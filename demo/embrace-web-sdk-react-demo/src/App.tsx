@@ -1,26 +1,43 @@
-import styles from "./App.module.css";
+import styles from './App.module.css';
 
-import { Span, trace } from "@opentelemetry/api";
-import { useRef, useState } from "react";
+import {Span, trace} from '@opentelemetry/api';
+import {useRef, useState} from 'react';
+import {startSessionSpan} from '@embraceio/embrace-web-sdk';
 
-const tracer = trace.getTracer("react-client");
+const tracer = trace.getTracer('embrace-web-sdk-demo');
 
 const App = () => {
-  const currentSpan = useRef<Span | null>(null);
-  const [isSpanStarted, setIsSpanStarted] = useState(false);
+  const sessionSpan = useRef<Span | null>(null);
+  const [spans, setSpans] = useState<Span[]>([]);
 
-  const handleStartSpan = () => {
-    currentSpan.current = tracer.startSpan("Demo Span");
-    setIsSpanStarted(true);
+  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(false);
+
+  const handleStartSessionSpan = () => {
+    sessionSpan.current = startSessionSpan();
+    setIsSessionSpanStarted(true);
   };
 
-  const handleEndSpan = () => {
-    if (currentSpan.current) {
-      currentSpan.current.end();
-      setIsSpanStarted(false);
+  const handleEndSessionSpan = () => {
+    if (sessionSpan.current) {
+      sessionSpan.current.end();
+      setIsSessionSpanStarted(false);
 
-      currentSpan.current = null;
+      sessionSpan.current = null;
     }
+  };
+
+  const handleStartSpan = () => {
+    const span = tracer.startSpan('demo-span');
+    setSpans([...spans, span]);
+  };
+
+  const handleEndSpan = (span: Span, index: number) => {
+    span.end();
+
+    const newSpans = [...spans];
+    newSpans.splice(index, 1);
+
+    setSpans(newSpans);
   };
 
   return (
@@ -28,10 +45,28 @@ const App = () => {
       <div className={styles.container}>
         Demo
         <div className={styles.actions}>
-          <button onClick={handleStartSpan} disabled={isSpanStarted}>
-            Start Span
+          <button
+            onClick={handleStartSessionSpan}
+            disabled={isSessionSpanStarted}>
+            Start Session span
           </button>
-          <button onClick={handleEndSpan}>End Span</button>
+          <button onClick={handleEndSessionSpan}>End Session Span</button>
+        </div>
+        <button
+          onClick={handleStartSpan}
+          disabled={sessionSpan.current === null}>
+          Start Span
+        </button>
+        <div className={styles.spans}>
+          {spans.map((span, index) => (
+            <div className={styles.span}>
+              <div key={index}>Span {index}</div>
+
+              <button onClick={() => handleEndSpan(span, index)}>
+                End Span
+              </button>
+            </div>
+          ))}
         </div>
       </div>
     </>
