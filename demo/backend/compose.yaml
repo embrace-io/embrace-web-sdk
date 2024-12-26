@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - '7070:7070'
+    networks:
+      - backend
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
+    depends_on:
+      grafana:
+        condition: service_healthy
+    restart: always
+
+  grafana:
+    image: grafana/otel-lgtm
+    ports:
+      - '3000:3000'
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
