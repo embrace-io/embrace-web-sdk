@@ -16,7 +16,7 @@ const setupOTelSDK = () => {
 
   const consoleExporter = new ConsoleSpanExporter();
   const traceExporter = new OTLPTraceExporter({
-    url: 'https://data.websdk.pablomatiasgomez.dev.emb-eng.com/v2/spans',
+    url: 'http://localhost:7070/v1/traces',
     headers: {
       'X-EMB-AID': 'ker2B',
       'X-EMB-DID': '018741D8E18447908A72222E7C002DB9',
