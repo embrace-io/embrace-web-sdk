@@ -14,6 +14,7 @@ import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
+import {WebVitalsInstrumentation} from '@honeycombio/opentelemetry-web';
 
 const setupOTelSDK = () => {
   const resource = Resource.default().merge(getWebSDKResource());
@@ -40,7 +41,10 @@ const setupOTelSDK = () => {
     propagator: new B3Propagator(),
   });
   registerInstrumentations({
-    instrumentations: [getWebAutoInstrumentations()],
+    instrumentations: [
+      getWebAutoInstrumentations(),
+      new WebVitalsInstrumentation(),
+    ],
   });
   trace.setGlobalTracerProvider(tracerProvider);
 };
