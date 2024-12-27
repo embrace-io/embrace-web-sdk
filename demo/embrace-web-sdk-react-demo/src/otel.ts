@@ -10,6 +10,10 @@ import {
   getWebSDKResource,
   SessionSpanProcessor,
 } from '@embraceio/embrace-web-sdk';
+import {ZoneContextManager} from '@opentelemetry/context-zone';
+import {B3Propagator} from '@opentelemetry/propagator-b3';
+import {registerInstrumentations} from '@opentelemetry/instrumentation';
+import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
 
 const setupOTelSDK = () => {
   const resource = Resource.default().merge(getWebSDKResource());
@@ -30,7 +34,14 @@ const setupOTelSDK = () => {
     spanProcessors: [sessionSpanProcessor, consoleSpanProcessor],
   });
 
-  tracerProvider.register();
+  tracerProvider.register({
+    // todo why do we need these? do the auto instrumentation libraries depend on them?
+    contextManager: new ZoneContextManager(),
+    propagator: new B3Propagator(),
+  });
+  registerInstrumentations({
+    instrumentations: [getWebAutoInstrumentations()],
+  });
   trace.setGlobalTracerProvider(tracerProvider);
 };
 

@@ -12,7 +12,11 @@
   "dependencies": {
     "@embraceio/embrace-web-sdk": "file:../..",
     "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.45.0",
+    "@opentelemetry/context-zone": "^1.30.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/instrumentation": "^0.57.0",
+    "@opentelemetry/propagator-b3": "^1.30.0",
     "@opentelemetry/sdk-trace-web": "^1.30.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
