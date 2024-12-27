@@ -9,14 +9,14 @@ import {logs} from '@opentelemetry/api-logs';
 import {
   getWebSDKResource,
   SessionSpanProcessor,
+  EmbraceTraceExporter,
+  EmbraceLogExporter,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import EmbraceTraceExporter from '../../../src/exporters/EmbraceTraceExporter';
-import EmbraceLogExporter from '../../../src/exporters/EmbraceLogExporter';
 
 const loggerProvider = new LoggerProvider({
   resource: Resource.default().merge(getWebSDKResource()),
