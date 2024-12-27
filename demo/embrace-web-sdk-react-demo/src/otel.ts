@@ -5,24 +5,30 @@ import {
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import {trace} from '@opentelemetry/api';
-import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
+import {logs} from '@opentelemetry/api-logs';
 import {
   getWebSDKResource,
   SessionSpanProcessor,
 } from '@embraceio/embrace-web-sdk';
+import {
+  ConsoleLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
+import EmbraceTraceExporter from '../../../src/exporters/EmbraceTraceExporter';
+import EmbraceLogExporter from '../../../src/exporters/EmbraceLogExporter';
+
+const loggerProvider = new LoggerProvider({
+  resource: Resource.default().merge(getWebSDKResource()),
+});
 
 const setupOTelSDK = () => {
   const resource = Resource.default().merge(getWebSDKResource());
 
   const consoleExporter = new ConsoleSpanExporter();
-  const traceExporter = new OTLPTraceExporter({
-    url: 'http://localhost:7070/v1/traces',
-    headers: {
-      'X-EMB-AID': 'ker2B',
-      'X-EMB-DID': '018741D8E18447908A72222E7C002DB9',
-    },
-  });
-  const sessionSpanProcessor = new SessionSpanProcessor(traceExporter);
+  const embraceTraceExporter = new EmbraceTraceExporter();
+
+  const sessionSpanProcessor = new SessionSpanProcessor(embraceTraceExporter);
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
 
   const tracerProvider = new WebTracerProvider({
@@ -32,6 +38,17 @@ const setupOTelSDK = () => {
 
   tracerProvider.register();
   trace.setGlobalTracerProvider(tracerProvider);
+
+  const logExporter = new EmbraceLogExporter();
+
+  loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+  );
+  loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(logExporter),
+  );
+
+  logs.setGlobalLoggerProvider(loggerProvider);
 };
 
-export {setupOTelSDK};
+export {setupOTelSDK, loggerProvider};

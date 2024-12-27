@@ -10,9 +10,9 @@ const getWebSDKResource = () => {
     environment: 'development',
     sdk_version: '0.0.1',
     sdk_simple_version: 1,
-    os_type: 'MacOS',
+    os_type: 'android',
     os_version: '10.15.7',
-    os_name: 'MacOS',
+    os_name: 'android',
   });
 };
 
