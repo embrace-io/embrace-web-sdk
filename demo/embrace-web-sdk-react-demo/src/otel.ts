@@ -20,6 +20,10 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
+import {ZoneContextManager} from '@opentelemetry/context-zone';
+import {B3Propagator} from '@opentelemetry/propagator-b3';
+import {registerInstrumentations} from '@opentelemetry/instrumentation';
+import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
 
 const loggerProvider = new LoggerProvider({
   resource: Resource.default().merge(getWebSDKResource()),
@@ -48,7 +52,14 @@ const setupOTelSDK = () => {
     ],
   });
 
-  tracerProvider.register();
+  tracerProvider.register({
+    // todo why do we need these? do the auto instrumentation libraries depend on them? copied from otel docs
+    contextManager: new ZoneContextManager(),
+    propagator: new B3Propagator(),
+  });
+  registerInstrumentations({
+    instrumentations: [getWebAutoInstrumentations()],
+  });
   trace.setGlobalTracerProvider(tracerProvider);
 
   const logExporter = new EmbraceLogExporter();
