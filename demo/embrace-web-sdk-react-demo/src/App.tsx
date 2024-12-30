@@ -5,7 +5,6 @@ import {useRef, useState} from 'react';
 import {startSessionSpan} from '@embraceio/embrace-web-sdk';
 import {loggerProvider} from './otel';
 import {SeverityNumber} from '@opentelemetry/api-logs';
-import {v4 as uuid} from 'uuid';
 
 const tracer = trace.getTracer('embrace-web-sdk-demo');
 const logger = loggerProvider.getLogger('default');
@@ -51,7 +50,6 @@ const App = () => {
       body: 'This is a log',
       attributes: {
         key: 'some value',
-        'log.record.uid': uuid().replace(/-/g, '').toUpperCase(),
       },
     });
   };

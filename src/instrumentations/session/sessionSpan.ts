@@ -1,13 +1,14 @@
 import {trace} from '@opentelemetry/api';
-import {v4 as uuid} from 'uuid';
+import generateUUID from '../../utils/generateUUID';
+import {EMB_SESSION, EMB_TYPE} from '../../constants/attributes';
 
 const tracer = trace.getTracer('embrace-web-sdk-sessions');
 
 const startSessionSpan = () => {
   const sessionSpan = tracer.startSpan('emb-session');
   sessionSpan.setAttributes({
-    'emb.type': 'ux.session',
-    'session.id': uuid().replace(/-/g, '').toUpperCase(),
+    [EMB_TYPE]: 'ux.session',
+    [EMB_SESSION]: generateUUID(),
   });
 
   return sessionSpan;

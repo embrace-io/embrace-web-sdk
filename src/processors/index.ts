@@ -1,4 +1,4 @@
 import SessionSpanProcessor from './SessionSpanProcessor';
+import EmbraceLogProcessor from './EmbraceLogProcessor';
 
-export {SessionSpanProcessor};
-export * from './SessionSpanProcessor';
+export {SessionSpanProcessor, EmbraceLogProcessor};

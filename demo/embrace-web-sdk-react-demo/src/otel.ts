@@ -11,11 +11,11 @@ import {
   SessionSpanProcessor,
   EmbraceTraceExporter,
   EmbraceLogExporter,
+  EmbraceLogProcessor,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
   LoggerProvider,
-  SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 
 const loggerProvider = new LoggerProvider({
@@ -42,11 +42,9 @@ const setupOTelSDK = () => {
   const logExporter = new EmbraceLogExporter();
 
   loggerProvider.addLogRecordProcessor(
-    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+    new EmbraceLogProcessor(new ConsoleLogRecordExporter()),
   );
-  loggerProvider.addLogRecordProcessor(
-    new SimpleLogRecordProcessor(logExporter),
-  );
+  loggerProvider.addLogRecordProcessor(new EmbraceLogProcessor(logExporter));
 
   logs.setGlobalLoggerProvider(loggerProvider);
 };

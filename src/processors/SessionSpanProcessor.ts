@@ -5,7 +5,11 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 // TODO: don't rely on internal API
 import {BindOnceFuture, internal} from '@opentelemetry/core';
-import {isSessionSpan} from '../instrumentations/session/util';
+import {EMB_SESSION, EMB_TYPE} from '../constants/attributes';
+
+const isSessionSpan = (span: ReadableSpan) => {
+  return span.attributes[EMB_TYPE] === EMB_SESSION;
+};
 
 class SessionSpanProcessor implements SpanProcessor {
   private _shutdownOnce: BindOnceFuture<void>;
