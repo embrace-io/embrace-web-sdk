@@ -39,6 +39,16 @@ const App = () => {
     setSpans(newSpans);
   };
 
+  const handleRecordException = () => {
+    const errorSpan = tracer.startSpan('error-span');
+    errorSpan.recordException({
+      name: 'Error',
+      message: 'This is an error',
+      stack: 'Error: This is an error',
+    });
+    errorSpan.end();
+  };
+
   const handleSendLog = () => {
     logger.emit({
       severityNumber: SeverityNumber.INFO,
@@ -68,6 +78,11 @@ const App = () => {
           Start Span
         </button>
         <button onClick={handleSendLog}>Send Log</button>
+        <button
+          onClick={handleRecordException}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Record Exception
+        </button>
         <div className={styles.spans}>
           {spans.map((span, index) => (
             <div className={styles.span} key={index}>

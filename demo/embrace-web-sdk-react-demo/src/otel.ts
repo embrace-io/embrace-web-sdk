@@ -20,6 +20,7 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
+import EmbraceSpanEventExceptionToLogProcessor from '../../../src/processors/EmbraceSpanEventExceptionToLogProcessor';
 import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
@@ -42,6 +43,10 @@ const setupOTelSDK = () => {
     embraceTraceExporter,
   );
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
+  const embraceSpanEventExceptionToLogProcessor =
+    new EmbraceSpanEventExceptionToLogProcessor(
+      loggerProvider.getLogger('exceptions'),
+    );
 
   const tracerProvider = new WebTracerProvider({
     resource: resource,
@@ -49,6 +54,7 @@ const setupOTelSDK = () => {
       sessionProcessor,
       consoleSpanProcessor,
       embraceSessionBatchedProcessor,
+      embraceSpanEventExceptionToLogProcessor,
     ],
   });
 
