@@ -1,7 +1,7 @@
 import {SessionProvider} from '@opentelemetry/web-common';
 import {Span, trace} from '@opentelemetry/api';
 import generateUUID from '../../utils/generateUUID';
-import {EMB_SESSION, EMB_TYPE} from '../../constants/attributes';
+import {VALUE_EMB_SESSION, KEY_EMB_TYPE} from '../../constants/attributes';
 import {ATTR_SESSION_ID} from '@opentelemetry/semantic-conventions/incubating';
 
 const tracer = trace.getTracer('embrace-web-sdk-sessions');
@@ -27,7 +27,7 @@ class SpanSessionProvider implements SessionProvider {
 
     this._sessionSpan = tracer.startSpan('emb-session');
     this._sessionSpan.setAttributes({
-      [EMB_TYPE]: EMB_SESSION,
+      [KEY_EMB_TYPE]: VALUE_EMB_SESSION,
       [ATTR_SESSION_ID]: this._activeSessionId,
     });
   }

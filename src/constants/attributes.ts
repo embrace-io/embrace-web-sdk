@@ -1,4 +1,4 @@
-const EMB_TYPE = 'emb.type';
-const EMB_SESSION = 'ux.session';
+const KEY_EMB_TYPE = 'emb.type';
+const VALUE_EMB_SESSION = 'ux.session';
 
-export {EMB_TYPE, EMB_SESSION};
+export {KEY_EMB_TYPE, VALUE_EMB_SESSION};
