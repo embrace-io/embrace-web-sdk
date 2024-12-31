@@ -6,7 +6,11 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
 } from '@opentelemetry/semantic-conventions';
 import {Logger, SeverityNumber} from '@opentelemetry/api-logs';
-import {EMB_TYPE, EMB_TYPES, JS_EXCEPTION} from '../constants/attributes';
+import {
+  KEY_EMB_TYPE,
+  EMB_TYPES,
+  KEY_JS_EXCEPTION,
+} from '../constants/attributes';
 import generateUUID from '../utils/generateUUID';
 
 /**
@@ -48,8 +52,8 @@ class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
       body: '',
       attributes: {
         ...attributes,
-        [EMB_TYPE]: EMB_TYPES.Exception,
-        [JS_EXCEPTION]: JSON.stringify({
+        [KEY_EMB_TYPE]: EMB_TYPES.Exception,
+        [KEY_JS_EXCEPTION]: JSON.stringify({
           id: generateUUID(),
           m: attributes[ATTR_EXCEPTION_MESSAGE],
           n: attributes[ATTR_EXCEPTION_TYPE],
