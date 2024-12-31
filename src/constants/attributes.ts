@@ -4,6 +4,7 @@ const KEY_JS_EXCEPTION = 'emb.android.react_native_crash.js_exception';
 
 enum EMB_TYPES {
   Session = 'ux.session',
+  Network = 'perf.network_request',
   // TODO: update once we have the right type
   Exception = 'sys.android.react_native_crash',
 }

@@ -7,14 +7,14 @@ import {
 import {trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {
-  getWebSDKResource,
-  EmbraceSessionBatchedProcessor,
-  EmbraceTraceExporter,
   EmbraceLogExporter,
+  EmbraceSessionBatchedProcessor,
+  EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceTraceExporter,
+  getWebSDKResource,
+  GlobalExceptionInstrumentation,
   IdentifiableSessionLogRecordProcessor,
   SpanSessionProvider,
-  GlobalExceptionInstrumentation,
-  EmbraceSpanEventExceptionToLogProcessor,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
@@ -26,6 +26,7 @@ import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
+import EmbraceNetworkSpanProcessor from '../../../src/processors/EmbraceNetworkSpanProcessor.ts';
 
 const loggerProvider = new LoggerProvider({
   resource: Resource.default().merge(getWebSDKResource()),
@@ -44,6 +45,7 @@ const setupOTelSDK = () => {
     embraceTraceExporter,
   );
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
+  const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
   const embraceSpanEventExceptionToLogProcessor =
     new EmbraceSpanEventExceptionToLogProcessor(
       loggerProvider.getLogger('exceptions'),
@@ -53,6 +55,7 @@ const setupOTelSDK = () => {
     resource: resource,
     spanProcessors: [
       sessionProcessor,
+      embraceNetworkSpanProcessor,
       consoleSpanProcessor,
       embraceSessionBatchedProcessor,
       embraceSpanEventExceptionToLogProcessor,
