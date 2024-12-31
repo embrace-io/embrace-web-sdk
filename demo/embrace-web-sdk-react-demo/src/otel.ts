@@ -84,7 +84,10 @@ const setupOTelSDK = () => {
   sessionProvider.startSessionSpan();
 
   registerInstrumentations({
-    instrumentations: [getWebAutoInstrumentations(), new GlobalExceptionInstrumentation()],
+    instrumentations: [
+      getWebAutoInstrumentations(),
+      new GlobalExceptionInstrumentation(),
+    ],
   });
 };
 

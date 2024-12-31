@@ -1,4 +1,9 @@
 import EmbraceSessionBatchedProcessor from './EmbraceSessionBatchedProcessor';
 import IdentifiableSessionLogRecordProcessor from './IdentifiableSessionLogRecordProcessor';
+import EmbraceSpanEventExceptionToLogProcessor from './EmbraceSpanEventExceptionToLogProcessor';
 
-export {EmbraceSessionBatchedProcessor, IdentifiableSessionLogRecordProcessor};
+export {
+  EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceSessionBatchedProcessor,
+  IdentifiableSessionLogRecordProcessor,
+};
