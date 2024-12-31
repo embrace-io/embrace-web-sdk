@@ -4,6 +4,8 @@ import {Span, trace} from '@opentelemetry/api';
 import {useState} from 'react';
 import {loggerProvider, sessionProvider} from './otel';
 import {SeverityNumber} from '@opentelemetry/api-logs';
+// some free and open source random API for testing purposes
+const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
 
 const tracer = trace.getTracer('embrace-web-sdk-demo');
 const logger = loggerProvider.getLogger('default');
@@ -60,6 +62,17 @@ const App = () => {
     });
   };
 
+  const handleSendFetchNetworkRequest = () => {
+    void fetch(POKEMON_URL, {
+      method: 'GET',
+    });
+  };
+  const handleSendXMLNetworkRequest = () => {
+    const req = new XMLHttpRequest();
+    req.open('GET', POKEMON_URL, true);
+    req.send();
+  };
+
   const handleThrowError = () => {
     throw new Error('This is an error');
   };
@@ -102,6 +115,12 @@ const App = () => {
           onClick={handleRejectPromise}
           disabled={sessionProvider.getSessionSpan() === null}>
           Reject Promise
+        </button>
+        <button onClick={handleSendFetchNetworkRequest}>
+          Send a Fetch Network Request
+        </button>
+        <button onClick={handleSendXMLNetworkRequest}>
+          Send a XML Network Request
         </button>
         <div className={styles.spans}>
           {spans.map((span, index) => (
