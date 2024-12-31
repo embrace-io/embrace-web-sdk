@@ -1,4 +1,4 @@
-import SessionSpanProcessor from './SessionSpanProcessor';
-import EmbraceLogProcessor from './EmbraceLogProcessor';
+import EmbraceSessionBatchedProcessor from './EmbraceSessionBatchedProcessor';
+import IdentifiableSessionLogRecordProcessor from './IdentifiableSessionLogRecordProcessor';
 
-export {SessionSpanProcessor, EmbraceLogProcessor};
+export {EmbraceSessionBatchedProcessor, IdentifiableSessionLogRecordProcessor};

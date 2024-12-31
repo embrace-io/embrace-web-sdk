@@ -8,19 +8,24 @@ import {trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {
   getWebSDKResource,
-  SessionSpanProcessor,
+  EmbraceSessionBatchedProcessor,
   EmbraceTraceExporter,
   EmbraceLogExporter,
-  EmbraceLogProcessor,
+  IdentifiableSessionLogRecordProcessor,
+  SpanSessionProvider,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
   LoggerProvider,
+  SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
+import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 
 const loggerProvider = new LoggerProvider({
   resource: Resource.default().merge(getWebSDKResource()),
 });
+
+const sessionProvider = new SpanSessionProvider();
 
 const setupOTelSDK = () => {
   const resource = Resource.default().merge(getWebSDKResource());
@@ -28,12 +33,19 @@ const setupOTelSDK = () => {
   const consoleExporter = new ConsoleSpanExporter();
   const embraceTraceExporter = new EmbraceTraceExporter();
 
-  const sessionSpanProcessor = new SessionSpanProcessor(embraceTraceExporter);
+  const sessionProcessor = createSessionSpanProcessor(sessionProvider);
+  const embraceSessionBatchedProcessor = new EmbraceSessionBatchedProcessor(
+    embraceTraceExporter,
+  );
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
 
   const tracerProvider = new WebTracerProvider({
     resource: resource,
-    spanProcessors: [sessionSpanProcessor, consoleSpanProcessor],
+    spanProcessors: [
+      sessionProcessor,
+      consoleSpanProcessor,
+      embraceSessionBatchedProcessor,
+    ],
   });
 
   tracerProvider.register();
@@ -42,11 +54,19 @@ const setupOTelSDK = () => {
   const logExporter = new EmbraceLogExporter();
 
   loggerProvider.addLogRecordProcessor(
-    new EmbraceLogProcessor(new ConsoleLogRecordExporter()),
+    new IdentifiableSessionLogRecordProcessor(sessionProvider),
   );
-  loggerProvider.addLogRecordProcessor(new EmbraceLogProcessor(logExporter));
+  loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+  );
+  loggerProvider.addLogRecordProcessor(
+    new SimpleLogRecordProcessor(logExporter),
+  );
 
   logs.setGlobalLoggerProvider(loggerProvider);
+
+  // Start the session span after the SDK is initialized
+  sessionProvider.startSessionSpan();
 };
 
-export {setupOTelSDK, loggerProvider};
+export {setupOTelSDK, loggerProvider, sessionProvider};

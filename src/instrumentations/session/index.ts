@@ -1,1 +1,3 @@
-export * from './sessionSpan';
+import SpanSessionProvider from './SpanSessionProvider';
+
+export {SpanSessionProvider};

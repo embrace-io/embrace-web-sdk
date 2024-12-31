@@ -11,7 +11,7 @@ const isSessionSpan = (span: ReadableSpan) => {
   return span.attributes[EMB_TYPE] === EMB_SESSION;
 };
 
-class SessionSpanProcessor implements SpanProcessor {
+class EmbraceSessionBatchedProcessor implements SpanProcessor {
   private _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
 
@@ -47,4 +47,4 @@ class SessionSpanProcessor implements SpanProcessor {
   }
 }
 
-export default SessionSpanProcessor;
+export default EmbraceSessionBatchedProcessor;
