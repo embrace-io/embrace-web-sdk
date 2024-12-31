@@ -1,28 +1,27 @@
 import styles from './App.module.css';
 
 import {Span, trace} from '@opentelemetry/api';
-import {useRef, useState} from 'react';
-import {startSessionSpan} from '@embraceio/embrace-web-sdk';
+import {useState} from 'react';
+import {loggerProvider, sessionProvider} from './otel';
+import {SeverityNumber} from '@opentelemetry/api-logs';
 
 const tracer = trace.getTracer('embrace-web-sdk-demo');
+const logger = loggerProvider.getLogger('default');
 
 const App = () => {
-  const sessionSpan = useRef<Span | null>(null);
   const [spans, setSpans] = useState<Span[]>([]);
 
   const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(false);
 
   const handleStartSessionSpan = () => {
-    sessionSpan.current = startSessionSpan();
+    sessionProvider.startSessionSpan();
     setIsSessionSpanStarted(true);
   };
 
   const handleEndSessionSpan = () => {
-    if (sessionSpan.current) {
-      sessionSpan.current.end();
+    if (sessionProvider.getSessionSpan()) {
+      sessionProvider.endSessionSpan();
       setIsSessionSpanStarted(false);
-
-      sessionSpan.current = null;
     }
   };
 
@@ -40,6 +39,17 @@ const App = () => {
     setSpans(newSpans);
   };
 
+  const handleSendLog = () => {
+    logger.emit({
+      severityNumber: SeverityNumber.INFO,
+      severityText: 'INFO',
+      body: 'This is a log',
+      attributes: {
+        key: 'some value',
+      },
+    });
+  };
+
   return (
     <>
       <div className={styles.container}>
@@ -54,13 +64,14 @@ const App = () => {
         </div>
         <button
           onClick={handleStartSpan}
-          disabled={sessionSpan.current === null}>
+          disabled={sessionProvider.getSessionSpan() === null}>
           Start Span
         </button>
+        <button onClick={handleSendLog}>Send Log</button>
         <div className={styles.spans}>
           {spans.map((span, index) => (
-            <div className={styles.span}>
-              <div key={index}>Span {index}</div>
+            <div className={styles.span} key={index}>
+              <div>Span {index}</div>
 
               <button onClick={() => handleEndSpan(span, index)}>
                 End Span

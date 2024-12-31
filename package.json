@@ -10,7 +10,11 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-trace-web": "^1.30.0"
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/otlp-exporter-base": "^0.57.0",
+    "@opentelemetry/sdk-trace-web": "^1.30.0",
+    "@opentelemetry/web-common": "^0.57.0",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
