@@ -13,6 +13,8 @@ import {
   EmbraceLogExporter,
   IdentifiableSessionLogRecordProcessor,
   SpanSessionProvider,
+  GlobalExceptionInstrumentation,
+  EmbraceSpanEventExceptionToLogProcessor,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
@@ -20,10 +22,9 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
-import EmbraceSpanEventExceptionToLogProcessor from '../../../src/processors/EmbraceSpanEventExceptionToLogProcessor';
+import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
-import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
 
 const loggerProvider = new LoggerProvider({
@@ -63,9 +64,6 @@ const setupOTelSDK = () => {
     contextManager: new ZoneContextManager(),
     propagator: new B3Propagator(),
   });
-  registerInstrumentations({
-    instrumentations: [getWebAutoInstrumentations()],
-  });
   trace.setGlobalTracerProvider(tracerProvider);
 
   const logExporter = new EmbraceLogExporter();
@@ -84,6 +82,10 @@ const setupOTelSDK = () => {
 
   // Start the session span after the SDK is initialized
   sessionProvider.startSessionSpan();
+
+  registerInstrumentations({
+    instrumentations: [getWebAutoInstrumentations(), new GlobalExceptionInstrumentation()],
+  });
 };
 
 export {setupOTelSDK, loggerProvider, sessionProvider};

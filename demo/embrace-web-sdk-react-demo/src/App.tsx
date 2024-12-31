@@ -60,6 +60,16 @@ const App = () => {
     });
   };
 
+  const handleThrowError = () => {
+    throw new Error('This is an error');
+  };
+
+  const handleRejectPromise = () => {
+    return new Promise((_, reject) => {
+      reject(new Error('This is an error'));
+    });
+  };
+
   return (
     <>
       <div className={styles.container}>
@@ -82,6 +92,16 @@ const App = () => {
           onClick={handleRecordException}
           disabled={sessionProvider.getSessionSpan() === null}>
           Record Exception
+        </button>
+        <button
+          onClick={handleThrowError}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Throw Error
+        </button>
+        <button
+          onClick={handleRejectPromise}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Reject Promise
         </button>
         <div className={styles.spans}>
           {spans.map((span, index) => (
