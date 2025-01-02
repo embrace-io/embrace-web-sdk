@@ -1,12 +1,9 @@
-import {SpanProcessor} from '@opentelemetry/sdk-trace-web';
 import {ReadableSpan} from '@opentelemetry/sdk-trace-base/build/src/export/ReadableSpan';
+import {Attributes, AttributeValue} from '@opentelemetry/api';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   SEMATTRS_HTTP_METHOD,
 } from '@opentelemetry/semantic-conventions';
-import {Attributes, AttributeValue} from '@opentelemetry/api';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../constants/attributes';
-import {Span} from '@opentelemetry/sdk-trace-base/build/src/Span';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,
@@ -28,15 +25,7 @@ interface NetworkSpan extends ReadableSpan {
   attributes: NetworkSpanAttributes;
 }
 
-// not used yet, but added for clarity. This is the type for Embrace tagged network spans
-// interface EmbraceNetworkSpanAttributes extends Attributes {
-//   [KEY_EMB_TYPE]: EMB_TYPES.Network;
-// }
-// interface EmbraceNetworkSpan extends NetworkSpan {
-//   attributes: NetworkSpanAttributes & EmbraceNetworkSpanAttributes;
-// }
-
-const isNetworkSpan = (
+export const isNetworkSpan = (
   span: ReadableSpan | NetworkSpan,
 ): span is NetworkSpan => {
   return (
@@ -45,26 +34,10 @@ const isNetworkSpan = (
   );
 };
 
-/**
- * Embrace's API expects network spans to have some specific attributes.
- * This processor checks if a span is a network span and adds them.
- */
-class EmbraceNetworkSpanProcessor implements SpanProcessor {
-  onStart(span: Span): void {
-    if (isNetworkSpan(span)) {
-      span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.Network);
-    }
-  }
-
-  onEnd(): void {}
-
-  forceFlush(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-
-  shutdown(): Promise<void> {
-    return Promise.resolve(undefined);
-  }
-}
-
-export default EmbraceNetworkSpanProcessor;
+// not used yet, but added for clarity. This is the type for Embrace tagged network spans
+// interface EmbraceNetworkSpanAttributes extends Attributes {
+//   [KEY_EMB_TYPE]: EMB_TYPES.Network;
+// }
+// interface EmbraceNetworkSpan extends NetworkSpan {
+//   attributes: NetworkSpanAttributes & EmbraceNetworkSpanAttributes;
+// }

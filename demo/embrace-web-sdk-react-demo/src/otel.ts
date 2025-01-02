@@ -8,6 +8,7 @@ import {trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {
   EmbraceLogExporter,
+  EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
   EmbraceTraceExporter,
@@ -26,7 +27,6 @@ import {registerInstrumentations} from '@opentelemetry/instrumentation';
 import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
-import EmbraceNetworkSpanProcessor from '../../../src/processors/EmbraceNetworkSpanProcessor.ts';
 
 const loggerProvider = new LoggerProvider({
   resource: Resource.default().merge(getWebSDKResource()),
