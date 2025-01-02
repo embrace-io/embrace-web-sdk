@@ -1,7 +1,7 @@
-import EmbraceSessionBatchedProcessor from './embraceSessionBatchedProcessor';
-import IdentifiableSessionLogRecordProcessor from './identifiableSessionLogRecordProcessor';
-import EmbraceSpanEventExceptionToLogProcessor from './embraceSpanEventExceptionToLogProcessor';
-import EmbraceNetworkSpanProcessor from './embraceNetworkSpanProcessor';
+import EmbraceSessionBatchedProcessor from './EmbraceSessionBatchedProcessor';
+import IdentifiableSessionLogRecordProcessor from './IdentifiableSessionLogRecordProcessor';
+import EmbraceSpanEventExceptionToLogProcessor from './EmbraceSpanEventExceptionToLogProcessor';
+import EmbraceNetworkSpanProcessor from './EmbraceNetworkSpanProcessor';
 
 export {
   EmbraceSpanEventExceptionToLogProcessor,
