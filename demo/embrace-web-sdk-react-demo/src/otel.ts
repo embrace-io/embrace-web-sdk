@@ -7,14 +7,15 @@ import {
 import {trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {
-  getWebSDKResource,
-  EmbraceSessionBatchedProcessor,
-  EmbraceTraceExporter,
   EmbraceLogExporter,
+  EmbraceNetworkSpanProcessor,
+  EmbraceSessionBatchedProcessor,
+  EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceTraceExporter,
+  getWebSDKResource,
+  GlobalExceptionInstrumentation,
   IdentifiableSessionLogRecordProcessor,
   SpanSessionProvider,
-  GlobalExceptionInstrumentation,
-  EmbraceSpanEventExceptionToLogProcessor,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
@@ -44,6 +45,7 @@ const setupOTelSDK = () => {
     embraceTraceExporter,
   );
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
+  const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
   const embraceSpanEventExceptionToLogProcessor =
     new EmbraceSpanEventExceptionToLogProcessor(
       loggerProvider.getLogger('exceptions'),
@@ -53,6 +55,7 @@ const setupOTelSDK = () => {
     resource: resource,
     spanProcessors: [
       sessionProcessor,
+      embraceNetworkSpanProcessor,
       consoleSpanProcessor,
       embraceSessionBatchedProcessor,
       embraceSpanEventExceptionToLogProcessor,

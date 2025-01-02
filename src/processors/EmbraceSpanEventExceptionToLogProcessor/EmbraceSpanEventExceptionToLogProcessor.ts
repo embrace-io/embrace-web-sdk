@@ -2,20 +2,20 @@ import {SpanProcessor, TimedEvent} from '@opentelemetry/sdk-trace-web';
 import {ReadableSpan} from '@opentelemetry/sdk-trace-base/build/src/export/ReadableSpan';
 import {
   ATTR_EXCEPTION_MESSAGE,
-  ATTR_EXCEPTION_TYPE,
   ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import {Logger, SeverityNumber} from '@opentelemetry/api-logs';
 import {
-  KEY_EMB_TYPE,
   EMB_TYPES,
+  KEY_EMB_TYPE,
   KEY_JS_EXCEPTION,
-} from '../constants/attributes';
-import generateUUID from '../utils/generateUUID';
+} from '../../constants/attributes';
+import generateUUID from '../../utils/generateUUID';
 
 /**
-  Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
-  to logs.
+ Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
+ to logs.
  */
 class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
   constructor(private _logger: Logger) {}

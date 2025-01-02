@@ -1,0 +1,3 @@
+import EmbraceSpanEventExceptionToLogProcessor from './EmbraceSpanEventExceptionToLogProcessor';
+
+export default EmbraceSpanEventExceptionToLogProcessor;
