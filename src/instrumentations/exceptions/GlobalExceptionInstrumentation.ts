@@ -1,17 +1,15 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import {InstrumentationBase} from '@opentelemetry/instrumentation/build/src/platform/browser/instrumentation';
 import {SpanStatusCode} from '@opentelemetry/api';
+import InstrumentationBase from '../InstrumentationBase';
 
 class GlobalExceptionInstrumentation extends InstrumentationBase {
-  private _onErrorHandler:
-    | undefined
-    | ((event: ErrorEvent | PromiseRejectionEvent) => void);
+  private readonly _onErrorHandler: (
+    event: ErrorEvent | PromiseRejectionEvent,
+  ) => void;
 
   constructor() {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
-  }
 
-  enable(): void {
     this._onErrorHandler = (event: ErrorEvent | PromiseRejectionEvent) => {
       const error: Error | undefined =
         'reason' in event ? event.reason : event.error;
@@ -35,6 +33,12 @@ class GlobalExceptionInstrumentation extends InstrumentationBase {
       errorSpan.end();
     };
 
+    if (this._config.enabled) {
+      this.enable();
+    }
+  }
+
+  enable(): void {
     window.addEventListener('error', this._onErrorHandler);
     window.addEventListener('unhandledrejection', this._onErrorHandler);
   }
