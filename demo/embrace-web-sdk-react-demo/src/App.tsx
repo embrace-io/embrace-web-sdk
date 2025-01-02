@@ -13,7 +13,9 @@ const logger = loggerProvider.getLogger('default');
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
 
-  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(false);
+  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(
+    sessionProvider.getSessionSpan !== null,
+  );
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
