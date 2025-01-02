@@ -16,6 +16,7 @@ import {
   GlobalExceptionInstrumentation,
   IdentifiableSessionLogRecordProcessor,
   SpanSessionProvider,
+  SpanSessionInstrumentation,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
@@ -90,6 +91,7 @@ const setupOTelSDK = () => {
     instrumentations: [
       getWebAutoInstrumentations(),
       new GlobalExceptionInstrumentation(),
+      new SpanSessionInstrumentation(sessionProvider),
     ],
   });
 };

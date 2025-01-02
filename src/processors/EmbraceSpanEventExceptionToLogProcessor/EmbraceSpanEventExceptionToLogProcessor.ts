@@ -1,5 +1,8 @@
-import {SpanProcessor, TimedEvent} from '@opentelemetry/sdk-trace-web';
-import {ReadableSpan} from '@opentelemetry/sdk-trace-base/build/src/export/ReadableSpan';
+import {
+  ReadableSpan,
+  SpanProcessor,
+  TimedEvent,
+} from '@opentelemetry/sdk-trace-web';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
