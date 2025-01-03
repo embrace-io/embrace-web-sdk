@@ -1,5 +1,5 @@
-import {type LogRecordProcessor, LogRecord} from '@opentelemetry/sdk-logs';
-import generateUUID from '../utils/generateUUID';
+import {LogRecord, type LogRecordProcessor} from '@opentelemetry/sdk-logs';
+import generateUUID from '../../utils/generateUUID';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,

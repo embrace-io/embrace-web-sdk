@@ -7,12 +7,16 @@ import {
 import {trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {
-  getWebSDKResource,
-  EmbraceSessionBatchedProcessor,
-  EmbraceTraceExporter,
   EmbraceLogExporter,
+  EmbraceNetworkSpanProcessor,
+  EmbraceSessionBatchedProcessor,
+  EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceTraceExporter,
+  getWebSDKResource,
+  GlobalExceptionInstrumentation,
   IdentifiableSessionLogRecordProcessor,
   SpanSessionProvider,
+  SpanSessionInstrumentation,
 } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
@@ -20,9 +24,8 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
-import {ZoneContextManager} from '@opentelemetry/context-zone';
-import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
+import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
 
 const loggerProvider = new LoggerProvider({
@@ -42,23 +45,25 @@ const setupOTelSDK = () => {
     embraceTraceExporter,
   );
   const consoleSpanProcessor = new SimpleSpanProcessor(consoleExporter);
+  const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
+  const embraceSpanEventExceptionToLogProcessor =
+    new EmbraceSpanEventExceptionToLogProcessor(
+      loggerProvider.getLogger('exceptions'),
+    );
 
   const tracerProvider = new WebTracerProvider({
     resource: resource,
     spanProcessors: [
       sessionProcessor,
+      embraceNetworkSpanProcessor,
       consoleSpanProcessor,
       embraceSessionBatchedProcessor,
+      embraceSpanEventExceptionToLogProcessor,
     ],
   });
 
   tracerProvider.register({
-    // todo why do we need these? do the auto instrumentation libraries depend on them? copied from otel docs
-    contextManager: new ZoneContextManager(),
     propagator: new B3Propagator(),
-  });
-  registerInstrumentations({
-    instrumentations: [getWebAutoInstrumentations()],
   });
   trace.setGlobalTracerProvider(tracerProvider);
 
@@ -78,6 +83,14 @@ const setupOTelSDK = () => {
 
   // Start the session span after the SDK is initialized
   sessionProvider.startSessionSpan();
+
+  registerInstrumentations({
+    instrumentations: [
+      getWebAutoInstrumentations(),
+      new GlobalExceptionInstrumentation(),
+      new SpanSessionInstrumentation(sessionProvider),
+    ],
+  });
 };
 
 export {setupOTelSDK, loggerProvider, sessionProvider};

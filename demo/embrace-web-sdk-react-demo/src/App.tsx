@@ -4,6 +4,8 @@ import {Span, trace} from '@opentelemetry/api';
 import {useState} from 'react';
 import {loggerProvider, sessionProvider} from './otel';
 import {SeverityNumber} from '@opentelemetry/api-logs';
+// some free and open source random API for testing purposes
+const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
 
 const tracer = trace.getTracer('embrace-web-sdk-demo');
 const logger = loggerProvider.getLogger('default');
@@ -11,7 +13,9 @@ const logger = loggerProvider.getLogger('default');
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
 
-  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(false);
+  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(
+    sessionProvider.getSessionSpan !== null,
+  );
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -39,6 +43,16 @@ const App = () => {
     setSpans(newSpans);
   };
 
+  const handleRecordException = () => {
+    const errorSpan = tracer.startSpan('error-span');
+    errorSpan.recordException({
+      name: 'Error',
+      message: 'This is an error',
+      stack: 'Error: This is an error',
+    });
+    errorSpan.end();
+  };
+
   const handleSendLog = () => {
     logger.emit({
       severityNumber: SeverityNumber.INFO,
@@ -47,6 +61,27 @@ const App = () => {
       attributes: {
         key: 'some value',
       },
+    });
+  };
+
+  const handleSendFetchNetworkRequest = () => {
+    void fetch(POKEMON_URL, {
+      method: 'GET',
+    });
+  };
+  const handleSendXMLNetworkRequest = () => {
+    const req = new XMLHttpRequest();
+    req.open('GET', POKEMON_URL, true);
+    req.send();
+  };
+
+  const handleThrowError = () => {
+    throw new Error('This is an error');
+  };
+
+  const handleRejectPromise = () => {
+    return new Promise((_, reject) => {
+      reject();
     });
   };
 
@@ -68,6 +103,27 @@ const App = () => {
           Start Span
         </button>
         <button onClick={handleSendLog}>Send Log</button>
+        <button
+          onClick={handleRecordException}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Record Exception
+        </button>
+        <button
+          onClick={handleThrowError}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Throw Error
+        </button>
+        <button
+          onClick={handleRejectPromise}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Reject Promise
+        </button>
+        <button onClick={handleSendFetchNetworkRequest}>
+          Send a Fetch Network Request
+        </button>
+        <button onClick={handleSendXMLNetworkRequest}>
+          Send a XML Network Request
+        </button>
         <div className={styles.spans}>
           {spans.map((span, index) => (
             <div className={styles.span} key={index}>
