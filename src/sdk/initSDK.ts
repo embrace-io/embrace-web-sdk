@@ -3,7 +3,7 @@ import {getWebSDKResource} from '../resources';
 import {
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
-  SpanSessionProvider,
+  EmbraceSpanSessionProvider,
 } from '../instrumentations';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 import {
@@ -20,6 +20,7 @@ import {
   BatchLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {
+  EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
   IdentifiableSessionLogRecordProcessor,
@@ -30,6 +31,7 @@ import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-w
 import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 import {EmbraceLogExporter, EmbraceTraceExporter} from '../exporters';
 import {OTLPLogExporter} from '@opentelemetry/exporter-logs-otlp-http';
+import {session} from '../api-sessions';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -64,10 +66,6 @@ interface SDKInitConfig {
   logProcessors?: LogRecordProcessor[];
 }
 
-const sessionProvider = new SpanSessionProvider();
-let tracerProvider: WebTracerProvider;
-let loggerProvider: LoggerProvider;
-
 const initSDK = ({
   resource = Resource.default(),
   exporters = ['embrace'],
@@ -76,14 +74,16 @@ const initSDK = ({
 }: SDKInitConfig = {}) => {
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
-  loggerProvider = setupLogs({
+  const sessionProvider = setupSession();
+
+  const loggerProvider = setupLogs({
     resource: resourceWithWebSDKAttributes,
     exporters,
     logProcessors,
     sessionProvider,
   });
 
-  tracerProvider = setupTraces({
+  setupTraces({
     exporters,
     sessionProvider,
     spanProcessors,
@@ -91,18 +91,24 @@ const initSDK = ({
     resource: resourceWithWebSDKAttributes,
   });
 
-  setupInstrumentation({
-    sessionProvider,
-  });
+  setupInstrumentation();
 };
 
 interface SetupTracesArgs {
   resource: Resource;
   exporters: Exporter[];
   spanProcessors: SpanProcessor[];
-  sessionProvider: SpanSessionProvider;
+  sessionProvider: EmbraceSpanSessionProvider;
   loggerProvider: LoggerProvider;
 }
+
+const setupSession = () => {
+  const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
+
+  session.setGlobalSessionProvider(embraceSpanSessionProvider);
+
+  return embraceSpanSessionProvider;
+};
 
 const setupTraces = ({
   resource,
@@ -132,7 +138,9 @@ const setupTraces = ({
       new EmbraceSpanEventExceptionToLogProcessor(
         loggerProvider.getLogger('exceptions'),
       );
+    const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
 
+    finalSpanProcessors.push(embraceNetworkSpanProcessor);
     finalSpanProcessors.push(embraceSessionBatchedProcessor);
     finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
   }
@@ -156,7 +164,7 @@ interface SetupLogsArgs {
   resource: Resource;
   exporters: Exporter[];
   logProcessors: LogRecordProcessor[];
-  sessionProvider: SpanSessionProvider;
+  sessionProvider: EmbraceSpanSessionProvider;
 }
 
 const setupLogs = ({
@@ -195,30 +203,14 @@ const setupLogs = ({
   return loggerProvider;
 };
 
-interface SetupInstrumentationsArgs {
-  sessionProvider: SpanSessionProvider;
-}
-
-const setupInstrumentation = ({sessionProvider}: SetupInstrumentationsArgs) => {
-  sessionProvider.startSessionSpan();
-
+const setupInstrumentation = () => {
   registerInstrumentations({
     instrumentations: [
       getWebAutoInstrumentations(),
       new GlobalExceptionInstrumentation(),
-      new SpanSessionInstrumentation(sessionProvider),
+      new SpanSessionInstrumentation(),
     ],
   });
 };
 
-const getSessionProvider = (): SpanSessionProvider => {
-  if (!sessionProvider) {
-    throw new Error(
-      'Session provider not initialized. Make sure to call initSDK before using this method',
-    );
-  }
-
-  return sessionProvider;
-};
-
-export {initSDK, getSessionProvider};
+export {initSDK};

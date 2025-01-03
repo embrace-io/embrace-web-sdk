@@ -1,10 +1,10 @@
-import {SessionProvider} from '@opentelemetry/web-common';
 import {Span, trace} from '@opentelemetry/api';
 import generateUUID from '../../utils/generateUUID';
 import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants/attributes';
 import {ATTR_SESSION_ID} from '@opentelemetry/semantic-conventions/incubating';
+import {SpanSessionProvider} from '../../api-sessions';
 
-class SpanSessionProvider implements SessionProvider {
+class EmbraceSpanSessionProvider implements SpanSessionProvider {
   private readonly _activeSessionId: string;
   private _sessionSpan: Span | null = null;
 
@@ -37,4 +37,4 @@ class SpanSessionProvider implements SessionProvider {
   }
 }
 
-export default SpanSessionProvider;
+export default EmbraceSpanSessionProvider;

@@ -3,29 +3,30 @@ import styles from './App.module.css';
 import {Span, trace} from '@opentelemetry/api';
 import {logs} from '@opentelemetry/api-logs';
 import {useState} from 'react';
-import {sdk} from '@embraceio/embrace-web-sdk';
+import {session} from '@embraceio/embrace-web-sdk';
 import {SeverityNumber} from '@opentelemetry/api-logs';
 // some free and open source random API for testing purposes
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
 
 const tracer = trace.getTracer('embrace-web-sdk-demo');
 const logger = logs.getLogger('default');
+const sessionProvider = session.getSpanSessionProvider();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
 
   const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(
-    sdk.getSessionProvider().getSessionSpan !== null,
+    sessionProvider.getSessionSpan() !== null,
   );
 
   const handleStartSessionSpan = () => {
-    sdk.getSessionProvider().startSessionSpan();
+    sessionProvider.startSessionSpan();
     setIsSessionSpanStarted(true);
   };
 
   const handleEndSessionSpan = () => {
-    if (sdk.getSessionProvider().getSessionSpan()) {
-      sdk.getSessionProvider().endSessionSpan();
+    if (sessionProvider.getSessionSpan()) {
+      sessionProvider.endSessionSpan();
       setIsSessionSpanStarted(false);
     }
   };
@@ -100,23 +101,23 @@ const App = () => {
         </div>
         <button
           onClick={handleStartSpan}
-          disabled={sdk.getSessionProvider().getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}>
           Start Span
         </button>
         <button onClick={handleSendLog}>Send Log</button>
         <button
           onClick={handleRecordException}
-          disabled={sdk.getSessionProvider().getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}>
           Record Exception
         </button>
         <button
           onClick={handleThrowError}
-          disabled={sdk.getSessionProvider().getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}>
           Throw Error
         </button>
         <button
           onClick={handleRejectPromise}
-          disabled={sdk.getSessionProvider().getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}>
           Reject Promise
         </button>
         <button onClick={handleSendFetchNetworkRequest}>

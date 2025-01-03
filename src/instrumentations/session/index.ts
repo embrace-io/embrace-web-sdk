@@ -1,4 +1,4 @@
-import SpanSessionProvider from './SpanSessionProvider';
+import EmbraceSpanSessionProvider from './EmbraceSpanSessionProvider';
 import SpanSessionInstrumentation from './SpanSessionInstrumentation';
 
-export {SpanSessionProvider, SpanSessionInstrumentation};
+export {EmbraceSpanSessionProvider, SpanSessionInstrumentation};
