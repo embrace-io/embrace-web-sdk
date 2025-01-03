@@ -25,7 +25,6 @@ import {
 } from '@opentelemetry/sdk-logs';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 import {registerInstrumentations} from '@opentelemetry/instrumentation';
-import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
 
@@ -64,8 +63,6 @@ const setupOTelSDK = () => {
   });
 
   tracerProvider.register({
-    // todo why do we need these? do the auto instrumentation libraries depend on them? copied from otel docs
-    contextManager: new ZoneContextManager(),
     propagator: new B3Propagator(),
   });
   trace.setGlobalTracerProvider(tracerProvider);
