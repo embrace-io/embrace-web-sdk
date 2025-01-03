@@ -3,33 +3,42 @@ import {SpanStatusCode} from '@opentelemetry/api';
 import InstrumentationBase from '../InstrumentationBase';
 
 class GlobalExceptionInstrumentation extends InstrumentationBase {
-  private readonly _onErrorHandler: (
-    event: ErrorEvent | PromiseRejectionEvent,
+  private readonly _onErrorHandler: (event: ErrorEvent) => void;
+  private readonly _onUnhandledRejectionHandler: (
+    event: PromiseRejectionEvent,
   ) => void;
 
   constructor() {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
 
-    this._onErrorHandler = (event: ErrorEvent | PromiseRejectionEvent) => {
-      const error: Error | undefined =
-        'reason' in event ? event.reason : event.error;
-      const message = error?.message;
-
+    this._onErrorHandler = (event: ErrorEvent) => {
+      const error: Error = event.error;
       const errorSpan = this.tracer.startSpan('on-error');
+
+      errorSpan.setStatus({
+        message: event.error.message,
+        code: SpanStatusCode.ERROR,
+      });
+      errorSpan.recordException(error);
+      errorSpan.end();
+    };
+    this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
+      const error =
+        event.reason && event.reason instanceof Error
+          ? event.reason
+          : new Error(
+              typeof event.reason === 'string'
+                ? event.reason
+                : 'Rejected Promise',
+            );
+      const message = error.message;
+      const errorSpan = this.tracer.startSpan('on-unhandled-rejection');
+
       errorSpan.setStatus({
         message,
         code: SpanStatusCode.ERROR,
       });
-
-      if (error) {
-        errorSpan.recordException(error);
-      } else {
-        errorSpan.recordException({
-          name: 'Unknown Exception',
-          message,
-        });
-      }
-
+      errorSpan.recordException(error);
       errorSpan.end();
     };
 
@@ -40,13 +49,19 @@ class GlobalExceptionInstrumentation extends InstrumentationBase {
 
   enable(): void {
     window.addEventListener('error', this._onErrorHandler);
-    window.addEventListener('unhandledrejection', this._onErrorHandler);
+    window.addEventListener(
+      'unhandledrejection',
+      this._onUnhandledRejectionHandler,
+    );
   }
 
   disable(): void {
     if (this._onErrorHandler) {
       window.removeEventListener('error', this._onErrorHandler);
-      window.removeEventListener('unhandledrejection', this._onErrorHandler);
+      window.removeEventListener(
+        'unhandledrejection',
+        this._onUnhandledRejectionHandler,
+      );
     }
   }
 

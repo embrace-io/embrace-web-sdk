@@ -81,7 +81,7 @@ const App = () => {
 
   const handleRejectPromise = () => {
     return new Promise((_, reject) => {
-      reject(new Error('This is an error'));
+      reject();
     });
   };
 
