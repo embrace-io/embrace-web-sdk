@@ -6,4 +6,4 @@ interface OtlpFetchExporterConfig extends OtlpSharedConfiguration {
   keepalive?: boolean;
 }
 
-export {OtlpFetchExporterConfig};
+export type {OtlpFetchExporterConfig};
