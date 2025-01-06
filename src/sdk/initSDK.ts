@@ -11,7 +11,6 @@ import {
   SpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import {ZoneContextManager} from '@opentelemetry/context-zone';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {trace} from '@opentelemetry/api';
 import {
@@ -152,7 +151,6 @@ const setupTraces = ({
 
   tracerProvider.register({
     // todo why do we need these? do the auto instrumentation libraries depend on them? copied from otel docs
-    contextManager: new ZoneContextManager(),
     propagator: new B3Propagator(),
   });
   trace.setGlobalTracerProvider(tracerProvider);
