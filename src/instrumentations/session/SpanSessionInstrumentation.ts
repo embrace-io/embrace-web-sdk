@@ -1,19 +1,16 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import SpanSessionProvider from './SpanSessionProvider';
 import InstrumentationBase from '../InstrumentationBase';
 
 class SpanSessionInstrumentation extends InstrumentationBase {
   private readonly _onVisibilityChange: (event: Event) => void;
-  private _spanSessionProvider: SpanSessionProvider;
 
-  constructor(spanSessionProvider: SpanSessionProvider) {
+  constructor() {
     super('SpanSessionInstrumentation', '1.0.0', {});
-    this._spanSessionProvider = spanSessionProvider;
     this._onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        this._spanSessionProvider.endSessionSpan();
+        this.sessionProvider.endSessionSpan();
       } else {
-        this._spanSessionProvider.startSessionSpan();
+        this.sessionProvider.startSessionSpan();
       }
     };
 
@@ -23,13 +20,13 @@ class SpanSessionInstrumentation extends InstrumentationBase {
   }
 
   disable(): void {
-    this._spanSessionProvider.endSessionSpan();
+    this.sessionProvider.endSessionSpan();
 
     window.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   enable(): void {
-    this._spanSessionProvider.startSessionSpan();
+    this.sessionProvider.startSessionSpan();
     window.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
