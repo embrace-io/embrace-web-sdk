@@ -1,5 +1,10 @@
 import {Span, trace} from '@opentelemetry/api';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants/attributes';
+import {
+  EMB_STATES,
+  EMB_TYPES,
+  KEY_EMB_STATE,
+  KEY_EMB_TYPE,
+} from '../../constants/attributes';
 import {ATTR_SESSION_ID} from '@opentelemetry/semantic-conventions/incubating';
 import {SpanSessionProvider} from '../../api-sessions';
 import generateUUID from '../../utils/generateUUID';
@@ -22,6 +27,7 @@ class EmbraceSpanSessionProvider implements SpanSessionProvider {
     this._activeSessionId = generateUUID();
     this._sessionSpan.setAttributes({
       [KEY_EMB_TYPE]: EMB_TYPES.Session,
+      [KEY_EMB_STATE]: EMB_STATES.Foreground,
       [ATTR_SESSION_ID]: this._activeSessionId,
     });
   }
