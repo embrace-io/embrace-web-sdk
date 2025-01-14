@@ -103,7 +103,6 @@ interface SetupTracesArgs {
 
 const setupSession = () => {
   const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
-  embraceSpanSessionProvider.startSessionSpan();
 
   session.setGlobalSessionProvider(embraceSpanSessionProvider);
 
