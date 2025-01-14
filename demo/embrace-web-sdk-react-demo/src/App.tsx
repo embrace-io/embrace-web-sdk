@@ -1,10 +1,9 @@
 import styles from './App.module.css';
 
 import {Span, trace} from '@opentelemetry/api';
-import {logs} from '@opentelemetry/api-logs';
+import {logs, SeverityNumber} from '@opentelemetry/api-logs';
 import {useState} from 'react';
 import {session} from '@embraceio/embrace-web-sdk';
-import {SeverityNumber} from '@opentelemetry/api-logs';
 // some free and open source random API for testing purposes
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
 
@@ -104,7 +103,11 @@ const App = () => {
           disabled={sessionProvider.getSessionSpan() === null}>
           Start Span
         </button>
-        <button onClick={handleSendLog}>Send Log</button>
+        <button
+          onClick={handleSendLog}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Send Log
+        </button>
         <button
           onClick={handleRecordException}
           disabled={sessionProvider.getSessionSpan() === null}>

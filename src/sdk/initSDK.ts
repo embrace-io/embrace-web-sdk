@@ -1,9 +1,9 @@
 import {Resource} from '@opentelemetry/resources';
 import {getWebSDKResource} from '../resources';
 import {
+  EmbraceSpanSessionProvider,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
-  EmbraceSpanSessionProvider,
 } from '../instrumentations';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 import {
@@ -14,9 +14,9 @@ import {
 import {B3Propagator} from '@opentelemetry/propagator-b3';
 import {trace} from '@opentelemetry/api';
 import {
+  BatchLogRecordProcessor,
   LoggerProvider,
   LogRecordProcessor,
-  BatchLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {
   EmbraceNetworkSpanProcessor,
@@ -103,6 +103,7 @@ interface SetupTracesArgs {
 
 const setupSession = () => {
   const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
+  embraceSpanSessionProvider.startSessionSpan();
 
   session.setGlobalSessionProvider(embraceSpanSessionProvider);
 
