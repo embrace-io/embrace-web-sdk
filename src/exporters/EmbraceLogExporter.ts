@@ -6,11 +6,11 @@ import {getEmbraceHeaders} from './utils';
 import OTLPFetchLogExporter from './OTLPFetchLogExporter';
 
 class EmbraceLogExporter extends OTLPFetchLogExporter {
-  constructor() {
+  constructor(appID: string) {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       url: EMBRACE_LOG_ENDPOINT,
-      headers: getEmbraceHeaders(),
+      headers: getEmbraceHeaders(appID),
     });
   }
 }

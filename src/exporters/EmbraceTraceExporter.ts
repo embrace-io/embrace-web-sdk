@@ -6,10 +6,10 @@ import {
 import {getEmbraceHeaders} from './utils';
 
 class EmbraceTraceExporter extends OTLPFetchTraceExporter {
-  constructor() {
+  constructor(appID: string) {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
-      headers: getEmbraceHeaders(),
+      headers: getEmbraceHeaders(appID),
       url: EMBRACE_TRACE_ENDPOINT,
     });
   }
