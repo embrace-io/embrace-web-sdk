@@ -35,6 +35,13 @@ import {session} from '../api-sessions';
 type Exporter = 'otlp' | 'embrace';
 
 interface SDKInitConfig {
+  /**
+   * appID is a unique identifier for your application. It is used to identify your application in Embrace, and it is only required when
+   * the Embrace exporter is enabled. You can find your appID in the Embrace dashboard. If embrace exporter is disabled this value will be ignored.
+   *
+   * **default**: undefined
+   */
+  appID?: string;
   resource?: Resource;
   /**
    * Exporters process and export your telemetry data.
@@ -42,7 +49,7 @@ interface SDKInitConfig {
    * Exporters supported by this list are automatically configured:
    *   * 'otlp' - Standard OpenTelemetry Protocol exporter. Uses HTTP to send data to the configured collector.
    *              It uses BatchSpanProcessor as processor.
-   *              If you need further customization you can set up your OTLP collector and processor through `spanProcessors`
+   *              If you need further customization you can set up your OTLP collector and processor through `spanProcessors` and `logProcessors`
    *   * 'embrace' - Embrace exporter. Sends data to the Embrace backend using OTLP though HTTP.
    *                 It applies the necessary transformations to the data to be compatible with Embrace.
    *
@@ -66,6 +73,7 @@ interface SDKInitConfig {
 }
 
 const initSDK = ({
+  appID,
   resource = Resource.default(),
   exporters = ['embrace'],
   spanProcessors = [],
@@ -76,6 +84,7 @@ const initSDK = ({
   const sessionProvider = setupSession();
 
   const loggerProvider = setupLogs({
+    appID,
     resource: resourceWithWebSDKAttributes,
     exporters,
     logProcessors,
@@ -83,6 +92,7 @@ const initSDK = ({
   });
 
   setupTraces({
+    appID,
     exporters,
     sessionProvider,
     spanProcessors,
@@ -94,6 +104,7 @@ const initSDK = ({
 };
 
 interface SetupTracesArgs {
+  appID?: string;
   resource: Resource;
   exporters: Exporter[];
   spanProcessors: SpanProcessor[];
@@ -110,6 +121,7 @@ const setupSession = () => {
 };
 
 const setupTraces = ({
+  appID,
   resource,
   exporters,
   spanProcessors = [],
@@ -129,7 +141,10 @@ const setupTraces = ({
   }
 
   if (exporters.includes('embrace')) {
-    const embraceTraceExporter = new EmbraceTraceExporter();
+    if (appID === undefined) {
+      throw new Error('appID is required when using Embrace exporter');
+    }
+    const embraceTraceExporter = new EmbraceTraceExporter(appID);
     const embraceSessionBatchedProcessor = new EmbraceSessionBatchedProcessor(
       embraceTraceExporter,
     );
@@ -159,6 +174,7 @@ const setupTraces = ({
 };
 
 interface SetupLogsArgs {
+  appID?: string;
   resource: Resource;
   exporters: Exporter[];
   logProcessors: LogRecordProcessor[];
@@ -166,6 +182,7 @@ interface SetupLogsArgs {
 }
 
 const setupLogs = ({
+  appID,
   resource,
   exporters,
   logProcessors,
@@ -187,7 +204,10 @@ const setupLogs = ({
   }
 
   if (exporters.includes('embrace')) {
-    const embraceLogsExporter = new EmbraceLogExporter();
+    if (appID === undefined) {
+      throw new Error('appID is required when using Embrace exporter');
+    }
+    const embraceLogsExporter = new EmbraceLogExporter(appID);
 
     finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }

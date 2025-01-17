@@ -14,7 +14,7 @@ const getWebSDKResource = () => {
     os_type: 'android',
     os_version: '10.15.7',
     os_name: 'android',
-    react_native_bundle_id: 'fd6996f1007b363f87a53be6d4a8a5f6',
+    react_native_bundle_id: 'fd6996f1007b363f87a53be6d4a8a5fc',
   });
   const detectedResources = detectResourcesSync({detectors: [browserDetector]});
   resource = resource.merge(detectedResources);

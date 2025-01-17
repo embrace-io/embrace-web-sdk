@@ -8,8 +8,11 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 
+const SAMPLE_APP_ID = 'uoAiG';
+
 const setupOTel = () => {
   sdk.initSDK({
+    appID: SAMPLE_APP_ID,
     spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     logProcessors: [
       new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
