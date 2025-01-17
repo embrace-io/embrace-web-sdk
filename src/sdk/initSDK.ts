@@ -49,7 +49,7 @@ interface SDKInitConfig {
    * Exporters supported by this list are automatically configured:
    *   * 'otlp' - Standard OpenTelemetry Protocol exporter. Uses HTTP to send data to the configured collector.
    *              It uses BatchSpanProcessor as processor.
-   *              If you need further customization you can set up your OTLP collector and processor through `spanProcessors` adn `logProcessors`
+   *              If you need further customization you can set up your OTLP collector and processor through `spanProcessors` and `logProcessors`
    *   * 'embrace' - Embrace exporter. Sends data to the Embrace backend using OTLP though HTTP.
    *                 It applies the necessary transformations to the data to be compatible with Embrace.
    *
