@@ -7,6 +7,10 @@ import {
   ConsoleLogRecordExporter,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
+import {
+  ConsoleMetricExporter,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 
 const SAMPLE_APP_ID = 'uoAiG';
 
@@ -16,6 +20,12 @@ const setupOTel = () => {
     spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     logProcessors: [
       new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+    ],
+    metricReaders: [
+      new PeriodicExportingMetricReader({
+        exporter: new ConsoleMetricExporter(),
+        exportIntervalMillis: 10000,
+      }),
     ],
   });
 };
