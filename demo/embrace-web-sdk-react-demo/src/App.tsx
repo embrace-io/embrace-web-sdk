@@ -1,14 +1,13 @@
 import styles from './App.module.css';
 
-import {Span, trace} from '@opentelemetry/api';
+import {Counter, metrics, Span, trace} from '@opentelemetry/api';
 import {logs, SeverityNumber} from '@opentelemetry/api-logs';
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {session} from '@embraceio/embrace-web-sdk';
 // some free and open source random API for testing purposes
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
-
-const tracer = trace.getTracer('embrace-web-sdk-demo');
-const logger = logs.getLogger('default');
+const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
+const logger = logs.getLogger('embrace-web-sdk-demo-logger');
 const sessionProvider = session.getSpanSessionProvider();
 
 const App = () => {
@@ -43,6 +42,27 @@ const App = () => {
 
     setSpans(newSpans);
   };
+
+  const [counter, setCounter] = useState<Counter | null>(null);
+
+  const handleCreateCounter = () => {
+    // we need to get the meter here and not at the module level, as it will reference a Noop meter until Embrace SDK is initialized
+    // TODO why is this not including a ProxyMeterProvider like logs and traces does?
+    const meter = metrics.getMeter('embrace-web-sdk-demo-meter');
+    const newCounter = meter.createCounter('counter', {
+      description: 'A counter',
+    });
+    setCounter(newCounter);
+  };
+
+  const handleIncreaseCounter = useCallback(() => {
+    if (counter) {
+      counter.add(1, {
+        key: 'some value',
+        otherKey: 'other value',
+      });
+    }
+  }, [counter]);
 
   const handleRecordException = () => {
     const errorSpan = tracer.startSpan('error-span');
@@ -125,6 +145,12 @@ const App = () => {
         </button>
         <button onClick={handleSendFetchNetworkRequest}>
           Send a Fetch Network Request
+        </button>
+        <button disabled={!!counter} onClick={handleCreateCounter}>
+          {counter ? 'counter created' : 'Create Counter'}
+        </button>
+        <button disabled={!counter} onClick={handleIncreaseCounter}>
+          Increase Counter
         </button>
         <button onClick={handleSendXMLNetworkRequest}>
           Send a XML Network Request
