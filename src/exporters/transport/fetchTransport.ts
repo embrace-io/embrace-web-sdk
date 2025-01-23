@@ -1,6 +1,6 @@
 import {
-  IExporterTransport,
   ExportResponse,
+  IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
 
 interface FetchRequestParameters {
@@ -13,41 +13,6 @@ class FetchTransport implements IExporterTransport {
   constructor(private config: FetchRequestParameters) {}
 
   // _compressRequest compresses the data using the gzip algorithm.
-  // Embrace Data endpoints require the data to be compressed.
-  private async _compressRequest(data: Uint8Array): Promise<Uint8Array> {
-    const stream = new CompressionStream('gzip');
-    const writer = stream.writable.getWriter();
-
-    void writer.write(data);
-    void writer.close();
-
-    const compressedChunks: Uint8Array[] = [];
-    const reader = stream.readable.getReader();
-
-    let done = false;
-    while (!done) {
-      const result = await reader.read();
-
-      if (result.value) {
-        compressedChunks.push(result.value);
-      }
-
-      done = result.done;
-    }
-
-    const compressedData = new Uint8Array(
-      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0),
-    );
-
-    let offset = 0;
-
-    for (const chunk of compressedChunks) {
-      compressedData.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return compressedData;
-  }
 
   public async _asyncSend(
     data: Uint8Array,
@@ -91,6 +56,42 @@ class FetchTransport implements IExporterTransport {
 
   shutdown(): void {
     // Intentionally left empty, nothing to do.
+  }
+
+  // Embrace Data endpoints require the data to be compressed.
+  private async _compressRequest(data: Uint8Array): Promise<Uint8Array> {
+    const stream = new CompressionStream('gzip');
+    const writer = stream.writable.getWriter();
+
+    void writer.write(data);
+    void writer.close();
+
+    const compressedChunks: Uint8Array[] = [];
+    const reader = stream.readable.getReader();
+
+    let done = false;
+    while (!done) {
+      const result = await reader.read();
+
+      if (result.value) {
+        compressedChunks.push(result.value);
+      }
+
+      done = result.done;
+    }
+
+    const compressedData = new Uint8Array(
+      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0),
+    );
+
+    let offset = 0;
+
+    for (const chunk of compressedChunks) {
+      compressedData.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    return compressedData;
   }
 }
 

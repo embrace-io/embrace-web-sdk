@@ -35,7 +35,7 @@ import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-w
 import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 import {EmbraceLogExporter, EmbraceTraceExporter} from '../exporters';
 import {OTLPLogExporter} from '@opentelemetry/exporter-logs-otlp-http';
-import {session} from '../api-sessions';
+import {session, SpanSessionProvider} from '../api-sessions';
 import {CompositePropagator} from '@opentelemetry/core';
 import {Instrumentation} from '@opentelemetry/instrumentation/build/src/types';
 import {
@@ -44,6 +44,7 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
+import WebVitalsInstrumentation from '../instrumentations/web-vitals/WebVitalsInstrumentation';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -73,7 +74,7 @@ interface SDKInitConfig {
   exporters?: Exporter[];
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
-  instrumentations?: Instrumentation[];
+  instrumentations?: Instrumentation[] | null;
   /**
    * Span processor is an interface which allows hooks for span start and end method invocations.
    * They are invoked in the same order as they were registered.
@@ -100,27 +101,27 @@ const initSDK = ({
   exporters = ['embrace'],
   spanProcessors = [],
   propagator = null,
-  instrumentations = [],
+  instrumentations = null,
   contextManager = null,
   logProcessors = [],
   metricReaders = [],
 }: SDKInitConfig = {}) => {
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
-  const sessionProvider = setupSession();
+  const spanSessionProvider = setupSession();
 
   const loggerProvider = setupLogs({
     appID,
     resource: resourceWithWebSDKAttributes,
     exporters,
     logProcessors,
-    sessionProvider,
+    spanSessionProvider,
   });
 
   setupTraces({
     appID,
     exporters,
-    sessionProvider,
+    spanSessionProvider,
     propagator,
     contextManager,
     spanProcessors,
@@ -128,13 +129,13 @@ const initSDK = ({
     resource: resourceWithWebSDKAttributes,
   });
 
-  setupMetrics({
+  const meterProvider = setupMetrics({
     resource: resourceWithWebSDKAttributes,
     exporters,
     readers: metricReaders,
   });
 
-  setupInstrumentation(instrumentations);
+  setupInstrumentation({instrumentations, spanSessionProvider, meterProvider});
 };
 
 interface SetupTracesArgs {
@@ -144,7 +145,7 @@ interface SetupTracesArgs {
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
   spanProcessors: SpanProcessor[];
-  sessionProvider: EmbraceSpanSessionProvider;
+  spanSessionProvider: SpanSessionProvider;
   loggerProvider: LoggerProvider;
 }
 
@@ -156,9 +157,7 @@ interface SetupMetricsArgs {
 
 const setupSession = () => {
   const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
-
   session.setGlobalSessionProvider(embraceSpanSessionProvider);
-
   return embraceSpanSessionProvider;
 };
 
@@ -174,13 +173,6 @@ const setupMetrics = ({resource, exporters, readers}: SetupMetricsArgs) => {
     });
     finalReaders.push(metricOTLPReader);
   }
-  if (exporters.includes('embrace')) {
-    // TODO add a mapper for metrics to session span events
-  }
-  // if there are no readers, we don't need to initialize the MeterProvider
-  if (finalReaders.length === 0) {
-    return;
-  }
   // Initialize a MeterProvider with the above configurations.
   const myServiceMeterProvider = new MeterProvider({
     resource,
@@ -188,6 +180,7 @@ const setupMetrics = ({resource, exporters, readers}: SetupMetricsArgs) => {
   });
   // Set the initialized MeterProvider as global to enable metric collection across the app.
   metrics.setGlobalMeterProvider(myServiceMeterProvider);
+  return myServiceMeterProvider;
 };
 
 const setupTraces = ({
@@ -197,12 +190,12 @@ const setupTraces = ({
   spanProcessors = [],
   propagator = null,
   contextManager = null,
-  sessionProvider,
+  spanSessionProvider,
   loggerProvider,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(sessionProvider),
+    createSessionSpanProcessor(spanSessionProvider),
   ];
 
   if (exporters.includes('otlp')) {
@@ -255,7 +248,7 @@ interface SetupLogsArgs {
   resource: Resource;
   exporters: Exporter[];
   logProcessors: LogRecordProcessor[];
-  sessionProvider: EmbraceSpanSessionProvider;
+  spanSessionProvider: SpanSessionProvider;
 }
 
 const setupLogs = ({
@@ -263,7 +256,7 @@ const setupLogs = ({
   resource,
   exporters,
   logProcessors,
-  sessionProvider,
+  spanSessionProvider,
 }: SetupLogsArgs) => {
   const loggerProvider = new LoggerProvider({
     resource,
@@ -271,7 +264,7 @@ const setupLogs = ({
 
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor(sessionProvider),
+    new IdentifiableSessionLogRecordProcessor({spanSessionProvider}),
   ];
 
   if (exporters.includes('otlp')) {
@@ -284,7 +277,7 @@ const setupLogs = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const embraceLogsExporter = new EmbraceLogExporter(appID);
+    const embraceLogsExporter = new EmbraceLogExporter({appID});
 
     finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }
@@ -298,11 +291,22 @@ const setupLogs = ({
   return loggerProvider;
 };
 
-const setupInstrumentation = (instrumentations: Instrumentation[] = []) => {
+interface SetupInstrumentationArgs {
+  instrumentations: Instrumentation[] | null;
+  spanSessionProvider: SpanSessionProvider;
+  meterProvider: MeterProvider;
+}
+
+const setupInstrumentation = ({
+  instrumentations = null,
+  spanSessionProvider,
+  meterProvider,
+}: SetupInstrumentationArgs) => {
   registerInstrumentations({
     instrumentations: [
-      instrumentations.length ? instrumentations : getWebAutoInstrumentations(),
-      new GlobalExceptionInstrumentation(),
+      instrumentations ? instrumentations : getWebAutoInstrumentations(),
+      new WebVitalsInstrumentation({spanSessionProvider, meterProvider}),
+      new GlobalExceptionInstrumentation({spanSessionProvider}),
       new SpanSessionInstrumentation(),
     ],
   });
