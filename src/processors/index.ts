@@ -1,5 +1,5 @@
-export * from './EmbraceSessionBatchedProcessor';
+export * from './EmbraceSessionBatchedSpanProcessor';
 export * from './IdentifiableSessionLogRecordProcessor';
 export * from './EmbraceSpanEventExceptionToLogProcessor';
 export * from './EmbraceNetworkSpanProcessor';
-export * from './EmbraceSpanEventWebVitals';
+export * from './EmbraceSpanEventWebVitalsSpanProcessor';

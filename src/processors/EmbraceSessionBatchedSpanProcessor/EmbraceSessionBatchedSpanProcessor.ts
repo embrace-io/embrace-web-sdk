@@ -14,7 +14,7 @@ const isSessionSpan = (
   return span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
 };
 
-export class EmbraceSessionBatchedProcessor implements SpanProcessor {
+export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
   private _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
 

@@ -26,9 +26,9 @@ import {
 } from '@opentelemetry/sdk-logs';
 import {
   EmbraceNetworkSpanProcessor,
-  EmbraceSessionBatchedProcessor,
+  EmbraceSessionBatchedSpanProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
-  EmbraceSpanEventWebVitals,
+  EmbraceSpanEventWebVitalsSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors';
 import {logs} from '@opentelemetry/api-logs';
@@ -211,18 +211,18 @@ const setupTraces = ({
       throw new Error('appID is required when using Embrace exporter');
     }
     const embraceTraceExporter = new EmbraceTraceExporter(appID);
-    const embraceSessionBatchedProcessor = new EmbraceSessionBatchedProcessor(
-      embraceTraceExporter,
-    );
+    const embraceSessionBatchedProcessor =
+      new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
     const embraceSpanEventExceptionToLogProcessor =
       new EmbraceSpanEventExceptionToLogProcessor(
         loggerProvider.getLogger('exceptions'),
       );
     const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
-    const embraceSpanEventWebVitals = new EmbraceSpanEventWebVitals();
+    const embraceSpanEventWebVitalsSpanProcessor =
+      new EmbraceSpanEventWebVitalsSpanProcessor();
 
     finalSpanProcessors.push(embraceNetworkSpanProcessor);
-    finalSpanProcessors.push(embraceSpanEventWebVitals);
+    finalSpanProcessors.push(embraceSpanEventWebVitalsSpanProcessor);
     finalSpanProcessors.push(embraceSessionBatchedProcessor);
     finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
   }
