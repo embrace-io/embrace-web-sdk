@@ -1,7 +1,7 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import InstrumentationBase from '../InstrumentationBase';
+import {InstrumentationBase} from '../../InstrumentationBase';
 
-class SpanSessionInstrumentation extends InstrumentationBase {
+export class SpanSessionInstrumentation extends InstrumentationBase {
   private readonly _onVisibilityChange: (event: Event) => void;
 
   constructor() {
@@ -38,5 +38,3 @@ class SpanSessionInstrumentation extends InstrumentationBase {
     return undefined;
   }
 }
-
-export default SpanSessionInstrumentation;

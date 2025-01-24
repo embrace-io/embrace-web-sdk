@@ -1,13 +1,9 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
 import {SpanStatusCode} from '@opentelemetry/api';
-import InstrumentationBase from '../InstrumentationBase';
-import {SpanSessionProvider} from '../../api-sessions';
+import {InstrumentationBase} from '../../InstrumentationBase';
+import {GlobalExceptionInstrumentationArgs} from './types';
 
-interface GlobalExceptionInstrumentationArgs {
-  spanSessionProvider: SpanSessionProvider;
-}
-
-class GlobalExceptionInstrumentation extends InstrumentationBase {
+export class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (
     event: PromiseRejectionEvent,
@@ -81,5 +77,3 @@ class GlobalExceptionInstrumentation extends InstrumentationBase {
     return;
   }
 }
-
-export default GlobalExceptionInstrumentation;

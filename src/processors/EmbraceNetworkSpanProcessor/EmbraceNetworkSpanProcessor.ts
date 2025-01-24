@@ -1,5 +1,5 @@
 import {ReadableSpan, SpanProcessor} from '@opentelemetry/sdk-trace-web';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants/attributes';
+import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
 import {isNetworkSpan} from './types';
 
 import {
@@ -14,7 +14,7 @@ import {
  * Embrace's API expects network spans to have some specific attributes.
  * This processor checks if a span is a network span and adds them.
  */
-class EmbraceNetworkSpanProcessor implements SpanProcessor {
+export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   onStart(): void {}
 
   onEnd(span: ReadableSpan): void {
@@ -38,5 +38,3 @@ class EmbraceNetworkSpanProcessor implements SpanProcessor {
     return Promise.resolve(undefined);
   }
 }
-
-export default EmbraceNetworkSpanProcessor;

@@ -1,13 +1,11 @@
 import {ReadableSpan} from '@opentelemetry/sdk-trace-web';
 import {Attributes} from '@opentelemetry/api';
-import {KEY_EMB_TYPE, EMB_TYPES} from '../../constants/attributes';
+import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
 
-interface SessionSpanAttributes extends Attributes {
+export interface SessionSpanAttributes extends Attributes {
   [KEY_EMB_TYPE]: EMB_TYPES.Session;
 }
 
-interface SessionSpan extends ReadableSpan {
+export interface SessionSpan extends ReadableSpan {
   attributes: SessionSpanAttributes;
 }
-
-export type {SessionSpan, SessionSpanAttributes};

@@ -9,18 +9,14 @@ import {
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import {Logger, SeverityNumber} from '@opentelemetry/api-logs';
-import {
-  EMB_TYPES,
-  KEY_EMB_TYPE,
-  KEY_JS_EXCEPTION,
-} from '../../constants/attributes';
-import generateUUID from '../../utils/generateUUID';
+import {EMB_TYPES, KEY_EMB_TYPE, KEY_JS_EXCEPTION} from '../../constants';
+import {generateUUID} from '../../utils';
 
 /**
  Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
  to logs.
  */
-class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
+export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
   constructor(private _logger: Logger) {}
 
   onStart(): void {}
@@ -67,5 +63,3 @@ class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
     });
   }
 }
-
-export default EmbraceSpanEventExceptionToLogProcessor;

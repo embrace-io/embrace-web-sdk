@@ -4,12 +4,12 @@ import {
   EMB_TYPES,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
-} from '../../constants/attributes';
+} from '../../../constants';
 import {ATTR_SESSION_ID} from '@opentelemetry/semantic-conventions/incubating';
-import {SpanSessionProvider} from '../../api-sessions';
-import generateUUID from '../../utils/generateUUID';
+import {type SpanSessionProvider} from '../../../api-sessions';
+import {generateUUID} from '../../../utils';
 
-class EmbraceSpanSessionProvider implements SpanSessionProvider {
+export class EmbraceSpanSessionProvider implements SpanSessionProvider {
   private _activeSessionId: string | null = null;
   private _sessionSpan: Span | null = null;
 
@@ -38,5 +38,3 @@ class EmbraceSpanSessionProvider implements SpanSessionProvider {
     this._activeSessionId = null;
   }
 }
-
-export default EmbraceSpanSessionProvider;

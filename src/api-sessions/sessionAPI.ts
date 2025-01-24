@@ -1,5 +1,3 @@
-import SessionAPI from './api/session';
+import {SessionAPI} from './api';
 
-const session = SessionAPI.getInstance();
-
-export {session};
+export const session = SessionAPI.getInstance();

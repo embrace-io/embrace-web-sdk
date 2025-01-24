@@ -1,7 +1,9 @@
-import {SpanSessionProvider} from '../types';
-import ProxySpanSessionProvider from '../ProxySpanSessionProvider';
+import {
+  ProxySpanSessionProvider,
+  type SpanSessionProvider,
+} from '../../provider';
 
-class SessionAPI {
+export class SessionAPI {
   private static _instance?: SessionAPI;
   private _proxySpanSessionProvider = new ProxySpanSessionProvider();
 
@@ -21,5 +23,3 @@ class SessionAPI {
     this._proxySpanSessionProvider.setDelegate(sessionProvider);
   }
 }
-
-export default SessionAPI;

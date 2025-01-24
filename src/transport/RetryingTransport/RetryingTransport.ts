@@ -2,12 +2,13 @@ import {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-
-const MAX_ATTEMPTS = 5;
-const INITIAL_BACKOFF = 1000;
-const MAX_BACKOFF = 5000;
-const BACKOFF_MULTIPLIER = 1.5;
-const JITTER = 0.2;
+import {
+  BACKOFF_MULTIPLIER,
+  INITIAL_BACKOFF,
+  JITTER,
+  MAX_ATTEMPTS,
+  MAX_BACKOFF,
+} from './constants';
 
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]
@@ -18,20 +19,8 @@ const getJitter = () => {
 
 // Taken directly from open-telemetry/opentelemetry-js/experimental/packages/otlp-exporter-base/src/retrying-transport.ts
 // File is not exposed externally
-class RetryingTransport implements IExporterTransport {
+export class RetryingTransport implements IExporterTransport {
   constructor(private _transport: IExporterTransport) {}
-
-  private retry(
-    data: Uint8Array,
-    timeoutMillis: number,
-    inMillis: number,
-  ): Promise<ExportResponse> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        this._transport.send(data, timeoutMillis).then(resolve, reject);
-      }, inMillis);
-    });
-  }
 
   async send(data: Uint8Array, timeoutMillis: number): Promise<ExportResponse> {
     const deadline = Date.now() + timeoutMillis;
@@ -65,14 +54,16 @@ class RetryingTransport implements IExporterTransport {
   shutdown() {
     return this._transport.shutdown();
   }
+
+  private retry(
+    data: Uint8Array,
+    timeoutMillis: number,
+    inMillis: number,
+  ): Promise<ExportResponse> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this._transport.send(data, timeoutMillis).then(resolve, reject);
+      }, inMillis);
+    });
+  }
 }
-
-/**
- * Creates an Exporter Transport that retries on 'retryable' response.
- */
-const createRetryingTransport = (options: {
-  // Underlying transport to wrap.
-  transport: IExporterTransport;
-}): IExporterTransport => new RetryingTransport(options.transport);
-
-export {createRetryingTransport};

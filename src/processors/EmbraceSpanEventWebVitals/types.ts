@@ -1,0 +1,27 @@
+import {type TimedEvent} from '@opentelemetry/sdk-trace-web';
+import {EMB_WEB_VITALS_PREFIX, WEB_VITALS} from '../../instrumentations';
+import {Attributes} from '@opentelemetry/api/build/src/common/Attributes';
+
+export interface EmbraceSpanEventWebViewInfo extends TimedEvent {
+  time_unix_nano: number; // nanoseconds since epoc time
+  attributes: Attributes & {
+    name: WEB_VITALS_IDS;
+  }; // attributes will always be defined for this type
+}
+
+export const isWebViewSpanEvent = (
+  spanEvent: EmbraceSpanEventWebViewInfo | TimedEvent,
+): spanEvent is EmbraceSpanEventWebViewInfo => {
+  return spanEvent.name.startsWith(EMB_WEB_VITALS_PREFIX);
+};
+
+export type WEB_VITALS_IDS = (typeof WEB_VITALS)[number];
+
+export interface EmbraceWebVitalsInfo {
+  t: WEB_VITALS_IDS;
+  n: string; //name
+  st: number; //startTime
+  d: number; //duration
+  s: number; //score
+  p: TimedEvent['attributes']; //attributes
+}

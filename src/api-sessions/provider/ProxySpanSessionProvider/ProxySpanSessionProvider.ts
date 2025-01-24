@@ -1,9 +1,9 @@
-import {SpanSessionProvider} from './types';
-import NoOpSpanSessionProvider from './NoOpSpanSessionProvider';
+import {SpanSessionProvider} from '../types';
+import {NoOpSpanSessionProvider} from '../NoOpSpanSessionProvider';
 
 const NOOP_SPAN_SESSION_PROVIDER = new NoOpSpanSessionProvider();
 
-class ProxySpanSessionProvider implements SpanSessionProvider {
+export class ProxySpanSessionProvider implements SpanSessionProvider {
   private _delegate?: SpanSessionProvider;
 
   getDelegate(): SpanSessionProvider {
@@ -30,5 +30,3 @@ class ProxySpanSessionProvider implements SpanSessionProvider {
     this.getDelegate().endSessionSpan();
   }
 }
-
-export default ProxySpanSessionProvider;

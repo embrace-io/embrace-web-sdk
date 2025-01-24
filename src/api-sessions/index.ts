@@ -1,4 +1,2 @@
-import {session} from './sessionAPI';
-
-export {session};
-export type {SpanSessionProvider} from './types';
+export * from './sessionAPI';
+export * from './provider';

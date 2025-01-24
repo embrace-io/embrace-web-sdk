@@ -2,14 +2,9 @@ import {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
+import {FetchRequestParameters} from './types';
 
-interface FetchRequestParameters {
-  url: string;
-  headers: Record<string, string>;
-  compression: 'gzip' | 'none';
-}
-
-class FetchTransport implements IExporterTransport {
+export class FetchTransport implements IExporterTransport {
   constructor(private config: FetchRequestParameters) {}
 
   // _compressRequest compresses the data using the gzip algorithm.
@@ -94,9 +89,3 @@ class FetchTransport implements IExporterTransport {
     return compressedData;
   }
 }
-
-const createFetchTransport = (
-  config: FetchRequestParameters,
-): IExporterTransport => new FetchTransport(config);
-
-export {createFetchTransport};

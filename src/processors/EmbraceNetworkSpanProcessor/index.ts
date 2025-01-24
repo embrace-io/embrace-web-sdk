@@ -1,2 +1,1 @@
-import EmbraceNetworkSpanProcessor from './EmbraceNetworkSpanProcessor';
-export default EmbraceNetworkSpanProcessor;
+export * from './EmbraceNetworkSpanProcessor';

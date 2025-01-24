@@ -1,1 +1,1 @@
-export * from "./webSdkResource";
+export * from './webSdkResource';

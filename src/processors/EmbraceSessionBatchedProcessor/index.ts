@@ -1,3 +1,1 @@
-import EmbraceSessionBatchedProcessor from './EmbraceSessionBatchedProcessor';
-
-export default EmbraceSessionBatchedProcessor;
+export * from './EmbraceSessionBatchedProcessor';

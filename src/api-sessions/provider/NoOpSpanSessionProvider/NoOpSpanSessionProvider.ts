@@ -1,7 +1,7 @@
-import {SpanSessionProvider} from './types';
+import {SpanSessionProvider} from '../types';
 import {Span} from '@opentelemetry/api';
 
-class NoOpSpanSessionProvider implements SpanSessionProvider {
+export class NoOpSpanSessionProvider implements SpanSessionProvider {
   getSessionId(): string | null {
     return null;
   }
@@ -14,5 +14,3 @@ class NoOpSpanSessionProvider implements SpanSessionProvider {
 
   endSessionSpan(): void {}
 }
-
-export default NoOpSpanSessionProvider;

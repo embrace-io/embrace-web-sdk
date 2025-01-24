@@ -17,22 +17,25 @@ import {
 } from '@opentelemetry/api';
 import {Logger, logs} from '@opentelemetry/api-logs';
 import {LoggerProvider} from '@opentelemetry/sdk-logs';
-import * as shimmer from 'shimmer';
-import {session, SpanSessionProvider} from '../api-sessions';
+import shimmer from 'shimmer';
+import {session, SpanSessionProvider} from '../../api-sessions';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.
-abstract class InstrumentationAbstract<
+export abstract class InstrumentationAbstract<
   ConfigType extends InstrumentationConfig = InstrumentationConfig,
 > implements Instrumentation<ConfigType>
 {
   protected _config: ConfigType = {} as ConfigType;
-
-  private _tracer: Tracer;
-  private _meter: Meter;
-  private _logger: Logger;
-  private _sessionProvider: SpanSessionProvider;
   protected _diag: DiagLogger;
+  /* Api to wrap instrumented method */
+  protected _wrap = shimmer.wrap;
+  /* Api to unwrap instrumented methods */
+  protected _unwrap = shimmer.unwrap;
+  /* Api to mass wrap instrumented method */
+  protected _massWrap = shimmer.massWrap;
+  /* Api to mass unwrap instrumented methods */
+  protected _massUnwrap = shimmer.massUnwrap;
 
   constructor(
     public readonly instrumentationName: string,
@@ -52,18 +55,32 @@ abstract class InstrumentationAbstract<
     this._updateMetricInstruments();
   }
 
-  /* Api to wrap instrumented method */
-  protected _wrap = shimmer.wrap;
-  /* Api to unwrap instrumented methods */
-  protected _unwrap = shimmer.unwrap;
-  /* Api to mass wrap instrumented method */
-  protected _massWrap = shimmer.massWrap;
-  /* Api to mass unwrap instrumented methods */
-  protected _massUnwrap = shimmer.massUnwrap;
+  private _tracer: Tracer;
+
+  /* Returns tracer */
+  protected get tracer(): Tracer {
+    return this._tracer;
+  }
+
+  private _meter: Meter;
 
   /* Returns meter */
   protected get meter(): Meter {
     return this._meter;
+  }
+
+  private _logger: Logger;
+
+  /* Returns logger */
+  protected get logger(): Logger {
+    return this._logger;
+  }
+
+  private _sessionProvider: SpanSessionProvider;
+
+  /* Returns session provider */
+  protected get sessionProvider(): SpanSessionProvider {
+    return this._sessionProvider;
   }
 
   /**
@@ -77,11 +94,6 @@ abstract class InstrumentationAbstract<
     );
 
     this._updateMetricInstruments();
-  }
-
-  /* Returns logger */
-  protected get logger(): Logger {
-    return this._logger;
   }
 
   /**
@@ -110,13 +122,6 @@ abstract class InstrumentationAbstract<
     }
 
     return initResult;
-  }
-
-  /**
-   * Sets the new metric instruments with the current Meter.
-   */
-  protected _updateMetricInstruments(): void {
-    return;
   }
 
   /* Returns InstrumentationConfig */
@@ -148,21 +153,18 @@ abstract class InstrumentationAbstract<
     );
   }
 
-  /* Returns tracer */
-  protected get tracer(): Tracer {
-    return this._tracer;
-  }
-
-  /* Returns session provider */
-  protected get sessionProvider(): SpanSessionProvider {
-    return this._sessionProvider;
-  }
-
   /* Enable plugin */
   public abstract enable(): void;
 
   /* Disable plugin */
   public abstract disable(): void;
+
+  /**
+   * Sets the new metric instruments with the current Meter.
+   */
+  protected _updateMetricInstruments(): void {
+    return;
+  }
 
   /**
    * Init method in which plugin should define _modules and patches for
@@ -202,5 +204,3 @@ abstract class InstrumentationAbstract<
     }
   }
 }
-
-export default InstrumentationAbstract;

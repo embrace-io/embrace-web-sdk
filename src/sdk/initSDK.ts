@@ -4,6 +4,7 @@ import {
   EmbraceSpanSessionProvider,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
+  WebVitalsInstrumentation,
 } from '../instrumentations';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 import {
@@ -27,6 +28,7 @@ import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceSpanEventWebVitals,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors';
 import {logs} from '@opentelemetry/api-logs';
@@ -44,7 +46,6 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
-import WebVitalsInstrumentation from '../instrumentations/web-vitals/WebVitalsInstrumentation';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -95,7 +96,7 @@ interface SDKInitConfig {
   metricReaders?: MetricReader[];
 }
 
-const initSDK = ({
+export const initSDK = ({
   appID,
   resource = Resource.default(),
   exporters = ['embrace'],
@@ -218,8 +219,10 @@ const setupTraces = ({
         loggerProvider.getLogger('exceptions'),
       );
     const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
+    const embraceSpanEventWebVitals = new EmbraceSpanEventWebVitals();
 
     finalSpanProcessors.push(embraceNetworkSpanProcessor);
+    finalSpanProcessors.push(embraceSpanEventWebVitals);
     finalSpanProcessors.push(embraceSessionBatchedProcessor);
     finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
   }
@@ -311,5 +314,3 @@ const setupInstrumentation = ({
     ],
   });
 };
-
-export {initSDK};

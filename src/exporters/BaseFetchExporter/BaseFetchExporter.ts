@@ -1,7 +1,7 @@
 import {IOtlpExportDelegate} from '@opentelemetry/otlp-exporter-base';
 import {ExportResult} from '@opentelemetry/core';
 
-class BaseFetchExporter<Internal> {
+export class BaseFetchExporter<Internal> {
   constructor(private _delegate: IOtlpExportDelegate<Internal>) {}
 
   export(
@@ -19,5 +19,3 @@ class BaseFetchExporter<Internal> {
     return this._delegate.shutdown();
   }
 }
-
-export default BaseFetchExporter;
