@@ -42,8 +42,9 @@ export class EmbraceSpanEventWebVitalsSpanProcessor implements SpanProcessor {
           s: Number(event.attributes.value),
           p: event.attributes,
         };
-        event.attributes[KEY_EMB_WEB_VIEW_VITALS] =
-          JSON.stringify(webVitalsInfo);
+        event.attributes[KEY_EMB_WEB_VIEW_VITALS] = JSON.stringify([
+          webVitalsInfo,
+        ]);
       }
     });
   }
