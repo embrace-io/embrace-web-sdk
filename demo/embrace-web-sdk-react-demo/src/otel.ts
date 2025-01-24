@@ -16,6 +16,7 @@ const SAMPLE_APP_ID = 'uoAiG';
 
 const setupOTel = () => {
   sdk.initSDK({
+    instrumentations: [],
     appID: SAMPLE_APP_ID,
     spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     logProcessors: [
