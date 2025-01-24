@@ -8,6 +8,8 @@ enum EMB_TYPES {
   Network = 'perf.network_request',
   // TODO: update once we have the right type
   Exception = 'sys.android.react_native_crash',
+  // todo update once we support a new type specific to web RUM
+  WebViewInfo = 'sys.webview_info',
 }
 
 enum EMB_STATES {
