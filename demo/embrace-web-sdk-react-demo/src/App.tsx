@@ -3,7 +3,7 @@ import styles from './App.module.css';
 import {Counter, metrics, Span, trace} from '@opentelemetry/api';
 import {logs, SeverityNumber} from '@opentelemetry/api-logs';
 import {useCallback, useState} from 'react';
-import {session} from '@embraceio/embrace-web-sdk';
+import {session} from '@embraceio/embrace-web-sdk'; // some free and open source random API for testing purposes
 // some free and open source random API for testing purposes
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
@@ -65,13 +65,14 @@ const App = () => {
   }, [counter]);
 
   const handleRecordException = () => {
-    const errorSpan = tracer.startSpan('error-span');
-    errorSpan.recordException({
-      name: 'Error',
-      message: 'This is an error',
-      stack: 'Error: This is an error',
-    });
-    errorSpan.end();
+    const sessionSpan = sessionProvider.getSessionSpan();
+    if (sessionSpan) {
+      sessionSpan.recordException({
+        name: 'Error',
+        message: 'This is an error',
+        stack: 'Error: This is an error',
+      });
+    }
   };
 
   const handleSendLog = () => {
@@ -81,6 +82,17 @@ const App = () => {
       body: 'This is a log',
       attributes: {
         key: 'some value',
+      },
+    });
+  };
+
+  const handleSendErrorLog = () => {
+    logger.emit({
+      severityNumber: SeverityNumber.ERROR,
+      severityText: 'ERROR',
+      body: 'This is a error log',
+      attributes: {
+        key: 'some value for an error log',
       },
     });
   };
@@ -127,6 +139,11 @@ const App = () => {
           onClick={handleSendLog}
           disabled={sessionProvider.getSessionSpan() === null}>
           Send Log
+        </button>
+        <button
+          onClick={handleSendErrorLog}
+          disabled={sessionProvider.getSessionSpan() === null}>
+          Send Error Log
         </button>
         <button
           onClick={handleRecordException}
