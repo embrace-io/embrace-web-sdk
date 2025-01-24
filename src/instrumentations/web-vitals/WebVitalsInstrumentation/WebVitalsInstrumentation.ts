@@ -1,40 +1,18 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import InstrumentationBase from '../InstrumentationBase';
+import {InstrumentationBase} from '../../InstrumentationBase';
 import {Attributes, Gauge, MeterProvider} from '@opentelemetry/api';
+import {type Metric} from 'web-vitals/attribution';
+import {SpanSessionProvider} from '../../../api-sessions';
 import {
-  type Metric,
-  onCLS,
-  onFCP,
-  onFID,
-  onINP,
-  onLCP,
-  onTTFB,
-} from 'web-vitals/attribution';
-import {SpanSessionProvider} from '../../api-sessions';
+  CORE_WEB_VITALS,
+  EMB_WEB_VITALS_PREFIX,
+  METER_NAME,
+  NOT_CORE_WEB_VITALS,
+  WEB_VITALS_ID_TO_LISTENER,
+} from './constants';
+import {TrackingLevel, WebVitalsInstrumentationArgs} from './types';
 
-const EMB_WEB_VITALS = 'emb-web-vitals';
-const METER_NAME = `${EMB_WEB_VITALS}-meter`;
-
-type TrackingLevel = 'core' | 'all';
-
-export interface WebVitalsInstrumentationArgs {
-  trackingLevel?: TrackingLevel;
-  spanSessionProvider: SpanSessionProvider;
-  meterProvider: MeterProvider;
-}
-
-const CORE_WEB_VITALS = ['CLS', 'INP', 'LCP'] as const;
-const NOT_CORE_WEB_VITALS = ['FCP', 'FID', 'TTFB'] as const;
-const WEB_VITALS_ID_TO_LISTENER = {
-  CLS: onCLS,
-  FCP: onFCP,
-  FID: onFID,
-  LCP: onLCP,
-  INP: onINP,
-  TTFB: onTTFB,
-} as const;
-
-class WebVitalsInstrumentation extends InstrumentationBase {
+export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
   private readonly _gauges: Partial<Record<Metric['name'], Gauge>>;
   private readonly _trackingLevel: TrackingLevel;
@@ -61,19 +39,27 @@ class WebVitalsInstrumentation extends InstrumentationBase {
   enable(): void {
     const meter = this._meterProvider.getMeter(METER_NAME);
     CORE_WEB_VITALS.forEach(name => {
-      this._gauges[name] = meter.createGauge(`${EMB_WEB_VITALS}-${name}`, {
-        description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
-      });
+      this._gauges[name] = meter.createGauge(
+        `${EMB_WEB_VITALS_PREFIX}-${name}`,
+        {
+          description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
+        },
+      );
     });
     if (this._trackingLevel === 'all') {
       NOT_CORE_WEB_VITALS.forEach(name => {
-        this._gauges[name] = meter.createGauge(`${EMB_WEB_VITALS}-${name}`, {
-          description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
-        });
+        this._gauges[name] = meter.createGauge(
+          `${EMB_WEB_VITALS_PREFIX}-${name}`,
+          {
+            description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
+          },
+        );
       });
     }
     Object.keys(this._gauges).forEach(name => {
       WEB_VITALS_ID_TO_LISTENER[name as Metric['name']](metric => {
+        // first thing record the time when this cb was invoked
+        const now = Date.now();
         // we split the atts into low cardinality and high cardinality so we only report the low cardinality ones as metrics
         // and keep the high cardinality ones for the span event representation
         const lowCardinalityAtts: Attributes = {
@@ -87,9 +73,11 @@ class WebVitalsInstrumentation extends InstrumentationBase {
           lowCardinalityAtts,
         );
         const highCardinalityAtts: Attributes = {
-          id: metric.id, // high cardinality, to be filter out by a view by default later
-          entries: JSON.stringify(metric.entries), // high cardinality, to be filter out by a view by default later
+          id: metric.id,
+          entries: JSON.stringify(metric.entries),
           delta: metric.delta,
+          value: metric.value,
+          pageURL: document.URL,
         };
         Object.entries(metric.attribution).forEach(([key, value]) => {
           highCardinalityAtts[`attribution.${key}`] =
@@ -99,10 +87,14 @@ class WebVitalsInstrumentation extends InstrumentationBase {
         if (!currentSessionSpan) {
           return;
         }
-        currentSessionSpan.addEvent(`web-vitals-report-${name}`, {
-          ...lowCardinalityAtts,
-          ...highCardinalityAtts,
-        });
+        currentSessionSpan.addEvent(
+          `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
+          {
+            ...lowCardinalityAtts,
+            ...highCardinalityAtts,
+          },
+          now,
+        );
       });
     });
   }
@@ -117,5 +109,3 @@ class WebVitalsInstrumentation extends InstrumentationBase {
     return;
   }
 }
-
-export default WebVitalsInstrumentation;
