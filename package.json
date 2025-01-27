@@ -4,8 +4,13 @@
   "description": "Embrace Web SDK",
   "main": "./src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
   "license": "Apache-2.0",
   "dependencies": {
