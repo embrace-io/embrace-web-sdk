@@ -1,6 +1,6 @@
 import {type TimedEvent} from '@opentelemetry/sdk-trace-web';
 import {EMB_WEB_VITALS_PREFIX, WEB_VITALS} from '../../instrumentations';
-import {Attributes} from '@opentelemetry/api/build/src/common/Attributes';
+import {Attributes} from '@opentelemetry/api';
 
 export interface EmbraceSpanEventWebViewInfo extends TimedEvent {
   time_unix_nano: number; // nanoseconds since epoc time

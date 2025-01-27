@@ -1,5 +1,5 @@
 import {TimedEvent} from '@opentelemetry/sdk-trace-web';
-import {Attributes} from '@opentelemetry/api/build/src/common/Attributes';
+import {Attributes} from '@opentelemetry/api';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
