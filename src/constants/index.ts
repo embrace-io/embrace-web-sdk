@@ -4,4 +4,4 @@ export {
   KEY_JS_EXCEPTION_STACKTRACE,
   EMB_TYPES,
   EMB_STATES,
-} from './attributes';
+} from './attributes.js';

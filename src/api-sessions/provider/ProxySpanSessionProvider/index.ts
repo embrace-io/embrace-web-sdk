@@ -1,1 +1,1 @@
-export { ProxySpanSessionProvider } from './ProxySpanSessionProvider';
+export { ProxySpanSessionProvider } from './ProxySpanSessionProvider.js';

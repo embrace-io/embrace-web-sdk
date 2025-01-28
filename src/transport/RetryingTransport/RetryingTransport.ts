@@ -8,7 +8,7 @@ import {
   JITTER,
   MAX_ATTEMPTS,
   MAX_BACKOFF,
-} from './constants';
+} from './constants.js';
 
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]

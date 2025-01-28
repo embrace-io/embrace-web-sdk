@@ -1,1 +1,1 @@
-export { initSDK } from './initSDK';
+export { initSDK } from './initSDK.js';

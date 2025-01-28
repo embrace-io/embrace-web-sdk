@@ -1,4 +1,4 @@
-export { WebVitalsInstrumentation } from './WebVitalsInstrumentation';
+export { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 export {
   EMB_WEB_VITALS_PREFIX,
   METER_NAME,
@@ -6,4 +6,4 @@ export {
   NOT_CORE_WEB_VITALS,
   WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
-} from './constants';
+} from './constants.js';

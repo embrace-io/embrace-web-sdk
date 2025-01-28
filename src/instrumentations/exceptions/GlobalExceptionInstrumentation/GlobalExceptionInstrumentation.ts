@@ -1,7 +1,7 @@
 import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { SpanStatusCode } from '@opentelemetry/api';
-import { InstrumentationBase } from '../../InstrumentationBase';
-import { GlobalExceptionInstrumentationArgs } from './types';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import { GlobalExceptionInstrumentationArgs } from './types.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;

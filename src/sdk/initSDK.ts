@@ -1,11 +1,11 @@
 import { Resource } from '@opentelemetry/resources';
-import { getWebSDKResource } from '../resources';
+import { getWebSDKResource } from '../resources/index.js';
 import {
   EmbraceSpanSessionProvider,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
   WebVitalsInstrumentation,
-} from '../instrumentations';
+} from '../instrumentations/index.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import {
   BatchSpanProcessor,
@@ -30,16 +30,21 @@ import {
   EmbraceSpanEventExceptionToLogProcessor,
   EmbraceSpanEventWebVitalsSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
-} from '../processors';
+} from '../processors/index.js';
 import { logs } from '@opentelemetry/api-logs';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import {
+  Instrumentation,
+  registerInstrumentations,
+} from '@opentelemetry/instrumentation';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { EmbraceLogExporter, EmbraceTraceExporter } from '../exporters';
+import {
+  EmbraceLogExporter,
+  EmbraceTraceExporter,
+} from '../exporters/index.js';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { session, SpanSessionProvider } from '../api-sessions';
+import { session, SpanSessionProvider } from '../api-sessions/index.js';
 import { CompositePropagator } from '@opentelemetry/core';
-import { Instrumentation } from '@opentelemetry/instrumentation/build/src/types';
 import {
   MeterProvider,
   MetricReader,

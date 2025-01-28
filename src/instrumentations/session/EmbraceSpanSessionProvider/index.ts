@@ -1,1 +1,1 @@
-export { EmbraceSpanSessionProvider } from './EmbraceSpanSessionProvider';
+export { EmbraceSpanSessionProvider } from './EmbraceSpanSessionProvider.js';

@@ -1,4 +1,4 @@
-export { OTLPFetchTraceExporter } from './OTLPFetchTraceExporter';
-export { OTLPFetchLogExporter } from './OTLPFetchLogExporter';
-export { EmbraceLogExporter } from './EmbraceLogExporter';
-export { EmbraceTraceExporter } from './EmbraceTraceExporter';
+export { OTLPFetchTraceExporter } from './OTLPFetchTraceExporter.js';
+export { OTLPFetchLogExporter } from './OTLPFetchLogExporter.js';
+export { EmbraceLogExporter } from './EmbraceLogExporter/index.js';
+export { EmbraceTraceExporter } from './EmbraceTraceExporter/index.js';

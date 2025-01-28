@@ -6,4 +6,4 @@ export {
   NOT_CORE_WEB_VITALS,
   WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
-} from './WebVitalsInstrumentation';
+} from './WebVitalsInstrumentation/index.js';

@@ -1,8 +1,8 @@
 import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-web';
 import { JsonTraceSerializer } from '@opentelemetry/otlp-transformer';
-import { BaseFetchExporter } from './BaseFetchExporter';
-import { OtlpFetchExporterConfig } from './types';
-import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate';
+import { BaseFetchExporter } from './BaseFetchExporter/index.js';
+import { OtlpFetchExporterConfig } from './types.js';
+import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate.js';
 
 export class OTLPFetchTraceExporter
   extends BaseFetchExporter<ReadableSpan[]>

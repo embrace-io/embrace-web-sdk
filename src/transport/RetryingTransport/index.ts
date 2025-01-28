@@ -1,1 +1,1 @@
-export { createRetryingTransport } from './createRetryingTransport';
+export { createRetryingTransport } from './createRetryingTransport.js';

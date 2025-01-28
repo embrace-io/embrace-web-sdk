@@ -1,1 +1,1 @@
-export { NoOpSpanSessionProvider } from './NoOpSpanSessionProvider';
+export { NoOpSpanSessionProvider } from './NoOpSpanSessionProvider.js';

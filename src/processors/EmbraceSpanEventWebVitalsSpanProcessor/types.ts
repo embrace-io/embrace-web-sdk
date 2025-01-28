@@ -1,5 +1,8 @@
 import { type TimedEvent } from '@opentelemetry/sdk-trace-web';
-import { EMB_WEB_VITALS_PREFIX, WEB_VITALS } from '../../instrumentations';
+import {
+  EMB_WEB_VITALS_PREFIX,
+  WEB_VITALS,
+} from '../../instrumentations/index.js';
 import { Attributes } from '@opentelemetry/api';
 
 export interface EmbraceSpanEventWebViewInfo extends TimedEvent {

@@ -5,8 +5,8 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 // TODO: don't rely on internal API
 import { BindOnceFuture, internal } from '@opentelemetry/core';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants';
-import { SessionSpan } from '../../instrumentations';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
+import { SessionSpan } from '../../instrumentations/index.js';
 
 const isSessionSpan = (
   span: ReadableSpan | SessionSpan

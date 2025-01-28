@@ -1,4 +1,4 @@
-import * as sdk from './sdk';
-import { session } from './api-sessions';
+import * as sdk from './sdk/index.js';
+import { session } from './api-sessions/index.js';
 
 export { sdk, session };

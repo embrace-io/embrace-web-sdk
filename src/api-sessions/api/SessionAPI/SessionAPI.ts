@@ -1,7 +1,7 @@
 import {
   ProxySpanSessionProvider,
   type SpanSessionProvider,
-} from '../../provider';
+} from '../../provider/index.js';
 
 export class SessionAPI {
   private static _instance?: SessionAPI;

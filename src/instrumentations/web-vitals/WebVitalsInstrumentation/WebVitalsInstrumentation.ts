@@ -1,17 +1,17 @@
 import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { InstrumentationBase } from '../../InstrumentationBase';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { Attributes, Gauge, MeterProvider } from '@opentelemetry/api';
 import { type Metric } from 'web-vitals/attribution';
-import { SpanSessionProvider } from '../../../api-sessions';
+import { SpanSessionProvider } from '../../../api-sessions/index.js';
 import {
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
   METER_NAME,
   NOT_CORE_WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
-} from './constants';
-import { TrackingLevel, WebVitalsInstrumentationArgs } from './types';
-import { withErrorFallback } from '../../../utils/withErrorFallback';
+} from './constants.js';
+import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
+import { withErrorFallback } from '../../../utils/withErrorFallback.js';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to

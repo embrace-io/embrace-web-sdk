@@ -3,11 +3,11 @@ export {
   SpanSessionInstrumentation,
   SessionSpanAttributes,
   SessionSpan,
-} from './session';
+} from './session/index.js';
 export {
   GlobalExceptionInstrumentation,
   GlobalExceptionInstrumentationArgs,
-} from './exceptions';
+} from './exceptions/index.js';
 export {
   WebVitalsInstrumentation,
   EMB_WEB_VITALS_PREFIX,
@@ -16,4 +16,4 @@ export {
   NOT_CORE_WEB_VITALS,
   WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
-} from './web-vitals';
+} from './web-vitals/index.js';

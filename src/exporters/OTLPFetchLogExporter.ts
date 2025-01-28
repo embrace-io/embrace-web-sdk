@@ -3,9 +3,9 @@ import type {
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
 import { JsonLogsSerializer } from '@opentelemetry/otlp-transformer';
-import { BaseFetchExporter } from './BaseFetchExporter';
-import { OtlpFetchExporterConfig } from './types';
-import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate';
+import { BaseFetchExporter } from './BaseFetchExporter/index.js';
+import { OtlpFetchExporterConfig } from './types.js';
+import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate.js';
 
 export class OTLPFetchLogExporter
   extends BaseFetchExporter<ReadableLogRecord[]>

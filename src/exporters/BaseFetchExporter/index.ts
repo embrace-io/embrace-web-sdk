@@ -1,1 +1,1 @@
-export { BaseFetchExporter } from './BaseFetchExporter';
+export { BaseFetchExporter } from './BaseFetchExporter.js';

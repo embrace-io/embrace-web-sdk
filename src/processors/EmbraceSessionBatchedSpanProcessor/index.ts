@@ -1,1 +1,1 @@
-export { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor';
+export { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';

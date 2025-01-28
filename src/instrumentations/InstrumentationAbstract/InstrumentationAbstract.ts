@@ -18,7 +18,7 @@ import {
 import { Logger, logs } from '@opentelemetry/api-logs';
 import { LoggerProvider } from '@opentelemetry/sdk-logs';
 import * as shimmer from 'shimmer';
-import { session, SpanSessionProvider } from '../../api-sessions';
+import { session, SpanSessionProvider } from '../../api-sessions/index.js';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.

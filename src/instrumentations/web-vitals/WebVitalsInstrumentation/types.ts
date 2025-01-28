@@ -1,4 +1,4 @@
-import { type SpanSessionProvider } from '../../../api-sessions';
+import { type SpanSessionProvider } from '../../../api-sessions/index.js';
 import { MeterProvider } from '@opentelemetry/api';
 
 export type TrackingLevel = 'core' | 'all';

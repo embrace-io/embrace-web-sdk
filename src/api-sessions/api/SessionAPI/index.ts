@@ -1,1 +1,1 @@
-export { SessionAPI } from './SessionAPI';
+export { SessionAPI } from './SessionAPI.js';
