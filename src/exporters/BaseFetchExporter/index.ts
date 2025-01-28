@@ -1,1 +1,1 @@
-export * from './BaseFetchExporter';
+export { BaseFetchExporter } from './BaseFetchExporter';

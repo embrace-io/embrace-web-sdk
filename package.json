@@ -7,7 +7,8 @@
     "prepublishOnly": "npm run publish:clean & npm run publish:build",
     "publish:clean": "rimraf dist",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "publish:build": "tsc"
+    "publish:build": "tsc",
+    "lint:fix": "eslint --fix ./src"
   },
   "files": [
     "dist"

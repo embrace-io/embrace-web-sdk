@@ -1,6 +1,6 @@
-import {ReadableSpan, SpanProcessor} from '@opentelemetry/sdk-trace-web';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
-import {isNetworkSpan} from './types';
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants';
+import { isNetworkSpan } from './types';
 
 import {
   ATTR_HTTP_METHOD,

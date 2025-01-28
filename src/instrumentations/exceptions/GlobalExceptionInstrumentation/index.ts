@@ -1,2 +1,2 @@
-export * from './GlobalExceptionInstrumentation';
-export * from './types';
+export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation';
+export { GlobalExceptionInstrumentationArgs } from './types';

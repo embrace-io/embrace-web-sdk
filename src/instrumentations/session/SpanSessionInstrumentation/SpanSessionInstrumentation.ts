@@ -1,5 +1,5 @@
-import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import {InstrumentationBase} from '../../InstrumentationBase';
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '../../InstrumentationBase';
 
 export class SpanSessionInstrumentation extends InstrumentationBase {
   private readonly _onVisibilityChange: (event: Event) => void;

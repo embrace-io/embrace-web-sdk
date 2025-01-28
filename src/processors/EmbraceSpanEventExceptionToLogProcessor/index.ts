@@ -1,1 +1,1 @@
-export * from './EmbraceSpanEventExceptionToLogProcessor';
+export { EmbraceSpanEventExceptionToLogProcessor } from './EmbraceSpanEventExceptionToLogProcessor';

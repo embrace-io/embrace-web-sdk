@@ -1,1 +1,1 @@
-export * from './initSDK';
+export { initSDK } from './initSDK';

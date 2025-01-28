@@ -1,18 +1,18 @@
-import {Resource} from '@opentelemetry/resources';
-import {getWebSDKResource} from '../resources';
+import { Resource } from '@opentelemetry/resources';
+import { getWebSDKResource } from '../resources';
 import {
   EmbraceSpanSessionProvider,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations';
-import {createSessionSpanProcessor} from '@opentelemetry/web-common';
+import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import {
   BatchSpanProcessor,
   SpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import {B3Propagator} from '@opentelemetry/propagator-b3';
+import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   ContextManager,
   metrics,
@@ -31,21 +31,21 @@ import {
   EmbraceSpanEventWebVitalsSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors';
-import {logs} from '@opentelemetry/api-logs';
-import {registerInstrumentations} from '@opentelemetry/instrumentation';
-import {getWebAutoInstrumentations} from '@opentelemetry/auto-instrumentations-web';
-import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
-import {EmbraceLogExporter, EmbraceTraceExporter} from '../exporters';
-import {OTLPLogExporter} from '@opentelemetry/exporter-logs-otlp-http';
-import {session, SpanSessionProvider} from '../api-sessions';
-import {CompositePropagator} from '@opentelemetry/core';
-import {Instrumentation} from '@opentelemetry/instrumentation/build/src/types';
+import { logs } from '@opentelemetry/api-logs';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { EmbraceLogExporter, EmbraceTraceExporter } from '../exporters';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { session, SpanSessionProvider } from '../api-sessions';
+import { CompositePropagator } from '@opentelemetry/core';
+import { Instrumentation } from '@opentelemetry/instrumentation/build/src/types';
 import {
   MeterProvider,
   MetricReader,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
-import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -136,7 +136,11 @@ export const initSDK = ({
     readers: metricReaders,
   });
 
-  setupInstrumentation({instrumentations, spanSessionProvider, meterProvider});
+  setupInstrumentation({
+    instrumentations,
+    spanSessionProvider,
+    meterProvider,
+  });
 };
 
 interface SetupTracesArgs {
@@ -164,7 +168,7 @@ const setupSession = () => {
 
 const METRICS_EXPORT_INTERVAL = 10000; // 10 seconds
 
-const setupMetrics = ({resource, exporters, readers}: SetupMetricsArgs) => {
+const setupMetrics = ({ resource, exporters, readers }: SetupMetricsArgs) => {
   const finalReaders = [...readers];
   if (exporters.includes('otlp')) {
     const otlpExporter = new OTLPMetricExporter();
@@ -215,7 +219,7 @@ const setupTraces = ({
       new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
     const embraceSpanEventExceptionToLogProcessor =
       new EmbraceSpanEventExceptionToLogProcessor(
-        loggerProvider.getLogger('exceptions'),
+        loggerProvider.getLogger('exceptions')
       );
     const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
     const embraceSpanEventWebVitalsSpanProcessor =
@@ -233,7 +237,7 @@ const setupTraces = ({
   });
 
   tracerProvider.register({
-    ...(!!contextManager && {contextManager: contextManager}),
+    ...(!!contextManager && { contextManager: contextManager }),
     // todo why do we need B3Propagator? do the auto instrumentation libraries depend on them? copied from otel docs
     propagator: propagator
       ? new CompositePropagator({
@@ -267,7 +271,7 @@ const setupLogs = ({
 
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor({spanSessionProvider}),
+    new IdentifiableSessionLogRecordProcessor({ spanSessionProvider }),
   ];
 
   if (exporters.includes('otlp')) {
@@ -280,7 +284,7 @@ const setupLogs = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const embraceLogsExporter = new EmbraceLogExporter({appID});
+    const embraceLogsExporter = new EmbraceLogExporter({ appID });
 
     finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }
@@ -308,8 +312,8 @@ const setupInstrumentation = ({
   registerInstrumentations({
     instrumentations: [
       instrumentations ? instrumentations : getWebAutoInstrumentations(),
-      new WebVitalsInstrumentation({spanSessionProvider, meterProvider}),
-      new GlobalExceptionInstrumentation({spanSessionProvider}),
+      new WebVitalsInstrumentation({ spanSessionProvider, meterProvider }),
+      new GlobalExceptionInstrumentation({ spanSessionProvider }),
       new SpanSessionInstrumentation(),
     ],
   });

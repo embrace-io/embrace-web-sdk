@@ -1,3 +1,3 @@
-export * from './types';
-export * from './NoOpSpanSessionProvider';
-export * from './ProxySpanSessionProvider';
+export { SpanSessionProvider } from './types';
+export { NoOpSpanSessionProvider } from './NoOpSpanSessionProvider';
+export { ProxySpanSessionProvider } from './ProxySpanSessionProvider';

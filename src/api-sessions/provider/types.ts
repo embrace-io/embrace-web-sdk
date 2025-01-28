@@ -1,4 +1,4 @@
-import {Span} from '@opentelemetry/api';
+import { Span } from '@opentelemetry/api';
 
 export interface SpanSessionProvider {
   getSessionId(): string | null;

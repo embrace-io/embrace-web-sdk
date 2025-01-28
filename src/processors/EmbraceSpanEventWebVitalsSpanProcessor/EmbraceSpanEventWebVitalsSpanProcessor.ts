@@ -1,5 +1,5 @@
-import {ReadableSpan, SpanProcessor} from '@opentelemetry/sdk-trace-web';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants';
 import {
   BILLION,
   KEY_EMB_TIME_UNIX_NANO,

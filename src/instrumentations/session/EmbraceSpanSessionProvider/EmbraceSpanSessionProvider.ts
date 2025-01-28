@@ -1,13 +1,13 @@
-import {Span, trace} from '@opentelemetry/api';
+import { Span, trace } from '@opentelemetry/api';
 import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../../constants';
-import {ATTR_SESSION_ID} from '@opentelemetry/semantic-conventions/incubating';
-import {type SpanSessionProvider} from '../../../api-sessions';
-import {generateUUID} from '../../../utils';
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import { type SpanSessionProvider } from '../../../api-sessions';
+import { generateUUID } from '../../../utils';
 
 export class EmbraceSpanSessionProvider implements SpanSessionProvider {
   private _activeSessionId: string | null = null;

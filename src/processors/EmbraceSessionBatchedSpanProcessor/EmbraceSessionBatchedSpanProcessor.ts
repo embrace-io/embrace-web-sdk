@@ -4,12 +4,12 @@ import {
   SpanProcessor,
 } from '@opentelemetry/sdk-trace-web';
 // TODO: don't rely on internal API
-import {BindOnceFuture, internal} from '@opentelemetry/core';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
-import {SessionSpan} from '../../instrumentations';
+import { BindOnceFuture, internal } from '@opentelemetry/core';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants';
+import { SessionSpan } from '../../instrumentations';
 
 const isSessionSpan = (
-  span: ReadableSpan | SessionSpan,
+  span: ReadableSpan | SessionSpan
 ): span is SessionSpan => {
   return span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
 };

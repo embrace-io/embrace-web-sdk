@@ -1,1 +1,1 @@
-export * from './ProxySpanSessionProvider';
+export { ProxySpanSessionProvider } from './ProxySpanSessionProvider';

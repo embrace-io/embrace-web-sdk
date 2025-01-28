@@ -1,1 +1,1 @@
-export * from './generateUUID';
+export { generateUUID } from './generateUUID';

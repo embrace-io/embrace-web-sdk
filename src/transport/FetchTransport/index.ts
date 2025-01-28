@@ -1,1 +1,1 @@
-export * from './createFetchTransport';
+export { createFetchTransport } from './createFetchTransport';

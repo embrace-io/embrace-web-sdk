@@ -1,5 +1,5 @@
-import {IExporterTransport} from '@opentelemetry/otlp-exporter-base';
-import {RetryingTransport} from './RetryingTransport';
+import { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
+import { RetryingTransport } from './RetryingTransport';
 
 /**
  * Creates an Exporter Transport that retries on 'retryable' response.

@@ -34,7 +34,7 @@ export class RetryingTransport implements IExporterTransport {
       // use maximum of computed backoff and 0 to avoid negative timeouts
       const backoff = Math.max(
         Math.min(nextBackoff, MAX_BACKOFF) + getJitter(),
-        0,
+        0
       );
       nextBackoff = nextBackoff * BACKOFF_MULTIPLIER;
       const retryInMillis = result.retryInMillis ?? backoff;
@@ -58,7 +58,7 @@ export class RetryingTransport implements IExporterTransport {
   private retry(
     data: Uint8Array,
     timeoutMillis: number,
-    inMillis: number,
+    inMillis: number
   ): Promise<ExportResponse> {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
