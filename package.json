@@ -2,7 +2,7 @@
   "name": "@embraceio/embrace-web-sdk",
   "version": "0.0.1",
   "description": "Embrace Web SDK",
-  "main": "./src/index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "prepublishOnly": "npm run publish:clean & npm run publish:build",
     "publish:clean": "rimraf dist",
@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@types/node": "^22.12.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
@@ -49,7 +50,7 @@
     "globals": "^15.14.0",
     "prettier": "^3.4.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.7.2",
+    "typescript": "^5.7.3",
     "typescript-eslint": "^8.18.2"
   }
 }

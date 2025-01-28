@@ -1,12 +1,26 @@
 {
   "compilerOptions": {
-    "target": "es2022",
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "declaration": true,
+    "declarationMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "inlineSources": true,
     "jsx": "react-jsx",
-    "module": "es2022",
+    "module": "ES6",
+    "moduleResolution": "node",
+    "newLine": "LF",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
     "outDir": "./dist",
+    "pretty": true,
+    "sourceMap": true,
     "strict": true,
-    "moduleResolution": "bundler",
-    "declaration": true
+    "strictNullChecks": true,
+    "target": "es2022"
   },
   "include": [
     "src"
