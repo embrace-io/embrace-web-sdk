@@ -5,8 +5,12 @@ import {
 import {getEmbraceHeaders} from './utils';
 import OTLPFetchLogExporter from './OTLPFetchLogExporter';
 
+interface EmbraceLogExporterArgs {
+  appID: string;
+}
+
 class EmbraceLogExporter extends OTLPFetchLogExporter {
-  constructor(appID: string) {
+  constructor({appID}: EmbraceLogExporterArgs) {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       url: EMBRACE_LOG_ENDPOINT,

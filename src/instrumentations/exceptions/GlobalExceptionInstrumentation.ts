@@ -1,6 +1,11 @@
 import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
 import {SpanStatusCode} from '@opentelemetry/api';
 import InstrumentationBase from '../InstrumentationBase';
+import {SpanSessionProvider} from '../../api-sessions';
+
+interface GlobalExceptionInstrumentationArgs {
+  spanSessionProvider: SpanSessionProvider;
+}
 
 class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
@@ -8,19 +13,20 @@ class GlobalExceptionInstrumentation extends InstrumentationBase {
     event: PromiseRejectionEvent,
   ) => void;
 
-  constructor() {
+  constructor({spanSessionProvider}: GlobalExceptionInstrumentationArgs) {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
 
     this._onErrorHandler = (event: ErrorEvent) => {
       const error: Error = event.error;
-      const errorSpan = this.tracer.startSpan('on-error');
-
-      errorSpan.setStatus({
+      const currentSessionSpan = spanSessionProvider.getSessionSpan();
+      if (!currentSessionSpan) {
+        return;
+      }
+      currentSessionSpan.setStatus({
         message: event.error.message,
         code: SpanStatusCode.ERROR,
       });
-      errorSpan.recordException(error);
-      errorSpan.end();
+      currentSessionSpan.recordException(error);
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       const error =
@@ -32,14 +38,16 @@ class GlobalExceptionInstrumentation extends InstrumentationBase {
                 : 'Rejected Promise',
             );
       const message = error.message;
-      const errorSpan = this.tracer.startSpan('on-unhandled-rejection');
-
-      errorSpan.setStatus({
+      const currentSessionSpan = spanSessionProvider.getSessionSpan();
+      if (!currentSessionSpan) {
+        return;
+      }
+      currentSessionSpan.setStatus({
         message,
         code: SpanStatusCode.ERROR,
       });
-      errorSpan.recordException(error);
-      errorSpan.end();
+      currentSessionSpan.recordException(error);
+      currentSessionSpan.end();
     };
 
     if (this._config.enabled) {

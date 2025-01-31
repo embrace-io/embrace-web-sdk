@@ -1,0 +1,121 @@
+import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
+import InstrumentationBase from '../InstrumentationBase';
+import {Attributes, Gauge, MeterProvider} from '@opentelemetry/api';
+import {
+  type Metric,
+  onCLS,
+  onFCP,
+  onFID,
+  onINP,
+  onLCP,
+  onTTFB,
+} from 'web-vitals/attribution';
+import {SpanSessionProvider} from '../../api-sessions';
+
+const EMB_WEB_VITALS = 'emb-web-vitals';
+const METER_NAME = `${EMB_WEB_VITALS}-meter`;
+
+type TrackingLevel = 'core' | 'all';
+
+export interface WebVitalsInstrumentationArgs {
+  trackingLevel?: TrackingLevel;
+  spanSessionProvider: SpanSessionProvider;
+  meterProvider: MeterProvider;
+}
+
+const CORE_WEB_VITALS = ['CLS', 'INP', 'LCP'] as const;
+const NOT_CORE_WEB_VITALS = ['FCP', 'FID', 'TTFB'] as const;
+const WEB_VITALS_ID_TO_LISTENER = {
+  CLS: onCLS,
+  FCP: onFCP,
+  FID: onFID,
+  LCP: onLCP,
+  INP: onINP,
+  TTFB: onTTFB,
+} as const;
+
+class WebVitalsInstrumentation extends InstrumentationBase {
+  //map of web vitals to gauges to emit to
+  private readonly _gauges: Partial<Record<Metric['name'], Gauge>>;
+  private readonly _trackingLevel: TrackingLevel;
+  private readonly _spanSessionProvider: SpanSessionProvider;
+  private readonly _meterProvider: MeterProvider;
+
+  // function that emits a metric for each web vital report
+  constructor({
+    trackingLevel = 'core',
+    spanSessionProvider,
+    meterProvider,
+  }: WebVitalsInstrumentationArgs) {
+    super('WebVitalsInstrumentation', '1.0.0', {});
+    this._gauges = {};
+    this._spanSessionProvider = spanSessionProvider;
+    this._meterProvider = meterProvider;
+    this._trackingLevel = trackingLevel;
+
+    if (this._config.enabled) {
+      this.enable();
+    }
+  }
+
+  enable(): void {
+    const meter = this._meterProvider.getMeter(METER_NAME);
+    CORE_WEB_VITALS.forEach(name => {
+      this._gauges[name] = meter.createGauge(`${EMB_WEB_VITALS}-${name}`, {
+        description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
+      });
+    });
+    if (this._trackingLevel === 'all') {
+      NOT_CORE_WEB_VITALS.forEach(name => {
+        this._gauges[name] = meter.createGauge(`${EMB_WEB_VITALS}-${name}`, {
+          description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
+        });
+      });
+    }
+    Object.keys(this._gauges).forEach(name => {
+      WEB_VITALS_ID_TO_LISTENER[name as Metric['name']](metric => {
+        // we split the atts into low cardinality and high cardinality so we only report the low cardinality ones as metrics
+        // and keep the high cardinality ones for the span event representation
+        const lowCardinalityAtts: Attributes = {
+          navigationType: metric.navigationType,
+          name: metric.name,
+          rating: metric.rating,
+        };
+
+        this._gauges[name as Metric['name']]?.record(
+          metric.value,
+          lowCardinalityAtts,
+        );
+        const highCardinalityAtts: Attributes = {
+          id: metric.id, // high cardinality, to be filter out by a view by default later
+          entries: JSON.stringify(metric.entries), // high cardinality, to be filter out by a view by default later
+          delta: metric.delta,
+        };
+        Object.entries(metric.attribution).forEach(([key, value]) => {
+          highCardinalityAtts[`attribution.${key}`] =
+            typeof value === 'number' ? value : JSON.stringify(value);
+        });
+        const currentSessionSpan = this._spanSessionProvider.getSessionSpan();
+        if (!currentSessionSpan) {
+          return;
+        }
+        currentSessionSpan.addEvent(`web-vitals-report-${name}`, {
+          ...lowCardinalityAtts,
+          ...highCardinalityAtts,
+        });
+      });
+    });
+  }
+
+  disable(): void {}
+
+  // no-op
+  protected init():
+    | InstrumentationModuleDefinition
+    | InstrumentationModuleDefinition[]
+    | void {
+    return;
+  }
+}
+
+export default WebVitalsInstrumentation;
