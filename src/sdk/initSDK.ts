@@ -12,7 +12,12 @@ import {
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
-import {ContextManager, TextMapPropagator, trace} from '@opentelemetry/api';
+import {
+  ContextManager,
+  metrics,
+  TextMapPropagator,
+  trace,
+} from '@opentelemetry/api';
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
@@ -33,6 +38,12 @@ import {OTLPLogExporter} from '@opentelemetry/exporter-logs-otlp-http';
 import {session} from '../api-sessions';
 import {CompositePropagator} from '@opentelemetry/core';
 import {Instrumentation} from '@opentelemetry/instrumentation/build/src/types';
+import {
+  MeterProvider,
+  MetricReader,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
+import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -75,6 +86,12 @@ interface SDKInitConfig {
    * Processors created by the sdk are inserted after processors in this list.
    */
   logProcessors?: LogRecordProcessor[];
+  /**
+   * metricReaders is an interface which allows hooks for metric emitting and exporting.
+   * They are invoked in the same order as they were registered.
+   * Readers created by the sdk are inserted after readers in this list.
+   */
+  metricReaders?: MetricReader[];
 }
 
 const initSDK = ({
@@ -86,6 +103,7 @@ const initSDK = ({
   instrumentations = [],
   contextManager = null,
   logProcessors = [],
+  metricReaders = [],
 }: SDKInitConfig = {}) => {
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
@@ -110,6 +128,12 @@ const initSDK = ({
     resource: resourceWithWebSDKAttributes,
   });
 
+  setupMetrics({
+    resource: resourceWithWebSDKAttributes,
+    exporters,
+    readers: metricReaders,
+  });
+
   setupInstrumentation(instrumentations);
 };
 
@@ -124,12 +148,46 @@ interface SetupTracesArgs {
   loggerProvider: LoggerProvider;
 }
 
+interface SetupMetricsArgs {
+  resource: Resource;
+  exporters: Exporter[];
+  readers: MetricReader[];
+}
+
 const setupSession = () => {
   const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
 
   session.setGlobalSessionProvider(embraceSpanSessionProvider);
 
   return embraceSpanSessionProvider;
+};
+
+const METRICS_EXPORT_INTERVAL = 10000; // 10 seconds
+
+const setupMetrics = ({resource, exporters, readers}: SetupMetricsArgs) => {
+  const finalReaders = [...readers];
+  if (exporters.includes('otlp')) {
+    const otlpExporter = new OTLPMetricExporter();
+    const metricOTLPReader = new PeriodicExportingMetricReader({
+      exporter: otlpExporter,
+      exportIntervalMillis: METRICS_EXPORT_INTERVAL, // Export metrics every 10 seconds.
+    });
+    finalReaders.push(metricOTLPReader);
+  }
+  if (exporters.includes('embrace')) {
+    // TODO add a mapper for metrics to session span events
+  }
+  // if there are no readers, we don't need to initialize the MeterProvider
+  if (finalReaders.length === 0) {
+    return;
+  }
+  // Initialize a MeterProvider with the above configurations.
+  const myServiceMeterProvider = new MeterProvider({
+    resource,
+    readers: finalReaders,
+  });
+  // Set the initialized MeterProvider as global to enable metric collection across the app.
+  metrics.setGlobalMeterProvider(myServiceMeterProvider);
 };
 
 const setupTraces = ({
