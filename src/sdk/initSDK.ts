@@ -12,7 +12,7 @@ import {
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import {B3Propagator} from '@opentelemetry/propagator-b3';
-import {trace} from '@opentelemetry/api';
+import {ContextManager, TextMapPropagator, trace} from '@opentelemetry/api';
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
@@ -31,6 +31,8 @@ import {OTLPTraceExporter} from '@opentelemetry/exporter-trace-otlp-http';
 import {EmbraceLogExporter, EmbraceTraceExporter} from '../exporters';
 import {OTLPLogExporter} from '@opentelemetry/exporter-logs-otlp-http';
 import {session} from '../api-sessions';
+import {CompositePropagator} from '@opentelemetry/core';
+import {Instrumentation} from '@opentelemetry/instrumentation/build/src/types';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -58,6 +60,9 @@ interface SDKInitConfig {
    * You can set up other exporters by proving the necessary processors.
    */
   exporters?: Exporter[];
+  propagator?: TextMapPropagator | null;
+  contextManager?: ContextManager | null;
+  instrumentations?: Instrumentation[];
   /**
    * Span processor is an interface which allows hooks for span start and end method invocations.
    * They are invoked in the same order as they were registered.
@@ -77,6 +82,9 @@ const initSDK = ({
   resource = Resource.default(),
   exporters = ['embrace'],
   spanProcessors = [],
+  propagator = null,
+  instrumentations = [],
+  contextManager = null,
   logProcessors = [],
 }: SDKInitConfig = {}) => {
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
@@ -95,18 +103,22 @@ const initSDK = ({
     appID,
     exporters,
     sessionProvider,
+    propagator,
+    contextManager,
     spanProcessors,
     loggerProvider,
     resource: resourceWithWebSDKAttributes,
   });
 
-  setupInstrumentation();
+  setupInstrumentation(instrumentations);
 };
 
 interface SetupTracesArgs {
   appID?: string;
   resource: Resource;
   exporters: Exporter[];
+  propagator?: TextMapPropagator | null;
+  contextManager?: ContextManager | null;
   spanProcessors: SpanProcessor[];
   sessionProvider: EmbraceSpanSessionProvider;
   loggerProvider: LoggerProvider;
@@ -125,6 +137,8 @@ const setupTraces = ({
   resource,
   exporters,
   spanProcessors = [],
+  propagator = null,
+  contextManager = null,
   sessionProvider,
   loggerProvider,
 }: SetupTracesArgs) => {
@@ -165,8 +179,13 @@ const setupTraces = ({
   });
 
   tracerProvider.register({
-    // todo why do we need these? do the auto instrumentation libraries depend on them? copied from otel docs
-    propagator: new B3Propagator(),
+    ...(!!contextManager && {contextManager: contextManager}),
+    // todo why do we need B3Propagator? do the auto instrumentation libraries depend on them? copied from otel docs
+    propagator: propagator
+      ? new CompositePropagator({
+          propagators: [propagator, new B3Propagator()],
+        })
+      : new B3Propagator(),
   });
   trace.setGlobalTracerProvider(tracerProvider);
 
@@ -221,10 +240,10 @@ const setupLogs = ({
   return loggerProvider;
 };
 
-const setupInstrumentation = () => {
+const setupInstrumentation = (instrumentations: Instrumentation[] = []) => {
   registerInstrumentations({
     instrumentations: [
-      getWebAutoInstrumentations(),
+      instrumentations.length ? instrumentations : getWebAutoInstrumentations(),
       new GlobalExceptionInstrumentation(),
       new SpanSessionInstrumentation(),
     ],
