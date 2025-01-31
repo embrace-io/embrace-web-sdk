@@ -1,6 +1,6 @@
 {
   "name": "@embraceio/embrace-web-sdk",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Embrace Web SDK",
   "type": "module",
   "main": "build/src/index.js",
@@ -8,11 +8,10 @@
   "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
-    "prepublishOnly": "npm run compile:clean & npm run publish:build",
+    "prepublishOnly": "npm run compile:clean & npm run compile",
     "compile:clean": "rimraf build",
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "clean:compile": "npm run compile:clean & npm run compile",
     "compile:esm": "tsc --build tsconfig.esm.json",
     "compile:esnext": "tsc --build tsconfig.esnext.json",
     "compile:cjs": "tsc --build tsconfig.json",
@@ -33,9 +32,9 @@
   ],
   "exports": {
     "types": "./build/index.d.ts",
-    "default": "./build/src/index.js",
     "import": "./build/esm/index.js",
-    "require": "./build/src/index.js"
+    "require": "./build/src/index.js",
+    "default": "./build/src/index.js"
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
   "license": "Apache-2.0",
