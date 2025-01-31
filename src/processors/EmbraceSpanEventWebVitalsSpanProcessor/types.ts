@@ -6,7 +6,7 @@ export interface EmbraceSpanEventWebViewInfo extends TimedEvent {
   time_unix_nano: number; // nanoseconds since epoc time
   attributes: Attributes & {
     name: WEB_VITALS_IDS;
-  }; // attributes will always be defined for this type
+  };
 }
 
 export const isWebViewSpanEvent = (

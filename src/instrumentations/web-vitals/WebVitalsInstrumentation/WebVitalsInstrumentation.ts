@@ -11,6 +11,7 @@ import {
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants';
 import {TrackingLevel, WebVitalsInstrumentationArgs} from './types';
+import {withErrorFallback} from '../../../utils/withErrorFallback';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
@@ -81,7 +82,12 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
         };
         Object.entries(metric.attribution).forEach(([key, value]) => {
           highCardinalityAtts[`attribution.${key}`] =
-            typeof value === 'number' ? value : JSON.stringify(value);
+            typeof value === 'number'
+              ? value
+              : withErrorFallback(
+                  JSON.stringify,
+                  'Error: unable to serialize the value as JSON. Likely a js circular structure ',
+                )(value);
         });
         const currentSessionSpan = this._spanSessionProvider.getSessionSpan();
         if (!currentSessionSpan) {
