@@ -15,10 +15,10 @@ import {
   Tracer,
   TracerProvider,
 } from '@opentelemetry/api';
-import {Logger, logs} from '@opentelemetry/api-logs';
-import {LoggerProvider} from '@opentelemetry/sdk-logs';
-import shimmer from 'shimmer';
-import {session, SpanSessionProvider} from '../../api-sessions';
+import { Logger, logs } from '@opentelemetry/api-logs';
+import { LoggerProvider } from '@opentelemetry/sdk-logs';
+import * as shimmer from 'shimmer';
+import { session, SpanSessionProvider } from '../../api-sessions/index.js';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.
@@ -40,7 +40,7 @@ export abstract class InstrumentationAbstract<
   constructor(
     public readonly instrumentationName: string,
     public readonly instrumentationVersion: string,
-    config: ConfigType,
+    config: ConfigType
   ) {
     this.setConfig(config);
 
@@ -90,7 +90,7 @@ export abstract class InstrumentationAbstract<
   public setMeterProvider(meterProvider: MeterProvider): void {
     this._meter = meterProvider.getMeter(
       this.instrumentationName,
-      this.instrumentationVersion,
+      this.instrumentationVersion
     );
 
     this._updateMetricInstruments();
@@ -103,7 +103,7 @@ export abstract class InstrumentationAbstract<
   public setLoggerProvider(loggerProvider: LoggerProvider): void {
     this._logger = loggerProvider.getLogger(
       this.instrumentationName,
-      this.instrumentationVersion,
+      this.instrumentationVersion
     );
   }
 
@@ -149,7 +149,7 @@ export abstract class InstrumentationAbstract<
   public setTracerProvider(tracerProvider: TracerProvider): void {
     this._tracer = tracerProvider.getTracer(
       this.instrumentationName,
-      this.instrumentationVersion,
+      this.instrumentationVersion
     );
   }
 
@@ -187,7 +187,7 @@ export abstract class InstrumentationAbstract<
     hookHandler: SpanCustomizationHook<SpanCustomizationInfoType> | undefined,
     triggerName: string,
     span: Span,
-    info: SpanCustomizationInfoType,
+    info: SpanCustomizationInfoType
   ) {
     if (!hookHandler) {
       return;
@@ -198,8 +198,8 @@ export abstract class InstrumentationAbstract<
     } catch (e) {
       this._diag.error(
         `Error running span customization hook due to exception in handler`,
-        {triggerName},
-        e,
+        { triggerName },
+        e
       );
     }
   }

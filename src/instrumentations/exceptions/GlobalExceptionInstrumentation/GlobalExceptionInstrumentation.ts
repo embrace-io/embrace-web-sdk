@@ -1,15 +1,15 @@
-import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import {SpanStatusCode} from '@opentelemetry/api';
-import {InstrumentationBase} from '../../InstrumentationBase';
-import {GlobalExceptionInstrumentationArgs} from './types';
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import { SpanStatusCode } from '@opentelemetry/api';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import { GlobalExceptionInstrumentationArgs } from './types.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (
-    event: PromiseRejectionEvent,
+    event: PromiseRejectionEvent
   ) => void;
 
-  constructor({spanSessionProvider}: GlobalExceptionInstrumentationArgs) {
+  constructor({ spanSessionProvider }: GlobalExceptionInstrumentationArgs) {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
 
     this._onErrorHandler = (event: ErrorEvent) => {
@@ -31,7 +31,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
           : new Error(
               typeof event.reason === 'string'
                 ? event.reason
-                : 'Rejected Promise',
+                : 'Rejected Promise'
             );
       const message = error.message;
       const currentSessionSpan = spanSessionProvider.getSessionSpan();
@@ -55,7 +55,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
     window.addEventListener('error', this._onErrorHandler);
     window.addEventListener(
       'unhandledrejection',
-      this._onUnhandledRejectionHandler,
+      this._onUnhandledRejectionHandler
     );
   }
 
@@ -64,7 +64,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
       window.removeEventListener('error', this._onErrorHandler);
       window.removeEventListener(
         'unhandledrejection',
-        this._onUnhandledRejectionHandler,
+        this._onUnhandledRejectionHandler
       );
     }
   }

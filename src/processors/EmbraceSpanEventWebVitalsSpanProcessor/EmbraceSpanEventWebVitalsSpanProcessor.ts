@@ -1,17 +1,17 @@
-import {ReadableSpan, SpanProcessor} from '@opentelemetry/sdk-trace-web';
-import {EMB_TYPES, KEY_EMB_TYPE} from '../../constants';
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import {
   BILLION,
   KEY_EMB_TIME_UNIX_NANO,
   KEY_EMB_WEB_VIEW_URL,
   KEY_EMB_WEB_VIEW_VITALS,
   WEB_VIEW_INFO_SPAN_EVENT_NAME,
-} from './constants';
+} from './constants.js';
 import {
   EmbraceSpanEventWebViewInfo,
   EmbraceWebVitalsInfo,
   isWebViewSpanEvent,
-} from './types';
+} from './types.js';
 
 /**
  Embrace's API uses a proprietary format to ingest web vital data. This processor converts span events to such format

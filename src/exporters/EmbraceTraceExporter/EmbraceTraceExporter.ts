@@ -1,7 +1,7 @@
-import {OTLPFetchTraceExporter} from '../OTLPFetchTraceExporter';
-import {DEFAULT_EMBRACE_EXPORTER_CONFIG} from '../constants';
-import {getEmbraceHeaders} from '../utils';
-import {EMBRACE_TRACE_ENDPOINT} from './constants';
+import { OTLPFetchTraceExporter } from '../OTLPFetchTraceExporter.js';
+import { DEFAULT_EMBRACE_EXPORTER_CONFIG } from '../constants.js';
+import { getEmbraceHeaders } from '../utils.js';
+import { EMBRACE_TRACE_ENDPOINT } from './constants.js';
 
 export class EmbraceTraceExporter extends OTLPFetchTraceExporter {
   constructor(appID: string) {

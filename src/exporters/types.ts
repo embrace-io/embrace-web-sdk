@@ -1,4 +1,4 @@
-import {OtlpSharedConfiguration} from '@opentelemetry/otlp-exporter-base';
+import { OtlpSharedConfiguration } from '@opentelemetry/otlp-exporter-base';
 
 interface OtlpFetchExporterConfig extends OtlpSharedConfiguration {
   url: string;
@@ -6,4 +6,4 @@ interface OtlpFetchExporterConfig extends OtlpSharedConfiguration {
   keepalive?: boolean;
 }
 
-export type {OtlpFetchExporterConfig};
+export type { OtlpFetchExporterConfig };

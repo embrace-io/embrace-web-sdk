@@ -1,11 +1,11 @@
-import {LogRecord, type LogRecordProcessor} from '@opentelemetry/sdk-logs';
-import {generateUUID} from '../../utils';
+import { LogRecord, type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { generateUUID } from '../../utils/index.js';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
-import {SpanSessionProvider} from '../../api-sessions';
-import {IdentifiableSessionLogRecordProcessorArgs} from './types';
+import { SpanSessionProvider } from '../../api-sessions/index.js';
+import { IdentifiableSessionLogRecordProcessorArgs } from './types.js';
 
 export class IdentifiableSessionLogRecordProcessor
   implements LogRecordProcessor

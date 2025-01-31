@@ -5,7 +5,7 @@ export const withErrorFallback =
   <Args extends U[], R, U>(
     fn: (...args: Args) => R,
     defaultValue: R,
-    silent = true,
+    silent = true
   ) =>
   (...args: Args) => {
     try {

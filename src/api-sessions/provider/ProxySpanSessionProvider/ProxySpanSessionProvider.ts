@@ -1,5 +1,5 @@
-import {SpanSessionProvider} from '../types';
-import {NoOpSpanSessionProvider} from '../NoOpSpanSessionProvider';
+import { SpanSessionProvider } from '../types.js';
+import { NoOpSpanSessionProvider } from '../NoOpSpanSessionProvider/index.js';
 
 const NOOP_SPAN_SESSION_PROVIDER = new NoOpSpanSessionProvider();
 

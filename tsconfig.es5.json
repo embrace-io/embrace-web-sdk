@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "build/src"
+    "target": "es5",
+    "downlevelIteration": true
   }
 }

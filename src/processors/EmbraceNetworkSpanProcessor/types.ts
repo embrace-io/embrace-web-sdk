@@ -1,9 +1,9 @@
-import {Attributes, AttributeValue} from '@opentelemetry/api';
+import { Attributes, AttributeValue } from '@opentelemetry/api';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   SEMATTRS_HTTP_METHOD,
 } from '@opentelemetry/semantic-conventions';
-import {ReadableSpan} from '@opentelemetry/sdk-trace-web';
+import { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,
@@ -26,7 +26,7 @@ interface NetworkSpan extends ReadableSpan {
 }
 
 export const isNetworkSpan = (
-  span: ReadableSpan | NetworkSpan,
+  span: ReadableSpan | NetworkSpan
 ): span is NetworkSpan => {
   return (
     span.attributes[SEMATTRS_HTTP_METHOD] !== undefined ||

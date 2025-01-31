@@ -1,5 +1,5 @@
-import {SpanSessionProvider} from '../types';
-import {Span} from '@opentelemetry/api';
+import { SpanSessionProvider } from '../types.js';
+import { Span } from '@opentelemetry/api';
 
 export class NoOpSpanSessionProvider implements SpanSessionProvider {
   getSessionId(): string | null {

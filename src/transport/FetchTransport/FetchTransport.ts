@@ -2,7 +2,7 @@ import {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-import {FetchRequestParameters} from './types';
+import { FetchRequestParameters } from './types.js';
 
 export class FetchTransport implements IExporterTransport {
   constructor(private config: FetchRequestParameters) {}
@@ -11,7 +11,7 @@ export class FetchTransport implements IExporterTransport {
 
   public async _asyncSend(
     data: Uint8Array,
-    timeoutMillis: number,
+    timeoutMillis: number
   ): Promise<ExportResponse> {
     let request = data;
     const headers: Record<string, string> = {
@@ -36,12 +36,12 @@ export class FetchTransport implements IExporterTransport {
       });
 
       if (response.ok) {
-        return {status: 'success'};
+        return { status: 'success' };
       } else {
-        return {status: 'failure', error: new Error('Fetch request failed')};
+        return { status: 'failure', error: new Error('Fetch request failed') };
       }
     } catch {
-      return {status: 'failure', error: new Error('Fetch request errored')};
+      return { status: 'failure', error: new Error('Fetch request errored') };
     }
   }
 
@@ -76,7 +76,7 @@ export class FetchTransport implements IExporterTransport {
     }
 
     const compressedData = new Uint8Array(
-      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0),
+      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0)
     );
 
     let offset = 0;

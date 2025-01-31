@@ -2,7 +2,7 @@ import {
   Instrumentation,
   InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
-import {InstrumentationAbstract} from '../InstrumentationAbstract';
+import { InstrumentationAbstract } from '../InstrumentationAbstract/index.js';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/platform/browser/instrumentation.ts
 // to avoid importing internal and experimental code.
@@ -15,7 +15,7 @@ export abstract class InstrumentationBase<
   constructor(
     instrumentationName: string,
     instrumentationVersion: string,
-    config: ConfigType,
+    config: ConfigType
   ) {
     super(instrumentationName, instrumentationVersion, config);
 

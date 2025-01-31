@@ -1,17 +1,17 @@
-import {InstrumentationModuleDefinition} from '@opentelemetry/instrumentation';
-import {InstrumentationBase} from '../../InstrumentationBase';
-import {Attributes, Gauge, MeterProvider} from '@opentelemetry/api';
-import {type Metric} from 'web-vitals/attribution';
-import {SpanSessionProvider} from '../../../api-sessions';
+import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import { Attributes, Gauge, MeterProvider } from '@opentelemetry/api';
+import { type Metric } from 'web-vitals/attribution';
+import { SpanSessionProvider } from '../../../api-sessions/index.js';
 import {
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
   METER_NAME,
   NOT_CORE_WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
-} from './constants';
-import {TrackingLevel, WebVitalsInstrumentationArgs} from './types';
-import {withErrorFallback} from '../../../utils/withErrorFallback';
+} from './constants.js';
+import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
+import { withErrorFallback } from '../../../utils/withErrorFallback.js';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
@@ -44,7 +44,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
         `${EMB_WEB_VITALS_PREFIX}-${name}`,
         {
           description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
-        },
+        }
       );
     });
     if (this._trackingLevel === 'all') {
@@ -53,7 +53,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
           `${EMB_WEB_VITALS_PREFIX}-${name}`,
           {
             description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
-          },
+          }
         );
       });
     }
@@ -71,7 +71,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
 
         this._gauges[name as Metric['name']]?.record(
           metric.value,
-          lowCardinalityAtts,
+          lowCardinalityAtts
         );
         const highCardinalityAtts: Attributes = {
           id: metric.id,
@@ -86,7 +86,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
               ? value
               : withErrorFallback(
                   JSON.stringify,
-                  'Error: unable to serialize the value as JSON. Likely a js circular structure ',
+                  'Error: unable to serialize the value as JSON. Likely a js circular structure '
                 )(value);
         });
         const currentSessionSpan = this._spanSessionProvider.getSessionSpan();
@@ -99,7 +99,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
             ...lowCardinalityAtts,
             ...highCardinalityAtts,
           },
-          now,
+          now
         );
       });
     });

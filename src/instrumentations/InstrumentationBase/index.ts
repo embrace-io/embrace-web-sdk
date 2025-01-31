@@ -1,1 +1,1 @@
-export * from './InstrumentationBase';
+export { InstrumentationBase } from './InstrumentationBase.js';

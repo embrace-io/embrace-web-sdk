@@ -1,12 +1,12 @@
-import {ReadableSpan, SpanProcessor} from '@opentelemetry/sdk-trace-web';
+import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
 } from '@opentelemetry/semantic-conventions';
-import {Logger, SeverityNumber} from '@opentelemetry/api-logs';
-import {KEY_JS_EXCEPTION_STACKTRACE} from '../../constants';
-import {EmbraceLogRecord, ExceptionEvent, isExceptionEvent} from './types';
-import {BILLION} from '../EmbraceSpanEventWebVitalsSpanProcessor/constants';
+import { Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import { KEY_JS_EXCEPTION_STACKTRACE } from '../../constants/index.js';
+import { EmbraceLogRecord, ExceptionEvent, isExceptionEvent } from './types.js';
+import { BILLION } from '../EmbraceSpanEventWebVitalsSpanProcessor/constants.js';
 
 /**
  Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
@@ -47,7 +47,7 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
       attributes: {
         ...event.attributes,
         [KEY_JS_EXCEPTION_STACKTRACE]: JSON.stringify(
-          event.attributes[ATTR_EXCEPTION_STACKTRACE],
+          event.attributes[ATTR_EXCEPTION_STACKTRACE]
         ),
       },
     };

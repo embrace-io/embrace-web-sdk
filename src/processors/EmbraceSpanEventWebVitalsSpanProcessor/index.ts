@@ -1,1 +1,1 @@
-export * from './EmbraceSpanEventWebVitalsSpanProcessor';
+export { EmbraceSpanEventWebVitalsSpanProcessor } from './EmbraceSpanEventWebVitalsSpanProcessor.js';

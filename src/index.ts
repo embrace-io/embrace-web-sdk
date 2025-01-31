@@ -1,9 +1,4 @@
-import * as sdk from './sdk';
-import {session} from './api-sessions';
+import * as sdk from './sdk/index.js';
+import { session } from './api-sessions/index.js';
 
-export * from './resources';
-export * from './processors';
-export * from './instrumentations';
-export * from './exporters';
-
-export {sdk, session};
+export { sdk, session };

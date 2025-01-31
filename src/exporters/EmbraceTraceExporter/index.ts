@@ -1,1 +1,1 @@
-export * from './EmbraceTraceExporter';
+export { EmbraceTraceExporter } from './EmbraceTraceExporter.js';

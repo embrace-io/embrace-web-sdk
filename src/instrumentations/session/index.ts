@@ -1,3 +1,3 @@
-export * from './EmbraceSpanSessionProvider';
-export * from './SpanSessionInstrumentation';
-export * from './types';
+export { EmbraceSpanSessionProvider } from './EmbraceSpanSessionProvider/index.js';
+export { SpanSessionInstrumentation } from './SpanSessionInstrumentation/index.js';
+export { SessionSpanAttributes, SessionSpan } from './types.js';

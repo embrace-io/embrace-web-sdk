@@ -1,1 +1,1 @@
-export * from './InstrumentationAbstract';
+export { InstrumentationAbstract } from './InstrumentationAbstract.js';

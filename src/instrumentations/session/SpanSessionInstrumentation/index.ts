@@ -1,1 +1,1 @@
-export * from './SpanSessionInstrumentation';
+export { SpanSessionInstrumentation } from './SpanSessionInstrumentation.js';

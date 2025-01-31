@@ -1,1 +1,1 @@
-export * from './EmbraceNetworkSpanProcessor';
+export { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor.js';

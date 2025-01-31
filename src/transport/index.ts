@@ -1,2 +1,2 @@
-export * from './FetchTransport';
-export * from './RetryingTransport';
+export { createFetchTransport } from './FetchTransport/index.js';
+export { createRetryingTransport } from './RetryingTransport/index.js';

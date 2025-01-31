@@ -1,3 +1,19 @@
-export * from './session';
-export * from './exceptions';
-export * from './web-vitals';
+export {
+  EmbraceSpanSessionProvider,
+  SpanSessionInstrumentation,
+  SessionSpanAttributes,
+  SessionSpan,
+} from './session/index.js';
+export {
+  GlobalExceptionInstrumentation,
+  GlobalExceptionInstrumentationArgs,
+} from './exceptions/index.js';
+export {
+  WebVitalsInstrumentation,
+  EMB_WEB_VITALS_PREFIX,
+  METER_NAME,
+  CORE_WEB_VITALS,
+  NOT_CORE_WEB_VITALS,
+  WEB_VITALS,
+  WEB_VITALS_ID_TO_LISTENER,
+} from './web-vitals/index.js';

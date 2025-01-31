@@ -1,11 +1,11 @@
-import {TimedEvent} from '@opentelemetry/sdk-trace-web';
-import {Attributes} from '@opentelemetry/api/build/src/common/Attributes';
+import { TimedEvent } from '@opentelemetry/sdk-trace-web';
+import { Attributes } from '@opentelemetry/api';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import {LogAttributes, LogRecord} from '@opentelemetry/api-logs';
+import { LogAttributes, LogRecord } from '@opentelemetry/api-logs';
 
 export interface ExceptionEvent extends TimedEvent {
   attributes: Attributes &
@@ -26,7 +26,7 @@ export interface ExceptionEvent extends TimedEvent {
 }
 
 export const isExceptionEvent = (
-  spanEvent: ExceptionEvent | TimedEvent,
+  spanEvent: ExceptionEvent | TimedEvent
 ): spanEvent is ExceptionEvent => {
   return !!(
     spanEvent.attributes &&

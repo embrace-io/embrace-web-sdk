@@ -1,2 +1,6 @@
-export * from './sessionAPI';
-export * from './provider';
+export { session } from './sessionAPI.js';
+export {
+  SpanSessionProvider,
+  NoOpSpanSessionProvider,
+  ProxySpanSessionProvider,
+} from './provider/index.js';

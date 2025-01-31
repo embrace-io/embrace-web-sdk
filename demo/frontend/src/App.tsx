@@ -3,9 +3,9 @@ import styles from './App.module.css';
 import {Counter, metrics, Span, trace} from '@opentelemetry/api';
 import {logs, SeverityNumber} from '@opentelemetry/api-logs';
 import {useCallback, useState} from 'react';
-import {session} from '@embraceio/embrace-web-sdk'; // some free and open source random API for testing purposes
-// some free and open source random API for testing purposes
-const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/';
+import {session} from '@embraceio/embrace-web-sdk';
+
+const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
 const logger = logs.getLogger('embrace-web-sdk-demo-logger');
 const sessionProvider = session.getSpanSessionProvider();

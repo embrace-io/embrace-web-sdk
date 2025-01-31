@@ -1,5 +1,5 @@
-export * from './EmbraceSessionBatchedSpanProcessor';
-export * from './IdentifiableSessionLogRecordProcessor';
-export * from './EmbraceSpanEventExceptionToLogProcessor';
-export * from './EmbraceNetworkSpanProcessor';
-export * from './EmbraceSpanEventWebVitalsSpanProcessor';
+export { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor/index.js';
+export { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor/index.js';
+export { EmbraceSpanEventExceptionToLogProcessor } from './EmbraceSpanEventExceptionToLogProcessor/index.js';
+export { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor/index.js';
+export { EmbraceSpanEventWebVitalsSpanProcessor } from './EmbraceSpanEventWebVitalsSpanProcessor/index.js';

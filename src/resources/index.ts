@@ -1,1 +1,1 @@
-export * from './webSdkResource';
+export { getWebSDKResource } from './webSdkResource.js';
