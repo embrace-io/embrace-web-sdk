@@ -4,6 +4,7 @@ import {
   EmbraceSpanSessionProvider,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
+  WebVitalsInstrumentation,
 } from '../instrumentations';
 import {createSessionSpanProcessor} from '@opentelemetry/web-common';
 import {
@@ -25,8 +26,9 @@ import {
 } from '@opentelemetry/sdk-logs';
 import {
   EmbraceNetworkSpanProcessor,
-  EmbraceSessionBatchedProcessor,
+  EmbraceSessionBatchedSpanProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
+  EmbraceSpanEventWebVitalsSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors';
 import {logs} from '@opentelemetry/api-logs';
@@ -44,7 +46,6 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
-import WebVitalsInstrumentation from '../instrumentations/web-vitals/WebVitalsInstrumentation';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -95,7 +96,7 @@ interface SDKInitConfig {
   metricReaders?: MetricReader[];
 }
 
-const initSDK = ({
+export const initSDK = ({
   appID,
   resource = Resource.default(),
   exporters = ['embrace'],
@@ -210,16 +211,18 @@ const setupTraces = ({
       throw new Error('appID is required when using Embrace exporter');
     }
     const embraceTraceExporter = new EmbraceTraceExporter(appID);
-    const embraceSessionBatchedProcessor = new EmbraceSessionBatchedProcessor(
-      embraceTraceExporter,
-    );
+    const embraceSessionBatchedProcessor =
+      new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
     const embraceSpanEventExceptionToLogProcessor =
       new EmbraceSpanEventExceptionToLogProcessor(
         loggerProvider.getLogger('exceptions'),
       );
     const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
+    const embraceSpanEventWebVitalsSpanProcessor =
+      new EmbraceSpanEventWebVitalsSpanProcessor();
 
     finalSpanProcessors.push(embraceNetworkSpanProcessor);
+    finalSpanProcessors.push(embraceSpanEventWebVitalsSpanProcessor);
     finalSpanProcessors.push(embraceSessionBatchedProcessor);
     finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
   }
@@ -311,5 +314,3 @@ const setupInstrumentation = ({
     ],
   });
 };
-
-export {initSDK};

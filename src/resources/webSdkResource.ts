@@ -2,7 +2,7 @@ import {detectResourcesSync, Resource} from '@opentelemetry/resources';
 import {ATTR_SERVICE_NAME} from '@opentelemetry/semantic-conventions';
 import {browserDetector} from '@opentelemetry/opentelemetry-browser-detector';
 
-const getWebSDKResource = () => {
+export const getWebSDKResource = () => {
   let resource = new Resource({
     [ATTR_SERVICE_NAME]: 'embrace-web-sdk',
     app_version: '0.0.1',
@@ -20,5 +20,3 @@ const getWebSDKResource = () => {
   resource = resource.merge(detectedResources);
   return resource;
 };
-
-export {getWebSDKResource};

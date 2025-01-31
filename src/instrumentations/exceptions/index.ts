@@ -1,3 +1,1 @@
-import GlobalExceptionInstrumentation from './GlobalExceptionInstrumentation';
-
-export {GlobalExceptionInstrumentation};
+export * from './GlobalExceptionInstrumentation';

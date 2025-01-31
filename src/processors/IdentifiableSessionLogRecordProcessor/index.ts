@@ -1,3 +1,1 @@
-import IdentifiableSessionLogRecordProcessor from './IdentifiableSessionLogRecordProcessor';
-
-export default IdentifiableSessionLogRecordProcessor;
+export * from './IdentifiableSessionLogRecordProcessor';

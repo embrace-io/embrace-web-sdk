@@ -1,16 +1,15 @@
 import {LogRecord, type LogRecordProcessor} from '@opentelemetry/sdk-logs';
-import generateUUID from '../../utils/generateUUID';
+import {generateUUID} from '../../utils';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
 import {SpanSessionProvider} from '../../api-sessions';
+import {IdentifiableSessionLogRecordProcessorArgs} from './types';
 
-interface IdentifiableSessionLogRecordProcessorArgs {
-  spanSessionProvider: SpanSessionProvider;
-}
-
-class IdentifiableSessionLogRecordProcessor implements LogRecordProcessor {
+export class IdentifiableSessionLogRecordProcessor
+  implements LogRecordProcessor
+{
   private readonly _spanSessionProvider: SpanSessionProvider;
 
   constructor({
@@ -36,5 +35,3 @@ class IdentifiableSessionLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 }
-
-export default IdentifiableSessionLogRecordProcessor;
