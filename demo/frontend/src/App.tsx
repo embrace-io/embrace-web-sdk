@@ -1,20 +1,20 @@
 import styles from './App.module.css';
 
-import {Counter, metrics, Span, trace} from '@opentelemetry/api';
-import {logs, SeverityNumber} from '@opentelemetry/api-logs';
-import {useCallback, useState} from 'react';
-import {session} from '@embraceio/embrace-web-sdk';
+import { Counter, metrics, Span, trace } from '@opentelemetry/api';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { useCallback, useState } from 'react';
+import { session } from '@embraceio/embrace-web-sdk';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
 const logger = logs.getLogger('embrace-web-sdk-demo-logger');
-const sessionProvider = session.getSpanSessionProvider();
+const sessionProvider = session.getSpanSessionManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
 
   const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(
-    sessionProvider.getSessionSpan() !== null,
+    sessionProvider.getSessionSpan() !== null
   );
 
   const handleStartSessionSpan = () => {
