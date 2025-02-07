@@ -54,7 +54,7 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalStorageUserInstrumentation/index.js';
 import { EmbraceUserProvider } from '../instrumentations/user/index.js';
 import { user, UserProvider } from '../api-users/index.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../constants/attributes.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/provider/constants/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 

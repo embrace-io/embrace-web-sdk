@@ -4,7 +4,7 @@ import { isUser } from './types.js';
 import { generateUUID } from '../../../utils/index.js';
 import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
 import { User } from '../../../api-users/provider/types.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../../constants/attributes.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/provider/constants/index.js';
 
 export class LocalStorageUserInstrumentation extends InstrumentationBase {
   constructor() {
