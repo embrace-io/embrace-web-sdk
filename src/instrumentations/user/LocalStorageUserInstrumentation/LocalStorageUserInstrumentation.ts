@@ -4,6 +4,7 @@ import { isUser } from './types.js';
 import { generateUUID } from '../../../utils/index.js';
 import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
 import { User } from '../../../api-users/provider/types.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../../constants/attributes.js';
 
 export class LocalStorageUserInstrumentation extends InstrumentationBase {
   constructor() {
@@ -55,7 +56,7 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
 
   private _generateNewUser() {
     const user: User = {
-      id: generateUUID(),
+      [KEY_ENDUSER_PSEUDO_ID]: generateUUID(),
     };
     try {
       const encodedUserString = JSON.stringify(user);

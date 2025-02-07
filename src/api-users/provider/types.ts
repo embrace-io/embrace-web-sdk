@@ -1,10 +1,10 @@
+import { KEY_ENDUSER_PSEUDO_ID } from '../../constants/attributes.js';
+
 export interface User {
-  id: string;
+  [KEY_ENDUSER_PSEUDO_ID]: string;
 }
 
 export interface UserProvider {
-  getUserID(): string | null;
-
   getUser(): User | null;
 
   setUser(user: User): void;

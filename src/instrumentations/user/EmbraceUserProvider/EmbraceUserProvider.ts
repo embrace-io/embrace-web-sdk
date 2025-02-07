@@ -4,10 +4,6 @@ import { User } from '../../../api-users/provider/types.js';
 export class EmbraceUserProvider implements UserProvider {
   private _activeUser: User | null = null;
 
-  getUserID(): string | null {
-    return this._activeUser?.id ?? null;
-  }
-
   getUser(): User | null {
     return this._activeUser;
   }

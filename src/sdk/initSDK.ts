@@ -54,6 +54,7 @@ import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalStorageUserInstrumentation/index.js';
 import { EmbraceUserProvider } from '../instrumentations/user/index.js';
 import { user, UserProvider } from '../api-users/index.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../constants/attributes.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -235,11 +236,14 @@ const setupTraces = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const userID = userProvider.getUserID();
-    if (userID === null) {
+    const enduserPseudoID = userProvider.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    if (!enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
     }
-    const embraceTraceExporter = new EmbraceTraceExporter({ appID, userID });
+    const embraceTraceExporter = new EmbraceTraceExporter({
+      appID,
+      userID: enduserPseudoID,
+    });
     const embraceSessionBatchedProcessor =
       new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
     const embraceSpanEventExceptionToLogProcessor =
@@ -311,11 +315,14 @@ const setupLogs = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const userID = userProvider.getUserID();
-    if (userID === null) {
+    const enduserPseudoID = userProvider.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    if (!enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
     }
-    const embraceLogsExporter = new EmbraceLogExporter({ appID, userID });
+    const embraceLogsExporter = new EmbraceLogExporter({
+      appID,
+      userID: enduserPseudoID,
+    });
 
     finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }

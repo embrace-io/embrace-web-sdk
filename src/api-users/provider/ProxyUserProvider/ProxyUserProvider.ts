@@ -14,10 +14,6 @@ export class ProxyUserProvider implements UserProvider {
     this._delegate = delegate;
   }
 
-  getUserID(): string | null {
-    return this.getDelegate().getUserID();
-  }
-
   getUser(): User | null {
     return this.getDelegate().getUser();
   }
