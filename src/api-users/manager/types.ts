@@ -4,7 +4,7 @@ export interface User {
   [KEY_ENDUSER_PSEUDO_ID]: string;
 }
 
-export interface UserProvider {
+export interface UserManager {
   getUser(): User | null;
 
   setUser(user: User): void;

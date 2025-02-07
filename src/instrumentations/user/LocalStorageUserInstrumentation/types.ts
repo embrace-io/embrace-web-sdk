@@ -1,4 +1,4 @@
-import { User } from '../../../api-users/provider/types.js';
+import { User } from '../../../api-users/manager/types.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../../../constants/attributes.js';
 
 export const isUser = (user: unknown | User): user is User =>

@@ -1,7 +1,7 @@
-import { UserProvider } from '../../../api-users/index.js';
-import { User } from '../../../api-users/provider/types.js';
+import { UserManager } from '../../../api-users/index.js';
+import { User } from '../../../api-users/manager/types.js';
 
-export class EmbraceUserProvider implements UserProvider {
+export class EmbraceUserManager implements UserManager {
   private _activeUser: User | null = null;
 
   getUser(): User | null {

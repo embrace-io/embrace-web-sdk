@@ -1,8 +1,8 @@
-import { ProxyUserProvider, type UserProvider } from '../../provider/index.js';
+import { ProxyUserManager, type UserManager } from '../../manager/index.js';
 
 export class UserAPI {
   private static _instance?: UserAPI;
-  private _proxyUserProvider = new ProxyUserProvider();
+  private _proxyUserManager = new ProxyUserManager();
 
   public static getInstance(): UserAPI {
     if (!this._instance) {
@@ -12,11 +12,11 @@ export class UserAPI {
     return this._instance;
   }
 
-  public getUserProvider(): UserProvider {
-    return this._proxyUserProvider;
+  public getUserManager(): UserManager {
+    return this._proxyUserManager;
   }
 
-  public setGlobalUserProvider(userProvider: UserProvider): void {
-    this._proxyUserProvider.setDelegate(userProvider);
+  public setGlobalUserManager(userManager: UserManager): void {
+    this._proxyUserManager.setDelegate(userManager);
   }
 }
