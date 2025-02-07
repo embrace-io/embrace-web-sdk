@@ -2,7 +2,7 @@ import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-web';
-import {sdk} from '@embraceio/embrace-web-sdk';
+import { sdk } from '@embraceio/embrace-web-sdk';
 import {
   ConsoleLogRecordExporter,
   SimpleLogRecordProcessor,
@@ -12,7 +12,7 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 
-const SAMPLE_APP_ID = 'uoAiG';
+const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 
 const setupOTel = () => {
   sdk.initSDK({
@@ -31,4 +31,4 @@ const setupOTel = () => {
   });
 };
 
-export {setupOTel};
+export { setupOTel };
