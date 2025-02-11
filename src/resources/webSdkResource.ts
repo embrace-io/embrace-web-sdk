@@ -1,6 +1,7 @@
 import { detectResourcesSync, Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
+import { TEMPLATE_BUNDLE_ID } from './constants/index.js';
 
 export const getWebSDKResource = () => {
   let resource = new Resource({
@@ -14,7 +15,7 @@ export const getWebSDKResource = () => {
     os_type: 'android',
     os_version: '10.15.7',
     os_name: 'android',
-    react_native_bundle_id: 'fd6996f1007b363f87a53be6d4a8a5fc',
+    react_native_bundle_id: TEMPLATE_BUNDLE_ID,
   });
   const detectedResources = detectResourcesSync({
     detectors: [browserDetector],
