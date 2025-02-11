@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "outDir": "build",
+    "rootDir": "src",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "declaration": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
+    "strict": true
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "build"
+  ]
+}

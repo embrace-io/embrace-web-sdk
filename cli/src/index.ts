@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+import { Command, Option } from 'commander';
+import { processSourceFiles } from './processSourceFiles.js';
+
+// Use commander to parse command-line options
+const program = new Command();
+
+const cliVersion = process.env.npm_package_version;
+if (!cliVersion) {
+  throw new Error('unable to determine the current CLI version');
+}
+
+const cliName = process.env.npm_package_name;
+if (!cliName) {
+  throw new Error('unable to determine the CLI name');
+}
+
+const cliDescription = 'Embrace Web SDK Source Uploader';
+
+program.name(cliName).description(cliDescription).version(cliVersion);
+
+program
+  .command('upload')
+  .description(cliDescription)
+  .addOption(
+    new Option('-b, --bundle <bundle>', 'Path to the JS Bundled file')
+      .env('EMB_JS_BUNDLE_PATH')
+      .makeOptionMandatory()
+  )
+  .addOption(
+    new Option('-m, --map <map>', 'Path to the source map file')
+      .env('EMB_JS_SOURCE_MAP_PATH')
+      .makeOptionMandatory()
+  )
+  .addOption(
+    new Option('-t, --token <token>', 'API token to authenticate with Embrace')
+      .env('EMB_SOURCE_UPLOAD_API_TOKEN')
+      .makeOptionMandatory()
+  )
+  .addOption(
+    new Option('-a, --app-id <appID>', 'Application ID')
+      .env('EMB_APP_ID')
+      .makeOptionMandatory()
+  )
+  .addOption(
+    new Option(
+      '-d, --dry-run',
+      'Make a dry run without uploading or saving the replacements'
+    ).env('EMB_DRY_RUN')
+  )
+  .addOption(
+    new Option('--host [host]', 'Embrace URL host to upload source maps to')
+      .env('EMB_SOURCE_MAP_UPLOAD_HOST')
+      .default(process.env.EMB_SOURCE_MAP_UPLOAD_HOST)
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .addOption(
+    new Option(
+      '--path-for-upload [pathForUpload]',
+      'Embrace URL path to upload source maps to'
+    )
+      .env('EMB_SOURCE_MAP_UPLOAD_PATH')
+      .default(process.env.EMB_SOURCE_MAP_UPLOAD_PATH)
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .addOption(
+    new Option('--store-type [storeType]', 'Embrace store type for the upload')
+      .env('EMB_STORE_TYPE')
+      .default('sourcemap')
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .addOption(
+    new Option(
+      '--template-bundle-id [templateBundleID]',
+      'Embrace Template Bundle ID build into the SDK source code for replacement'
+    )
+      .env('EMB_TEMPLATE_BUNDLE_ID')
+      .default(process.env.EMB_TEMPLATE_BUNDLE_ID)
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .addOption(
+    new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
+      .env('EMB_CLI_VERSION')
+      .default(process.env.npm_package_version)
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .action(async options => {
+    const {
+      bundle,
+      map,
+      token,
+      appId,
+      host,
+      pathForUpload,
+      storeType,
+      templateBundleId,
+      cliVersion,
+      dryRun,
+    } = options; // Destructure the options
+    await processSourceFiles({
+      jsFilePath: bundle,
+      mapFilePath: map,
+      token,
+      appID: appId, // commander processes it as appId instead of appID, ergo the rename
+      host,
+      pathForUpload,
+      storeType,
+      templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of appIDtemplateBundleID, ergo the rename
+      cliVersion,
+      dryRun,
+    });
+  });
+
+program.parse(process.argv);
