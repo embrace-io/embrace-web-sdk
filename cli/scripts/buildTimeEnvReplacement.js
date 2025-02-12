@@ -2,12 +2,18 @@
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Replaces environment variables in the given file with their values.
+ * @param {string} filePath - The path to the file to process.
+ */
 async function replaceEnvVariables(filePath) {
   try {
     const fileContent = fs.readFileSync(filePath, 'utf8');
 
+    // Regular expression to match process.env.<VARIABLE_NAME>
     const regex = /process\.env\.([a-zA-Z0-9_]+)/g;
 
+    // Replace environment variables with their actual values
     const newContent = fileContent.replace(regex, (match, envVarName) => {
       const envValue = process.env[envVarName];
       if (envValue === undefined) {
@@ -27,6 +33,10 @@ async function replaceEnvVariables(filePath) {
   }
 }
 
+/**
+ * Recursively processes all files in the given directory.
+ * @param {string} directory - The directory to process.
+ */
 async function processDirectory(directory) {
   const files = fs.readdirSync(directory);
 
