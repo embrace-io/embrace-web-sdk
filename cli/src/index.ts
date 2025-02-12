@@ -16,6 +16,7 @@ if (!cliName) {
 }
 
 const cliDescription = 'Embrace Web SDK Source Uploader';
+const DEFAULT_FILE_ENCODING = 'utf8';
 
 program.name(cliName).description(cliDescription).version(cliVersion);
 
@@ -47,6 +48,28 @@ program
       '-d, --dry-run',
       'Make a dry run without uploading or saving the replacements'
     ).env('EMB_DRY_RUN')
+  )
+  .addOption(
+    new Option(
+      '-e, --encoding [fileEncoding]',
+      'File encoding for reading and writing the JS and map files'
+    )
+      .env('EMB_ENCODING')
+      .choices([
+        'ascii',
+        'utf8',
+        'utf-8',
+        'utf16le',
+        'utf-16le',
+        'ucs2',
+        'ucs-2',
+        'base64',
+        'base64url',
+        'latin1',
+        'binary',
+        'hex',
+      ])
+      .default(DEFAULT_FILE_ENCODING)
   )
   .addOption(
     new Option('--host [host]', 'Embrace URL host to upload source maps to')
@@ -101,6 +124,7 @@ program
       templateBundleId,
       cliVersion,
       dryRun,
+      encoding,
     } = options; // Destructure the options
     await processSourceFiles({
       jsFilePath: bundle,
@@ -112,6 +136,7 @@ program
       storeType,
       templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of appIDtemplateBundleID, ergo the rename
       cliVersion,
+      fileEncoding: encoding,
       dryRun,
     });
   });

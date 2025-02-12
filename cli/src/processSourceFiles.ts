@@ -13,6 +13,7 @@ interface ProcessSourceFilesArgs {
   storeType: string;
   cliVersion: string;
   templateBundleID: string;
+  fileEncoding: BufferEncoding;
   dryRun: boolean;
 }
 
@@ -27,6 +28,7 @@ export async function processSourceFiles({
   cliVersion,
   templateBundleID,
   dryRun,
+  fileEncoding,
 }: ProcessSourceFilesArgs): Promise<void> {
   const validationError = validateInput({
     jsFilePath,
@@ -46,8 +48,8 @@ export async function processSourceFiles({
 
   try {
     // load files content
-    const jsContent = fs.readFileSync(jsFilePath, 'utf8');
-    const mapContent = fs.readFileSync(mapFilePath, 'utf8');
+    const jsContent = fs.readFileSync(jsFilePath, fileEncoding);
+    const mapContent = fs.readFileSync(mapFilePath, fileEncoding);
 
     // generate 32 chars long hash from the js content using md5
     const bundleID = crypto.createHash('md5').update(jsContent).digest('hex');
@@ -63,8 +65,8 @@ export async function processSourceFiles({
     }
     // write the updated source code back to the file
     if (!dryRun) {
-      fs.writeFileSync(jsFilePath, newJsContent, 'utf8');
-      fs.writeFileSync(mapFilePath, newMapContent, 'utf8');
+      fs.writeFileSync(jsFilePath, newJsContent, fileEncoding);
+      fs.writeFileSync(mapFilePath, newMapContent, fileEncoding);
     }
 
     // upload the files to the Embrace API
