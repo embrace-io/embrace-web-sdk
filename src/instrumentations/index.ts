@@ -1,5 +1,5 @@
 export {
-  EmbraceSpanSessionProvider,
+  EmbraceSpanSessionManager,
   SpanSessionInstrumentation,
   SessionSpanAttributes,
   SessionSpan,

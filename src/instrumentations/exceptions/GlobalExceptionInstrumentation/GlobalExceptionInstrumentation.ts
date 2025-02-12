@@ -9,12 +9,12 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
     event: PromiseRejectionEvent
   ) => void;
 
-  constructor({ spanSessionProvider }: GlobalExceptionInstrumentationArgs) {
+  constructor({ spanSessionManager }: GlobalExceptionInstrumentationArgs) {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
 
     this._onErrorHandler = (event: ErrorEvent) => {
       const error: Error = event.error;
-      const currentSessionSpan = spanSessionProvider.getSessionSpan();
+      const currentSessionSpan = spanSessionManager.getSessionSpan();
       if (!currentSessionSpan) {
         return;
       }
@@ -34,7 +34,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
                 : 'Rejected Promise'
             );
       const message = error.message;
-      const currentSessionSpan = spanSessionProvider.getSessionSpan();
+      const currentSessionSpan = spanSessionManager.getSessionSpan();
       if (!currentSessionSpan) {
         return;
       }

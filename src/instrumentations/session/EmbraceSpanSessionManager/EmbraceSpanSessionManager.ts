@@ -6,10 +6,10 @@ import {
   KEY_EMB_TYPE,
 } from '../../../constants/index.js';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import { type SpanSessionProvider } from '../../../api-sessions/index.js';
+import { type SpanSessionManager } from '../../../api-sessions/index.js';
 import { generateUUID } from '../../../utils/index.js';
 
-export class EmbraceSpanSessionProvider implements SpanSessionProvider {
+export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
   private _sessionSpan: Span | null = null;
 

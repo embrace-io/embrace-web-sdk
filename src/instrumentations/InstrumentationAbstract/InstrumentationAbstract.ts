@@ -18,8 +18,8 @@ import {
 import { Logger, logs } from '@opentelemetry/api-logs';
 import { LoggerProvider } from '@opentelemetry/sdk-logs';
 import * as shimmer from 'shimmer';
-import { session, SpanSessionProvider } from '../../api-sessions/index.js';
 
+// TODO is there any legal issue with copying this?
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.
 export abstract class InstrumentationAbstract<
@@ -51,7 +51,6 @@ export abstract class InstrumentationAbstract<
     this._tracer = trace.getTracer(instrumentationName, instrumentationVersion);
     this._meter = metrics.getMeter(instrumentationName, instrumentationVersion);
     this._logger = logs.getLogger(instrumentationName, instrumentationVersion);
-    this._sessionProvider = session.getSpanSessionProvider();
     this._updateMetricInstruments();
   }
 
@@ -74,13 +73,6 @@ export abstract class InstrumentationAbstract<
   /* Returns logger */
   protected get logger(): Logger {
     return this._logger;
-  }
-
-  private _sessionProvider: SpanSessionProvider;
-
-  /* Returns session provider */
-  protected get sessionProvider(): SpanSessionProvider {
-    return this._sessionProvider;
   }
 
   /**

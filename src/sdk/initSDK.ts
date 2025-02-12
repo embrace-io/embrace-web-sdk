@@ -1,7 +1,7 @@
 import { Resource } from '@opentelemetry/resources';
 import { getWebSDKResource } from '../resources/index.js';
 import {
-  EmbraceSpanSessionProvider,
+  EmbraceSpanSessionManager,
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
   WebVitalsInstrumentation,
@@ -43,7 +43,7 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { session, SpanSessionProvider } from '../api-sessions/index.js';
+import { session, SpanSessionManager } from '../api-sessions/index.js';
 import { CompositePropagator } from '@opentelemetry/core';
 import {
   MeterProvider,
@@ -51,6 +51,10 @@ import {
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalStorageUserInstrumentation/index.js';
+import { EmbraceUserManager } from '../instrumentations/user/index.js';
+import { user, UserManager } from '../api-users/index.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -114,37 +118,42 @@ export const initSDK = ({
 }: SDKInitConfig = {}) => {
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
-  const spanSessionProvider = setupSession();
-
-  const loggerProvider = setupLogs({
-    appID,
-    resource: resourceWithWebSDKAttributes,
-    exporters,
-    logProcessors,
-    spanSessionProvider,
-  });
-
-  setupTraces({
-    appID,
-    exporters,
-    spanSessionProvider,
-    propagator,
-    contextManager,
-    spanProcessors,
-    loggerProvider,
-    resource: resourceWithWebSDKAttributes,
-  });
+  const spanSessionManager = setupSession();
+  const userManager = setupUser();
 
   const meterProvider = setupMetrics({
     resource: resourceWithWebSDKAttributes,
     exporters,
     readers: metricReaders,
   });
-
+  // NOTE: we require setupInstrumentation to run before setupLogs and setupTraces
+  // to ensure that the userManager is enabled before the EmbraceHeaders are added to the diferent exporters. Embrace headers depend on the userID (aka device ID) to be set.
+  // TODO find a better way to avoid this condition by using delegates of adding the headers later on demand instead of during initialization. Otel packages only support initialization atm
   setupInstrumentation({
     instrumentations,
-    spanSessionProvider,
+    spanSessionManager,
     meterProvider,
+  });
+
+  const loggerProvider = setupLogs({
+    appID,
+    userManager,
+    resource: resourceWithWebSDKAttributes,
+    exporters,
+    logProcessors,
+    spanSessionManager,
+  });
+
+  setupTraces({
+    appID,
+    userManager,
+    exporters,
+    spanSessionManager,
+    propagator,
+    contextManager,
+    spanProcessors,
+    loggerProvider,
+    resource: resourceWithWebSDKAttributes,
   });
 };
 
@@ -155,8 +164,9 @@ interface SetupTracesArgs {
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
   spanProcessors: SpanProcessor[];
-  spanSessionProvider: SpanSessionProvider;
+  spanSessionManager: SpanSessionManager;
   loggerProvider: LoggerProvider;
+  userManager: UserManager;
 }
 
 interface SetupMetricsArgs {
@@ -166,9 +176,15 @@ interface SetupMetricsArgs {
 }
 
 const setupSession = () => {
-  const embraceSpanSessionProvider = new EmbraceSpanSessionProvider();
-  session.setGlobalSessionProvider(embraceSpanSessionProvider);
-  return embraceSpanSessionProvider;
+  const embraceSpanSessionManager = new EmbraceSpanSessionManager();
+  session.setGlobalSessionManager(embraceSpanSessionManager);
+  return embraceSpanSessionManager;
+};
+
+const setupUser = () => {
+  const embraceUserManager = new EmbraceUserManager();
+  user.setGlobalUserManager(embraceUserManager);
+  return embraceUserManager;
 };
 
 const METRICS_EXPORT_INTERVAL = 10000; // 10 seconds
@@ -195,17 +211,18 @@ const setupMetrics = ({ resource, exporters, readers }: SetupMetricsArgs) => {
 
 const setupTraces = ({
   appID,
+  userManager,
   resource,
   exporters,
   spanProcessors = [],
   propagator = null,
   contextManager = null,
-  spanSessionProvider,
+  spanSessionManager,
   loggerProvider,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(spanSessionProvider),
+    createSessionSpanProcessor(spanSessionManager),
   ];
 
   if (exporters.includes('otlp')) {
@@ -219,7 +236,14 @@ const setupTraces = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const embraceTraceExporter = new EmbraceTraceExporter(appID);
+    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    if (!enduserPseudoID) {
+      throw new Error('userID is required when using Embrace exporter');
+    }
+    const embraceTraceExporter = new EmbraceTraceExporter({
+      appID,
+      userID: enduserPseudoID,
+    });
     const embraceSessionBatchedProcessor =
       new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
     const embraceSpanEventExceptionToLogProcessor =
@@ -260,15 +284,17 @@ interface SetupLogsArgs {
   resource: Resource;
   exporters: Exporter[];
   logProcessors: LogRecordProcessor[];
-  spanSessionProvider: SpanSessionProvider;
+  spanSessionManager: SpanSessionManager;
+  userManager: UserManager;
 }
 
 const setupLogs = ({
   appID,
+  userManager,
   resource,
   exporters,
   logProcessors,
-  spanSessionProvider,
+  spanSessionManager,
 }: SetupLogsArgs) => {
   const loggerProvider = new LoggerProvider({
     resource,
@@ -276,7 +302,9 @@ const setupLogs = ({
 
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor({ spanSessionProvider }),
+    new IdentifiableSessionLogRecordProcessor({
+      spanSessionManager: spanSessionManager,
+    }),
   ];
 
   if (exporters.includes('otlp')) {
@@ -289,7 +317,14 @@ const setupLogs = ({
     if (appID === undefined) {
       throw new Error('appID is required when using Embrace exporter');
     }
-    const embraceLogsExporter = new EmbraceLogExporter({ appID });
+    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    if (!enduserPseudoID) {
+      throw new Error('userID is required when using Embrace exporter');
+    }
+    const embraceLogsExporter = new EmbraceLogExporter({
+      appID,
+      userID: enduserPseudoID,
+    });
 
     finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }
@@ -305,21 +340,27 @@ const setupLogs = ({
 
 interface SetupInstrumentationArgs {
   instrumentations: Instrumentation[] | null;
-  spanSessionProvider: SpanSessionProvider;
+  spanSessionManager: SpanSessionManager;
   meterProvider: MeterProvider;
 }
 
 const setupInstrumentation = ({
   instrumentations = null,
-  spanSessionProvider,
+  spanSessionManager,
   meterProvider,
 }: SetupInstrumentationArgs) => {
   registerInstrumentations({
     instrumentations: [
       instrumentations ? instrumentations : getWebAutoInstrumentations(),
-      new WebVitalsInstrumentation({ spanSessionProvider, meterProvider }),
-      new GlobalExceptionInstrumentation({ spanSessionProvider }),
+      new WebVitalsInstrumentation({
+        spanSessionManager: spanSessionManager,
+        meterProvider,
+      }),
+      new GlobalExceptionInstrumentation({
+        spanSessionManager: spanSessionManager,
+      }),
       new SpanSessionInstrumentation(),
+      new LocalStorageUserInstrumentation(),
     ],
   });
 };

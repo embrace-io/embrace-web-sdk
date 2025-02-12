@@ -1,5 +1,5 @@
-import { SpanSessionProvider } from '../../../api-sessions/index.js';
+import { SpanSessionManager } from '../../../api-sessions/index.js';
 
 export interface GlobalExceptionInstrumentationArgs {
-  spanSessionProvider: SpanSessionProvider;
+  spanSessionManager: SpanSessionManager;
 }
