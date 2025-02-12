@@ -7,9 +7,9 @@
     "demo:frontend:dev": "vite",
     "demo:frontend:build": "tsc -b && vite build",
     "demo:frontend:lint": "eslint .",
-    "demo:frontend:upload:sourcemaps:stg": "EMB_SOURCE_MAP_UPLOAD_HOST=https://dsym-store.stg.emb-eng.com sourcemaps-uploader upload -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 13f327e891ad45858949004eb755b9f1 -a pa6hp",
-    "demo:frontend:upload:sourcemaps": "sourcemaps-uploader upload -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 13f327e891ad45858949004eb755b9f1 -a pa6hp",
-    "demo:frontend:upload:sourcemaps:dry": "sourcemaps-uploader upload -d -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 13f327e891ad45858949004eb755b9f1 -a pa6hp",
+    "demo:frontend:upload:sourcemaps:stg": "EMB_SOURCE_MAP_UPLOAD_HOST=https://dsym-store.stg.emb-eng.com sourcemaps-uploader upload -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
+    "demo:frontend:upload:sourcemaps": "sourcemaps-uploader upload -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
+    "demo:frontend:upload:sourcemaps:dry": "sourcemaps-uploader upload -d -b dist/assets/index-DhDfF2mT.js -m dist/assets/index-DhDfF2mT.js.map -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
