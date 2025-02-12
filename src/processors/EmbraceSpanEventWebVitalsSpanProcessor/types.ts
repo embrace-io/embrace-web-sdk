@@ -19,12 +19,3 @@ export const isWebViewSpanEvent = (
 };
 
 export type WEB_VITALS_IDS = (typeof WEB_VITALS)[number];
-
-export interface EmbraceWebVitalsInfo {
-  t: WEB_VITALS_IDS;
-  n: string; //name
-  st: number; //startTime
-  d: number; //duration
-  s: number; //score
-  p: TimedEvent['attributes']; //attributes
-}
