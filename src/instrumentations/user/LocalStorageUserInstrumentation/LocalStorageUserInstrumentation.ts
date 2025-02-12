@@ -3,20 +3,29 @@ import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { isUser } from './types.js';
 import { generateUUID } from '../../../utils/index.js';
 import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
-import { User } from '../../../api-users/provider/types.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/provider/constants/index.js';
+import { User, UserManager } from '../../../api-users/manager/types.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/manager/constants/index.js';
+import { user } from '../../../api-users/index.js';
 
 export class LocalStorageUserInstrumentation extends InstrumentationBase {
+  private readonly _userManager: UserManager;
+
   constructor() {
     super('UserInstrumentation', '1.0.0', {});
+    this._userManager = user.getUserManager();
     if (this._config.enabled) {
       this.enable();
     }
   }
 
+  /* Returns user provider */
+  protected get userManager(): UserManager {
+    return this._userManager;
+  }
+
   disable(): void {
     localStorage.removeItem(EMBRACE_USER_LOCAL_STORAGE_KEY);
-    this.userProvider.clearUser();
+    this.userManager.clearUser();
   }
 
   enable(): void {
@@ -27,7 +36,7 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
       try {
         const existingUser: unknown = JSON.parse(encodedUserString);
         if (isUser(existingUser)) {
-          this.userProvider.setUser(existingUser);
+          this.userManager.setUser(existingUser);
         } else {
           console.warn(
             'Invalid user object in localStorage, defaulting to a new one'
@@ -67,6 +76,6 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
         e
       );
     }
-    this.userProvider.setUser(user);
+    this.userManager.setUser(user);
   }
 }

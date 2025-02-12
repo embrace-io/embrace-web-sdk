@@ -1,11 +1,11 @@
 import {
-  ProxySpanSessionProvider,
-  type SpanSessionProvider,
-} from '../../provider/index.js';
+  ProxySpanSessionManager,
+  type SpanSessionManager,
+} from '../../manager/index.js';
 
 export class SessionAPI {
   private static _instance?: SessionAPI;
-  private _proxySpanSessionProvider = new ProxySpanSessionProvider();
+  private _proxySpanSessionManager = new ProxySpanSessionManager();
 
   public static getInstance(): SessionAPI {
     if (!this._instance) {
@@ -15,11 +15,11 @@ export class SessionAPI {
     return this._instance;
   }
 
-  public getSpanSessionProvider(): SpanSessionProvider {
-    return this._proxySpanSessionProvider;
+  public getSpanSessionManager(): SpanSessionManager {
+    return this._proxySpanSessionManager;
   }
 
-  public setGlobalSessionProvider(sessionProvider: SpanSessionProvider): void {
-    this._proxySpanSessionProvider.setDelegate(sessionProvider);
+  public setGlobalSessionManager(sessionManager: SpanSessionManager): void {
+    this._proxySpanSessionManager.setDelegate(sessionManager);
   }
 }

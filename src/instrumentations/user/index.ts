@@ -1,2 +1,2 @@
-export { EmbraceUserProvider } from './EmbraceUserProvider/index.js';
+export { EmbraceUserManager } from './EmbraceUserManager/index.js';
 export { LocalStorageUserInstrumentation } from './LocalStorageUserInstrumentation/index.js';

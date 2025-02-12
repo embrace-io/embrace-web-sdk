@@ -2,7 +2,7 @@ import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation'
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { Attributes, Gauge, MeterProvider } from '@opentelemetry/api';
 import { type Metric } from 'web-vitals/attribution';
-import { SpanSessionProvider } from '../../../api-sessions/index.js';
+import { SpanSessionManager } from '../../../api-sessions/index.js';
 import {
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
@@ -17,18 +17,18 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
   private readonly _gauges: Partial<Record<Metric['name'], Gauge>>;
   private readonly _trackingLevel: TrackingLevel;
-  private readonly _spanSessionProvider: SpanSessionProvider;
+  private readonly _spanSessionManager: SpanSessionManager;
   private readonly _meterProvider: MeterProvider;
 
   // function that emits a metric for each web vital report
   constructor({
     trackingLevel = 'core',
-    spanSessionProvider,
+    spanSessionManager,
     meterProvider,
   }: WebVitalsInstrumentationArgs) {
     super('WebVitalsInstrumentation', '1.0.0', {});
     this._gauges = {};
-    this._spanSessionProvider = spanSessionProvider;
+    this._spanSessionManager = spanSessionManager;
     this._meterProvider = meterProvider;
     this._trackingLevel = trackingLevel;
 
@@ -89,7 +89,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
                   'Error: unable to serialize the value as JSON. Likely a js circular structure '
                 )(value);
         });
-        const currentSessionSpan = this._spanSessionProvider.getSessionSpan();
+        const currentSessionSpan = this._spanSessionManager.getSessionSpan();
         if (!currentSessionSpan) {
           return;
         }
