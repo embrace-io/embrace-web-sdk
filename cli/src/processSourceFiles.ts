@@ -40,7 +40,7 @@ export async function processSourceFiles({
     templateBundleID,
   });
   if (validationError) {
-    console.error('Input Validation Error:', validationError);
+    console.error('Input Validation Error: ', validationError);
     process.exit(1); // Exit with error code
   }
 
