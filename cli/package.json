@@ -1,0 +1,47 @@
+{
+  "name": "@embraceio/sourcemaps-uploader",
+  "bin": "./build/index.js",
+  "version": "0.0.3",
+  "description": "Embrace Web SDK Source Uploader",
+  "type": "module",
+  "module": "build/index.js",
+  "esnext": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "npm run cli:compile:clean & npm run cli:compile",
+    "cli:test": "echo \"Error: no test specified\" && exit 1",
+    "cli:tsc": "tsc",
+    "cli:compile": "npm run cli:tsc",
+    "cli:lint:fix": "eslint --fix ./src",
+    "cli:compile:clean": "rimraf build"
+  },
+  "files": [
+    "build/**/*.js",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    "import": "./build/index.js",
+    "default": "./build/index.js"
+  },
+  "author": "Embrace <support@embrace.io> (https://embrace.io/)",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.12.0",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-require-extensions": "^0.1.3",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.18.2"
+  }
+}
