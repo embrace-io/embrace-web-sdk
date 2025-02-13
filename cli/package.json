@@ -1,7 +1,7 @@
 {
   "name": "@embraceio/sourcemaps-uploader",
   "bin": "./build/index.js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Embrace Web SDK Source Uploader",
   "type": "module",
   "module": "build/index.js",
@@ -11,8 +11,7 @@
     "prepublishOnly": "npm run cli:compile:clean & npm run cli:compile",
     "cli:test": "echo \"Error: no test specified\" && exit 1",
     "cli:tsc": "tsc",
-    "cli:inlineEnvVariables": "node --env-file=.env ./scripts/buildTimeEnvReplacement.js ./build",
-    "cli:compile": "npm run cli:tsc && npm run cli:inlineEnvVariables",
+    "cli:compile": "npm run cli:tsc",
     "cli:lint:fix": "eslint --fix ./src",
     "cli:compile:clean": "rimraf build"
   },
@@ -35,7 +34,6 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
     "@types/node": "^22.12.0",
-    "esbuild": "0.25.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",

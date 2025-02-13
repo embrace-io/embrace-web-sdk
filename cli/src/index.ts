@@ -1,28 +1,24 @@
 #!/usr/bin/env node
 import { Command, Option } from 'commander';
 import { processSourceFiles } from './processSourceFiles.js';
+import {
+  CLI_DESCRIPTION,
+  CLI_NAME,
+  CLI_VERSION,
+  DEFAULT_FILE_ENCODING,
+  SOURCE_MAP_UPLOAD_HOST,
+  SOURCE_MAP_UPLOAD_PATH,
+  TEMPLATE_BUNDLE_ID,
+} from './constants.js';
 
 // Use commander to parse command-line options
 const program = new Command();
 
-const cliVersion = process.env.npm_package_version;
-if (!cliVersion) {
-  throw new Error('unable to determine the current CLI version');
-}
-
-const cliName = process.env.npm_package_name;
-if (!cliName) {
-  throw new Error('unable to determine the CLI name');
-}
-
-const cliDescription = 'Embrace Web SDK Source Uploader';
-const DEFAULT_FILE_ENCODING = 'utf8';
-
-program.name(cliName).description(cliDescription).version(cliVersion);
+program.name(CLI_NAME).description(CLI_DESCRIPTION).version(CLI_VERSION);
 
 program
   .command('upload')
-  .description(cliDescription)
+  .description(CLI_DESCRIPTION)
   .addOption(
     new Option('-b, --bundle <bundle>', 'Path to the JS Bundled file')
       .env('EMB_JS_BUNDLE_PATH')
@@ -74,7 +70,7 @@ program
   .addOption(
     new Option('--host [host]', 'Embrace URL host to upload source maps to')
       .env('EMB_SOURCE_MAP_UPLOAD_HOST')
-      .default(process.env.EMB_SOURCE_MAP_UPLOAD_HOST)
+      .default(SOURCE_MAP_UPLOAD_HOST)
       .makeOptionMandatory()
       .hideHelp()
   )
@@ -84,7 +80,7 @@ program
       'Embrace URL path to upload source maps to'
     )
       .env('EMB_SOURCE_MAP_UPLOAD_PATH')
-      .default(process.env.EMB_SOURCE_MAP_UPLOAD_PATH)
+      .default(SOURCE_MAP_UPLOAD_PATH)
       .makeOptionMandatory()
       .hideHelp()
   )
@@ -101,14 +97,14 @@ program
       'Embrace Template Bundle ID build into the SDK source code for replacement'
     )
       .env('EMB_TEMPLATE_BUNDLE_ID')
-      .default(process.env.EMB_TEMPLATE_BUNDLE_ID)
+      .default(TEMPLATE_BUNDLE_ID)
       .makeOptionMandatory()
       .hideHelp()
   )
   .addOption(
     new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
       .env('EMB_CLI_VERSION')
-      .default(process.env.npm_package_version)
+      .default(CLI_VERSION)
       .makeOptionMandatory()
       .hideHelp()
   )
@@ -134,7 +130,7 @@ program
       host,
       pathForUpload,
       storeType,
-      templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of appIDtemplateBundleID, ergo the rename
+      templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of templateBundleID, ergo the rename
       cliVersion,
       fileEncoding: encoding,
       dryRun,
