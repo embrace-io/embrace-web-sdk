@@ -36,9 +36,7 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
 
   private _emitEmbraceExceptionLog(event: ExceptionEvent) {
     // event.time[0] has seconds, so multiply by 1 billion to get nanoseconds, then add the nanoseconds part
-    // NOTE: time is actually the time when the web vitals instrumentation reported a change in the metric, not what
-    // EmbraceSpanEventWebViewInfo expects, which is the start time of the measurement. We'll set the start time to
-    // comply with the expected format until the BE accepts a better format
+    // TODO this conversion is probably not needed, we need to test without it.
     const time = event.time[0] * BILLION + event.time[1];
     const embraceLogRecord: EmbraceLogRecord = {
       severityNumber: SeverityNumber.ERROR,

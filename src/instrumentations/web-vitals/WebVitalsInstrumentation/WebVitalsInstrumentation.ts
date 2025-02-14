@@ -13,6 +13,7 @@ import {
 import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
 import { withErrorFallback } from '../../../utils/withErrorFallback.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
@@ -65,6 +66,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
         // we split the atts into low cardinality and high cardinality so we only report the low cardinality ones as metrics
         // and keep the high cardinality ones for the span event representation
         const lowCardinalityAtts: Attributes = {
+          [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
           'emb.web_vital.rating': metric.rating,
