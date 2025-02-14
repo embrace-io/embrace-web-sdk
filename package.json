@@ -8,14 +8,14 @@
   "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
-    "prepublishOnly": "npm run compile:clean & npm run compile",
-    "compile:clean": "rimraf build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "compile:esm": "tsc --build tsconfig.esm.json",
-    "compile:esnext": "tsc --build tsconfig.esnext.json",
-    "compile:cjs": "tsc --build tsconfig.json",
-    "lint:fix": "eslint --fix ./src"
+    "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
+    "sdk:compile:clean": "rimraf build",
+    "sdk:test": "echo \"Error: no test specified\" && exit 1",
+    "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "sdk:compile:esm": "tsc --build tsconfig.esm.json",
+    "sdk:compile:esnext": "tsc --build tsconfig.esnext.json",
+    "sdk:compile:cjs": "tsc --build tsconfig.json",
+    "sdk:lint:fix": "eslint --fix ./src"
   },
   "files": [
     "build/esm/**/*.js",
