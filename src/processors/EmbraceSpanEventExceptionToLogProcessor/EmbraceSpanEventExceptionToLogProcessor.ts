@@ -6,7 +6,8 @@ import {
 import { Logger, SeverityNumber } from '@opentelemetry/api-logs';
 import { KEY_JS_EXCEPTION_STACKTRACE } from '../../constants/index.js';
 import { EmbraceLogRecord, ExceptionEvent, isExceptionEvent } from './types.js';
-import { BILLION } from '../EmbraceSpanEventWebVitalsSpanProcessor/constants.js';
+
+const BILLION = 1000000000;
 
 /**
  Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
