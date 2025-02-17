@@ -68,6 +68,11 @@ export async function processSourceFiles({
       process.exit(1); // Exit with error code
     }
     // write the updated source code back to the file
+    console.log(
+      replaceBundleID && !dryRun
+        ? 'Replacing the template bundle ID with the generated bundle ID'
+        : 'Dry run mode, not replacing the template bundle ID'
+    );
     if (!dryRun && replaceBundleID) {
       fs.writeFileSync(jsFilePath, newJsContent, fileEncoding);
       fs.writeFileSync(mapFilePath, newMapContent, fileEncoding);

@@ -46,17 +46,15 @@ program
     ).env('EMB_DRY_RUN')
   )
   .addOption(
-    new Option('-u, --upload', 'Turn on uploading source maps to Embrace')
-      .env('EMB_UPLOAD')
-      .default(true)
+    new Option('--no-upload', 'Turn off uploading source maps to Embrace').env(
+      'EMB_NO_UPLOAD'
+    )
   )
   .addOption(
     new Option(
-      '-r, --replaceBundleID',
-      'Turn on editing the original source bundle and map files to include the bundle ID'
-    )
-      .env('EMB_REPLACE_BUNDLE_ID')
-      .default(true)
+      '--no-replaceBundleID',
+      'Turn off editing the original source bundle and map files to include the bundle ID'
+    ).env('EMB_REPLACE_BUNDLE_ID')
   )
   .addOption(
     new Option(
@@ -134,7 +132,7 @@ program
       cliVersion,
       dryRun,
       upload,
-      replaceBundleId,
+      replaceBundleID,
       encoding,
     } = options; // Destructure the options
     await processSourceFiles({
@@ -150,7 +148,7 @@ program
       fileEncoding: encoding,
       dryRun,
       upload,
-      replaceBundleID: replaceBundleId, // commander processes it as replaceBundleId instead of replaceBundleID, ergo the rename
+      replaceBundleID,
     });
   });
 
