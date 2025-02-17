@@ -11,6 +11,7 @@ interface UploadToApiArgs {
   storeType: string;
   cliVersion: string;
   dryRun: boolean;
+  upload: boolean;
 }
 
 export async function uploadToApi({
@@ -24,6 +25,7 @@ export async function uploadToApi({
   storeType,
   cliVersion,
   dryRun,
+  upload,
 }: UploadToApiArgs): Promise<void> {
   // prepare the body for the API request as a gzipped JSON object
   const body = new Blob([
@@ -40,7 +42,7 @@ export async function uploadToApi({
   formData.append('app', appID);
   formData.append('token', token);
   formData.append('file', body);
-  if (dryRun) {
+  if (dryRun || !upload) {
     return;
   }
   try {

@@ -33,6 +33,8 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
   }
 
   private _emitEmbraceExceptionLog(event: ExceptionEvent) {
+    // TODO, check if all the attributes of this span event are part of the semantic conventions.
+    //  If they are, replace them with their constants. If they are not: prefix them with emb."
     const embraceLogRecord: EmbraceLogRecord = {
       timestamp: event.time,
       severityNumber: SeverityNumber.ERROR,
