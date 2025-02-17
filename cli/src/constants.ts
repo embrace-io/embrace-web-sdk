@@ -1,20 +1,6 @@
-import packageInfo from '../package.json';
-
-export const CLI_VERSION = packageInfo.version;
-if (!CLI_VERSION) {
-  throw new Error('unable to determine the current CLI version');
-}
-
-export const CLI_NAME = packageInfo.name;
-if (!CLI_NAME) {
-  throw new Error('unable to determine the CLI name');
-}
-
-export const CLI_DESCRIPTION = packageInfo.description;
-if (!CLI_DESCRIPTION) {
-  throw new Error('unable to determine the CLI description');
-}
-
+export const CLI_VERSION = '0.0.3';
+export const CLI_NAME = '@embraceio/sourcemaps-uploader';
+export const CLI_DESCRIPTION = 'Embrace Web SDK Source Uploader';
 export const DEFAULT_FILE_ENCODING = 'utf8';
 export const SOURCE_MAP_UPLOAD_HOST = 'https://dsym-store.emb-api.com';
 export const SOURCE_MAP_UPLOAD_PATH = '/v2/store/';
