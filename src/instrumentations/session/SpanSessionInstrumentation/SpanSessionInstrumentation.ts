@@ -16,6 +16,10 @@ export class SpanSessionInstrumentation extends InstrumentationBase {
         this.sessionManager.startSessionSpan();
       }
     };
+
+    if (this._config.enabled) {
+      this.enable();
+    }
   }
 
   /* Returns session provider */
@@ -25,6 +29,7 @@ export class SpanSessionInstrumentation extends InstrumentationBase {
 
   disable(): void {
     this.sessionManager.endSessionSpan();
+
     window.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 

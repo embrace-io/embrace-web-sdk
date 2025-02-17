@@ -122,9 +122,7 @@ export const initSDK = ({
   // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
   //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
   //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
-  const localStorageUserInstrumentation = new LocalStorageUserInstrumentation();
-  // registerInstrumentations calls "enable" for all other instrumentations. We do it manually here as we initialize LocalStorageUserInstrumentation ahead of time
-  localStorageUserInstrumentation.enable();
+  new LocalStorageUserInstrumentation();
 
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
