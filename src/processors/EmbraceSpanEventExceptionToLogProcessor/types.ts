@@ -37,6 +37,5 @@ export const isExceptionEvent = (
 };
 
 export interface EmbraceLogRecord extends LogRecord {
-  time_unix_nano: number;
   attributes: LogAttributes;
 }
