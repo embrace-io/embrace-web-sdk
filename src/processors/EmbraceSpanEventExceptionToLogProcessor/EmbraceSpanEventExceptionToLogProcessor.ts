@@ -37,6 +37,8 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
   private _emitEmbraceExceptionLog(event: ExceptionEvent) {
     // event.time[0] has seconds, so multiply by 1 billion to get nanoseconds, then add the nanoseconds part
     // TODO this conversion is probably not needed, we need to test without it.
+    // TODO, check if all the attributes of this span event are part of the semantic conventions.
+    //  If they are, replace them with its contants. If they are not: prefix them with emb."
     const time = event.time[0] * BILLION + event.time[1];
     const embraceLogRecord: EmbraceLogRecord = {
       severityNumber: SeverityNumber.ERROR,

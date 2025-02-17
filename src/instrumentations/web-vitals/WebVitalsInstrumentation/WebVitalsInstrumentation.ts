@@ -85,7 +85,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
         };
 
         Object.entries(metric.attribution).forEach(([key, value]) => {
-          highCardinalityAtts[`attribution.${key}`] =
+          highCardinalityAtts[`emb.web_vital.attribution.${key}`] =
             typeof value === 'number'
               ? value
               : withErrorFallback(
