@@ -17,6 +17,7 @@ npm run cli:compile
 cd ../demo/frontend
 npm run demo:frontend:install:clean
 npm install
+sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=pa6hp/g' .env.template > .env
 npm run demo:frontend:compile:clean
 npm run demo:frontend:compile
 #find the path for the generated bundle
