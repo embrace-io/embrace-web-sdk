@@ -6,7 +6,8 @@ import {
 import { Logger, SeverityNumber } from '@opentelemetry/api-logs';
 import { KEY_JS_EXCEPTION_STACKTRACE } from '../../constants/index.js';
 import { EmbraceLogRecord, ExceptionEvent, isExceptionEvent } from './types.js';
-import { BILLION } from '../EmbraceSpanEventWebVitalsSpanProcessor/constants.js';
+
+const BILLION = 1000000000;
 
 /**
  Embrace's API uses logs internally to track exceptions. This processor converts span events with exception attributes
@@ -35,9 +36,9 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
 
   private _emitEmbraceExceptionLog(event: ExceptionEvent) {
     // event.time[0] has seconds, so multiply by 1 billion to get nanoseconds, then add the nanoseconds part
-    // NOTE: time is actually the time when the web vitals instrumentation reported a change in the metric, not what
-    // EmbraceSpanEventWebViewInfo expects, which is the start time of the measurement. We'll set the start time to
-    // comply with the expected format until the BE accepts a better format
+    // TODO this conversion is probably not needed, we need to test without it.
+    // TODO, check if all the attributes of this span event are part of the semantic conventions.
+    //  If they are, replace them with its contants. If they are not: prefix them with emb."
     const time = event.time[0] * BILLION + event.time[1];
     const embraceLogRecord: EmbraceLogRecord = {
       severityNumber: SeverityNumber.ERROR,

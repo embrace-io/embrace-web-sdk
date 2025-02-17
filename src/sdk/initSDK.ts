@@ -28,7 +28,6 @@ import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
   EmbraceSpanEventExceptionToLogProcessor,
-  EmbraceSpanEventWebVitalsSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { logs } from '@opentelemetry/api-logs';
@@ -251,11 +250,8 @@ const setupTraces = ({
         loggerProvider.getLogger('exceptions')
       );
     const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
-    const embraceSpanEventWebVitalsSpanProcessor =
-      new EmbraceSpanEventWebVitalsSpanProcessor();
 
     finalSpanProcessors.push(embraceNetworkSpanProcessor);
-    finalSpanProcessors.push(embraceSpanEventWebVitalsSpanProcessor);
     finalSpanProcessors.push(embraceSessionBatchedProcessor);
     finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
   }

@@ -8,8 +8,7 @@ export enum EMB_TYPES {
   Network = 'perf.network_request',
   // TODO: update once we have the right type
   SystemLog = 'sys.log',
-  // todo update once we support a new type specific to web RUM
-  WebViewInfo = 'sys.webview_info',
+  WebVital = 'ux.web_vital',
 }
 
 export enum EMB_STATES {
