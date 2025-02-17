@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "demo:frontend:full:preview": "bash ./scripts/runDemo.sh",
+    "demo:frontend:compile:clean": "rimraf dist",
+    "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
-    "demo:frontend:build": "tsc -b && vite build",
+    "demo:frontend:compile": "tsc -b && vite build",
     "demo:frontend:lint": "eslint .",
-    "demo:frontend:upload:sourcemaps:stg": "EMB_SOURCE_MAP_UPLOAD_HOST=https://dsym-store.stg.emb-eng.com sourcemaps-uploader upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
     "demo:frontend:upload:sourcemaps": "sourcemaps-uploader upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
     "demo:frontend:upload:sourcemaps:dry": "sourcemaps-uploader upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
     "demo:frontend:preview": "vite preview"
@@ -28,6 +30,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.17.0",
+    "rimraf": "^6.0.1",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
