@@ -1,50 +1,92 @@
-# React + TypeScript + Vite
+This is a simple (extremely simple) demo app that shows how to use the embrace-web-sdk and the sourcemaps-uploader in a
+React app.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Testing the embrace-web-sdk
 
-Currently, two official plugins are available:
+The dependency between the demo app and the sdk is managed through `demo/frontend/package.json`. Specifically, the line
+`"@embraceio/embrace-web-sdk": "file:../..",`. This tell npm to use the local version of the sdk instead of downloading
+a remote one from npm registry.
+When you run `npm install` in the `demo/frontend` directory, npm will install the sdk from the local directory
+`../../` (which is the root of the sdk project).
+If you check the `node_modules/@embraceio/embrace-web-sdk` directory, you will see that it is a symlink to the root of
+the sdk project.
+This will ensure that the demo app uses the latest version of the sdk, even before it is published, for testing
+purposes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Note: even while the sdk is not published, the exported fields from `package.json` (root level, for the sdk) are still
+honored.
+This means that the demo app will import the sdk as if it was published and from `build/esm/index.js`, instead of
+referencing the source code for the sdk directly.
 
-## Expanding the ESLint configuration
+With all of these, here are the steps to run the demo app referencing the latest version of the sdk:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+1. Run `npm install` in the root of the sdk project. This will install all the dependencies for the sdk.
+2. Run `npm run sdk:compile:clean` in the root of the sdk project. This will remove any previous local builds of the
+   SDK, to make sure that the demo app uses the latest version of the SDK.
+3. Run `npm run sdk:compile` in the root of the sdk project. This will compile the SDK and make it available for the
+   demo app later from `build/esm/index.js`.
+4. Delete the `node_modules` directory in the `demo/frontend` directory. This will remove the symlink to the sdk
+   project, so it can be regenerated later.
+5. Run `npm install` in the `demo/frontend` directory. This will install all the dependencies for the demo app,
+   including the sdk.
+6. Run `npm run demo:frontend:dev` in the `demo/frontend` directory. This will start the demo app in development mode,
+   with hot reloading enabled.
+7. Open your browser and go to `http://localhost:5173/`. You should see the demo app running.
 
-- Configure the top-level `parserOptions` property like this:
+If you make changes to the demo frontend app, then the hot reloading will automatically reload the app in the browser.
+If you make changes to the sdk, then you will need to recompile the sdk and restart the demo app (steps 2, 3, 4, 5, 6).
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+If you want to test the demo app in production mode, bundled, then repeat steps 1 through 5 and then
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+6. Run `npm run demo:frontend:build` in the `demo/frontend` directory. This will build the demo app in production mode.
+   The output will be at `demo/frontend/dist`
+7. Run `npm run demo:frontend:preview` in the `demo/frontend` directory. This will serve the demo app in production
+   mode.
+   Open your browser and go to ` http://localhost:4173/`. You should see the demo app running.
 
-```js
-// eslintrc
-import react from 'eslint-plugin-react'
+## Testing the sourcemaps-uploader
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+The dependency between the demo app and the cli is managed through `demo/frontend/package.json`. Specifically, the line
+`"@embraceio/sourcemaps-uploader": "file:../../cli",`. This tell npm to use the local version of the cli instead of
+downloading
+a remote one from npm registry.
+When you run `npm install` in the `demo/frontend` directory, npm will install the cli from the local directory
+`../../cli`.
+If you check the `node_modules/@embraceio/sourcemaps-uploader` directory, you will see that it is a symlink to `./cli`.
+This will ensure that the demo app uses the latest version of the cli, even before it is published, for testing
+purposes.
+
+Note: even while the cli is not published, the exported fields from `cli/package.json` are still
+honored.
+This means that the demo app will import the cli as if it was published and from `build/index.js`, instead of
+referencing the source code for the cli directly.
+
+With all of these, here are the steps to run the demo app referencing the latest version of the cli:
+
+1. Run `npm install` in the root of the cli project. This will install all the dependencies for the cli.
+2. Run `npm run cli:compile:clean` in the root of the cli project. This will remove any previous local builds of the
+   cli, to make sure that the demo app uses the latest version of the cli. Changes to the source are NOT automatically
+   synced
+3. Run `npm run cli:compile` in the root of the cli project. This will compile the cli and make it available for the
+   demo app later from `build/index.js`.
+4. Delete the `node_modules` directory in the `demo/frontend` directory. This will remove the symlink to the cli
+   project, so it can be regenerated later.
+5. Run `npm install` in the `demo/frontend` directory. This will install all the dependencies for the demo app,
+   including the cli.
+6. Run `npm run demo:frontend:build` in the `demo/frontend` directory. This will build the demo app in production mode.
+   The output will be at `demo/frontend/dist`
+    7. Run `npm run demo:frontend:upload:sourcemaps:dry -- -b <path_to_bundle_file.js> -m <path_to_map_file.js.map>` in
+       the
+       `demo/frontend` directory. This will trigger a "dry" run to
+       upload the sourcemaps to embrace. As this is a dry run, it won't actually upload anything. If you do want to
+       upload
+       source maps, you need to use `npm run demo:frontend:upload:sourcemaps:stg` or
+       `npm run demo:frontend:upload:sourcemaps` instead (for stg and prod, respectively).
+       The values of `<path_to_bundle_file.js>` and `<path_to_map_file.js.map>` will be the file path for the compiled
+       bundle for the demo app. Example:
+       `npm run demo:frontend:upload:sourcemaps:dry -- -b ./dist/assets/index-BFp_59-e.js -m ./dist/assets/index-BFp_59-e.js.map`.
+       Note that if you made changes to the demo app, the hash in the names of these files will change, so you will get
+       a
+       new file name after a new build.
+
+
