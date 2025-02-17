@@ -33,14 +33,16 @@ With all of these, here are the steps to run the demo app referencing the latest
 7. Run `npm run demo:frontend:dev` in the `demo/frontend` directory. This will start the demo app in development mode,
    with hot reloading enabled.
 8. Open your browser and go to `http://localhost:5173/`. You should see the demo app running.  
-If you make changes to the demo frontend app, then the hot reloading will automatically reload the app in the browser.  
-If you make changes to the sdk, then you will need to recompile the sdk and restart the demo app (steps 2, 3, 4, 5, 6).  
-If you want to test the demo app in production mode, bundled, then repeat steps 1 through 5 and then.
+   If you make changes to the demo frontend app, then the hot reloading will automatically reload the app in the
+   browser.  
+   If you make changes to the sdk, then you will need to recompile the sdk and restart the demo app (steps 2, 3, 4, 5,
+   6).  
+   If you want to test the demo app in production mode, bundled, then repeat steps 1 through 5 and then.
 9. Run `npm run demo:frontend:build` in the `demo/frontend` directory. This will build the demo app in production mode.
    The output will be at `demo/frontend/dist`
 10. Run `npm run demo:frontend:preview` in the `demo/frontend` directory. This will serve the demo app in production
-   mode.
-   Open your browser and go to ` http://localhost:4173/`. You should see the demo app running.
+    mode.
+    Open your browser and go to ` http://localhost:4173/`. You should see the demo app running.
 
 ## Testing the sourcemaps-uploader
 
@@ -71,20 +73,21 @@ With all of these, here are the steps to run the demo app referencing the latest
    project, so it can be regenerated later.
 5. Run `npm install` in the `demo/frontend` directory. This will install all the dependencies for the demo app,
    including the cli.
-6. Run `npm run demo:frontend:build` in the `demo/frontend` directory. This will build the demo app in production mode.
+6. Copy the file located at `demo/frontend/.env.template` to `demo/frontend/.env` and modify with your custom envs.
+7. Run `npm run demo:frontend:build` in the `demo/frontend` directory. This will build the demo app in production mode.
    The output will be at `demo/frontend/dist`
-    7. Run `npm run demo:frontend:upload:sourcemaps:dry -- -b <path_to_bundle_file.js> -m <path_to_map_file.js.map>` in
-       the
-       `demo/frontend` directory. This will trigger a "dry" run to
-       upload the sourcemaps to embrace. As this is a dry run, it won't actually upload anything. If you do want to
-       upload
-       source maps, you need to use `npm run demo:frontend:upload:sourcemaps:stg` or
-       `npm run demo:frontend:upload:sourcemaps` instead (for stg and prod, respectively).
-       The values of `<path_to_bundle_file.js>` and `<path_to_map_file.js.map>` will be the file path for the compiled
-       bundle for the demo app. Example:
-       `npm run demo:frontend:upload:sourcemaps:dry -- -b ./dist/assets/index-BFp_59-e.js -m ./dist/assets/index-BFp_59-e.js.map`.
-       Note that if you made changes to the demo app, the hash in the names of these files will change, so you will get
-       a
-       new file name after a new build.
+7. Run `npm run demo:frontend:upload:sourcemaps:dry -- -b <path_to_bundle_file.js> -m <path_to_map_file.js.map>` in
+   the
+   `demo/frontend` directory. This will trigger a "dry" run to
+   upload the sourcemaps to embrace. As this is a dry run, it won't actually upload anything. If you do want to
+   upload
+   source maps, you need to use `npm run demo:frontend:upload:sourcemaps:stg` or
+   `npm run demo:frontend:upload:sourcemaps` instead (for stg and prod, respectively).
+   The values of `<path_to_bundle_file.js>` and `<path_to_map_file.js.map>` will be the file path for the compiled
+   bundle for the demo app. Example:
+   `npm run demo:frontend:upload:sourcemaps:dry -- -b ./dist/assets/index-BFp_59-e.js -m ./dist/assets/index-BFp_59-e.js.map`.
+   Note that if you made changes to the demo app, the hash in the names of these files will change, so you will get
+   a
+   new file name after a new build.
 
 
