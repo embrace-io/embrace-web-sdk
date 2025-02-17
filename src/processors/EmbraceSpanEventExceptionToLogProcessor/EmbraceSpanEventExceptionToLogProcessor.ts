@@ -34,6 +34,7 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
 
   private _emitEmbraceExceptionLog(event: ExceptionEvent) {
     const embraceLogRecord: EmbraceLogRecord = {
+      timestamp: event.time,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
       body: event.attributes[ATTR_EXCEPTION_MESSAGE],
