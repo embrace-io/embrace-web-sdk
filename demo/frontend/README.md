@@ -5,7 +5,8 @@ React app.
 
 Running the demo app locally involves several steps. If you don't really need to customize anything and just want to try
 what it is already there, you can run `npm run demo:frontend:full:preview` from the `demo/frontend` directory. This will
-take care of all the steps below. For more granular control, keep reading :)
+take care of all the steps below, just make sure you have node installed (version 22+). For more granular control, keep
+reading :)
 
 ## Testing the embrace-web-sdk
 
