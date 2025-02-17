@@ -115,23 +115,25 @@ export const initSDK = ({
   logProcessors = [],
   metricReaders = [],
 }: SDKInitConfig = {}) => {
+  const userManager = setupUser();
+  // We initialize LocalStorageUserInstrumentation outside of the setupInstrumentation function to ensure that the
+  // userManager is enabled and the LocalStorageUserInstrumentation provides a valid userID before the EmbraceHeaders
+  // are added to the diferent exporters. Embrace headers depend on the userID (aka device ID) to be set.
+  // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
+  //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
+  //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
+  const localStorageUserInstrumentation = new LocalStorageUserInstrumentation();
+  // registerInstrumentations calls "enable" for all other instrumentations. We do it manually here as we initialize LocalStorageUserInstrumentation ahead of time
+  localStorageUserInstrumentation.enable();
+
   const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
   const spanSessionManager = setupSession();
-  const userManager = setupUser();
 
   const meterProvider = setupMetrics({
     resource: resourceWithWebSDKAttributes,
     exporters,
     readers: metricReaders,
-  });
-  // NOTE: we require setupInstrumentation to run before setupLogs and setupTraces
-  // to ensure that the userManager is enabled before the EmbraceHeaders are added to the diferent exporters. Embrace headers depend on the userID (aka device ID) to be set.
-  // TODO find a better way to avoid this condition by using delegates of adding the headers later on demand instead of during initialization. Otel packages only support initialization atm
-  setupInstrumentation({
-    instrumentations,
-    spanSessionManager,
-    meterProvider,
   });
 
   const loggerProvider = setupLogs({
@@ -153,6 +155,13 @@ export const initSDK = ({
     spanProcessors,
     loggerProvider,
     resource: resourceWithWebSDKAttributes,
+  });
+  // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how otel works wrt the dependencies between instrumentations and global providers.
+  // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
+  setupInstrumentation({
+    instrumentations,
+    spanSessionManager,
+    meterProvider,
   });
 };
 
@@ -345,6 +354,8 @@ const setupInstrumentation = ({
   spanSessionManager,
   meterProvider,
 }: SetupInstrumentationArgs) => {
+  // TODO: do we need to expose an api to allow external disabling of instrumentations? `registerInstrumentations`
+  // returns a callback to disable instrumentations, but we are ignoring it atm
   registerInstrumentations({
     instrumentations: [
       instrumentations ? instrumentations : getWebAutoInstrumentations(),
@@ -356,7 +367,6 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
       }),
       new SpanSessionInstrumentation(),
-      new LocalStorageUserInstrumentation(),
     ],
   });
 };

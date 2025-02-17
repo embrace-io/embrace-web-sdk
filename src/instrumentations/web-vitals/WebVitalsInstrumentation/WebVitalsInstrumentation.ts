@@ -13,7 +13,7 @@ import {
 import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
 import { withErrorFallback } from '../../../utils/withErrorFallback.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
@@ -33,10 +33,6 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
     this._spanSessionManager = spanSessionManager;
     this._meterProvider = meterProvider;
     this._trackingLevel = trackingLevel;
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   enable(): void {

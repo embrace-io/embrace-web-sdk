@@ -45,10 +45,6 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
       currentSessionSpan.recordException(error);
       currentSessionSpan.end();
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   enable(): void {
