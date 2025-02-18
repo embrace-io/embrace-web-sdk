@@ -42,6 +42,9 @@ export async function uploadToApi({
   formData.append('app', appID);
   formData.append('token', token);
   formData.append('file', body);
+  console.log(
+    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload'
+  );
   if (dryRun || !upload) {
     return;
   }

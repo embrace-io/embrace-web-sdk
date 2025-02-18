@@ -24,8 +24,8 @@ npm run demo:frontend:compile
 bundle_path=$(find ./dist/assets -name "index*.js")
 source_map_path=$(find ./dist/assets -name "index*.js.map")
 # process the bundle to replace the bundle id. NOTE: we don't upload source maps on each run, to avoid spamming s3, so symbolication won't work
-# If you need to upload source maps for testing, remove the "-u=false" flag
-npm run demo:frontend:upload:sourcemaps -- -b "$bundle_path" -m "$source_map_path" -u=false
+# If you need to upload source maps for testing, remove the "--no-upload" flag
+npm run demo:frontend:upload:sourcemaps -- -b "$bundle_path" -m "$source_map_path" --no-upload
 npm run demo:frontend:preview
 
 
