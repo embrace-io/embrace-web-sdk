@@ -10,6 +10,7 @@
   "scripts": {
     "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
     "sdk:compile:clean": "rimraf build",
+    "sdk:install:clean": "rimraf node_modules",
     "sdk:test": "echo \"Error: no test specified\" && exit 1",
     "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "sdk:compile:esm": "tsc --build tsconfig.esm.json",

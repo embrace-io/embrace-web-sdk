@@ -13,7 +13,8 @@
     "cli:tsc": "tsc",
     "cli:compile": "npm run cli:tsc",
     "cli:lint:fix": "eslint --fix ./src",
-    "cli:compile:clean": "rimraf build"
+    "cli:compile:clean": "rimraf build",
+    "cli:install:clean": "rimraf node_modules"
   },
   "files": [
     "build/**/*.js",

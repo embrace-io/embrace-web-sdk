@@ -15,6 +15,8 @@ interface ProcessSourceFilesArgs {
   templateBundleID: string;
   fileEncoding: BufferEncoding;
   dryRun: boolean;
+  replaceBundleID: boolean;
+  upload: boolean;
 }
 
 export async function processSourceFiles({
@@ -28,6 +30,8 @@ export async function processSourceFiles({
   cliVersion,
   templateBundleID,
   dryRun,
+  replaceBundleID,
+  upload,
   fileEncoding,
 }: ProcessSourceFilesArgs): Promise<void> {
   const validationError = validateInput({
@@ -64,7 +68,7 @@ export async function processSourceFiles({
       process.exit(1); // Exit with error code
     }
     // write the updated source code back to the file
-    if (!dryRun) {
+    if (!dryRun && replaceBundleID) {
       fs.writeFileSync(jsFilePath, newJsContent, fileEncoding);
       fs.writeFileSync(mapFilePath, newMapContent, fileEncoding);
     }
@@ -81,6 +85,7 @@ export async function processSourceFiles({
       storeType,
       cliVersion,
       dryRun,
+      upload,
     });
     console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
   } catch (err) {
