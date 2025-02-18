@@ -65,6 +65,12 @@ interface SDKInitConfig {
    * **default**: undefined
    */
   appID?: string;
+  /**
+   * appVersion is your application's version. It is used to identify your application in Embrace, and it is only required when
+   * you are not using the Embrace CLI to inject it into your bundle. If embrace exporter is disabled this value will be ignored.
+   * If you use the CLI tool and also provide this value, the SDK will use the provided value instead of the one injected by the CLI tool.
+   */
+  appVersion?: string;
   resource?: Resource;
   /**
    * Exporters process and export your telemetry data.
@@ -106,6 +112,7 @@ interface SDKInitConfig {
 
 export const initSDK = ({
   appID,
+  appVersion,
   resource = Resource.default(),
   exporters = ['embrace'],
   spanProcessors = [],
@@ -124,7 +131,9 @@ export const initSDK = ({
   //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
   new LocalStorageUserInstrumentation();
 
-  const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
+  const resourceWithWebSDKAttributes = resource.merge(
+    getWebSDKResource({ appVersion })
+  );
 
   const spanSessionManager = setupSession();
 

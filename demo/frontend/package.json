@@ -10,8 +10,8 @@
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
     "demo:frontend:lint": "eslint .",
-    "demo:frontend:upload:sourcemaps": "web-cli upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
-    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
+    "demo:frontend:upload:sourcemaps": "web-cli upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp --app-version 0.0.1",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
