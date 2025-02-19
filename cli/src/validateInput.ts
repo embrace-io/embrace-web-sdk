@@ -10,10 +10,8 @@ interface ValidateInputArgs {
   host: string;
   pathForUpload: string;
   storeType: string;
-  sdkVersion: string;
   cliVersion: string;
   templateBundleID: string;
-  templateSDKVersion: string;
 }
 
 export function validateInput({
@@ -25,18 +23,10 @@ export function validateInput({
   pathForUpload,
   storeType,
   cliVersion,
-  sdkVersion,
   templateBundleID,
-  templateSDKVersion,
 }: ValidateInputArgs): string | null {
   if (!jsFilePath.trim()) {
     return 'JS file path cannot be empty.';
-  }
-  if (!sdkVersion.trim()) {
-    return 'sdkVersion cannot be empty.';
-  }
-  if (sdkVersion.length > 20) {
-    return 'sdkVersion cannot be longer than 20 characters.';
   }
   if (!mapFilePath.trim()) {
     return 'Map file path cannot be empty.';
@@ -71,13 +61,6 @@ export function validateInput({
   if (templateBundleID.length !== 32) {
     return 'Template bundle ID must be 32 characters long.';
   }
-  if (!templateSDKVersion.trim()) {
-    return 'Template SDK version cannot be empty.';
-  }
-  if (templateSDKVersion.length !== 20) {
-    return 'Template SDK version must be 20 characters long.';
-  }
-
   try {
     const jsStats = fs.statSync(jsFilePath);
     if (!jsStats.isFile() || jsStats.size === 0) {

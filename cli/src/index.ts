@@ -6,11 +6,9 @@ import {
   CLI_NAME,
   CLI_VERSION,
   DEFAULT_FILE_ENCODING,
-  SDK_VERSION,
   SOURCE_MAP_UPLOAD_HOST,
   SOURCE_MAP_UPLOAD_PATH,
   TEMPLATE_BUNDLE_ID,
-  TEMPLATE_SDK_VERSION,
 } from './constants.js';
 
 // Use commander to parse command-line options
@@ -45,13 +43,6 @@ program
     new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
       .env('EMB_CLI_VERSION')
       .default(CLI_VERSION)
-      .makeOptionMandatory()
-      .hideHelp()
-  )
-  .addOption(
-    new Option('--sdk-version [sdkVersion]', 'Version of the SDK')
-      .env('EMB_SDK_VERSION')
-      .default(SDK_VERSION)
       .makeOptionMandatory()
       .hideHelp()
   )
@@ -128,16 +119,6 @@ program
       .makeOptionMandatory()
       .hideHelp()
   )
-  .addOption(
-    new Option(
-      '--template-sdk-version [templateSdkVersion]',
-      'Embrace Template SDK Version build into the SDK source code for replacement'
-    )
-      .env('EMB_TEMPLATE_APP_VERSION')
-      .default(TEMPLATE_SDK_VERSION)
-      .makeOptionMandatory()
-      .hideHelp()
-  )
   .action(async options => {
     const {
       bundle,
@@ -148,12 +129,10 @@ program
       pathForUpload,
       storeType,
       templateBundleId,
-      templateSdkVersion,
       cliVersion,
       dryRun,
       upload,
       replaceBundleID,
-      sdkVersion,
       encoding,
     } = options; // Destructure the options
     await processSourceFiles({
@@ -165,11 +144,9 @@ program
       pathForUpload,
       storeType,
       templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of templateBundleID, ergo the rename
-      templateSDKVersion: templateSdkVersion, // commander processes it as templateSdkVersion instead of templateSDKVersion, ergo the rename
       cliVersion,
       fileEncoding: encoding,
       dryRun,
-      sdkVersion,
       upload,
       replaceBundleID,
     });
