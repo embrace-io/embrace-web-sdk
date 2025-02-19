@@ -58,7 +58,9 @@ export function validateInput({
   if (!templateBundleID.trim()) {
     return 'Template bundle ID cannot be empty.';
   }
-
+  if (templateBundleID.length !== 32) {
+    return 'Template bundle ID must be 32 characters long.';
+  }
   try {
     const jsStats = fs.statSync(jsFilePath);
     if (!jsStats.isFile() || jsStats.size === 0) {

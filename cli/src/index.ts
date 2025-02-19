@@ -40,6 +40,13 @@ program
       .makeOptionMandatory()
   )
   .addOption(
+    new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
+      .env('EMB_CLI_VERSION')
+      .default(CLI_VERSION)
+      .makeOptionMandatory()
+      .hideHelp()
+  )
+  .addOption(
     new Option(
       '-d, --dry-run',
       'Make a dry run without uploading or saving the replacements. This is the same as using --no-upload and --no-replaceBundleID'
@@ -109,13 +116,6 @@ program
     )
       .env('EMB_TEMPLATE_BUNDLE_ID')
       .default(TEMPLATE_BUNDLE_ID)
-      .makeOptionMandatory()
-      .hideHelp()
-  )
-  .addOption(
-    new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
-      .env('EMB_CLI_VERSION')
-      .default(CLI_VERSION)
       .makeOptionMandatory()
       .hideHelp()
   )

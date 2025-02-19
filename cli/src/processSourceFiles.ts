@@ -52,8 +52,8 @@ export async function processSourceFiles({
 
   try {
     // load files content
-    const jsContent = fs.readFileSync(jsFilePath, fileEncoding);
-    const mapContent = fs.readFileSync(mapFilePath, fileEncoding);
+    let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
+    let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
 
     // generate 32 chars long hash from the js content using md5
     const bundleID = crypto.createHash('md5').update(jsContent).digest('hex');
@@ -67,6 +67,10 @@ export async function processSourceFiles({
       console.error('Template bundle ID not found in the source code');
       process.exit(1); // Exit with error code
     }
+
+    // save the content to the base vars for later processing
+    jsContent = newJsContent;
+    mapContent = newMapContent;
     console.log(
       replaceBundleID && !dryRun
         ? 'Replacing the template bundle ID with the generated bundle ID'
@@ -74,8 +78,8 @@ export async function processSourceFiles({
     );
     // write the updated source code back to the file
     if (!dryRun && replaceBundleID) {
-      fs.writeFileSync(jsFilePath, newJsContent, fileEncoding);
-      fs.writeFileSync(mapFilePath, newMapContent, fileEncoding);
+      fs.writeFileSync(jsFilePath, jsContent, fileEncoding);
+      fs.writeFileSync(mapFilePath, mapContent, fileEncoding);
     }
 
     // upload the files to the Embrace API

@@ -4,6 +4,7 @@ import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
 import {
   EMBRACE_SERVICE_NAME,
   NATIVE_FRAMEWORK,
+  SDK_VERSION,
   TEMPLATE_BUNDLE_ID,
 } from './constants/index.js';
 
@@ -13,7 +14,7 @@ export const getWebSDKResource = () => {
     app_version: '0.0.1', // TODO: this should be provided by the user / injected by our cli / both
     app_framework: NATIVE_FRAMEWORK,
     bundle_id: TEMPLATE_BUNDLE_ID,
-    sdk_version: '0.0.1', // TODO: this should be injected by our cli
+    sdk_version: SDK_VERSION,
     sdk_simple_version: 1,
     sdk_platform: 'web',
   });
