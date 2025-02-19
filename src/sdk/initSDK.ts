@@ -52,6 +52,7 @@ import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalS
 import { EmbraceUserManager } from '../instrumentations/user/index.js';
 import { user, UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
+import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcessor/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -301,6 +302,7 @@ const setupLogs = ({
     new IdentifiableSessionLogRecordProcessor({
       spanSessionManager: spanSessionManager,
     }),
+    new EmbTypeLogRecordProcessor(),
   ];
 
   if (exporters.includes('otlp')) {
