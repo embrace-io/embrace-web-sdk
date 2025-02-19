@@ -1,7 +1,7 @@
 {
   "name": "embrace-web-sdk-react-demo",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "demo:frontend:full:preview": "bash ./scripts/runDemo.sh",
@@ -10,8 +10,8 @@
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
     "demo:frontend:lint": "eslint .",
-    "demo:frontend:upload:sourcemaps": "sourcemaps-uploader upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
-    "demo:frontend:upload:sourcemaps:dry": "sourcemaps-uploader upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
+    "demo:frontend:upload:sourcemaps": "web-cli upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
+    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@embraceio/sourcemaps-uploader": "file:../../cli",
+    "@embraceio/web-cli": "file:../../cli",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",

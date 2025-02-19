@@ -1,4 +1,4 @@
-This is a simple (extremely simple) demo app that shows how to use the embrace-web-sdk and the sourcemaps-uploader in a
+This is a simple (extremely simple) demo app that shows how to use the embrace-web-sdk and the web-cli in a
 React app.
 
 ## TLDR
@@ -45,14 +45,14 @@ With all of these, here are the steps to run the demo app referencing the latest
 10. Run `npm run demo:frontend:preview` in the `demo/frontend` directory. This will serve the demo app in production
     mode. Open your browser and go to ` http://localhost:4173/`. You should see the demo app running.
 
-## Testing the sourcemaps-uploader
+## Testing the web cli
 
 The dependency between the demo app and the cli is managed through `demo/frontend/package.json`. Specifically, the line
-`"@embraceio/sourcemaps-uploader": "file:../../cli",`. This tell npm to use the local version of the cli instead of
+`"@embraceio/web-cli": "file:../../cli",`. This tell npm to use the local version of the cli instead of
 downloading
 a remote one from npm registry. When you run `npm install` in the `demo/frontend` directory, npm will install the cli
 from the local directory `../../cli`.
-If you check the `node_modules/@embraceio/sourcemaps-uploader` directory, you will see that it is a symlink to `./cli`.
+If you check the `node_modules/@embraceio/web-cli` directory, you will see that it is a symlink to `./cli`.
 This will ensure that the demo app uses the latest version of the cli, even before it is published, for testing
 purposes.
 Note: even while the cli is not published, the exported fields from `cli/package.json` are still honored. This means
