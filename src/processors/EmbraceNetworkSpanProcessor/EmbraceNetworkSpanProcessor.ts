@@ -10,9 +10,9 @@ import {
   ATTR_HTTP_URL,
 } from '@opentelemetry/semantic-conventions/incubating';
 import {
-  ATTR_URL_FULL,
-  ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -22,6 +22,8 @@ import {
 export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   onStart(): void {}
 
+  // TODO `onEnd` is not supposed to modify the span. There is a new experimental onEnding api that allows modifying
+  //  the span before it is sent to the exporter. This processor should be updated to use that api once that is available
   onEnd(span: ReadableSpan): void {
     if (isNetworkSpan(span)) {
       span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
