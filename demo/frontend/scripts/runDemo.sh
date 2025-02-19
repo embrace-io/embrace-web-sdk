@@ -3,22 +3,22 @@ cd ../..
 #print current node version
 node -v
 #build sdk locally
-npm run sdk:install:clean
+rm -rf node_modules
 npm install
-npm run sdk:compile:clean
+rm -rf build
 npm run sdk:compile
 #build the cli locally
 cd ./cli
-npm run cli:install:clean
+rm -rf node_modules
 npm install
-npm run cli:compile:clean
+rm -rf build
 npm run cli:compile
 #build demo locally
 cd ../demo/frontend
-npm run demo:frontend:install:clean
+rm -rf node_modules
 npm install
 sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=pa6hp/g' .env.template > .env
-npm run demo:frontend:compile:clean
+rm -rf build dist
 npm run demo:frontend:compile
 #find the path for the generated bundle
 bundle_path=$(find ./dist/assets -name "index*.js")
