@@ -8,6 +8,7 @@ import {
   DEFAULT_FILE_ENCODING,
   SOURCE_MAP_UPLOAD_HOST,
   SOURCE_MAP_UPLOAD_PATH,
+  TEMPLATE_APP_VERSION,
   TEMPLATE_BUNDLE_ID,
 } from './constants.js';
 
@@ -38,6 +39,21 @@ program
     new Option('-a, --app-id <appID>', 'Application ID')
       .env('EMB_APP_ID')
       .makeOptionMandatory()
+  )
+  .addOption(
+    new Option(
+      '--app-version <appVersion>',
+      'Application Version. Usually the version of the app under package.json -> version'
+    )
+      .env('EMB_APP_VERSION')
+      .makeOptionMandatory()
+  )
+  .addOption(
+    new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
+      .env('EMB_CLI_VERSION')
+      .default(CLI_VERSION)
+      .makeOptionMandatory()
+      .hideHelp()
   )
   .addOption(
     new Option(
@@ -113,9 +129,12 @@ program
       .hideHelp()
   )
   .addOption(
-    new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
-      .env('EMB_CLI_VERSION')
-      .default(CLI_VERSION)
+    new Option(
+      '--template-app-version [templateAppVersion]',
+      'Embrace Template App Version build into the SDK source code for replacement'
+    )
+      .env('EMB_TEMPLATE_APP_VERSION')
+      .default(TEMPLATE_APP_VERSION)
       .makeOptionMandatory()
       .hideHelp()
   )
@@ -129,10 +148,12 @@ program
       pathForUpload,
       storeType,
       templateBundleId,
+      templateAppVersion,
       cliVersion,
       dryRun,
       upload,
       replaceBundleID,
+      appVersion,
       encoding,
     } = options; // Destructure the options
     await processSourceFiles({
@@ -144,9 +165,11 @@ program
       pathForUpload,
       storeType,
       templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of templateBundleID, ergo the rename
+      templateAppVersion,
       cliVersion,
       fileEncoding: encoding,
       dryRun,
+      appVersion,
       upload,
       replaceBundleID,
     });
