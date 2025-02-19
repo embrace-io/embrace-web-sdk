@@ -8,10 +8,12 @@ interface ProcessSourceFilesArgs {
   mapFilePath: string;
   token: string;
   appID: string;
+  appVersion: string;
   host: string;
   pathForUpload: string;
   storeType: string;
   cliVersion: string;
+  templateAppVersion: string;
   templateBundleID: string;
   fileEncoding: BufferEncoding;
   dryRun: boolean;
@@ -29,10 +31,12 @@ export async function processSourceFiles({
   storeType,
   cliVersion,
   templateBundleID,
+  templateAppVersion,
   dryRun,
   replaceBundleID,
   upload,
   fileEncoding,
+  appVersion,
 }: ProcessSourceFilesArgs): Promise<void> {
   const validationError = validateInput({
     jsFilePath,
@@ -43,7 +47,9 @@ export async function processSourceFiles({
     pathForUpload,
     storeType,
     cliVersion,
+    appVersion,
     templateBundleID,
+    templateAppVersion,
   });
   if (validationError) {
     console.error('Input Validation Error: ', validationError);
@@ -55,13 +61,32 @@ export async function processSourceFiles({
     let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
     let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
 
+    // inject the appVersion into the source code
+    // for that, generate a 20 chars long appVersion by adding leading spaces to the appVersion
+    // if it is less than 20 chars long
+    const appVersionLength = appVersion.length;
+    if (appVersionLength < 20) {
+      appVersion = appVersion.padStart(20, ' ');
+    }
+    let newJsContent = jsContent.replace(templateAppVersion, appVersion);
+    let newMapContent = mapContent.replace(templateAppVersion, appVersion);
+
+    if (newJsContent === jsContent || newMapContent === mapContent) {
+      console.error('Template App version not found in the source code');
+      process.exit(1); // Exit with error code
+    }
+
+    // save the content to the base vars for later processing
+    jsContent = newJsContent;
+    mapContent = newMapContent;
+
     // generate 32 chars long hash from the js content using md5
     const bundleID = crypto.createHash('md5').update(jsContent).digest('hex');
     console.log(`Generated bundleID ${bundleID}`);
 
     // replace the injected template bundle ID with the generated bundle ID in the source code
-    const newJsContent = jsContent.replace(templateBundleID, bundleID);
-    const newMapContent = mapContent.replace(templateBundleID, bundleID);
+    newJsContent = jsContent.replace(templateBundleID, bundleID);
+    newMapContent = mapContent.replace(templateBundleID, bundleID);
 
     if (newJsContent === jsContent || newMapContent === mapContent) {
       console.error('Template bundle ID not found in the source code');
