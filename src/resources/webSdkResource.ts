@@ -3,16 +3,13 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
 import {
   EMBRACE_SERVICE_NAME,
-  TEMPLATE_APP_VERSION,
-  TEMPLATE_BUNDLE_ID,
   NATIVE_FRAMEWORK,
   SDK_VERSION,
+  TEMPLATE_APP_VERSION,
+  TEMPLATE_BUNDLE_ID,
 } from './constants/index.js';
-import { GetWebSDKResourceArgs } from './types.js';
 
-export const getWebSDKResource = ({
-  appVersion: providedAppVersion,
-}: GetWebSDKResourceArgs) => {
+export const getWebSDKResource = () => {
   /* We need to trim the app  version to remove any leading/trailing spaces
   added by our cli tool. This is required to guarantee that the version is always
   20 characters long in the final bundle, so sourcemaps don't get confused by
@@ -21,7 +18,7 @@ export const getWebSDKResource = ({
   different lengths, pushing the sourcemaps mapping out of range. Instead,
   "               0.0.1" and "             0.0.115" are both 20 characters long,
   and we trim them before loading at runtime */
-  const appVersion = providedAppVersion || TEMPLATE_APP_VERSION.trim();
+  const appVersion = TEMPLATE_APP_VERSION.trim();
   let resource = new Resource({
     [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
     app_version: appVersion,
