@@ -4,11 +4,7 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
 } from '@opentelemetry/semantic-conventions';
 import { Logger, SeverityNumber } from '@opentelemetry/api-logs';
-import {
-  EMB_TYPES,
-  KEY_EMB_TYPE,
-  KEY_JS_EXCEPTION_STACKTRACE,
-} from '../../constants/index.js';
+import { KEY_JS_EXCEPTION_STACKTRACE } from '../../constants/index.js';
 import { EmbraceLogRecord, ExceptionEvent, isExceptionEvent } from './types.js';
 
 /**
@@ -44,7 +40,6 @@ export class EmbraceSpanEventExceptionToLogProcessor implements SpanProcessor {
       body: event.attributes[ATTR_EXCEPTION_MESSAGE],
       attributes: {
         ...event.attributes,
-        [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
         [KEY_JS_EXCEPTION_STACKTRACE]:
           event.attributes[ATTR_EXCEPTION_STACKTRACE],
       },
