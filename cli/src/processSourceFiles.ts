@@ -67,6 +67,11 @@ export async function processSourceFiles({
       console.error('Template bundle ID not found in the source code');
       process.exit(1); // Exit with error code
     }
+    console.log(
+      replaceBundleID && !dryRun
+        ? 'Replacing the template bundle ID with the generated bundle ID'
+        : 'Dry run mode, not replacing the template bundle ID'
+    );
     // write the updated source code back to the file
     if (!dryRun && replaceBundleID) {
       fs.writeFileSync(jsFilePath, newJsContent, fileEncoding);
