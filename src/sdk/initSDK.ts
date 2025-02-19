@@ -12,7 +12,6 @@ import {
   SpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { B3Propagator } from '@opentelemetry/propagator-b3';
 import {
   ContextManager,
   metrics,
@@ -43,7 +42,6 @@ import {
 } from '../exporters/index.js';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { session, SpanSessionManager } from '../api-sessions/index.js';
-import { CompositePropagator } from '@opentelemetry/core';
 import {
   MeterProvider,
   MetricReader,
@@ -118,7 +116,7 @@ export const initSDK = ({
   const userManager = setupUser();
   // We initialize LocalStorageUserInstrumentation outside of the setupInstrumentation function to ensure that the
   // userManager is enabled and the LocalStorageUserInstrumentation provides a valid userID before the EmbraceHeaders
-  // are added to the diferent exporters. Embrace headers depend on the userID (aka device ID) to be set.
+  // are added to the different exporters. Embrace headers depend on the userID (aka device ID) to be set.
   // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
   //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
   //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
@@ -154,7 +152,7 @@ export const initSDK = ({
     loggerProvider,
     resource: resourceWithWebSDKAttributes,
   });
-  // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how otel works wrt the dependencies between instrumentations and global providers.
+  // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt the dependencies between instrumentations and global providers.
   // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
   setupInstrumentation({
     instrumentations,
@@ -270,12 +268,7 @@ const setupTraces = ({
 
   tracerProvider.register({
     ...(!!contextManager && { contextManager: contextManager }),
-    // todo why do we need B3Propagator? do the auto instrumentation libraries depend on them? copied from otel docs
-    propagator: propagator
-      ? new CompositePropagator({
-          propagators: [propagator, new B3Propagator()],
-        })
-      : new B3Propagator(),
+    propagator: propagator,
   });
   trace.setGlobalTracerProvider(tracerProvider);
 
