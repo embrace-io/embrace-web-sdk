@@ -108,9 +108,30 @@ const App = () => {
     req.send();
   };
 
-  const handleThrowError = () => {
+  // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
+  function handleThrowError() {
+    handleThrowErrorA(true);
+  }
+
+  function handleThrowErrorA(useBranchB: boolean) {
+    if (useBranchB) {
+      handleThrowErrorB();
+    } else {
+      handleThrowErrorD();
+    }
+  }
+
+  function handleThrowErrorB() {
+    handleThrowErrorC();
+  }
+
+  function handleThrowErrorC() {
+    handleThrowErrorA(false);
+  }
+
+  function handleThrowErrorD() {
     throw new Error('This is an error');
-  };
+  }
 
   const handleRejectPromise = () => {
     return new Promise((_, reject) => {
