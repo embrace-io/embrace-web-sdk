@@ -52,6 +52,7 @@ import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalS
 import { EmbraceUserManager } from '../instrumentations/user/index.js';
 import { user, UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
+import { isValidAppID } from './utils.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -237,30 +238,28 @@ const setupTraces = ({
   }
 
   if (exporters.includes('embrace')) {
-    if (appID === undefined) {
-      throw new Error('appID is required when using Embrace exporter');
-    }
-    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
-    if (!enduserPseudoID) {
-      throw new Error('userID is required when using Embrace exporter');
-    }
-    const embraceTraceExporter = new EmbraceTraceExporter({
-      appID,
-      userID: enduserPseudoID,
-    });
-    const embraceSessionBatchedProcessor =
-      new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
-    const embraceSpanEventExceptionToLogProcessor =
-      new EmbraceSpanEventExceptionToLogProcessor(
-        loggerProvider.getLogger('exceptions')
-      );
-    const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
+    if (isValidAppID(appID)) {
+      const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+      if (!enduserPseudoID) {
+        throw new Error('userID is required when using Embrace exporter');
+      }
+      const embraceTraceExporter = new EmbraceTraceExporter({
+        appID,
+        userID: enduserPseudoID,
+      });
+      const embraceSessionBatchedProcessor =
+        new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
+      const embraceSpanEventExceptionToLogProcessor =
+        new EmbraceSpanEventExceptionToLogProcessor(
+          loggerProvider.getLogger('exceptions')
+        );
+      const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
 
-    finalSpanProcessors.push(embraceNetworkSpanProcessor);
-    finalSpanProcessors.push(embraceSessionBatchedProcessor);
-    finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
+      finalSpanProcessors.push(embraceNetworkSpanProcessor);
+      finalSpanProcessors.push(embraceSessionBatchedProcessor);
+      finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
+    }
   }
-
   const tracerProvider = new WebTracerProvider({
     resource,
     spanProcessors: finalSpanProcessors,
@@ -310,19 +309,17 @@ const setupLogs = ({
   }
 
   if (exporters.includes('embrace')) {
-    if (appID === undefined) {
-      throw new Error('appID is required when using Embrace exporter');
+    if (isValidAppID(appID)) {
+      const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+      if (!enduserPseudoID) {
+        throw new Error('userID is required when using Embrace exporter');
+      }
+      const embraceLogsExporter = new EmbraceLogExporter({
+        appID,
+        userID: enduserPseudoID,
+      });
+      finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
     }
-    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
-    if (!enduserPseudoID) {
-      throw new Error('userID is required when using Embrace exporter');
-    }
-    const embraceLogsExporter = new EmbraceLogExporter({
-      appID,
-      userID: enduserPseudoID,
-    });
-
-    finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
   }
 
   for (const logProcessor of finalLogProcessors) {
