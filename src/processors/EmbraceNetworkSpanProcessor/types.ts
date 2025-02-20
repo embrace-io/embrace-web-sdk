@@ -25,14 +25,15 @@ interface NetworkSpan extends ReadableSpan {
   attributes: NetworkSpanAttributes;
 }
 
+const NETWORK_INSTRUMENTATION_LIBRARIES = [
+  '@opentelemetry/instrumentation-xml-http-request',
+  '@opentelemetry/instrumentation-fetch',
+];
+
 export const isNetworkSpan = (
   span: ReadableSpan | NetworkSpan
-): span is NetworkSpan => {
-  return (
-    span.attributes[SEMATTRS_HTTP_METHOD] !== undefined ||
-    span.attributes[ATTR_HTTP_REQUEST_METHOD] !== undefined
-  );
-};
+): span is NetworkSpan =>
+  NETWORK_INSTRUMENTATION_LIBRARIES.includes(span.instrumentationLibrary.name);
 
 // not used yet, but added for clarity. This is the type for Embrace tagged network spans
 // interface EmbraceNetworkSpanAttributes extends Attributes {
