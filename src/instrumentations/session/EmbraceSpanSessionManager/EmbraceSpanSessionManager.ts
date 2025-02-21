@@ -27,17 +27,24 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       this.endSessionSpan();
     }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
-    this._sessionSpan = tracer.startSpan('emb-session');
     this._activeSessionId = generateUUID();
-    this._sessionSpan.setAttributes({
-      [KEY_EMB_TYPE]: EMB_TYPES.Session,
-      [KEY_EMB_STATE]: EMB_STATES.Foreground,
-      [ATTR_SESSION_ID]: this._activeSessionId,
+    this._sessionSpan = tracer.startSpan('emb-session', {
+      attributes: {
+        [KEY_EMB_TYPE]: EMB_TYPES.Session,
+        [KEY_EMB_STATE]: EMB_STATES.Foreground,
+        [ATTR_SESSION_ID]: this._activeSessionId,
+      },
     });
   }
 
   endSessionSpan() {
-    this._sessionSpan?.end();
+    if (!this._sessionSpan) {
+      console.log(
+        'trying to end a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.end();
     this._sessionSpan = null;
     this._activeSessionId = null;
   }
