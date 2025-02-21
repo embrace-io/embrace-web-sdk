@@ -4,13 +4,10 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_URL_FULL,
   SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_STATUS_CODE,
+  SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import {
-  ATTR_HTTP_STATUS_CODE,
-  ATTR_HTTP_URL,
-  ATTR_HTTP_METHOD,
-} from '@opentelemetry/semantic-conventions/incubating';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,
@@ -39,12 +36,12 @@ export const isNetworkSpan = (
 ): span is NetworkSpan => {
   if (
     (span.attributes[ATTR_HTTP_REQUEST_METHOD] ||
-      span.attributes[ATTR_HTTP_METHOD]) &&
+      span.attributes[SEMATTRS_HTTP_METHOD]) &&
     (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ||
-      span.attributes[ATTR_HTTP_STATUS_CODE])
+      span.attributes[SEMATTRS_HTTP_STATUS_CODE])
   ) {
     const url =
-      span.attributes[ATTR_URL_FULL] || span.attributes[ATTR_HTTP_URL];
+      span.attributes[ATTR_URL_FULL] || span.attributes[SEMATTRS_HTTP_URL];
 
     return !!(url && typeof url === 'string' && url.match(SCHEME_RE));
   }

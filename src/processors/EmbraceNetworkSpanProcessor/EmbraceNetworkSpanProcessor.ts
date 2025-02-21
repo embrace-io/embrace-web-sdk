@@ -2,17 +2,15 @@ import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import { isNetworkSpan } from './types.js';
 
-import {
-  ATTR_HTTP_METHOD,
-  ATTR_HTTP_RESPONSE_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-  ATTR_HTTP_STATUS_CODE,
-  ATTR_HTTP_URL,
-} from '@opentelemetry/semantic-conventions/incubating';
+import { ATTR_HTTP_RESPONSE_BODY_SIZE } from '@opentelemetry/semantic-conventions/incubating';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_URL_FULL,
+  SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_STATUS_CODE,
+  SEMATTRS_HTTP_URL,
+  SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
 } from '@opentelemetry/semantic-conventions';
 
 /**
@@ -32,13 +30,13 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
         Fallback on deprecated attribute names in case the span is using those
         instead of the latest ones
        */
-      span.attributes[ATTR_URL_FULL] ??= span.attributes[ATTR_HTTP_URL];
+      span.attributes[ATTR_URL_FULL] ??= span.attributes[SEMATTRS_HTTP_URL];
       span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
-        span.attributes[ATTR_HTTP_STATUS_CODE];
+        span.attributes[SEMATTRS_HTTP_STATUS_CODE];
       span.attributes[ATTR_HTTP_REQUEST_METHOD] ??=
-        span.attributes[ATTR_HTTP_METHOD];
+        span.attributes[SEMATTRS_HTTP_METHOD];
       span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??=
-        span.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH];
+        span.attributes[SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH];
     }
   }
 
