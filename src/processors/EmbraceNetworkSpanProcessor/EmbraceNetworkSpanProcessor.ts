@@ -31,8 +31,11 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
       span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
 
       /*
-        Fallback on deprecated attribute names in case the span is using those
-        instead of the latest ones
+        Fallback on deprecated attribute names in case the span is using those instead of the latest ones
+
+        The current versions of @opentelemetry/instrumentation-xml-http-request and @opentelemetry/instrumentation-fetch
+        that we're getting from @opentelemetry/auto-instrumentations-web are using these, once we update we'll remove
+        this fallback and only support a single version of the semantic convention
        */
       span.attributes[ATTR_URL_FULL] ??= span.attributes[SEMATTRS_HTTP_URL];
       span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
