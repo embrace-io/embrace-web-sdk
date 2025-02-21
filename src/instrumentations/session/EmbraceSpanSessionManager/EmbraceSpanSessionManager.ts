@@ -22,6 +22,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   }
 
   startSessionSpan() {
+    //if there was a session in progress already, finish it first.
+    if (this._sessionSpan) {
+      this.endSessionSpan();
+    }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._sessionSpan = tracer.startSpan('emb-session');
     this._activeSessionId = generateUUID();
