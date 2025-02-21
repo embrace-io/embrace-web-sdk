@@ -43,7 +43,6 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
         code: SpanStatusCode.ERROR,
       });
       currentSessionSpan.recordException(error);
-      currentSessionSpan.end();
     };
 
     if (this._config.enabled) {
