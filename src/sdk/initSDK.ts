@@ -115,52 +115,57 @@ export const initSDK = ({
   logProcessors = [],
   metricReaders = [],
 }: SDKInitConfig = {}) => {
-  const userManager = setupUser();
-  // We initialize LocalStorageUserInstrumentation outside of the setupInstrumentation function to ensure that the
-  // userManager is enabled and the LocalStorageUserInstrumentation provides a valid userID before the EmbraceHeaders
-  // are added to the different exporters. Embrace headers depend on the userID (aka device ID) to be set.
-  // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
-  //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
-  //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
-  new LocalStorageUserInstrumentation();
+  try {
+    const userManager = setupUser();
+    // We initialize LocalStorageUserInstrumentation outside of the setupInstrumentation function to ensure that the
+    // userManager is enabled and the LocalStorageUserInstrumentation provides a valid userID before the EmbraceHeaders
+    // are added to the different exporters. Embrace headers depend on the userID (aka device ID) to be set.
+    // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
+    //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
+    //  to first add the ability to delegate the retrival of headers to a callback to the base OTel implementation
+    new LocalStorageUserInstrumentation();
 
-  const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
+    const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
-  const spanSessionManager = setupSession();
+    const spanSessionManager = setupSession();
 
-  const meterProvider = setupMetrics({
-    resource: resourceWithWebSDKAttributes,
-    exporters,
-    readers: metricReaders,
-  });
+    const meterProvider = setupMetrics({
+      resource: resourceWithWebSDKAttributes,
+      exporters,
+      readers: metricReaders,
+    });
 
-  const loggerProvider = setupLogs({
-    appID,
-    userManager,
-    resource: resourceWithWebSDKAttributes,
-    exporters,
-    logProcessors,
-    spanSessionManager,
-  });
+    const loggerProvider = setupLogs({
+      appID,
+      userManager,
+      resource: resourceWithWebSDKAttributes,
+      exporters,
+      logProcessors,
+      spanSessionManager,
+    });
 
-  setupTraces({
-    appID,
-    userManager,
-    exporters,
-    spanSessionManager,
-    propagator,
-    contextManager,
-    spanProcessors,
-    loggerProvider,
-    resource: resourceWithWebSDKAttributes,
-  });
-  // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt the dependencies between instrumentations and global providers.
-  // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
-  setupInstrumentation({
-    instrumentations,
-    spanSessionManager,
-    meterProvider,
-  });
+    setupTraces({
+      appID,
+      userManager,
+      exporters,
+      spanSessionManager,
+      propagator,
+      contextManager,
+      spanProcessors,
+      loggerProvider,
+      resource: resourceWithWebSDKAttributes,
+    });
+    // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt the dependencies between instrumentations and global providers.
+    // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
+    setupInstrumentation({
+      instrumentations,
+      spanSessionManager,
+      meterProvider,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error.';
+    console.error(`failed to initialize the SDK: ${message}`);
+  }
 };
 
 interface SetupTracesArgs {
