@@ -102,6 +102,13 @@ const App = () => {
       method: 'GET',
     });
   };
+
+  const handleSendFetchNetworkRequest404 = () => {
+    void fetch('https://example.com/sdk/auto/interception', {
+      method: 'GET',
+    });
+  };
+
   const handleSendXMLNetworkRequest = () => {
     const req = new XMLHttpRequest();
     req.open('GET', POKEMON_URL, true);
@@ -183,6 +190,9 @@ const App = () => {
         </button>
         <button onClick={handleSendFetchNetworkRequest}>
           Send a Fetch Network Request
+        </button>
+        <button onClick={handleSendFetchNetworkRequest404}>
+          Send a Fetch Network Request (404)
         </button>
         <button disabled={!!counter} onClick={handleCreateCounter}>
           {counter ? 'counter created' : 'Create Counter'}

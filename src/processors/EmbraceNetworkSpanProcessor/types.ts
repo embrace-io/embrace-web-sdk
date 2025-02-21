@@ -1,7 +1,11 @@
 import { Attributes, AttributeValue } from '@opentelemetry/api';
 import {
   ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_FULL,
   SEMATTRS_HTTP_METHOD,
+  SEMATTRS_HTTP_STATUS_CODE,
+  SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
 import { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
@@ -25,13 +29,24 @@ interface NetworkSpan extends ReadableSpan {
   attributes: NetworkSpanAttributes;
 }
 
+const SCHEME_RE = /.+:\/\/.+/;
+
 export const isNetworkSpan = (
   span: ReadableSpan | NetworkSpan
 ): span is NetworkSpan => {
-  return (
-    span.attributes[SEMATTRS_HTTP_METHOD] !== undefined ||
-    span.attributes[ATTR_HTTP_REQUEST_METHOD] !== undefined
-  );
+  if (
+    (span.attributes[ATTR_HTTP_REQUEST_METHOD] ||
+      span.attributes[SEMATTRS_HTTP_METHOD]) &&
+    (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ||
+      span.attributes[SEMATTRS_HTTP_STATUS_CODE])
+  ) {
+    const url =
+      span.attributes[ATTR_URL_FULL] || span.attributes[SEMATTRS_HTTP_URL];
+
+    return !!(url && typeof url === 'string' && url.match(SCHEME_RE));
+  }
+
+  return false;
 };
 
 // not used yet, but added for clarity. This is the type for Embrace tagged network spans
