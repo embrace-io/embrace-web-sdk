@@ -27,12 +27,17 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   onEnd(span: ReadableSpan): void {
     if (isNetworkSpan(span)) {
       span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
-      span.attributes[ATTR_URL_FULL] = span.attributes[ATTR_HTTP_URL];
-      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] =
+
+      /*
+        Fallback on deprecated attribute names in case the span is using those
+        instead of the latest ones
+       */
+      span.attributes[ATTR_URL_FULL] ??= span.attributes[ATTR_HTTP_URL];
+      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
         span.attributes[ATTR_HTTP_STATUS_CODE];
-      span.attributes[ATTR_HTTP_REQUEST_METHOD] =
+      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??=
         span.attributes[ATTR_HTTP_METHOD];
-      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] =
+      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??=
         span.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH];
     }
   }
