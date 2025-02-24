@@ -1,41 +1,27 @@
-import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import {
+  InstrumentationConfig,
+  InstrumentationModuleDefinition,
+} from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { session, SpanSessionManager } from '../../../api-sessions/index.js';
 
-export class SpanSessionInstrumentation extends InstrumentationBase {
-  private readonly _onVisibilityChange: (event: Event) => void;
+export abstract class SpanSessionInstrumentation<
+  ConfigType extends InstrumentationConfig = InstrumentationConfig,
+> extends InstrumentationBase<ConfigType> {
   private readonly _sessionManager: SpanSessionManager;
 
-  constructor() {
-    super('SpanSessionInstrumentation', '1.0.0', {});
+  constructor(
+    instrumentationName: string,
+    instrumentationVersion: string,
+    config: ConfigType
+  ) {
+    super(instrumentationName, instrumentationVersion, config);
     this._sessionManager = session.getSpanSessionManager();
-    this._onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        this.sessionManager.endSessionSpan();
-      } else {
-        this.sessionManager.startSessionSpan();
-      }
-    };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   /* Returns session provider */
   protected get sessionManager(): SpanSessionManager {
     return this._sessionManager;
-  }
-
-  disable(): void {
-    this.sessionManager.endSessionSpan();
-
-    window.removeEventListener('visibilitychange', this._onVisibilityChange);
-  }
-
-  enable(): void {
-    this.sessionManager.startSessionSpan();
-    window.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   // no-op

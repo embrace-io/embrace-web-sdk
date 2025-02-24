@@ -1,6 +1,6 @@
 export {
   EmbraceSpanSessionManager,
-  SpanSessionInstrumentation,
+  SpanSessionVisibilityInstrumentation,
   SessionSpanAttributes,
   SessionSpan,
 } from './session/index.js';
