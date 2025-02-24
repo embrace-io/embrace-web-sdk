@@ -32,9 +32,11 @@ export class ClicksInstrumentation extends InstrumentationBase {
 
   /**
    * Creates a new span event
-   * @param element
+   * @param event
    */
-  private _createSpanEvent(element: EventTarget | null | undefined) {
+  private _createSpanEvent(event: MouseEvent) {
+    const element = event.target;
+
     if (!(element instanceof HTMLElement)) {
       return undefined;
     }
@@ -52,6 +54,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
           {
             'emb.type': 'ux.tap',
             'view.name': getHTMLElementFriendlyName(element),
+            'tap.coords': `${event.x},${event.y}`,
           },
           Date.now()
         );
@@ -63,7 +66,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
   }
 
   private _clickEventListener(ev: MouseEvent) {
-    this._createSpanEvent(ev.target);
+    this._createSpanEvent(ev);
   }
 
   enable(): void {
