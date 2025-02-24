@@ -11,9 +11,9 @@ import {
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.js';
 import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
-import { withErrorFallback } from '../../../utils/withErrorFallback.js';
+import { withErrorFallback } from '../../../utils/index.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
