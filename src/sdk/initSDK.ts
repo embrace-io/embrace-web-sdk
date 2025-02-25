@@ -57,6 +57,7 @@ import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcess
 import { isValidAppID } from './utils.js';
 import { SpanSessionOnLoadInstrumentation } from '../instrumentations/session/SpanSessionOnLoadInstrumentation/index.js';
 import { SpanSessionBrowserActivityInstrumentation } from '../instrumentations/session/SpanSessionBrowserActivityInstrumentation/index.js';
+import { SpanSessionTimeoutInstrumentation } from '../instrumentations/session/SpanSessionTimeoutInstrumentation/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -376,6 +377,7 @@ const setupInstrumentation = ({
       new SpanSessionVisibilityInstrumentation(),
       new ClicksInstrumentation(),
       new SpanSessionBrowserActivityInstrumentation(),
+      new SpanSessionTimeoutInstrumentation(),
     ],
   });
 };

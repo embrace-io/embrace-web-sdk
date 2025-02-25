@@ -2,7 +2,7 @@ import styles from './App.module.css';
 
 import { Counter, metrics, Span, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { session } from '@embraceio/embrace-web-sdk';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
@@ -12,6 +12,19 @@ const sessionProvider = session.getSpanSessionManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
+  const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [sessionRefresher, setSessionRefresher] = useState<
+    number | undefined
+  >();
+
+  useEffect(() => {
+    setSessionRefresher(
+      window.setInterval(() => {
+        setCurrentSession(sessionProvider.getSessionId());
+      }, 1000)
+    );
+    return () => window.clearInterval(sessionRefresher);
+  }, []);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -144,6 +157,7 @@ const App = () => {
     <>
       <div className={styles.container}>
         Demo
+        <div>current session: {currentSession}</div>
         <div className={styles.actions}>
           <button
             onClick={handleStartSessionSpan}
