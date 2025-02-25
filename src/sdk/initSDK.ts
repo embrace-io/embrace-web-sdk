@@ -54,6 +54,7 @@ import { user, UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
 import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcessor/index.js';
 import { isValidAppID } from './utils.js';
+import { ClicksInstrumentation } from '../instrumentations/clicks/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -344,6 +345,14 @@ interface SetupInstrumentationArgs {
   meterProvider: MeterProvider;
 }
 
+const setupWebAutoInstrumentations = () =>
+  getWebAutoInstrumentations({
+    // Covered by our ClicksInstrumentation
+    '@opentelemetry/instrumentation-user-interaction': {
+      enabled: false,
+    },
+  });
+
 const setupInstrumentation = ({
   instrumentations = null,
   spanSessionManager,
@@ -353,7 +362,7 @@ const setupInstrumentation = ({
   // returns a callback to disable instrumentations, but we are ignoring it atm
   registerInstrumentations({
     instrumentations: [
-      instrumentations ? instrumentations : getWebAutoInstrumentations(),
+      instrumentations ? instrumentations : setupWebAutoInstrumentations(),
       new WebVitalsInstrumentation({
         spanSessionManager: spanSessionManager,
         meterProvider,
@@ -362,6 +371,9 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
       }),
       new SpanSessionInstrumentation(),
+      new ClicksInstrumentation({
+        spanSessionManager: spanSessionManager,
+      }),
     ],
   });
 };
