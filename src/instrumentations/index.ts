@@ -8,6 +8,7 @@ export {
   GlobalExceptionInstrumentation,
   GlobalExceptionInstrumentationArgs,
 } from './exceptions/index.js';
+export { ClicksInstrumentation } from './clicks/index.js';
 export {
   WebVitalsInstrumentation,
   EMB_WEB_VITALS_PREFIX,
