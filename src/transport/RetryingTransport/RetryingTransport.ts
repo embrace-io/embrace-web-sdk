@@ -9,6 +9,7 @@ import {
   MAX_ATTEMPTS,
   MAX_BACKOFF,
 } from './constants.js';
+import { getNowMilis } from '../../utils/getNowHRTime/getNowHRTime.js';
 
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]
@@ -23,7 +24,7 @@ export class RetryingTransport implements IExporterTransport {
   constructor(private _transport: IExporterTransport) {}
 
   async send(data: Uint8Array, timeoutMillis: number): Promise<ExportResponse> {
-    const deadline = Date.now() + timeoutMillis;
+    const deadline = getNowMilis() + timeoutMillis;
     let result = await this._transport.send(data, timeoutMillis);
     let attempts = MAX_ATTEMPTS;
     let nextBackoff = INITIAL_BACKOFF;
@@ -40,7 +41,7 @@ export class RetryingTransport implements IExporterTransport {
       const retryInMillis = result.retryInMillis ?? backoff;
 
       // return when expected retry time is after the export deadline.
-      const remainingTimeoutMillis = deadline - Date.now();
+      const remainingTimeoutMillis = deadline - getNowMilis();
       if (retryInMillis > remainingTimeoutMillis) {
         return result;
       }
