@@ -258,7 +258,9 @@ const setupTraces = ({
         userID: enduserPseudoID,
       });
       const embraceSessionBatchedProcessor =
-        new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
+        new EmbraceSessionBatchedSpanProcessor({
+          exporter: embraceTraceExporter,
+        });
       const embraceSpanEventExceptionToLogProcessor =
         new EmbraceSpanEventExceptionToLogProcessor(
           loggerProvider.getLogger('exceptions')
