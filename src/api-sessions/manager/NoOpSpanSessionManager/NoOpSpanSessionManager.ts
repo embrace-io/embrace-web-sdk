@@ -17,4 +17,6 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   startSessionSpan(): void {}
 
   endSessionSpan(): void {}
+
+  endSessionSpanInternal(): void {}
 }

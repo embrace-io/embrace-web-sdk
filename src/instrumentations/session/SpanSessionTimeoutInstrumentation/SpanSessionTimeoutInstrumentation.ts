@@ -33,6 +33,7 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     if (this._sessionTimeout) {
       clearTimeout(this._sessionTimeout);
     }
+    this.sessionManager.endSessionSpanInternal('max_time_reached');
     this.sessionManager.startSessionSpan();
     // set a new check in TIMEOUT_TIME for the session we just started
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);

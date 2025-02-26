@@ -36,7 +36,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
       clearTimeout(this._activityTimeout);
     }
     this._activityTimeout = null;
-    this.sessionManager.endSessionSpan();
+    this.sessionManager.endSessionSpanInternal('inactivity');
   };
 
   _onActivity = () => {

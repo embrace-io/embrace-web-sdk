@@ -1,4 +1,4 @@
-import { SpanSessionManager } from '../types.js';
+import { ReasonSessionEnded, SpanSessionManager } from '../types.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
 import { HrTime } from '@opentelemetry/api';
 
@@ -33,5 +33,9 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   endSessionSpan() {
     this.getDelegate().endSessionSpan();
+  }
+
+  endSessionSpanInternal(reason: ReasonSessionEnded) {
+    this.getDelegate().endSessionSpanInternal(reason);
   }
 }
