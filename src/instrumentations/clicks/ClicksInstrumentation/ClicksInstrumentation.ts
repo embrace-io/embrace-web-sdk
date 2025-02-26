@@ -13,68 +13,61 @@
 
 import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session, SpanSessionManager } from '../../../api-sessions/index.js';
 
-import { ClicksInstrumentationArgs } from './types.js';
 import { getHTMLElementFriendlyName } from './utils.js';
 
 export class ClicksInstrumentation extends InstrumentationBase {
   private readonly _spanSessionManager: SpanSessionManager;
+  private readonly _onClickHandler: (event: MouseEvent) => void;
 
-  constructor({ spanSessionManager }: ClicksInstrumentationArgs) {
+  constructor() {
     super('ClicksInstrumentation', '1.0.0', {});
-    this._spanSessionManager = spanSessionManager;
+    this._spanSessionManager = session.getSpanSessionManager();
+
+    this._onClickHandler = (event: MouseEvent) => {
+      const element = event.target;
+
+      if (!(element instanceof HTMLElement)) {
+        return;
+      }
+      if (!element.getAttribute) {
+        return;
+      }
+      if (element.hasAttribute('disabled')) {
+        return;
+      }
+      try {
+        const currentSessionSpan = this._spanSessionManager.getSessionSpan();
+        if (currentSessionSpan) {
+          currentSessionSpan.addEvent(
+            'click',
+            {
+              'emb.type': 'ux.tap',
+              'view.name': getHTMLElementFriendlyName(element),
+              'tap.coords': `${event.x},${event.y}`,
+            },
+            Date.now()
+          );
+        }
+      } catch (e) {
+        this._diag.error('failed to create new user interaction span event', e);
+      }
+    };
 
     if (this._config.enabled) {
       this.enable();
     }
   }
 
-  /**
-   * Creates a new span event
-   * @param event
-   */
-  private _createSpanEvent(event: MouseEvent) {
-    const element = event.target;
-
-    if (!(element instanceof HTMLElement)) {
-      return undefined;
-    }
-    if (!element.getAttribute) {
-      return undefined;
-    }
-    if (element.hasAttribute('disabled')) {
-      return undefined;
-    }
-    try {
-      const currentSessionSpan = this._spanSessionManager.getSessionSpan();
-      if (currentSessionSpan) {
-        currentSessionSpan.addEvent(
-          'click',
-          {
-            'emb.type': 'ux.tap',
-            'view.name': getHTMLElementFriendlyName(element),
-            'tap.coords': `${event.x},${event.y}`,
-          },
-          Date.now()
-        );
-        this._spanSessionManager.endSessionSpan();
-      }
-    } catch (e) {
-      this._diag.error('failed to create new user interaction span event', e);
-    }
-  }
-
-  private _clickEventListener(ev: MouseEvent) {
-    this._createSpanEvent(ev);
-  }
-
   enable(): void {
-    document.addEventListener('click', this._clickEventListener.bind(this));
+    document.addEventListener('click', this._onClickHandler);
   }
 
   disable(): void {
-    document.removeEventListener('click', this._clickEventListener.bind(this));
+    if (this._onClickHandler) {
+      document.removeEventListener('click', this._onClickHandler);
+    }
   }
 
   // no-op

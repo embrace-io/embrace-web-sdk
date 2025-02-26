@@ -5,6 +5,7 @@ import {
   GlobalExceptionInstrumentation,
   SpanSessionInstrumentation,
   WebVitalsInstrumentation,
+  ClicksInstrumentation,
 } from '../instrumentations/index.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import {
@@ -54,7 +55,6 @@ import { user, UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
 import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcessor/index.js';
 import { isValidAppID } from './utils.js';
-import { ClicksInstrumentation } from '../instrumentations/clicks/index.js';
 
 type Exporter = 'otlp' | 'embrace';
 
@@ -371,9 +371,7 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
       }),
       new SpanSessionInstrumentation(),
-      new ClicksInstrumentation({
-        spanSessionManager: spanSessionManager,
-      }),
+      new ClicksInstrumentation(),
     ],
   });
 };
