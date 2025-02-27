@@ -1,11 +1,11 @@
 import { Resource } from '@opentelemetry/resources';
 import { getWebSDKResource } from '../resources/index.js';
 import {
+  ClicksInstrumentation,
   EmbraceSpanSessionManager,
   GlobalExceptionInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
-  ClicksInstrumentation,
 } from '../instrumentations/index.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import {
@@ -363,6 +363,7 @@ const setupInstrumentation = ({
   // returns a callback to disable instrumentations, but we are ignoring it atm
   registerInstrumentations({
     instrumentations: [
+      new SpanSessionOnLoadInstrumentation(),
       instrumentations ? instrumentations : setupWebAutoInstrumentations(),
       new WebVitalsInstrumentation({
         spanSessionManager: spanSessionManager,
@@ -372,7 +373,6 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
       }),
       new SpanSessionVisibilityInstrumentation(),
-      new SpanSessionOnLoadInstrumentation(),
       new ClicksInstrumentation(),
     ],
   });
