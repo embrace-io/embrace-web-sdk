@@ -9,7 +9,7 @@ export class SpanSessionOnLoadInstrumentation extends SpanSessionInstrumentation
   }
 
   disable(): void {
-    this.sessionManager.endSessionSpan();
+    this.sessionManager.endSessionSpanInternal('unknown');
   }
 
   enable(): void {
