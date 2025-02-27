@@ -1,4 +1,4 @@
-import { Span, trace } from '@opentelemetry/api';
+import { HrTime, Span, trace } from '@opentelemetry/api';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -7,14 +7,19 @@ import {
 } from '../../../constants/index.js';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { type SpanSessionManager } from '../../../api-sessions/index.js';
-import { generateUUID } from '../../../utils/index.js';
+import { generateUUID, getNowHRTime } from '../../../utils/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
+  private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
 
   getSessionId(): string | null {
     return this._activeSessionId;
+  }
+
+  getSessionStartTime(): HrTime | null {
+    return this._activeSessionStartTime;
   }
 
   getSessionSpan(): Span | null {
@@ -28,6 +33,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
+    this._activeSessionStartTime = getNowHRTime();
     this._sessionSpan = tracer.startSpan('emb-session', {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,
@@ -46,6 +52,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     }
     this._sessionSpan.end();
     this._sessionSpan = null;
+    this._activeSessionStartTime = null;
     this._activeSessionId = null;
   }
 }

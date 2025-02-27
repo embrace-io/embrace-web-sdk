@@ -1,5 +1,6 @@
 import { SpanSessionManager } from '../types.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
+import { HrTime } from '@opentelemetry/api';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 
@@ -16,6 +17,10 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   getSessionId(): string | null {
     return this.getDelegate().getSessionId();
+  }
+
+  getSessionStartTime(): HrTime | null {
+    return this.getDelegate().getSessionStartTime();
   }
 
   getSessionSpan() {

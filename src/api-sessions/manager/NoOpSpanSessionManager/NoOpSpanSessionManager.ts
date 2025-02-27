@@ -1,5 +1,5 @@
 import { SpanSessionManager } from '../types.js';
-import { Span } from '@opentelemetry/api';
+import { HrTime, Span } from '@opentelemetry/api';
 
 export class NoOpSpanSessionManager implements SpanSessionManager {
   getSessionId(): string | null {
@@ -7,6 +7,10 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   }
 
   getSessionSpan(): Span | null {
+    return null;
+  }
+
+  getSessionStartTime(): HrTime | null {
     return null;
   }
 

@@ -7,6 +7,7 @@ import {
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
+  TimeoutRef,
   throttle,
 } from '../../../utils/index.js';
 
@@ -17,8 +18,8 @@ import {
  *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
+  private _activityTimeout: TimeoutRef | null;
   onActivity: () => void;
-  private _activityTimeout: ReturnType<typeof setTimeout> | null; // ReturnType<typeof setTimeout> === number
 
   constructor() {
     super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
