@@ -1,8 +1,13 @@
 import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
-import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
+import {
+  EVENT_THROTTLING_TIME_WINDOW,
+  TIMEOUT_TIME,
+  WINDOW_USER_EVENTS,
+} from './constants.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
+  throttle,
 } from '../../../utils/index.js';
 
 /**
@@ -12,17 +17,20 @@ import {
  *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
+  onActivity: () => void;
   private _activityTimeout: ReturnType<typeof setTimeout> | null; // ReturnType<typeof setTimeout> === number
 
   constructor() {
     super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
     this._activityTimeout = null;
+    this.onActivity = throttle(this._onActivity, EVENT_THROTTLING_TIME_WINDOW);
     if (this._config.enabled) {
       this.enable();
     }
   }
 
   onInactivity = () => {
+    console.log('Inactivity detected');
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
     }
@@ -30,7 +38,8 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     this.sessionManager.endSessionSpan();
   };
 
-  onActivity = () => {
+  _onActivity = () => {
+    console.log('Activity detected');
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
     }
