@@ -16,6 +16,7 @@ import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { session, SpanSessionManager } from '../../../api-sessions/index.js';
 
 import { getHTMLElementFriendlyName } from './utils.js';
+import { getNowMilis } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class ClicksInstrumentation extends InstrumentationBase {
   private readonly _spanSessionManager: SpanSessionManager;
@@ -47,7 +48,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
               'view.name': getHTMLElementFriendlyName(element),
               'tap.coords': `${event.x},${event.y}`,
             },
-            Date.now()
+            getNowMilis()
           );
         }
       } catch (e) {
