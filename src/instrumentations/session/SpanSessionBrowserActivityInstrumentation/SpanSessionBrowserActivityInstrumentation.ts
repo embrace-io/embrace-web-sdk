@@ -8,7 +8,8 @@ import {
 /**
  *  SpanSessionBrowserActivityInstrumentation will track the user activity and end the session span if there is no
  *  activity for a certain amount of time.
- *  SpanSessionBrowserActivityInstrumentation will NOT initialize new sessions if new activity is detected.
+ *  SpanSessionBrowserActivityInstrumentation will initialize new sessions if new activity is detected and there is no
+ *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
   private _activityTimeout: ReturnType<typeof setTimeout> | null; // ReturnType<typeof setTimeout> === number
@@ -29,9 +30,13 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     this.sessionManager.endSessionSpan();
   };
 
-  resetTimeout = () => {
+  onActivity = () => {
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
+    }
+    // if there was no active session, start one
+    if (!this.sessionManager.getSessionId()) {
+      this.sessionManager.startSessionSpan();
     }
     this._activityTimeout = setTimeout(this.onInactivity, TIMEOUT_TIME);
   };
@@ -40,7 +45,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     bulkRemoveEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this.resetTimeout,
+      callback: this.onActivity,
     });
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
@@ -52,8 +57,8 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     bulkAddEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this.resetTimeout,
+      callback: this.onActivity,
     });
-    this.resetTimeout();
+    this.onActivity();
   };
 }
