@@ -156,6 +156,11 @@ const App = () => {
             disabled={isSessionSpanStarted}>
             Start Session span
           </button>
+          <button
+            onClick={handleStartSessionSpan}
+            disabled={!isSessionSpanStarted}>
+            Override Session span
+          </button>
           <button onClick={handleEndSessionSpan}>End Session Span</button>
         </div>
         <button
