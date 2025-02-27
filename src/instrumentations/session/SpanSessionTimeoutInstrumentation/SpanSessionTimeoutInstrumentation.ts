@@ -33,7 +33,6 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     if (this._sessionTimeout) {
       clearTimeout(this._sessionTimeout);
     }
-    this.sessionManager.endSessionSpan();
     this.sessionManager.startSessionSpan();
     // set a new check in TIMEOUT_TIME for the session we just started
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);
@@ -60,6 +59,7 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
         clearTimeout(this._sessionTimeout);
       }
       this._sessionTimeout = setTimeout(this._checkTimeout, remainingTime);
+      return;
     }
     // if there is no currentSessionStartTime then there is no active session,
     //  check again in TIMEOUT_TIME in case a new one is started.
