@@ -14,6 +14,7 @@
     "sdk:test": "echo \"Error: no test specified\" && exit 1",
     "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "sdk:compile:esm": "tsc --build tsconfig.esm.json",
+    "sdk:compile:esm:watch": "tsc --build tsconfig.esm.json --watch",
     "sdk:compile:esnext": "tsc --build tsconfig.esnext.json",
     "sdk:compile:cjs": "tsc --build tsconfig.json",
     "sdk:lint:fix": "eslint --fix ./src"
