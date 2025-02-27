@@ -1,4 +1,4 @@
-import { HrTime, Span, trace } from '@opentelemetry/api';
+import { diag, DiagLogger, HrTime, Span, trace } from '@opentelemetry/api';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -15,6 +15,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
+  private _diag: DiagLogger = diag.createComponentLogger({
+    namespace: 'EmbraceSpanSessionManager',
+  });
 
   getSessionId(): string | null {
     return this._activeSessionId;
@@ -49,7 +52,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
   endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
-      console.log(
+      this._diag.debug(
         'trying to end a session, but there is no session in progress. This is a no-op.'
       );
       return;
