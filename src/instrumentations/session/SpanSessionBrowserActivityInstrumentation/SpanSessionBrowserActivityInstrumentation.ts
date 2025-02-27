@@ -7,8 +7,8 @@ import {
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
-  TimeoutRef,
   throttle,
+  TimeoutRef,
 } from '../../../utils/index.js';
 
 /**
@@ -18,8 +18,8 @@ import {
  *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
-  private _activityTimeout: TimeoutRef | null;
   onActivity: () => void;
+  private _activityTimeout: TimeoutRef | null;
 
   constructor() {
     super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
@@ -31,7 +31,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
   }
 
   onInactivity = () => {
-    console.log('Inactivity detected');
+    this._diag.debug('Inactivity detected');
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
     }
@@ -40,7 +40,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
   };
 
   _onActivity = () => {
-    console.log('Activity detected');
+    this._diag.debug('Activity detected');
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
     }
