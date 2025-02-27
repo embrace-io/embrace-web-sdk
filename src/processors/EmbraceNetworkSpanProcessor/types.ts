@@ -48,11 +48,3 @@ export const isNetworkSpan = (
 
   return false;
 };
-
-// not used yet, but added for clarity. This is the type for Embrace tagged network spans
-// interface EmbraceNetworkSpanAttributes extends Attributes {
-//   [KEY_EMB_TYPE]: EMB_TYPES.Network;
-// }
-// interface EmbraceNetworkSpan extends NetworkSpan {
-//   attributes: NetworkSpanAttributes & EmbraceNetworkSpanAttributes;
-// }

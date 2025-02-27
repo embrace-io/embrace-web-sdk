@@ -8,6 +8,7 @@ export enum EMB_TYPES {
   // SystemLog = 'sys.log', is a log emb type that tells the Embrace BE to treat this as an Embrace Log to be shown in the dashboard.
   SystemLog = 'sys.log',
   WebVital = 'ux.web_vital',
+  View = 'ux.view',
 }
 
 export enum EMB_STATES {
