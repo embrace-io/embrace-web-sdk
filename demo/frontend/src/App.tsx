@@ -13,20 +13,12 @@ const sessionProvider = session.getSpanSessionManager();
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
 
-  const [isSessionSpanStarted, setIsSessionSpanStarted] = useState(
-    sessionProvider.getSessionSpan() !== null
-  );
-
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
-    setIsSessionSpanStarted(true);
   };
 
   const handleEndSessionSpan = () => {
-    if (sessionProvider.getSessionSpan()) {
-      sessionProvider.endSessionSpan();
-      setIsSessionSpanStarted(false);
-    }
+    sessionProvider.endSessionSpan();
   };
 
   const handleStartSpan = () => {
@@ -145,6 +137,8 @@ const App = () => {
       reject();
     });
   };
+
+  const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
 
   return (
     <>
