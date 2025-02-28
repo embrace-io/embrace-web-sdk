@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 env:
@@ -70,11 +70,11 @@ jobs:
           npm ci
       - name: commitlint (last commit)
         if: github.event_name == 'push'
-        run: commitlint --last --verbose
+        run: npm run commitlint -- --last --verbose
 
       - name: commitlint (PR)
         if: github.event_name == 'pull_request'
-        run: commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   # deploy: TODO
 

@@ -18,6 +18,7 @@
     "sdk:compile:esnext": "tsc --build tsconfig.esnext.json",
     "sdk:compile:cjs": "tsc --build tsconfig.json",
     "sdk:lint:fix": "eslint --fix ./src",
+    "commitlint": "commitlint",
     "prepare": "husky"
   },
   "files": [
