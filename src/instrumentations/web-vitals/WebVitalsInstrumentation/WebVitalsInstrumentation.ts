@@ -14,7 +14,7 @@ import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
 import { withErrorFallback } from '../../../utils/index.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
-import { getNowMilis } from '../../../utils/getNowHRTime/getNowHRTime.js';
+import { getNowMillis } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class WebVitalsInstrumentation extends InstrumentationBase {
   //map of web vitals to gauges to emit to
@@ -63,7 +63,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
     Object.keys(this._gauges).forEach(name => {
       WEB_VITALS_ID_TO_LISTENER[name as Metric['name']](metric => {
         // first thing record the time when this cb was invoked
-        const now = getNowMilis();
+        const now = getNowMillis();
         // we split the atts into low cardinality and high cardinality so we only report the low cardinality ones as metrics
         // and keep the high cardinality ones for the span event representation
         const lowCardinalityAtts: Attributes = {
