@@ -4,19 +4,19 @@ cd ../..
 node -v
 #build sdk locally
 rm -rf node_modules
-npm install
+npm ci
 rm -rf build
 npm run sdk:compile
 #build the cli locally
 cd ./cli
 rm -rf node_modules
-npm install
+npm ci
 rm -rf build
 npm run cli:compile
 #build demo locally
 cd ../demo/frontend
 rm -rf node_modules
-npm install
+npm ci
 sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=pa6hp/g' .env.template > .env
 rm -rf build dist
 npm run demo:frontend:compile
