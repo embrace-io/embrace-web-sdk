@@ -16,7 +16,7 @@ import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { session, SpanSessionManager } from '../../../api-sessions/index.js';
 
 import { getHTMLElementFriendlyName } from './utils.js';
-import { getNowMilis } from '../../../utils/getNowHRTime/getNowHRTime.js';
+import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class ClicksInstrumentation extends InstrumentationBase {
   private readonly _spanSessionManager: SpanSessionManager;
@@ -38,6 +38,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
       if (element.hasAttribute('disabled')) {
         return;
       }
+
       try {
         const currentSessionSpan = this._spanSessionManager.getSessionSpan();
         if (currentSessionSpan) {
@@ -48,7 +49,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
               'view.name': getHTMLElementFriendlyName(element),
               'tap.coords': `${event.x},${event.y}`,
             },
-            getNowMilis()
+            epochMillisFromOriginOffset(event.timeStamp)
           );
         }
       } catch (e) {
