@@ -371,9 +371,7 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
         meterProvider,
       }),
-      new GlobalExceptionInstrumentation({
-        spanSessionManager: spanSessionManager,
-      }),
+      new GlobalExceptionInstrumentation(),
       new SpanSessionVisibilityInstrumentation(),
       new ClicksInstrumentation(),
       new SpanSessionBrowserActivityInstrumentation(),

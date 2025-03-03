@@ -1,4 +1,1 @@
-export {
-  GlobalExceptionInstrumentation,
-  GlobalExceptionInstrumentationArgs,
-} from './GlobalExceptionInstrumentation/index.js';
+export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation/index.js';
