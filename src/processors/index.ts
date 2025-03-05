@@ -2,3 +2,4 @@ export { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanP
 export { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor/index.js';
 export { EmbraceSpanEventExceptionToLogProcessor } from './EmbraceSpanEventExceptionToLogProcessor/index.js';
 export { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor/index.js';
+export { EmbraceViewSpanProcessor } from './EmbraceViewSpanProcessor/index.js';
