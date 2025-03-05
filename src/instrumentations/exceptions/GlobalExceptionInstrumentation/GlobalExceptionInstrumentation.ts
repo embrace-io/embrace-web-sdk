@@ -1,7 +1,7 @@
 import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { SpanStatusCode } from '@opentelemetry/api';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { GlobalExceptionInstrumentationArgs } from './types.js';
+import { logMessage } from '../../../utils/log.js';
+import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
@@ -9,20 +9,18 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
     event: PromiseRejectionEvent
   ) => void;
 
-  constructor({ spanSessionManager }: GlobalExceptionInstrumentationArgs) {
+  constructor() {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
 
     this._onErrorHandler = (event: ErrorEvent) => {
-      const error: Error = event.error;
-      const currentSessionSpan = spanSessionManager.getSessionSpan();
-      if (!currentSessionSpan) {
-        return;
-      }
-      currentSessionSpan.setStatus({
-        message: event.error.message,
-        code: SpanStatusCode.ERROR,
-      });
-      currentSessionSpan.recordException(error);
+      logMessage(
+        this.logger,
+        event.error.message,
+        'error',
+        epochMillisFromOriginOffset(event.timeStamp),
+        {},
+        event.error.stack
+      );
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       const error =
@@ -31,18 +29,14 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
           : new Error(
               typeof event.reason === 'string'
                 ? event.reason
-                : 'Rejected Promise'
+                : 'Unhandled Rejected Promise'
             );
-      const message = error.message;
-      const currentSessionSpan = spanSessionManager.getSessionSpan();
-      if (!currentSessionSpan) {
-        return;
-      }
-      currentSessionSpan.setStatus({
-        message,
-        code: SpanStatusCode.ERROR,
-      });
-      currentSessionSpan.recordException(error);
+      logMessage(
+        this.logger,
+        error.message,
+        'error',
+        epochMillisFromOriginOffset(event.timeStamp)
+      );
     };
 
     if (this._config.enabled) {

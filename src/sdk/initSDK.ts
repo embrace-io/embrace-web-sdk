@@ -27,7 +27,6 @@ import {
 import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
-  EmbraceSpanEventExceptionToLogProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { logs } from '@opentelemetry/api-logs';
@@ -259,15 +258,10 @@ const setupTraces = ({
       });
       const embraceSessionBatchedProcessor =
         new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
-      const embraceSpanEventExceptionToLogProcessor =
-        new EmbraceSpanEventExceptionToLogProcessor(
-          loggerProvider.getLogger('exceptions')
-        );
       const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
 
       finalSpanProcessors.push(embraceNetworkSpanProcessor);
       finalSpanProcessors.push(embraceSessionBatchedProcessor);
-      finalSpanProcessors.push(embraceSpanEventExceptionToLogProcessor);
     }
   }
   const tracerProvider = new WebTracerProvider({
@@ -371,9 +365,7 @@ const setupInstrumentation = ({
         spanSessionManager: spanSessionManager,
         meterProvider,
       }),
-      new GlobalExceptionInstrumentation({
-        spanSessionManager: spanSessionManager,
-      }),
+      new GlobalExceptionInstrumentation(),
       new SpanSessionVisibilityInstrumentation(),
       new ClicksInstrumentation(),
       new SpanSessionBrowserActivityInstrumentation(),

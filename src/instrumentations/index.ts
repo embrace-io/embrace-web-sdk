@@ -4,10 +4,7 @@ export {
   SessionSpanAttributes,
   SessionSpan,
 } from './session/index.js';
-export {
-  GlobalExceptionInstrumentation,
-  GlobalExceptionInstrumentationArgs,
-} from './exceptions/index.js';
+export { GlobalExceptionInstrumentation } from './exceptions/index.js';
 export { ClicksInstrumentation } from './clicks/index.js';
 export {
   WebVitalsInstrumentation,
