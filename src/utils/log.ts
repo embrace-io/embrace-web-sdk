@@ -20,14 +20,14 @@ const logSeverityToSeverityNumber = (severity: LogSeverity): SeverityNumber => {
   }
 };
 
-// TODO, is this enough to expose as a helper or should we have our own global API for logs? One downside here is
+// TODO, expose a public API on top of this for logs? One thing to consider for the public interface is not
 // requiring the caller to supply their own Logger
 export function logMessage(
   logger: Logger,
   message: string,
   severity: LogSeverity,
   timestamp: number = getNowMillis(),
-  properties: Record<string, AttributeValue | undefined> = {},
+  attributes: Record<string, AttributeValue | undefined> = {},
   stackTrace?: string
 ) {
   logger.emit({
@@ -36,10 +36,10 @@ export function logMessage(
     severityText: severity.toUpperCase(),
     body: message,
     attributes: {
-      ...properties,
+      ...attributes,
       [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
-      // TODO, by default if no stack trace is applied we should generate one for warning + error level logs with
-      //  frames from the Embrace SDK itself removed
+      // TODO, for the public interface by default if no stack trace is applied we should generate one for warning +
+      //  error level logs with frames from the Embrace SDK itself removed
       ...(stackTrace
         ? {
             [KEY_JS_EXCEPTION_STACKTRACE]: stackTrace,

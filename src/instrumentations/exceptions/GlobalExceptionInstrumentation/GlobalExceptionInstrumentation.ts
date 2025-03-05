@@ -1,11 +1,9 @@
 import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { session, SpanSessionManager } from '../../../api-sessions/index.js';
 import { logMessage } from '../../../utils/log.js';
 import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
-  private readonly _spanSessionManager: SpanSessionManager;
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (
     event: PromiseRejectionEvent
@@ -13,16 +11,8 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
 
   constructor() {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
-    this._spanSessionManager = session.getSpanSessionManager();
 
     this._onErrorHandler = (event: ErrorEvent) => {
-      const error: Error = event.error;
-      const currentSessionSpan = this._spanSessionManager.getSessionSpan();
-      if (!currentSessionSpan) {
-        return;
-      }
-
-      currentSessionSpan.recordException(error);
       logMessage(
         this.logger,
         event.error.message,
@@ -41,15 +31,9 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
                 ? event.reason
                 : 'Unhandled Rejected Promise'
             );
-      const message = error.message;
-      const currentSessionSpan = this._spanSessionManager.getSessionSpan();
-      if (!currentSessionSpan) {
-        return;
-      }
-      currentSessionSpan.recordException(error);
       logMessage(
         this.logger,
-        message,
+        error.message,
         'error',
         epochMillisFromOriginOffset(event.timeStamp)
       );
