@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+
+env:
+  NODE_VERSION: '22.x'
+  LINT_STATUS_FILE: lint.success.txt
+
+jobs:
+  configure:
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    outputs:
+      NODE_VERSION: ${{ steps.node_version.outputs.NODE_VERSION }}
+    steps:
+      - name: Pick NodeJS version
+        id: node_version
+        run: |
+          echo 'NODE_VERSION=${{ env.NODE_VERSION }}' >> $GITHUB_OUTPUT
+
+  # test: TODO
+
+  lint:
+    needs: configure
+    timeout-minutes: 15
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous lint results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.LINT_STATUS_FILE }}
+          key: lint.sha-${{ github.sha }}.txt
+
+      - name: Check if lint previously succeeded
+        run: |
+          if test -e ${{ env.LINT_STATUS_FILE }}; then
+            echo 'LINT_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Cache node_modules
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-
+      - name: Install npm dependencies
+        run: |
+          npm ci
+      - name: commitlint (PR)
+        run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # deploy: TODO
+
+  # report-release-slack: TODO
