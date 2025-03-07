@@ -1,11 +1,15 @@
 import { User, UserManager } from '../types.js';
 
 export class NoOpUserManager implements UserManager {
-  getUser(): User | null {
+  public getUser(): User | null {
     return null;
   }
 
-  clearUser(): void {}
+  public clearUser(): void {
+    // do nothing.
+  }
 
-  setUser(): void {}
+  public setUser(): void {
+    // do nothing.
+  }
 }

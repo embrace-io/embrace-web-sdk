@@ -22,7 +22,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
   private readonly _spanSessionManager: SpanSessionManager;
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
-  constructor() {
+  public constructor() {
     super('ClicksInstrumentation', '1.0.0', {});
     this._spanSessionManager = session.getSpanSessionManager();
 
@@ -30,9 +30,6 @@ export class ClicksInstrumentation extends InstrumentationBase {
       const element = event.target;
 
       if (!(element instanceof HTMLElement)) {
-        return;
-      }
-      if (!element.getAttribute) {
         return;
       }
       if (element.hasAttribute('disabled')) {
@@ -47,7 +44,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
             {
               'emb.type': 'ux.tap',
               'view.name': getHTMLElementFriendlyName(element),
-              'tap.coords': `${event.x},${event.y}`,
+              'tap.coords': `${event.x.toString()},${event.y.toString()}`,
             },
             epochMillisFromOriginOffset(event.timeStamp)
           );
@@ -62,20 +59,21 @@ export class ClicksInstrumentation extends InstrumentationBase {
     }
   }
 
-  enable(): void {
+  public enable(): void {
     document.addEventListener('click', this._onClickHandler);
   }
 
-  disable(): void {
-    if (this._onClickHandler) {
-      document.removeEventListener('click', this._onClickHandler);
-    }
+  public disable(): void {
+    document.removeEventListener('click', this._onClickHandler);
   }
 
   // no-op
-  protected init():
+  protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {
     return;
   }

@@ -18,10 +18,10 @@ import {
  *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
-  onActivity: () => void;
+  private readonly onActivity: () => void;
   private _activityTimeout: TimeoutRef | null;
 
-  constructor() {
+  public constructor() {
     super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
     this._activityTimeout = null;
     this.onActivity = throttle(this._onActivity, EVENT_THROTTLING_TIME_WINDOW);
@@ -30,28 +30,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     }
   }
 
-  onInactivity = () => {
-    this._diag.debug('Inactivity detected');
-    if (this._activityTimeout) {
-      clearTimeout(this._activityTimeout);
-    }
-    this._activityTimeout = null;
-    this.sessionManager.endSessionSpanInternal('inactivity');
-  };
-
-  _onActivity = () => {
-    this._diag.debug('Activity detected');
-    if (this._activityTimeout) {
-      clearTimeout(this._activityTimeout);
-    }
-    // if there was no active session, start one
-    if (!this.sessionManager.getSessionId()) {
-      this.sessionManager.startSessionSpan();
-    }
-    this._activityTimeout = setTimeout(this.onInactivity, TIMEOUT_TIME);
-  };
-
-  disable = () => {
+  public disable = () => {
     bulkRemoveEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
@@ -63,12 +42,33 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     this._activityTimeout = null;
   };
 
-  enable = () => {
+  public enable = () => {
     bulkAddEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
       callback: this.onActivity,
     });
     this.onActivity();
+  };
+
+  private readonly onInactivity = () => {
+    this._diag.debug('Inactivity detected');
+    if (this._activityTimeout) {
+      clearTimeout(this._activityTimeout);
+    }
+    this._activityTimeout = null;
+    this.sessionManager.endSessionSpanInternal('inactivity');
+  };
+
+  private readonly _onActivity = () => {
+    this._diag.debug('Activity detected');
+    if (this._activityTimeout) {
+      clearTimeout(this._activityTimeout);
+    }
+    // if there was no active session, start one
+    if (!this.sessionManager.getSessionId()) {
+      this.sessionManager.startSessionSpan();
+    }
+    this._activityTimeout = setTimeout(this.onInactivity, TIMEOUT_TIME);
   };
 }

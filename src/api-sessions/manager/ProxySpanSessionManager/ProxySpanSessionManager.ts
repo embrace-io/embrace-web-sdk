@@ -7,35 +7,35 @@ const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 export class ProxySpanSessionManager implements SpanSessionManager {
   private _delegate?: SpanSessionManager;
 
-  getDelegate(): SpanSessionManager {
-    return this._delegate || NOOP_SPAN_SESSION_MANAGER;
+  public getDelegate(): SpanSessionManager {
+    return this._delegate ?? NOOP_SPAN_SESSION_MANAGER;
   }
 
-  setDelegate(delegate: SpanSessionManager): void {
+  public setDelegate(delegate: SpanSessionManager): void {
     this._delegate = delegate;
   }
 
-  getSessionId(): string | null {
+  public getSessionId(): string | null {
     return this.getDelegate().getSessionId();
   }
 
-  getSessionStartTime(): HrTime | null {
+  public getSessionStartTime(): HrTime | null {
     return this.getDelegate().getSessionStartTime();
   }
 
-  getSessionSpan() {
+  public getSessionSpan() {
     return this.getDelegate().getSessionSpan();
   }
 
-  startSessionSpan() {
+  public startSessionSpan() {
     this.getDelegate().startSessionSpan();
   }
 
-  endSessionSpan() {
+  public endSessionSpan() {
     this.getDelegate().endSessionSpan();
   }
 
-  endSessionSpanInternal(reason: ReasonSessionEnded) {
+  public endSessionSpanInternal(reason: ReasonSessionEnded) {
     this.getDelegate().endSessionSpanInternal(reason);
   }
 }

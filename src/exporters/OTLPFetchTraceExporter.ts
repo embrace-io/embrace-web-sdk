@@ -8,7 +8,7 @@ export class OTLPFetchTraceExporter
   extends BaseFetchExporter<ReadableSpan[]>
   implements SpanExporter
 {
-  constructor(config: OtlpFetchExporterConfig) {
+  public constructor(config: OtlpFetchExporterConfig) {
     super(
       createOtlpBrowserFetchExportDelegate(
         {

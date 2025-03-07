@@ -1,18 +1,18 @@
 import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
 
 export class SpanSessionOnLoadInstrumentation extends SpanSessionInstrumentation {
-  constructor() {
+  public constructor() {
     super('SpanSessionOnLoadInstrumentation', '1.0.0', {});
     if (this._config.enabled) {
       this.enable();
     }
   }
 
-  disable(): void {
+  public disable(): void {
     this.sessionManager.endSessionSpanInternal('unknown');
   }
 
-  enable(): void {
+  public enable(): void {
     this.sessionManager.startSessionSpan();
   }
 }

@@ -12,13 +12,13 @@ export class IdentifiableSessionLogRecordProcessor
 {
   private readonly _spanSessionManager: SpanSessionManager;
 
-  constructor({
+  public constructor({
     spanSessionManager,
   }: IdentifiableSessionLogRecordProcessorArgs) {
     this._spanSessionManager = spanSessionManager;
   }
 
-  onEmit(logRecord: LogRecord) {
+  public onEmit(logRecord: LogRecord) {
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
       [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),
@@ -26,12 +26,12 @@ export class IdentifiableSessionLogRecordProcessor
   }
 
   // no-op
-  forceFlush(): Promise<void> {
+  public forceFlush(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
   // no-op
-  shutdown(): Promise<void> {
+  public shutdown(): Promise<void> {
     return Promise.resolve(undefined);
   }
 }

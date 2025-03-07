@@ -5,56 +5,12 @@ import {
 import { FetchRequestParameters } from './types.js';
 
 export class FetchTransport implements IExporterTransport {
-  constructor(private config: FetchRequestParameters) {}
+  public constructor(private readonly config: FetchRequestParameters) {}
 
   // _compressRequest compresses the data using the gzip algorithm.
 
-  public async _asyncSend(
-    data: Uint8Array,
-    timeoutMillis: number
-  ): Promise<ExportResponse> {
-    let request = data;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...this.config.headers,
-    };
-
-    if (this.config.compression === 'gzip') {
-      request = await this._compressRequest(data);
-
-      headers['Content-Encoding'] = 'gzip';
-      headers['Content-Length'] = request.length.toString();
-    }
-
-    try {
-      const response = await fetch(this.config.url, {
-        method: 'POST',
-        keepalive: true,
-        headers: headers,
-        body: request,
-        signal: AbortSignal.timeout(timeoutMillis),
-      });
-
-      if (response.ok) {
-        return { status: 'success' };
-      } else {
-        return { status: 'failure', error: new Error('Fetch request failed') };
-      }
-    } catch {
-      return { status: 'failure', error: new Error('Fetch request errored') };
-    }
-  }
-
-  send(data: Uint8Array, timeoutMillis: number): Promise<ExportResponse> {
-    return this._asyncSend(data, timeoutMillis);
-  }
-
-  shutdown(): void {
-    // Intentionally left empty, nothing to do.
-  }
-
   // Embrace Data endpoints require the data to be compressed.
-  private async _compressRequest(data: Uint8Array): Promise<Uint8Array> {
+  private static async _compressRequest(data: Uint8Array): Promise<Uint8Array> {
     const stream = new CompressionStream('gzip');
     const writer = stream.writable.getWriter();
 
@@ -87,5 +43,52 @@ export class FetchTransport implements IExporterTransport {
     }
 
     return compressedData;
+  }
+
+  public async _asyncSend(
+    data: Uint8Array,
+    timeoutMillis: number
+  ): Promise<ExportResponse> {
+    let request = data;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...this.config.headers,
+    };
+
+    if (this.config.compression === 'gzip') {
+      request = await FetchTransport._compressRequest(data);
+
+      headers['Content-Encoding'] = 'gzip';
+      headers['Content-Length'] = request.length.toString();
+    }
+
+    try {
+      const response = await fetch(this.config.url, {
+        method: 'POST',
+        keepalive: true,
+        headers,
+        body: request,
+        signal: AbortSignal.timeout(timeoutMillis),
+      });
+
+      if (response.ok) {
+        return { status: 'success' };
+      } else {
+        return { status: 'failure', error: new Error('Fetch request failed') };
+      }
+    } catch {
+      return { status: 'failure', error: new Error('Fetch request errored') };
+    }
+  }
+
+  public send(
+    data: Uint8Array,
+    timeoutMillis: number
+  ): Promise<ExportResponse> {
+    return this._asyncSend(data, timeoutMillis);
+  }
+
+  public shutdown(): void {
+    // Intentionally left empty, nothing to do.
   }
 }

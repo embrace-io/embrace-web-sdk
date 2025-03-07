@@ -5,7 +5,7 @@ import {
 
 export class SessionAPI {
   private static _instance?: SessionAPI;
-  private _proxySpanSessionManager = new ProxySpanSessionManager();
+  private readonly _proxySpanSessionManager = new ProxySpanSessionManager();
 
   public static getInstance(): SessionAPI {
     if (!this._instance) {
@@ -15,9 +15,9 @@ export class SessionAPI {
     return this._instance;
   }
 
-  public getSpanSessionManager(): SpanSessionManager {
+  public getSpanSessionManager = () => {
     return this._proxySpanSessionManager;
-  }
+  };
 
   public setGlobalSessionManager(sessionManager: SpanSessionManager): void {
     this._proxySpanSessionManager.setDelegate(sessionManager);

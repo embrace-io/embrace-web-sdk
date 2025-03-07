@@ -10,7 +10,7 @@ import { user } from '../../../api-users/index.js';
 export class LocalStorageUserInstrumentation extends InstrumentationBase {
   private readonly _userManager: UserManager;
 
-  constructor() {
+  public constructor() {
     super('UserInstrumentation', '1.0.0', {});
     this._userManager = user.getUserManager();
     if (this._config.enabled) {
@@ -23,12 +23,12 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
     return this._userManager;
   }
 
-  disable(): void {
+  public disable(): void {
     localStorage.removeItem(EMBRACE_USER_LOCAL_STORAGE_KEY);
     this.userManager.clearUser();
   }
 
-  enable(): void {
+  public enable(): void {
     const encodedUserString = localStorage.getItem(
       EMBRACE_USER_LOCAL_STORAGE_KEY
     );
@@ -56,9 +56,12 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
   }
 
   // no-op
-  protected init():
+  protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {
     return undefined;
   }

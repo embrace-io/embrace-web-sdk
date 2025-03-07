@@ -36,14 +36,17 @@ export const isNetworkSpan = (
 ): span is NetworkSpan => {
   if (
     (span.attributes[ATTR_HTTP_REQUEST_METHOD] ||
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[SEMATTRS_HTTP_METHOD]) &&
     (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ||
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[SEMATTRS_HTTP_STATUS_CODE])
   ) {
     const url =
-      span.attributes[ATTR_URL_FULL] || span.attributes[SEMATTRS_HTTP_URL];
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_URL_FULL] ?? span.attributes[SEMATTRS_HTTP_URL];
 
-    return !!(url && typeof url === 'string' && url.match(SCHEME_RE));
+    return !!(url && typeof url === 'string' && SCHEME_RE.exec(url));
   }
 
   return false;
