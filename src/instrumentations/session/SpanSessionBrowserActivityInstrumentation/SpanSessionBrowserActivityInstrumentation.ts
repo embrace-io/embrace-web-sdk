@@ -4,11 +4,11 @@ import {
   TIMEOUT_TIME,
   WINDOW_USER_EVENTS,
 } from './constants.js';
+import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
-  TimeoutRef,
 } from '../../../utils/index.js';
 
 /**

@@ -1,5 +1,5 @@
-import { FetchRequestParameters } from './types.js';
-import { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
+import type { FetchRequestParameters } from './types.js';
+import type { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
 import { FetchTransport } from './FetchTransport.js';
 
 export const createFetchTransport = (

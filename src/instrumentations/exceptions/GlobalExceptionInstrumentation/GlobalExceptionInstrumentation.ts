@@ -1,4 +1,4 @@
-import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { logMessage } from '../../../utils/log.js';
 import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';

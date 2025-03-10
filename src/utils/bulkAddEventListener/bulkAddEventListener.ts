@@ -1,4 +1,4 @@
-import { BulkAddEventListenerArgs } from './types.js';
+import type { BulkAddEventListenerArgs } from './types.js';
 
 /**
  * Add multiple event listeners to a target element.

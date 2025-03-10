@@ -1,4 +1,5 @@
-import { LogRecord, type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecord } from '@opentelemetry/sdk-logs';
+import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 
 export class EmbTypeLogRecordProcessor implements LogRecordProcessor {

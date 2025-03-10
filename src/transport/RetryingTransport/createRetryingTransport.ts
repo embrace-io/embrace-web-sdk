@@ -1,4 +1,4 @@
-import { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
+import type { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
 import { RetryingTransport } from './RetryingTransport.js';
 
 /**

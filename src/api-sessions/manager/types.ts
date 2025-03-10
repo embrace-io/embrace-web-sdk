@@ -1,4 +1,4 @@
-import { HrTime, Span } from '@opentelemetry/api';
+import type { HrTime, Span } from '@opentelemetry/api';
 
 export interface SpanSessionManager {
   getSessionId(): string | null;
