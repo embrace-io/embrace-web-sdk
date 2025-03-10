@@ -6,3 +6,21 @@ Note: there is no public npm registry yet, so you can't publish the package to n
 For development, login to https://repo.embrace.io/repository/web-testing/ and publish the package there.
 For login in, you can run
 `npm login --scope=@embraceio --registry=https://repo.embrace.io/repository/web-testing/`
+
+## Testing
+
+We use Mocha (test runner), Playwright (browser launcher), Chai (assertion library) and web-test-runner (general
+framework that ties everything else together).
+
+TODO: add nyc for coverage
+
+## Publishing
+
+TODO:
+
+* Add Lerna to manage testing across packages (demo, sdk, cli),
+* Publish to npm,
+* Publish typedoc doc
+* Add CI/CD pipeline
+* Add amannn/action-semantic-pull-request@v5
+* Add semantic-release
