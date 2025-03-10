@@ -1,5 +1,6 @@
 import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
-import { getNowHRTime, TimeoutRef } from '../../../utils/index.js';
+import type { TimeoutRef } from '../../../utils/index.js';
+import { getNowHRTime } from '../../../utils/index.js';
 import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
 import { TIMEOUT_TIME } from './constants.js';
 

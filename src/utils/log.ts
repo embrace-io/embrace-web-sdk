@@ -1,11 +1,12 @@
-import { Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import type { Logger } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import { getNowMillis } from './getNowHRTime/getNowHRTime.js';
 import {
   EMB_TYPES,
   KEY_EMB_TYPE,
   KEY_JS_EXCEPTION_STACKTRACE,
 } from '../constants/index.js';
-import { AttributeValue } from '@opentelemetry/api';
+import type { AttributeValue } from '@opentelemetry/api';
 
 type LogSeverity = 'info' | 'warning' | 'error';
 

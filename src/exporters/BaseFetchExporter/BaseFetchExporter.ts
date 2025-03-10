@@ -1,5 +1,5 @@
-import { IOtlpExportDelegate } from '@opentelemetry/otlp-exporter-base';
-import { ExportResult } from '@opentelemetry/core';
+import type { IOtlpExportDelegate } from '@opentelemetry/otlp-exporter-base';
+import type { ExportResult } from '@opentelemetry/core';
 
 export class BaseFetchExporter<Internal> {
   public constructor(

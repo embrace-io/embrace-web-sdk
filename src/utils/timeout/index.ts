@@ -1,1 +1,1 @@
-export { TimeoutRef } from './types.js';
+export type { TimeoutRef } from './types.js';

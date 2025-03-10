@@ -1,22 +1,21 @@
-import {
+import type {
   Instrumentation,
   InstrumentationConfig,
   InstrumentationModuleDefinition,
   SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
-import {
-  diag,
+import type {
   DiagLogger,
   Meter,
   MeterProvider,
-  metrics,
   Span,
-  trace,
   Tracer,
   TracerProvider,
 } from '@opentelemetry/api';
-import { Logger, logs } from '@opentelemetry/api-logs';
-import { LoggerProvider } from '@opentelemetry/sdk-logs';
+import { diag, metrics, trace } from '@opentelemetry/api';
+import type { Logger } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
+import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 import * as shimmer from 'shimmer';
 
 // TODO is there any legal issue with copying this?

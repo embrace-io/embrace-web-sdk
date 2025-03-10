@@ -1,6 +1,6 @@
-import { ReasonSessionEnded, SpanSessionManager } from '../types.js';
+import type { ReasonSessionEnded, SpanSessionManager } from '../types.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
-import { HrTime } from '@opentelemetry/api';
+import type { HrTime } from '@opentelemetry/api';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 

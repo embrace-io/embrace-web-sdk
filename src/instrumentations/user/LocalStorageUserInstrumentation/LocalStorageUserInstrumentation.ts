@@ -1,9 +1,9 @@
-import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import { isUser } from './types.js';
 import { generateUUID } from '../../../utils/index.js';
 import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
-import { User, UserManager } from '../../../api-users/manager/types.js';
+import type { User, UserManager } from '../../../api-users/manager/types.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/manager/constants/index.js';
 import { user } from '../../../api-users/index.js';
 

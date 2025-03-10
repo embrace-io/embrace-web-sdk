@@ -1,4 +1,4 @@
-import {
+import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';

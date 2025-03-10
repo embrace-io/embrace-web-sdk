@@ -1,4 +1,4 @@
-import {
+import type {
   Instrumentation,
   InstrumentationConfig,
 } from '@opentelemetry/instrumentation';

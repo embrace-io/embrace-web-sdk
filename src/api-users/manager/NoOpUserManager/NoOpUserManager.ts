@@ -1,4 +1,4 @@
-import { User, UserManager } from '../types.js';
+import type { User, UserManager } from '../types.js';
 
 export class NoOpUserManager implements UserManager {
   public getUser(): User | null {

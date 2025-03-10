@@ -1,4 +1,5 @@
-import { diag, DiagLogger, HrTime, Span, trace } from '@opentelemetry/api';
+import type { DiagLogger, HrTime, Span } from '@opentelemetry/api';
+import { diag, trace } from '@opentelemetry/api';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -8,8 +9,8 @@ import {
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { generateUUID, getNowHRTime } from '../../../utils/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
-import { SpanSessionManager } from '../../../api-sessions/index.js';
-import { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import type { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
