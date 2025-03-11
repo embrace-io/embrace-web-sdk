@@ -5,9 +5,9 @@ export interface User {
 }
 
 export interface UserManager {
-  getUser(): User | null;
+  getUser: () => User | null;
 
-  setUser(user: User): void;
+  setUser: (user: User) => void;
 
-  clearUser(): void;
+  clearUser: () => void;
 }

@@ -1,7 +1,7 @@
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { logMessage } from '../../../utils/log.js';
 import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
+import { logMessage } from '../../../utils/log.js';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
@@ -14,14 +14,12 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
 
     this._onErrorHandler = (event: ErrorEvent) => {
       logMessage(
-        this.logger,
-        // ErrorEvent is not typed correctly in the DOM types
+        this.logger, // ErrorEvent is not typed correctly in the DOM types
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
         event.error.message ?? '',
         'error',
         epochMillisFromOriginOffset(event.timeStamp),
-        {},
-        // ErrorEvent is not typed correctly in the DOM types
+        {}, // ErrorEvent is not typed correctly in the DOM types
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument,@typescript-eslint/no-unsafe-member-access
         event.error.stack
       );
@@ -48,17 +46,17 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
     }
   }
 
-  public enable(): void {
-    window.addEventListener('error', this._onErrorHandler);
-    window.addEventListener(
+  public disable(): void {
+    window.removeEventListener('error', this._onErrorHandler);
+    window.removeEventListener(
       'unhandledrejection',
       this._onUnhandledRejectionHandler
     );
   }
 
-  public disable(): void {
-    window.removeEventListener('error', this._onErrorHandler);
-    window.removeEventListener(
+  public enable(): void {
+    window.addEventListener('error', this._onErrorHandler);
+    window.addEventListener(
       'unhandledrejection',
       this._onUnhandledRejectionHandler
     );

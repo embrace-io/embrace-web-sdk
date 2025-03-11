@@ -8,7 +8,7 @@ import { TIMEOUT_TIME } from './constants.js';
  *  SpanSessionTimeoutInstrumentation will track how long has a session been active and end it after a certain amount of time. It will immediately start a new session after the previous one ends.
  * */
 export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentation {
-  private _sessionTimeout: TimeoutRef | null; // ReturnType<typeof setTimeout> === number
+  private _sessionTimeout: TimeoutRef | null;
 
   public constructor() {
     super('SpanSessionTimeoutInstrumentation', '1.0.0', {});
@@ -39,6 +39,8 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     // set a new check in TIMEOUT_TIME for the session we just started
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);
   };
+
+  // ReturnType<typeof setTimeout> === number
 
   private readonly _checkTimeout = () => {
     const currentSessionStartTime = this.sessionManager.getSessionStartTime();

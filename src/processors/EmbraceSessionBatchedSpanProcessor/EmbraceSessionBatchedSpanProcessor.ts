@@ -1,10 +1,9 @@
+import { BindOnceFuture, internal } from '@opentelemetry/core';
 import type {
   ReadableSpan,
   SpanExporter,
-  SpanProcessor,
-} from '@opentelemetry/sdk-trace-web';
-// TODO: don't rely on internal API
-import { BindOnceFuture, internal } from '@opentelemetry/core';
+  SpanProcessor
+} from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
 
@@ -19,8 +18,8 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
   }
 
-  public onStart(): void {
-    // do nothing.
+  public forceFlush(): Promise<void> {
+    return Promise.resolve(undefined);
   }
 
   public onEnd(span: ReadableSpan): void {
@@ -36,12 +35,12 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     }
   }
 
-  public shutdown(): Promise<void> {
-    return this._shutdownOnce.call();
+  public onStart(): void {
+    // do nothing.
   }
 
-  public forceFlush(): Promise<void> {
-    return Promise.resolve(undefined);
+  public shutdown(): Promise<void> {
+    return this._shutdownOnce.call();
   }
 
   private readonly _shutdown = () => {

@@ -1,17 +1,17 @@
 import type {
   InstrumentationConfig,
-  InstrumentationModuleDefinition,
+  InstrumentationModuleDefinition
 } from '@opentelemetry/instrumentation';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 
 export abstract class SpanSessionInstrumentation<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig,
+  ConfigType extends InstrumentationConfig = InstrumentationConfig
 > extends InstrumentationBase<ConfigType> {
   private readonly _sessionManager: SpanSessionManager;
 
-  public constructor(
+  protected constructor(
     instrumentationName: string,
     instrumentationVersion: string,
     config: ConfigType

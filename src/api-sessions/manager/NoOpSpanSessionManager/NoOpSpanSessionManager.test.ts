@@ -1,6 +1,6 @@
-import { expect } from 'chai';
-import { NoOpSpanSessionManager } from './NoOpSpanSessionManager';
 import type { HrTime, Span } from '@opentelemetry/api';
+import { expect } from 'chai';
+import { NoOpSpanSessionManager } from './NoOpSpanSessionManager.js';
 
 describe('NoOpSpanSessionManager', () => {
   let noOpSpanSessionManager: NoOpSpanSessionManager;
@@ -11,31 +11,35 @@ describe('NoOpSpanSessionManager', () => {
 
   it('should return null for getSessionId', () => {
     const sessionId = noOpSpanSessionManager.getSessionId();
-    expect(sessionId).to.be.null;
+    void expect(sessionId).to.be.null;
   });
 
   it('should return null for getSessionSpan', () => {
     const sessionSpan: Span | null = noOpSpanSessionManager.getSessionSpan();
-    expect(sessionSpan).to.be.null;
+    void expect(sessionSpan).to.be.null;
   });
 
   it('should return null for getSessionStartTime', () => {
     const sessionStartTime: HrTime | null =
       noOpSpanSessionManager.getSessionStartTime();
-    expect(sessionStartTime).to.be.null;
+    void expect(sessionStartTime).to.be.null;
   });
 
   it('should do nothing for startSessionSpan', () => {
-    expect(() => noOpSpanSessionManager.startSessionSpan()).to.not.throw();
+    expect(() => {
+      noOpSpanSessionManager.startSessionSpan();
+    }).to.not.throw();
   });
 
   it('should do nothing for endSessionSpan', () => {
-    expect(() => noOpSpanSessionManager.endSessionSpan()).to.not.throw();
+    expect(() => {
+      noOpSpanSessionManager.endSessionSpan();
+    }).to.not.throw();
   });
 
   it('should do nothing for endSessionSpanInternal', () => {
-    expect(() =>
-      noOpSpanSessionManager.endSessionSpanInternal()
-    ).to.not.throw();
+    expect(() => {
+      noOpSpanSessionManager.endSessionSpanInternal();
+    }).to.not.throw();
   });
 });
