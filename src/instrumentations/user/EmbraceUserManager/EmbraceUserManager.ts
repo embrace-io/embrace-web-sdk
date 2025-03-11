@@ -4,15 +4,15 @@ import { User } from '../../../api-users/manager/types.js';
 export class EmbraceUserManager implements UserManager {
   private _activeUser: User | null = null;
 
-  getUser(): User | null {
+  public getUser(): User | null {
     return this._activeUser;
   }
 
-  setUser(user: User) {
+  public setUser(user: User) {
     this._activeUser = user;
   }
 
-  clearUser() {
+  public clearUser() {
     this._activeUser = null;
   }
 }

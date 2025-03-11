@@ -11,7 +11,7 @@ export class OTLPFetchLogExporter
   extends BaseFetchExporter<ReadableLogRecord[]>
   implements LogRecordExporter
 {
-  constructor(config: OtlpFetchExporterConfig) {
+  public constructor(config: OtlpFetchExporterConfig) {
     super(createOtlpBrowserFetchExportDelegate(config, JsonLogsSerializer));
   }
 }

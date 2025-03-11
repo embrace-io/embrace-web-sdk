@@ -24,7 +24,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
   private readonly _meterProvider: MeterProvider;
 
   // function that emits a metric for each web vital report
-  constructor({
+  public constructor({
     trackingLevel = 'core',
     spanSessionManager,
     meterProvider,
@@ -40,7 +40,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
     }
   }
 
-  enable(): void {
+  public enable(): void {
     const meter = this._meterProvider.getMeter(METER_NAME);
     CORE_WEB_VITALS.forEach(name => {
       this._gauges[name] = meter.createGauge(
@@ -110,12 +110,17 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
     });
   }
 
-  disable(): void {}
+  public override disable(): void {
+    // do nothing.
+  }
 
   // no-op
-  protected init():
+  protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {
     return;
   }

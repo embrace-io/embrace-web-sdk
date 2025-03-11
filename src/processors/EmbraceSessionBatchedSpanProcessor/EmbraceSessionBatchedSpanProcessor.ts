@@ -8,23 +8,22 @@ import { BindOnceFuture, internal } from '@opentelemetry/core';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import { SessionSpan } from '../../instrumentations/index.js';
 
-const isSessionSpan = (
-  span: ReadableSpan | SessionSpan
-): span is SessionSpan => {
-  return span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
-};
+const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
+  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
 
 export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
-  private _shutdownOnce: BindOnceFuture<void>;
-  private _pendingSpans: ReadableSpan[] = [];
+  private readonly _shutdownOnce: BindOnceFuture<void>;
+  private readonly _pendingSpans: ReadableSpan[] = [];
 
-  constructor(private readonly _exporter: SpanExporter) {
+  public constructor(private readonly _exporter: SpanExporter) {
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
   }
 
-  onStart(): void {}
+  public onStart(): void {
+    // do nothing.
+  }
 
-  onEnd(span: ReadableSpan): void {
+  public onEnd(span: ReadableSpan): void {
     if (this._shutdownOnce.isCalled) {
       return;
     }
@@ -37,15 +36,15 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     }
   }
 
-  shutdown(): Promise<void> {
+  public shutdown(): Promise<void> {
     return this._shutdownOnce.call();
   }
 
-  forceFlush(): Promise<void> {
+  public forceFlush(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  private _shutdown(): Promise<void> {
+  private readonly _shutdown = () => {
     return this._exporter.shutdown();
-  }
+  };
 }

@@ -15,23 +15,23 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
-  private _diag: DiagLogger = diag.createComponentLogger({
+  private readonly _diag: DiagLogger = diag.createComponentLogger({
     namespace: 'EmbraceSpanSessionManager',
   });
 
-  getSessionId(): string | null {
+  public getSessionId(): string | null {
     return this._activeSessionId;
   }
 
-  getSessionStartTime(): HrTime | null {
+  public getSessionStartTime(): HrTime | null {
     return this._activeSessionStartTime;
   }
 
-  getSessionSpan(): Span | null {
+  public getSessionSpan(): Span | null {
     return this._sessionSpan;
   }
 
-  startSessionSpan() {
+  public startSessionSpan() {
     //if there was a session in progress already, finish it first.
     if (this._sessionSpan) {
       this.endSessionSpanInternal('new_session_started');
@@ -50,7 +50,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
 
   // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
-  endSessionSpanInternal(reason: ReasonSessionEnded) {
+  public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(
         'trying to end a session, but there is no session in progress. This is a no-op.'
@@ -65,7 +65,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use thi.endSessionSpanInternal instead.
-  endSessionSpan() {
+  public endSessionSpan() {
     this.endSessionSpanInternal('user_ended');
   }
 }

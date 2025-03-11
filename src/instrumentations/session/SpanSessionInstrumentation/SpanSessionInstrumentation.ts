@@ -10,7 +10,7 @@ export abstract class SpanSessionInstrumentation<
 > extends InstrumentationBase<ConfigType> {
   private readonly _sessionManager: SpanSessionManager;
 
-  constructor(
+  public constructor(
     instrumentationName: string,
     instrumentationVersion: string,
     config: ConfigType
@@ -25,9 +25,12 @@ export abstract class SpanSessionInstrumentation<
   }
 
   // no-op
-  protected init():
+  protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {
     return undefined;
   }

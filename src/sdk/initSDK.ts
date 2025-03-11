@@ -232,7 +232,6 @@ const setupTraces = ({
   propagator = null,
   contextManager = null,
   spanSessionManager,
-  loggerProvider,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
@@ -270,8 +269,8 @@ const setupTraces = ({
   });
 
   tracerProvider.register({
-    ...(!!contextManager && { contextManager: contextManager }),
-    propagator: propagator,
+    ...(!!contextManager && { contextManager }),
+    propagator,
   });
   trace.setGlobalTracerProvider(tracerProvider);
 
@@ -302,7 +301,7 @@ const setupLogs = ({
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new IdentifiableSessionLogRecordProcessor({
-      spanSessionManager: spanSessionManager,
+      spanSessionManager,
     }),
     new EmbTypeLogRecordProcessor(),
   ];
@@ -360,9 +359,9 @@ const setupInstrumentation = ({
   registerInstrumentations({
     instrumentations: [
       new SpanSessionOnLoadInstrumentation(),
-      instrumentations ? instrumentations : setupWebAutoInstrumentations(),
+      instrumentations ?? setupWebAutoInstrumentations(),
       new WebVitalsInstrumentation({
-        spanSessionManager: spanSessionManager,
+        spanSessionManager,
         meterProvider,
       }),
       new GlobalExceptionInstrumentation(),

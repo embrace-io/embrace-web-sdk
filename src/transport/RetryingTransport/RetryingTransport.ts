@@ -14,16 +14,17 @@ import { getNowMillis } from '../../utils/getNowHRTime/getNowHRTime.js';
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]
  */
-const getJitter = () => {
-  return Math.random() * (2 * JITTER) - JITTER;
-};
+const getJitter = () => Math.random() * (2 * JITTER) - JITTER;
 
 // Taken directly from open-telemetry/opentelemetry-js/experimental/packages/otlp-exporter-base/src/retrying-transport.ts
 // File is not exposed externally
 export class RetryingTransport implements IExporterTransport {
-  constructor(private _transport: IExporterTransport) {}
+  public constructor(private readonly _transport: IExporterTransport) {}
 
-  async send(data: Uint8Array, timeoutMillis: number): Promise<ExportResponse> {
+  public async send(
+    data: Uint8Array,
+    timeoutMillis: number
+  ): Promise<ExportResponse> {
     const deadline = getNowMillis() + timeoutMillis;
     let result = await this._transport.send(data, timeoutMillis);
     let attempts = MAX_ATTEMPTS;
@@ -52,8 +53,8 @@ export class RetryingTransport implements IExporterTransport {
     return result;
   }
 
-  shutdown() {
-    return this._transport.shutdown();
+  public shutdown() {
+    this._transport.shutdown();
   }
 
   private retry(

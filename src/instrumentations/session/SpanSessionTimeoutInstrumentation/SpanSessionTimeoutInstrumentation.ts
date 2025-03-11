@@ -9,7 +9,7 @@ import { TIMEOUT_TIME } from './constants.js';
 export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentation {
   private _sessionTimeout: TimeoutRef | null; // ReturnType<typeof setTimeout> === number
 
-  constructor() {
+  public constructor() {
     super('SpanSessionTimeoutInstrumentation', '1.0.0', {});
     this._sessionTimeout = null;
     if (this._config.enabled) {
@@ -17,18 +17,18 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     }
   }
 
-  disable = () => {
+  public disable = () => {
     if (this._sessionTimeout) {
       clearTimeout(this._sessionTimeout);
     }
     this._sessionTimeout = null;
   };
 
-  enable = () => {
+  public enable = () => {
     this._checkTimeout();
   };
 
-  private _onTimeout = () => {
+  private readonly _onTimeout = () => {
     // clear existing timeout
     if (this._sessionTimeout) {
       clearTimeout(this._sessionTimeout);
@@ -39,7 +39,7 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);
   };
 
-  private _checkTimeout = () => {
+  private readonly _checkTimeout = () => {
     const currentSessionStartTime = this.sessionManager.getSessionStartTime();
     // validate that there is an active session, as it may already been finished for other reasons.
     if (currentSessionStartTime) {

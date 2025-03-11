@@ -3,7 +3,7 @@ import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.
 export class SpanSessionVisibilityInstrumentation extends SpanSessionInstrumentation {
   private readonly _onVisibilityChange: (event: Event) => void;
 
-  constructor() {
+  public constructor() {
     super('SpanSessionVisibilityInstrumentation', '1.0.0', {});
     this._onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
@@ -18,11 +18,11 @@ export class SpanSessionVisibilityInstrumentation extends SpanSessionInstrumenta
     }
   }
 
-  disable(): void {
+  public disable(): void {
     window.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 
-  enable(): void {
+  public enable(): void {
     window.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 }

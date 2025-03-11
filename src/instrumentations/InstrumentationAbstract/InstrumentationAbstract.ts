@@ -28,16 +28,26 @@ export abstract class InstrumentationAbstract<
 {
   protected _config: ConfigType = {} as ConfigType;
   protected _diag: DiagLogger;
-  /* Api to wrap instrumented method */
-  protected _wrap = shimmer.wrap;
-  /* Api to unwrap instrumented methods */
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   protected _unwrap = shimmer.unwrap;
-  /* Api to mass wrap instrumented method */
+  /* Api to unwrap instrumented methods */
+  /* Api to wrap instrumented method */
+  // NOTE: disabling typescript check, as this class was copied from OTel repo.
+  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   protected _massWrap = shimmer.massWrap;
-  /* Api to mass unwrap instrumented methods */
+  /* Api to mass wrap instrumented method */
+  /* Api to wrap instrumented method */
+  // NOTE: disabling typescript check, as this class was copied from OTel repo.
+  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   protected _massUnwrap = shimmer.massUnwrap;
+  /* Api to mass unwrap instrumented methods */
+  /* Api to wrap instrumented method */
+  // NOTE: disabling typescript check, as this class was copied from OTel repo.
+  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
 
-  constructor(
+  public constructor(
     public readonly instrumentationName: string,
     public readonly instrumentationVersion: string,
     config: ConfigType
@@ -108,6 +118,9 @@ export abstract class InstrumentationAbstract<
    * @returns an array of {@link InstrumentationModuleDefinition}
    */
   public getModuleDefinitions(): InstrumentationModuleDefinition[] {
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const initResult = this.init() ?? [];
     if (!Array.isArray(initResult)) {
       return [initResult];
@@ -154,6 +167,7 @@ export abstract class InstrumentationAbstract<
   /**
    * Sets the new metric instruments with the current Meter.
    */
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {
     return;
   }
@@ -165,6 +179,9 @@ export abstract class InstrumentationAbstract<
   protected abstract init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void;
 
   /**
