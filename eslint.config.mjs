@@ -1,33 +1,28 @@
-import globals from 'globals';
-import pluginJs from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import pluginReact from 'eslint-plugin-react';
-import prettierPlugin from 'eslint-plugin-prettier/recommended';
-import { fileURLToPath } from 'node:url';
 import { FlatCompat } from '@eslint/eslintrc';
+import pluginJs from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import globals from 'globals';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import tseslint from 'typescript-eslint';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  baseDirectory: __dirname
 });
 
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config({
   files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-  ignores: ['**/*.test.ts'],
   extends: [
     pluginJs.configs.recommended,
     tseslint.configs.strictTypeChecked,
-    tseslint.configs.stylisticTypeChecked,
-    pluginReact.configs.flat.recommended,
-    pluginReact.configs.flat['jsx-runtime'],
-    prettierPlugin,
+    eslintConfigPrettier,
     ...compat.extends('plugin:require-extensions/recommended'),
     ...compat.plugins('prefer-arrow-functions'),
-    ...compat.plugins('require-extensions'),
+    ...compat.plugins('require-extensions')
   ],
   rules: {
     'object-shorthand': ['error', 'always'],
@@ -36,8 +31,8 @@ export default tseslint.config({
       'error',
       {
         ignoreClassesThatImplementAnInterface: 'public-fields',
-        ignoreOverrideMethods: true,
-      },
+        ignoreOverrideMethods: true
+      }
     ],
     '@typescript-eslint/prefer-readonly': 'error',
     '@typescript-eslint/unbound-method': 'error',
@@ -45,42 +40,45 @@ export default tseslint.config({
     '@typescript-eslint/no-invalid-void-type': [
       'error',
       {
-        allowAsThisParameter: true,
-      },
+        allowAsThisParameter: true
+      }
     ],
-    "@typescript-eslint/consistent-type-exports": "error",
-    "@typescript-eslint/consistent-type-imports": "error",
+    'default-param-last': 'off',
+    '@typescript-eslint/default-param-last': 'error',
+    '@typescript-eslint/method-signature-style': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
+    '@typescript-eslint/consistent-type-imports': 'error',
     '@typescript-eslint/naming-convention': [
       'error',
       {
-        selector: 'memberLike',
-        modifiers: ['private', 'protected'],
+        selector: ['memberLike'],
+        modifiers: ['private'],
         format: ['camelCase'],
-        leadingUnderscore: 'require',
-      },
+        leadingUnderscore: 'require'
+      }
     ],
     '@typescript-eslint/no-inferrable-types': [
       'error',
-      { ignoreProperties: true },
+      { ignoreProperties: true }
     ],
     '@typescript-eslint/no-unused-vars': [
       'error',
-      { argsIgnorePattern: '^_', args: 'after-used' },
+      { argsIgnorePattern: '^_', args: 'after-used' }
     ],
     'no-restricted-syntax': ['error', 'ExportAllDeclaration'],
     'prefer-arrow-functions/prefer-arrow-functions': [
       'error',
       {
-        returnStyle: 'implicit',
-      },
+        returnStyle: 'implicit'
+      }
     ],
-    'func-style': 'error',
+    'func-style': 'error'
   },
   languageOptions: {
     globals: globals.browser,
     parserOptions: {
-      projectService: true,
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
+      project: './tsconfig.test.json',
+      tsconfigRootDir: import.meta.dirname
+    }
+  }
 });

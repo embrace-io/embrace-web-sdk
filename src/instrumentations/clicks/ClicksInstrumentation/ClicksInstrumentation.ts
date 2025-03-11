@@ -12,12 +12,12 @@
  */
 
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
+import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 
 import { getHTMLElementFriendlyName } from './utils.js';
-import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
 
 export class ClicksInstrumentation extends InstrumentationBase {
   private readonly _spanSessionManager: SpanSessionManager;
@@ -45,7 +45,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
             {
               'emb.type': 'ux.tap',
               'view.name': getHTMLElementFriendlyName(element),
-              'tap.coords': `${event.x.toString()},${event.y.toString()}`,
+              'tap.coords': `${event.x.toString()},${event.y.toString()}`
             },
             epochMillisFromOriginOffset(event.timeStamp)
           );
@@ -60,12 +60,12 @@ export class ClicksInstrumentation extends InstrumentationBase {
     }
   }
 
-  public enable(): void {
-    document.addEventListener('click', this._onClickHandler);
-  }
-
   public disable(): void {
     document.removeEventListener('click', this._onClickHandler);
+  }
+
+  public enable(): void {
+    document.addEventListener('click', this._onClickHandler);
   }
 
   // no-op

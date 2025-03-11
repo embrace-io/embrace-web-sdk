@@ -1,12 +1,12 @@
+import type { AttributeValue } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { getNowMillis } from './getNowHRTime/getNowHRTime.js';
 import {
   EMB_TYPES,
   KEY_EMB_TYPE,
-  KEY_JS_EXCEPTION_STACKTRACE,
+  KEY_JS_EXCEPTION_STACKTRACE
 } from '../constants/index.js';
-import type { AttributeValue } from '@opentelemetry/api';
+import { getNowMillis } from './getNowHRTime/getNowHRTime.js';
 
 type LogSeverity = 'info' | 'warning' | 'error';
 
@@ -38,14 +38,13 @@ export const logMessage = (
     body: message,
     attributes: {
       ...attributes,
-      [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
-      // TODO, for the public interface by default if no stack trace is applied we should generate one for warning +
+      [KEY_EMB_TYPE]: EMB_TYPES.SystemLog, // TODO, for the public interface by default if no stack trace is applied we should generate one for warning +
       //  error level logs with frames from the Embrace SDK itself removed
       ...(stackTrace
         ? {
-            [KEY_JS_EXCEPTION_STACKTRACE]: stackTrace,
+            [KEY_JS_EXCEPTION_STACKTRACE]: stackTrace
           }
-        : {}),
-    },
+        : {})
+    }
   });
 };

@@ -1,11 +1,11 @@
 import type {
   ExportResponse,
-  IExporterTransport,
+  IExporterTransport
 } from '@opentelemetry/otlp-exporter-base';
 import type { FetchRequestParameters } from './types.js';
 
 export class FetchTransport implements IExporterTransport {
-  public constructor(private readonly config: FetchRequestParameters) {}
+  public constructor(private readonly _config: FetchRequestParameters) {}
 
   // _compressRequest compresses the data using the gzip algorithm.
 
@@ -45,6 +45,17 @@ export class FetchTransport implements IExporterTransport {
     return compressedData;
   }
 
+  public send(
+    data: Uint8Array,
+    timeoutMillis: number
+  ): Promise<ExportResponse> {
+    return this._asyncSend(data, timeoutMillis);
+  }
+
+  public shutdown(): void {
+    // Intentionally left empty, nothing to do.
+  }
+
   public async _asyncSend(
     data: Uint8Array,
     timeoutMillis: number
@@ -52,10 +63,10 @@ export class FetchTransport implements IExporterTransport {
     let request = data;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this.config.headers,
+      ...this._config.headers
     };
 
-    if (this.config.compression === 'gzip') {
+    if (this._config.compression === 'gzip') {
       request = await FetchTransport._compressRequest(data);
 
       headers['Content-Encoding'] = 'gzip';
@@ -63,12 +74,12 @@ export class FetchTransport implements IExporterTransport {
     }
 
     try {
-      const response = await fetch(this.config.url, {
+      const response = await fetch(this._config.url, {
         method: 'POST',
         keepalive: true,
         headers,
         body: request,
-        signal: AbortSignal.timeout(timeoutMillis),
+        signal: AbortSignal.timeout(timeoutMillis)
       });
 
       if (response.ok) {
@@ -79,16 +90,5 @@ export class FetchTransport implements IExporterTransport {
     } catch {
       return { status: 'failure', error: new Error('Fetch request errored') };
     }
-  }
-
-  public send(
-    data: Uint8Array,
-    timeoutMillis: number
-  ): Promise<ExportResponse> {
-    return this._asyncSend(data, timeoutMillis);
-  }
-
-  public shutdown(): void {
-    // Intentionally left empty, nothing to do.
   }
 }

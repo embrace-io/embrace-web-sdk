@@ -1,6 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { SessionAPI } from './SessionAPI';
+import {
+  ProxySpanSessionManager,
+  type SpanSessionManager
+} from '../../manager/index.js';
+import { SessionAPI } from './SessionAPI.js';
 
 afterEach(() => {
   sinon.restore();
@@ -13,9 +17,20 @@ describe('SessionAPI', () => {
   });
   it('should return the global session manager', () => {
     const sessionAPI = SessionAPI.getInstance();
-    const sessionManager = {} as any;
+    const sessionManager: SpanSessionManager = {
+      // Mock implementation of SpanSessionManager
+      getSessionId: sinon.stub().returns('mockSessionId'),
+      getSessionStartTime: sinon.stub().returns(1234567890),
+      getSessionSpan: sinon.stub().returns('mockSpanId'),
+      startSessionSpan: sinon.stub(),
+      endSessionSpan: sinon.stub(),
+      endSessionSpanInternal: sinon.stub()
+    };
     sessionAPI.setGlobalSessionManager(sessionManager);
-    const result = sessionAPI.getSpanSessionManager().getDelegate();
-    expect(result).to.equal(sessionManager);
+    const result = sessionAPI.getSpanSessionManager();
+    expect(result).to.be.instanceOf(ProxySpanSessionManager);
+    expect((result as ProxySpanSessionManager).getDelegate()).to.equal(
+      sessionManager
+    );
   });
 });

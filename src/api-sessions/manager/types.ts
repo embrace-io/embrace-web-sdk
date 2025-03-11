@@ -1,18 +1,18 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 
 export interface SpanSessionManager {
-  getSessionId(): string | null;
+  getSessionId: () => string | null;
 
-  getSessionStartTime(): HrTime | null;
+  getSessionStartTime: () => HrTime | null;
 
-  getSessionSpan(): Span | null;
+  getSessionSpan: () => Span | null;
 
-  startSessionSpan(): void;
+  startSessionSpan: () => void;
 
-  endSessionSpan(): void;
+  endSessionSpan: () => void;
 
   // todo move this to another class SpanSessionManagerInternal that is only accessible from within our code, but expose the external one without the method to the users.
-  endSessionSpanInternal(reason: ReasonSessionEnded): void;
+  endSessionSpanInternal: (reason: ReasonSessionEnded) => void;
 }
 
 export type ReasonSessionEnded =

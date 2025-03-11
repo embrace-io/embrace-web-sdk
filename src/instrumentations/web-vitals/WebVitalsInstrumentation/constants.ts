@@ -4,7 +4,7 @@ import {
   onFID,
   onINP,
   onLCP,
-  onTTFB,
+  onTTFB
 } from 'web-vitals/attribution';
 
 export const EMB_WEB_VITALS_PREFIX = 'emb-web-vitals';
@@ -18,5 +18,5 @@ export const WEB_VITALS_ID_TO_LISTENER = {
   FID: onFID,
   LCP: onLCP,
   INP: onINP,
-  TTFB: onTTFB,
+  TTFB: onTTFB
 } as const;

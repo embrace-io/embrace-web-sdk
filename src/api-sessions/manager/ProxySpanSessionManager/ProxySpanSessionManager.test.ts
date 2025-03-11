@@ -1,10 +1,10 @@
-import * as chai from 'chai';
-import { ProxySpanSessionManager } from './ProxySpanSessionManager';
-import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager';
-import type { ReasonSessionEnded, SpanSessionManager } from '../types';
 import type { HrTime, Span } from '@opentelemetry/api';
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
+import type { ReasonSessionEnded, SpanSessionManager } from '../types.js';
+import { ProxySpanSessionManager } from './ProxySpanSessionManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -21,7 +21,7 @@ describe('ProxySpanSessionManager', () => {
       getSessionStartTime: sinon.stub().returns([0, 0] as HrTime),
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
-      endSessionSpanInternal: sinon.stub(),
+      endSessionSpanInternal: sinon.stub()
     };
   });
 
@@ -57,13 +57,13 @@ describe('ProxySpanSessionManager', () => {
   it('should delegate startSessionSpan to the delegate', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.startSessionSpan();
-    expect(mockDelegate.startSessionSpan).to.have.been.calledOnce;
+    void expect(mockDelegate.startSessionSpan).to.have.been.calledOnce;
   });
 
   it('should delegate endSessionSpan to the delegate', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.endSessionSpan();
-    expect(mockDelegate.endSessionSpan).to.have.been.calledOnce;
+    void expect(mockDelegate.endSessionSpan).to.have.been.calledOnce;
   });
 
   it('should delegate endSessionSpanInternal to the delegate with unknown reason', () => {

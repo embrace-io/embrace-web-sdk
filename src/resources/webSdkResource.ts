@@ -1,12 +1,12 @@
+import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
 import { detectResourcesSync, Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
 import {
   EMBRACE_SERVICE_NAME,
   NATIVE_FRAMEWORK,
   SDK_VERSION,
   TEMPLATE_APP_VERSION,
-  TEMPLATE_BUNDLE_ID,
+  TEMPLATE_BUNDLE_ID
 } from './constants/index.js';
 
 export const getWebSDKResource = () => {
@@ -26,10 +26,10 @@ export const getWebSDKResource = () => {
     bundle_id: TEMPLATE_BUNDLE_ID,
     sdk_version: SDK_VERSION,
     sdk_simple_version: 1,
-    sdk_platform: 'web',
+    sdk_platform: 'web'
   });
   const detectedResources = detectResourcesSync({
-    detectors: [browserDetector],
+    detectors: [browserDetector]
   });
   resource = resource.merge(detectedResources);
   return resource;

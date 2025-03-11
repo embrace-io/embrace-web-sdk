@@ -1,20 +1,20 @@
 import type {
-  Instrumentation,
-  InstrumentationConfig,
-  InstrumentationModuleDefinition,
-  SpanCustomizationHook,
-} from '@opentelemetry/instrumentation';
-import type {
   DiagLogger,
   Meter,
   MeterProvider,
   Span,
   Tracer,
-  TracerProvider,
+  TracerProvider
 } from '@opentelemetry/api';
 import { diag, metrics, trace } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
+import type {
+  Instrumentation,
+  InstrumentationConfig,
+  InstrumentationModuleDefinition,
+  SpanCustomizationHook
+} from '@opentelemetry/instrumentation';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 import * as shimmer from 'shimmer';
 
@@ -22,7 +22,7 @@ import * as shimmer from 'shimmer';
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.
 export abstract class InstrumentationAbstract<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig,
+  ConfigType extends InstrumentationConfig = InstrumentationConfig
 > implements Instrumentation<ConfigType>
 {
   protected _config: ConfigType = {} as ConfigType;
@@ -42,9 +42,8 @@ export abstract class InstrumentationAbstract<
   // eslint-disable-next-line @typescript-eslint/unbound-method
   protected _massUnwrap = shimmer.massUnwrap;
   /* Api to mass unwrap instrumented methods */
+
   /* Api to wrap instrumented method */
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
 
   public constructor(
     public readonly instrumentationName: string,
@@ -54,7 +53,7 @@ export abstract class InstrumentationAbstract<
     this.setConfig(config);
 
     this._diag = diag.createComponentLogger({
-      namespace: instrumentationName,
+      namespace: instrumentationName
     });
 
     this._tracer = trace.getTracer(instrumentationName, instrumentationVersion);
@@ -63,12 +62,15 @@ export abstract class InstrumentationAbstract<
     this._updateMetricInstruments();
   }
 
+  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
   private _tracer: Tracer;
 
   /* Returns tracer */
   protected get tracer(): Tracer {
     return this._tracer;
   }
+
+  // NOTE: disabling typescript check, as this class was copied from OTel repo.
 
   private _meter: Meter;
 
@@ -82,30 +84,6 @@ export abstract class InstrumentationAbstract<
   /* Returns logger */
   protected get logger(): Logger {
     return this._logger;
-  }
-
-  /**
-   * Sets MeterProvider to this plugin
-   * @param meterProvider
-   */
-  public setMeterProvider(meterProvider: MeterProvider): void {
-    this._meter = meterProvider.getMeter(
-      this.instrumentationName,
-      this.instrumentationVersion
-    );
-
-    this._updateMetricInstruments();
-  }
-
-  /**
-   * Sets LoggerProvider to this plugin
-   * @param loggerProvider
-   */
-  public setLoggerProvider(loggerProvider: LoggerProvider): void {
-    this._logger = loggerProvider.getLogger(
-      this.instrumentationName,
-      this.instrumentationVersion
-    );
   }
 
   /**
@@ -128,6 +106,12 @@ export abstract class InstrumentationAbstract<
     return initResult;
   }
 
+  /* Disable plugin */
+  public abstract disable(): void;
+
+  /* Enable plugin */
+  public abstract enable(): void;
+
   /* Returns InstrumentationConfig */
   public getConfig(): ConfigType {
     return this._config;
@@ -142,8 +126,32 @@ export abstract class InstrumentationAbstract<
     // nested properties are not copied, thus are mutable from the outside.
     this._config = {
       enabled: true,
-      ...config,
+      ...config
     };
+  }
+
+  /**
+   * Sets LoggerProvider to this plugin
+   * @param loggerProvider
+   */
+  public setLoggerProvider(loggerProvider: LoggerProvider): void {
+    this._logger = loggerProvider.getLogger(
+      this.instrumentationName,
+      this.instrumentationVersion
+    );
+  }
+
+  /**
+   * Sets MeterProvider to this plugin
+   * @param meterProvider
+   */
+  public setMeterProvider(meterProvider: MeterProvider): void {
+    this._meter = meterProvider.getMeter(
+      this.instrumentationName,
+      this.instrumentationVersion
+    );
+
+    this._updateMetricInstruments();
   }
 
   /**
@@ -157,20 +165,9 @@ export abstract class InstrumentationAbstract<
     );
   }
 
-  /* Enable plugin */
-  public abstract enable(): void;
-
-  /* Disable plugin */
-  public abstract disable(): void;
-
   /**
    * Sets the new metric instruments with the current Meter.
    */
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
-  protected _updateMetricInstruments(): void {
-    return;
-  }
-
   /**
    * Init method in which plugin should define _modules and patches for
    * methods.
@@ -182,6 +179,11 @@ export abstract class InstrumentationAbstract<
     // I agree with typescript here, but keeping it disabled for consistency with the base repo
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void;
+
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  protected _updateMetricInstruments(): void {
+    return;
+  }
 
   /**
    * Execute span customization hook, if configured, and log any errors.
