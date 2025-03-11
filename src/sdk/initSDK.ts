@@ -8,21 +8,17 @@ import {
   WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
-  SpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import {
-  ContextManager,
-  metrics,
-  TextMapPropagator,
-  trace,
-} from '@opentelemetry/api';
+import type { ContextManager, TextMapPropagator } from '@opentelemetry/api';
+import { metrics, trace } from '@opentelemetry/api';
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
-  LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import {
   EmbraceNetworkSpanProcessor,
@@ -30,10 +26,8 @@ import {
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { logs } from '@opentelemetry/api-logs';
-import {
-  Instrumentation,
-  registerInstrumentations,
-} from '@opentelemetry/instrumentation';
+import type { Instrumentation } from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import {
@@ -41,16 +35,18 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { session, SpanSessionManager } from '../api-sessions/index.js';
+import type { SpanSessionManager } from '../api-sessions/index.js';
+import { session } from '../api-sessions/index.js';
+import type { MetricReader } from '@opentelemetry/sdk-metrics';
 import {
   MeterProvider,
-  MetricReader,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { LocalStorageUserInstrumentation } from '../instrumentations/user/LocalStorageUserInstrumentation/index.js';
 import { EmbraceUserManager } from '../instrumentations/user/index.js';
-import { user, UserManager } from '../api-users/index.js';
+import type { UserManager } from '../api-users/index.js';
+import { user } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
 import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcessor/index.js';
 import { isValidAppID } from './utils.js';

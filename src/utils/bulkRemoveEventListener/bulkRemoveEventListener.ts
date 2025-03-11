@@ -1,4 +1,4 @@
-import { BulkRemoveEventListenerArgs } from './types.js';
+import type { BulkRemoveEventListenerArgs } from './types.js';
 
 /**
  * Remove multiple event listeners from a target element.

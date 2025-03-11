@@ -1,8 +1,8 @@
-import { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
+import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { Attributes, Gauge, MeterProvider } from '@opentelemetry/api';
+import type { Attributes, Gauge, MeterProvider } from '@opentelemetry/api';
 import { type Metric } from 'web-vitals/attribution';
-import { SpanSessionManager } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import {
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
@@ -10,7 +10,7 @@ import {
   NOT_CORE_WEB_VITALS,
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.js';
-import { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
+import type { TrackingLevel, WebVitalsInstrumentationArgs } from './types.js';
 import { withErrorFallback } from '../../../utils/index.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';

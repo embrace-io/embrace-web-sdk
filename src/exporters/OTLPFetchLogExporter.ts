@@ -4,7 +4,7 @@ import type {
 } from '@opentelemetry/sdk-logs';
 import { JsonLogsSerializer } from '@opentelemetry/otlp-transformer';
 import { BaseFetchExporter } from './BaseFetchExporter/index.js';
-import { OtlpFetchExporterConfig } from './types.js';
+import type { OtlpFetchExporterConfig } from './types.js';
 import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate.js';
 
 export class OTLPFetchLogExporter

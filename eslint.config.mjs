@@ -17,6 +17,7 @@ const compat = new FlatCompat({
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config({
   files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+  ignores: ['**/*.test.ts'],
   extends: [
     pluginJs.configs.recommended,
     tseslint.configs.strictTypeChecked,
@@ -47,6 +48,8 @@ export default tseslint.config({
         allowAsThisParameter: true,
       },
     ],
+    "@typescript-eslint/consistent-type-exports": "error",
+    "@typescript-eslint/consistent-type-imports": "error",
     '@typescript-eslint/naming-convention': [
       'error',
       {

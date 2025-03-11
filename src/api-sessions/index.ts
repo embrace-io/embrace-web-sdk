@@ -1,6 +1,6 @@
 export { session } from './sessionAPI.js';
+export type { SpanSessionManager } from './manager/index.js';
 export {
-  SpanSessionManager,
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
 } from './manager/index.js';

@@ -1,4 +1,4 @@
-import { Attributes, AttributeValue } from '@opentelemetry/api';
+import type { Attributes, AttributeValue } from '@opentelemetry/api';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
@@ -7,7 +7,7 @@ import {
   SEMATTRS_HTTP_STATUS_CODE,
   SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,

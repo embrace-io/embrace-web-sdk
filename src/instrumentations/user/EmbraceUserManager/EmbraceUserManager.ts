@@ -1,5 +1,5 @@
-import { UserManager } from '../../../api-users/index.js';
-import { User } from '../../../api-users/manager/types.js';
+import type { UserManager } from '../../../api-users/index.js';
+import type { User } from '../../../api-users/manager/types.js';
 
 export class EmbraceUserManager implements UserManager {
   private _activeUser: User | null = null;
