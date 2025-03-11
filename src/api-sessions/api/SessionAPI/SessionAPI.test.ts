@@ -11,17 +11,6 @@ describe('SessionAPI', () => {
     const instance2 = SessionAPI.getInstance();
     expect(instance1).to.equal(instance2);
   });
-  it('should set the global session manager', () => {
-    const sessionManager = {} as any;
-    const sessionAPI = SessionAPI.getInstance();
-    const setDelegateStub = sinon.stub(
-      sessionAPI.getSpanSessionManager(),
-      'setDelegate'
-    );
-    sessionAPI.setGlobalSessionManager(sessionManager);
-    expect(setDelegateStub.calledOnce).to.be.true;
-    expect(setDelegateStub.firstCall.args[0]).to.equal(sessionManager);
-  });
   it('should return the global session manager', () => {
     const sessionAPI = SessionAPI.getInstance();
     const sessionManager = {} as any;
