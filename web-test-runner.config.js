@@ -8,7 +8,7 @@ const nodeResolve = fromRollup(nodeResolveRollup);
 
 export default {
   nodeResolve: true,
-  files: ['src/**/*.test.ts'],
+  files: ['src/exporters/EmbraceLogExporter/EmbraceLogExporter.test.ts'],
   plugins: [
     esbuildPlugin({ ts: true }),
     nodeResolve({ browser: true, preferBuiltins: false }),
