@@ -63,7 +63,15 @@ export default tseslint.config({
     ],
     '@typescript-eslint/no-unused-vars': [
       'error',
-      { argsIgnorePattern: '^_', args: 'after-used' }
+      {
+        "args": "all",
+        "argsIgnorePattern": "^_",
+        "caughtErrors": "all",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "ignoreRestSiblings": true
+      }
     ],
     'no-restricted-syntax': ['error', 'ExportAllDeclaration'],
     'prefer-arrow-functions/prefer-arrow-functions': [
