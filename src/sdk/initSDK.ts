@@ -27,8 +27,7 @@ import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import type { SpanSessionManager } from '../api-sessions/index.js';
 import { session } from '../api-sessions/index.js';
 import type { UserManager } from '../api-users/index.js';
-import { user } from '../api-users/index.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../api-users/manager/constants/index.js';
+import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter
@@ -36,21 +35,19 @@ import {
 import {
   ClicksInstrumentation,
   EmbraceSpanSessionManager,
+  EmbraceUserManager,
   GlobalExceptionInstrumentation,
+  LocalStorageUserInstrumentation,
+  SpanSessionBrowserActivityInstrumentation,
+  SpanSessionOnLoadInstrumentation,
+  SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation
 } from '../instrumentations/index.js';
-import { SpanSessionBrowserActivityInstrumentation } from '../instrumentations/session/SpanSessionBrowserActivityInstrumentation/index.js';
-import { SpanSessionOnLoadInstrumentation } from '../instrumentations/session/SpanSessionOnLoadInstrumentation/index.js';
-import { SpanSessionTimeoutInstrumentation } from '../instrumentations/session/SpanSessionTimeoutInstrumentation/index.js';
-import {
-  EmbraceUserManager,
-  LocalStorageUserInstrumentation
-} from '../instrumentations/user/index.js';
-import { EmbTypeLogRecordProcessor } from '../processors/EmbTypeLogRecordProcessor/index.js';
 import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
+  EmbTypeLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
