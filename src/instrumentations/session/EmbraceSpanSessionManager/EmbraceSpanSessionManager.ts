@@ -1,5 +1,10 @@
-import type { DiagLogger, HrTime, Span } from '@opentelemetry/api';
-import { diag, trace } from '@opentelemetry/api';
+import {
+  diag,
+  type DiagLogger,
+  type HrTime,
+  type Span,
+  trace
+} from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import type { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
@@ -10,17 +15,30 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE
 } from '../../../constants/index.js';
-import { generateUUID, getNowHRTime } from '../../../utils/index.js';
+import type { PerformanceManager } from '../../../utils/index.js';
+import { generateUUID, OTelPerformanceManager } from '../../../utils/index.js';
+import type { EmbraceSpanSessionManagerArgs } from './types.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
-  private readonly _diag: DiagLogger = diag.createComponentLogger({
-    namespace: 'EmbraceSpanSessionManager'
-  });
+  private readonly _diag: DiagLogger;
+  private readonly _perf: PerformanceManager;
 
-  // note: don't use this internally, this is just for user facing APIs. Use thi.endSessionSpanInternal instead.
+  public constructor({
+    diag: diagParam,
+    perf
+  }: EmbraceSpanSessionManagerArgs = {}) {
+    this._diag =
+      diagParam ??
+      diag.createComponentLogger({
+        namespace: 'EmbraceSpanSessionManager'
+      });
+    this._perf = perf ?? new OTelPerformanceManager();
+  }
+
+  // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
   public endSessionSpan() {
     this.endSessionSpanInternal('manual');
   }
@@ -61,7 +79,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
-    this._activeSessionStartTime = getNowHRTime();
+    this._activeSessionStartTime = this._perf.getNowHRTime();
     this._sessionSpan = tracer.startSpan('emb-session', {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,

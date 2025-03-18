@@ -4,12 +4,13 @@ import {
   bulkRemoveEventListener,
   throttle
 } from '../../../utils/index.js';
-import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
+import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
 import {
   EVENT_THROTTLING_TIME_WINDOW,
   TIMEOUT_TIME,
   WINDOW_USER_EVENTS
 } from './constants.js';
+import type { SpanSessionBrowserActivityInstrumentationArgs } from './types.js';
 
 /**
  *  SpanSessionBrowserActivityInstrumentation will track the user activity and end the session span if there is no
@@ -17,12 +18,19 @@ import {
  *  SpanSessionBrowserActivityInstrumentation will initialize new sessions if new activity is detected and there is no
  *  active session.
  * */
-export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
+export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onActivityThrottled: () => void;
   private _activityTimeout: TimeoutRef | null;
 
-  public constructor() {
-    super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
+  public constructor({
+    diag
+  }: SpanSessionBrowserActivityInstrumentationArgs = {}) {
+    super({
+      instrumentationName: 'SpanSessionBrowserActivityInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      config: {}
+    });
     this._activityTimeout = null;
     this._onActivityThrottled = throttle(
       this._onActivity,
@@ -51,7 +59,6 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
       events: WINDOW_USER_EVENTS,
       callback: this._onActivityThrottled
     });
-    this._onActivityThrottled();
   };
 
   private readonly _onInactivity = () => {

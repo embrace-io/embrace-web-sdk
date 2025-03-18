@@ -2,7 +2,8 @@ import type {
   ExportResponse,
   IExporterTransport
 } from '@opentelemetry/otlp-exporter-base';
-import { getNowMillis } from '../../utils/getNowHRTime/getNowHRTime.js';
+import type { PerformanceManager } from '../../utils/index.js';
+import { OTelPerformanceManager } from '../../utils/index.js';
 import {
   BACKOFF_MULTIPLIER,
   INITIAL_BACKOFF,
@@ -19,13 +20,16 @@ const getJitter = () => Math.random() * (2 * JITTER) - JITTER;
 // Taken directly from open-telemetry/opentelemetry-js/experimental/packages/otlp-exporter-base/src/retrying-transport.ts
 // File is not exposed externally
 export class RetryingTransport implements IExporterTransport {
-  public constructor(private readonly _transport: IExporterTransport) {}
+  public constructor(
+    private readonly _transport: IExporterTransport,
+    private readonly _perf: PerformanceManager = new OTelPerformanceManager()
+  ) {}
 
   public async send(
     data: Uint8Array,
     timeoutMillis: number
   ): Promise<ExportResponse> {
-    const deadline = getNowMillis() + timeoutMillis;
+    const deadline = this._perf.getNowMillis() + timeoutMillis;
     let result = await this._transport.send(data, timeoutMillis);
     let attempts = MAX_ATTEMPTS;
     let nextBackoff = INITIAL_BACKOFF;
@@ -42,7 +46,7 @@ export class RetryingTransport implements IExporterTransport {
       const retryInMillis = result.retryInMillis ?? backoff;
 
       // return when expected retry time is after the export deadline.
-      const remainingTimeoutMillis = deadline - getNowMillis();
+      const remainingTimeoutMillis = deadline - this._perf.getNowMillis();
       if (retryInMillis > remainingTimeoutMillis) {
         return result;
       }

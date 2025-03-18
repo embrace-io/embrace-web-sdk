@@ -4,8 +4,11 @@ import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import { type Metric } from 'web-vitals/attribution';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
-import { getNowMillis } from '../../../utils/getNowHRTime/getNowHRTime.js';
-import { withErrorFallback } from '../../../utils/index.js';
+import type { PerformanceManager } from '../../../utils/index.js';
+import {
+  OTelPerformanceManager,
+  withErrorFallback
+} from '../../../utils/index.js';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import {
   CORE_WEB_VITALS,
@@ -22,18 +25,21 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
   private readonly _trackingLevel: TrackingLevel;
   private readonly _spanSessionManager: SpanSessionManager;
   private readonly _meterProvider: MeterProvider;
+  private readonly _perf: PerformanceManager;
 
   // function that emits a metric for each web vital report
   public constructor({
     trackingLevel = 'core',
     spanSessionManager,
-    meterProvider
+    meterProvider,
+    perf = new OTelPerformanceManager()
   }: WebVitalsInstrumentationArgs) {
     super('WebVitalsInstrumentation', '1.0.0', {});
     this._gauges = {};
     this._spanSessionManager = spanSessionManager;
     this._meterProvider = meterProvider;
     this._trackingLevel = trackingLevel;
+    this._perf = perf;
 
     if (this._config.enabled) {
       this.enable();
@@ -67,7 +73,7 @@ export class WebVitalsInstrumentation extends InstrumentationBase {
     Object.keys(this._gauges).forEach(name => {
       WEB_VITALS_ID_TO_LISTENER[name as Metric['name']](metric => {
         // first thing record the time when this cb was invoked
-        const now = getNowMillis();
+        const now = this._perf.getNowMillis();
         // we split the atts into low cardinality and high cardinality so we only report the low cardinality ones as metrics
         // and keep the high cardinality ones for the span event representation
         const lowCardinalityAtts: Attributes = {
