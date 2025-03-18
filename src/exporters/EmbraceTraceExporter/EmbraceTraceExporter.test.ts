@@ -180,6 +180,7 @@ describe('EmbraceTraceExporter', () => {
     const expectedBodyFirefoxWebkitString = JSON.stringify(
       encodedBodyFirefoxWebkit
     );
+    //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
     expect(encodedBodyString).to.be.oneOf([
       expectedBodyChromeString,
       expectedBodyFirefoxWebkitString
