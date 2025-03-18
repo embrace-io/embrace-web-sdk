@@ -21,15 +21,17 @@
     "sdk:compile:esm:watch": "tsc --build tsconfig.esm.json --watch",
     "sdk:compile:esnext": "tsc --build tsconfig.esnext.json",
     "sdk:compile:cjs": "tsc --build tsconfig.json",
-    "sdk:lint:eslint": "eslint --fix --max-warnings=0 ./src ",
+    "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0 ./src ",
+    "sdk:lint:eslint": "eslint --max-warnings=0 ./src ",
     "sdk:lint:prettier": "prettier --write ./src ",
     "sdk:lint": "npm run sdk:lint:eslint && npm run sdk:lint:prettier",
+    "sdk:lint:fix": "npm run sdk:lint:eslint:fix && npm run sdk:lint:prettier",
     "commitlint": "commitlint",
     "prepare": "husky"
   },
   "lint-staged": {
     "./src/**/*": [
-      "npm run sdk:lint:eslint",
+      "npm run sdk:lint:eslint:fix",
       "npm run sdk:lint:prettier"
     ]
   },
