@@ -1,6 +1,6 @@
 export const KEY_EMB_TYPE = 'emb.type';
 export const KEY_EMB_STATE = 'emb.state';
-export const KEY_EMB_SESSION_REASON_ENDED = 'emb.session.reason_ended';
+export const KEY_EMB_SESSION_REASON_ENDED = 'emb.session_end_type';
 export const KEY_JS_EXCEPTION_STACKTRACE = 'emb.stacktrace.js';
 
 export enum EMB_TYPES {

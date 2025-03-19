@@ -1,16 +1,16 @@
 import type { DiagLogger, HrTime, Span } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
+import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import type { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../../constants/index.js';
-import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import { generateUUID, getNowHRTime } from '../../../utils/index.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import type { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
@@ -20,16 +20,38 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     namespace: 'EmbraceSpanSessionManager',
   });
 
+  // note: don't use this internally, this is just for user facing APIs. Use thi.endSessionSpanInternal instead.
+  public endSessionSpan() {
+    this.endSessionSpanInternal('manual');
+  }
+
+  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
+  public endSessionSpanInternal(reason: ReasonSessionEnded) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to end a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.setAttribute(KEY_EMB_SESSION_REASON_ENDED, reason);
+    this._sessionSpan.end();
+    this._sessionSpan = null;
+    this._activeSessionStartTime = null;
+    this._activeSessionId = null;
+  }
+
   public getSessionId(): string | null {
     return this._activeSessionId;
   }
 
-  public getSessionStartTime(): HrTime | null {
-    return this._activeSessionStartTime;
-  }
-
   public getSessionSpan(): Span | null {
     return this._sessionSpan;
+  }
+
+  // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
+
+  public getSessionStartTime(): HrTime | null {
+    return this._activeSessionStartTime;
   }
 
   public startSessionSpan() {
@@ -47,26 +69,5 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
         [ATTR_SESSION_ID]: this._activeSessionId,
       },
     });
-  }
-
-  // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
-  public endSessionSpanInternal(reason: ReasonSessionEnded) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to end a session, but there is no session in progress. This is a no-op.'
-      );
-      return;
-    }
-    this._sessionSpan.setAttribute(KEY_EMB_SESSION_REASON_ENDED, reason);
-    this._sessionSpan.end();
-    this._sessionSpan = null;
-    this._activeSessionStartTime = null;
-    this._activeSessionId = null;
-  }
-
-  // note: don't use this internally, this is just for user facing APIs. Use thi.endSessionSpanInternal instead.
-  public endSessionSpan() {
-    this.endSessionSpanInternal('user_ended');
   }
 }

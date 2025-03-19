@@ -17,9 +17,9 @@ export interface SpanSessionManager {
 
 export type ReasonSessionEnded =
   | 'unknown'
-  | 'inactivity'
-  | 'max_time_reached'
-  | 'user_ended'
+  | 'inactivity' // inactivity timer
+  | 'timer' // max_time_reached limit
+  | 'manual' // using the public api
   | 'max_size_reached'
-  | 'visibility_hidden'
+  | 'bkgnd_state' // visibility change to hidden
   | 'new_session_started';
