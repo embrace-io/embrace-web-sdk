@@ -1,7 +1,11 @@
 name: CI
 
 on:
+  push:
+    branches: [ master ]
   pull_request:
+  release:
+    types: [ released ]
 
 env:
   NODE_VERSION: '22.x'
