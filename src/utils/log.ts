@@ -3,9 +3,15 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   EMB_TYPES,
-  KEY_EMB_TYPE,
-  KEY_JS_EXCEPTION_STACKTRACE
+  KEY_EMB_JS_EXCEPTION_STACKTRACE,
+  KEY_EMB_TYPE
 } from '../constants/index.js';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE
+} from '@opentelemetry/semantic-conventions';
+import { KEY_EMB_EXCEPTION_HANDLING } from '../constants/attributes.js';
 
 type LogSeverity = 'info' | 'warning' | 'error';
 
@@ -48,9 +54,37 @@ export const logMessage = ({
       //  error level logs with frames from the Embrace SDK itself removed
       ...(stackTrace
         ? {
-            [KEY_JS_EXCEPTION_STACKTRACE]: stackTrace
+            [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stackTrace
           }
         : {})
+    }
+  });
+};
+
+export const logException = ({
+  logger,
+  timestamp,
+  attributes = {},
+  error
+}: {
+  logger: Logger;
+  timestamp: number;
+  attributes?: Record<string, AttributeValue | undefined>;
+  error: Error;
+}) => {
+  logger.emit({
+    timestamp,
+    severityNumber: SeverityNumber.ERROR,
+    severityText: 'ERROR',
+    body: error.message || '',
+    attributes: {
+      ...attributes,
+      [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
+      [KEY_EMB_EXCEPTION_HANDLING]: 'UNHANDLED',
+      [ATTR_EXCEPTION_TYPE]: error.constructor.name,
+      ['exception.name']: error.name,
+      [ATTR_EXCEPTION_MESSAGE]: error.message,
+      [ATTR_EXCEPTION_STACKTRACE]: error.stack
     }
   });
 };
