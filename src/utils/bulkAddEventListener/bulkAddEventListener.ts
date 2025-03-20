@@ -15,7 +15,7 @@ import type { BulkAddEventListenerArgs } from './types.js';
 export const bulkAddEventListener = ({
   target,
   events,
-  callback,
+  callback
 }: BulkAddEventListenerArgs) => {
   events.forEach(event => {
     target.addEventListener(event, callback);

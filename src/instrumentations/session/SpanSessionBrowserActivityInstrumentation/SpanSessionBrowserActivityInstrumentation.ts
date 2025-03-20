@@ -1,15 +1,15 @@
-import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
-import {
-  EVENT_THROTTLING_TIME_WINDOW,
-  TIMEOUT_TIME,
-  WINDOW_USER_EVENTS,
-} from './constants.js';
 import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
-  throttle,
+  throttle
 } from '../../../utils/index.js';
+import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
+import {
+  EVENT_THROTTLING_TIME_WINDOW,
+  TIMEOUT_TIME,
+  WINDOW_USER_EVENTS
+} from './constants.js';
 
 /**
  *  SpanSessionBrowserActivityInstrumentation will track the user activity and end the session span if there is no
@@ -18,13 +18,16 @@ import {
  *  active session.
  * */
 export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstrumentation {
-  private readonly onActivity: () => void;
+  private readonly _onActivityThrottled: () => void;
   private _activityTimeout: TimeoutRef | null;
 
   public constructor() {
     super('SpanSessionBrowserActivityInstrumentation', '1.0.0', {});
     this._activityTimeout = null;
-    this.onActivity = throttle(this._onActivity, EVENT_THROTTLING_TIME_WINDOW);
+    this._onActivityThrottled = throttle(
+      this._onActivity,
+      EVENT_THROTTLING_TIME_WINDOW
+    );
     if (this._config.enabled) {
       this.enable();
     }
@@ -34,7 +37,7 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     bulkRemoveEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this.onActivity,
+      callback: this._onActivityThrottled
     });
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
@@ -46,12 +49,12 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     bulkAddEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this.onActivity,
+      callback: this._onActivityThrottled
     });
-    this.onActivity();
+    this._onActivityThrottled();
   };
 
-  private readonly onInactivity = () => {
+  private readonly _onInactivity = () => {
     this._diag.debug('Inactivity detected');
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
@@ -69,6 +72,6 @@ export class SpanSessionBrowserActivityInstrumentation extends SpanSessionInstru
     if (!this.sessionManager.getSessionId()) {
       this.sessionManager.startSessionSpan();
     }
-    this._activityTimeout = setTimeout(this.onInactivity, TIMEOUT_TIME);
+    this._activityTimeout = setTimeout(this._onInactivity, TIMEOUT_TIME);
   };
 }

@@ -1,5 +1,5 @@
-import { type SpanSessionManager } from '../../../api-sessions/index.js';
 import type { MeterProvider } from '@opentelemetry/api';
+import { type SpanSessionManager } from '../../../api-sessions/index.js';
 
 export type TrackingLevel = 'core' | 'all';
 

@@ -3,7 +3,10 @@
   "compilerOptions": {
     "esModuleInterop": true
   },
-  "include": [
-    "./**/*.test.ts"
+  "exclude": [
+    "node_modules",
+    "demo",
+    "cli",
+    "build"
   ]
 }

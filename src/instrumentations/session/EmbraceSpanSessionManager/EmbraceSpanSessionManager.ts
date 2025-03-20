@@ -8,7 +8,7 @@ import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
-  KEY_EMB_TYPE,
+  KEY_EMB_TYPE
 } from '../../../constants/index.js';
 import { generateUUID, getNowHRTime } from '../../../utils/index.js';
 
@@ -17,7 +17,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
   private readonly _diag: DiagLogger = diag.createComponentLogger({
-    namespace: 'EmbraceSpanSessionManager',
+    namespace: 'EmbraceSpanSessionManager'
   });
 
   // note: don't use this internally, this is just for user facing APIs. Use thi.endSessionSpanInternal instead.
@@ -66,8 +66,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,
         [KEY_EMB_STATE]: EMB_STATES.Foreground,
-        [ATTR_SESSION_ID]: this._activeSessionId,
-      },
+        [ATTR_SESSION_ID]: this._activeSessionId
+      }
     });
   }
 }

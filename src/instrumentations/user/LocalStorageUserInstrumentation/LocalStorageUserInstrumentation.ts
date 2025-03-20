@@ -1,11 +1,11 @@
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
-import { isUser } from './types.js';
-import { generateUUID } from '../../../utils/index.js';
-import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
-import type { User, UserManager } from '../../../api-users/manager/types.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/manager/constants/index.js';
 import { user } from '../../../api-users/index.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/manager/constants/index.js';
+import type { User, UserManager } from '../../../api-users/manager/types.js';
+import { generateUUID } from '../../../utils/index.js';
+import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import { EMBRACE_USER_LOCAL_STORAGE_KEY } from './constants.js';
+import { isUser } from './types.js';
 
 export class LocalStorageUserInstrumentation extends InstrumentationBase {
   private readonly _userManager: UserManager;
@@ -68,7 +68,7 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
 
   private _generateNewUser() {
     const user: User = {
-      [KEY_ENDUSER_PSEUDO_ID]: generateUUID(),
+      [KEY_ENDUSER_PSEUDO_ID]: generateUUID()
     };
     try {
       const encodedUserString = JSON.stringify(user);

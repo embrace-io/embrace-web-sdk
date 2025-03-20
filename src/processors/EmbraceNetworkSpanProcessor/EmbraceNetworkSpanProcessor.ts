@@ -1,11 +1,4 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import { isNetworkSpan } from './types.js';
-
-import {
-  ATTR_HTTP_REQUEST_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_BODY_SIZE,
-} from '@opentelemetry/semantic-conventions/incubating';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
@@ -14,19 +7,27 @@ import {
   SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
   SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_HTTP_URL,
+  SEMATTRS_HTTP_URL
 } from '@opentelemetry/semantic-conventions';
+
+import {
+  ATTR_HTTP_REQUEST_BODY_SIZE,
+  ATTR_HTTP_RESPONSE_BODY_SIZE
+} from '@opentelemetry/semantic-conventions/incubating';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
+import { isNetworkSpan } from './types.js';
 
 /**
  * Embrace's API expects network spans to have some specific attributes.
  * This processor checks if a span is a network span and adds them.
  */
 export class EmbraceNetworkSpanProcessor implements SpanProcessor {
-  public onStart(this: void): void {
-    // do nothing.
+  public forceFlush(): Promise<void> {
+    return Promise.resolve(undefined);
   }
 
   // TODO `onEnd` is not supposed to modify the span. There is a new experimental onEnding api that allows modifying
+
   //  the span before it is sent to the exporter. This processor should be updated to use that api once that is available
   public onEnd(span: ReadableSpan): void {
     if (isNetworkSpan(span)) {
@@ -41,23 +42,19 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
        */
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[ATTR_URL_FULL] ??= span.attributes[SEMATTRS_HTTP_URL];
-      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
         span.attributes[SEMATTRS_HTTP_STATUS_CODE];
-      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??=
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
         span.attributes[SEMATTRS_HTTP_METHOD];
-      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??=
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
         span.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH];
-      span.attributes[ATTR_HTTP_REQUEST_BODY_SIZE] ??=
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_REQUEST_BODY_SIZE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
         span.attributes[SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH];
     }
   }
 
-  public forceFlush(): Promise<void> {
-    return Promise.resolve(undefined);
+  public onStart(this: void): void {
+    // do nothing.
   }
 
   public shutdown(): Promise<void> {

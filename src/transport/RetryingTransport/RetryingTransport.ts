@@ -1,15 +1,15 @@
 import type {
   ExportResponse,
-  IExporterTransport,
+  IExporterTransport
 } from '@opentelemetry/otlp-exporter-base';
+import { getNowMillis } from '../../utils/getNowHRTime/getNowHRTime.js';
 import {
   BACKOFF_MULTIPLIER,
   INITIAL_BACKOFF,
   JITTER,
   MAX_ATTEMPTS,
-  MAX_BACKOFF,
+  MAX_BACKOFF
 } from './constants.js';
-import { getNowMillis } from '../../utils/getNowHRTime/getNowHRTime.js';
 
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]
@@ -47,7 +47,7 @@ export class RetryingTransport implements IExporterTransport {
         return result;
       }
 
-      result = await this.retry(data, remainingTimeoutMillis, retryInMillis);
+      result = await this._retry(data, remainingTimeoutMillis, retryInMillis);
     }
 
     return result;
@@ -57,7 +57,7 @@ export class RetryingTransport implements IExporterTransport {
     this._transport.shutdown();
   }
 
-  private retry(
+  private _retry(
     data: Uint8Array,
     timeoutMillis: number,
     inMillis: number

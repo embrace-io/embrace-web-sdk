@@ -1,13 +1,13 @@
 import type { Attributes, AttributeValue } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_URL_FULL,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_HTTP_URL,
+  SEMATTRS_HTTP_URL
 } from '@opentelemetry/semantic-conventions';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,
@@ -35,15 +35,12 @@ export const isNetworkSpan = (
   span: ReadableSpan | NetworkSpan
 ): span is NetworkSpan => {
   if (
-    (span.attributes[ATTR_HTTP_REQUEST_METHOD] ||
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+    (span.attributes[ATTR_HTTP_REQUEST_METHOD] || // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[SEMATTRS_HTTP_METHOD]) &&
-    (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ||
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+    (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[SEMATTRS_HTTP_STATUS_CODE])
   ) {
-    const url =
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
+    const url = // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[ATTR_URL_FULL] ?? span.attributes[SEMATTRS_HTTP_URL];
 
     return !!(url && typeof url === 'string' && SCHEME_RE.exec(url));
