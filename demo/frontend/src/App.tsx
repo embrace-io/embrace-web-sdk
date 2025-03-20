@@ -142,7 +142,7 @@ const App = () => {
   }
 
   function handleThrowErrorD() {
-    const e = new Error("This is an error with name CustomError and type Error");
+    const e = new Error("This is an error with name ParseError and type Error");
     e.name = "ParseError";
     throw e;
   }
