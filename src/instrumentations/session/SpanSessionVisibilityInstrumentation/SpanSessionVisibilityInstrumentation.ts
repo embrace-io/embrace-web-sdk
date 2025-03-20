@@ -7,7 +7,7 @@ export class SpanSessionVisibilityInstrumentation extends SpanSessionInstrumenta
     super('SpanSessionVisibilityInstrumentation', '1.0.0', {});
     this._onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        this.sessionManager.endSessionSpanInternal('visibility_hidden');
+        this.sessionManager.endSessionSpanInternal('bkgnd_state');
       } else {
         this.sessionManager.startSessionSpan();
       }

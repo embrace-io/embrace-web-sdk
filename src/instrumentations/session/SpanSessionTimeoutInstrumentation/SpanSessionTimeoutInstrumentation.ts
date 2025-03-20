@@ -1,7 +1,7 @@
-import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
+import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
 import type { TimeoutRef } from '../../../utils/index.js';
 import { getNowHRTime } from '../../../utils/index.js';
-import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
+import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 
 /**
@@ -34,7 +34,7 @@ export class SpanSessionTimeoutInstrumentation extends SpanSessionInstrumentatio
     if (this._sessionTimeout) {
       clearTimeout(this._sessionTimeout);
     }
-    this.sessionManager.endSessionSpanInternal('max_time_reached');
+    this.sessionManager.endSessionSpanInternal('timer');
     this.sessionManager.startSessionSpan();
     // set a new check in TIMEOUT_TIME for the session we just started
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);
