@@ -21,5 +21,4 @@ export type ReasonSessionEnded =
   | 'timer' // max_time_reached limit
   | 'manual' // using the public api
   | 'max_size_reached'
-  | 'bkgnd_state' // visibility change to hidden
-  | 'new_session_started';
+  | 'bkgnd_state'; // visibility change to hidden
