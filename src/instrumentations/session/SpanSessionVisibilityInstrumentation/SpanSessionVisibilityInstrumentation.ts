@@ -4,7 +4,7 @@ import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onVisibilityChange: (event: Event) => void;
 
-  public constructor({ diag }: SpanSessionVisibilityInstrumentationArgs) {
+  public constructor({ diag }: SpanSessionVisibilityInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SpanSessionOnLoadInstrumentation',
       instrumentationVersion: '1.0.0',
