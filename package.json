@@ -15,7 +15,7 @@
     "sdk:test": "web-test-runner",
     "sdk:test:manual": "npm run sdk:test -- --manual",
     "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
-    "sdk:test:multiBrowsers": "npm run sdk:test -- --playwright --browsers chromium firefox webkit",
+    "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
     "sdk:test:watch": "npm run sdk:test -- --watch",
     "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "sdk:compile:esm": "tsc --build tsconfig.esm.json",

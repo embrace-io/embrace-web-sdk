@@ -106,6 +106,7 @@ jobs:
       - name: Test multiple browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
+          npx playwright install --with-deps
           npm run sdk:test:multiBrowsers
 
       - name: Cache successful test results
