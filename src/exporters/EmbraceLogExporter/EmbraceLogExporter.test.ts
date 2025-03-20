@@ -3,7 +3,15 @@ import type { IResource } from '@opentelemetry/resources';
 import type { ReadableLogRecord } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import * as fakeFetch from '../../testUtils/fake-fetch/index.test.js';
+import {
+  fakeFetchGetBody,
+  fakeFetchGetMethod,
+  fakeFetchGetRequestHeaders,
+  fakeFetchGetUrl,
+  fakeFetchInstall,
+  fakeFetchRespondWith,
+  fakeFetchRestore
+} from '../../testUtils/index.js';
 import { EmbraceLogExporter } from './EmbraceLogExporter.js';
 import type { EmbraceLogExporterArgs } from './types.js';
 
@@ -30,11 +38,11 @@ describe('EmbraceLogExporter', () => {
   ];
 
   beforeEach(() => {
-    fakeFetch.install();
+    fakeFetchInstall();
   });
 
   afterEach(() => {
-    fakeFetch.restore();
+    fakeFetchRestore();
   });
 
   it('should initialize ', () => {
@@ -47,7 +55,7 @@ describe('EmbraceLogExporter', () => {
   });
 
   it('should send using fetch with the right config', async () => {
-    fakeFetch.respondWith('');
+    fakeFetchRespondWith('');
     const args: EmbraceLogExporterArgs = {
       appID: mockAppID,
       userID: mockUserID
@@ -60,8 +68,8 @@ describe('EmbraceLogExporter', () => {
         resolve();
       });
     });
-    expect(fakeFetch.getMethod()).to.equal('POST');
-    const headers = fakeFetch.getRequestHeaders();
+    expect(fakeFetchGetMethod()).to.equal('POST');
+    const headers = fakeFetchGetRequestHeaders();
     expect((headers as Record<string, string>)['Content-Encoding']).to.equal(
       'gzip'
     );
@@ -80,10 +88,10 @@ describe('EmbraceLogExporter', () => {
       chromeContentLength,
       firefoxWebkitContentLength
     ]);
-    expect(fakeFetch.getUrl()).to.equal(
+    expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.stg.emb-eng.com/v2/logs'
     );
-    const body = fakeFetch.getBody();
+    const body = fakeFetchGetBody();
     void expect(body).not.to.be.null;
     // assert that the decompressed and decoded body is the expected one
     const expectedBody = {

@@ -1,8 +1,14 @@
-import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
+import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import type { SpanSessionOnLoadInstrumentationArgs } from './types.js';
 
-export class SpanSessionOnLoadInstrumentation extends SpanSessionInstrumentation {
-  public constructor() {
-    super('SpanSessionOnLoadInstrumentation', '1.0.0', {});
+export class SpanSessionOnLoadInstrumentation extends EmbraceInstrumentationBase {
+  public constructor({ diag }: SpanSessionOnLoadInstrumentationArgs = {}) {
+    super({
+      instrumentationName: 'SpanSessionOnLoadInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      config: {}
+    });
     if (this._config.enabled) {
       this.enable();
     }

@@ -1,14 +1,22 @@
-import { SpanSessionInstrumentation } from '../SpanSessionInstrumentation/index.js';
+import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
 
-export class SpanSessionVisibilityInstrumentation extends SpanSessionInstrumentation {
+export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onVisibilityChange: (event: Event) => void;
 
-  public constructor() {
-    super('SpanSessionVisibilityInstrumentation', '1.0.0', {});
+  public constructor({ diag }: SpanSessionVisibilityInstrumentationArgs) {
+    super({
+      instrumentationName: 'SpanSessionOnLoadInstrumentation',
+      instrumentationVersion: '1.0.0',
+      config: {},
+      diag
+    });
     this._onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        this._diag.debug('Visibility change detected: hidden');
         this.sessionManager.endSessionSpanInternal('bkgnd_state');
       } else {
+        this._diag.debug('Visibility change detected: visible');
         this.sessionManager.startSessionSpan();
       }
     };

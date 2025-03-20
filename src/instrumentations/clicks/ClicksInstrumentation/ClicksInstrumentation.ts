@@ -12,20 +12,22 @@
  */
 
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { session } from '../../../api-sessions/index.js';
-import { epochMillisFromOriginOffset } from '../../../utils/getNowHRTime/getNowHRTime.js';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import { EmbraceInstrumentationBase } from '../../session/index.js';
+import type { ClicksInstrumentationArgs } from './types.js';
 
 import { getHTMLElementFriendlyName } from './utils.js';
 
-export class ClicksInstrumentation extends InstrumentationBase {
-  private readonly _spanSessionManager: SpanSessionManager;
+export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
-  public constructor() {
-    super('ClicksInstrumentation', '1.0.0', {});
-    this._spanSessionManager = session.getSpanSessionManager();
+  public constructor({ diag, perf }: ClicksInstrumentationArgs = {}) {
+    super({
+      instrumentationName: 'SpanSessionBrowserActivityInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      perf,
+      config: {}
+    });
 
     this._onClickHandler = (event: MouseEvent) => {
       const element = event.target;
@@ -38,7 +40,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
       }
 
       try {
-        const currentSessionSpan = this._spanSessionManager.getSessionSpan();
+        const currentSessionSpan = this.sessionManager.getSessionSpan();
         if (currentSessionSpan) {
           currentSessionSpan.addEvent(
             'click',
@@ -47,7 +49,7 @@ export class ClicksInstrumentation extends InstrumentationBase {
               'view.name': getHTMLElementFriendlyName(element),
               'tap.coords': `${event.x.toString()},${event.y.toString()}`
             },
-            epochMillisFromOriginOffset(event.timeStamp)
+            this.perf.epochMillisFromOriginOffset(event.timeStamp)
           );
         }
       } catch (e) {

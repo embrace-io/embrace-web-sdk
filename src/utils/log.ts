@@ -6,7 +6,6 @@ import {
   KEY_EMB_TYPE,
   KEY_JS_EXCEPTION_STACKTRACE
 } from '../constants/index.js';
-import { getNowMillis } from './getNowHRTime/getNowHRTime.js';
 
 type LogSeverity = 'info' | 'warning' | 'error';
 
@@ -23,14 +22,21 @@ const logSeverityToSeverityNumber = (severity: LogSeverity): SeverityNumber => {
 
 // TODO, expose a public API on top of this for logs? One thing to consider for the public interface is not
 // requiring the caller to supply their own Logger
-export const logMessage = (
-  logger: Logger,
-  message: string,
-  severity: LogSeverity,
-  timestamp: number = getNowMillis(),
-  attributes: Record<string, AttributeValue | undefined> = {},
-  stackTrace?: string
-) => {
+export const logMessage = ({
+  logger,
+  message,
+  severity,
+  timestamp,
+  attributes = {},
+  stackTrace
+}: {
+  logger: Logger;
+  message: string;
+  severity: LogSeverity;
+  timestamp: number;
+  attributes?: Record<string, AttributeValue | undefined>;
+  stackTrace?: string;
+}) => {
   logger.emit({
     timestamp,
     severityNumber: logSeverityToSeverityNumber(severity),
