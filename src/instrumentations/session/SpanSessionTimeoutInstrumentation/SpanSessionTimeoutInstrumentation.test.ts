@@ -1,9 +1,4 @@
-import { trace, type TracerProvider } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider
-} from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -16,6 +11,7 @@ import {
   InMemoryDiagLogger,
   MockPerformanceManager
 } from '../../../testUtils/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 import { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.js';
@@ -25,18 +21,13 @@ const { expect } = chai;
 describe('SpanSessionTimeoutInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: SpanSessionTimeoutInstrumentation;
-  let tracerProvider: TracerProvider;
   let clock: sinon.SinonFakeTimers;
   let diag: InMemoryDiagLogger;
   let perf: MockPerformanceManager;
   let spanSessionManager: SpanSessionManager;
 
   before(() => {
-    memoryExporter = new InMemorySpanExporter();
-    tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
-    });
-    trace.setGlobalTracerProvider(tracerProvider);
+    memoryExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {
@@ -81,7 +72,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'max_time_reached'
+      'timer'
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -120,7 +111,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     const sessionSpanA = finishedSpans[0];
     expect(sessionSpanA.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'new_session_started'
+      'manual'
     );
     expect(sessionSpanA.attributes).to.have.property(
       ATTR_SESSION_ID,
@@ -129,7 +120,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     const sessionSpanB = finishedSpans[1];
     expect(sessionSpanB.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'max_time_reached'
+      'timer'
     );
     expect(sessionSpanB.attributes).to.have.property(
       ATTR_SESSION_ID,

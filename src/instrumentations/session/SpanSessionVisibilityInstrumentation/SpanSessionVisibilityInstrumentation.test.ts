@@ -1,9 +1,3 @@
-import { trace, type TracerProvider } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider
-} from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -11,24 +5,19 @@ import {
   type SpanSessionManager
 } from '../../../api-sessions/index.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
 
 const { expect } = chai;
 
 describe('SpanSessionVisibilityInstrumentation', () => {
-  let memoryExporter: InMemorySpanExporter;
-  let tracerProvider: TracerProvider;
   let instrumentation: SpanSessionVisibilityInstrumentation;
   let spanSessionManager: SpanSessionManager;
   let diag: InMemoryDiagLogger;
 
   before(() => {
-    memoryExporter = new InMemorySpanExporter();
-    tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
-    });
-    trace.setGlobalTracerProvider(tracerProvider);
+    void setupTestTraceExporter();
   });
 
   beforeEach(() => {

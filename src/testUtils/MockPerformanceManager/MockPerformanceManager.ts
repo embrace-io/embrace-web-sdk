@@ -1,5 +1,5 @@
 import { millisToHrTime } from '@opentelemetry/core';
-import type { PerformanceManager } from '../../utils/index.js'; // Note: this is required as the latest version of sinon (19.0.2)  is not yet referencing the latest version of fake-timers (14)
+import type { PerformanceManager } from '../../utils/index.js';
 // Note: this is required as the latest version of sinon (19.0.2)  is not yet referencing the latest version of fake-timers (14)
 // which has the timeOrigin property on SinonFakeTimers. Will fake it for now and remove once sinon release its next version
 type PatchedSinonFakeTimers = sinon.SinonFakeTimers & {

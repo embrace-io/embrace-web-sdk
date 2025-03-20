@@ -1,9 +1,4 @@
-import { trace, type TracerProvider } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider
-} from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -13,6 +8,7 @@ import {
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
 import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';
@@ -22,17 +18,12 @@ const { expect } = chai;
 describe('SpanSessionBrowserActivityInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: SpanSessionBrowserActivityInstrumentation;
-  let tracerProvider: TracerProvider;
   let clock: sinon.SinonFakeTimers;
   let diag: InMemoryDiagLogger;
   let spanSessionManager: SpanSessionManager;
 
   before(() => {
-    memoryExporter = new InMemorySpanExporter();
-    tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
-    });
-    trace.setGlobalTracerProvider(tracerProvider);
+    memoryExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {

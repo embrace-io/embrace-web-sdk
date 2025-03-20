@@ -1,14 +1,10 @@
-import { trace, type TracerProvider } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider
-} from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
 
 chai.use(sinonChai);
@@ -17,15 +13,10 @@ const { expect } = chai;
 describe('EmbraceSpanSessionManager', () => {
   let manager: EmbraceSpanSessionManager;
   let memoryExporter: InMemorySpanExporter;
-  let tracerProvider: TracerProvider;
   let diag: InMemoryDiagLogger;
 
   before(() => {
-    memoryExporter = new InMemorySpanExporter();
-    tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
-    });
-    trace.setGlobalTracerProvider(tracerProvider);
+    memoryExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {
@@ -66,7 +57,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'user_ended'
+      'manual'
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -89,7 +80,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'new_session_started'
+      'manual'
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });

@@ -1,9 +1,4 @@
-import { trace, type TracerProvider } from '@opentelemetry/api';
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider
-} from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import {
@@ -11,6 +6,7 @@ import {
   type SpanSessionManager
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
+import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.js';
 
@@ -18,15 +14,10 @@ const { expect } = chai;
 
 describe('SpanSessionOnLoadInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
-  let tracerProvider: TracerProvider;
   let spanSessionManager: SpanSessionManager;
 
   before(() => {
-    memoryExporter = new InMemorySpanExporter();
-    tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
-    });
-    trace.setGlobalTracerProvider(tracerProvider);
+    memoryExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {
