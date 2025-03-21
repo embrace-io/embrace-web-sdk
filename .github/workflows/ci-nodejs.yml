@@ -43,8 +43,11 @@ jobs:
           echo 'NODE_VERSION=${{ env.NODE_VERSION }}' >> $GITHUB_OUTPUT
 
   test:
-    needs: configure
+    needs:
+      - configure
+      - environment
     runs-on: ${{ vars.RUNNER_SMALL }}
+    if: ${{ needs.environment.outputs.name == 'development' }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -103,22 +106,6 @@ jobs:
           npx playwright install --with-deps
           npm run sdk:test -- $argsCoverage
 
-      - name: Test multiple browsers
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npx playwright install --with-deps
-          npm run sdk:test:multiBrowsers
-
-      - name: Cache successful test results
-        if: ${{ success() }}
-        run: |
-          touch ${{ env.TEST_STATUS_FILE }}
-
-      - name: Do not cache test failures
-        if: ${{ failure() || cancelled() }}
-        run: |
-          rm -f ${{ env.TEST_STATUS_FILE }}
-
       # https://github.com/embrace-io/code-coverage-report-action
       - name: Generate coverage difference report
         uses: embrace-io/code-coverage-report-action@main
@@ -136,6 +123,73 @@ jobs:
         with:
           comment_tag: 'code-coverage-results'
           filePath: code-coverage-results.md
+
+  test-multiple-browsers:
+    needs:
+      - configure
+      - environment
+    if: ${{ needs.environment.outputs.name == 'staging' }}
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Cache test
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: .test
+          key: ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-${{ github.head_ref }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Test multiple browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npx playwright install --with-deps
+          npm run sdk:test:multiBrowsers
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
 
   commitlint:
     needs: configure
