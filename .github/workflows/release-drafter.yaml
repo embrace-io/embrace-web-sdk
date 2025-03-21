@@ -1,0 +1,10 @@
+name: Draft Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release-drafter:
+    uses: embrace-io/actions/.github/workflows/release-drafter.yml@master
+    secrets: inherit

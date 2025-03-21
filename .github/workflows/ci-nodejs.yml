@@ -1,13 +1,37 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
+  release:
+    types: [released]
 
 env:
   NODE_VERSION: '22.x'
   LINT_STATUS_FILE: lint.success.txt
+  TEST_STATUS_FILE: test.success.txt
 
 jobs:
+  environment:
+    runs-on: ${{ vars.RUNNER_PYTHON_SMALL }}
+    outputs:
+      name: ${{ steps.choose_environment.outputs.name }}
+      name_short: ${{ steps.choose_environment.outputs.name_short }}
+      URL: ${{ steps.choose_environment.outputs.URL }}
+    steps:
+      - name: Choose environment
+        id: choose_environment
+        run: |
+          # Finalized releases get deployed to prod
+          if [ '${{ github.event_name }}' == 'release' ] && [ '${{ github.event.action }}' == 'released' ]; then
+              echo 'name=production' >> $GITHUB_OUTPUT
+          # All pushes to main get deployed to staging
+          elif [ '${{ github.ref }}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
+              echo 'name=staging' >> $GITHUB_OUTPUT
+          else
+              echo 'name=development' >> $GITHUB_OUTPUT
+          fi
   configure:
     runs-on: ${{ vars.RUNNER_SMALL }}
     outputs:
@@ -18,11 +42,133 @@ jobs:
         run: |
           echo 'NODE_VERSION=${{ env.NODE_VERSION }}' >> $GITHUB_OUTPUT
 
-  # test: TODO
+  test:
+    needs: configure
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Cache test
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: .test
+          key: ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-${{ github.head_ref }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Test with coverage
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
+          if [[ '${{ github.event_name }}/${{ github.event.action }}' == 'release/released' || '${{ github.actor }}' == 'dependabot[bot]' ]]; then
+            argsCoverage=''
+          else
+            argsCoverage='--config=web-test-runner.coverage.config.js'
+            echo 'TEST_COLLECTED_COVERAGE=true' >> $GITHUB_ENV
+          fi
+          npx playwright install --with-deps
+          npm run sdk:test -- $argsCoverage
+
+      - name: Test multiple browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npx playwright install --with-deps
+          npm run sdk:test:multiBrowsers
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+      # https://github.com/embrace-io/code-coverage-report-action
+      - name: Generate coverage difference report
+        uses: embrace-io/code-coverage-report-action@main
+        id: coverage_report
+        if: ${{ github.event_name != 'release' && env.TEST_PREVIOUSLY_PASSED != 'true' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
+        with:
+          # https://github.com/embrace-io/code-coverage-report-action/blob/main/action.yml
+          filename: 'coverage/cobertura-coverage.xml'
+          retention_days: 90
+
+      # https://github.com/embrace-io/actions-comment-pull-request
+      - name: Post coverage difference report as PR comment
+        uses: embrace-io/actions-comment-pull-request@v2
+        if: ${{ steps.coverage_report.outputs.file != '' && github.event_name == 'pull_request' && success() }}
+        with:
+          comment_tag: 'code-coverage-results'
+          filePath: code-coverage-results.md
+
+  commitlint:
+    needs: configure
+    timeout-minutes: 5
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    if: ${{ github.actor != 'dependabot[bot]' && github.event_name == 'pull_request' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - name: Install npm dependencies
+        run: |
+          npm ci --include="dev"
+
+      - name: Validate current commit (last commit) with commitlint
+        if: github.event_name == 'push'
+        run: npm run commitlint -- --last --verbose
+
+      - name: Validate PR commits with commitlint
+        if: github.event_name == 'pull_request'
+        run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
   lint:
     needs: configure
-    timeout-minutes: 15
+    timeout-minutes: 5
     runs-on: ${{ vars.RUNNER_SMALL }}
     if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
@@ -46,29 +192,79 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
 
       - uses: actions/setup-node@v4
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Install NPM dependencies
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --include="dev"
+
+      - name: Lint
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:lint
+
+      - name: Cache successful lint results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.LINT_STATUS_FILE }}
+
+      - name: Do not cache lint failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.ELINT_STATUS_FILE }}
+
+
+  publish:
+    needs:
+      - configure
+      - environment
+      - test
+      - lint
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    timeout-minutes: 10
+    if: ${{ needs.environment.outputs.name == 'production' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
           cache: npm
 
-      - name: Cache node_modules
-        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-${{ hashFiles('**/package-lock.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.node-version }}-nodemodules-
-      - name: Install npm dependencies
+      - name: Install NPM dependencies
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         run: |
+          npm config set @embraceio:registry https://repo.embrace.io/repository/web-testing/
+          npm config set //repo.embrace.io/repository/web-testing/:_authToken: "$NODE_AUTH_TOKEN"
           npm ci
-      - name: commitlint (PR)
-        run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
-  # deploy: TODO
+      - name: Run 'npm publish'
+        run: |
+          npm publish
 
-  # report-release-slack: TODO
+  # not used yet, there are no "production" releases
+  report-release-slack:
+    runs-on: ${{ vars.RUNNER_SMALL }}
+    if: ${{ needs.environment.outputs.name == 'production' }}
+    needs: [publish]
+    steps:
+      - name: "Send to #mission-web Slack channel/workflow"
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook-type: webhook-trigger
+          webhook: ${{ secrets.SLACK_WEB_SDK_RELEASE_WEBHOOK_URL }}
+          payload: |
+            author: ${{ github.actor }}
+            release_url: ${{ github.event.release.html_url }}
+            release_name: ${{ github.event.release.name }}
