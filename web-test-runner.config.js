@@ -8,6 +8,6 @@ export default {
   nodeResolve: true,
   files: ['src/**/*.test.ts'],
   plugins: [vitePlugin()],
-  browsers: [playwrightLauncher({ product: 'chromium', concurrency: 5 })],
+  browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
   filterBrowserLogs: removeViteLogging
 };
