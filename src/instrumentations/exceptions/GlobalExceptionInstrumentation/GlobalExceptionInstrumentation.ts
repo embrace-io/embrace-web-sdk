@@ -1,7 +1,7 @@
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import type { PerformanceManager } from '../../../utils/index.js';
 import { OTelPerformanceManager } from '../../../utils/index.js';
-import { logMessage } from '../../../utils/log.js';
+import { logException } from '../../../utils/log.js';
 import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { GlobalExceptionInstrumentationArgs } from './types.js';
 
@@ -18,31 +18,31 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
     this._perf = perf;
     this._onErrorHandler = (event: ErrorEvent) => {
-      logMessage({
-        logger: this.logger, // ErrorEvent is not typed correctly in the DOM types
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        message: event.error.message ?? '',
-        severity: 'error',
+      logException({
+        logger: this.logger,
         timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
-        // ErrorEvent is not typed correctly in the DOM types
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
-        stackTrace: event.error.stack
+        error: event.error as Error,
+        handled: false
       });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
-      const error =
-        event.reason && event.reason instanceof Error
-          ? event.reason
-          : new Error(
-              typeof event.reason === 'string'
-                ? event.reason
-                : 'Unhandled Rejected Promise'
-            );
-      logMessage({
+      let error: Error;
+      if (event.reason && event.reason instanceof Error) {
+        error = event.reason;
+      } else {
+        error = new Error(
+          typeof event.reason === 'string'
+            ? event.reason
+            : 'Unhandled Rejected Promise'
+        );
+        error.stack = '';
+      }
+
+      logException({
         logger: this.logger,
-        message: error.message,
-        severity: 'error',
-        timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp)
+        timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
+        error,
+        handled: false
       });
     };
 

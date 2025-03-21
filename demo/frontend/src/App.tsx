@@ -142,7 +142,9 @@ const App = () => {
   }
 
   function handleThrowErrorD() {
-    throw new Error('This is an error');
+    const e = new Error("This is an error with name ParseError and type Error");
+    e.name = "ParseError";
+    throw e;
   }
 
   const handleRejectPromise = () => {
