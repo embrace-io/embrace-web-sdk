@@ -79,15 +79,6 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
 
-      - name: Cache test
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
-        with:
-          path: .test
-          key: ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-${{ github.head_ref }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-
-
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
@@ -105,6 +96,16 @@ jobs:
           fi
           npx playwright install --with-deps
           npm run sdk:test -- $argsCoverage
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
 
       # https://github.com/embrace-io/code-coverage-report-action
       - name: Generate coverage difference report
@@ -160,15 +161,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-
-      - name: Cache test
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
-        with:
-          path: .test
-          key: ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-${{ github.head_ref }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ matrix.node-version }}-${{ hashFiles('**/package.lock.json') }}-branch-
 
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}

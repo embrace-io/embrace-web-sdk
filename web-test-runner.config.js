@@ -9,6 +9,5 @@ export default {
   files: ['src/**/*.test.ts'],
   plugins: [vitePlugin()],
   browsers: [playwrightLauncher({ product: 'chromium', concurrency: 5 })],
-  concurrentBrowsers: 3,
   filterBrowserLogs: removeViteLogging
 };
