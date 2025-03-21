@@ -21,22 +21,28 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
       logException({
         logger: this.logger,
         timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
-        error: event.error as Error
+        error: event.error as Error,
+        handled: false
       });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
-      const error =
-        event.reason && event.reason instanceof Error
-          ? event.reason
-          : new Error(
-              typeof event.reason === 'string'
-                ? event.reason
-                : 'Unhandled Rejected Promise'
-            );
+      let error: Error;
+      if (event.reason && event.reason instanceof Error) {
+        error = event.reason;
+      } else {
+        error = new Error(
+          typeof event.reason === 'string'
+            ? event.reason
+            : 'Unhandled Rejected Promise'
+        );
+        error.stack = '';
+      }
+
       logException({
         logger: this.logger,
         timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
-        error
+        error,
+        handled: false
       });
     };
 

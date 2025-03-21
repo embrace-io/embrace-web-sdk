@@ -64,13 +64,15 @@ export const logMessage = ({
 export const logException = ({
   logger,
   timestamp,
-  attributes = {},
-  error
+  error,
+  handled,
+  attributes = {}
 }: {
   logger: Logger;
   timestamp: number;
-  attributes?: Record<string, AttributeValue | undefined>;
   error: Error;
+  handled: boolean;
+  attributes?: Record<string, AttributeValue | undefined>;
 }) => {
   logger.emit({
     timestamp,
@@ -80,7 +82,7 @@ export const logException = ({
     attributes: {
       ...attributes,
       [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
-      [KEY_EMB_EXCEPTION_HANDLING]: 'UNHANDLED',
+      [KEY_EMB_EXCEPTION_HANDLING]: handled ? 'HANDLED' : 'UNHANDLED',
       [ATTR_EXCEPTION_TYPE]: error.constructor.name,
       ['exception.name']: error.name,
       [ATTR_EXCEPTION_MESSAGE]: error.message,
