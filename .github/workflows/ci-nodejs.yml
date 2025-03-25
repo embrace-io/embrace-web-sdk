@@ -47,6 +47,7 @@ jobs:
       - configure
       - environment
     runs-on: ${{ vars.RUNNER_SMALL }}
+    # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name == 'development' }}
     timeout-minutes: 5
     strategy:
@@ -162,7 +163,8 @@ jobs:
       - configure
       - environment
     runs-on: ${{ vars.RUNNER_SMALL }}
-    if: ${{ needs.environment.outputs.name == 'staging' }}
+    # staging and production run test-multiple-browsers, and development just runs regular test
+    if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -334,7 +336,7 @@ jobs:
     needs:
       - configure
       - environment
-      - test
+      - test-multiple-browsers
       - lint
     runs-on: ${{ vars.RUNNER_SMALL }}
     timeout-minutes: 10
