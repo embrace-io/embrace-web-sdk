@@ -251,7 +251,9 @@ const setupTraces = ({
         userID: enduserPseudoID
       });
       const embraceSessionBatchedProcessor =
-        new EmbraceSessionBatchedSpanProcessor(embraceTraceExporter);
+        new EmbraceSessionBatchedSpanProcessor({
+          exporter: embraceTraceExporter
+        });
       const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
 
       finalSpanProcessors.push(embraceNetworkSpanProcessor);
