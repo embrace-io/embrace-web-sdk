@@ -202,10 +202,12 @@ jobs:
           npm ci --strict-peer-deps
 
       - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         id: playwright-version
         run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
 
       - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/cache@v4
         id: playwright-cache
         with:
