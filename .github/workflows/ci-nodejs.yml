@@ -109,13 +109,13 @@ jobs:
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
         run: npm run playwright -- install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: npm run playwright -- install-deps
 
       - name: Test with coverage
@@ -144,7 +144,7 @@ jobs:
       - name: Generate coverage difference report
         uses: embrace-io/code-coverage-report-action@main
         id: coverage_report
-        if: ${{ github.event_name != 'release' && env.TEST_PREVIOUSLY_PASSED != 'true' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
           # https://github.com/embrace-io/code-coverage-report-action/blob/main/action.yml
           filename: 'coverage/cobertura-coverage.xml'
@@ -153,7 +153,7 @@ jobs:
       # https://github.com/embrace-io/actions-comment-pull-request
       - name: Post coverage difference report as PR comment
         uses: embrace-io/actions-comment-pull-request@v2
-        if: ${{ steps.coverage_report.outputs.file != '' && github.event_name == 'pull_request' && success() }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.coverage_report.outputs.file != '' && github.event_name == 'pull_request' && success() }}
         with:
           comment_tag: 'code-coverage-results'
           filePath: code-coverage-results.md
