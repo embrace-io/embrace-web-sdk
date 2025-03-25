@@ -336,7 +336,7 @@ jobs:
     needs:
       - configure
       - environment
-      - test
+      - test-multiple-browsers
       - lint
     runs-on: ${{ vars.RUNNER_SMALL }}
     timeout-minutes: 10
