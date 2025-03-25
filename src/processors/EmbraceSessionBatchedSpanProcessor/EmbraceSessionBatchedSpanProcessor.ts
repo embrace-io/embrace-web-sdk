@@ -26,18 +26,24 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   }
 
   public override forceFlush(): Promise<void> {
+    this.diag.debug(
+      'forceFlush called for EmbraceSessionBatchedSpanProcessor. This is a no op'
+    );
     return Promise.resolve(undefined);
   }
 
   public onEnd(span: ReadableSpan): void {
     if (this._shutdownOnce.isCalled) {
+      this.diag.debug('Span ended after processor shutdown. Ignoring span.');
       return;
     }
 
     if (!isSessionSpan(span)) {
+      this.diag.debug('Non-session span ended. Adding to pending spans queue.');
       this._pendingSpans.push(span);
     } else {
       // TODO: handle errors
+      this.diag.debug('Session span ended. Exporting all pending spans.');
       void internal._export(this._exporter, [span, ...this._pendingSpans]);
       this._pendingSpans = [];
     }
