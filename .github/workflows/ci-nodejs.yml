@@ -47,7 +47,8 @@ jobs:
       - configure
       - environment
     runs-on: ${{ vars.RUNNER_SMALL }}
-    if: ${{ needs.environment.outputs.name == 'development' }}
+    # staging runs test-multiple-browsers so we don't need to run regular test for staging
+    if: ${{ needs.environment.outputs.name != 'staging' }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
