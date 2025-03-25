@@ -1,5 +1,4 @@
 import { ExportResultCode } from '@opentelemetry/core';
-import type { IResource } from '@opentelemetry/resources';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
@@ -12,6 +11,7 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore
 } from '../../testUtils/index.js';
+import { mockSpan } from '../../testUtils/mockEntities/ReadableSpan.js';
 import { EmbraceTraceExporter } from './EmbraceTraceExporter.js';
 import type { EmbraceTraceExporterArgs } from './types.js';
 
@@ -22,30 +22,7 @@ const { expect } = chai;
 describe('EmbraceTraceExporter', () => {
   const mockAppID = 'testAppID';
   const mockUserID = 'testUserID';
-  const mockSpans: ReadableSpan[] = [
-    {
-      name: 'mock span',
-      kind: 1,
-      spanContext: () => ({
-        traceId: '1',
-        spanId: '2',
-        traceFlags: 1
-      }),
-      startTime: [0, 0],
-      endTime: [0, 0],
-      status: { code: 1 },
-      attributes: {},
-      links: [],
-      events: [],
-      duration: [0, 0],
-      ended: true,
-      resource: { attributes: {} } as IResource, // casting required to avoid having to implement `merge` method
-      instrumentationLibrary: { name: 'test', version: '1' },
-      droppedAttributesCount: 0,
-      droppedEventsCount: 0,
-      droppedLinksCount: 0
-    }
-  ];
+  const mockSpans: ReadableSpan[] = [mockSpan];
 
   beforeEach(() => {
     fakeFetchInstall();
