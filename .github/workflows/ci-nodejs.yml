@@ -86,10 +86,12 @@ jobs:
           npm ci --strict-peer-deps
 
       - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         id: playwright-version
         run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
 
       - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/cache@v4
         id: playwright-cache
         with:
@@ -227,13 +229,13 @@ jobs:
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
         run: npm run playwright -- install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: npm run playwright -- install-deps
 
       - name: Test multiple browsers
