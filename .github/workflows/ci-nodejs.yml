@@ -360,10 +360,10 @@ jobs:
 
       - name: Install NPM dependencies
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          NEXUS_NPM_TOKEN: ${{ secrets.NEXUS_NPM_TOKEN }}
         run: |
           npm config set @embraceio:registry https://repo.embrace.io/repository/web-testing/
-          npm config set //repo.embrace.io/repository/web-testing/:_authToken: "$NODE_AUTH_TOKEN"
+          npm config set //repo.embrace.io/repository/web-testing/:_authToken: "$NEXUS_NPM_TOKEN"
           npm ci
 
       - name: Run 'npm publish'
