@@ -1,13 +1,13 @@
-import styles from './App.module.css';
+import { session } from '@embraceio/embrace-web-sdk';
 
 import { Counter, metrics, Span, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { useCallback, useEffect, useState } from 'react';
-import { session } from '@embraceio/embrace-web-sdk';
+import styles from './App.module.css';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
+const getLazyLogger = () => logs.getLogger('embrace-web-sdk-demo-lazy-logger');
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
-const logger = logs.getLogger('embrace-web-sdk-demo-logger');
 const sessionProvider = session.getSpanSessionManager();
 
 const App = () => {
@@ -55,7 +55,7 @@ const App = () => {
     // TODO why is this not including a ProxyMeterProvider like logs and traces does?
     const meter = metrics.getMeter('embrace-web-sdk-demo-meter');
     const newCounter = meter.createCounter('counter', {
-      description: 'A counter',
+      description: 'A counter'
     });
     setCounter(newCounter);
   };
@@ -64,7 +64,7 @@ const App = () => {
     if (counter) {
       counter.add(1, {
         key: 'some value',
-        otherKey: 'other value',
+        otherKey: 'other value'
       });
     }
   }, [counter]);
@@ -75,42 +75,42 @@ const App = () => {
       sessionSpan.recordException({
         name: 'Error',
         message: 'This is an error',
-        stack: 'Error: This is an error',
+        stack: 'Error: This is an error'
       });
     }
   };
 
   const handleSendLog = () => {
-    logger.emit({
+    getLazyLogger().emit({
       severityNumber: SeverityNumber.INFO,
       severityText: 'INFO',
       body: 'This is a log',
       attributes: {
-        key: 'some value',
-      },
+        key: 'some value'
+      }
     });
   };
 
   const handleSendErrorLog = () => {
-    logger.emit({
+    getLazyLogger().emit({
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
       body: 'This is a error log',
       attributes: {
-        key: 'some value for an error log',
-      },
+        key: 'some value for an error log'
+      }
     });
   };
 
   const handleSendFetchNetworkRequest = () => {
     void fetch(POKEMON_URL, {
-      method: 'GET',
+      method: 'GET'
     });
   };
 
   const handleSendFetchNetworkRequest404 = () => {
     void fetch('https://example.com/sdk/auto/interception', {
-      method: 'GET',
+      method: 'GET'
     });
   };
 
@@ -142,8 +142,8 @@ const App = () => {
   }
 
   function handleThrowErrorD() {
-    const e = new Error("This is an error with name ParseError and type Error");
-    e.name = "ParseError";
+    const e = new Error('This is an error with name ParseError and type Error');
+    e.name = 'ParseError';
     throw e;
   }
 
@@ -163,44 +163,52 @@ const App = () => {
         <div className={styles.actions}>
           <button
             onClick={handleStartSessionSpan}
-            disabled={isSessionSpanStarted}>
+            disabled={isSessionSpanStarted}
+          >
             Start Session span
           </button>
           <button
             onClick={handleStartSessionSpan}
-            disabled={!isSessionSpanStarted}>
+            disabled={!isSessionSpanStarted}
+          >
             Override Session span
           </button>
           <button onClick={handleEndSessionSpan}>End Session Span</button>
         </div>
         <button
           onClick={handleStartSpan}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Start Span
         </button>
         <button
           onClick={handleSendLog}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Send Log
         </button>
         <button
           onClick={handleSendErrorLog}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Send Error Log
         </button>
         <button
           onClick={handleRecordException}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Record Exception
         </button>
         <button
           onClick={handleThrowError}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Throw Error
         </button>
         <button
           onClick={handleRejectPromise}
-          disabled={sessionProvider.getSessionSpan() === null}>
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
           Reject Promise
         </button>
         <button onClick={handleSendFetchNetworkRequest}>
