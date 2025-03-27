@@ -1,11 +1,20 @@
-import type { MeterProvider } from '@opentelemetry/api';
-import { type SpanSessionManager } from '../../../api-sessions/index.js';
-import type { EmbraceInstrumentationBaseArgs } from '../../session/index.js';
+import type { EmbraceInstrumentationBaseArgs } from '../../session/EmbraceInstrumentationBase/types.js';
+import type {
+  Metric,
+  MetricWithAttribution,
+  ReportOpts
+} from 'web-vitals/attribution';
 
 export type TrackingLevel = 'core' | 'all';
 
+export type WebVitalOnReport = (metric: MetricWithAttribution) => void;
+
+export type WebVitalListeners = Record<
+  Metric['name'],
+  ((onReport: WebVitalOnReport, opts?: ReportOpts) => void) | undefined
+>;
+
 export type WebVitalsInstrumentationArgs = {
   trackingLevel?: TrackingLevel;
-  spanSessionManager: SpanSessionManager;
-  meterProvider: MeterProvider;
-} & Pick<EmbraceInstrumentationBaseArgs, 'perf'>;
+  listeners?: WebVitalListeners;
+} & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;

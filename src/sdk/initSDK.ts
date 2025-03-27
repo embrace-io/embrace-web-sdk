@@ -347,9 +347,7 @@ const setupWebAutoInstrumentations = () =>
   });
 
 const setupInstrumentation = ({
-  instrumentations = null,
-  spanSessionManager,
-  meterProvider
+  instrumentations = null
 }: SetupInstrumentationArgs) => {
   // TODO: do we need to expose an api to allow external disabling of instrumentations? `registerInstrumentations`
   // returns a callback to disable instrumentations, but we are ignoring it atm
@@ -357,10 +355,7 @@ const setupInstrumentation = ({
     instrumentations: [
       new SpanSessionOnLoadInstrumentation(),
       instrumentations ?? setupWebAutoInstrumentations(),
-      new WebVitalsInstrumentation({
-        spanSessionManager,
-        meterProvider
-      }),
+      new WebVitalsInstrumentation(),
       new GlobalExceptionInstrumentation(),
       new SpanSessionVisibilityInstrumentation(),
       new ClicksInstrumentation(),
