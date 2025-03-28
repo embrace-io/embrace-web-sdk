@@ -1,4 +1,4 @@
-import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionOnLoadInstrumentationArgs } from './types.js';
 
 export class SpanSessionOnLoadInstrumentation extends EmbraceInstrumentationBase {

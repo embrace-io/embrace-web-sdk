@@ -4,7 +4,7 @@ import {
   bulkRemoveEventListener,
   throttle,
 } from '../../../utils/index.js';
-import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import {
   EVENT_THROTTLING_TIME_WINDOW,
   TIMEOUT_TIME,
