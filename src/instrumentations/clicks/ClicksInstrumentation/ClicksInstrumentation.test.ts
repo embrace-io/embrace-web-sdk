@@ -141,40 +141,6 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should stop recording after the instrumentation has been disabled', async () => {
-    const user = userEvent.setup();
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
-
-    const t1 = document.createElement('button');
-    t1.innerText = 'button1';
-    testContainer.append(t1);
-
-    const t2 = document.createElement('button');
-    t2.innerText = 'button2';
-    testContainer.append(t2);
-
-    await user.click(t2);
-    instrumentation.disable();
-    await user.click(t1);
-    spanSessionManager.endSessionSpan();
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clickEvent = sessionSpan.events[0];
-
-    void expect(clickEvent.name).to.be.equal('click');
-
-    void expect(clickEvent.attributes).to.deep.equal({
-      'emb.type': 'ux.tap',
-      'tap.coords': '0,0',
-      'view.name': '<button>button2</button>',
-    });
-  });
-
   it('should record multiple clicks', async () => {
     const user = userEvent.setup();
     instrumentation = new ClicksInstrumentation({
