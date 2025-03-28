@@ -68,5 +68,5 @@ export const WEB_VITALS_ID_TO_LISTENER = {
   TTFB: onTTFB,
 
   // Omitting onFID since FID (First Input Delay) has been deprecated
-  FID: undefined
+  FID: undefined,
 } as const;

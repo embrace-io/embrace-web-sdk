@@ -11,17 +11,17 @@ import { Resource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
-  LoggerProvider
+  LoggerProvider,
 } from '@opentelemetry/sdk-logs';
 import type { MetricReader } from '@opentelemetry/sdk-metrics';
 import {
   MeterProvider,
-  PeriodicExportingMetricReader
+  PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
-  WebTracerProvider
+  WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import type { SpanSessionManager } from '../api-sessions/index.js';
@@ -30,7 +30,7 @@ import type { UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
 import {
   EmbraceLogExporter,
-  EmbraceTraceExporter
+  EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
   ClicksInstrumentation,
@@ -42,13 +42,13 @@ import {
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
-  WebVitalsInstrumentation
+  WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
 import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
   EmbTypeLogRecordProcessor,
-  IdentifiableSessionLogRecordProcessor
+  IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -111,7 +111,7 @@ export const initSDK = ({
   instrumentations = null,
   contextManager = null,
   logProcessors = [],
-  metricReaders = []
+  metricReaders = [],
 }: SDKInitConfig = {}) => {
   try {
     const userManager = setupUser();
@@ -130,7 +130,7 @@ export const initSDK = ({
     const meterProvider = setupMetrics({
       resource: resourceWithWebSDKAttributes,
       exporters,
-      readers: metricReaders
+      readers: metricReaders,
     });
 
     const loggerProvider = setupLogs({
@@ -139,7 +139,7 @@ export const initSDK = ({
       resource: resourceWithWebSDKAttributes,
       exporters,
       logProcessors,
-      spanSessionManager
+      spanSessionManager,
     });
 
     setupTraces({
@@ -151,14 +151,14 @@ export const initSDK = ({
       contextManager,
       spanProcessors,
       loggerProvider,
-      resource: resourceWithWebSDKAttributes
+      resource: resourceWithWebSDKAttributes,
     });
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt the dependencies between instrumentations and global providers.
     // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
     setupInstrumentation({
       instrumentations,
       spanSessionManager,
-      meterProvider
+      meterProvider,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error.';
@@ -204,14 +204,14 @@ const setupMetrics = ({ resource, exporters, readers }: SetupMetricsArgs) => {
     const otlpExporter = new OTLPMetricExporter();
     const metricOTLPReader = new PeriodicExportingMetricReader({
       exporter: otlpExporter,
-      exportIntervalMillis: METRICS_EXPORT_INTERVAL // Export metrics every 10 seconds.
+      exportIntervalMillis: METRICS_EXPORT_INTERVAL, // Export metrics every 10 seconds.
     });
     finalReaders.push(metricOTLPReader);
   }
   // Initialize a MeterProvider with the above configurations.
   const myServiceMeterProvider = new MeterProvider({
     resource,
-    readers: finalReaders
+    readers: finalReaders,
   });
   // Set the initialized MeterProvider as global to enable metric collection across the app.
   metrics.setGlobalMeterProvider(myServiceMeterProvider);
@@ -226,11 +226,11 @@ const setupTraces = ({
   spanProcessors = [],
   propagator = null,
   contextManager = null,
-  spanSessionManager
+  spanSessionManager,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(spanSessionManager)
+    createSessionSpanProcessor(spanSessionManager),
   ];
 
   if (exporters.includes('otlp')) {
@@ -248,11 +248,11 @@ const setupTraces = ({
       }
       const embraceTraceExporter = new EmbraceTraceExporter({
         appID,
-        userID: enduserPseudoID
+        userID: enduserPseudoID,
       });
       const embraceSessionBatchedProcessor =
         new EmbraceSessionBatchedSpanProcessor({
-          exporter: embraceTraceExporter
+          exporter: embraceTraceExporter,
         });
       const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
 
@@ -262,12 +262,12 @@ const setupTraces = ({
   }
   const tracerProvider = new WebTracerProvider({
     resource,
-    spanProcessors: finalSpanProcessors
+    spanProcessors: finalSpanProcessors,
   });
 
   tracerProvider.register({
     ...(!!contextManager && { contextManager }),
-    propagator
+    propagator,
   });
   trace.setGlobalTracerProvider(tracerProvider);
 
@@ -289,18 +289,18 @@ const setupLogs = ({
   resource,
   exporters,
   logProcessors,
-  spanSessionManager
+  spanSessionManager,
 }: SetupLogsArgs) => {
   const loggerProvider = new LoggerProvider({
-    resource
+    resource,
   });
 
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new IdentifiableSessionLogRecordProcessor({
-      spanSessionManager
+      spanSessionManager,
     }),
-    new EmbTypeLogRecordProcessor()
+    new EmbTypeLogRecordProcessor(),
   ];
 
   if (exporters.includes('otlp')) {
@@ -317,7 +317,7 @@ const setupLogs = ({
       }
       const embraceLogsExporter = new EmbraceLogExporter({
         appID,
-        userID: enduserPseudoID
+        userID: enduserPseudoID,
       });
       finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
     }
@@ -342,12 +342,12 @@ const setupWebAutoInstrumentations = () =>
   getWebAutoInstrumentations({
     // Covered by our ClicksInstrumentation
     '@opentelemetry/instrumentation-user-interaction': {
-      enabled: false
-    }
+      enabled: false,
+    },
   });
 
 const setupInstrumentation = ({
-  instrumentations = null
+  instrumentations = null,
 }: SetupInstrumentationArgs) => {
   // TODO: do we need to expose an api to allow external disabling of instrumentations? `registerInstrumentations`
   // returns a callback to disable instrumentations, but we are ignoring it atm
@@ -360,7 +360,7 @@ const setupInstrumentation = ({
       new SpanSessionVisibilityInstrumentation(),
       new ClicksInstrumentation(),
       new SpanSessionBrowserActivityInstrumentation(),
-      new SpanSessionTimeoutInstrumentation()
-    ]
+      new SpanSessionTimeoutInstrumentation(),
+    ],
   });
 };

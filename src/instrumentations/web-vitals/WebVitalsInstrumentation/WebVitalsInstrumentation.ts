@@ -8,12 +8,12 @@ import {
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
   NOT_CORE_WEB_VITALS,
-  WEB_VITALS_ID_TO_LISTENER
+  WEB_VITALS_ID_TO_LISTENER,
 } from './constants.js';
 import type {
   TrackingLevel,
   WebVitalListeners,
-  WebVitalsInstrumentationArgs
+  WebVitalsInstrumentationArgs,
 } from './types.js';
 import { EmbraceInstrumentationBase } from '../../session/index.js';
 
@@ -28,14 +28,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     diag,
     perf,
     trackingLevel = 'core',
-    listeners = WEB_VITALS_ID_TO_LISTENER
+    listeners = WEB_VITALS_ID_TO_LISTENER,
   }: WebVitalsInstrumentationArgs = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config: {}
+      config: {},
     });
     this._gauges = {};
     this._trackingLevel = trackingLevel;
@@ -56,7 +56,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       this._gauges[name] = meter.createGauge(
         `${EMB_WEB_VITALS_PREFIX}-${name}`,
         {
-          description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`
+          description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
         }
       );
     });
@@ -65,7 +65,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         this._gauges[name] = meter.createGauge(
           `${EMB_WEB_VITALS_PREFIX}-${name}`,
           {
-            description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`
+            description: `Embrace instrumentation - emits a metric for each web vital report for ${name}`,
           }
         );
       });
@@ -81,7 +81,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
-          'emb.web_vital.rating': metric.rating
+          'emb.web_vital.rating': metric.rating,
         };
 
         this._gauges[name as Metric['name']]?.record(
@@ -91,7 +91,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         const highCardinalityAtts: Attributes = {
           'emb.web_vital.id': metric.id,
           'emb.web_vital.delta': metric.delta,
-          'emb.web_vital.value': metric.value
+          'emb.web_vital.value': metric.value,
         };
 
         Object.entries(metric.attribution).forEach(([key, value]) => {
@@ -111,7 +111,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
           {
             ...lowCardinalityAtts,
-            ...highCardinalityAtts
+            ...highCardinalityAtts,
           },
           now
         );

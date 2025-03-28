@@ -2,7 +2,7 @@ import type { EmbraceInstrumentationBaseArgs } from '../../session/EmbraceInstru
 import type {
   Metric,
   MetricWithAttribution,
-  ReportOpts
+  ReportOpts,
 } from 'web-vitals/attribution';
 
 export type TrackingLevel = 'core' | 'all';
