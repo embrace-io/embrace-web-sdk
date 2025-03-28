@@ -12,7 +12,7 @@
  */
 
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { EmbraceInstrumentationBase } from '../../session/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { ClicksInstrumentationArgs } from './types.js';
 
 import { getHTMLElementFriendlyName } from './utils.js';

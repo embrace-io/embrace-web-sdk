@@ -2,11 +2,11 @@ import type {
   InstrumentationConfig,
   InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { session } from '../../../api-sessions/index.js';
-import type { PerformanceManager } from '../../../utils/index.js';
-import { OTelPerformanceManager } from '../../../utils/index.js';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
+import type { SpanSessionManager } from '../../api-sessions/index.js';
+import { session } from '../../api-sessions/index.js';
+import type { PerformanceManager } from '../../utils/index.js';
+import { OTelPerformanceManager } from '../../utils/index.js';
+import { InstrumentationBase } from '../InstrumentationBase/index.js';
 import type { EmbraceInstrumentationBaseArgs } from './types.js';
 
 export abstract class EmbraceInstrumentationBase<

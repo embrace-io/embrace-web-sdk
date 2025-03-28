@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type { PerformanceManager } from '../../../utils/index.js';
+import type { PerformanceManager } from '../../utils/index.js';
 
 export interface EmbraceInstrumentationBaseArgs<
   ConfigType extends InstrumentationConfig = InstrumentationConfig,

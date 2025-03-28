@@ -15,7 +15,7 @@ import type {
   WebVitalListeners,
   WebVitalsInstrumentationArgs,
 } from './types.js';
-import { EmbraceInstrumentationBase } from '../../session/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   //map of web vitals to gauges to emit to

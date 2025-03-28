@@ -1,4 +1,4 @@
-import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {

@@ -1,4 +1,4 @@
-import type { EmbraceInstrumentationBaseArgs } from '../../session/EmbraceInstrumentationBase/types.js';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/types.js';
 import type {
   Metric,
   MetricWithAttribution,
