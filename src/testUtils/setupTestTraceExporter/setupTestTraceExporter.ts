@@ -2,7 +2,7 @@ import { trace } from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-  WebTracerProvider
+  WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 
 /**
@@ -12,7 +12,7 @@ import {
 export const setupTestTraceExporter = () => {
   const memoryExporter = new InMemorySpanExporter();
   const tracerProvider = new WebTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)]
+    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
   });
   trace.setGlobalTracerProvider(tracerProvider);
   return memoryExporter;

@@ -7,7 +7,7 @@ export {
   getUrl as fakeFetchGetUrl,
   getRequestHeaders as fakeFetchGetRequestHeaders,
   respondWith as fakeFetchRespondWith,
-  wasCalled as fakeFetchWasCalled
+  wasCalled as fakeFetchWasCalled,
 } from './fake-fetch/index.js';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger/index.js';
 export { MockPerformanceManager } from './MockPerformanceManager/index.js';

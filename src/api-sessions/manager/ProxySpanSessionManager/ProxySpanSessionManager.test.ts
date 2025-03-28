@@ -21,7 +21,7 @@ describe('ProxySpanSessionManager', () => {
       getSessionStartTime: sinon.stub().returns([0, 0] as HrTime),
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
-      endSessionSpanInternal: sinon.stub()
+      endSessionSpanInternal: sinon.stub(),
     };
   });
 

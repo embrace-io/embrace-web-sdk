@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   session,
-  type SpanSessionManager
+  type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';

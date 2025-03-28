@@ -3,7 +3,7 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import * as chai from 'chai';
 import {
   session,
-  type SpanSessionManager
+  type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';

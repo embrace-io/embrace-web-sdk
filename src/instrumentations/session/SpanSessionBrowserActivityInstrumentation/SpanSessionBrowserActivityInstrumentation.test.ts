@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   session,
-  type SpanSessionManager
+  type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
@@ -50,7 +50,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
       it(`on ${event}`, () => {
         void expect(spanSessionManager.getSessionSpan()).to.be.null;
         instrumentation = new SpanSessionBrowserActivityInstrumentation({
-          diag
+          diag,
         });
         window.dispatchEvent(new Event(event));
         void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
@@ -62,7 +62,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
   it('should end the current session when inactivity is detected', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
     instrumentation = new SpanSessionBrowserActivityInstrumentation({
-      diag
+      diag,
     });
     const anySupportedEvent = WINDOW_USER_EVENTS[0];
     window.dispatchEvent(new Event(anySupportedEvent));
@@ -90,7 +90,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
   it('should reset the inactivity timeout window on activity', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
     instrumentation = new SpanSessionBrowserActivityInstrumentation({
-      diag
+      diag,
     });
     const anySupportedEvent = WINDOW_USER_EVENTS[0];
     window.dispatchEvent(new Event(anySupportedEvent));
@@ -124,7 +124,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
   it('should NOT track activity if disabled', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
     instrumentation = new SpanSessionBrowserActivityInstrumentation({
-      diag
+      diag,
     });
     instrumentation.disable();
     const anySupportedEvent = WINDOW_USER_EVENTS[0];
@@ -135,7 +135,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
   it('should NOT track activity or inactivity anymore if disabled after being enabled', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
     instrumentation = new SpanSessionBrowserActivityInstrumentation({
-      diag
+      diag,
     });
     const anySupportedEvent = WINDOW_USER_EVENTS[0];
     window.dispatchEvent(new Event(anySupportedEvent));

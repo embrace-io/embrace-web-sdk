@@ -1,6 +1,6 @@
 import type {
   ExportResponse,
-  IExporterTransport
+  IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
 import type { FetchRequestParameters } from './types.js';
 
@@ -63,7 +63,7 @@ export class FetchTransport implements IExporterTransport {
     let request = data;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...this._config.headers
+      ...this._config.headers,
     };
 
     if (this._config.compression === 'gzip') {
@@ -79,7 +79,7 @@ export class FetchTransport implements IExporterTransport {
         keepalive: true,
         headers,
         body: request,
-        signal: AbortSignal.timeout(timeoutMillis)
+        signal: AbortSignal.timeout(timeoutMillis),
       });
 
       if (response.ok) {

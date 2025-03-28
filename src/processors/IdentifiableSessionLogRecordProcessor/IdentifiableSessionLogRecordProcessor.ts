@@ -2,7 +2,7 @@ import type { LogRecord } from '@opentelemetry/sdk-logs';
 import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   ATTR_LOG_RECORD_UID,
-  ATTR_SESSION_ID
+  ATTR_SESSION_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
 import { generateUUID } from '../../utils/index.js';
@@ -14,7 +14,7 @@ export class IdentifiableSessionLogRecordProcessor
   private readonly _spanSessionManager: SpanSessionManager;
 
   public constructor({
-    spanSessionManager
+    spanSessionManager,
   }: IdentifiableSessionLogRecordProcessorArgs) {
     this._spanSessionManager = spanSessionManager;
   }
@@ -27,7 +27,7 @@ export class IdentifiableSessionLogRecordProcessor
   public onEmit(logRecord: LogRecord) {
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
-      [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId()
+      [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),
     });
   }
 

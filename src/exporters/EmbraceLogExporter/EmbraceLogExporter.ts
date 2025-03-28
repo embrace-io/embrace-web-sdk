@@ -9,7 +9,7 @@ export class EmbraceLogExporter extends OTLPFetchLogExporter {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       headers: getEmbraceHeaders(appID, userID),
-      url: getLogEndpoint(appID)
+      url: getLogEndpoint(appID),
     });
   }
 }

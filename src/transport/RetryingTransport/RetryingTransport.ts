@@ -1,6 +1,6 @@
 import type {
   ExportResponse,
-  IExporterTransport
+  IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
 import type { PerformanceManager } from '../../utils/index.js';
 import { OTelPerformanceManager } from '../../utils/index.js';
@@ -9,7 +9,7 @@ import {
   INITIAL_BACKOFF,
   JITTER,
   MAX_ATTEMPTS,
-  MAX_BACKOFF
+  MAX_BACKOFF,
 } from './constants.js';
 
 /**

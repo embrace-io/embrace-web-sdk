@@ -13,7 +13,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
   ) => void;
 
   public constructor({
-    perf = new OTelPerformanceManager()
+    perf = new OTelPerformanceManager(),
   }: GlobalExceptionInstrumentationArgs = {}) {
     super('GlobalExceptionInstrumentation', '1.0.0', {});
     this._perf = perf;
@@ -22,7 +22,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
         logger: this.logger,
         timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
         error: event.error as Error,
-        handled: false
+        handled: false,
       });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
@@ -42,7 +42,7 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
         logger: this.logger,
         timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
         error,
-        handled: false
+        handled: false,
       });
     };
 

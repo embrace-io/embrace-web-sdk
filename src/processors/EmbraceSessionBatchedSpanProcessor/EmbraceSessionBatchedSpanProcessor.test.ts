@@ -2,7 +2,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   mockSessionSpan,
-  mockSpan
+  mockSpan,
 } from '../../testUtils/mockEntities/ReadableSpan.js';
 import { setupTestTraceExporter } from '../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
@@ -16,7 +16,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   beforeEach(() => {
     memoryExporter = setupTestTraceExporter();
     processor = new EmbraceSessionBatchedSpanProcessor({
-      exporter: memoryExporter
+      exporter: memoryExporter,
     });
   });
 

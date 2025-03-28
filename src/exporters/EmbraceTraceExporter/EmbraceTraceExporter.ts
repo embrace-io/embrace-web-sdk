@@ -9,7 +9,7 @@ export class EmbraceTraceExporter extends OTLPFetchTraceExporter {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       headers: getEmbraceHeaders(appID, userID),
-      url: getTraceEndpoint(appID)
+      url: getTraceEndpoint(appID),
     });
   }
 }

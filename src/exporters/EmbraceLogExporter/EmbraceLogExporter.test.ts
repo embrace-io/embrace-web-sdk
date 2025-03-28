@@ -10,7 +10,7 @@ import {
   fakeFetchGetUrl,
   fakeFetchInstall,
   fakeFetchRespondWith,
-  fakeFetchRestore
+  fakeFetchRestore,
 } from '../../testUtils/index.js';
 import { EmbraceLogExporter } from './EmbraceLogExporter.js';
 import type { EmbraceLogExporterArgs } from './types.js';
@@ -33,8 +33,8 @@ describe('EmbraceLogExporter', () => {
       resource: { attributes: {} } as IResource, // casting required to avoid having to implement `merge` method
       instrumentationScope: { name: 'test' },
       attributes: {},
-      droppedAttributesCount: 0
-    }
+      droppedAttributesCount: 0,
+    },
   ];
 
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe('EmbraceLogExporter', () => {
   it('should initialize ', () => {
     const args: EmbraceLogExporterArgs = {
       appID: mockAppID,
-      userID: mockUserID
+      userID: mockUserID,
     };
     const exporter = new EmbraceLogExporter(args);
     expect(exporter).to.be.instanceOf(EmbraceLogExporter);
@@ -58,7 +58,7 @@ describe('EmbraceLogExporter', () => {
     fakeFetchRespondWith('');
     const args: EmbraceLogExporterArgs = {
       appID: mockAppID,
-      userID: mockUserID
+      userID: mockUserID,
     };
 
     const exporter = new EmbraceLogExporter(args);
@@ -86,7 +86,7 @@ describe('EmbraceLogExporter', () => {
     //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
     expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
       chromeContentLength,
-      firefoxWebkitContentLength
+      firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.stg.emb-eng.com/v2/logs'
@@ -99,7 +99,7 @@ describe('EmbraceLogExporter', () => {
         {
           resource: {
             attributes: [],
-            droppedAttributesCount: 0
+            droppedAttributesCount: 0,
           },
           scopeLogs: [
             {
@@ -111,16 +111,16 @@ describe('EmbraceLogExporter', () => {
                   severityNumber: 1,
                   severityText: 'INFO',
                   body: {
-                    stringValue: 'mock body'
+                    stringValue: 'mock body',
                   },
                   attributes: [],
-                  droppedAttributesCount: 0
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  droppedAttributesCount: 0,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
     const decompressedStream = new Response(body).body?.pipeThrough(
       new DecompressionStream('gzip')

@@ -2,7 +2,7 @@ import { createOtlpNetworkExportDelegate } from '@opentelemetry/otlp-exporter-ba
 import type { ISerializer } from '@opentelemetry/otlp-transformer';
 import {
   createFetchTransport,
-  createRetryingTransport
+  createRetryingTransport,
 } from '../transport/index.js';
 import type { OtlpFetchExporterConfig } from './types.js'; // createOtlpBrowserFetchExportDelegate creates an export delegate that uses
 
@@ -17,6 +17,6 @@ export const createOtlpBrowserFetchExportDelegate = <Internal, Response>(
     config,
     serializer,
     createRetryingTransport({
-      transport: createFetchTransport(config)
+      transport: createFetchTransport(config),
     })
   );

@@ -9,7 +9,7 @@ describe('utils', () => {
       const headers = getEmbraceHeaders(appID, userID);
       expect(headers).to.deep.equal({
         'X-EM-AID': appID,
-        'X-EM-DID': userID
+        'X-EM-DID': userID,
       });
     });
   });

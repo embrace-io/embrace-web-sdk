@@ -7,7 +7,7 @@ export class SpanSessionOnLoadInstrumentation extends EmbraceInstrumentationBase
       instrumentationName: 'SpanSessionOnLoadInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
-      config: {}
+      config: {},
     });
     if (this._config.enabled) {
       this.enable();
