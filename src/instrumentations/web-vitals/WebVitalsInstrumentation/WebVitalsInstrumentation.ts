@@ -17,11 +17,10 @@ import type {
 import { EmbraceInstrumentationBase } from '../../session/index.js';
 
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
-  //map of web vitals to gauges to emit to
   private readonly _metricsToTrack: Metric['name'][];
   private readonly _listeners: WebVitalListeners;
 
-  // function that emits a metric for each web vital report
+  // instrumentation that adds an event to the session span for each web vital report
   public constructor({
     diag,
     perf,
