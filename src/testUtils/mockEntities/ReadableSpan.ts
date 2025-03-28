@@ -8,7 +8,7 @@ export const mockSpan: ReadableSpan = {
   spanContext: () => ({
     traceId: '1',
     spanId: '2',
-    traceFlags: 1
+    traceFlags: 1,
   }),
   startTime: [0, 0],
   endTime: [0, 0],
@@ -22,13 +22,13 @@ export const mockSpan: ReadableSpan = {
   instrumentationLibrary: { name: 'test', version: '1' },
   droppedAttributesCount: 0,
   droppedEventsCount: 0,
-  droppedLinksCount: 0
+  droppedLinksCount: 0,
 };
 
 export const mockSessionSpan: ReadableSpan = {
   ...mockSpan,
   name: 'mock session span',
   attributes: {
-    [KEY_EMB_TYPE]: EMB_TYPES.Session
-  }
+    [KEY_EMB_TYPE]: EMB_TYPES.Session,
+  },
 };

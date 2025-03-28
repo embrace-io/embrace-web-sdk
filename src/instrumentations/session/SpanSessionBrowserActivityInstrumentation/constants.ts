@@ -40,5 +40,5 @@ export const WINDOW_USER_EVENTS = [
   'keydown',
   'mousedown',
   'mousemove',
-  'scroll'
+  'scroll',
 ]; // list manually generated from the user related event in https://developer.mozilla.org/en-US/docs/Web/API/Window#events, updated on 2025-02-24

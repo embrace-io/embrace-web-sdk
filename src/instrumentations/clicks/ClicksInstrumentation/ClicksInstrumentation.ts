@@ -26,7 +26,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config: {}
+      config: {},
     });
 
     this._onClickHandler = (event: MouseEvent) => {
@@ -47,7 +47,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
             {
               'emb.type': 'ux.tap',
               'view.name': getHTMLElementFriendlyName(element),
-              'tap.coords': `${event.x.toString()},${event.y.toString()}`
+              'tap.coords': `${event.x.toString()},${event.y.toString()}`,
             },
             this.perf.epochMillisFromOriginOffset(event.timeStamp)
           );

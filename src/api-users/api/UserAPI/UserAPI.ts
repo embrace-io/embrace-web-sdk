@@ -12,7 +12,7 @@ export class UserAPI {
   public static getInstance(): UserAPI {
     if (!this._instance) {
       this._instance = new UserAPI({
-        proxyUserManager: new ProxyUserManager()
+        proxyUserManager: new ProxyUserManager(),
       });
     }
 

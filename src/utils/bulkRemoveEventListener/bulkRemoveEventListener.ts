@@ -15,7 +15,7 @@ import type { BulkRemoveEventListenerArgs } from './types.js';
 export const bulkRemoveEventListener = ({
   target,
   events,
-  callback
+  callback,
 }: BulkRemoveEventListenerArgs) => {
   events.forEach(event => {
     target.removeEventListener(event, callback);

@@ -2,13 +2,13 @@ import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
-  throttle
+  throttle,
 } from '../../../utils/index.js';
 import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
 import {
   EVENT_THROTTLING_TIME_WINDOW,
   TIMEOUT_TIME,
-  WINDOW_USER_EVENTS
+  WINDOW_USER_EVENTS,
 } from './constants.js';
 import type { SpanSessionBrowserActivityInstrumentationArgs } from './types.js';
 
@@ -23,13 +23,13 @@ export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrument
   private _activityTimeout: TimeoutRef | null;
 
   public constructor({
-    diag
+    diag,
   }: SpanSessionBrowserActivityInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SpanSessionBrowserActivityInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
-      config: {}
+      config: {},
     });
     this._activityTimeout = null;
     this._onActivityThrottled = throttle(
@@ -45,7 +45,7 @@ export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrument
     bulkRemoveEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this._onActivityThrottled
+      callback: this._onActivityThrottled,
     });
     if (this._activityTimeout) {
       clearTimeout(this._activityTimeout);
@@ -57,7 +57,7 @@ export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrument
     bulkAddEventListener({
       target: window,
       events: WINDOW_USER_EVENTS,
-      callback: this._onActivityThrottled
+      callback: this._onActivityThrottled,
     });
   };
 

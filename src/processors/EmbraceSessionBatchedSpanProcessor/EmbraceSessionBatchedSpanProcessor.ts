@@ -19,7 +19,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   }: EmbraceSessionBatchedSpanProcessorArgs) {
     super({
       ...parentArgs,
-      processorName: 'EmbraceSessionBatchedSpanProcessor'
+      processorName: 'EmbraceSessionBatchedSpanProcessor',
     });
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);

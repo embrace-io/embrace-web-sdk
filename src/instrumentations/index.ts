@@ -4,11 +4,11 @@ export {
   SpanSessionVisibilityInstrumentation,
   SpanSessionOnLoadInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
-  SpanSessionTimeoutInstrumentation
+  SpanSessionTimeoutInstrumentation,
 } from './session/index.js';
 export {
   EmbraceUserManager,
-  LocalStorageUserInstrumentation
+  LocalStorageUserInstrumentation,
 } from './user/index.js';
 export { GlobalExceptionInstrumentation } from './exceptions/index.js';
 export { ClicksInstrumentation } from './clicks/index.js';

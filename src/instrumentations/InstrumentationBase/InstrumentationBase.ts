@@ -1,13 +1,13 @@
 import type {
   Instrumentation,
-  InstrumentationConfig
+  InstrumentationConfig,
 } from '@opentelemetry/instrumentation';
 import { InstrumentationAbstract } from '../InstrumentationAbstract/index.js'; // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/platform/browser/instrumentation.ts
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/platform/browser/instrumentation.ts
 // to avoid importing internal and experimental code.
 export abstract class InstrumentationBase<
-    ConfigType extends InstrumentationConfig = InstrumentationConfig
+    ConfigType extends InstrumentationConfig = InstrumentationConfig,
   >
   extends InstrumentationAbstract<ConfigType>
   implements Instrumentation<ConfigType> {

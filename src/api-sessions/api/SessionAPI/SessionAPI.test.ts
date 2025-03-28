@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
   ProxySpanSessionManager,
-  type SpanSessionManager
+  type SpanSessionManager,
 } from '../../manager/index.js';
 import { SessionAPI } from './SessionAPI.js';
 
@@ -24,7 +24,7 @@ describe('SessionAPI', () => {
       getSessionSpan: sinon.stub().returns('mockSpanId'),
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
-      endSessionSpanInternal: sinon.stub()
+      endSessionSpanInternal: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(sessionManager);
     const result = sessionAPI.getSpanSessionManager();

@@ -19,7 +19,7 @@ describe('ProxyUserManager', () => {
         .stub()
         .returns({ [KEY_ENDUSER_PSEUDO_ID]: 'mockUserId' } as User),
       setUser: sinon.stub(),
-      clearUser: sinon.stub()
+      clearUser: sinon.stub(),
     };
   });
 

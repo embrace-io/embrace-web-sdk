@@ -4,12 +4,12 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   session,
-  type SpanSessionManager
+  type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import {
   InMemoryDiagLogger,
-  MockPerformanceManager
+  MockPerformanceManager,
 } from '../../../testUtils/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';

@@ -5,6 +5,6 @@ export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.js';
 export type { TimeoutRef } from './timeout/index.js';
 export {
   OTelPerformanceManager,
-  type PerformanceManager
+  type PerformanceManager,
 } from './PerformanceManager/index.js';
 export { throttle } from './throttle.js';
