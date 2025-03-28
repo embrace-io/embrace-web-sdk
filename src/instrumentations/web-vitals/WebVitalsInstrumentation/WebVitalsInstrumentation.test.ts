@@ -10,7 +10,7 @@ import {
   MockPerformanceManager
 } from '../../../testUtils/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
-import { EmbraceSpanSessionManager } from '../..//session/EmbraceSpanSessionManager/index.js';
+import { EmbraceSpanSessionManager } from '../../session/EmbraceSpanSessionManager/index.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import sinonChai from 'sinon-chai';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
@@ -107,8 +107,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.name': 'CLS',
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
-      'emb.web_vital.value': 22,
-      'url.full': document.URL
+      'emb.web_vital.value': 22
     });
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
@@ -156,7 +155,6 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
-      'url.full': document.URL,
       'emb.web_vital.attribution.largestShiftTarget': '"some-target"',
       'emb.web_vital.attribution.largestShiftTime': 3000
     });
@@ -221,7 +219,6 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'needs-improvement',
       'emb.web_vital.value': 33,
-      'url.full': document.URL,
       'emb.web_vital.attribution.timeToFirstByte': 20,
       'emb.web_vital.attribution.firstByteToFCP': 40,
       'emb.web_vital.attribution.loadState': '"complete"'
@@ -276,7 +273,6 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'poor',
       'emb.web_vital.value': 22,
-      'url.full': document.URL,
       'emb.web_vital.attribution.timeToFirstByte': 999,
       'emb.web_vital.attribution.resourceLoadDelay': 1000,
       'emb.web_vital.attribution.resourceLoadDuration': 2000,
@@ -339,7 +335,6 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'poor',
       'emb.web_vital.value': 22,
-      'url.full': document.URL,
       'emb.web_vital.attribution.inputDelay': 1000,
       'emb.web_vital.attribution.interactionTarget': '"some-target"',
       'emb.web_vital.attribution.interactionTargetElement': undefined,
@@ -415,7 +410,6 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'poor',
       'emb.web_vital.value': 33,
-      'url.full': document.URL,
       'emb.web_vital.attribution.waitingDuration': 20,
       'emb.web_vital.attribution.cacheDuration': 40,
       'emb.web_vital.attribution.dnsDuration': 60,
@@ -424,5 +418,87 @@ describe('WebVitalsInstrumentation', () => {
     });
 
     expect(ttfbEvent.time).to.deep.equal([5, 0]);
+  });
+
+  it('should be able to report multiple metrics', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners
+    });
+
+    void expect(clsStub).to.have.been.calledOnce;
+    const { args: clsArgs } = clsStub.callsArg(0);
+    const clsReportFunc = clsArgs[0][0] as WebVitalOnReport;
+
+    void expect(lcpStub).to.have.been.calledOnce;
+    const { args: lcpArgs } = lcpStub.callsArg(0);
+    const lcpReportFunc = lcpArgs[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    clsReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {}
+    } as MetricWithAttribution);
+
+    lcpReportFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000
+      }
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(2);
+    const clsEvent = sessionSpan.events[0];
+    const lcpEvent = sessionSpan.events[1];
+
+    expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
+    expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
+
+    expect(clsEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'CLS',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 22
+    });
+    expect(lcpEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'LCP',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'poor',
+      'emb.web_vital.value': 22,
+      'emb.web_vital.attribution.timeToFirstByte': 999,
+      'emb.web_vital.attribution.resourceLoadDelay': 1000,
+      'emb.web_vital.attribution.resourceLoadDuration': 2000,
+      'emb.web_vital.attribution.elementRenderDelay': 3000
+    });
+
+    expect(clsEvent.time).to.deep.equal([5, 0]);
+    expect(lcpEvent.time).to.deep.equal([5, 0]);
   });
 });

@@ -1,6 +1,5 @@
 import type { Attributes, Gauge } from '@opentelemetry/api';
 import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
 import { type Metric } from 'web-vitals/attribution';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
@@ -92,11 +91,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         const highCardinalityAtts: Attributes = {
           'emb.web_vital.id': metric.id,
           'emb.web_vital.delta': metric.delta,
-          'emb.web_vital.value': metric.value,
-          // Keeping this attribute for now since loaders are expecting it but the current URL is not necessarily tied
-          // to the web vital, e.g. CLS is cumulative so the score may have actually been most heavily influenced by a
-          // previous URL, look at attribution instead
-          [ATTR_URL_FULL]: document.URL
+          'emb.web_vital.value': metric.value
         };
 
         Object.entries(metric.attribution).forEach(([key, value]) => {
