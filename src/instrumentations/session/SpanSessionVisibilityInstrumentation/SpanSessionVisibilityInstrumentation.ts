@@ -9,7 +9,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       instrumentationName: 'SpanSessionOnLoadInstrumentation',
       instrumentationVersion: '1.0.0',
       config: {},
-      diag
+      diag,
     });
     this._onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {

@@ -8,13 +8,13 @@ export abstract class EmbraceProcessor implements SpanProcessor {
 
   protected constructor({
     diag: providedDiag,
-    processorName
+    processorName,
   }: EmbraceProcessorArgs) {
     this._processorName = processorName;
     this._diag =
       providedDiag ??
       diag.createComponentLogger({
-        namespace: processorName
+        namespace: processorName,
       });
   }
 

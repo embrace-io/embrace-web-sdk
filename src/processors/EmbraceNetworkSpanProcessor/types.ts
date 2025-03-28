@@ -6,7 +6,7 @@ import {
   ATTR_URL_FULL,
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_HTTP_URL
+  SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.

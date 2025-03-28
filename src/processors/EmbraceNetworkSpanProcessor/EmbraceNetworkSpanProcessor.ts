@@ -7,12 +7,12 @@ import {
   SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
   SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
   SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_HTTP_URL
+  SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
 
 import {
   ATTR_HTTP_REQUEST_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_BODY_SIZE
+  ATTR_HTTP_RESPONSE_BODY_SIZE,
 } from '@opentelemetry/semantic-conventions/incubating';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import { isNetworkSpan } from './types.js';

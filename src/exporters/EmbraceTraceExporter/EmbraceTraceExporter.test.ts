@@ -9,7 +9,7 @@ import {
   fakeFetchGetUrl,
   fakeFetchInstall,
   fakeFetchRespondWith,
-  fakeFetchRestore
+  fakeFetchRestore,
 } from '../../testUtils/index.js';
 import { mockSpan } from '../../testUtils/mockEntities/ReadableSpan.js';
 import { EmbraceTraceExporter } from './EmbraceTraceExporter.js';
@@ -35,7 +35,7 @@ describe('EmbraceTraceExporter', () => {
   it('should initialize', () => {
     const args: EmbraceTraceExporterArgs = {
       appID: mockAppID,
-      userID: mockUserID
+      userID: mockUserID,
     };
     const exporter = new EmbraceTraceExporter(args);
 
@@ -46,7 +46,7 @@ describe('EmbraceTraceExporter', () => {
     fakeFetchRespondWith('');
     const args: EmbraceTraceExporterArgs = {
       appID: mockAppID,
-      userID: mockUserID
+      userID: mockUserID,
     };
 
     const exporter = new EmbraceTraceExporter(args);
@@ -74,7 +74,7 @@ describe('EmbraceTraceExporter', () => {
     //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
     expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
       chromeContentLength,
-      firefoxWebkitContentLength
+      firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.stg.emb-eng.com/v2/spans'
@@ -87,13 +87,13 @@ describe('EmbraceTraceExporter', () => {
         {
           resource: {
             attributes: [],
-            droppedAttributesCount: 0
+            droppedAttributesCount: 0,
           },
           scopeSpans: [
             {
               scope: {
                 name: 'test',
-                version: '1'
+                version: '1',
               },
               spans: [
                 {
@@ -108,16 +108,16 @@ describe('EmbraceTraceExporter', () => {
                   events: [],
                   droppedEventsCount: 0,
                   status: {
-                    code: 1
+                    code: 1,
                   },
                   links: [],
-                  droppedLinksCount: 0
-                }
-              ]
-            }
-          ]
-        }
-      ]
+                  droppedLinksCount: 0,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
     const decompressedStream = new Response(body).body?.pipeThrough(
       new DecompressionStream('gzip')

@@ -31,7 +31,7 @@ describe('UserAPI', () => {
       // Mock implementation of UserManager
       getUser: sinon.stub().returns({ id: 'mockUserId' }),
       setUser: sinon.stub(),
-      clearUser: sinon.stub()
+      clearUser: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
     const userManager = userAPI.getUserManager();

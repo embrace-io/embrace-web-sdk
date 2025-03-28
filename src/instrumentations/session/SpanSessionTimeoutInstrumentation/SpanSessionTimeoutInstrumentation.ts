@@ -12,14 +12,14 @@ export class SpanSessionTimeoutInstrumentation extends EmbraceInstrumentationBas
 
   public constructor({
     diag,
-    perf
+    perf,
   }: SpanSessionTimeoutInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SpanSessionTimeoutInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config: {}
+      config: {},
     });
     this._sessionTimeout = null;
     if (this._config.enabled) {

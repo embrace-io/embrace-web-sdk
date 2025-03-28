@@ -13,7 +13,7 @@ export class OTLPFetchTraceExporter
       createOtlpBrowserFetchExportDelegate(
         {
           ...config,
-          compression: 'gzip'
+          compression: 'gzip',
         },
         JsonTraceSerializer
       )

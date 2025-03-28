@@ -4,7 +4,7 @@ import type {
   MeterProvider,
   Span,
   Tracer,
-  TracerProvider
+  TracerProvider,
 } from '@opentelemetry/api';
 import { diag, metrics, trace } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
@@ -13,7 +13,7 @@ import type {
   Instrumentation,
   InstrumentationConfig,
   InstrumentationModuleDefinition,
-  SpanCustomizationHook
+  SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 import * as shimmer from 'shimmer';
@@ -22,7 +22,7 @@ import * as shimmer from 'shimmer';
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code.
 export abstract class InstrumentationAbstract<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig
+  ConfigType extends InstrumentationConfig = InstrumentationConfig,
 > implements Instrumentation<ConfigType>
 {
   protected _config: ConfigType = {} as ConfigType;
@@ -53,7 +53,7 @@ export abstract class InstrumentationAbstract<
     this.setConfig(config);
 
     this._diag = diag.createComponentLogger({
-      namespace: instrumentationName
+      namespace: instrumentationName,
     });
 
     this._tracer = trace.getTracer(instrumentationName, instrumentationVersion);
@@ -126,7 +126,7 @@ export abstract class InstrumentationAbstract<
     // nested properties are not copied, thus are mutable from the outside.
     this._config = {
       enabled: true,
-      ...config
+      ...config,
     };
   }
 

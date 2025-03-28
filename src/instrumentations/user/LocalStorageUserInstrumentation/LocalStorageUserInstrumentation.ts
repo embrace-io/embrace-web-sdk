@@ -68,7 +68,7 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
 
   private _generateNewUser() {
     const user: User = {
-      [KEY_ENDUSER_PSEUDO_ID]: generateUUID()
+      [KEY_ENDUSER_PSEUDO_ID]: generateUUID(),
     };
     try {
       const encodedUserString = JSON.stringify(user);

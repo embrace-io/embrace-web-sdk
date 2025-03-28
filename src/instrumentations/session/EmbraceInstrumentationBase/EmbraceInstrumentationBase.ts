@@ -1,6 +1,6 @@
 import type {
   InstrumentationConfig,
-  InstrumentationModuleDefinition
+  InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
@@ -10,7 +10,7 @@ import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { EmbraceInstrumentationBaseArgs } from './types.js';
 
 export abstract class EmbraceInstrumentationBase<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig
+  ConfigType extends InstrumentationConfig = InstrumentationConfig,
 > extends InstrumentationBase<ConfigType> {
   private readonly _sessionManager: SpanSessionManager;
   private readonly _perf: PerformanceManager;
@@ -20,7 +20,7 @@ export abstract class EmbraceInstrumentationBase<
     instrumentationVersion,
     config,
     diag,
-    perf
+    perf,
   }: EmbraceInstrumentationBaseArgs<ConfigType>) {
     super(instrumentationName, instrumentationVersion, config);
     // optionally override the diag logger from the base class

@@ -3,7 +3,7 @@ import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { PerformanceManager } from '../../../utils/index.js';
 
 export interface EmbraceInstrumentationBaseArgs<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig
+  ConfigType extends InstrumentationConfig = InstrumentationConfig,
 > {
   instrumentationName: string;
   instrumentationVersion: string;

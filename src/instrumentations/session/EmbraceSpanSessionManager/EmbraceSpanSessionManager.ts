@@ -3,7 +3,7 @@ import {
   type DiagLogger,
   type HrTime,
   type Span,
-  trace
+  trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
@@ -13,7 +13,7 @@ import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
-  KEY_EMB_TYPE
+  KEY_EMB_TYPE,
 } from '../../../constants/index.js';
 import type { PerformanceManager } from '../../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../../utils/index.js';
@@ -28,12 +28,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
 
   public constructor({
     diag: diagParam,
-    perf
+    perf,
   }: EmbraceSpanSessionManagerArgs = {}) {
     this._diag =
       diagParam ??
       diag.createComponentLogger({
-        namespace: 'EmbraceSpanSessionManager'
+        namespace: 'EmbraceSpanSessionManager',
       });
     this._perf = perf ?? new OTelPerformanceManager();
   }
@@ -84,8 +84,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,
         [KEY_EMB_STATE]: EMB_STATES.Foreground,
-        [ATTR_SESSION_ID]: this._activeSessionId
-      }
+        [ATTR_SESSION_ID]: this._activeSessionId,
+      },
     });
   }
 }
