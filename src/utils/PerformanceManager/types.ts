@@ -5,3 +5,8 @@ export interface PerformanceManager {
   epochMillisFromOriginOffset: (originOffset: number) => number;
   getNowMillis: () => number;
 }
+
+export interface PerformanceClock {
+  now: () => number;
+  timeOrigin: number;
+}
