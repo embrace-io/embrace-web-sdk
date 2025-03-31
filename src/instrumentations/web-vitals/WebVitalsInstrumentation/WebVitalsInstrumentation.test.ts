@@ -8,8 +8,8 @@ import {
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../../session/EmbraceSpanSessionManager/index.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import sinonChai from 'sinon-chai';

@@ -1,7 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { MockPerformanceManager } from '../../../testUtils/index.js';
-import { setupTestLogExporter } from '../../../testUtils/setupTestLogExporter/setupTestLogExporter.js';
+import {
+  MockPerformanceManager,
+  setupTestLogExporter,
+} from '../../../testUtils/index.js';
 import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
@@ -34,7 +36,9 @@ describe('GlobalExceptionInstrumentation', () => {
     memoryExporter.reset();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
-
+    instrumentation = new GlobalExceptionInstrumentation({
+      perf,
+    });
     // The runner will fail our tests if it detects an unhandled error / rejection, temporarily ignore the ones we're
     // artificially triggering from this suite
     existingRejectionHandler = window.onunhandledrejection;
@@ -61,10 +65,6 @@ describe('GlobalExceptionInstrumentation', () => {
   });
 
   it('should add a log when there is an unhandled error', () => {
-    instrumentation = new GlobalExceptionInstrumentation({
-      perf,
-    });
-
     const err = new GlobalExceptionTestError('my custom error');
     const evt = new ErrorEvent('error', {
       error: err,
@@ -92,9 +92,6 @@ describe('GlobalExceptionInstrumentation', () => {
   });
 
   it('should add a log when there is an unhandled promise rejection with a string reason', () => {
-    instrumentation = new GlobalExceptionInstrumentation({
-      perf,
-    });
     const evt = new PromiseRejectionEvent('unhandledrejection', {
       promise: new Promise(() => {}),
       reason: 'promise was rejected',
@@ -122,10 +119,6 @@ describe('GlobalExceptionInstrumentation', () => {
   });
 
   it('should add a log when there is an unhandled promise rejection with an error reason', () => {
-    instrumentation = new GlobalExceptionInstrumentation({
-      perf,
-    });
-
     const err = new GlobalExceptionTestError('my custom error');
     const evt = new PromiseRejectionEvent('unhandledrejection', {
       promise: new Promise(() => {}),
@@ -154,10 +147,6 @@ describe('GlobalExceptionInstrumentation', () => {
   });
 
   it('should add a log when there is an unhandled promise rejection with an unknown reason', () => {
-    instrumentation = new GlobalExceptionInstrumentation({
-      perf,
-    });
-
     const evt = new PromiseRejectionEvent('unhandledrejection', {
       promise: new Promise(() => {}),
       reason: 1234,

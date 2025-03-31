@@ -4,8 +4,10 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { InMemoryDiagLogger } from '../../../testUtils/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
 
