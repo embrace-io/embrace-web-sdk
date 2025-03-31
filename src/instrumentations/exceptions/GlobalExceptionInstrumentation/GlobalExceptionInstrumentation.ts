@@ -6,9 +6,9 @@ import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { GlobalExceptionInstrumentationArgs } from './types.js';
 
 export class GlobalExceptionInstrumentation extends InstrumentationBase {
-  protected readonly _onErrorHandler: (event: ErrorEvent) => void;
+  private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _perf: PerformanceManager;
-  protected readonly _onUnhandledRejectionHandler: (
+  private readonly _onUnhandledRejectionHandler: (
     event: PromiseRejectionEvent
   ) => void;
 
