@@ -4,7 +4,7 @@ import {
   mockSessionSpan,
   mockSpan,
 } from '../../testUtils/mockEntities/ReadableSpan.js';
-import { setupTestTraceExporter } from '../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
+import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
 
 const { expect } = chai;

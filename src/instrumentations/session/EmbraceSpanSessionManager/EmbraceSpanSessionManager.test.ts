@@ -3,8 +3,10 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
-import { InMemoryDiagLogger } from '../../../testUtils/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
 
 chai.use(sinonChai);
