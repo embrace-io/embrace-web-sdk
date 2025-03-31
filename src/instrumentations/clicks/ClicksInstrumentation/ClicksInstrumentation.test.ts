@@ -8,7 +8,6 @@ import { InMemoryDiagLogger } from '../../../testUtils/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../../session/index.js';
 import { ClicksInstrumentation } from './ClicksInstrumentation.js';
-import userEvent from '@testing-library/user-event';
 
 const { expect } = chai;
 
@@ -38,8 +37,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.remove();
   });
 
-  it('should add a span event to the session when a click is detected', async () => {
-    const user = userEvent.setup();
+  it('should add a span event to the session when a click is detected', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -47,7 +45,7 @@ describe('ClicksInstrumentation', () => {
     target.innerText = 'HEY';
     testContainer.append(target);
 
-    await user.click(target);
+    target.click();
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -66,8 +64,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should not record clicks for disabled elements', async () => {
-    const user = userEvent.setup();
+  it('should not record clicks for disabled elements', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -75,7 +72,6 @@ describe('ClicksInstrumentation', () => {
     target.disabled = true;
     testContainer.append(target);
 
-    await user.click(target);
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -84,8 +80,7 @@ describe('ClicksInstrumentation', () => {
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 
-  it("should include the target's className if available", async () => {
-    const user = userEvent.setup();
+  it("should include the target's className if available", () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -94,7 +89,7 @@ describe('ClicksInstrumentation', () => {
     target.className = 'my-css-class';
     testContainer.append(target);
 
-    await user.click(target);
+    target.click();
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -113,8 +108,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it("should truncate the target's innerText if too long", async () => {
-    const user = userEvent.setup();
+  it("should truncate the target's innerText if too long", () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -122,7 +116,7 @@ describe('ClicksInstrumentation', () => {
     target.innerText = 'my long inner text, plus some extra text';
     testContainer.append(target);
 
-    await user.click(target);
+    target.click();
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -141,8 +135,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should record multiple clicks', async () => {
-    const user = userEvent.setup();
+  it('should record multiple clicks', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -155,9 +148,9 @@ describe('ClicksInstrumentation', () => {
     t2.innerText = 'button2';
     testContainer.append(t2);
 
-    await user.click(t2);
-    await user.click(t1);
-    await user.click(t2);
+    t2.click();
+    t1.click();
+    t2.click();
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -195,8 +188,7 @@ describe('ClicksInstrumentation', () => {
     ]);
   });
 
-  it('should stop recording after the instrumentation has been disabled', async () => {
-    const user = userEvent.setup();
+  it('should stop recording after the instrumentation has been disabled', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -209,9 +201,9 @@ describe('ClicksInstrumentation', () => {
     t2.innerText = 'button2';
     testContainer.append(t2);
 
-    await user.click(t2);
+    t2.click();
     instrumentation.disable();
-    await user.click(t1);
+    t1.click();
     spanSessionManager.endSessionSpan();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -229,8 +221,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should not record if the session is not active', async () => {
-    const user = userEvent.setup();
+  it('should not record if the session is not active', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -243,9 +234,9 @@ describe('ClicksInstrumentation', () => {
     t2.innerText = 'button2';
     testContainer.append(t2);
 
-    await user.click(t2);
+    t2.click();
     spanSessionManager.endSessionSpan();
-    await user.click(t1);
+    t1.click();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
