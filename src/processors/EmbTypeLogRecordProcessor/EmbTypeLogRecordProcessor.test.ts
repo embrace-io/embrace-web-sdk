@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import { EmbTypeLogRecordProcessor } from './EmbTypeLogRecordProcessor.js';
-import { setupTestLogExporter } from '../../testUtils/setupTestLogExporter/setupTestLogExporter.js';
+import { setupTestLogExporter } from '../../testUtils/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';

@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.js';
-import { setupTestLogExporter } from '../../testUtils/setupTestLogExporter/setupTestLogExporter.js';
+import { setupTestLogExporter } from '../../testUtils/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
 import { EmbraceSpanSessionManager } from '../../instrumentations/index.js';

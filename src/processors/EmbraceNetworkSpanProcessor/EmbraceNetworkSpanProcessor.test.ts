@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
-import { setupTestTraceExporter } from '../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
+import { setupTestTraceExporter } from '../../testUtils/index.js';
 import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor.js';
