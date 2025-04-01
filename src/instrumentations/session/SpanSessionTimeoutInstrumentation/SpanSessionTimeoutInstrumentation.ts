@@ -1,6 +1,6 @@
 import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
 import type { TimeoutRef } from '../../../utils/index.js';
-import { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 import type { SpanSessionTimeoutInstrumentationArgs } from './types.js';
 

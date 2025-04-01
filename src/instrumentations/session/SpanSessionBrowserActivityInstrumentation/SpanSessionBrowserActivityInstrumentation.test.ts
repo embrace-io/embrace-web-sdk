@@ -7,8 +7,10 @@ import {
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
-import { InMemoryDiagLogger } from '../../../testUtils/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
 import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';

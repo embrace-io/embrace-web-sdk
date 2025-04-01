@@ -11,3 +11,5 @@ export {
 } from './fake-fetch/index.js';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger/index.js';
 export { MockPerformanceManager } from './MockPerformanceManager/index.js';
+export { setupTestTraceExporter } from './setupTestTraceExporter/index.js';
+export { setupTestLogExporter } from './setupTestLogExporter/index.js';

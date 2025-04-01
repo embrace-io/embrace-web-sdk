@@ -10,8 +10,8 @@ import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 import { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.js';

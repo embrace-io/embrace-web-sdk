@@ -1,9 +1,8 @@
 import type { ContextManager, TextMapPropagator } from '@opentelemetry/api';
-import { metrics, trace } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
@@ -13,11 +12,6 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { MetricReader } from '@opentelemetry/sdk-metrics';
-import {
-  MeterProvider,
-  PeriodicExportingMetricReader,
-} from '@opentelemetry/sdk-metrics';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
@@ -94,12 +88,6 @@ interface SDKInitConfig {
    * Processors created by the sdk are inserted after processors in this list.
    */
   logProcessors?: LogRecordProcessor[];
-  /**
-   * metricReaders is an interface which allows hooks for metric emitting and exporting.
-   * They are invoked in the same order as they were registered.
-   * Readers created by the sdk are inserted after readers in this list.
-   */
-  metricReaders?: MetricReader[];
 }
 
 export const initSDK = ({
@@ -111,7 +99,6 @@ export const initSDK = ({
   instrumentations = null,
   contextManager = null,
   logProcessors = [],
-  metricReaders = [],
 }: SDKInitConfig = {}) => {
   try {
     const userManager = setupUser();
@@ -126,12 +113,6 @@ export const initSDK = ({
     const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 
     const spanSessionManager = setupSession();
-
-    const meterProvider = setupMetrics({
-      resource: resourceWithWebSDKAttributes,
-      exporters,
-      readers: metricReaders,
-    });
 
     const loggerProvider = setupLogs({
       appID,
@@ -157,8 +138,6 @@ export const initSDK = ({
     // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
     setupInstrumentation({
       instrumentations,
-      spanSessionManager,
-      meterProvider,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error.';
@@ -178,12 +157,6 @@ interface SetupTracesArgs {
   userManager: UserManager;
 }
 
-interface SetupMetricsArgs {
-  resource: Resource;
-  exporters: Exporter[];
-  readers: MetricReader[];
-}
-
 const setupSession = () => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager();
   session.setGlobalSessionManager(embraceSpanSessionManager);
@@ -194,28 +167,6 @@ const setupUser = () => {
   const embraceUserManager = new EmbraceUserManager();
   user.setGlobalUserManager(embraceUserManager);
   return embraceUserManager;
-};
-
-const METRICS_EXPORT_INTERVAL = 10000; // 10 seconds
-
-const setupMetrics = ({ resource, exporters, readers }: SetupMetricsArgs) => {
-  const finalReaders = [...readers];
-  if (exporters.includes('otlp')) {
-    const otlpExporter = new OTLPMetricExporter();
-    const metricOTLPReader = new PeriodicExportingMetricReader({
-      exporter: otlpExporter,
-      exportIntervalMillis: METRICS_EXPORT_INTERVAL, // Export metrics every 10 seconds.
-    });
-    finalReaders.push(metricOTLPReader);
-  }
-  // Initialize a MeterProvider with the above configurations.
-  const myServiceMeterProvider = new MeterProvider({
-    resource,
-    readers: finalReaders,
-  });
-  // Set the initialized MeterProvider as global to enable metric collection across the app.
-  metrics.setGlobalMeterProvider(myServiceMeterProvider);
-  return myServiceMeterProvider;
 };
 
 const setupTraces = ({
@@ -334,8 +285,6 @@ const setupLogs = ({
 
 interface SetupInstrumentationArgs {
   instrumentations: Instrumentation[] | null;
-  spanSessionManager: SpanSessionManager;
-  meterProvider: MeterProvider;
 }
 
 const setupWebAutoInstrumentations = () =>

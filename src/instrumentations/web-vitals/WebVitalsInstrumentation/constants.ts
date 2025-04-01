@@ -2,7 +2,7 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals/attribution';
 
 export const EMB_WEB_VITALS_PREFIX = 'emb-web-vitals';
 export const CORE_WEB_VITALS = ['CLS', 'INP', 'LCP'] as const;
-export const NOT_CORE_WEB_VITALS = ['FCP', 'TTFB'] as const;
+export const ALL_WEB_VITALS = ['CLS', 'INP', 'LCP', 'FCP', 'TTFB'] as const;
 export const WEB_VITALS_ID_TO_LISTENER = {
   /**
    *  Cumulative Layout Shift (CLS)
