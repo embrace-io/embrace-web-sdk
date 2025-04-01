@@ -4,7 +4,8 @@ export default {
   ...baseConfig,
   coverage: true,
   coverageConfig: {
+    include: ['src/**/*.ts'],
     report: true,
-    reporters: ['cobertura']
-  }
+    reporters: ['cobertura'],
+  },
 };
