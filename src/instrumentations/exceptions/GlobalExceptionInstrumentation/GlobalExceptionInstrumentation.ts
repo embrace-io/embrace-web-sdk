@@ -1,4 +1,3 @@
-import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import type { PerformanceManager } from '../../../utils/index.js';
 import { OTelPerformanceManager } from '../../../utils/index.js';
 import { logException } from '../../../utils/log.js';
@@ -65,15 +64,5 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
       'unhandledrejection',
       this._onUnhandledRejectionHandler
     );
-  }
-
-  protected override init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void {
-    return;
   }
 }

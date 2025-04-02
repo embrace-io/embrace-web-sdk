@@ -45,7 +45,8 @@ export abstract class EmbraceInstrumentationBase<
   protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // NOTE: disabling typescript check,to follow the signature from src/instrumentations/InstrumentationAbstract/InstrumentationAbstract.ts
+    // which was copied from OTel repo.
     // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {

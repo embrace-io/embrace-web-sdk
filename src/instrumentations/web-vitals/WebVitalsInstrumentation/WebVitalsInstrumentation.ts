@@ -1,5 +1,4 @@
 import type { Attributes } from '@opentelemetry/api';
-import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
 import { type Metric } from 'web-vitals/attribution';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
@@ -45,6 +44,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   public override disable(): void {
     // do nothing.
+    // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
   }
 
   public enable(): void {
@@ -102,16 +102,5 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     }
 
     return this.perf.getNowMillis();
-  }
-
-  // no-op
-  protected override init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void {
-    return;
   }
 }
