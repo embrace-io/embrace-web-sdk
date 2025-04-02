@@ -5,8 +5,9 @@ import { TIMEOUT_TIME } from './constants.js';
 import type { SpanSessionTimeoutInstrumentationArgs } from './types.js';
 
 /**
- *  SpanSessionTimeoutInstrumentation will track how long has a session been active and end it after a certain amount of time. It will immediately start a new session after the previous one ends.
- * */
+ *  SpanSessionTimeoutInstrumentation will track how long has a session been active and end it after a certain amount of time.
+ *  It will immediately start a new session after the previous one ends.
+ **/
 export class SpanSessionTimeoutInstrumentation extends EmbraceInstrumentationBase {
   private _sessionTimeout: TimeoutRef | null;
 

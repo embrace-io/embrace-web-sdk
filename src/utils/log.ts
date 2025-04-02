@@ -50,8 +50,9 @@ export const logMessage = ({
     body: message,
     attributes: {
       ...attributes,
-      [KEY_EMB_TYPE]: EMB_TYPES.SystemLog, // TODO, for the public interface by default if no stack trace is applied we should generate one for warning +
-      //  error level logs with frames from the Embrace SDK itself removed
+      [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
+      // TODO, for the public interface by default if no stack trace is applied we should generate one for warning +
+      // error level logs with frames from the Embrace SDK itself removed
       ...(stackTrace
         ? {
             [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stackTrace,

@@ -1,4 +1,3 @@
-import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { user } from '../../../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../../../api-users/manager/constants/index.js';
 import type { User, UserManager } from '../../../api-users/manager/types.js';
@@ -53,17 +52,6 @@ export class LocalStorageUserInstrumentation extends InstrumentationBase {
     } else {
       this._generateNewUser();
     }
-  }
-
-  // no-op
-  protected override init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void {
-    return undefined;
   }
 
   private _generateNewUser() {
