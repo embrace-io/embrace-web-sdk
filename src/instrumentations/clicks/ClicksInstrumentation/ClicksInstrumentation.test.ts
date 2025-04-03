@@ -221,7 +221,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should not record if the session is not active', () => {
+  it('should not record if the session is inactive', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
