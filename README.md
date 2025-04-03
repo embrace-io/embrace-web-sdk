@@ -1,5 +1,6 @@
 ---
-  ![GitHub Release Date](https://img.shields.io/github/release-date/embrace-io/embrace-web-sdk)
+    [![codecov](https://codecov.io/gh/embrace-io/embrace-web-sdk/graph/badge.svg?token=88948NPGPI)](https://codecov.io/gh/embrace-io/embrace-web-sdk)
+    ![GitHub Release Date](https://img.shields.io/github/release-date/embrace-io/embrace-web-sdk)
     ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/embrace-io/embrace-web-sdk)
     [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-orange)](./LICENSE.txt)
     ![GitHub top language](https://img.shields.io/github/languages/top/embrace-io/embrace-web-sdk)
