@@ -17,7 +17,7 @@ npm run cli:compile
 cd ../demo/frontend
 rm -rf node_modules
 npm ci
-sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=pa6hp/g' .env.template > .env
+sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' .env.template > .env
 rm -rf build dist
 npm run demo:frontend:compile
 #find the path for the generated bundle
