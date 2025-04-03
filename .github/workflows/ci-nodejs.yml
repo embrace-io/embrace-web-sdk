@@ -362,7 +362,7 @@ jobs:
         env:
           NEXUS_NPM_TOKEN: ${{ secrets.NEXUS_NPM_TOKEN }}
         run: |
-          npm config set @embraceio:registry https://repo.embrace.io/repository/web-testing/
+          npm config set @embrace-io:registry https://repo.embrace.io/repository/web-testing/
           npm config set //repo.embrace.io/repository/web-testing/:_authToken: "$NEXUS_NPM_TOKEN"
           npm ci
 
