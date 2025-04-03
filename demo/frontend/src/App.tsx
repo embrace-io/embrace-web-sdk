@@ -1,4 +1,4 @@
-import { session } from '@embraceio/embrace-web-sdk';
+import { session } from '@embrace-io/web-sdk';
 
 import { Counter, metrics, Span, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
@@ -55,7 +55,7 @@ const App = () => {
     // TODO why is this not including a ProxyMeterProvider like logs and traces does?
     const meter = metrics.getMeter('embrace-web-sdk-demo-meter');
     const newCounter = meter.createCounter('counter', {
-      description: 'A counter'
+      description: 'A counter',
     });
     setCounter(newCounter);
   };
@@ -64,7 +64,7 @@ const App = () => {
     if (counter) {
       counter.add(1, {
         key: 'some value',
-        otherKey: 'other value'
+        otherKey: 'other value',
       });
     }
   }, [counter]);
@@ -75,7 +75,7 @@ const App = () => {
       sessionSpan.recordException({
         name: 'Error',
         message: 'This is an error',
-        stack: 'Error: This is an error'
+        stack: 'Error: This is an error',
       });
     }
   };
@@ -86,8 +86,8 @@ const App = () => {
       severityText: 'INFO',
       body: 'This is a log',
       attributes: {
-        key: 'some value'
-      }
+        key: 'some value',
+      },
     });
   };
 
@@ -97,20 +97,20 @@ const App = () => {
       severityText: 'ERROR',
       body: 'This is a error log',
       attributes: {
-        key: 'some value for an error log'
-      }
+        key: 'some value for an error log',
+      },
     });
   };
 
   const handleSendFetchNetworkRequest = () => {
     void fetch(POKEMON_URL, {
-      method: 'GET'
+      method: 'GET',
     });
   };
 
   const handleSendFetchNetworkRequest404 = () => {
     void fetch('https://example.com/sdk/auto/interception', {
-      method: 'GET'
+      method: 'GET',
     });
   };
 
