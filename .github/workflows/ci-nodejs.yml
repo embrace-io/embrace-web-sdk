@@ -14,7 +14,7 @@ env:
 
 jobs:
   environment:
-    runs-on: ${{ vars.RUNNER_PYTHON_SMALL }}
+    runs-on: ubuntu-latest
     outputs:
       name: ${{ steps.choose_environment.outputs.name }}
       name_short: ${{ steps.choose_environment.outputs.name_short }}
@@ -33,7 +33,7 @@ jobs:
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
   configure:
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     outputs:
       NODE_VERSION: ${{ steps.node_version.outputs.NODE_VERSION }}
     steps:
@@ -46,7 +46,7 @@ jobs:
     needs:
       - configure
       - environment
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name == 'development' }}
     timeout-minutes: 5
@@ -164,7 +164,7 @@ jobs:
     needs:
       - configure
       - environment
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 5
@@ -256,7 +256,7 @@ jobs:
   commitlint:
     needs: configure
     timeout-minutes: 5
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' && github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
@@ -285,7 +285,7 @@ jobs:
   lint:
     needs: configure
     timeout-minutes: 5
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
@@ -342,7 +342,7 @@ jobs:
       - environment
       - test-multiple-browsers
       - lint
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     strategy:
@@ -372,7 +372,7 @@ jobs:
 
   # not used yet, there are no "production" releases
   report-release-slack:
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ needs.environment.outputs.name == 'production' }}
     needs: [publish]
     steps:
