@@ -11,10 +11,10 @@ reading :)
 ## Testing the embrace-web-sdk
 
 The dependency between the demo app and the sdk is managed through `demo/frontend/package.json`. Specifically, the line
-`"@embraceio/embrace-web-sdk": "file:../..",`. This tell npm to use the local version of the sdk instead of downloading
+`"@embrace-io/web-sdk": "file:../..",`. This tell npm to use the local version of the sdk instead of downloading
 a remote one from npm registry. When you run `npm install` in the `demo/frontend` directory, npm will install the sdk
 from the local directory`../../` (which is the root of the sdk project). If you check the
-`node_modules/@embraceio/embrace-web-sdk` directory, you will see that it is a symlink to the root of the sdk project.
+`node_modules/@embrace-io/web-sdk` directory, you will see that it is a symlink to the root of the sdk project.
 This will ensure that the demo app uses the latest version of the sdk, even before it is published, for testing
 purposes.
 
@@ -48,11 +48,11 @@ With all of these, here are the steps to run the demo app referencing the latest
 ## Testing the web cli
 
 The dependency between the demo app and the cli is managed through `demo/frontend/package.json`. Specifically, the line
-`"@embraceio/web-cli": "file:../../cli",`. This tell npm to use the local version of the cli instead of
+`"@embrace-io/web-cli": "file:../../cli",`. This tell npm to use the local version of the cli instead of
 downloading
 a remote one from npm registry. When you run `npm install` in the `demo/frontend` directory, npm will install the cli
 from the local directory `../../cli`.
-If you check the `node_modules/@embraceio/web-cli` directory, you will see that it is a symlink to `./cli`.
+If you check the `node_modules/@embrace-io/web-cli` directory, you will see that it is a symlink to `./cli`.
 This will ensure that the demo app uses the latest version of the cli, even before it is published, for testing
 purposes.
 Note: even while the cli is not published, the exported fields from `cli/package.json` are still honored. This means
