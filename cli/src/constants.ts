@@ -1,5 +1,5 @@
 export const CLI_VERSION = '0.0.3';
-export const CLI_NAME = '@embraceio/web-cli';
+export const CLI_NAME = '@embrace-io/web-cli';
 export const CLI_DESCRIPTION =
   'Embrace Web CLI to help setup the Embrace SDK in your web app';
 export const DEFAULT_FILE_ENCODING = 'utf8';
