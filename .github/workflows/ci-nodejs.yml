@@ -145,6 +145,7 @@ jobs:
       # https://github.com/codecov/codecov-action
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: embrace-io/embrace-web-sdk
