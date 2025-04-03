@@ -1,6 +1,8 @@
 {
   "name": "@embrace-io/web-cli",
-  "bin": "./build/index.js",
+  "bin": {
+    "web-cli": "build/index.js"
+  },
   "version": "0.0.4",
   "description": "Embrace Web CLI to help setup the Embrace SDK in your web app",
   "type": "module",
