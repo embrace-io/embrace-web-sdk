@@ -1,5 +1,5 @@
 {
-  "name": "@embraceio/embrace-web-sdk",
+  "name": "@embrace-io/web-sdk",
   "version": "0.0.10",
   "description": "Embrace Web SDK",
   "type": "module",
@@ -54,7 +54,24 @@
     "default": "./build/src/index.js"
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
+  "bugs": {
+    "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
+    "email": "support@embrace.io"
+  },
+  "homepage": "https://github.com/embrace-io/embrace-web-sdk",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embrace-io/embrace-web-sdk"
+  },
+  "keywords": [
+    "embrace",
+    "web",
+    "tracking",
+    "observability",
+    "instrumentation",
+    "telemetry"
+  ],
   "dependencies": {
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/auto-instrumentations-web": "0.45.0",
