@@ -252,4 +252,8 @@ describe('ClicksInstrumentation', () => {
       'view.name': '<button>button2</button>',
     });
   });
+
+  it('some temporary test', () => {
+    expect(['foo']).to.have.lengthOf(1);
+  });
 });
