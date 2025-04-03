@@ -221,7 +221,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should not record if the session is inactive', () => {
+  it('should not record if the session is not active', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -251,9 +251,5 @@ describe('ClicksInstrumentation', () => {
       'tap.coords': '0,0',
       'view.name': '<button>button2</button>',
     });
-  });
-
-  it('some temporary test', () => {
-    expect(['foo']).to.have.lengthOf(1);
   });
 });
