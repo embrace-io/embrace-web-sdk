@@ -89,7 +89,7 @@ describe('EmbraceLogExporter', () => {
       firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
-      'https://a-testAppID.data.stg.emb-eng.com/v2/logs'
+      'https://a-testAppID.data.emb-api.com/v2/logs'
     );
     const body = fakeFetchGetBody();
     void expect(body).not.to.be.null;

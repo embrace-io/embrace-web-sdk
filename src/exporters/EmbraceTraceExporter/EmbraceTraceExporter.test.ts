@@ -77,7 +77,7 @@ describe('EmbraceTraceExporter', () => {
       firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
-      'https://a-testAppID.data.stg.emb-eng.com/v2/spans'
+      'https://a-testAppID.data.emb-api.com/v2/spans'
     );
     // assert that the decompressed and decoded body is the expected one
     const body = fakeFetchGetBody();
