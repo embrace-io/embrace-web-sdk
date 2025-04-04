@@ -14,7 +14,7 @@ env:
 
 jobs:
   environment:
-    runs-on: ${{ vars.RUNNER_PYTHON_SMALL }}
+    runs-on: ubuntu-latest
     outputs:
       name: ${{ steps.choose_environment.outputs.name }}
       name_short: ${{ steps.choose_environment.outputs.name_short }}
@@ -33,7 +33,7 @@ jobs:
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
   configure:
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     outputs:
       NODE_VERSION: ${{ steps.node_version.outputs.NODE_VERSION }}
     steps:
@@ -46,9 +46,10 @@ jobs:
     needs:
       - configure
       - environment
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
-    if: ${{ needs.environment.outputs.name == 'development' }}
+    # also run these in staging so that we generate code coverage for pushes to main
+    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -142,29 +143,19 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      # https://github.com/embrace-io/code-coverage-report-action
-      - name: Generate coverage difference report
-        uses: embrace-io/code-coverage-report-action@main
-        id: coverage_report
+      # https://github.com/codecov/codecov-action
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
-          # https://github.com/embrace-io/code-coverage-report-action/blob/main/action.yml
-          filename: 'coverage/cobertura-coverage.xml'
-          retention_days: 90
-
-      # https://github.com/embrace-io/actions-comment-pull-request
-      - name: Post coverage difference report as PR comment
-        uses: embrace-io/actions-comment-pull-request@v2
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.coverage_report.outputs.file != '' && github.event_name == 'pull_request' && success() }}
-        with:
-          comment_tag: 'code-coverage-results'
-          filePath: code-coverage-results.md
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: embrace-io/embrace-web-sdk
 
   test-multiple-browsers:
     needs:
       - configure
       - environment
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 5
@@ -256,7 +247,7 @@ jobs:
   commitlint:
     needs: configure
     timeout-minutes: 5
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' && github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
@@ -285,7 +276,7 @@ jobs:
   lint:
     needs: configure
     timeout-minutes: 5
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
@@ -342,7 +333,7 @@ jobs:
       - environment
       - test-multiple-browsers
       - lint
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     strategy:
@@ -362,7 +353,7 @@ jobs:
         env:
           NEXUS_NPM_TOKEN: ${{ secrets.NEXUS_NPM_TOKEN }}
         run: |
-          npm config set @embraceio:registry https://repo.embrace.io/repository/web-testing/
+          npm config set @embrace-io:registry https://repo.embrace.io/repository/web-testing/
           npm config set //repo.embrace.io/repository/web-testing/:_authToken: "$NEXUS_NPM_TOKEN"
           npm ci
 
@@ -372,7 +363,7 @@ jobs:
 
   # not used yet, there are no "production" releases
   report-release-slack:
-    runs-on: ${{ vars.RUNNER_SMALL }}
+    runs-on: ubuntu-latest
     if: ${{ needs.environment.outputs.name == 'production' }}
     needs: [publish]
     steps:

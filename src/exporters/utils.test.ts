@@ -18,7 +18,7 @@ describe('utils', () => {
     it('should return correct data URL', () => {
       const appID = 'testAppID';
       const url = getDataURL(appID);
-      expect(url).to.equal(`https://a-${appID}.data.stg.emb-eng.com`);
+      expect(url).to.equal(`https://a-${appID}.data.emb-api.com`);
     });
   });
 });

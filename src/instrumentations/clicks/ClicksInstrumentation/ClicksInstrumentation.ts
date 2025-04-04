@@ -8,10 +8,9 @@
     2) There is a bug with the instrumentation that causes a large number of spans to be created for a single click
       when zone context isn't available. To avoid the bug we take a simpler approach here and add a listener directly
       to `document` rather than trying to patch the `addEventListener` method on the prototype, this does mean we miss
-      recording click events for which `stopPropagation` is called.
+      recording click events for which `stopPropagation` is called. See https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1368
  */
 
-import type { InstrumentationModuleDefinition } from '@opentelemetry/instrumentation';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { ClicksInstrumentationArgs } from './types.js';
 
@@ -68,16 +67,5 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
 
   public enable(): void {
     document.addEventListener('click', this._onClickHandler);
-  }
-
-  // no-op
-  protected override init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void {
-    return;
   }
 }

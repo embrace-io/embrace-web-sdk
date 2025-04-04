@@ -1,7 +1,7 @@
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 
-// TODO this helper file could be open sourced as a package
+// TODO this helper file could be open sourced as a separate package
 
 const withRequest = (arg: unknown) => arg instanceof window.Request;
 

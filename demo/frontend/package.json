@@ -10,32 +10,32 @@
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
     "demo:frontend:lint": "eslint .",
-    "demo:frontend:upload:sourcemaps": "web-cli upload -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp --app-version 0.0.1",
-    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -t 9819ef05be634fb39720d5f7dffb6404 -a pa6hp --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps": "web-cli upload -a 5przi --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -a 5przi --app-version 0.0.1",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
-    "@embraceio/embrace-web-sdk": "file:../..",
+    "@embrace-io/web-sdk": "file:../..",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/api-logs": "0.200.0",
     "@opentelemetry/sdk-logs": "0.200.0",
     "@opentelemetry/sdk-trace-web": "1.30.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
-    "@embraceio/web-cli": "file:../../cli",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@embrace-io/web-cli": "file:../../cli",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.17.0",
     "rimraf": "^6.0.1",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.14.0",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.2.4"
+    "vite": "^6.2.5"
   }
 }

@@ -1,7 +1,9 @@
 {
-  "name": "@embraceio/web-cli",
-  "bin": "./build/index.js",
-  "version": "0.0.3",
+  "name": "@embrace-io/web-cli",
+  "bin": {
+    "web-cli": "build/index.js"
+  },
+  "version": "0.0.4",
   "description": "Embrace Web CLI to help setup the Embrace SDK in your web app",
   "type": "module",
   "module": "build/index.js",
@@ -34,7 +36,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.23.0",
-    "@types/node": "^22.13.16",
+    "@types/node": "^22.14.0",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.5",
