@@ -7,6 +7,9 @@
   "module": "build/esm/index.js",
   "esnext": "build/esnext/index.js",
   "types": "build/src/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
     "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
