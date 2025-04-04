@@ -5,6 +5,36 @@ on:
     branches: [main]
 
 jobs:
-  release-drafter:
-    uses: embrace-io/actions/.github/workflows/release-drafter.yml@master
-    secrets: inherit
+  next-release:
+    permissions:
+      contents: write
+      pull-requests: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate next version
+        id: calver
+        run: |
+          today=$(date +%Y%m%d)
+          release=1
+
+          while [ ! -z $(git tag -l ${today}.${release}) ]; do
+            release=$((release+1))
+          done
+
+          next_version="${today}.${release}"
+          echo "version=${next_version}" >> $GITHUB_OUTPUT
+
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: true
+          name: ${{ steps.calver.outputs.version }}
+          tag: ${{ steps.calver.outputs.version }}
+          version: ${{ steps.calver.outputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
