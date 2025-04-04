@@ -9,6 +9,9 @@
   "module": "build/index.js",
   "esnext": "build/index.js",
   "types": "build/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "prepublishOnly": "npm run cli:compile:clean & npm run cli:compile",
     "cli:test": "echo \"Error: no test specified\" && exit 1",
