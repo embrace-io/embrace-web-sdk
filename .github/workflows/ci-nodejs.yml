@@ -48,7 +48,8 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
-    if: ${{ needs.environment.outputs.name == 'development' }}
+    # also run these in staging so that we generate code coverage for pushes to main
+    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 5
     strategy:
       fail-fast: false
