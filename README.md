@@ -35,7 +35,6 @@ if you wish to skip this step).
 Once you've created an Embrace web application you can initialize the SDK using the appID you were given along with
 the app version of your application:
 
-<<<<<<< HEAD
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
 
