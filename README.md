@@ -57,7 +57,7 @@ your app and then ending the session by either closing the tab/window or simply 
 Embrace uses the `appVersion` you provide to segment collected telemetry and allow you to view differences between
 releases, as such you should make sure this value is updated whenever you release a new version of your application. If
 you use your `package.json` to track versions of your app then a way to keep this up-to-date is simply to read that
-value when initializing the SDK:
+value when initializing the SDK (assuming that your bundler provides a method for importing json files):
 
 ```typescript
 import * as packageInfo from "../<some-path>/package.json";
@@ -70,8 +70,8 @@ sdk.initSDK({
 });
 ```
 
-Otherwise you can use our CLI tool to inject your app version into your bundle at build time as part of your CI/CD.
-First install the CLI as a devDependency:
+Alternatively if your app version is generated as part of your CI/CD process, you can use our CLI tool to inject your
+app version into your bundle at build time. First install the CLI as a devDependency:
 
 npm:
 
@@ -155,6 +155,10 @@ const span = trace.startSpan("span-name");
 
 someAsyncOperation().then(() => span.end());
 ```
+
+Attributes and events can also be added to the span either on start or later during its lifespan. Our API wraps that of
+an OpenTelemetry `Tracer` so you can follow [these examples](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans)
+for more elaborate use-cases.
 
 ## Adding logs
 
