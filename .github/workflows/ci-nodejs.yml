@@ -338,6 +338,8 @@ jobs:
       - test-multiple-browsers
       - lint
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     strategy:
@@ -361,7 +363,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
-          npm publish --access public
+          npm publish --provenance --access public
 
   # not used yet, there are no "production" releases
   report-release-slack:
