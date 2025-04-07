@@ -19,6 +19,8 @@
 
 ## Quick Start
 
+npm:
+
 ```sh
 npm install @embrace-io/web-sdk
 ```
