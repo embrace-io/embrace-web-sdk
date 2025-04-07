@@ -243,7 +243,7 @@ TODO
 
 ## Support
 
-If you have a feature suggestion or have spotted something that doesn't look right please open an [issue](https://github.com/embrace-io/embrace-react-native-sdk/issues/new) for the
+If you have a feature suggestion or have spotted something that doesn't look right please open an [issue](https://github.com/embrace-io/embrace-web-sdk/issues/new) for the
 Embrace team to triage or reach out in our [Community Slack](https://community.embrace.io/) for direct, faster assistance.
 
 ## Contributions
