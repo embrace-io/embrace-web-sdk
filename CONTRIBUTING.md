@@ -21,4 +21,4 @@ For more details on how to setup your environment and implement changes please s
 ## Reporting issues
 
 If you have any trouble to start contributing, please [contact us directly](mailto:support@embrace.io) or reach out in our [Community Slack](https://embraceio-community.slack.com/)
-Finally, feel free to open a [new issue](https://github.com/embrace-io/embrace-react-native-sdk/issues/new).
+Finally, feel free to open a [new issue](https://github.com/embrace-io/embrace-web-sdk/issues/new).
