@@ -27,12 +27,30 @@
     "LICENSE",
     "README.md"
   ],
+  "bugs": {
+    "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
+    "email": "support@embrace.io"
+  },
   "exports": {
     "import": "./build/index.js",
     "default": "./build/index.js"
   },
+  "homepage": "https://github.com/embrace-io/embrace-web-sdk",
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embrace-io/embrace-web-sdk.git"
+  },
+  "keywords": [
+    "embrace",
+    "web",
+    "tracking",
+    "observability",
+    "instrumentation",
+    "telemetry",
+    "cli"
+  ],
   "dependencies": {
     "commander": "^13.1.0"
   },
