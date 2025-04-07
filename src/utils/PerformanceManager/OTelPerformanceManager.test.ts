@@ -20,7 +20,7 @@ describe('OTelPerformanceManager', () => {
   it('should calculate epochMillisFromOriginOffset correctly', () => {
     const offset = 300;
     const result = performanceManager.epochMillisFromOriginOffset(offset);
-    expect(result).to.equal(1300); // timeOrigin (1000) + offset (500)
+    expect(result).to.equal(1300); // timeOrigin (1000) + offset (300)
   });
 
   it('should get current time in milliseconds', () => {
