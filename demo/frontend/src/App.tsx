@@ -1,14 +1,13 @@
-import { session } from '@embrace-io/web-sdk';
+import { log, session } from '@embrace-io/web-sdk';
 
 import { Counter, metrics, Span, trace } from '@opentelemetry/api';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
-const getLazyLogger = () => logs.getLogger('embrace-web-sdk-demo-lazy-logger');
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
 const sessionProvider = session.getSpanSessionManager();
+const logManager = log.getLogManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
@@ -80,25 +79,21 @@ const App = () => {
     }
   };
 
-  const handleSendLog = () => {
-    getLazyLogger().emit({
-      severityNumber: SeverityNumber.INFO,
-      severityText: 'INFO',
-      body: 'This is a log',
-      attributes: {
-        key: 'some value',
-      },
+  const handleSendEmbraceInfoLog = () => {
+    logManager.message('This is an info log', 'info', {
+      key: 'some value for an info log',
     });
   };
 
-  const handleSendErrorLog = () => {
-    getLazyLogger().emit({
-      severityNumber: SeverityNumber.ERROR,
-      severityText: 'ERROR',
-      body: 'This is a error log',
-      attributes: {
-        key: 'some value for an error log',
-      },
+  const handleSendEmbraceWarnLog = () => {
+    logManager.message('This is a warning log', 'warning', {
+      key: 'some value for a warning log',
+    });
+  };
+
+  const handleSendEmbraceErrorLog = () => {
+    logManager.message('This is an error log', 'error', {
+      key: 'some value for an error log',
     });
   };
 
@@ -182,16 +177,22 @@ const App = () => {
           Start Span
         </button>
         <button
-          onClick={handleSendLog}
+          onClick={handleSendEmbraceInfoLog}
           disabled={sessionProvider.getSessionSpan() === null}
         >
-          Send Log
+          Send Embrace Info Log
         </button>
         <button
-          onClick={handleSendErrorLog}
+          onClick={handleSendEmbraceWarnLog}
           disabled={sessionProvider.getSessionSpan() === null}
         >
-          Send Error Log
+          Send Embrace Warning Log
+        </button>
+        <button
+          onClick={handleSendEmbraceErrorLog}
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
+          Send Embrace Error Log
         </button>
         <button
           onClick={handleRecordException}
