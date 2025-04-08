@@ -143,6 +143,13 @@ Then hook the CLI into your CI/CD and point it to your bundle and sourcmaps in o
 TODO
 ```
 
+### UnSymbolicated function names
+
+We currently support symbolication of function names only when defined with the function keyword.
+For functions that assigned to constants, or variables, you will still see the symbolicated token.
+
+Line and column numbers, along with file names will always be symbolicated to the original source.
+
 ## Adding traces
 
 In addition to what our auto-instrumentations provide you can create your own spans for operations you'd like to track.
