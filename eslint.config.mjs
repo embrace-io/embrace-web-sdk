@@ -89,7 +89,7 @@ export default tseslint.config({
       [
         {
           regex: `SDK_VERSION = '(?!${sdkPackageInfo.version}).*'`,
-          message: `SDK_VERSION version mismatch. It should the package,json version ${sdkPackageInfo.version}.`,
+          message: `SDK_VERSION version mismatch. It should match the package.json version ${sdkPackageInfo.version}.`,
           replacement: `SDK_VERSION = '${sdkPackageInfo.version}'`,
         },
         {
@@ -97,8 +97,7 @@ export default tseslint.config({
           message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
           replacement: `CLI_VERSION = '${cliPackageInfo.version}'`,
         },
-        // TODO we validate CLI_VERSION against both package.json and cli/package.json as a way to make sure the 2 package files are in sync.
-        // We should create a custom eslint rule that reads one package and compare it to the other directly.
+        // we validate the version in the cli version against the sdk version, to make sure both the sdk and cli versions are in sync
         {
           regex: `CLI_VERSION = '(?!${sdkPackageInfo.version}).*'`,
           message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
