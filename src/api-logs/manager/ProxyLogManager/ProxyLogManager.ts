@@ -2,13 +2,13 @@ import type { AttributeValue } from '@opentelemetry/api';
 import { NoOpLogManager } from '../NoOpLogManager/index.js';
 import type { LogManager, LogSeverity } from '../types.js';
 
-const NOOP_SPAN_SESSION_MANAGER = new NoOpLogManager();
+const NOOP_LOG_MANAGER = new NoOpLogManager();
 
 export class ProxyLogManager implements LogManager {
   private _delegate?: LogManager;
 
   public getDelegate(): LogManager {
-    return this._delegate ?? NOOP_SPAN_SESSION_MANAGER;
+    return this._delegate ?? NOOP_LOG_MANAGER;
   }
 
   public setDelegate(delegate: LogManager) {
