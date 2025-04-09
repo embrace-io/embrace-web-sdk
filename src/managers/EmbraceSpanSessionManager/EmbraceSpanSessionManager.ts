@@ -87,4 +87,20 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       },
     });
   }
+
+  public addBreadcrumb(name: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.addEvent(
+      'emb-breadcrumb',
+      {
+        message: name,
+      },
+      this._perf.getNowMillis()
+    );
+  }
 }

@@ -38,4 +38,8 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   public startSessionSpan() {
     this.getDelegate().startSessionSpan();
   }
+
+  public addBreadcrumb(name: string): void {
+    this.getDelegate().addBreadcrumb(name);
+  }
 }
