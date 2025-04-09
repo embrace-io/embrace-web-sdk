@@ -28,16 +28,17 @@ import {
 } from '../exporters/index.js';
 import {
   ClicksInstrumentation,
-  EmbraceSpanSessionManager,
-  EmbraceUserManager,
   GlobalExceptionInstrumentation,
-  LocalStorageUserInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
+import {
+  EmbraceSpanSessionManager,
+  EmbraceUserManager,
+} from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
@@ -104,13 +105,6 @@ export const initSDK = ({
 }: SDKInitConfig = {}) => {
   try {
     const userManager = setupUser();
-    // We initialize LocalStorageUserInstrumentation outside of the setupInstrumentation function to ensure that the
-    // userManager is enabled and the LocalStorageUserInstrumentation provides a valid userID before the EmbraceHeaders
-    // are added to the different exporters. Embrace headers depend on the userID (aka device ID) to be set.
-    // TODO find a better way to avoid this condition by using delegates and adding the headers later on demand instead
-    //  of during initialization. As of now, OTel packages only support adding headers during initialization, so we need
-    //  to first add the ability to delegate the retrieval of headers to a callback to the base OTel implementation
-    new LocalStorageUserInstrumentation();
 
     const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
 

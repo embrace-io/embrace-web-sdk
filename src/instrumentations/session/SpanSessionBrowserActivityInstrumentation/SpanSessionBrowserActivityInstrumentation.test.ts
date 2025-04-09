@@ -11,7 +11,7 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
 import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';
 

@@ -10,7 +10,7 @@ import {
   MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../../session/EmbraceSpanSessionManager/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import sinonChai from 'sinon-chai';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';

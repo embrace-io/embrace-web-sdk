@@ -8,7 +8,7 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
 
 const { expect } = chai;
