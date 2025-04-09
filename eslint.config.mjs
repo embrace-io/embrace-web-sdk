@@ -5,12 +5,14 @@ import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
+import cliPackageInfo from './cli/package.json' with { type: 'json' };
+import sdkPackageInfo from './package.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const compat = new FlatCompat({
-  baseDirectory: __dirname
+  baseDirectory: __dirname,
 });
 
 /** @type {import('eslint').Linter.Config[]} */
@@ -22,7 +24,8 @@ export default tseslint.config({
     eslintConfigPrettier,
     ...compat.extends('plugin:require-extensions/recommended'),
     ...compat.plugins('prefer-arrow-functions'),
-    ...compat.plugins('require-extensions')
+    ...compat.plugins('regex'),
+    ...compat.plugins('require-extensions'),
   ],
   rules: {
     'object-shorthand': ['error', 'always'],
@@ -31,8 +34,8 @@ export default tseslint.config({
       'error',
       {
         ignoreClassesThatImplementAnInterface: 'public-fields',
-        ignoreOverrideMethods: true
-      }
+        ignoreOverrideMethods: true,
+      },
     ],
     '@typescript-eslint/prefer-readonly': 'error',
     '@typescript-eslint/unbound-method': 'error',
@@ -40,8 +43,8 @@ export default tseslint.config({
     '@typescript-eslint/no-invalid-void-type': [
       'error',
       {
-        allowAsThisParameter: true
-      }
+        allowAsThisParameter: true,
+      },
     ],
     'default-param-last': 'off',
     '@typescript-eslint/default-param-last': 'error',
@@ -54,39 +57,59 @@ export default tseslint.config({
         selector: ['memberLike'],
         modifiers: ['private'],
         format: ['camelCase'],
-        leadingUnderscore: 'require'
-      }
+        leadingUnderscore: 'require',
+      },
     ],
     '@typescript-eslint/no-inferrable-types': [
       'error',
-      { ignoreProperties: true }
+      { ignoreProperties: true },
     ],
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
-        "args": "all",
-        "argsIgnorePattern": "^_",
-        "caughtErrors": "all",
-        "caughtErrorsIgnorePattern": "^_",
-        "destructuredArrayIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "ignoreRestSiblings": true
-      }
+        args: 'all',
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
     ],
     'no-restricted-syntax': ['error', 'ExportAllDeclaration'],
     'prefer-arrow-functions/prefer-arrow-functions': [
       'error',
       {
-        returnStyle: 'implicit'
-      }
+        returnStyle: 'implicit',
+      },
     ],
-    'func-style': 'error'
+    'func-style': 'error',
+    'regex/invalid': [
+      'error',
+      [
+        {
+          regex: `SDK_VERSION = '(?!${sdkPackageInfo.version}).*'`,
+          message: `SDK_VERSION version mismatch. It should match the package.json version ${sdkPackageInfo.version}.`,
+          replacement: `SDK_VERSION = '${sdkPackageInfo.version}'`,
+        },
+        {
+          regex: `CLI_VERSION = '(?!${cliPackageInfo.version}).*'`,
+          message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
+          replacement: `CLI_VERSION = '${cliPackageInfo.version}'`,
+        },
+        // we validate the version in the cli version against the sdk version, to make sure both the sdk and cli versions are in sync
+        {
+          regex: `CLI_VERSION = '(?!${sdkPackageInfo.version}).*'`,
+          message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
+        },
+      ],
+    ],
   },
   languageOptions: {
     globals: globals.browser,
     parserOptions: {
-      project: './tsconfig.test.json',
-      tsconfigRootDir: import.meta.dirname
-    }
-  }
+      project: ['./tsconfig.test.json', './cli/tsconfig.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
 });

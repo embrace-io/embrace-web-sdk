@@ -16,7 +16,7 @@ interface ValidateInputArgs {
   templateAppVersion: string;
 }
 
-export function validateInput({
+export const validateInput = ({
   jsFilePath,
   mapFilePath,
   token,
@@ -28,7 +28,7 @@ export function validateInput({
   appVersion,
   templateBundleID,
   templateAppVersion,
-}: ValidateInputArgs): string | null {
+}: ValidateInputArgs): string | null => {
   if (!jsFilePath.trim()) {
     return 'JS file path cannot be empty.';
   }
@@ -97,4 +97,4 @@ export function validateInput({
   }
 
   return null; // All validations passed
-}
+};
