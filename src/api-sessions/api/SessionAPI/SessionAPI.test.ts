@@ -25,6 +25,7 @@ describe('SessionAPI', () => {
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
       endSessionSpanInternal: sinon.stub(),
+      addBreadcrumb: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(sessionManager);
     const result = sessionAPI.getSpanSessionManager();

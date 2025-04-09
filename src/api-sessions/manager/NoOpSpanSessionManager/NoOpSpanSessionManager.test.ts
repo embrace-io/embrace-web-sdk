@@ -42,4 +42,10 @@ describe('NoOpSpanSessionManager', () => {
       noOpSpanSessionManager.endSessionSpanInternal();
     }).to.not.throw();
   });
+
+  it('should do nothing for addBreadcrumb', () => {
+    expect(() => {
+      noOpSpanSessionManager.addBreadcrumb('name');
+    }).to.not.throw();
+  });
 });
