@@ -331,7 +331,7 @@ jobs:
         run: |
           rm -f ${{ env.ELINT_STATUS_FILE }}
 
-  publish:
+  publish-sdk:
     needs:
       - configure
       - environment
@@ -366,11 +366,49 @@ jobs:
         run: |
           npm publish --provenance --access public
 
+  publish-cli:
+    needs:
+      - configure
+      - environment
+      - test-multiple-browsers
+      - lint
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    timeout-minutes: 10
+    if: ${{ needs.environment.outputs.name == 'production' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: CD into the cli directory
+        run: |
+          cd cli
+      - name: Install NPM dependencies
+        run: |
+          npm ci
+
+      - name: Run 'npm publish'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
+        run: |
+          npm publish --provenance --access public
+
   # not used yet, there are no "production" releases
   report-release-slack:
     runs-on: ubuntu-latest
     if: ${{ needs.environment.outputs.name == 'production' }}
-    needs: [publish]
+    needs: [publish-sdk, publish-cli]
     steps:
       - name: "Send to #mission-web Slack channel/workflow"
         continue-on-error: true
