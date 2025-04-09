@@ -6,17 +6,17 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import type { ReasonSessionEnded } from '../../../api-sessions/manager/types.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
+import type { SpanSessionManager } from '../../api-sessions/index.js';
+import type { ReasonSessionEnded } from '../../api-sessions/manager/types.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/attributes.js';
 import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
-} from '../../../constants/index.js';
-import type { PerformanceManager } from '../../../utils/index.js';
-import { generateUUID, OTelPerformanceManager } from '../../../utils/index.js';
+} from '../../constants/index.js';
+import type { PerformanceManager } from '../../utils/index.js';
+import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type { EmbraceSpanSessionManagerArgs } from './types.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {

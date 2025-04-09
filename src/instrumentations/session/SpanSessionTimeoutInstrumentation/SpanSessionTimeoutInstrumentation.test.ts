@@ -12,7 +12,7 @@ import {
   MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 import { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.js';
 

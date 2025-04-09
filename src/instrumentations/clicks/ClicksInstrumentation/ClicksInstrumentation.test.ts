@@ -6,7 +6,7 @@ import {
 } from '../../../api-sessions/index.js';
 import { InMemoryDiagLogger } from '../../../testUtils/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/setupTestTraceExporter/setupTestTraceExporter.js';
-import { EmbraceSpanSessionManager } from '../../session/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { ClicksInstrumentation } from './ClicksInstrumentation.js';
 
 const { expect } = chai;

@@ -1,4 +1,4 @@
-export { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager/index.js';
+export { EmbraceSpanSessionManager } from '../../managers/index.js';
 export { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation/index.js';
 export { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation/index.js';
 export { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation/index.js';
