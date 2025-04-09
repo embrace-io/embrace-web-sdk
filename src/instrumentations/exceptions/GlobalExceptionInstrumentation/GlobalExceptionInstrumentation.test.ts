@@ -8,6 +8,9 @@ import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
+import { EmbraceLogManager } from '../../../managers/index.js';
+import type { LogManager } from '../../../api-logs/index.js';
+import { log } from '../../../api-logs/index.js';
 
 const { expect } = chai;
 
@@ -20,6 +23,7 @@ class GlobalExceptionTestError extends Error {
 
 describe('GlobalExceptionInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
+  let logManager: LogManager;
   let instrumentation: GlobalExceptionInstrumentation;
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
@@ -34,6 +38,8 @@ describe('GlobalExceptionInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
+    logManager = new EmbraceLogManager();
+    log.setGlobalLogManager(logManager);
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     instrumentation = new GlobalExceptionInstrumentation({

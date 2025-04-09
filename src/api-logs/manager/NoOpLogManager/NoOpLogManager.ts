@@ -10,4 +10,13 @@ export class NoOpLogManager implements LogManager {
   ) {
     // no op
   }
+
+  public logException(
+    _timestamp: number,
+    _error: Error,
+    _handled: boolean,
+    _attributes?: Record<string, AttributeValue | undefined>
+  ) {
+    // no op
+  }
 }

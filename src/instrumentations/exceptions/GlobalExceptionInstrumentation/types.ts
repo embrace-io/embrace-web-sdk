@@ -2,5 +2,5 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type GlobalExceptionInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'perf'
+  'diag' | 'perf'
 >;

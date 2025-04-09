@@ -23,4 +23,13 @@ export class ProxyLogManager implements LogManager {
   ) {
     this.getDelegate().message(message, level, attributes);
   }
+
+  public logException(
+    timestamp: number,
+    error: Error,
+    handled: boolean,
+    attributes?: Record<string, AttributeValue | undefined>
+  ) {
+    this.getDelegate().logException(timestamp, error, handled, attributes);
+  }
 }

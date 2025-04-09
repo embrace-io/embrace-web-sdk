@@ -8,11 +8,17 @@ describe('NoOpLogManager', () => {
     noOpLogManager = new NoOpLogManager();
   });
 
-  it('should return null for message', () => {
+  it('should not throw for message', () => {
     expect(() => {
       noOpLogManager.message('logging an error log', 'error', {
         key1: 'value1',
       });
+    }).to.not.throw();
+  });
+
+  it('should not throw for logException', () => {
+    expect(() => {
+      noOpLogManager.logException(Date.now(), new Error(), true);
     }).to.not.throw();
   });
 });
