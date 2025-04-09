@@ -14,7 +14,7 @@ interface UploadToApiArgs {
   upload: boolean;
 }
 
-export async function uploadToApi({
+export const uploadToApi = async ({
   jsContent,
   mapContent,
   bundleID,
@@ -26,7 +26,7 @@ export async function uploadToApi({
   cliVersion,
   dryRun,
   upload,
-}: UploadToApiArgs): Promise<void> {
+}: UploadToApiArgs): Promise<void> => {
   // prepare the body for the API request as a gzipped JSON object
   const body = new Blob([
     zlib.gzipSync(
@@ -61,7 +61,7 @@ export async function uploadToApi({
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `API returned ${response.status}: ${response.statusText} - ${errorText}`
+        `API returned ${response.status.toString()}: ${response.statusText} - ${errorText}`
       );
     }
 
@@ -70,4 +70,4 @@ export async function uploadToApi({
     console.error('Error uploading to API:', error);
     throw error;
   }
-}
+};

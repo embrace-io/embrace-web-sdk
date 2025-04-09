@@ -21,7 +21,7 @@ interface ProcessSourceFilesArgs {
   upload: boolean;
 }
 
-export async function processSourceFiles({
+export const processSourceFiles = async ({
   jsFilePath,
   mapFilePath,
   token,
@@ -37,7 +37,7 @@ export async function processSourceFiles({
   upload,
   fileEncoding,
   appVersion,
-}: ProcessSourceFilesArgs): Promise<void> {
+}: ProcessSourceFilesArgs): Promise<void> => {
   const validationError = validateInput({
     jsFilePath,
     mapFilePath,
@@ -126,4 +126,4 @@ export async function processSourceFiles({
     console.error('Error processing files:', err);
     process.exit(1); // Exit with error code
   }
-}
+};
