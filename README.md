@@ -49,8 +49,8 @@ sdk.initSDK({
 ```
 
 At this point you should be able to rebuild your app and have Embrace begin collecting telemetry. Data should start to
-show up in the Embrace Dashboard once the SDK reports at least 1 completed user session. This can be triggered by launching
-your app and then ending the session by either closing the tab/window or simply putting it in the background.
+show up in the Embrace Dashboard once the SDK reports at least 1 completed user session. This can be triggered by
+launching your app and then ending the session by either closing the tab/window or simply putting it in the background.
 
 ## Keeping your app version up-to-date
 
@@ -219,7 +219,7 @@ do the following:
 sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  traceExporters: [
+  spanExporters: [
     new OTLPTraceExporter({
       url: `GRANAFA_ENDPOINT/v1/traces`,
       headers: {

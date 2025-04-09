@@ -1,13 +1,14 @@
 import type { ContextManager, TextMapPropagator } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
-import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordExporter,
+  LogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
@@ -17,24 +18,13 @@ import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import type { SpanSessionManager } from '../api-sessions/index.js';
 import { session } from '../api-sessions/index.js';
-import type { UserManager } from '../api-users/index.js';
 import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
 } from '../exporters/index.js';
-import {
-  ClicksInstrumentation,
-  GlobalExceptionInstrumentation,
-  SpanSessionBrowserActivityInstrumentation,
-  SpanSessionOnLoadInstrumentation,
-  SpanSessionTimeoutInstrumentation,
-  SpanSessionVisibilityInstrumentation,
-  WebVitalsInstrumentation,
-} from '../instrumentations/index.js';
 import {
   EmbraceSpanSessionManager,
   EmbraceUserManager,
@@ -47,114 +37,167 @@ import {
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
-
-type Exporter = 'otlp' | 'embrace';
+import type { SpanExporter } from '@opentelemetry/sdk-trace-base';
+import type { DiagLogger } from '@opentelemetry/api/build/src/diag/types';
+import { getDefaultInstrumentations } from './defaultInstrumentations.js';
+import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 
 interface SDKInitConfig {
   /**
-   * appID is a unique identifier for your application. It is used to identify your application in Embrace, and it is only required when
-   * the Embrace exporter is enabled. You can find your appID in the Embrace dashboard. If embrace exporter is disabled this value will be ignored.
+   * appID is a unique identifier for your application. It is used to identify your application in Embrace, and can be
+   * found in the Embrace dashboard. This can only be omitted if at least one spanExporter or logExporter is setup to
+   * send data to a collector other than Embrace.
    *
    * **default**: undefined
    */
   appID?: string;
-  resource?: Resource;
+
   /**
-   * Exporters process and export your telemetry data.
+   * appVersion is used to distinguish between different releases of your application. It can be set here if the value
+   * is known in code, otherwise our CLI tool can be used to inject the value at build time.
    *
-   * Exporters supported by this list are automatically configured:
-   *   * 'otlp' - Standard OpenTelemetry Protocol exporter. Uses HTTP to send data to the configured collector.
-   *              It uses BatchSpanProcessor as processor.
-   *              If you need further customization you can set up your OTLP collector and processor through `spanProcessors` and `logProcessors`
-   *   * 'embrace' - Embrace exporter. Sends data to the Embrace backend using OTLP though HTTP.
-   *                 It applies the necessary transformations to the data to be compatible with Embrace.
-   *
-   * **default**: ['embrace']
-   *
-   * You can set up other exporters by proving the necessary processors.
+   * **default**: undefined
    */
-  exporters?: Exporter[];
-  propagator?: TextMapPropagator | null;
-  contextManager?: ContextManager | null;
-  instrumentations?: Instrumentation[] | null;
+  appVersion?: string;
+
   /**
+   * instrumentations define the set of Instrumentations that will begin collecting telemetry on initialization of the
+   * SDK. The default set can be modified by calling `getDefaultInstrumentations` with a configuration object containing
+   * keys to pass options for specific instrumentations.
+   *
+   * **default**: getDefaultInstrumentations()
+   */
+  instrumentations?: Instrumentation[] | null;
+
+  /**
+   * spanExporters can be set to export span to a collector other than Embrace. If `appID` is omitted at lease one
+   * exporter needs to be set here, or in `logExporters`.
+   *
+   * **default**: []
+   */
+  spanExporters?: SpanExporter[];
+
+  /**
+   * logExporters can be set to export logs to a collector other than Embrace. If `appID` is omitted at lease one
+   * exporter needs to be set here, or in `spanExporters`.
+   *
+   * **default**: []
+   */
+  logExporters?: LogRecordExporter[];
+
+  /**
+   * propagator defines a custom context propagator that will be attached to the TracerProvider setup by the SDK
+   *
+   * **default**: null
+   */
+  propagator?: TextMapPropagator | null;
+
+  /**
+   * contextManager defines a custom context manager that will be attached to the TracerProvider setup by the SDK
+   *
+   * **default**: null
+   */
+  contextManager?: ContextManager | null;
+
+  /**
+   * resource defines a custom Resource that will be merged with the resource defined in `src/resources/webSdkResource.ts`
+   * and included with all produced telemetry
+   *
+   * **default**: Resource.default()
+   */
+  resource?: Resource;
+
+  /**
+   * spanProcessors
    * Span processor is an interface which allows hooks for span start and end method invocations.
    * They are invoked in the same order as they were registered.
    * Processors created by the sdk are inserted after processors in this list.
+   *
+   * **default**: []
    */
   spanProcessors?: SpanProcessor[];
+
   /**
+   * logProcessors
    * LogRecordProcessor is an interface which allows hooks for LogRecord emitting.
    * They are invoked in the same order as they were registered.
    * Processors created by the sdk are inserted after processors in this list.
+   *
+   * **default**: []
    */
   logProcessors?: LogRecordProcessor[];
+
+  diagLogger?: DiagLogger;
 }
 
 export const initSDK = ({
   appID,
+  appVersion,
   resource = Resource.default(),
-  exporters = ['embrace'],
+  spanExporters = [],
+  logExporters = [],
   spanProcessors = [],
   propagator = null,
   instrumentations = null,
   contextManager = null,
   logProcessors = [],
+  diagLogger = diag.createComponentLogger({
+    namespace: 'embrace-sdk',
+  }),
 }: SDKInitConfig = {}) => {
   try {
-    const userManager = setupUser();
+    const resourceWithWebSDKAttributes = resource.merge(
+      getWebSDKResource(appVersion)
+    );
 
-    const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
+    const sendingToEmbrace = !!appID && isValidAppID(appID);
+
+    if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
+      throw new Error(
+        'when the embrace appID is omitted then at least one logExporter or spanExporter must be set'
+      );
+    }
+
+    const userManager = setupUser();
+    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    if (sendingToEmbrace && !enduserPseudoID) {
+      throw new Error('userID is required when using Embrace exporter');
+    }
 
     const spanSessionManager = setupSession();
 
-    const loggerProvider = setupLogs({
+    setupTraces({
+      sendingToEmbrace,
       appID,
-      userManager,
+      enduserPseudoID,
       resource: resourceWithWebSDKAttributes,
-      exporters,
+      spanSessionManager,
+      spanExporters,
+      spanProcessors,
+      propagator,
+      contextManager,
+    });
+
+    setupLogs({
+      sendingToEmbrace,
+      appID,
+      enduserPseudoID,
+      resource: resourceWithWebSDKAttributes,
+      logExporters,
       logProcessors,
       spanSessionManager,
     });
 
-    setupTraces({
-      appID,
-      userManager,
-      exporters,
-      spanSessionManager,
-      propagator,
-      contextManager,
-      spanProcessors,
-      loggerProvider,
-      resource: resourceWithWebSDKAttributes,
-    });
-    // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt the dependencies between instrumentations and global providers.
-    // We need the providers for meters, tracers, and logs to be setup before we enable instrumentations.
-    setupInstrumentation({
-      instrumentations,
+    // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
+    // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
+    // setup before we enable instrumentations.
+    registerInstrumentations({
+      instrumentations: instrumentations || getDefaultInstrumentations(),
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error.';
-    console.error(`failed to initialize the SDK: ${message}`);
+    diagLogger.error(`failed to initialize the SDK: ${message}`);
   }
-};
-
-interface SetupTracesArgs {
-  appID?: string;
-  resource: Resource;
-  exporters: Exporter[];
-  propagator?: TextMapPropagator | null;
-  contextManager?: ContextManager | null;
-  spanProcessors: SpanProcessor[];
-  spanSessionManager: SpanSessionManager;
-  loggerProvider: LoggerProvider;
-  userManager: UserManager;
-}
-
-const setupSession = () => {
-  const embraceSpanSessionManager = new EmbraceSpanSessionManager();
-  session.setGlobalSessionManager(embraceSpanSessionManager);
-  return embraceSpanSessionManager;
 };
 
 const setupUser = () => {
@@ -163,55 +206,63 @@ const setupUser = () => {
   return embraceUserManager;
 };
 
+const setupSession = () => {
+  const embraceSpanSessionManager = new EmbraceSpanSessionManager();
+  session.setGlobalSessionManager(embraceSpanSessionManager);
+  return embraceSpanSessionManager;
+};
+
+interface SetupTracesArgs {
+  sendingToEmbrace: boolean;
+  appID?: string;
+  enduserPseudoID?: string;
+  resource: Resource;
+  spanSessionManager: SpanSessionManager;
+  spanExporters?: SpanExporter[];
+  spanProcessors: SpanProcessor[];
+  propagator?: TextMapPropagator | null;
+  contextManager?: ContextManager | null;
+}
+
 const setupTraces = ({
+  sendingToEmbrace,
   appID,
-  userManager,
+  enduserPseudoID,
   resource,
-  exporters,
+  spanSessionManager,
+  spanExporters,
   spanProcessors = [],
   propagator = null,
   contextManager = null,
-  spanSessionManager,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
+    new EmbraceNetworkSpanProcessor(),
   ];
 
-  if (exporters.includes('otlp')) {
-    const otlpExporter = new OTLPTraceExporter();
-    const otlpProcessor = new BatchSpanProcessor(otlpExporter);
+  spanExporters?.forEach(exporter => {
+    finalSpanProcessors.push(new BatchSpanProcessor(exporter));
+  });
 
-    finalSpanProcessors.push(otlpProcessor);
+  if (sendingToEmbrace && appID && enduserPseudoID) {
+    finalSpanProcessors.push(
+      new EmbraceSessionBatchedSpanProcessor({
+        exporter: new EmbraceTraceExporter({
+          appID,
+          userID: enduserPseudoID,
+        }),
+      })
+    );
   }
 
-  if (exporters.includes('embrace')) {
-    if (isValidAppID(appID)) {
-      const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
-      if (!enduserPseudoID) {
-        throw new Error('userID is required when using Embrace exporter');
-      }
-      const embraceTraceExporter = new EmbraceTraceExporter({
-        appID,
-        userID: enduserPseudoID,
-      });
-      const embraceSessionBatchedProcessor =
-        new EmbraceSessionBatchedSpanProcessor({
-          exporter: embraceTraceExporter,
-        });
-      const embraceNetworkSpanProcessor = new EmbraceNetworkSpanProcessor();
-
-      finalSpanProcessors.push(embraceNetworkSpanProcessor);
-      finalSpanProcessors.push(embraceSessionBatchedProcessor);
-    }
-  }
   const tracerProvider = new WebTracerProvider({
     resource,
     spanProcessors: finalSpanProcessors,
   });
 
   tracerProvider.register({
-    ...(!!contextManager && { contextManager }),
+    contextManager,
     propagator,
   });
   trace.setGlobalTracerProvider(tracerProvider);
@@ -220,19 +271,21 @@ const setupTraces = ({
 };
 
 interface SetupLogsArgs {
+  sendingToEmbrace: boolean;
   appID?: string;
+  enduserPseudoID?: string;
   resource: Resource;
-  exporters: Exporter[];
+  logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
   spanSessionManager: SpanSessionManager;
-  userManager: UserManager;
 }
 
 const setupLogs = ({
+  sendingToEmbrace,
   appID,
-  userManager,
+  enduserPseudoID,
   resource,
-  exporters,
+  logExporters,
   logProcessors,
   spanSessionManager,
 }: SetupLogsArgs) => {
@@ -248,24 +301,19 @@ const setupLogs = ({
     new EmbTypeLogRecordProcessor(),
   ];
 
-  if (exporters.includes('otlp')) {
-    const otlpLogsExporter = new OTLPLogExporter();
+  logExporters?.forEach(exporter => {
+    finalLogProcessors.push(new BatchLogRecordProcessor(exporter));
+  });
 
-    finalLogProcessors.push(new BatchLogRecordProcessor(otlpLogsExporter));
-  }
-
-  if (exporters.includes('embrace')) {
-    if (isValidAppID(appID)) {
-      const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
-      if (!enduserPseudoID) {
-        throw new Error('userID is required when using Embrace exporter');
-      }
-      const embraceLogsExporter = new EmbraceLogExporter({
-        appID,
-        userID: enduserPseudoID,
-      });
-      finalLogProcessors.push(new BatchLogRecordProcessor(embraceLogsExporter));
-    }
+  if (sendingToEmbrace && appID && enduserPseudoID) {
+    finalLogProcessors.push(
+      new BatchLogRecordProcessor(
+        new EmbraceLogExporter({
+          appID,
+          userID: enduserPseudoID,
+        })
+      )
+    );
   }
 
   for (const logProcessor of finalLogProcessors) {
@@ -275,35 +323,4 @@ const setupLogs = ({
   logs.setGlobalLoggerProvider(loggerProvider);
 
   return loggerProvider;
-};
-
-interface SetupInstrumentationArgs {
-  instrumentations: Instrumentation[] | null;
-}
-
-const setupWebAutoInstrumentations = () =>
-  getWebAutoInstrumentations({
-    // Covered by our ClicksInstrumentation
-    '@opentelemetry/instrumentation-user-interaction': {
-      enabled: false,
-    },
-  });
-
-const setupInstrumentation = ({
-  instrumentations = null,
-}: SetupInstrumentationArgs) => {
-  // TODO: do we need to expose an api to allow external disabling of instrumentations? `registerInstrumentations`
-  // returns a callback to disable instrumentations, but we are ignoring it atm
-  registerInstrumentations({
-    instrumentations: [
-      new SpanSessionOnLoadInstrumentation(),
-      instrumentations ?? setupWebAutoInstrumentations(),
-      new WebVitalsInstrumentation(),
-      new GlobalExceptionInstrumentation(),
-      new SpanSessionVisibilityInstrumentation(),
-      new ClicksInstrumentation(),
-      new SpanSessionBrowserActivityInstrumentation(),
-      new SpanSessionTimeoutInstrumentation(),
-    ],
-  });
 };
