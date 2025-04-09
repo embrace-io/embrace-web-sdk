@@ -22,6 +22,7 @@ describe('ProxySpanSessionManager', () => {
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
       endSessionSpanInternal: sinon.stub(),
+      addBreadcrumb: sinon.stub(),
     };
   });
 
@@ -80,6 +81,14 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.endSessionSpanInternal(reason);
     expect(mockDelegate.endSessionSpanInternal).to.have.been.calledOnceWith(
       reason
+    );
+  });
+
+  it('should delegate addBreadcrumb to the delegate', () => {
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.addBreadcrumb('some breadcrumb');
+    expect(mockDelegate.addBreadcrumb).to.have.been.calledOnceWith(
+      'some breadcrumb'
     );
   });
 });
