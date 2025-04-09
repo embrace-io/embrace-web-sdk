@@ -1,7 +1,4 @@
-import {
-  ProxyLogManager,
-  type LogManager,
-} from '../../manager/index.js';
+import { ProxyLogManager, type LogManager } from '../../manager/index.js';
 import type { LogAPIArgs } from './types.js';
 
 export class LogAPI {
