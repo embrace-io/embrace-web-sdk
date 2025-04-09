@@ -5,7 +5,8 @@ export class NoOpLogManager implements LogManager {
   public message(
     _message: string,
     _level: LogSeverity,
-    _attributes?: Record<string, AttributeValue | undefined>
+    _attributes?: Record<string, AttributeValue | undefined>,
+    _includeStacktrace?: boolean
   ) {
     // no op
   }

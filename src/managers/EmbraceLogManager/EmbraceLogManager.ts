@@ -1,17 +1,17 @@
 import { type AttributeValue } from '@opentelemetry/api';
-import type { LogManager } from '../../../api-logs/index.js';
-import type { LogSeverity } from '../../../api-logs/manager/types.js';
+import type { LogManager } from '../../api-logs/index.js';
+import type { LogSeverity } from '../../api-logs/manager/types.js';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   EMB_TYPES,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
-} from '../../../constants/index.js';
+} from '../../constants/index.js';
 import {
   OTelPerformanceManager,
   type PerformanceManager,
-} from '../../../utils/index.js';
+} from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 
 export class EmbraceLogManager implements LogManager {
@@ -26,14 +26,16 @@ export class EmbraceLogManager implements LogManager {
   public message(
     message: string,
     severity: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    includeStacktrace = true
   ) {
     this._logMessage({
       message,
       severity,
       timestamp: this._perf.getNowMillis(),
       attributes,
-      stackTrace: severity != 'info' ? new Error().stack : undefined,
+      stackTrace:
+        includeStacktrace && severity != 'info' ? new Error().stack : undefined,
     });
   }
 

@@ -4,7 +4,8 @@ export interface LogManager {
   message: (
     message: string,
     level: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    includeStacktrace?: boolean
   ) => void;
 }
 

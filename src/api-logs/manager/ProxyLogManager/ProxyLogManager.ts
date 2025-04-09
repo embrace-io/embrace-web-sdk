@@ -18,7 +18,8 @@ export class ProxyLogManager implements LogManager {
   public message(
     message: string,
     level: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    _includeStacktrace?: boolean
   ) {
     this.getDelegate().message(message, level, attributes);
   }

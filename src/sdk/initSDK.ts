@@ -36,6 +36,7 @@ import {
   WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
 import {
+  EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceUserManager,
 } from '../managers/index.js';
@@ -47,7 +48,6 @@ import {
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
-import { EmbraceLogManager } from '../instrumentations/log/index.js';
 import { log } from '../api-logs/index.js';
 
 type Exporter = 'otlp' | 'embrace';
