@@ -89,11 +89,18 @@ export default tseslint.config({
       [
         {
           regex: `SDK_VERSION = '(?!${sdkPackageInfo.version}).*'`,
+          message: `SDK_VERSION version mismatch. It should match the package.json version ${sdkPackageInfo.version}.`,
           replacement: `SDK_VERSION = '${sdkPackageInfo.version}'`,
         },
         {
           regex: `CLI_VERSION = '(?!${cliPackageInfo.version}).*'`,
+          message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
           replacement: `CLI_VERSION = '${cliPackageInfo.version}'`,
+        },
+        // we validate the version in the cli version against the sdk version, to make sure both the sdk and cli versions are in sync
+        {
+          regex: `CLI_VERSION = '(?!${sdkPackageInfo.version}).*'`,
+          message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
         },
       ],
     ],
@@ -101,10 +108,7 @@ export default tseslint.config({
   languageOptions: {
     globals: globals.browser,
     parserOptions: {
-      project: [
-        './tsconfig.test.json',
-        './cli/tsconfig.json',
-      ],
+      project: ['./tsconfig.test.json', './cli/tsconfig.json'],
       tsconfigRootDir: import.meta.dirname,
     },
   },
