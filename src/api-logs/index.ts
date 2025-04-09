@@ -1,4 +1,4 @@
-export { log } from './logAPI';
+export { log } from './logAPI.js';
 export type { LogManager } from './manager/index.js';
 export {
   NoOpLogManager,
