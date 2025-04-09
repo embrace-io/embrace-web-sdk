@@ -96,4 +96,34 @@ describe('EmbraceSpanSessionManager', () => {
       'trying to end a session, but there is no session in progress. This is a no-op.'
     );
   });
+
+  it('should not fail if trying to add breadcrumb to non active session', () => {
+    manager.addBreadcrumb('some breadcrumb');
+
+    expect(diag.getDebugLogs()).to.have.lengthOf(1);
+    expect(diag.getDebugLogs()[0]).to.equal(
+      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+    );
+  });
+
+  it('should add breadcrumb to session span', () => {
+    manager.startSessionSpan();
+    void expect(manager.getSessionSpan()).to.not.be.null;
+    void expect(manager.getSessionId()).to.not.be.null;
+    void expect(manager.getSessionStartTime()).to.not.be.null;
+
+    manager.addBreadcrumb('some breadcrumb');
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[0].attributes).to.have.property(
+      'message',
+      'some breadcrumb'
+    );
+  });
 });
