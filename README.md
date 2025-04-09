@@ -31,7 +31,10 @@ yarn:
 yarn add @embrace-io/web-sdk
 ```
 
-Sign up for an Embrace account by going to https://dash.embrace.io/signup (See [Using without Embrace](#using-without-embrace)
+for CDN installs, see [Including the SDK as a code snippet from CDN](##including-the-sdk-as-a-code-snippet-from-cdn).
+
+Sign up for an Embrace account by going to https://dash.embrace.io/signup (
+See [Using without Embrace](#using-without-embrace)
 if you wish to skip this step).
 
 Once you've created an Embrace web application you can initialize the SDK using the appID you were given along with
@@ -49,8 +52,8 @@ sdk.initSDK({
 ```
 
 At this point you should be able to rebuild your app and have Embrace begin collecting telemetry. Data should start to
-show up in the Embrace Dashboard once the SDK reports at least 1 completed user session. This can be triggered by launching
-your app and then ending the session by either closing the tab/window or simply putting it in the background.
+show up in the Embrace Dashboard once the SDK reports at least 1 completed user session. This can be triggered by
+launching your app and then ending the session by either closing the tab/window or simply putting it in the background.
 
 ## Keeping your app version up-to-date
 
@@ -116,14 +119,14 @@ sdk.initSDK({
 });
 ```
 
-View the `TODO` type definition for the full set of configuration options. Note that `getDefaultInstrumentations` returns
-a list, for more advanced customization you can append your own instrumentations to the list provided that they confirm
-to the `Instrumentation` interface.
+View the `TODO` type definition for the full set of configuration options. Note that `getDefaultInstrumentations`
+returns a list, for more advanced customization you can append your own instrumentations to the list provided that they
+confirm to the `Instrumentation` interface.
 
 ## Upload sourcemaps
 
-In order to view symbolicated stack traces for exceptions in Embrace you must first upload your bundle and sourcemap files.
-You can do so using our CLI tool, if you haven't already you can install it using:
+In order to view symbolicated stack traces for exceptions in Embrace you must first upload your bundle and sourcemap
+files. You can do so using our CLI tool, if you haven't already you can install it using:
 
 ```sh
 npm install --save-dev @embrace-io/web-cli
@@ -135,7 +138,8 @@ yarn:
 yarn add -D @embrace-io/web-cli
 ```
 
-You will also require an upload API token. This can be found in your Embrace dashboard by going to [Settings->API](https://dash.embrace.io/settings/organization/api).
+You will also require an upload API token. This can be found in your Embrace dashboard by going
+to [Settings->API](https://dash.embrace.io/settings/organization/api).
 
 Then hook the CLI into your CI/CD and point it to your bundle and sourcmaps in order to perform the upload:
 
@@ -164,8 +168,9 @@ someAsyncOperation().then(() => span.end());
 ```
 
 Attributes and events can also be added to the span either on start or later during its lifespan. Our API wraps that of
-an OpenTelemetry `Tracer` so you can follow [these examples](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans)
-for more elaborate use-cases.
+an OpenTelemetry `Tracer` so you can
+follow [these examples](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans) for more elaborate
+use-cases.
 
 ## Adding logs
 
@@ -212,8 +217,8 @@ user.setIdentifier("internal_id_1234");
 ## Custom exporters
 
 If you wish to export your data to another backend in addition to Embrace you can setup your own custom log and trace
-exporters and pass them in when initializing the SDK. For example to send telemetry to Grafana cloud using OTLP you could
-do the following:
+exporters and pass them in when initializing the SDK. For example to send telemetry to Grafana cloud using OTLP you
+could do the following:
 
 ```typescript
 sdk.initSDK({
@@ -238,11 +243,56 @@ sdk.initSDK({
 });
 ```
 
+## Including the SDK as a code snippet from CDN
+
+We recommend you include our SDK as a regular npm dependency (see [Quick Start](#quick-start)). If you prefer to include
+the SDK as a code snippet from CDN, you can do so by adding the following script tag to your generated HTML file:
+
+```html
+
+<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk"></script>
+```
+
+Note: we recommend you pin specific versions to avoid breaking changes. For example:
+
+```html
+
+<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@0.0.12"></script>
+```
+
+We recommend you add this script tag to the `<head>` of your HTML file, so that it loads before your app code. This will
+expose the SDK as a global variable `EmbraceWebSdk` on the `window` object. This needs to be added before any script
+that makes use of the sdk.
+
+The rest of this README assumes using the SDK from an NPM installation, here are some required changes to keep in mind
+as you refer to that documentation:
+
+1) Importing the sdk from node modules is no longer valid. Instead, reference it from the global `window` object:
+
+```diff
+- import { sdk } from '@embrace-io/web-sdk';
++ const sdk = window.EmbraceWebSdk;
+```
+
+2) Because our web-cli does not support the CDN version of the SDK, you will need to make sure to pass in your app
+   version when initializing the sdk. If you don't, then your app version will be reported to Embrace as
+   `EmbIOAppVersionX.X.X`
+
+```javascript
+  sdk.initSDK({
+  appVersion: '0.0.1',
+  /*...*/
+});
+```
+
+3) Because our web-cli does not support the CDN version of the SDK, the source maps upload won't work
+   (see [Upload sourcemaps](#upload-sourcemaps)). You will not see symbolicated stack traces in Embrace.
+
 ## Using without Embrace
 
 If you'd prefer not to send data to Embrace you can simply omit the embrace app id when calling `initSDK`. Note that in
-this case at least one custom exporter needs to be configured following the steps from [Custom exporters](#custom-exporters)
-or else the SDK considers the configuration invalid.
+this case at least one custom exporter needs to be configured following the steps
+from [Custom exporters](#custom-exporters) or else the SDK considers the configuration invalid.
 
 ## Including the SDK as a code snippet from CDN
 
@@ -256,8 +306,9 @@ TODO
 
 ## Support
 
-If you have a feature suggestion or have spotted something that doesn't look right please open an [issue](https://github.com/embrace-io/embrace-web-sdk/issues/new) for the
-Embrace team to triage or reach out in our [Community Slack](https://community.embrace.io/) for direct, faster assistance.
+If you have a feature suggestion or have spotted something that doesn't look right please open
+an [issue](https://github.com/embrace-io/embrace-web-sdk/issues/new) for the Embrace team to triage or reach out in
+our [Community Slack](https://community.embrace.io/) for direct, faster assistance.
 
 ## Contributions
 

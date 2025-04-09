@@ -2,14 +2,12 @@
   "name": "embrace-web-sdk-react-demo",
   "private": true,
   "version": "0.0.1",
-  "type": "module",
   "scripts": {
     "demo:frontend:full:preview": "bash ./scripts/runDemo.sh",
     "demo:frontend:compile:clean": "rimraf dist",
     "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
-    "demo:frontend:lint": "eslint .",
     "demo:frontend:upload:sourcemaps": "web-cli upload -a 5przi --app-version 0.0.1",
     "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -a 5przi --app-version 0.0.1",
     "demo:frontend:preview": "vite preview"
@@ -24,18 +22,13 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.17.0",
     "@embrace-io/web-cli": "file:../../cli",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.17.0",
     "rimraf": "^6.0.1",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.14.0",
     "typescript": "~5.6.2",
-    "typescript-eslint": "^8.18.2",
     "vite": "^6.2.5"
   }
 }

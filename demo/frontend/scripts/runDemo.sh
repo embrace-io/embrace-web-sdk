@@ -8,13 +8,13 @@ npm ci
 rm -rf build
 npm run sdk:compile
 #build the cli locally
-cd ./cli
+cd ./cli || exit
 rm -rf node_modules
 npm ci
 rm -rf build
 npm run cli:compile
 #build demo locally
-cd ../demo/frontend
+cd ../demo/frontend || exit
 rm -rf node_modules
 npm ci
 sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' .env.template > .env
