@@ -2,7 +2,6 @@ import type {
   DiagLogger,
   Meter,
   MeterProvider,
-  Span,
   Tracer,
   TracerProvider,
 } from '@opentelemetry/api';
@@ -12,14 +11,11 @@ import { logs } from '@opentelemetry/api-logs';
 import type {
   Instrumentation,
   InstrumentationConfig,
-  InstrumentationModuleDefinition,
-  SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
-import * as shimmer from 'shimmer';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
-// to avoid importing internal and experimental code.
+// to avoid importing internal and experimental code. Some unused blocks removed.
 /*
  * Copyright The OpenTelemetry Authors
  *
@@ -41,23 +37,6 @@ export abstract class InstrumentationAbstract<
 {
   protected _config: ConfigType = {} as ConfigType;
   protected _diag: DiagLogger;
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _unwrap = shimmer.unwrap;
-  /* Api to unwrap instrumented methods */
-  /* Api to wrap instrumented method */
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _massWrap = shimmer.massWrap;
-  /* Api to mass wrap instrumented method */
-  /* Api to wrap instrumented method */
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _massUnwrap = shimmer.massUnwrap;
-  /* Api to mass unwrap instrumented methods */
-
-  /* Api to wrap instrumented method */
 
   public constructor(
     public readonly instrumentationName: string,
@@ -76,15 +55,12 @@ export abstract class InstrumentationAbstract<
     this._updateMetricInstruments();
   }
 
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
   private _tracer: Tracer;
 
   /* Returns tracer */
   protected get tracer(): Tracer {
     return this._tracer;
   }
-
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
 
   private _meter: Meter;
 
@@ -98,26 +74,6 @@ export abstract class InstrumentationAbstract<
   /* Returns logger */
   protected get logger(): Logger {
     return this._logger;
-  }
-
-  /**
-   * @experimental
-   *
-   * Get module definitions defined by {@link init}.
-   * This can be used for experimental compile-time instrumentation.
-   *
-   * @returns an array of {@link InstrumentationModuleDefinition}
-   */
-  public getModuleDefinitions(): InstrumentationModuleDefinition[] {
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const initResult = this.init() ?? [];
-    if (!Array.isArray(initResult)) {
-      return [initResult];
-    }
-
-    return initResult;
   }
 
   /* Disable plugin */
@@ -179,52 +135,8 @@ export abstract class InstrumentationAbstract<
     );
   }
 
-  /**
-   * Sets the new metric instruments with the current Meter.
-   */
-  /**
-   * Init method in which plugin should define _modules and patches for
-   * methods.
-   */
-  protected abstract init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void;
-
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {
     return;
-  }
-
-  /**
-   * Execute span customization hook, if configured, and log any errors.
-   * Any semantics of the trigger and info are defined by the specific instrumentation.
-   * @param hookHandler The optional hook handler which the user has configured via instrumentation config
-   * @param triggerName The name of the trigger for executing the hook for logging purposes
-   * @param span The span to which the hook should be applied
-   * @param info The info object to be passed to the hook, with useful data the hook may use
-   */
-  protected _runSpanCustomizationHook<SpanCustomizationInfoType>(
-    hookHandler: SpanCustomizationHook<SpanCustomizationInfoType> | undefined,
-    triggerName: string,
-    span: Span,
-    info: SpanCustomizationInfoType
-  ) {
-    if (!hookHandler) {
-      return;
-    }
-
-    try {
-      hookHandler(span, info);
-    } catch (e) {
-      this._diag.error(
-        `Error running span customization hook due to exception in handler`,
-        { triggerName },
-        e
-      );
-    }
   }
 }
