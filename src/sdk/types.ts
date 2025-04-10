@@ -25,6 +25,8 @@ import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumen
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 
+export type SDKLogLevel = 'info' | 'warning' | 'error';
+
 type BaseSDKInitConfig = {
   /**
    * appVersion is used to distinguish between different releases of your application. It can be set here if the value
@@ -91,6 +93,13 @@ type BaseSDKInitConfig = {
    * **default**: []
    */
   logProcessors?: LogRecordProcessor[];
+
+  /**
+   * logLevel controls the verbosity of the SDK console logging
+   *
+   * **default**: 'error'
+   */
+  logLevel?: SDKLogLevel;
 
   diagLogger?: DiagLogger;
 };

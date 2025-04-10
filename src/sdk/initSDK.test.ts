@@ -14,7 +14,7 @@ import {
   fakeFetchGetRequestHeaders,
   fakeFetchGetBody,
 } from '../testUtils/index.js';
-import { trace } from '@opentelemetry/api';
+import { diag, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import type { WebVitalOnReport } from '../instrumentations/web-vitals/WebVitalsInstrumentation/types.js';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
@@ -22,6 +22,8 @@ import sinonChai from 'sinon-chai';
 import { session } from '../api-sessions/index.js';
 import { Resource } from '@opentelemetry/resources';
 import { SDK_VERSION } from '../resources/constants/index.js';
+import * as sinon from 'sinon';
+import type { SinonStub } from 'sinon';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -40,6 +42,7 @@ describe('initSDK', () => {
     logExporter.reset();
     trace.disable();
     logs.disable();
+    diag.disable();
   });
 
   it('should require an app ID when not setting custom exporters', () => {
@@ -256,6 +259,66 @@ describe('initSDK', () => {
         },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
+    });
+  });
+
+  describe('console logging', () => {
+    let consoleErrorStub: SinonStub;
+    let consoleWarnStub: SinonStub;
+    let consoleInfoStub: SinonStub;
+
+    beforeEach(() => {
+      consoleErrorStub = sinon.stub(console, 'error');
+      consoleWarnStub = sinon.stub(console, 'warn');
+      consoleInfoStub = sinon.stub(console, 'info');
+    });
+
+    afterEach(() => {
+      consoleErrorStub.restore();
+      consoleWarnStub.restore();
+      consoleInfoStub.restore();
+    });
+
+    it('should allow sending info level logs to the console', () => {
+      const result = initSDK({ appID: 'abc12', logLevel: 'info' });
+      void expect(result).not.to.be.false;
+      const diagLogger = diag.createComponentLogger({ namespace: 'testing' });
+
+      diagLogger.info('info');
+      diagLogger.warn('warning');
+      diagLogger.error('error');
+
+      void expect(consoleInfoStub).to.have.been.calledOnce;
+      void expect(consoleWarnStub).to.have.been.calledOnce;
+      void expect(consoleErrorStub).to.have.been.calledOnce;
+    });
+
+    it('should allow sending warning level logs to the console', () => {
+      const result = initSDK({ appID: 'abc12', logLevel: 'warning' });
+      void expect(result).not.to.be.false;
+      const diagLogger = diag.createComponentLogger({ namespace: 'testing' });
+
+      diagLogger.info('info');
+      diagLogger.warn('warning');
+      diagLogger.error('error');
+
+      void expect(consoleInfoStub).not.to.have.been.called;
+      void expect(consoleWarnStub).to.have.been.calledOnce;
+      void expect(consoleErrorStub).to.have.been.calledOnce;
+    });
+
+    it('should default to error level logging', () => {
+      const result = initSDK({ appID: 'abc12' });
+      void expect(result).not.to.be.false;
+      const diagLogger = diag.createComponentLogger({ namespace: 'testing' });
+
+      diagLogger.info('info');
+      diagLogger.warn('warning');
+      diagLogger.error('error');
+
+      void expect(consoleInfoStub).not.to.have.been.called;
+      void expect(consoleWarnStub).not.to.have.been.called;
+      void expect(consoleErrorStub).to.have.been.calledOnce;
     });
   });
 });

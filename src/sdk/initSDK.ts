@@ -1,7 +1,5 @@
-import { diag } from '@opentelemetry/api';
-import { trace } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
@@ -30,17 +28,19 @@ import {
   EmbTypeLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
-import { getWebSDKResource } from '../resources/index.js';
-import { isValidAppID } from './utils.js';
-import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
 import type {
   SDKControl,
   SDKInitConfig,
+  SDKLogLevel,
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
+import { getWebSDKResource } from '../resources/index.js';
+import { isValidAppID } from './utils.js';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 
 export const initSDK = (
   {
@@ -55,11 +55,16 @@ export const initSDK = (
     instrumentations = [],
     contextManager = null,
     logProcessors = [],
+    logLevel = 'error',
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
+  diag.setLogger(new DiagConsoleLogger(), {
+    logLevel: sdkLogLevelToDiagLogLevel(logLevel),
+  });
+
   try {
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource(appVersion)
@@ -126,6 +131,17 @@ export const initSDK = (
   }
 };
 
+const sdkLogLevelToDiagLogLevel = (logLevel: SDKLogLevel): DiagLogLevel => {
+  switch (logLevel) {
+    case 'info':
+      return DiagLogLevel.INFO;
+    case 'warning':
+      return DiagLogLevel.WARN;
+    case 'error':
+      return DiagLogLevel.ERROR;
+  }
+};
+
 const setupUser = () => {
   const embraceUserManager = new EmbraceUserManager();
   user.setGlobalUserManager(embraceUserManager);
@@ -179,7 +195,6 @@ const setupTraces = ({
     contextManager,
     propagator,
   });
-  trace.setGlobalTracerProvider(tracerProvider);
 
   return tracerProvider;
 };
