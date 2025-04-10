@@ -60,6 +60,7 @@ interface SDKInitConfig {
    * **default**: undefined
    */
   appID?: string;
+  appVersion?: string;
   resource?: Resource;
   /**
    * Exporters process and export your telemetry data.
@@ -95,6 +96,7 @@ interface SDKInitConfig {
 
 export const initSDK = ({
   appID,
+  appVersion,
   resource = Resource.default(),
   exporters = ['embrace'],
   spanProcessors = [],
@@ -106,7 +108,9 @@ export const initSDK = ({
   try {
     const userManager = setupUser();
 
-    const resourceWithWebSDKAttributes = resource.merge(getWebSDKResource());
+    const resourceWithWebSDKAttributes = resource.merge(
+      getWebSDKResource(appVersion)
+    );
 
     const spanSessionManager = setupSession();
 
