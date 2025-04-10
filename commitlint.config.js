@@ -14,6 +14,8 @@ export default {
       2,
       'always',
       [
+        'build',
+        'ci',
         'feat',
         'fix',
         'docs',

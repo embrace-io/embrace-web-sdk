@@ -58,14 +58,12 @@ npm run sdk:test:watch
 
 New releases of the SDK are triggered through [Github Releases](https://github.com/embrace-io/embrace-web-sdk/releases).
 Commits merged to main are added to the next Draft release. Once these are ready the Draft can be set to Published to
-trigger a publish of the SDK packages to NPM. Prior to publishing there should be at least one commit on main since the
-last release that:
-* Bumps the version in package.json
-* Makes sure that same version is reflected in
-  * cli/package.json
-  * cli/src/constants.ts
-  * src/resources/constants/index.ts
-* Run `npm i` in the following locations:
-  * ./
-  * cli/
-  * demo/frontend/
+trigger a publish of the SDK packages to NPM.
+
+Note: the level of the version bump (major, minor, patch) is determined by the type of changes made to the SDK since the
+last release. You can see the requirements for each type of bump in
+our [release-drafter config -> autolabeler](./.github/release-drafter.yml)
+
+The release version will be generated based on the content of the pull requests merged since the last release. We
+use https://github.com/release-drafter/release-drafter to generate new releases and https://commitlint.js.org/ to make
+sure PRs follow our commit convention
