@@ -1,7 +1,8 @@
 import { ProxyUserManager, type UserManager } from '../../manager/index.js';
 import type { UserAPIArgs } from './types.js';
+import type { User } from '../../manager/types.js';
 
-export class UserAPI {
+export class UserAPI implements UserManager {
   private static _instance?: UserAPI;
   private readonly _proxyUserManager;
 
@@ -25,5 +26,17 @@ export class UserAPI {
 
   public setGlobalUserManager(userManager: UserManager): void {
     this._proxyUserManager.setDelegate(userManager);
+  }
+
+  public clearUser(): void {
+    this.getUserManager().clearUser();
+  }
+
+  public getUser(): User | null {
+    return this.getUserManager().getUser();
+  }
+
+  public setUser(user: User): void {
+    this.getUserManager().setUser(user);
   }
 }
