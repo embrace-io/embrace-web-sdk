@@ -17,7 +17,7 @@ describe('TraceAPI', () => {
     const traceAPI = TraceAPI.getInstance();
     const traceManager: TraceManager = {
       // Mock implementation of TraceManager
-      startSpan: sinon.stub().returns({} as Span),
+      startPerformanceSpan: sinon.stub().returns({} as Span),
     };
     traceAPI.setGlobalTraceManager(traceManager);
     const result = traceAPI.getTraceManager();

@@ -15,7 +15,10 @@ export class ProxyTraceManager implements TraceManager {
     this._delegate = delegate;
   }
 
-  public startSpan(name: string, options?: SpanOptions): Span | null {
-    return this.getDelegate().startSpan(name, options);
+  public startPerformanceSpan(
+    name: string,
+    options?: SpanOptions
+  ): Span | null {
+    return this.getDelegate().startPerformanceSpan(name, options);
   }
 }

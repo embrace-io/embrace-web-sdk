@@ -4,7 +4,7 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SpanOptions } from '@opentelemetry/api/build/src/trace/SpanOptions';
 
 export class EmbraceTraceManager implements TraceManager {
-  public startSpan(name: string, options: SpanOptions = {}): Span {
+  public startPerformanceSpan(name: string, options: SpanOptions = {}): Span {
     const tracer = trace.getTracer('embrace-web-sdk-traces');
 
     options.attributes = options.attributes ? options.attributes : {};

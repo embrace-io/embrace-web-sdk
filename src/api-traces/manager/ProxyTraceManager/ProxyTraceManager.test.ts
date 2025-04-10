@@ -16,7 +16,7 @@ describe('ProxyTraceManager', () => {
   beforeEach(() => {
     proxyTraceManager = new ProxyTraceManager();
     mockDelegate = {
-      startSpan: sinon.stub().returns({} as Span),
+      startPerformanceSpan: sinon.stub().returns({} as Span),
     };
   });
 
@@ -33,7 +33,7 @@ describe('ProxyTraceManager', () => {
 
   it('should delegate startSpan to the delegate', () => {
     proxyTraceManager.setDelegate(mockDelegate);
-    const span = proxyTraceManager.startSpan('span-name');
+    const span = proxyTraceManager.startPerformanceSpan('span-name');
     expect(span).to.deep.equal({});
   });
 });

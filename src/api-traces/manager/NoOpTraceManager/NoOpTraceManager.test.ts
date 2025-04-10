@@ -10,7 +10,8 @@ describe('NoOpTraceManager', () => {
   });
 
   it('should return null for startSpan', () => {
-    const span: Span | null = noOpTraceManager.startSpan('span-name');
+    const span: Span | null =
+      noOpTraceManager.startPerformanceSpan('span-name');
     void expect(span).to.be.null;
   });
 });

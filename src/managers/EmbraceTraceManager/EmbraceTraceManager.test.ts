@@ -4,6 +4,7 @@ import sinonChai from 'sinon-chai';
 import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { EmbraceTraceManager } from './EmbraceTraceManager.js';
 import { KEY_EMB_TYPE } from '../../constants/attributes.js';
+import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -26,7 +27,7 @@ describe('EmbraceTraceManager', () => {
   });
 
   it('should start and end a perf span', () => {
-    const span = manager.startSpan('perf-span');
+    const span = manager.startPerformanceSpan('perf-span');
     void expect(span).to.not.be.null;
     expect(() => {
       span.end();
@@ -37,5 +38,8 @@ describe('EmbraceTraceManager', () => {
     const perfSpan = finishedSpans[0];
     expect(perfSpan.name).to.equal('perf-span');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
+    expect(hrTimeToMilliseconds(perfSpan.endTime)).to.be.greaterThanOrEqual(
+      hrTimeToMilliseconds(perfSpan.startTime)
+    );
   });
 });
