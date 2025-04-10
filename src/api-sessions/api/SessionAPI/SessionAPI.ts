@@ -59,4 +59,8 @@ export class SessionAPI implements SpanSessionManager {
   public addBreadcrumb(name: string): void {
     this.getSpanSessionManager().addBreadcrumb(name);
   }
+
+  public addProperty(key: string, value: string): void {
+    this.getSpanSessionManager().addProperty(key, value);
+  }
 }
