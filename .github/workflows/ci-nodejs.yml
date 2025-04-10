@@ -373,6 +373,10 @@ jobs:
       - test-multiple-browsers
       - lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./cli
     permissions:
       id-token: write
     timeout-minutes: 10
@@ -390,10 +394,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
           registry-url: 'https://registry.npmjs.org'
-
-      - name: CD into the cli directory
-        run: |
-          cd cli
+          
       - name: Install NPM dependencies
         run: |
           npm ci
