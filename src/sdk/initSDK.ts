@@ -46,7 +46,7 @@ export const initSDK = (
   {
     appID,
     appVersion,
-    resource = Resource.default(),
+    resource = Resource.empty(),
     spanExporters = [],
     logExporters = [],
     spanProcessors = [],

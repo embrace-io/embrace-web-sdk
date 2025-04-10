@@ -221,9 +221,9 @@ describe('initSDK', () => {
           { key: 'telemetry.sdk.language', value: { stringValue: 'webjs' } },
           {
             key: 'telemetry.sdk.name',
-            value: { stringValue: 'opentelemetry' },
+            value: { stringValue: 'embrace-web-sdk' },
           },
-          { key: 'telemetry.sdk.version', value: { stringValue: '1.30.0' } },
+          { key: 'telemetry.sdk.version', value: { stringValue: SDK_VERSION } },
           { key: 'r1', value: { stringValue: 'my-resource-attr' } },
           { key: 'app_version', value: { stringValue: 'my-app-version' } },
           { key: 'app_framework', value: { intValue: 1 } },
