@@ -19,9 +19,9 @@ export class ProxyLogManager implements LogManager {
     message: string,
     level: LogSeverity,
     attributes?: Record<string, AttributeValue | undefined>,
-    _includeStacktrace?: boolean
+    includeStacktrace?: boolean
   ) {
-    this.getDelegate().message(message, level, attributes);
+    this.getDelegate().message(message, level, attributes, includeStacktrace);
   }
 
   public logException(
