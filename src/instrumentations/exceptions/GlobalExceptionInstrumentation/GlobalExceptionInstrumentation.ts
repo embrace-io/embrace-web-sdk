@@ -1,28 +1,26 @@
-import type { PerformanceManager } from '../../../utils/index.js';
-import { OTelPerformanceManager } from '../../../utils/index.js';
-import { logException } from '../../../utils/log.js';
-import { InstrumentationBase } from '../../InstrumentationBase/index.js';
 import type { GlobalExceptionInstrumentationArgs } from './types.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 
-export class GlobalExceptionInstrumentation extends InstrumentationBase {
+export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
-  private readonly _perf: PerformanceManager;
   private readonly _onUnhandledRejectionHandler: (
     event: PromiseRejectionEvent
   ) => void;
 
-  public constructor({
-    perf = new OTelPerformanceManager(),
-  }: GlobalExceptionInstrumentationArgs = {}) {
-    super('GlobalExceptionInstrumentation', '1.0.0', {});
-    this._perf = perf;
+  public constructor({ diag, perf }: GlobalExceptionInstrumentationArgs = {}) {
+    super({
+      instrumentationName: 'GlobalExceptionInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      perf,
+      config: {},
+    });
     this._onErrorHandler = (event: ErrorEvent) => {
-      logException({
-        logger: this.logger,
-        timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
-        error: event.error as Error,
-        handled: false,
-      });
+      this.logManager.logException(
+        this.perf.epochMillisFromOriginOffset(event.timeStamp),
+        event.error as Error,
+        false
+      );
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       let error: Error;
@@ -37,12 +35,11 @@ export class GlobalExceptionInstrumentation extends InstrumentationBase {
         error.stack = '';
       }
 
-      logException({
-        logger: this.logger,
-        timestamp: this._perf.epochMillisFromOriginOffset(event.timeStamp),
+      this.logManager.logException(
+        this.perf.epochMillisFromOriginOffset(event.timeStamp),
         error,
-        handled: false,
-      });
+        false
+      );
     };
 
     if (this._config.enabled) {
