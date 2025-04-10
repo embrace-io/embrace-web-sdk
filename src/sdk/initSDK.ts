@@ -1,4 +1,8 @@
-import type { ContextManager, TextMapPropagator } from '@opentelemetry/api';
+import type {
+  ContextManager,
+  TextMapPropagator,
+  DiagLogger,
+} from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
@@ -38,8 +42,10 @@ import {
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
 import type { SpanExporter } from '@opentelemetry/sdk-trace-base';
-import type { DiagLogger } from '@opentelemetry/api/build/src/diag/types';
-import { getDefaultInstrumentations } from './defaultInstrumentations.js';
+import {
+  setupDefaultInstrumentations,
+  type DefaultInstrumenationConfig,
+} from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 
 interface SDKInitConfig {
@@ -61,13 +67,20 @@ interface SDKInitConfig {
   appVersion?: string;
 
   /**
-   * instrumentations define the set of Instrumentations that will begin collecting telemetry on initialization of the
-   * SDK. The default set can be modified by calling `getDefaultInstrumentations` with a configuration object containing
-   * keys to pass options for specific instrumentations.
+   * defaultInstrumentationConfig can be used pass options to the default instrumentations by Embrace or turn certain
+   * ones off entirely. Note that only some default instrumentations support configuration in this manner.
    *
-   * **default**: getDefaultInstrumentations()
+   * **default**: undefined
    */
-  instrumentations?: Instrumentation[] | null;
+  defaultInstrumentationConfig?: DefaultInstrumenationConfig;
+
+  /**
+   * instrumentations can be set to include instrumentations beyond the default ones provided by Embrace. This does not
+   * override Embrace's default instrumentations, to control those set `defaultInstrumentationConfig` instead.
+   *
+   * **default**: []
+   */
+  instrumentations?: Instrumentation[];
 
   /**
    * spanExporters can be set to export span to a collector other than Embrace. If `appID` is omitted at lease one
@@ -130,6 +143,10 @@ interface SDKInitConfig {
   diagLogger?: DiagLogger;
 }
 
+interface SDKControl {
+  flush: () => Promise<void>;
+}
+
 export const initSDK = ({
   appID,
   appVersion,
@@ -138,13 +155,14 @@ export const initSDK = ({
   logExporters = [],
   spanProcessors = [],
   propagator = null,
-  instrumentations = null,
+  defaultInstrumentationConfig,
+  instrumentations = [],
   contextManager = null,
   logProcessors = [],
   diagLogger = diag.createComponentLogger({
     namespace: 'embrace-sdk',
   }),
-}: SDKInitConfig = {}) => {
+}: SDKInitConfig = {}): SDKControl | false => {
   try {
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource(appVersion)
@@ -166,7 +184,7 @@ export const initSDK = ({
 
     const spanSessionManager = setupSession();
 
-    setupTraces({
+    const tracerProvider = setupTraces({
       sendingToEmbrace,
       appID,
       enduserPseudoID,
@@ -178,7 +196,7 @@ export const initSDK = ({
       contextManager,
     });
 
-    setupLogs({
+    const loggerProvider = setupLogs({
       sendingToEmbrace,
       appID,
       enduserPseudoID,
@@ -192,11 +210,22 @@ export const initSDK = ({
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
     // setup before we enable instrumentations.
     registerInstrumentations({
-      instrumentations: instrumentations || getDefaultInstrumentations(),
+      instrumentations: [
+        ...instrumentations,
+        setupDefaultInstrumentations(defaultInstrumentationConfig),
+      ],
     });
+
+    return {
+      flush: async () => {
+        await tracerProvider.forceFlush();
+        await loggerProvider.forceFlush();
+      },
+    };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error.';
     diagLogger.error(`failed to initialize the SDK: ${message}`);
+    return false;
   }
 };
 

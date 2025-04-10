@@ -13,6 +13,7 @@ import {
   type SpanSessionVisibilityInstrumentationArgs,
   type SpanSessionOnLoadInstrumentationArgs,
   type ClicksInstrumentationArgs,
+  ClicksInstrumentation,
 } from '../instrumentations/index.js';
 import {
   DocumentLoadInstrumentation,
@@ -27,11 +28,7 @@ import {
   type XMLHttpRequestInstrumentationConfig,
 } from '@opentelemetry/instrumentation-xml-http-request';
 
-type AvailableInstrumentations =
-  | 'session-on-load'
-  | 'session-visibility'
-  | 'session-activity'
-  | 'session-timeout'
+type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'web-vital'
@@ -39,15 +36,15 @@ type AvailableInstrumentations =
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
-interface DefaultInstrumenationConfig {
-  omit: Set<AvailableInstrumentations>;
+export interface DefaultInstrumenationConfig {
+  omit?: Set<OptionalInstrumentations>;
+  exception?: GlobalExceptionInstrumentationArgs;
+  click?: ClicksInstrumentationArgs;
+  'web-vital'?: WebVitalsInstrumentationArgs;
   'session-on-load'?: SpanSessionOnLoadInstrumentationArgs;
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
-  exception?: GlobalExceptionInstrumentationArgs;
-  click?: ClicksInstrumentationArgs;
-  'web-vital'?: WebVitalsInstrumentationArgs;
   /*
     Remove 'enabled' from the accepted config for the @opentelemetry instrumentations. This parameter is misleading
     since we are going to call `registerInstrumentations` for every instrumentation we include here even if their
@@ -67,50 +64,34 @@ interface DefaultInstrumenationConfig {
   >;
 }
 
-export const getDefaultInstrumentations = (
-  config: DefaultInstrumenationConfig = { omit: new Set() }
+export const setupDefaultInstrumentations = (
+  config: DefaultInstrumenationConfig = {}
 ): Instrumentation[] => {
-  const instrumentations = [];
+  /*
+    These instrumentations are core to managing the session lifecycle and so are not optional
+   */
+  const instrumentations: Instrumentation[] = [
+    new SpanSessionOnLoadInstrumentation(config['session-on-load']),
+    new SpanSessionVisibilityInstrumentation(config['session-visibility']),
+    new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
+    new SpanSessionTimeoutInstrumentation(config['session-timeout']),
+  ];
 
-  if (!config.omit.has('session-on-load')) {
-    instrumentations.push(
-      new SpanSessionOnLoadInstrumentation(config['session-on-load'])
-    );
-  }
-
-  if (!config.omit.has('session-visibility')) {
-    instrumentations.push(
-      new SpanSessionVisibilityInstrumentation(config['session-visibility'])
-    );
-  }
-
-  if (!config.omit.has('session-activity')) {
-    instrumentations.push(
-      new SpanSessionBrowserActivityInstrumentation(config['session-activity'])
-    );
-  }
-
-  if (!config.omit.has('session-timeout')) {
-    instrumentations.push(
-      new SpanSessionTimeoutInstrumentation(config['session-timeout'])
-    );
-  }
-
-  if (!config.omit.has('exception')) {
+  if (!config.omit?.has('exception')) {
     instrumentations.push(
       new GlobalExceptionInstrumentation(config['exception'])
     );
   }
 
-  if (!config.omit.has('click')) {
-    instrumentations.push(new WebVitalsInstrumentation(config['click']));
+  if (!config.omit?.has('click')) {
+    instrumentations.push(new ClicksInstrumentation(config['click']));
   }
 
-  if (!config.omit.has('web-vital')) {
+  if (!config.omit?.has('web-vital')) {
     instrumentations.push(new WebVitalsInstrumentation(config['web-vital']));
   }
 
-  if (!config.omit.has('@opentelemetry/instrumentation-document-load')) {
+  if (!config.omit?.has('@opentelemetry/instrumentation-document-load')) {
     instrumentations.push(
       new DocumentLoadInstrumentation(
         config['@opentelemetry/instrumentation-document-load']
@@ -118,13 +99,13 @@ export const getDefaultInstrumentations = (
     );
   }
 
-  if (!config.omit.has('@opentelemetry/instrumentation-fetch')) {
+  if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new FetchInstrumentation(config['@opentelemetry/instrumentation-fetch'])
     );
   }
 
-  if (!config.omit.has('@opentelemetry/instrumentation-xml-http-request')) {
+  if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
     instrumentations.push(
       new XMLHttpRequestInstrumentation(
         config['@opentelemetry/instrumentation-xml-http-request']
