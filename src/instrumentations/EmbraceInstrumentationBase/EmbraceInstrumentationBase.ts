@@ -4,6 +4,8 @@ import type {
 } from '@opentelemetry/instrumentation';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
 import { session } from '../../api-sessions/index.js';
+import type { LogManager } from '../../api-logs/index.js';
+import { log } from '../../api-logs/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { OTelPerformanceManager } from '../../utils/index.js';
 import { InstrumentationBase } from '../InstrumentationBase/index.js';
@@ -13,6 +15,7 @@ export abstract class EmbraceInstrumentationBase<
   ConfigType extends InstrumentationConfig = InstrumentationConfig,
 > extends InstrumentationBase<ConfigType> {
   private readonly _sessionManager: SpanSessionManager;
+  private readonly _logManager: LogManager;
   private readonly _perf: PerformanceManager;
 
   protected constructor({
@@ -29,11 +32,17 @@ export abstract class EmbraceInstrumentationBase<
     }
     this._perf = perf ?? new OTelPerformanceManager();
     this._sessionManager = session.getSpanSessionManager();
+    this._logManager = log.getLogManager();
   }
 
   /* Returns session provider */
   protected get sessionManager(): SpanSessionManager {
     return this._sessionManager;
+  }
+
+  /* Returns session provider */
+  protected get logManager(): LogManager {
+    return this._logManager;
   }
 
   /* Returns the performance manager */

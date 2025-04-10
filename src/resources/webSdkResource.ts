@@ -17,11 +17,17 @@ export const getWebSDKResource = (appVersion?: string) => {
   are both valid, but injecting them without leading whitespaces will result in
   different lengths, pushing the sourcemaps mapping out of range. Instead,
   "               0.0.1" and "             0.0.115" are both 20 characters long,
-  and we trim them before loading at runtime */
-  const templateAppVersion = TEMPLATE_APP_VERSION.trim();
+  and we trim them before loading at runtime
+
+  if the app version has been passed as an argument, we use it instead of the
+  one processed by our cli tool. This will allow for no cli installations,
+  like importing the web sdk from a CDN
+  */
+  const processedAppVersion = appVersion ?? TEMPLATE_APP_VERSION.trim();
+
   let resource = new Resource({
     [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
-    app_version: appVersion || templateAppVersion,
+    app_version: processedAppVersion,
     app_framework: NATIVE_FRAMEWORK,
     bundle_id: TEMPLATE_BUNDLE_ID,
     sdk_version: SDK_VERSION,

@@ -30,6 +30,7 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceUserManager,
 } from '../managers/index.js';
@@ -47,6 +48,7 @@ import {
   type DefaultInstrumenationConfig,
 } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
+import { log } from '../api-logs/index.js';
 
 interface SDKInitConfig {
   /**
@@ -318,6 +320,9 @@ const setupLogs = ({
   logProcessors,
   spanSessionManager,
 }: SetupLogsArgs) => {
+  const embraceLogManager = new EmbraceLogManager();
+  log.setGlobalLogManager(embraceLogManager);
+
   const loggerProvider = new LoggerProvider({
     resource,
   });
