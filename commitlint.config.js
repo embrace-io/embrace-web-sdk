@@ -14,6 +14,7 @@ export default {
       2,
       'always',
       [
+        'deploy',
         'build',
         'ci',
         'feat',
@@ -24,17 +25,17 @@ export default {
         'perf',
         'test',
         'chore',
-        'revert',
-      ],
-    ],
+        'revert'
+      ]
+    ]
   },
   plugins: [
     {
       rules: {
         'type-enum': removeEMBRNumberHeader(rules['type-enum']),
         'subject-empty': removeEMBRNumberHeader(rules['type-enum']),
-        'type-empty': removeEMBRNumberHeader(rules['type-enum']),
-      },
-    },
-  ],
+        'type-empty': removeEMBRNumberHeader(rules['type-enum'])
+      }
+    }
+  ]
 };
