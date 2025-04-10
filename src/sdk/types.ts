@@ -68,7 +68,7 @@ type BaseSDKInitConfig = {
    * resource defines a custom Resource that will be merged with the resource defined in `src/resources/webSdkResource.ts`
    * and included with all produced telemetry
    *
-   * **default**: Resource.default()
+   * **default**: Resource.empty()
    */
   resource?: Resource;
 
