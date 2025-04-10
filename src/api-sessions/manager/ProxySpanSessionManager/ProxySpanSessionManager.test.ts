@@ -1,6 +1,6 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
 import type { ReasonSessionEnded, SpanSessionManager } from '../types.js';
@@ -23,6 +23,7 @@ describe('ProxySpanSessionManager', () => {
       endSessionSpan: sinon.stub(),
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
+      addProperty: sinon.stub(),
     };
   });
 
@@ -89,6 +90,15 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.addBreadcrumb('some breadcrumb');
     expect(mockDelegate.addBreadcrumb).to.have.been.calledOnceWith(
       'some breadcrumb'
+    );
+  });
+
+  it('should delegate addProperty to the delegate', () => {
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.addProperty('some-custom-key', 'some custom value');
+    expect(mockDelegate.addProperty).to.have.been.calledOnceWith(
+      'some-custom-key',
+      'some custom value'
     );
   });
 });

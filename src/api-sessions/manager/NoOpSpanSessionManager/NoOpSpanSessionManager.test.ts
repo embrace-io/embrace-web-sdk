@@ -48,4 +48,13 @@ describe('NoOpSpanSessionManager', () => {
       noOpSpanSessionManager.addBreadcrumb('name');
     }).to.not.throw();
   });
+
+  it('should do nothing for addProperty', () => {
+    expect(() => {
+      noOpSpanSessionManager.addProperty(
+        'some-custom-key',
+        'some custom value'
+      );
+    }).to.not.throw();
+  });
 });

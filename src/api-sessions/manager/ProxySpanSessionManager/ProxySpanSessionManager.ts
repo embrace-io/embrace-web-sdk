@@ -42,4 +42,8 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   public addBreadcrumb(name: string): void {
     this.getDelegate().addBreadcrumb(name);
   }
+
+  public addProperty(key: string, value: string): void {
+    this.getDelegate().addProperty(key, value);
+  }
 }
