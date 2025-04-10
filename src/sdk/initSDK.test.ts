@@ -37,6 +37,7 @@ describe('initSDK', () => {
 
   it('should require an app ID when not setting custom exporters', () => {
     const diagLogger = new InMemoryDiagLogger();
+    // @ts-expect-error need to bypass type checking to test this invalid configuration
     const result = initSDK({ diagLogger });
     void expect(result).to.be.false;
 

@@ -6,63 +6,12 @@ import {
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
-  type WebVitalsInstrumentationArgs,
-  type GlobalExceptionInstrumentationArgs,
-  type SpanSessionTimeoutInstrumentationArgs,
-  type SpanSessionBrowserActivityInstrumentationArgs,
-  type SpanSessionVisibilityInstrumentationArgs,
-  type SpanSessionOnLoadInstrumentationArgs,
-  type ClicksInstrumentationArgs,
   ClicksInstrumentation,
 } from '../instrumentations/index.js';
-import {
-  DocumentLoadInstrumentation,
-  type DocumentLoadInstrumentationConfig,
-} from '@opentelemetry/instrumentation-document-load';
-import {
-  FetchInstrumentation,
-  type FetchInstrumentationConfig,
-} from '@opentelemetry/instrumentation-fetch';
-import {
-  XMLHttpRequestInstrumentation,
-  type XMLHttpRequestInstrumentationConfig,
-} from '@opentelemetry/instrumentation-xml-http-request';
-
-type OptionalInstrumentations =
-  | 'exception'
-  | 'click'
-  | 'web-vital'
-  | '@opentelemetry/instrumentation-document-load'
-  | '@opentelemetry/instrumentation-fetch'
-  | '@opentelemetry/instrumentation-xml-http-request';
-
-export interface DefaultInstrumenationConfig {
-  omit?: Set<OptionalInstrumentations>;
-  exception?: GlobalExceptionInstrumentationArgs;
-  click?: ClicksInstrumentationArgs;
-  'web-vital'?: WebVitalsInstrumentationArgs;
-  'session-on-load'?: SpanSessionOnLoadInstrumentationArgs;
-  'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
-  'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
-  'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
-  /*
-    Remove 'enabled' from the accepted config for the @opentelemetry instrumentations. This parameter is misleading
-    since we are going to call `registerInstrumentations` for every instrumentation we include here even if their
-    config has enabled=false. Instead, use `omit` to specify which default instrumentations should be turned off.
-   */
-  '@opentelemetry/instrumentation-document-load'?: Omit<
-    DocumentLoadInstrumentationConfig,
-    'enabled'
-  >;
-  '@opentelemetry/instrumentation-fetch'?: Omit<
-    FetchInstrumentationConfig,
-    'enabled'
-  >;
-  '@opentelemetry/instrumentation-xml-http-request'?: Omit<
-    XMLHttpRequestInstrumentationConfig,
-    'enabled'
-  >;
-}
+import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import type { DefaultInstrumenationConfig } from './types.js';
 
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumenationConfig = {}

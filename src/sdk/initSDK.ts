@@ -1,18 +1,9 @@
-import type {
-  ContextManager,
-  TextMapPropagator,
-  DiagLogger,
-} from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
-import type {
-  LogRecordExporter,
-  LogRecordProcessor,
-} from '@opentelemetry/sdk-logs';
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
@@ -22,7 +13,6 @@ import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import type { SpanSessionManager } from '../api-sessions/index.js';
 import { session } from '../api-sessions/index.js';
 import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
 import {
@@ -42,129 +32,34 @@ import {
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
-import type { SpanExporter } from '@opentelemetry/sdk-trace-base';
-import {
-  setupDefaultInstrumentations,
-  type DefaultInstrumenationConfig,
-} from './setupDefaultInstrumentations.js';
+import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
+import type {
+  SDKControl,
+  SDKInitConfig,
+  SetupLogsArgs,
+  SetupTracesArgs,
+} from './types.js';
 
-interface SDKInitConfig {
-  /**
-   * appID is a unique identifier for your application. It is used to identify your application in Embrace, and can be
-   * found in the Embrace dashboard. This can only be omitted if at least one spanExporter or logExporter is setup to
-   * send data to a collector other than Embrace.
-   *
-   * **default**: undefined
-   */
-  appID?: string;
-
-  /**
-   * appVersion is used to distinguish between different releases of your application. It can be set here if the value
-   * is known in code, otherwise our CLI tool can be used to inject the value at build time.
-   *
-   * **default**: undefined
-   */
-  appVersion?: string;
-
-  /**
-   * defaultInstrumentationConfig can be used pass options to the default instrumentations by Embrace or turn certain
-   * ones off entirely. Note that only some default instrumentations support configuration in this manner.
-   *
-   * **default**: undefined
-   */
-  defaultInstrumentationConfig?: DefaultInstrumenationConfig;
-
-  /**
-   * instrumentations can be set to include instrumentations beyond the default ones provided by Embrace. This does not
-   * override Embrace's default instrumentations, to control those set `defaultInstrumentationConfig` instead.
-   *
-   * **default**: []
-   */
-  instrumentations?: Instrumentation[];
-
-  /**
-   * spanExporters can be set to export span to a collector other than Embrace. If `appID` is omitted at lease one
-   * exporter needs to be set here, or in `logExporters`.
-   *
-   * **default**: []
-   */
-  spanExporters?: SpanExporter[];
-
-  /**
-   * logExporters can be set to export logs to a collector other than Embrace. If `appID` is omitted at lease one
-   * exporter needs to be set here, or in `spanExporters`.
-   *
-   * **default**: []
-   */
-  logExporters?: LogRecordExporter[];
-
-  /**
-   * propagator defines a custom context propagator that will be attached to the TracerProvider setup by the SDK
-   *
-   * **default**: null
-   */
-  propagator?: TextMapPropagator | null;
-
-  /**
-   * contextManager defines a custom context manager that will be attached to the TracerProvider setup by the SDK
-   *
-   * **default**: null
-   */
-  contextManager?: ContextManager | null;
-
-  /**
-   * resource defines a custom Resource that will be merged with the resource defined in `src/resources/webSdkResource.ts`
-   * and included with all produced telemetry
-   *
-   * **default**: Resource.default()
-   */
-  resource?: Resource;
-
-  /**
-   * spanProcessors
-   * Span processor is an interface which allows hooks for span start and end method invocations.
-   * They are invoked in the same order as they were registered.
-   * Processors created by the sdk are inserted after processors in this list.
-   *
-   * **default**: []
-   */
-  spanProcessors?: SpanProcessor[];
-
-  /**
-   * logProcessors
-   * LogRecordProcessor is an interface which allows hooks for LogRecord emitting.
-   * They are invoked in the same order as they were registered.
-   * Processors created by the sdk are inserted after processors in this list.
-   *
-   * **default**: []
-   */
-  logProcessors?: LogRecordProcessor[];
-
-  diagLogger?: DiagLogger;
-}
-
-interface SDKControl {
-  flush: () => Promise<void>;
-}
-
-export const initSDK = ({
-  appID,
-  appVersion,
-  resource = Resource.default(),
-  spanExporters = [],
-  logExporters = [],
-  spanProcessors = [],
-  propagator = null,
-  defaultInstrumentationConfig,
-  instrumentations = [],
-  contextManager = null,
-  logProcessors = [],
-  diagLogger = diag.createComponentLogger({
-    namespace: 'embrace-sdk',
-  }),
-}: SDKInitConfig = {}): SDKControl | false => {
+export const initSDK = (
+  {
+    appID,
+    appVersion,
+    resource = Resource.default(),
+    spanExporters = [],
+    logExporters = [],
+    spanProcessors = [],
+    propagator = null,
+    defaultInstrumentationConfig,
+    instrumentations = [],
+    contextManager = null,
+    logProcessors = [],
+    diagLogger = diag.createComponentLogger({
+      namespace: 'embrace-sdk',
+    }),
+  }: SDKInitConfig = { appID: '' }
+): SDKControl | false => {
   try {
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource(appVersion)
@@ -243,18 +138,6 @@ const setupSession = () => {
   return embraceSpanSessionManager;
 };
 
-interface SetupTracesArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
-  resource: Resource;
-  spanSessionManager: SpanSessionManager;
-  spanExporters?: SpanExporter[];
-  spanProcessors: SpanProcessor[];
-  propagator?: TextMapPropagator | null;
-  contextManager?: ContextManager | null;
-}
-
 const setupTraces = ({
   sendingToEmbrace,
   appID,
@@ -300,16 +183,6 @@ const setupTraces = ({
 
   return tracerProvider;
 };
-
-interface SetupLogsArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
-  resource: Resource;
-  logExporters?: LogRecordExporter[];
-  logProcessors: LogRecordProcessor[];
-  spanSessionManager: SpanSessionManager;
-}
 
 const setupLogs = ({
   sendingToEmbrace,
