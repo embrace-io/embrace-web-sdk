@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { NoOpLogManager } from '../NoOpLogManager/index.js';
 import type { LogManager } from '../types.js';
@@ -16,6 +16,7 @@ describe('ProxyLogManager', () => {
     proxyLogManager = new ProxyLogManager();
     mockDelegate = {
       message: sinon.stub(),
+      logException: sinon.stub(),
     };
   });
 
@@ -36,5 +37,13 @@ describe('ProxyLogManager', () => {
       key1: 'value1',
     });
     void expect(mockDelegate.message).to.have.been.calledOnce;
+  });
+
+  it('should delegate logException to the delegate', () => {
+    proxyLogManager.setDelegate(mockDelegate);
+    proxyLogManager.logException(Date.now(), new Error(), true, {
+      key1: 'value1',
+    });
+    void expect(mockDelegate.logException).to.have.been.calledOnce;
   });
 });
