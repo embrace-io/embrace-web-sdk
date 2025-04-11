@@ -297,15 +297,12 @@ If you'd prefer not to send data to Embrace you can simply omit the embrace app 
 this case at least one custom exporter needs to be configured following the steps
 from [Custom exporters](#custom-exporters) or else the SDK considers the configuration invalid.
 
-## Including the SDK as a code snippet from CDN
-
-TODO
-
 ## Troubleshooting
 
 ### Turning on verbose logging in the SDK
 
-The log level of the SDK can be increased when initializing as follows:
+By default, the SDK will only send error level logs to the console. The log level of the SDK can be increased when
+initializing as follows:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
@@ -318,10 +315,6 @@ sdk.initSDK({
   logLevel: sdk.DiagLogLevel.INFO,
 });
 ```
-
-### Version differences in opentelemetry dependencies
-
-TODO
 
 ## Support
 
