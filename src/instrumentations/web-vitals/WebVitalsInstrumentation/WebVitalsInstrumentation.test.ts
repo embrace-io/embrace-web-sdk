@@ -495,4 +495,55 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsEvent.time).to.deep.equal([5, 0]);
     expect(lcpEvent.time).to.deep.equal([5, 0]);
   });
+
+  it('should handle invalid JSON in metric attribution keys', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+    });
+
+    void expect(clsStub).to.have.been.calledOnce;
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    const metricValue = {
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution;
+
+    // @ts-expect-error invalid attribution for testing
+    metricValue.attribution['largestShiftTarget'] = metricValue;
+
+    metricReportFunc(metricValue);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
+
+    expect(clsEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.attribution.largestShiftTarget':
+        'Error: unable to serialize the value as JSON. Likely a js circular structure.',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'CLS',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 22,
+    });
+
+    expect(diag.getErrorLogs()).to.have.lengthOf(1);
+  });
 });

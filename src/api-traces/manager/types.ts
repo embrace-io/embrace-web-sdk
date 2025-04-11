@@ -1,5 +1,4 @@
-import type { Span } from '@opentelemetry/api';
-import type { SpanOptions } from '@opentelemetry/api/build/src/trace/SpanOptions';
+import type { Span, SpanOptions } from '@opentelemetry/api';
 
 export interface TraceManager {
   startPerformanceSpan: (name: string, options?: SpanOptions) => Span | null;
