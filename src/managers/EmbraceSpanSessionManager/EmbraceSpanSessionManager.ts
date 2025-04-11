@@ -8,7 +8,10 @@ import {
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
 import type { ReasonSessionEnded } from '../../api-sessions/manager/types.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/attributes.js';
+import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_PREFIX_EMB_PROPERTIES,
+} from '../../constants/attributes.js';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -102,5 +105,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       },
       this._perf.getNowMillis()
     );
+  }
+
+  public addProperty(key: string, value: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
   }
 }

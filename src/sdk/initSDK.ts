@@ -1,5 +1,6 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
@@ -28,6 +29,9 @@ import {
   EmbTypeLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
+import { getWebSDKResource } from '../resources/index.js';
+import { isValidAppID } from './utils.js';
+import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
 import type {
@@ -36,10 +40,6 @@ import type {
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
-import { getWebSDKResource } from '../resources/index.js';
-import { isValidAppID } from './utils.js';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 
 export const initSDK = (
   {

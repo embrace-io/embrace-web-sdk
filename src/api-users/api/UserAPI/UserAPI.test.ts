@@ -1,8 +1,15 @@
-import { expect } from 'chai';
+import * as chai from 'chai';
 import * as sinon from 'sinon';
 import type { UserManager } from '../../manager/index.js';
-import { ProxyUserManager } from '../../manager/index.js';
+import {
+  KEY_ENDUSER_PSEUDO_ID,
+  ProxyUserManager,
+} from '../../manager/index.js';
 import { UserAPI } from './UserAPI.js';
+import sinonChai from 'sinon-chai';
+
+chai.use(sinonChai);
+const { expect } = chai;
 
 describe('UserAPI', () => {
   let userAPI: UserAPI;
@@ -39,5 +46,25 @@ describe('UserAPI', () => {
     expect((userManager as ProxyUserManager).getDelegate()).to.equal(
       mockUserManager
     );
+  });
+
+  it('should forward calls to the user manager', () => {
+    const mockUserManager: UserManager = {
+      // Mock implementation of UserManager
+      getUser: sinon.stub().returns({ id: 'mockUserId' }),
+      setUser: sinon.stub(),
+      clearUser: sinon.stub(),
+    };
+    userAPI.setGlobalUserManager(mockUserManager);
+
+    void expect(userAPI.getUser()).to.not.be.null;
+    void expect(mockUserManager.getUser).to.have.been.calledOnce;
+
+    const user = { [KEY_ENDUSER_PSEUDO_ID]: 'newUserId' };
+    userAPI.setUser(user);
+    expect(mockUserManager.setUser).to.have.been.calledOnceWith(user);
+
+    userAPI.clearUser();
+    void expect(mockUserManager.clearUser).to.have.been.calledOnce;
   });
 });

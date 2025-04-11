@@ -126,4 +126,39 @@ describe('EmbraceSpanSessionManager', () => {
       'some breadcrumb'
     );
   });
+
+  it('should not fail if trying to add properties to non active session', () => {
+    manager.addProperty('custom-property-1', 'custom value1');
+
+    expect(diag.getDebugLogs()).to.have.lengthOf(1);
+    expect(diag.getDebugLogs()[0]).to.equal(
+      'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+    );
+  });
+
+  it('should add properties to session span', () => {
+    manager.startSessionSpan();
+
+    manager.addProperty('custom-property-1', 'custom value1');
+    manager.addProperty('custom-property-2', 'custom value2');
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.properties.custom-property-1',
+      'custom value1'
+    );
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.properties.custom-property-2',
+      'custom value2'
+    );
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.session_end_type',
+      'manual'
+    );
+    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
+  });
 });

@@ -128,7 +128,7 @@ type LogExportSDKInitConfig = {
    *
    * **default**: []
    */
-  logExporters: LogRecordExporter[];
+  logExporters: [LogRecordExporter, ...LogRecordExporter[]];
 
   appID?: string;
   spanExporters?: SpanExporter[];
@@ -141,7 +141,7 @@ type SpanExportSDKInitConfig = {
    *
    * **default**: []
    */
-  spanExporters: SpanExporter[];
+  spanExporters: [SpanExporter, ...SpanExporter[]];
 
   appID?: string;
   logExporters?: LogRecordExporter[];

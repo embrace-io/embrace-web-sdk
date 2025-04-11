@@ -27,4 +27,8 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   public addBreadcrumb(_name: string): void {
     // do nothing.
   }
+
+  public addProperty(_key: string, _value: string): void {
+    // do nothing.
+  }
 }
