@@ -253,7 +253,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' && github.event_name == 'pull_request' }}
     strategy:
       fail-fast: false
       matrix:
