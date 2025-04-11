@@ -53,7 +53,7 @@ autolabeler:
       - '/(EMBR-[0-9]+\s+)(feat).*/'
   - label: 'patch'
     title: # SAME AS 'fix or maintenance'
-      - '/((EMBR-[0-9]+\s+)(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
+      - '/(EMBR-[0-9]+\s+)(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
 
 template: |
   ## What's Changed
