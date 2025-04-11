@@ -1,21 +1,21 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import type { MetricWithAttribution } from 'web-vitals/attribution';
 import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
   setupTestTraceExporter,
+  setupTestWebVitalListeners,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
-import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
-import sinonChai from 'sinon-chai';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
-import type { MetricWithAttribution } from 'web-vitals/attribution';
-import { setupTestWebVitalListeners } from '../../../testUtils/setupTestWebVitalListeners/setupTestWebVitalListeners.js';
+import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

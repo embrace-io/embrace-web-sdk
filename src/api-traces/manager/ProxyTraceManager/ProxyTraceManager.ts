@@ -1,6 +1,6 @@
 import type { Span, SpanOptions } from '@opentelemetry/api';
+import type { TraceManager } from '../index.js';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
-import type { TraceManager } from '../types.js';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
 
