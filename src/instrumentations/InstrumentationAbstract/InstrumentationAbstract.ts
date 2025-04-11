@@ -16,10 +16,9 @@ import type {
   SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
-import * as shimmer from 'shimmer';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
-// to avoid importing internal and experimental code.
+// to avoid importing internal and experimental code. Some unused blocks removed.
 /*
  * Copyright The OpenTelemetry Authors
  *
@@ -41,23 +40,6 @@ export abstract class InstrumentationAbstract<
 {
   protected _config: ConfigType = {} as ConfigType;
   protected _diag: DiagLogger;
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _unwrap = shimmer.unwrap;
-  /* Api to unwrap instrumented methods */
-  /* Api to wrap instrumented method */
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _massWrap = shimmer.massWrap;
-  /* Api to mass wrap instrumented method */
-  /* Api to wrap instrumented method */
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  protected _massUnwrap = shimmer.massUnwrap;
-  /* Api to mass unwrap instrumented methods */
-
-  /* Api to wrap instrumented method */
 
   public constructor(
     public readonly instrumentationName: string,
@@ -76,15 +58,12 @@ export abstract class InstrumentationAbstract<
     this._updateMetricInstruments();
   }
 
-  // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
   private _tracer: Tracer;
 
   /* Returns tracer */
   protected get tracer(): Tracer {
     return this._tracer;
   }
-
-  // NOTE: disabling typescript check, as this class was copied from OTel repo.
 
   private _meter: Meter;
 
@@ -179,9 +158,6 @@ export abstract class InstrumentationAbstract<
     );
   }
 
-  /**
-   * Sets the new metric instruments with the current Meter.
-   */
   /**
    * Init method in which plugin should define _modules and patches for
    * methods.
