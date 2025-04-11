@@ -282,21 +282,21 @@ as you refer to that documentation:
 
 1) Importing the sdk from node modules is no longer valid. Instead, reference it from the global `window` object:
 
-```diff
-- import { sdk } from '@embrace-io/web-sdk';
-+ const sdk = window.EmbraceWebSdk;
-```
+   ```diff
+   - import { sdk } from '@embrace-io/web-sdk';
+   + const sdk = window.EmbraceWebSdk;
+   ```
 
 2) Because our web-cli does not support the CDN version of the SDK, you will need to make sure to pass in your app
    version when initializing the sdk. If you don't, then your app version will be reported to Embrace as
    `EmbIOAppVersionX.X.X`
 
-```javascript
-  sdk.initSDK({
-  appVersion: '0.0.1',
-  /*...*/
-});
-```
+   ```javascript
+     sdk.initSDK({
+     appVersion: '0.0.1',
+     /*...*/
+   });
+   ```
 
 3) Because our web-cli does not support the CDN version of the SDK, the sourcemaps upload won't work
    (see [Upload sourcemaps](#upload-sourcemaps)). You will not see symbolicated stack traces in Embrace.
