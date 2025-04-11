@@ -12,4 +12,8 @@ export class NoOpUserManager implements UserManager {
   public setUser(): void {
     // do nothing.
   }
+
+  public setIdentifier(_identifier: string): void {
+    // do nothing.
+  }
 }

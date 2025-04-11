@@ -25,4 +25,8 @@ export class ProxyUserManager implements UserManager {
   public setUser(user: User): void {
     this.getDelegate().setUser(user);
   }
+
+  public setIdentifier(identifier: string): void {
+    this.getDelegate().setIdentifier(identifier);
+  }
 }

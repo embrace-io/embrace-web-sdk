@@ -39,4 +39,8 @@ export class UserAPI implements UserManager {
   public setUser(user: User): void {
     this.getUserManager().setUser(user);
   }
+
+  public setIdentifier(identifier: string): void {
+    this.getUserManager().setIdentifier(identifier);
+  }
 }
