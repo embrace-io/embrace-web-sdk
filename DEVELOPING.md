@@ -65,3 +65,7 @@ last release that:
   * cli/package.json
   * cli/src/constants.ts
   * src/resources/constants/index.ts
+* Run `npm i` in the following locations:
+  * ./
+  * cli/
+  * demo/frontend/
