@@ -15,17 +15,12 @@ import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import sinonChai from 'sinon-chai';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import type { SinonStub } from 'sinon';
+import { setupTestWebVitalListeners } from '../../../testUtils/setupTestWebVitalListeners/setupTestWebVitalListeners.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
 describe('WebVitalsInstrumentation', () => {
-  let clsStub: SinonStub;
-  let fcpStub: SinonStub;
-  let lcpStub: SinonStub;
-  let inpStub: SinonStub;
-  let ttfbStub: SinonStub;
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: WebVitalsInstrumentation;
   let diag: InMemoryDiagLogger;
@@ -33,6 +28,11 @@ describe('WebVitalsInstrumentation', () => {
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
   let mockWebVitalListeners: WebVitalListeners;
+  let clsStub: sinon.SinonStub;
+  let fcpStub: sinon.SinonStub;
+  let lcpStub: sinon.SinonStub;
+  let inpStub: sinon.SinonStub;
+  let ttfbStub: sinon.SinonStub;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -46,20 +46,14 @@ describe('WebVitalsInstrumentation', () => {
     spanSessionManager = new EmbraceSpanSessionManager();
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();
+    const testWebVitalListeners = setupTestWebVitalListeners();
 
-    clsStub = sinon.stub();
-    fcpStub = sinon.stub();
-    lcpStub = sinon.stub();
-    inpStub = sinon.stub();
-    ttfbStub = sinon.stub();
-    mockWebVitalListeners = {
-      CLS: clsStub,
-      FCP: fcpStub,
-      LCP: lcpStub,
-      INP: inpStub,
-      TTFB: ttfbStub,
-      FID: undefined,
-    };
+    mockWebVitalListeners = testWebVitalListeners.listeners;
+    clsStub = testWebVitalListeners.clsStub;
+    fcpStub = testWebVitalListeners.fcpStub;
+    lcpStub = testWebVitalListeners.lcpStub;
+    inpStub = testWebVitalListeners.inpStub;
+    ttfbStub = testWebVitalListeners.ttfbStub;
   });
 
   afterEach(() => {
