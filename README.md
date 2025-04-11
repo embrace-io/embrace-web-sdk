@@ -75,7 +75,8 @@ At this point you should be able to rebuild your app and have Embrace begin coll
 show up in the Embrace Dashboard once the SDK reports at least 1 completed session. This can be triggered by launching
 your app and then ending the session by either closing the tab/window or simply putting it in the background.
 
-> [!NOTE] It may take a few minutes before the first Sessions appear in your Embrace dashboard.
+> [!NOTE]
+> It may take a few minutes before the first Sessions appear in your Embrace dashboard.
 
 ## Adding traces
 
