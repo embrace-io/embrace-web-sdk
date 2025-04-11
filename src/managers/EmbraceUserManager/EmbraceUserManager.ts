@@ -12,6 +12,7 @@ export class EmbraceUserManager implements UserManager {
   private readonly _diag: DiagLogger;
   private readonly _storage: Storage;
   private _activeUser: User | null = null;
+  private _identifier: string | null = null;
 
   public constructor({
     diag: diagParam,
@@ -41,6 +42,10 @@ export class EmbraceUserManager implements UserManager {
 
   public setUser(user: User) {
     this._activeUser = user;
+  }
+
+  public setIdentifier(identifier: string): void {
+    this._identifier = identifier;
   }
 
   private _initialSetup() {

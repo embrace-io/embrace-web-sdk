@@ -10,4 +10,6 @@ export interface UserManager {
   setUser: (user: User) => void;
 
   clearUser: () => void;
+
+  setIdentifier: (identifier: string) => void;
 }
