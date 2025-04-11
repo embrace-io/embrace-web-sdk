@@ -105,9 +105,9 @@ export default tseslint.config({
         // make sure all third party imports are not referencing internal packages
         // e.g. import type { something } from '@openteleme/something'; is valid, but
         // import type { something } from '@openteleme/something/internal'; is not
-        // import type { something } from 'openteleme/something/internal'; is not
         {
-          regex: "import .* from '@?(\\w)+\\/(\\w)+\\/.+'",
+          regex:
+            "import .* from '@?([a-zA-Z0-9_-])+\\/([a-zA-Z0-9_-])+\\/.*(?<!incubating)'",
           message: `Third party imports should never reference internal packages.`,
         },
         // make sure all relative imports are reference just one folder
@@ -119,7 +119,8 @@ export default tseslint.config({
         // import type { something } from './folder/index.js'; is valid
         // import type { something } from './index.js'; is valid
         {
-          regex: "import .* from '\\.{1,2}(?:\\/\.\.)*\\/(\\w)+\\/(\\w)+\\/.+'",
+          regex:
+            "import .* from '\\.{1,2}(?:\\/\.\.)*\\/([a-zA-Z0-9_-])+\\/([a-zA-Z0-9_-])+\\/.+'",
           message: `Relative imports should never include more than 1 folder. If you need access to a nested folder consider reexporting it from the intermediate folders.`,
         },
         // make sure all relative imports are reference the index.js file
@@ -131,7 +132,7 @@ export default tseslint.config({
         // import { something } from '../something.js'; is invalid
         {
           regex: "import .* from '\\.{2}.*(?<!\\/index)\\.js'",
-          message: `Relative imports should always reference the index.ts files`,
+          message: `Relative imports should always reference the index.js files`,
         },
       ],
     ],
