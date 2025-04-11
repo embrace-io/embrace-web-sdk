@@ -1,15 +1,65 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
 categories:
-  - title: 'Changes'
-  - title: 'Dependencies'
+  - title: '⚠️ BREAKING CHANGES'
+    collapse-after: 5
+    labels:
+      - 'breaking'
+  - title: '🤖️ Dependencies'
     collapse-after: 5
     labels:
       - 'dependencies'
+  - title: '🧰 Maintenance'
+    collapse-after: 5
+    labels:
+      - 'maintenance'
+  - title: '🐛 Bug Fixes'
+    collapse-after: 5
+    labels:
+      - 'fix'
+  - title: '🚀 Features'
+    collapse-after: 5
+    labels:
+      - 'feat'
 
-version-template: $MAJOR.$MINOR
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
+
+autolabeler:
+  - label: 'maintenance'
+    title:
+      - '/(EMBR-[0-9]+\s+)(build|ci|docs|style|refactor|perf|test|chore).*/'
+  - label: 'fix'
+    title:
+      - '/(EMBR-[0-9]+\s+)(fix|revert).*/'
+  - label: 'feat'
+    title:
+      - '/(EMBR-[0-9]+\s+)(feat).*/'
+  - label: 'major'
+    body:
+      - '/(BREAKING CHANGE)/'
+  - label: 'minor'
+    title: # SAME AS 'feat'
+      - '/(EMBR-[0-9]+\s+)(feat).*/'
+  - label: 'patch'
+    title: # SAME AS 'fix or maintenance'
+      - '/((EMBR-[0-9]+\s+)(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
 
 template: |
   ## What's Changed
 
   $CHANGES
+
+  $CONTRIBUTORS
 
   **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
