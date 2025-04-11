@@ -1,23 +1,23 @@
-import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
-import { setupTestLogExporter } from '../../testUtils/index.js';
-import { EmbraceLogManager } from './EmbraceLogManager.js';
-import {
-  OTelPerformanceManager,
-  type PerformanceManager,
-} from '../../utils/index.js';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import {
-  KEY_EMB_JS_EXCEPTION_STACKTRACE,
-  KEY_EMB_TYPE,
-} from '../../constants/index.js';
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { KEY_EMB_EXCEPTION_HANDLING } from '../../constants/attributes.js';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
+import * as chai from 'chai';
+import sinonChai from 'sinon-chai';
+import {
+  KEY_EMB_EXCEPTION_HANDLING,
+  KEY_EMB_JS_EXCEPTION_STACKTRACE,
+  KEY_EMB_TYPE,
+} from '../../constants/index.js';
+import { setupTestLogExporter } from '../../testUtils/index.js';
+import {
+  OTelPerformanceManager,
+  type PerformanceManager,
+} from '../../utils/index.js';
+import { EmbraceLogManager } from './EmbraceLogManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

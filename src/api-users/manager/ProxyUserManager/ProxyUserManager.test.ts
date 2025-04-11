@@ -2,8 +2,8 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { KEY_ENDUSER_PSEUDO_ID } from '../constants/index.js';
+import type { User, UserManager } from '../index.js';
 import { NoOpUserManager } from '../NoOpUserManager/index.js';
-import type { User, UserManager } from '../types.js';
 import { ProxyUserManager } from './ProxyUserManager.js';
 
 chai.use(sinonChai);

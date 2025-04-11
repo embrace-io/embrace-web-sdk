@@ -102,6 +102,37 @@ export default tseslint.config({
           regex: `CLI_VERSION = '(?!${sdkPackageInfo.version}).*'`,
           message: `CLI_VERSION version mismatch. It should always match the one listed in both package.json (${sdkPackageInfo.version}) and cli/package.json (${cliPackageInfo.version}) and those 2 should be in sync.`,
         },
+        // make sure all third party imports are not referencing internal packages
+        // e.g. import type { something } from '@openteleme/something'; is valid, but
+        // import type { something } from '@openteleme/something/internal'; is not
+        // import type { something } from 'openteleme/something/internal'; is not
+        {
+          regex: "import .* from '@?(\\w)+\\/(\\w)+\\/.+'",
+          message: `Third party imports should never reference internal packages.`,
+        },
+        // make sure all relative imports are reference just one folder
+        // e.g. import type { something } from './folder/otherFolder/index.js'; is invalid,
+        // import type { something } from '../folder/some/index.js'; is invalid
+        // import type { something } from '../../../folder/some/index.js'; is invalid
+        // import type { something } from '../../../folder/index.js'; is valid
+        // import type { something } from '../folder/index.js'; is valid
+        // import type { something } from './folder/index.js'; is valid
+        // import type { something } from './index.js'; is valid
+        {
+          regex: "import .* from '\\.{1,2}(?:\\/\.\.)*\\/(\\w)+\\/(\\w)+\\/.+'",
+          message: `Relative imports should never include more than 1 folder. If you need access to a nested folder consider reexporting it from the intermediate folders.`,
+        },
+        // make sure all relative imports are reference the index.js file
+        // e.g. import type { something } from './folder/other.js'; is invalid,
+        // e.g. import type { something } from './folder/index.js'; is valid,
+        // import type { something } from './someOther.js'; is invalid
+        // import type { something } from './index.js'; is valid
+        // import { something } from './something.js'; is valid because it references the same folder as the imported file
+        // import { something } from '../something.js'; is invalid
+        {
+          regex: "import .* from '\\.{2}.*(?<!\\/index)\\.js'",
+          message: `Relative imports should always reference the index.ts files`,
+        },
       ],
     ],
   },

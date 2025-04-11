@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { withErrorFallback } from './withErrorFallback.js';
 import { InMemoryDiagLogger } from '../testUtils/index.js';
+import { withErrorFallback } from './index.js';
 
 chai.use(sinonChai);
 

@@ -1,10 +1,15 @@
 import { type AttributeValue } from '@opentelemetry/api';
-import type { LogManager } from '../../api-logs/index.js';
-import type { LogSeverity } from '../../api-logs/manager/types.js';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+} from '@opentelemetry/semantic-conventions';
+import type { LogManager, LogSeverity } from '../../api-logs/index.js';
+import {
   EMB_TYPES,
+  KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
@@ -13,12 +18,6 @@ import {
   type PerformanceManager,
 } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
-import { KEY_EMB_EXCEPTION_HANDLING } from '../../constants/attributes.js';
-import {
-  ATTR_EXCEPTION_MESSAGE,
-  ATTR_EXCEPTION_STACKTRACE,
-  ATTR_EXCEPTION_TYPE,
-} from '@opentelemetry/semantic-conventions';
 
 export class EmbraceLogManager implements LogManager {
   private readonly _perf: PerformanceManager;
@@ -29,20 +28,17 @@ export class EmbraceLogManager implements LogManager {
     this._logger = logs.getLogger('embrace-web-sdk-logs');
   }
 
-  public message(
-    message: string,
-    severity: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>,
-    includeStacktrace = true
-  ) {
-    this._logMessage({
-      message,
-      severity,
-      timestamp: this._perf.getNowMillis(),
-      attributes,
-      stackTrace:
-        includeStacktrace && severity != 'info' ? new Error().stack : undefined,
-    });
+  private static _logSeverityToSeverityNumber(
+    severity: LogSeverity
+  ): SeverityNumber {
+    switch (severity) {
+      case 'info':
+        return SeverityNumber.INFO;
+      case 'warning':
+        return SeverityNumber.WARN;
+      default:
+        return SeverityNumber.ERROR;
+    }
   }
 
   public logException(
@@ -65,6 +61,22 @@ export class EmbraceLogManager implements LogManager {
         [ATTR_EXCEPTION_MESSAGE]: error.message,
         [ATTR_EXCEPTION_STACKTRACE]: error.stack,
       },
+    });
+  }
+
+  public message(
+    message: string,
+    severity: LogSeverity,
+    attributes?: Record<string, AttributeValue | undefined>,
+    includeStacktrace = true
+  ) {
+    this._logMessage({
+      message,
+      severity,
+      timestamp: this._perf.getNowMillis(),
+      attributes,
+      stackTrace:
+        includeStacktrace && severity != 'info' ? new Error().stack : undefined,
     });
   }
 
@@ -96,18 +108,5 @@ export class EmbraceLogManager implements LogManager {
           : {}),
       },
     });
-  }
-
-  private static _logSeverityToSeverityNumber(
-    severity: LogSeverity
-  ): SeverityNumber {
-    switch (severity) {
-      case 'info':
-        return SeverityNumber.INFO;
-      case 'warning':
-        return SeverityNumber.WARN;
-      default:
-        return SeverityNumber.ERROR;
-    }
   }
 }

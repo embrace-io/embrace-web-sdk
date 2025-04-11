@@ -2,8 +2,8 @@ import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { ReasonSessionEnded, SpanSessionManager } from '../index.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
-import type { ReasonSessionEnded, SpanSessionManager } from '../types.js';
 import { ProxySpanSessionManager } from './ProxySpanSessionManager.js';
 
 chai.use(sinonChai);

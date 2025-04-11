@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { LogManager } from '../index.js';
 import { NoOpLogManager } from '../NoOpLogManager/index.js';
-import type { LogManager } from '../types.js';
 import { ProxyLogManager } from './ProxyLogManager.js';
 
 chai.use(sinonChai);

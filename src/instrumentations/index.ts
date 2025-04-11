@@ -19,5 +19,7 @@ export {
 } from './clicks/index.js';
 export {
   WebVitalsInstrumentation,
+  type WebVitalOnReport,
   type WebVitalsInstrumentationArgs,
 } from './web-vitals/index.js';
+export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';

@@ -2,8 +2,8 @@ import type { Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { TraceManager } from '../index.js';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
-import type { TraceManager } from '../types.js';
 import { ProxyTraceManager } from './ProxyTraceManager.js';
 
 chai.use(sinonChai);

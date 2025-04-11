@@ -1,2 +1,5 @@
 export { WebVitalsInstrumentation } from './WebVitalsInstrumentation/index.js';
-export type { WebVitalsInstrumentationArgs } from './WebVitalsInstrumentation/types.js';
+export type {
+  WebVitalsInstrumentationArgs,
+  WebVitalOnReport,
+} from './WebVitalsInstrumentation/types.js';

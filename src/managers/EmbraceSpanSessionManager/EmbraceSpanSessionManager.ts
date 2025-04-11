@@ -6,8 +6,10 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import type { SpanSessionManager } from '../../api-sessions/index.js';
-import type { ReasonSessionEnded } from '../../api-sessions/manager/types.js';
+import type {
+  ReasonSessionEnded,
+  SpanSessionManager,
+} from '../../api-sessions/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_PREFIX_EMB_PROPERTIES,
@@ -42,6 +44,33 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   }
 
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
+
+  public addBreadcrumb(name: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.addEvent(
+      'emb-breadcrumb',
+      {
+        message: name,
+      },
+      this._perf.getNowMillis()
+    );
+  }
+
+  public addProperty(key: string, value: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
+  }
+
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
   public endSessionSpan() {
     this.endSessionSpanInternal('manual');
@@ -89,31 +118,5 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
         [ATTR_SESSION_ID]: this._activeSessionId,
       },
     });
-  }
-
-  public addBreadcrumb(name: string) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
-      );
-      return;
-    }
-    this._sessionSpan.addEvent(
-      'emb-breadcrumb',
-      {
-        message: name,
-      },
-      this._perf.getNowMillis()
-    );
-  }
-
-  public addProperty(key: string, value: string) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
-      );
-      return;
-    }
-    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
   }
 }

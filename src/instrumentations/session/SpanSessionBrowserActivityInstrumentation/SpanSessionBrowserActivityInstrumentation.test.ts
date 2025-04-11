@@ -6,12 +6,12 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
 import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';
 

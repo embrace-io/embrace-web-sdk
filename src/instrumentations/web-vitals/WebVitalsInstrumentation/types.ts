@@ -1,9 +1,9 @@
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/types.js';
 import type {
   Metric,
   MetricWithAttribution,
   ReportOpts,
 } from 'web-vitals/attribution';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
 
 export type TrackingLevel = 'core' | 'all';
 

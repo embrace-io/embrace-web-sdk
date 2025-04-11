@@ -1,5 +1,5 @@
 import type { Span, SpanOptions } from '@opentelemetry/api';
-import type { TraceManager } from '../types.js';
+import type { TraceManager } from '../index.js';
 
 export class NoOpTraceManager implements TraceManager {
   public startPerformanceSpan(

@@ -10,8 +10,8 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
+  mockSpan,
 } from '../../testUtils/index.js';
-import { mockSpan } from '../../testUtils/mockEntities/ReadableSpan.js';
 import { EmbraceTraceExporter } from './EmbraceTraceExporter.js';
 import type { EmbraceTraceExporterArgs } from './types.js';
 

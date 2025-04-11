@@ -6,13 +6,13 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
+import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { TIMEOUT_TIME } from './constants.js';
 import { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.js';
 

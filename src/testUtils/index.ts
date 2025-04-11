@@ -17,3 +17,5 @@ export { FakeInstrumentation } from './FakeInstrumentation/index.js';
 export { FakeLogRecordProcessor } from './FakeLogRecordProcessor/index.js';
 export { FakeSpanProcessor } from './FakeSpanProcessor/index.js';
 export { setupTestWebVitalListeners } from './setupTestWebVitalListeners/index.js';
+export { mockSpan } from './mockEntities/index.js';
+export { InMemoryStorage } from './InMemoryStorage/index.js';

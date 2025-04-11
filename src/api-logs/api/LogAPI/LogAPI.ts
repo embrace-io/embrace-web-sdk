@@ -1,6 +1,6 @@
 import type { AttributeValue } from '@opentelemetry/api';
+import type { LogSeverity } from '../../manager/index.js';
 import { type LogManager, ProxyLogManager } from '../../manager/index.js';
-import type { LogSeverity } from '../../manager/types.js';
 import type { LogAPIArgs } from './types.js';
 
 export class LogAPI implements LogManager {
@@ -29,15 +29,6 @@ export class LogAPI implements LogManager {
     this._proxyLogManager.setDelegate(logManager);
   }
 
-  public message(
-    message: string,
-    level: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>,
-    includeStacktrace?: boolean
-  ) {
-    this.getLogManager().message(message, level, attributes, includeStacktrace);
-  }
-
   public logException(
     timestamp: number,
     error: Error,
@@ -45,5 +36,14 @@ export class LogAPI implements LogManager {
     attributes?: Record<string, AttributeValue | undefined>
   ) {
     this.getLogManager().logException(timestamp, error, handled, attributes);
+  }
+
+  public message(
+    message: string,
+    level: LogSeverity,
+    attributes?: Record<string, AttributeValue | undefined>,
+    includeStacktrace?: boolean
+  ) {
+    this.getLogManager().message(message, level, attributes, includeStacktrace);
   }
 }
