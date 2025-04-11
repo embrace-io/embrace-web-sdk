@@ -33,7 +33,6 @@ import { log } from '../api-logs/index.js';
 import type {
   SDKControl,
   SDKInitConfig,
-  SDKLogLevel,
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
@@ -55,14 +54,14 @@ export const initSDK = (
     instrumentations = [],
     contextManager = null,
     logProcessors = [],
-    logLevel = 'error',
+    logLevel = DiagLogLevel.ERROR,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   diag.setLogger(new DiagConsoleLogger(), {
-    logLevel: sdkLogLevelToDiagLogLevel(logLevel),
+    logLevel,
   });
 
   try {
@@ -128,17 +127,6 @@ export const initSDK = (
     const message = e instanceof Error ? e.message : 'Unknown error.';
     diagLogger.error(`failed to initialize the SDK: ${message}`);
     return false;
-  }
-};
-
-const sdkLogLevelToDiagLogLevel = (logLevel: SDKLogLevel): DiagLogLevel => {
-  switch (logLevel) {
-    case 'info':
-      return DiagLogLevel.INFO;
-    case 'warning':
-      return DiagLogLevel.WARN;
-    case 'error':
-      return DiagLogLevel.ERROR;
   }
 };
 

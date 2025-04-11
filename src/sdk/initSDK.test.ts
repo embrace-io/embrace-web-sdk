@@ -3,18 +3,18 @@ import * as chai from 'chai';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { initSDK } from './initSDK.js';
 import {
-  InMemoryDiagLogger,
+  fakeFetchGetBody,
+  fakeFetchGetRequestHeaders,
+  fakeFetchInstall,
+  fakeFetchRespondWith,
+  fakeFetchRestore,
   FakeInstrumentation,
   FakeLogRecordProcessor,
   FakeSpanProcessor,
+  InMemoryDiagLogger,
   setupTestWebVitalListeners,
-  fakeFetchInstall,
-  fakeFetchRestore,
-  fakeFetchRespondWith,
-  fakeFetchGetRequestHeaders,
-  fakeFetchGetBody,
 } from '../testUtils/index.js';
-import { diag, trace } from '@opentelemetry/api';
+import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import type { WebVitalOnReport } from '../instrumentations/web-vitals/WebVitalsInstrumentation/types.js';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
@@ -22,8 +22,8 @@ import sinonChai from 'sinon-chai';
 import { session } from '../api-sessions/index.js';
 import { Resource } from '@opentelemetry/resources';
 import { SDK_VERSION } from '../resources/constants/index.js';
-import * as sinon from 'sinon';
 import type { SinonStub } from 'sinon';
+import * as sinon from 'sinon';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -280,7 +280,7 @@ describe('initSDK', () => {
     });
 
     it('should allow sending info level logs to the console', () => {
-      const result = initSDK({ appID: 'abc12', logLevel: 'info' });
+      const result = initSDK({ appID: 'abc12', logLevel: DiagLogLevel.INFO });
       void expect(result).not.to.be.false;
       const diagLogger = diag.createComponentLogger({ namespace: 'testing' });
 
@@ -294,7 +294,7 @@ describe('initSDK', () => {
     });
 
     it('should allow sending warning level logs to the console', () => {
-      const result = initSDK({ appID: 'abc12', logLevel: 'warning' });
+      const result = initSDK({ appID: 'abc12', logLevel: DiagLogLevel.WARN });
       void expect(result).not.to.be.false;
       const diagLogger = diag.createComponentLogger({ namespace: 'testing' });
 
