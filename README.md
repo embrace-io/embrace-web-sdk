@@ -35,6 +35,7 @@ Currently, only Spans and Logs are supported, but other signals will be added in
 ## Quick Start
 
 ### Install the package
+
 npm:
 
 ```sh
