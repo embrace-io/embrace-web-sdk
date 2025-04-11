@@ -371,6 +371,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Update package.json version
         run: |
+          # checkout the main branch to commit to it later. As this is trigger by a release, actions/checkout@v4
+          # had left the current shell in a detached HEAD pointing to the commit of the release tag
+          git checkout --progress --force -B main refs/remotes/origin/main
           version="${{ steps.extract_version.outputs.version }}"
            if [ -z "$version"]; then
             echo 'Version is empty. Exiting'
