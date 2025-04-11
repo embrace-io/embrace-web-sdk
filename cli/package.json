@@ -1,7 +1,7 @@
 {
   "name": "@embrace-io/web-cli",
   "bin": {
-    "web-cli": "build/index.js"
+    "embrace-web-cli": "build/index.js"
   },
   "version": "0.0.14",
   "description": "Embrace Web CLI to help setup the Embrace SDK in your web app",
@@ -69,5 +69,8 @@
     "rimraf": "^6.0.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.29.0"
+  },
+  "engines" : {
+    "node" : ">=22.0.0"
   }
 }

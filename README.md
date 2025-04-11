@@ -11,11 +11,24 @@
 [![codecov](https://codecov.io/gh/embrace-io/embrace-web-sdk/graph/badge.svg?token=88948NPGPI)](https://codecov.io/gh/embrace-io/embrace-web-sdk)
 ![GitHub Release Date](https://img.shields.io/github/release-date/embrace-io/embrace-web-sdk)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/t/embrace-io/embrace-web-sdk)
-[![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-orange)](./LICENSE.txt)
+[![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-orange)](./LICENSE)
 ![GitHub top language](https://img.shields.io/github/languages/top/embrace-io/embrace-web-sdk)
 ![Build and tests status](https://github.com/embrace-io/embrace-web-sdk/actions/workflows/ci-nodejs.yml/badge.svg)
 
 # Embrace Web SDK
+
+The Embrace Web SDK builds on top of [OpenTelemetry](https://opentelemetry.io) to capture performance data for web
+applications, enabling full-stack observability of your system by connecting web and backend telemetry in a seamless
+way.
+
+Telemetry recorded through this SDK can be consumed on the Embrace platform for Embrace customers, but it can also be
+used by those who are not Embrace customers to export collected data directly to any OTel Collector, either one that
+they host or is hosted by other vendors. In effect, this SDK is an alternative to using the
+[OpenTelemetry JS SDK](https://github.com/open-telemetry/opentelemetry-js) directly for web apps that want to leverage
+the OpenTelemetry ecosystem for observability, but also want all the advanced telemetry capture that Embrace is known
+for.
+
+Currently, only Spans and Logs are supported, but other signals will be added in the future.
 
 ## Quick Start
 
@@ -31,7 +44,7 @@ yarn:
 yarn add @embrace-io/web-sdk
 ```
 
-for CDN installs, see [Including the SDK as a code snippet from CDN](##including-the-sdk-as-a-code-snippet-from-cdn).
+for CDN installs, see [Including the SDK as a code snippet from CDN](#including-the-sdk-as-a-code-snippet-from-cdn).
 
 Sign up for an Embrace account by going to https://dash.embrace.io/signup (
 See [Using without Embrace](#using-without-embrace)
@@ -74,25 +87,8 @@ sdk.initSDK({
 ```
 
 Alternatively if your app version is generated as part of your CI/CD process, you can use our CLI tool to inject your
-app version into your bundle at build time. First install the CLI as a devDependency:
-
-npm:
-
-```sh
-npm install --save-dev @embrace-io/web-cli
-```
-
-yarn:
-
-```sh
-yarn add -D @embrace-io/web-cli
-```
-
-Then hook it into your CI/CD:
-
-```sh
-TODO
-```
+app version into your bundle at build time. The process is part of [Uploading sourcemaps](#upload-sourcemaps) described
+below.
 
 ## Configuring auto-instrumentations
 
@@ -151,10 +147,17 @@ yarn add -D @embrace-io/web-cli
 You will also require an upload API token. This can be found in your Embrace dashboard by going
 to [Settings->API](https://dash.embrace.io/settings/organization/api).
 
-Then hook the CLI into your CI/CD and point it to your bundle and sourcmaps in order to perform the upload:
+Then hook the CLI into your CI/CD and point it to your bundle and sourcemaps in order to perform the upload:
 
 ```sh
-TODO
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+```
+
+If your app version is only known at build-time you can optionally include it in the command as well to have it injected
+into the bundle:
+
+```sh
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH" --app-version "APP_VERSION"
 ```
 
 ### UnSymbolicated function names
@@ -214,19 +217,9 @@ import { session } from '@embrace-io/web-sdk';
 session.addProperty("my-custom-property", "some value");
 ```
 
-If you have your own identifier for the current user you can annotate the session wit this ID. Note that this data will
-be uploaded to Embrace, so think about the privacy of your users and only include data you are willing to share. We
-recommend using an anonymized or hashed user ID that only your agents can search for:
-
-```typescript
-import { user } from '@embrace-io/web-sdk';
-
-user.setIdentifier("internal_id_1234");
-```
-
 ## Custom exporters
 
-If you wish to export your data to another backend in addition to Embrace you can setup your own custom log and trace
+If you wish to export your data to another backend in addition to Embrace you can set up your own custom log and trace
 exporters and pass them in when initializing the SDK. For example to send telemetry to Grafana cloud using OTLP you
 could do the following:
 
@@ -304,15 +297,12 @@ If you'd prefer not to send data to Embrace you can simply omit the embrace app 
 this case at least one custom exporter needs to be configured following the steps
 from [Custom exporters](#custom-exporters) or else the SDK considers the configuration invalid.
 
-## Including the SDK as a code snippet from CDN
-
-TODO
-
 ## Troubleshooting
 
 ### Turning on verbose logging in the SDK
 
-The log level of the SDK can be increased when initializing as follows:
+By default, the SDK will only send error level logs to the console. The log level of the SDK can be increased when
+initializing as follows:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
@@ -325,10 +315,6 @@ sdk.initSDK({
   logLevel: sdk.DiagLogLevel.INFO,
 });
 ```
-
-### Version differences in opentelemetry dependencies
-
-TODO
 
 ## Support
 
