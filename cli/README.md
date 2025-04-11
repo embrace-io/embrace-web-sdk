@@ -20,7 +20,7 @@ yarn add -D @embrace-io/web-cli
 
 To upload sourcemaps to Embrace as part of your build process you will require the following:
 * Your Embrace App ID
-* Your Embrace Upload API Token (found in your Embrace dashbboard in
+* Your Embrace `Symbol Upload` API token (found in your Embrace dashbboard in
 [Settings->API](https://dash.embrace.io/settings/organization/api))
 * The path to your built JS bundle
 * The path to your JS sourcemap file
