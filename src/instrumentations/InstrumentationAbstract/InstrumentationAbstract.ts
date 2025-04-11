@@ -2,6 +2,7 @@ import type {
   DiagLogger,
   Meter,
   MeterProvider,
+  Span,
   Tracer,
   TracerProvider,
 } from '@opentelemetry/api';
@@ -11,6 +12,8 @@ import { logs } from '@opentelemetry/api-logs';
 import type {
   Instrumentation,
   InstrumentationConfig,
+  InstrumentationModuleDefinition,
+  SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 
@@ -76,6 +79,26 @@ export abstract class InstrumentationAbstract<
     return this._logger;
   }
 
+  /**
+   * @experimental
+   *
+   * Get module definitions defined by {@link init}.
+   * This can be used for experimental compile-time instrumentation.
+   *
+   * @returns an array of {@link InstrumentationModuleDefinition}
+   */
+  public getModuleDefinitions(): InstrumentationModuleDefinition[] {
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const initResult = this.init() ?? [];
+    if (!Array.isArray(initResult)) {
+      return [initResult];
+    }
+
+    return initResult;
+  }
+
   /* Disable plugin */
   public abstract disable(): void;
 
@@ -135,8 +158,49 @@ export abstract class InstrumentationAbstract<
     );
   }
 
+  /**
+   * Init method in which plugin should define _modules and patches for
+   * methods.
+   */
+  protected abstract init():
+    | InstrumentationModuleDefinition
+    | InstrumentationModuleDefinition[]
+    // NOTE: disabling typescript check, as this class was copied from OTel repo.
+    // I agree with typescript here, but keeping it disabled for consistency with the base repo
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+    | void;
+
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {
     return;
+  }
+
+  /**
+   * Execute span customization hook, if configured, and log any errors.
+   * Any semantics of the trigger and info are defined by the specific instrumentation.
+   * @param hookHandler The optional hook handler which the user has configured via instrumentation config
+   * @param triggerName The name of the trigger for executing the hook for logging purposes
+   * @param span The span to which the hook should be applied
+   * @param info The info object to be passed to the hook, with useful data the hook may use
+   */
+  protected _runSpanCustomizationHook<SpanCustomizationInfoType>(
+    hookHandler: SpanCustomizationHook<SpanCustomizationInfoType> | undefined,
+    triggerName: string,
+    span: Span,
+    info: SpanCustomizationInfoType
+  ) {
+    if (!hookHandler) {
+      return;
+    }
+
+    try {
+      hookHandler(span, info);
+    } catch (e) {
+      this._diag.error(
+        `Error running span customization hook due to exception in handler`,
+        { triggerName },
+        e
+      );
+    }
   }
 }
