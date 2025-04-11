@@ -6,7 +6,6 @@
     "demo:cdn:frontend:full:preview": "bash ./scripts/runDemo.sh",
     "demo:cdn:frontend:compile:clean": "rimraf dist",
     "demo:cdn:frontend:install:clean": "rimraf node_modules",
-    "postinstall": "npm run demo:cdn:sync:web:sdk",
     "demo:cdn:sync:web:sdk": "ln -f ../../build/esm/bundle.js ./public/bundle.js",
     "demo:cdn:frontend:dev": "vite",
     "demo:cdn:frontend:compile": "tsc -b && vite build",
