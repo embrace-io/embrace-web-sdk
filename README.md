@@ -76,7 +76,7 @@ show up in the Embrace Dashboard once the SDK reports at least 1 completed sessi
 your app and then ending the session by either closing the tab/window or simply putting it in the background.
 
 > [!NOTE]
-> It may take a few minutes before the first Sessions appear in your Embrace dashboard.
+> It may take a few minutes before the first sessions appear in your Embrace dashboard.
 
 ## Adding traces
 
