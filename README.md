@@ -93,8 +93,7 @@ below.
 ## Configuring auto-instrumentations
 
 The SDK provides several auto-instrumentations out-of-the box, in order to change how these behave (or disable certain
-ones altogether) you can override the default set of instrumentations using a configuration object when initializing the
-SDK:
+ones altogether) you can pass a `defaultInstrumentationConfig` object when initializing the SDK:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
@@ -104,20 +103,31 @@ import { sdk } from '@embrace-io/web-sdk';
 sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  instrumentations: sdk.getDefaultInstrumentations({
-    '@opentelemetry-instrumentation-fetch': {
-      enabled: false,
-    },
+  defaultInstrumentationConfig: {
+    omit: new Set(['@opentelemetry-instrumentation-fetch']),
     'web-vitals': {
       trackingLevel: 'all'
     }
-  }),
+  },
 });
 ```
 
-View the `TODO` type definition for the full set of configuration options. Note that `getDefaultInstrumentations`
-returns a list, for more advanced customization you can append your own instrumentations to the list provided that they
-confirm to the `Instrumentation` interface.
+View the type definition for `defaultInstrumentationConfig` to see the full set of configuration options.
+
+For more advanced customization you can also include additional instrumentations provided they conform to the
+`Instrumentation` interface:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+...
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  instrumentations: [myCustomInstrumentation],
+});
+```
 
 ## Upload sourcemaps
 
@@ -217,7 +227,7 @@ could do the following:
 sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  traceExporters: [
+  spanExporters: [
     new OTLPTraceExporter({
       url: `GRANAFA_ENDPOINT/v1/traces`,
       headers: {
@@ -292,6 +302,22 @@ from [Custom exporters](#custom-exporters) or else the SDK considers the configu
 TODO
 
 ## Troubleshooting
+
+### Turning on verbose logging in the SDK
+
+The log level of the SDK can be increased when initializing as follows:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+...
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  logLevel: sdk.DiagLogLevel.INFO,
+});
+```
 
 ### Version differences in opentelemetry dependencies
 

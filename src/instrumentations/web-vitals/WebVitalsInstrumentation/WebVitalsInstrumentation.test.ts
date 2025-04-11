@@ -15,17 +15,12 @@ import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import sinonChai from 'sinon-chai';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import type { SinonStub } from 'sinon';
+import { setupTestWebVitalListeners } from '../../../testUtils/setupTestWebVitalListeners/setupTestWebVitalListeners.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
 describe('WebVitalsInstrumentation', () => {
-  let clsStub: SinonStub;
-  let fcpStub: SinonStub;
-  let lcpStub: SinonStub;
-  let inpStub: SinonStub;
-  let ttfbStub: SinonStub;
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: WebVitalsInstrumentation;
   let diag: InMemoryDiagLogger;
@@ -33,6 +28,11 @@ describe('WebVitalsInstrumentation', () => {
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
   let mockWebVitalListeners: WebVitalListeners;
+  let clsStub: sinon.SinonStub;
+  let fcpStub: sinon.SinonStub;
+  let lcpStub: sinon.SinonStub;
+  let inpStub: sinon.SinonStub;
+  let ttfbStub: sinon.SinonStub;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -46,20 +46,14 @@ describe('WebVitalsInstrumentation', () => {
     spanSessionManager = new EmbraceSpanSessionManager();
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();
+    const testWebVitalListeners = setupTestWebVitalListeners();
 
-    clsStub = sinon.stub();
-    fcpStub = sinon.stub();
-    lcpStub = sinon.stub();
-    inpStub = sinon.stub();
-    ttfbStub = sinon.stub();
-    mockWebVitalListeners = {
-      CLS: clsStub,
-      FCP: fcpStub,
-      LCP: lcpStub,
-      INP: inpStub,
-      TTFB: ttfbStub,
-      FID: undefined,
-    };
+    mockWebVitalListeners = testWebVitalListeners.listeners;
+    clsStub = testWebVitalListeners.clsStub;
+    fcpStub = testWebVitalListeners.fcpStub;
+    lcpStub = testWebVitalListeners.lcpStub;
+    inpStub = testWebVitalListeners.inpStub;
+    ttfbStub = testWebVitalListeners.ttfbStub;
   });
 
   afterEach(() => {
@@ -500,5 +494,56 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
     expect(lcpEvent.time).to.deep.equal([5, 0]);
+  });
+
+  it('should handle invalid JSON in metric attribution keys', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+    });
+
+    void expect(clsStub).to.have.been.calledOnce;
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    const metricValue = {
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution;
+
+    // @ts-expect-error invalid attribution for testing
+    metricValue.attribution['largestShiftTarget'] = metricValue;
+
+    metricReportFunc(metricValue);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
+
+    expect(clsEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.attribution.largestShiftTarget':
+        'Error: unable to serialize the value as JSON. Likely a js circular structure.',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'CLS',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 22,
+    });
+
+    expect(diag.getErrorLogs()).to.have.lengthOf(1);
   });
 });

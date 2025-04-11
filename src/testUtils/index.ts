@@ -13,3 +13,7 @@ export { InMemoryDiagLogger } from './InMemoryDiagLogger/index.js';
 export { MockPerformanceManager } from './MockPerformanceManager/index.js';
 export { setupTestTraceExporter } from './setupTestTraceExporter/index.js';
 export { setupTestLogExporter } from './setupTestLogExporter/index.js';
+export { FakeInstrumentation } from './FakeInstrumentation/index.js';
+export { FakeLogRecordProcessor } from './FakeLogRecordProcessor/index.js';
+export { FakeSpanProcessor } from './FakeSpanProcessor/index.js';
+export { setupTestWebVitalListeners } from './setupTestWebVitalListeners/index.js';

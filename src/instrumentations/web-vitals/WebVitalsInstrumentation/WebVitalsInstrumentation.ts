@@ -75,7 +75,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
               ? value
               : withErrorFallback(
                   JSON.stringify,
-                  'Error: unable to serialize the value as JSON. Likely a js circular structure '
+                  'Error: unable to serialize the value as JSON. Likely a js circular structure.',
+                  false,
+                  this._diag
                 )(value);
         });
 

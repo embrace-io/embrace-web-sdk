@@ -1,4 +1,5 @@
 import type {
+  Instrumentation,
   InstrumentationConfig,
   InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
@@ -8,12 +9,15 @@ import type { LogManager } from '../../api-logs/index.js';
 import { log } from '../../api-logs/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { OTelPerformanceManager } from '../../utils/index.js';
-import { InstrumentationBase } from '../InstrumentationBase/index.js';
 import type { EmbraceInstrumentationBaseArgs } from './types.js';
+import { InstrumentationAbstract } from '../InstrumentationAbstract/index.js';
 
 export abstract class EmbraceInstrumentationBase<
-  ConfigType extends InstrumentationConfig = InstrumentationConfig,
-> extends InstrumentationBase<ConfigType> {
+    ConfigType extends InstrumentationConfig = InstrumentationConfig,
+  >
+  extends InstrumentationAbstract<ConfigType>
+  implements Instrumentation<ConfigType>
+{
   private readonly _sessionManager: SpanSessionManager;
   private readonly _logManager: LogManager;
   private readonly _perf: PerformanceManager;
