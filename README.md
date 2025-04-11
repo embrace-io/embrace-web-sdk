@@ -175,7 +175,7 @@ For the most basic usage simply start a span and end it after some operation com
 ```typescript
 import { trace } from '@embrace-io/web-sdk';
 
-const span = trace.startSpan("span-name");
+const span = trace.startPerformanceSpan("span-name");
 
 someAsyncOperation().then(() => span.end());
 ```
