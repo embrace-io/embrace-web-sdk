@@ -361,7 +361,8 @@ jobs:
             echo "Version is empty. Exiting"
             exit 1
           fi
-          echo 'version=$version' >> $GITHUB_OUTPUT
+          echo "version=$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
