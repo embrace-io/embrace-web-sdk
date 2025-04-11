@@ -310,6 +310,22 @@ TODO
 
 ## Troubleshooting
 
+### Turning on verbose logging in the SDK
+
+The log level of the SDK can be increased when initializing as follows:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+...
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  logLevel: sdk.DiagLogLevel.INFO,
+});
+```
+
 ### Version differences in opentelemetry dependencies
 
 TODO

@@ -2,6 +2,7 @@ import type {
   ContextManager,
   TextMapPropagator,
   DiagLogger,
+  DiagLogLevel,
 } from '@opentelemetry/api';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { Resource } from '@opentelemetry/resources';
@@ -91,6 +92,13 @@ type BaseSDKInitConfig = {
    * **default**: []
    */
   logProcessors?: LogRecordProcessor[];
+
+  /**
+   * logLevel controls the verbosity of the SDK console logging
+   *
+   * **default**: DiagLogLevel.ERROR
+   */
+  logLevel?: DiagLogLevel;
 
   diagLogger?: DiagLogger;
 };

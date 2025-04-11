@@ -1,5 +1,4 @@
-import { diag } from '@opentelemetry/api';
-import { trace } from '@opentelemetry/api';
+import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { Resource } from '@opentelemetry/resources';
@@ -55,11 +54,16 @@ export const initSDK = (
     instrumentations = [],
     contextManager = null,
     logProcessors = [],
+    logLevel = DiagLogLevel.ERROR,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
+  diag.setLogger(new DiagConsoleLogger(), {
+    logLevel,
+  });
+
   try {
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource(appVersion)
@@ -179,7 +183,6 @@ const setupTraces = ({
     contextManager,
     propagator,
   });
-  trace.setGlobalTracerProvider(tracerProvider);
 
   return tracerProvider;
 };
