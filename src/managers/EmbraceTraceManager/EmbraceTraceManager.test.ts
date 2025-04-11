@@ -1,10 +1,10 @@
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
+import { KEY_EMB_TYPE } from '../../constants/index.js';
 import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { EmbraceTraceManager } from './EmbraceTraceManager.js';
-import { KEY_EMB_TYPE } from '../../constants/attributes.js';
-import { hrTimeToMilliseconds } from '@opentelemetry/core/build/src/common/time';
 
 chai.use(sinonChai);
 const { expect } = chai;

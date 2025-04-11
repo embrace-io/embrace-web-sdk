@@ -1,6 +1,6 @@
 import type { AttributeValue } from '@opentelemetry/api';
+import type { LogManager, LogSeverity } from '../index.js';
 import { NoOpLogManager } from '../NoOpLogManager/index.js';
-import type { LogManager, LogSeverity } from '../types.js';
 
 const NOOP_LOG_MANAGER = new NoOpLogManager();
 
@@ -15,15 +15,6 @@ export class ProxyLogManager implements LogManager {
     this._delegate = delegate;
   }
 
-  public message(
-    message: string,
-    level: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>,
-    includeStacktrace?: boolean
-  ) {
-    this.getDelegate().message(message, level, attributes, includeStacktrace);
-  }
-
   public logException(
     timestamp: number,
     error: Error,
@@ -31,5 +22,14 @@ export class ProxyLogManager implements LogManager {
     attributes?: Record<string, AttributeValue | undefined>
   ) {
     this.getDelegate().logException(timestamp, error, handled, attributes);
+  }
+
+  public message(
+    message: string,
+    level: LogSeverity,
+    attributes?: Record<string, AttributeValue | undefined>,
+    includeStacktrace?: boolean
+  ) {
+    this.getDelegate().message(message, level, attributes, includeStacktrace);
   }
 }

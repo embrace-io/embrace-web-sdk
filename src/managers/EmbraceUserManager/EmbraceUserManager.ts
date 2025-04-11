@@ -1,12 +1,11 @@
-import type { UserManager } from '../../api-users/index.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
-import type { User } from '../../api-users/manager/types.js';
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-import type { EmbraceUserManagerArgs } from './types.js';
-import { isUser } from './types.js';
+import type { User, UserManager } from '../../api-users/index.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
 import { generateUUID } from '../../utils/index.js';
 import { EMBRACE_USER_STORAGE_KEY } from './constants.js';
+import type { EmbraceUserManagerArgs } from './types.js';
+import { isUser } from './types.js';
 
 export class EmbraceUserManager implements UserManager {
   private readonly _diag: DiagLogger;

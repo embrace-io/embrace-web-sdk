@@ -1,7 +1,16 @@
+import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
+import { logs } from '@opentelemetry/api-logs';
+import { Resource } from '@opentelemetry/resources';
+import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { initSDK } from './initSDK.js';
+import type { SinonStub } from 'sinon';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import type { MetricWithAttribution } from 'web-vitals/attribution';
+import { session } from '../api-sessions/index.js';
+import type { WebVitalOnReport } from '../instrumentations/index.js';
+import { SDK_VERSION } from '../resources/index.js';
 import {
   fakeFetchGetBody,
   fakeFetchGetRequestHeaders,
@@ -14,16 +23,7 @@ import {
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
 } from '../testUtils/index.js';
-import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
-import type { WebVitalOnReport } from '../instrumentations/web-vitals/WebVitalsInstrumentation/types.js';
-import type { MetricWithAttribution } from 'web-vitals/attribution';
-import sinonChai from 'sinon-chai';
-import { session } from '../api-sessions/index.js';
-import { Resource } from '@opentelemetry/resources';
-import { SDK_VERSION } from '../resources/constants/index.js';
-import type { SinonStub } from 'sinon';
-import * as sinon from 'sinon';
+import { initSDK } from './initSDK.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

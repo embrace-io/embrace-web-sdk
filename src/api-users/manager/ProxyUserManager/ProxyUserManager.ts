@@ -1,5 +1,5 @@
+import type { User, UserManager } from '../index.js';
 import { NoOpUserManager } from '../NoOpUserManager/index.js';
-import type { User, UserManager } from '../types.js';
 
 const NOOP_USER_MANAGER = new NoOpUserManager();
 

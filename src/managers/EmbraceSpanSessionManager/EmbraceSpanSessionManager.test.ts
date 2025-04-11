@@ -2,7 +2,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/attributes.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/index.js';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,

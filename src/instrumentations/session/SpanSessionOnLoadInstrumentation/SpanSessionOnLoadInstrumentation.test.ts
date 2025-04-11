@@ -5,9 +5,9 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/attributes.js';
-import { setupTestTraceExporter } from '../../../testUtils/index.js';
+import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
 import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/index.js';
 import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.js';
 
 const { expect } = chai;

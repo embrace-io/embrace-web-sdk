@@ -1,10 +1,9 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { InMemoryDiagLogger } from '../../testUtils/index.js';
-import { EmbraceUserManager } from './EmbraceUserManager.js';
-import { InMemoryStorage } from '../../testUtils/InMemoryStorage/index.js';
 import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
+import { InMemoryDiagLogger, InMemoryStorage } from '../../testUtils/index.js';
 import { EMBRACE_USER_STORAGE_KEY } from './constants.js';
+import { EmbraceUserManager } from './EmbraceUserManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
