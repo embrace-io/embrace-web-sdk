@@ -38,22 +38,22 @@ version-resolver:
 autolabeler:
   - label: 'maintenance'
     title:
-      - '/(EMBR-[0-9]+\s+)(build|ci|docs|style|refactor|perf|test|chore).*/'
+      - '/(EMBR-[0-9]+\s+)?(build|ci|docs|style|refactor|perf|test|chore).*/'
   - label: 'fix'
     title:
-      - '/(EMBR-[0-9]+\s+)(fix|revert).*/'
+      - '/(EMBR-[0-9]+\s+)?(fix|revert).*/'
   - label: 'feat'
     title:
-      - '/(EMBR-[0-9]+\s+)(feat).*/'
+      - '/(EMBR-[0-9]+\s+)?(feat).*/'
   - label: 'major'
     body:
       - '/(BREAKING CHANGE)/'
   - label: 'minor'
     title: # SAME AS 'feat'
-      - '/(EMBR-[0-9]+\s+)(feat).*/'
+      - '/(EMBR-[0-9]+\s+)?(feat).*/'
   - label: 'patch'
     title: # SAME AS 'fix or maintenance'
-      - '/(EMBR-[0-9]+\s+)(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
+      - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
 
 template: |
   ## What's Changed
