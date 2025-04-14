@@ -14,6 +14,7 @@ permissions:
 env:
   NODE_VERSION: '22.x'
   LINT_STATUS_FILE: lint.success.txt
+  TYPE_CHECK_STATUS_FILE: type_check.success.txt
   TEST_STATUS_FILE: test.success.txt
 
 jobs:
@@ -332,7 +333,60 @@ jobs:
       - name: Do not cache lint failures
         if: ${{ failure() || cancelled() }}
         run: |
-          rm -f ${{ env.ELINT_STATUS_FILE }}
+          rm -f ${{ env.LINT_STATUS_FILE }}
+
+  type-check:
+    needs: configure
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous type check results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TYPE_CHECK_STATUS_FILE }}
+          key: type_check.sha-${{ github.sha }}.txt
+
+      - name: Check if type check previously succeeded
+        run: |
+          if test -e ${{ env.TYPE_CHECK_STATUS_FILE }}; then
+            echo 'TYPE_CHECK_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+
+      - uses: actions/setup-node@v4
+        if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install NPM dependencies
+        if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: TSC
+        if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:tsc:no:emit
+
+      - name: Cache successful type check results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TYPE_CHECK_STATUS_FILE }}
+
+      - name: Do not cache type check failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TYPE_CHECK_STATUS_FILE }}
   # this jobs updates the version in package.json and package-lock.json for both the cli and sdk before publishing
   # to npm and based on the github release version
   publish:
@@ -341,6 +395,7 @@ jobs:
       - environment
       - test-multiple-browsers
       - lint
+      - type-check
     runs-on: ubuntu-latest
     permissions:
       id-token: write
