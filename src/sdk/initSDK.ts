@@ -21,8 +21,8 @@ import {
 import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
-  EmbraceUserManager,
   EmbraceTraceManager,
+  EmbraceUserManager,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,

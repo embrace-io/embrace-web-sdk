@@ -8,7 +8,7 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import { session } from '../api-sessions/index.js';
+import { ProxySpanSessionManager, session } from '../api-sessions/index.js';
 import type { WebVitalOnReport } from '../instrumentations/index.js';
 import { SDK_VERSION } from '../resources/index.js';
 import {
@@ -24,6 +24,15 @@ import {
   setupTestWebVitalListeners,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
+import { log, ProxyLogManager } from '../api-logs/index.js';
+import { ProxyTraceManager, trace as embtrace } from '../api-traces/index.js';
+import {
+  EmbraceLogManager,
+  EmbraceSpanSessionManager,
+  EmbraceTraceManager,
+  EmbraceUserManager,
+} from '../managers/index.js';
+import { ProxyUserManager, user } from '../api-users/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -319,6 +328,35 @@ describe('initSDK', () => {
       void expect(consoleInfoStub).not.to.have.been.called;
       void expect(consoleWarnStub).not.to.have.been.called;
       void expect(consoleErrorStub).to.have.been.calledOnce;
+    });
+
+    it('should register all global managers', () => {
+      const result = initSDK({ appID: 'abc12' });
+      void expect(result).not.to.be.false;
+
+      expect(log.getLogManager()).to.be.instanceOf(ProxyLogManager);
+      expect(
+        (log.getLogManager() as ProxyLogManager).getDelegate()
+      ).to.be.instanceOf(EmbraceLogManager);
+
+      expect(session.getSpanSessionManager()).to.be.instanceOf(
+        ProxySpanSessionManager
+      );
+      expect(
+        (
+          session.getSpanSessionManager() as ProxySpanSessionManager
+        ).getDelegate()
+      ).to.be.instanceOf(EmbraceSpanSessionManager);
+
+      expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
+      expect(
+        (embtrace.getTraceManager() as ProxyTraceManager).getDelegate()
+      ).to.be.instanceOf(EmbraceTraceManager);
+
+      expect(user.getUserManager()).to.be.instanceOf(ProxyUserManager);
+      expect(
+        (user.getUserManager() as ProxyUserManager).getDelegate()
+      ).to.be.instanceOf(EmbraceUserManager);
     });
   });
 });
