@@ -118,6 +118,24 @@ log.message('Loading not finished in time.', 'error', {
   propertyB: 'valueB'
 });
 ```
+## Adding exceptions
+
+The SDK automatically captures unhandled exceptions.
+
+If there is a need to a log a handled exception, this can be done manually by calling the logException method:
+
+```typescript
+import { log } from '@embrace-io/web-sdk';
+
+try {
+  // some operation...
+} catch (e) {
+  log.logException(e as Error, true, {
+     propertyA: 'valueA',
+     propertyB: 'valueB'
+  });
+}
+```
 
 ## Enriching with metadata
 
