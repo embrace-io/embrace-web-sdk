@@ -18,6 +18,7 @@ import {
   type PerformanceManager,
 } from '../../utils/index.js';
 import { EmbraceLogManager } from './EmbraceLogManager.js';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -139,12 +140,12 @@ describe('EmbraceLogManager', () => {
   it('should log an exception with stacktrace', () => {
     expect(() => {
       manager.logException(
-        perf.getNowMillis(),
         new Error('this is an exception'),
         true,
         {
           attr_key: 'attr value',
-        }
+        },
+        perf.getNowMillis()
       );
     }).to.not.throw();
 
@@ -161,6 +162,36 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
       'HANDLED'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+    expect(log.attributes).to.have.property('exception.name', 'Error');
+    expect(log.attributes).to.have.property(
+      ATTR_EXCEPTION_MESSAGE,
+      'this is an exception'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+  });
+
+  it('should log an exception without required attributes', () => {
+    expect(() => {
+      manager.logException(new Error('this is an exception'), false);
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is an exception');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+    expect(log.severityText).to.be.equal('ERROR');
+    void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
+      perf.getNowMillis()
+    );
+
+    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+    expect(log.attributes).to.have.property(
+      KEY_EMB_EXCEPTION_HANDLING,
+      'UNHANDLED'
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');

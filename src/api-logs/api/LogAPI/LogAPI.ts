@@ -30,12 +30,12 @@ export class LogAPI implements LogManager {
   }
 
   public logException(
-    timestamp: number,
     error: Error,
     handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    timestamp?: number
   ) {
-    this.getLogManager().logException(timestamp, error, handled, attributes);
+    this.getLogManager().logException(error, handled, attributes, timestamp);
   }
 
   public message(

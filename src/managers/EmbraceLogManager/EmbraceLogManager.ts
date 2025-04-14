@@ -42,18 +42,19 @@ export class EmbraceLogManager implements LogManager {
   }
 
   public logException(
-    timestamp: number,
     error: Error,
     handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    timestamp?: number
   ) {
+    timestamp = timestamp ? timestamp : this._perf.getNowMillis();
     this._logger.emit({
       timestamp,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
       body: error.message || '',
       attributes: {
-        ...attributes,
+        ...(attributes || {}),
         [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
         [KEY_EMB_EXCEPTION_HANDLING]: handled ? 'HANDLED' : 'UNHANDLED',
         [ATTR_EXCEPTION_TYPE]: error.constructor.name,

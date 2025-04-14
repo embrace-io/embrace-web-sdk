@@ -9,10 +9,10 @@ export interface LogManager {
   ) => void;
 
   logException: (
-    timestamp: number,
     error: Error,
     handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    timestamp?: number
   ) => void;
 }
 
