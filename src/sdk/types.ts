@@ -215,3 +215,9 @@ export interface DefaultInstrumenationConfig {
     'enabled'
   >;
 }
+
+export interface SDKRegistryManager {
+  register: (sdk: SDKControl) => void;
+  clear: () => void;
+  registered: () => SDKControl | null;
+}

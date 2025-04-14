@@ -33,6 +33,7 @@ import {
   EmbraceUserManager,
 } from '../managers/index.js';
 import { ProxyUserManager, user } from '../api-users/index.js';
+import { registry } from './registry.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -52,6 +53,7 @@ describe('initSDK', () => {
     trace.disable();
     logs.disable();
     diag.disable();
+    registry.clear();
   });
 
   it('should require an app ID when not setting custom exporters', () => {
@@ -297,7 +299,12 @@ describe('initSDK', () => {
       diagLogger.warn('warning');
       diagLogger.error('error');
 
-      void expect(consoleInfoStub).to.have.been.calledOnce;
+      void expect(consoleInfoStub).to.have.callCount(2);
+      void expect(consoleInfoStub).to.have.been.calledWith(
+        'embrace-sdk',
+        'successfully initialized the SDK'
+      );
+      void expect(consoleInfoStub).to.have.been.calledWith('testing', 'info');
       void expect(consoleWarnStub).to.have.been.calledOnce;
       void expect(consoleErrorStub).to.have.been.calledOnce;
     });
@@ -357,6 +364,85 @@ describe('initSDK', () => {
       expect(
         (user.getUserManager() as ProxyUserManager).getDelegate()
       ).to.be.instanceOf(EmbraceUserManager);
+    });
+  });
+
+  describe('multiple invocations', () => {
+    let consoleWarnStub: SinonStub;
+
+    beforeEach(() => {
+      consoleWarnStub = sinon.stub(console, 'warn');
+    });
+
+    afterEach(() => {
+      consoleWarnStub.restore();
+    });
+
+    it('should not cause the SDK to be initialized multiple times', () => {
+      const testWebVitalListeners = setupTestWebVitalListeners();
+
+      const result1 = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        logLevel: DiagLogLevel.WARN,
+        defaultInstrumentationConfig: {
+          omit: new Set(['web-vital']),
+          'web-vital': { listeners: testWebVitalListeners.listeners },
+        },
+      });
+      void expect(result1).not.to.be.false;
+      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+
+      // 2nd invocation does not omit the web vital instrumentation, this should be ignored since only the first
+      // invocation initialized the SDK
+      const result2 = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        defaultInstrumentationConfig: {
+          'web-vital': { listeners: testWebVitalListeners.listeners },
+        },
+      });
+      void expect(result2).not.to.be.false;
+      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+
+      void expect(consoleWarnStub).to.have.been.calledWith(
+        'embrace-sdk',
+        'SDK has already been successfully initialized, skipping this invocation of initSDK'
+      );
+    });
+
+    it('should still initialize the SDK if previous init calls were not successful', () => {
+      const testWebVitalListeners = setupTestWebVitalListeners();
+
+      const result1 = initSDK({
+        appID: 'invalid',
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        logLevel: DiagLogLevel.WARN,
+        defaultInstrumentationConfig: {
+          omit: new Set(['web-vital']),
+          'web-vital': { listeners: testWebVitalListeners.listeners },
+        },
+      });
+      void expect(result1).to.be.false;
+      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+
+      // 2nd invocation does not omit the web vital instrumentation, this should take effect since the first
+      // invocation failed to initialize the SDK
+      const result2 = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        defaultInstrumentationConfig: {
+          'web-vital': { listeners: testWebVitalListeners.listeners },
+        },
+      });
+      void expect(result2).not.to.be.false;
+      void expect(testWebVitalListeners.clsStub).to.have.been.calledOnce;
+
+      void expect(consoleWarnStub).not.to.have.been.calledWith(
+        'embrace-sdk',
+        'SDK has already been successfully initialized, skipping this invocation of initSDK'
+      );
     });
   });
 });

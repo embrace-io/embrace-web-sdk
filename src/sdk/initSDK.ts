@@ -42,6 +42,7 @@ import type {
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
+import { registry } from './registry.js';
 
 export const initSDK = (
   {
@@ -62,11 +63,19 @@ export const initSDK = (
     }),
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
-  diag.setLogger(new DiagConsoleLogger(), {
-    logLevel,
-  });
-
   try {
+    const existingSDK = registry.registered();
+    if (existingSDK !== null) {
+      diagLogger.warn(
+        'SDK has already been successfully initialized, skipping this invocation of initSDK'
+      );
+      return existingSDK;
+    }
+
+    diag.setLogger(new DiagConsoleLogger(), {
+      logLevel,
+    });
+
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource(appVersion)
     );
@@ -119,12 +128,18 @@ export const initSDK = (
       ],
     });
 
-    return {
+    diagLogger.info('successfully initialized the SDK');
+
+    const sdkControl = {
       flush: async () => {
         await tracerProvider.forceFlush();
         await loggerProvider.forceFlush();
       },
     };
+
+    registry.register(sdkControl);
+
+    return sdkControl;
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error.';
     diagLogger.error(`failed to initialize the SDK: ${message}`);
