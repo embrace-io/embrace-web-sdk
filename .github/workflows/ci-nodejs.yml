@@ -352,6 +352,8 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Extract Version
         id: extract_version
         run: |
