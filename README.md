@@ -302,7 +302,7 @@ as you refer to that documentation:
 
    ```diff
    - import { sdk } from '@embrace-io/web-sdk';
-   + const sdk = window.EmbraceWebSdk;
+   + const { sdk } = window.EmbraceWebSdk;
    ```
 
 2) Because our web-cli does not support the CDN version of the SDK, you will need to make sure to pass in your app
