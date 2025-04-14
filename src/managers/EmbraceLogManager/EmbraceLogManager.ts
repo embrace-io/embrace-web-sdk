@@ -42,10 +42,10 @@ export class EmbraceLogManager implements LogManager {
   }
 
   public logException(
-    timestamp: number,
     error: Error,
     handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined> = {},
+    timestamp: number = this._perf.getNowMillis()
   ) {
     this._logger.emit({
       timestamp,

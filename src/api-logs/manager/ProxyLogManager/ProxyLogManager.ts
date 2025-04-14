@@ -16,12 +16,12 @@ export class ProxyLogManager implements LogManager {
   }
 
   public logException(
-    timestamp: number,
     error: Error,
     handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>
+    attributes?: Record<string, AttributeValue | undefined>,
+    timestamp?: number
   ) {
-    this.getDelegate().logException(timestamp, error, handled, attributes);
+    this.getDelegate().logException(error, handled, attributes, timestamp);
   }
 
   public message(
