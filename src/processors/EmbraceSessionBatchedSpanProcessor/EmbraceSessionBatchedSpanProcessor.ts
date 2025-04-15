@@ -34,17 +34,27 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
   public onEnd(span: ReadableSpan): void {
     if (this._shutdownOnce.isCalled) {
-      this.diag.debug('Span ended after processor shutdown. Ignoring span.');
+      this.diag.debug('span ended after processor shutdown. Ignoring span.');
       return;
     }
 
     if (!isSessionSpan(span)) {
-      this.diag.debug('Non-session span ended. Adding to pending spans queue.');
+      this.diag.debug('non-session span ended. Adding to pending spans queue.');
       this._pendingSpans.push(span);
     } else {
-      // TODO: handle errors
-      this.diag.debug('Session span ended. Exporting all pending spans.');
-      void internal._export(this._exporter, [span, ...this._pendingSpans]);
+      this.diag.debug('session span ended. Exporting all pending spans.');
+      internal
+        ._export(this._exporter, [span, ...this._pendingSpans])
+        .catch((reason: unknown) => {
+          let msg = 'unknown reason';
+          if (reason && reason instanceof Error) {
+            msg = reason.message;
+          } else if (typeof reason === 'string') {
+            msg = reason;
+          }
+
+          this.diag.error(`spans failed to export: ${msg}`);
+        });
       this._pendingSpans = [];
     }
   }

@@ -342,6 +342,12 @@ sdk.initSDK({
 });
 ```
 
+## FAQ
+
+### How is data exported from the SDK
+
+Refer to [DATA_EXPORT.md](/.DATA_EXPORT.md) for details on how data is exported from the SDK.
+
 ## Support
 
 If you have a feature suggestion or have spotted something that doesn't look right please open
