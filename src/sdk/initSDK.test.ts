@@ -186,6 +186,52 @@ describe('initSDK', () => {
     void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
   });
 
+  it('should register all global managers', async () => {
+    const result = initSDK({
+      appID: 'abc12',
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+    });
+    void expect(result).not.to.be.false;
+
+    expect(log.getLogManager()).to.be.instanceOf(ProxyLogManager);
+    expect(
+      (log.getLogManager() as ProxyLogManager).getDelegate()
+    ).to.be.instanceOf(EmbraceLogManager);
+
+    expect(session.getSpanSessionManager()).to.be.instanceOf(
+      ProxySpanSessionManager
+    );
+    expect(
+      (session.getSpanSessionManager() as ProxySpanSessionManager).getDelegate()
+    ).to.be.instanceOf(EmbraceSpanSessionManager);
+
+    expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
+    expect(
+      (embtrace.getTraceManager() as ProxyTraceManager).getDelegate()
+    ).to.be.instanceOf(EmbraceTraceManager);
+
+    expect(user.getUserManager()).to.be.instanceOf(ProxyUserManager);
+    expect(
+      (user.getUserManager() as ProxyUserManager).getDelegate()
+    ).to.be.instanceOf(EmbraceUserManager);
+
+    embtrace.startPerformanceSpan('my performance span')?.end();
+    log.message('my custom log', 'info');
+
+    if (result) {
+      await result.flush();
+    }
+
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    void expect(finishedSpans[0].name).to.be.equal('my performance span');
+
+    const finishedLogRecords = logExporter.getFinishedLogRecords();
+    expect(finishedLogRecords).to.have.lengthOf(1);
+    void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
+  });
+
   describe('export to Embrace', () => {
     beforeEach(() => {
       fakeFetchInstall();
@@ -335,35 +381,6 @@ describe('initSDK', () => {
       void expect(consoleInfoStub).not.to.have.been.called;
       void expect(consoleWarnStub).not.to.have.been.called;
       void expect(consoleErrorStub).to.have.been.calledOnce;
-    });
-
-    it('should register all global managers', () => {
-      const result = initSDK({ appID: 'abc12' });
-      void expect(result).not.to.be.false;
-
-      expect(log.getLogManager()).to.be.instanceOf(ProxyLogManager);
-      expect(
-        (log.getLogManager() as ProxyLogManager).getDelegate()
-      ).to.be.instanceOf(EmbraceLogManager);
-
-      expect(session.getSpanSessionManager()).to.be.instanceOf(
-        ProxySpanSessionManager
-      );
-      expect(
-        (
-          session.getSpanSessionManager() as ProxySpanSessionManager
-        ).getDelegate()
-      ).to.be.instanceOf(EmbraceSpanSessionManager);
-
-      expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
-      expect(
-        (embtrace.getTraceManager() as ProxyTraceManager).getDelegate()
-      ).to.be.instanceOf(EmbraceTraceManager);
-
-      expect(user.getUserManager()).to.be.instanceOf(ProxyUserManager);
-      expect(
-        (user.getUserManager() as ProxyUserManager).getDelegate()
-      ).to.be.instanceOf(EmbraceUserManager);
     });
   });
 
