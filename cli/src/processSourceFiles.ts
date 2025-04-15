@@ -1,7 +1,7 @@
-import { validateInput } from './validateInput.js';
-import fs from 'fs';
 import crypto from 'crypto';
+import fs from 'fs';
 import { uploadToApi } from './uploadToApi.js';
+import { validateInput } from './validateInput.js';
 
 interface ProcessSourceFilesArgs {
   jsFilePath: string;
@@ -61,24 +61,31 @@ export const processSourceFiles = async ({
     let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
     let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
 
-    // inject the appVersion into the source code
-    // for that, generate a 20 chars long appVersion by adding leading spaces to the appVersion
-    // if it is less than 20 chars long
-    const appVersionLength = appVersion.length;
-    if (appVersionLength < 20) {
-      appVersion = appVersion.padStart(20, ' ');
-    }
-    let newJsContent = jsContent.replace(templateAppVersion, appVersion);
-    let newMapContent = mapContent.replace(templateAppVersion, appVersion);
+    let newJsContent: string;
+    let newMapContent: string;
 
-    if (newJsContent === jsContent || newMapContent === mapContent) {
-      console.error('Template App version not found in the source code');
-      process.exit(1); // Exit with error code
-    }
+    // if an app version is provided, inject it into the source code
+    // note that this is not mandatory, as the app version cam also be provided during sdk initialization.
+    // If neither is provided, the SDK will report the app version as "EmbIOAppVersionX.X.X"
+    if (appVersion) {
+      // for that, generate a 20 chars long appVersion by adding leading spaces to the appVersion
+      // if it is less than 20 chars long
+      const appVersionLength = appVersion.length;
+      if (appVersionLength < 20) {
+        appVersion = appVersion.padStart(20, ' ');
+      }
+      newJsContent = jsContent.replace(templateAppVersion, appVersion);
+      newMapContent = mapContent.replace(templateAppVersion, appVersion);
 
-    // save the content to the base vars for later processing
-    jsContent = newJsContent;
-    mapContent = newMapContent;
+      if (newJsContent === jsContent || newMapContent === mapContent) {
+        console.error('Template App version not found in the source code');
+        process.exit(1); // Exit with error code
+      }
+
+      // save the content to the base vars for later processing
+      jsContent = newJsContent;
+      mapContent = newMapContent;
+    }
 
     // generate 32 chars long hash from the js content using md5
     const bundleID = crypto.createHash('md5').update(jsContent).digest('hex');

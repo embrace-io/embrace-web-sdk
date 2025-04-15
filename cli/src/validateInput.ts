@@ -32,11 +32,10 @@ export const validateInput = ({
   if (!jsFilePath.trim()) {
     return 'JS file path cannot be empty.';
   }
-  if (!appVersion.trim()) {
-    return 'appVersion cannot be empty.';
-  }
-  if (appVersion.length > 20) {
-    return 'appVersion cannot be longer than 20 characters.';
+  if (appVersion) {
+    if (appVersion.length > 20) {
+      return 'appVersion cannot be longer than 20 characters.';
+    }
   }
   if (!mapFilePath.trim()) {
     return 'Map file path cannot be empty.';

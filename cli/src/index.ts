@@ -50,9 +50,7 @@ program
     new Option(
       '--app-version <appVersion>',
       'Application Version. Usually the version of the app under package.json -> version'
-    )
-      .env('EMB_APP_VERSION')
-      .makeOptionMandatory()
+    ).env('EMB_APP_VERSION')
   )
   .addOption(
     new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
