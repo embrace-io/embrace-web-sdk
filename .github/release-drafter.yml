@@ -41,9 +41,10 @@ autolabeler:
   - label: 'feat'
     title:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  - label: 'major'
-    body:
-      - '/(BREAKING CHANGE)/'
+  # No major releases until we go out of beta
+  # - label: 'major'
+  #   body:
+  #     - '/(BREAKING CHANGE)/'
   - label: 'minor'
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
