@@ -8,8 +8,8 @@
     "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
-    "demo:frontend:upload:sourcemaps": "web-cli upload -a 5przi --app-version 0.0.1",
-    "demo:frontend:upload:sourcemaps:dry": "web-cli upload -d -a 5przi --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps": "embrace-web-cli upload -a 5przi --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d -a 5przi --app-version 0.0.1",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
