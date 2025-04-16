@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
   release:
-    types: [released]
+    types: [created]
 
 permissions:
   contents: read
@@ -29,7 +29,7 @@ jobs:
         id: choose_environment
         run: |
           # Finalized releases get deployed to prod
-          if [ '${{ github.event_name }}' == 'release' ] && [ '${{ github.event.action }}' == 'released' ]; then
+          if [ '${{ github.event_name }}' == 'release' ] && [ '${{ github.event.action }}' == 'created' ] && [ '${{ github.event.release.draft }}' == 'false' ]; then
               echo 'name=production' >> $GITHUB_OUTPUT
           # All pushes to main get deployed to staging
           elif [ '${{ github.ref }}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
@@ -131,7 +131,7 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
-          if [[ '${{ github.event_name }}/${{ github.event.action }}' == 'release/released' || '${{ github.actor }}' == 'dependabot[bot]' ]]; then
+          if [[ '${{ github.event_name }}/${{ github.event.action }}' == 'release/created' || '${{ github.actor }}' == 'dependabot[bot]' ]]; then
             argsCoverage=''
           else
             argsCoverage='--config=web-test-runner.coverage.config.js'
@@ -152,7 +152,7 @@ jobs:
       # https://github.com/codecov/codecov-action
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'created' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: embrace-io/embrace-web-sdk
