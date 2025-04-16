@@ -8,7 +8,7 @@ Logs are also batched but can be sent throughout a session, this is managed by a
 
 ## How is data sent?
 
-Data from the SDK is sent to Embrace using a CORS HTTP POST request. The data is gzip compressed and encoding as
+Data from the SDK is sent to Embrace using a CORS HTTP POST request. The data is gzip compressed and encoded as
 [OTLP JSON Protobuf](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding). We make use of the
 [keepalive property](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive) of the browser's Fetch API to
 help ensure the transmission of data even if the page has been closed. If possible we will attempt to retry request
