@@ -1,15 +1,14 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 
+exclude-labels:
+  - 'release'
+
 categories:
   - title: '⚠️ BREAKING CHANGES'
     collapse-after: 5
     labels:
       - 'breaking'
-  - title: '🤖️ Dependencies'
-    collapse-after: 5
-    labels:
-      - 'dependencies'
   - title: '🧰 Maintenance'
     collapse-after: 5
     labels:
@@ -45,9 +44,10 @@ autolabeler:
   - label: 'feat'
     title:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  - label: 'major'
-    body:
-      - '/(BREAKING CHANGE)/'
+  # No major releases until we go out of beta
+  # - label: 'major'
+  #   body:
+  #     - '/(BREAKING CHANGE)/'
   - label: 'minor'
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'

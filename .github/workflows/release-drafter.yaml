@@ -18,6 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
+      - uses: embrace-io/release-drafter@c3db6ed8d1ba035bbf9edcd5d89c1d5064d98dfb # fork from v6.1.0
+        with:
+          # only create a release if the last commit merged starts with "release". Coming from .github/workflows/release.yaml
+          disable-releaser: ${{ startsWith(github.event.head_commit.message, 'release') }}
+          publish: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

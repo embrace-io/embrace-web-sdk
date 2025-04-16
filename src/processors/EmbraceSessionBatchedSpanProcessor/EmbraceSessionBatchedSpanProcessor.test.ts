@@ -1,13 +1,38 @@
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   mockSessionSpan,
   mockSpan,
 } from '../../testUtils/mockEntities/ReadableSpan.js';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../testUtils/index.js';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
+import type { ExportResult } from '@opentelemetry/core';
+import { ExportResultCode } from '@opentelemetry/core';
 
 const { expect } = chai;
+
+class FailingSpanExporter extends InMemorySpanExporter {
+  private readonly _error: Error | undefined;
+
+  public constructor(error?: Error) {
+    super();
+    this._error = error;
+  }
+
+  public override export(
+    _spans: ReadableSpan[],
+    resultCallback: (result: ExportResult) => void
+  ) {
+    resultCallback({
+      code: ExportResultCode.FAILED,
+      error: this._error,
+    });
+  }
+}
 
 describe('EmbraceSessionBatchedSpanProcessor', () => {
   let memoryExporter: InMemorySpanExporter;
@@ -60,5 +85,39 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     memoryExporter.reset();
     processor.onEnd(mockSessionSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
+  });
+
+  it('should handle the exporter returning a failed result', async () => {
+    const diagLogger = new InMemoryDiagLogger();
+    processor = new EmbraceSessionBatchedSpanProcessor({
+      exporter: new FailingSpanExporter(),
+      diag: diagLogger,
+    });
+
+    processor.onEnd(mockSessionSpan);
+
+    await Promise.resolve();
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.be.equal(
+      'spans failed to export: unknown error'
+    );
+  });
+
+  it('should log the exporter error if available', async () => {
+    const diagLogger = new InMemoryDiagLogger();
+    processor = new EmbraceSessionBatchedSpanProcessor({
+      exporter: new FailingSpanExporter(new Error('some failure reason')),
+      diag: diagLogger,
+    });
+
+    processor.onEnd(mockSessionSpan);
+
+    await Promise.resolve();
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.be.equal(
+      'spans failed to export: some failure reason'
+    );
   });
 });

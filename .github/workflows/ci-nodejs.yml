@@ -8,7 +8,7 @@ on:
     types: [released]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 env:
@@ -389,9 +389,8 @@ jobs:
         if: ${{ failure() || cancelled() }}
         run: |
           rm -f ${{ env.TYPE_CHECK_STATUS_FILE }}
-  # this jobs updates the version in package.json and package-lock.json for both the cli and sdk before publishing
-  # to npm and based on the github release version
-  publish:
+
+  publish-sdk:
     needs:
       - configure
       - environment
@@ -401,7 +400,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: write
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     strategy:
@@ -410,63 +408,58 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Extract Version
-        id: extract_version
-        run: |
-          version="${{ github.event.release.tag_name }}"
-          version=$(echo "$version" | sed 's/^v//')
-          if [ z "$version"]; then
-            echo "Version is empty. Exiting"
-            exit 1
-          fi
-          echo "version=$version"
-          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
           registry-url: 'https://registry.npmjs.org'
-      - name: Update package.json version
+
+      - name: Install NPM dependencies
         run: |
-          # checkout the main branch to commit to it later. As this is trigger by a release, actions/checkout@v4
-          # had left the current shell in a detached HEAD pointing to the commit of the release tag
-          git checkout --progress --force -B main refs/remotes/origin/main
-          version="${{ steps.extract_version.outputs.version }}"
-           if [ -z "$version"]; then
-            echo 'Version is empty. Exiting'
-            exit 1
-          fi
-          echo 'Updating package.json version to $version'
-          # update sdk version
-          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
-          npm i
-          # update cli version
-          cd cli
-          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
-          npm i
-          # update demo versions
-          cd ../demo/frontend
-          npm i
-          cd ../frontend-cdn
-          npm i
-      - name: Commit version change
-        run: |
-          git config --global user.name 'embrace-ci'
-          git config --global user.email 'embrace-ci@users.noreply.github.com'
-          git add package.json package-lock.json cli/package.json cli/package-lock.json demo/frontend/package.json demo/frontend/package-lock.json demo/frontend-cdn/package.json demo/frontend-cdn/package-lock.json
-          git commit --author '${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>' -m "deploy: update version to ${{ steps.extract_version.outputs.version }}"
-          git pull --rebase && git push
-      - uses: actions/checkout@v4
-      - name: Publish sdk
+          npm ci --strict-peer-deps
+
+      - name: Run 'npm publish'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
           npm publish --provenance --access public
-      - name: Publish cli
+  publish-cli:
+    needs:
+      - configure
+      - environment
+      - test-multiple-browsers
+      - lint
+      - type-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
         working-directory: ./cli
+    permissions:
+      id-token: write
+    timeout-minutes: 10
+    if: ${{ needs.environment.outputs.name == 'production' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install NPM dependencies
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Run 'npm publish'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
@@ -476,7 +469,7 @@ jobs:
   report-release-slack:
     runs-on: ubuntu-latest
     if: ${{ needs.environment.outputs.name == 'production' }}
-    needs: [publish]
+    needs: [publish-sdk, publish-cli]
     steps:
       - name: "Send to #mission-web Slack channel/workflow"
         continue-on-error: true

@@ -1,0 +1,75 @@
+name: Bump packages version
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  next-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    timeout-minutes: 2
+    steps:
+      - uses: embrace-io/release-drafter@c3db6ed8d1ba035bbf9edcd5d89c1d5064d98dfb # fork from v6.1.0
+        id: release_drafter
+        with:
+          # dry run, we just want to identify the next version, not publish it yet
+          dry-release: true
+          disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+      - name: Update package.json version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ steps.release_drafter.outputs.resolved_version }}"
+           if [ -z "$version"]; then
+            echo 'Version is empty. Exiting'
+            exit 1
+          fi
+          # bump the version
+          echo 'Updating package.json version to $version'
+          # update sdk version
+          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+          npm i
+          # update cli version
+          cd cli
+          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+          npm i
+          # update demo versions
+          cd ../demo/frontend
+          npm i
+          cd ../frontend-cdn
+          npm i
+          # run the linter to update the version hardcoded in code
+          cd ../..
+          npm run sdk:lint:fix
+      - name: commit and create PR with the next release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # get the next version from the release-drafter output
+          NEXT_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
+          RELEASE_BODY="${{ steps.release_drafter.outputs.body }}"
+          # create a new branch for the release
+          git branch "release-$NEXT_VERSION"
+          # commit the changes
+          git config --global user.name 'embrace-ci'
+          git config --global user.email 'embrace-ci@users.noreply.github.com'
+          git add package.json package-lock.json cli/package.json cli/package-lock.json demo/frontend/package.json demo/frontend/package-lock.json demo/frontend-cdn/package.json demo/frontend-cdn/package-lock.json
+          git commit --author '${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>' -m "release: update version to $NEXT_VERSION"
+          git push origin "release-$NEXT_VERSION"
+          # create a PR with the next version
+          gh pr create --base main --title "release: Bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${{ github.actor }}" --label "release"

@@ -7,6 +7,7 @@ export default {
       2,
       'always',
       [
+        'release',
         'deploy',
         'build',
         'ci',
