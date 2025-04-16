@@ -64,7 +64,7 @@ jobs:
           NEXT_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
           RELEASE_BODY="${{ steps.release_drafter.outputs.body }}"
           # create a new branch for the release
-          git branch "release-$NEXT_VERSION"
+          git checkout -b "release-$NEXT_VERSION"
           # commit the changes
           git config --global user.name 'embrace-ci'
           git config --global user.email 'embrace-ci@users.noreply.github.com'
