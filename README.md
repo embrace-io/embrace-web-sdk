@@ -52,6 +52,7 @@ yarn add @embrace-io/web-sdk
 > For CDN installs, see [Including the SDK as a code snippet from CDN](#including-the-sdk-as-a-code-snippet-from-cdn).
 
 ### Initialize the SDK
+
 First sign up for an Embrace account by going to https://dash.embrace.io/signup (see
 [Using without Embrace](#using-without-embrace) if you wish to skip this step).
 
@@ -118,6 +119,7 @@ log.message('Loading not finished in time.', 'error', {
   propertyB: 'valueB'
 });
 ```
+
 ## Adding exceptions
 
 The SDK automatically captures unhandled exceptions.
@@ -131,8 +133,8 @@ try {
   // some operation...
 } catch (e) {
   log.logException(e as Error, true, {
-     propertyA: 'valueA',
-     propertyB: 'valueB'
+    propertyA: 'valueA',
+    propertyB: 'valueB'
   });
 }
 ```
@@ -203,7 +205,7 @@ npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" 
 ```
 
 > [!NOTE]
-> We currently support symbolication of function names only when defined with the function keyword. 
+> We currently support symbolication of function names only when defined with the function keyword.
 > For functions assigned to constants, or variables, you will still see the unsymbolicated token.
 > Line and column numbers, along with file names, will always be symbolicated to the original source.
 
@@ -249,7 +251,7 @@ exporters and pass them in when initializing the SDK. For example to send teleme
 could do the following:
 
 ```typescript
-import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPLogExporter }   from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 sdk.initSDK({
@@ -326,6 +328,20 @@ this case at least one custom exporter needs to be configured following the step
 from [Custom exporters](#custom-exporters) or else the SDK considers the configuration invalid.
 
 ## Troubleshooting
+
+### Compatibility with OTel packages
+
+The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. If you
+wish to customize the sdk behaviour by configuring custom resources, exporters, processors or instrumentations you
+should make sure to use the same versions of the OTel packages as the SDK uses. The next table summarizes the compatible
+versions of the OTel packages:
+
+| Open Telemetry APIs | Core  | Instrumentations & Contrib |
+|---------------------|-------|----------------------------|
+| ^1.9.0              | ^1.30 | ^0.57.0                    |
+
+For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
+and [package-lock.json](./package-lock.json) files.
 
 ### Turning on verbose logging in the SDK
 
