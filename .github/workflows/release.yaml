@@ -3,14 +3,14 @@ name: Bump packages version
 on: workflow_dispatch
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
   next-version:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     timeout-minutes: 2
     steps:
