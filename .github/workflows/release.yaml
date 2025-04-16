@@ -68,7 +68,7 @@ jobs:
           # commit the changes
           git config --global user.name 'embrace-ci'
           git config --global user.email 'embrace-ci@users.noreply.github.com'
-          git add package.json package-lock.json cli/package.json cli/package-lock.json demo/frontend/package.json demo/frontend/package-lock.json demo/frontend-cdn/package.json demo/frontend-cdn/package-lock.json
+          git add package.json package-lock.json cli/package.json cli/package-lock.json demo/frontend/package.json demo/frontend/package-lock.json demo/frontend-cdn/package.json demo/frontend-cdn/package-lock.json src/resources/constants/index.ts cli/src/constants.ts
           git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
