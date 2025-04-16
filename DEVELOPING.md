@@ -62,8 +62,8 @@ npm run sdk:test:watch
 
 New releases of the SDK are manually triggered through a [Github action workflow](.github/workflows/release.yaml).
 When triggered, a new PR with the next version of the SDK is created. This PR contains a changelog.
-Once the PR is reviewed and merged, a new Github release gets created and published, and this will also
-trigger a publish of the SDK packages to NPM.
+Once the PR is reviewed and merged, a new Github release gets created as a draft. Once that release is manually
+published, it will trigger a publish of the SDK packages to NPM.
 
 Note: the level of the version bump (major, minor, patch) is determined by the type of changes made to the SDK since the
 last release. You can see the requirements for each type of bump in
