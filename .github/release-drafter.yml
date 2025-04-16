@@ -1,6 +1,9 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 
+exclude-labels:
+  - 'release'
+
 categories:
   - title: '⚠️ BREAKING CHANGES'
     collapse-after: 5
