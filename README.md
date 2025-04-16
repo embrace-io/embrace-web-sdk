@@ -340,6 +340,9 @@ versions of the OTel packages:
 |---------------------|-------|----------------------------|
 | ^1.9.0              | ^1.30 | ^0.57.0                    |
 
+NOTE: the @opentelemetry/instrumentation-document-load instrumentation is behind the rest of the OTel instrumentations
+in versioning. The max version we support is `^0.44.1`.
+
 For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
 and [package-lock.json](./package-lock.json) files.
 
