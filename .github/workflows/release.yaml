@@ -72,4 +72,4 @@ jobs:
           git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
-          gh pr create --base main --title "release: Bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${{ github.actor }}" --label "release"
+          gh pr create --base main --title "release: bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${{ github.actor }}" --label "release"
