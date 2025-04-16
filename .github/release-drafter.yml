@@ -1,5 +1,5 @@
-name-template: 'v$RESOLVED_VERSION'
-tag-template: 'v$RESOLVED_VERSION'
+name-template: '$RESOLVED_VERSION'
+tag-template: '$RESOLVED_VERSION'
 
 exclude-labels:
   - 'release'
@@ -37,7 +37,7 @@ version-resolver:
 autolabeler:
   - label: 'maintenance'
     title:
-      - '/(EMBR-[0-9]+\s+)?(build|ci|docs|style|refactor|perf|test|chore).*/'
+      - '/(EMBR-[0-9]+\s+)?(build|ci|docs|style|refactor|perf|test|chore|deploy).*/'
   - label: 'fix'
     title:
       - '/(EMBR-[0-9]+\s+)?(fix|revert).*/'
@@ -46,8 +46,8 @@ autolabeler:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
   # No major releases until we go out of beta
   # - label: 'major'
-  #   body:
-  #     - '/(BREAKING CHANGE)/'
+  #   title: # anything with a "!" after the type
+  #     - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore|deploy|feat).*/'
   - label: 'minor'
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'

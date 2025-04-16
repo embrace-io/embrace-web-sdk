@@ -69,7 +69,7 @@ jobs:
           git config --global user.name 'embrace-ci'
           git config --global user.email 'embrace-ci@users.noreply.github.com'
           git add package.json package-lock.json cli/package.json cli/package-lock.json demo/frontend/package.json demo/frontend/package-lock.json demo/frontend-cdn/package.json demo/frontend-cdn/package-lock.json
-          git commit --author '${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>' -m "release: update version to $NEXT_VERSION"
+          git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
           gh pr create --base main --title "release: Bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${{ github.actor }}" --label "release"
