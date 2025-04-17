@@ -6,4 +6,5 @@ export {
   EMB_STATES,
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_ERROR_CODE,
 } from './attributes.js';

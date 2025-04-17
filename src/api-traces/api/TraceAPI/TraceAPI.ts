@@ -1,5 +1,9 @@
 import type { Span, SpanOptions } from '@opentelemetry/api';
-import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
+import {
+  type PerformanceSpanFailedOptions,
+  ProxyTraceManager,
+  type TraceManager,
+} from '../../manager/index.js';
 import type { TraceAPIArgs } from './types.js';
 
 export class TraceAPI implements TraceManager {
@@ -33,5 +37,12 @@ export class TraceAPI implements TraceManager {
     options?: SpanOptions
   ): Span | null {
     return this.getTraceManager().startPerformanceSpan(name, options);
+  }
+
+  public performanceSpanFailed(
+    span: Span | null,
+    options?: PerformanceSpanFailedOptions
+  ): void {
+    this.getTraceManager().performanceSpanFailed(span, options);
   }
 }

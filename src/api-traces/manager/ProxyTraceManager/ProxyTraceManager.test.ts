@@ -17,6 +17,7 @@ describe('ProxyTraceManager', () => {
     proxyTraceManager = new ProxyTraceManager();
     mockDelegate = {
       startPerformanceSpan: sinon.stub().returns({} as Span),
+      performanceSpanFailed: sinon.stub(),
     };
   });
 
@@ -31,9 +32,19 @@ describe('ProxyTraceManager', () => {
     expect(delegate).to.equal(mockDelegate);
   });
 
-  it('should delegate startSpan to the delegate', () => {
+  it('should delegate startPerformanceSpan to the delegate', () => {
     proxyTraceManager.setDelegate(mockDelegate);
     const span = proxyTraceManager.startPerformanceSpan('span-name');
     expect(span).to.deep.equal({});
+  });
+
+  it('should delegate performanceSpanFailed to the delegate', () => {
+    proxyTraceManager.setDelegate(mockDelegate);
+    const span = proxyTraceManager.startPerformanceSpan('span-name');
+    proxyTraceManager.performanceSpanFailed(span, {});
+    void expect(mockDelegate.performanceSpanFailed).to.have.been.calledOnceWith(
+      span,
+      {}
+    );
   });
 });

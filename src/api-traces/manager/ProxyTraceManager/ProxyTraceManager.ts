@@ -1,5 +1,5 @@
 import type { Span, SpanOptions } from '@opentelemetry/api';
-import type { TraceManager } from '../index.js';
+import type { PerformanceSpanFailedOptions, TraceManager } from '../index.js';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
@@ -20,5 +20,12 @@ export class ProxyTraceManager implements TraceManager {
     options?: SpanOptions
   ): Span | null {
     return this.getDelegate().startPerformanceSpan(name, options);
+  }
+
+  public performanceSpanFailed(
+    span: Span | null,
+    options?: PerformanceSpanFailedOptions
+  ): void {
+    this.getDelegate().performanceSpanFailed(span, options);
   }
 }
