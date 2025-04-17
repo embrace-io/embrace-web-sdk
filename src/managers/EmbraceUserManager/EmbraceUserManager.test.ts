@@ -1,7 +1,11 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
-import { InMemoryDiagLogger, InMemoryStorage } from '../../testUtils/index.js';
+import {
+  InMemoryDiagLogger,
+  InMemoryStorage,
+  FailingStorage,
+} from '../../testUtils/index.js';
 import { EMBRACE_USER_STORAGE_KEY } from './constants.js';
 import { EmbraceUserManager } from './EmbraceUserManager.js';
 
@@ -98,5 +102,33 @@ describe('EmbraceUserManager', () => {
       'Failed to parse user from localStorage, defaulting to a new one'
     );
     void expect(manager.getUser()?.['enduser.pseudo.id']).to.have.lengthOf(32);
+  });
+
+  it('should handle being setup with a non-functional storage', () => {
+    // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
+    const manager = new EmbraceUserManager({ diag, storage: null });
+    void expect(manager.getUser()?.['enduser.pseudo.id']).to.have.lengthOf(32);
+    manager.clearUser();
+    expect(diag.getWarnLogs()).to.have.lengthOf(3);
+    expect(diag.getWarnLogs()).to.deep.equal([
+      'Failed to parse user from localStorage, defaulting to a new one',
+      'Failed to persist user object for storage, keeping it in-memory only',
+      'Failed to retrieve user object from storage',
+    ]);
+  });
+
+  it('should handle its storage throwing errors', () => {
+    const manager = new EmbraceUserManager({
+      diag,
+      storage: new FailingStorage(),
+    });
+    void expect(manager.getUser()?.['enduser.pseudo.id']).to.have.lengthOf(32);
+    manager.clearUser();
+    expect(diag.getWarnLogs()).to.have.lengthOf(3);
+    expect(diag.getWarnLogs()).to.deep.equal([
+      'Failed to parse user from localStorage, defaulting to a new one',
+      'Failed to persist user object for storage, keeping it in-memory only',
+      'Failed to retrieve user object from storage',
+    ]);
   });
 });

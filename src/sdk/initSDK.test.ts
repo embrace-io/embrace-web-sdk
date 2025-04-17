@@ -217,6 +217,9 @@ describe('initSDK', () => {
     ).to.be.instanceOf(EmbraceUserManager);
 
     embtrace.startPerformanceSpan('my performance span')?.end();
+    // shouldn't get exported
+    embtrace.startPerformanceSpan('my unfinished performance span');
+
     log.message('my custom log', 'info');
 
     if (result) {
@@ -248,11 +251,18 @@ describe('initSDK', () => {
         appVersion: 'my-app-version',
         resource: new Resource({ r1: 'my-resource-attr' }),
         defaultInstrumentationConfig: {
-          // This instrumentation does its own patching of Fetch which interferes with our test stub
-          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
         },
       });
       void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
 
       const sessionID = session.getSpanSessionManager().getSessionId();
       session.getSpanSessionManager().endSessionSpan();
@@ -275,7 +285,10 @@ describe('initSDK', () => {
       expect(parsed['resourceSpans']).to.have.lengthOf(1);
       const resourceSpan = parsed['resourceSpans'][0];
       const resource = resourceSpan['resource'];
-      expect(resource).to.deep.equal({
+
+      // Different test environments will include different values for the various browser.* attributes, test on a
+      // subset here rather than the full object
+      expect(resource).to.containSubset({
         attributes: [
           { key: 'service.name', value: { stringValue: 'embrace-web-sdk' } },
           { key: 'telemetry.sdk.language', value: { stringValue: 'webjs' } },
@@ -294,6 +307,10 @@ describe('initSDK', () => {
           { key: 'sdk_version', value: { stringValue: SDK_VERSION } },
           { key: 'sdk_simple_version', value: { intValue: 1 } },
           { key: 'sdk_platform', value: { stringValue: 'web' } },
+          {
+            key: 'browser.language',
+            value: { stringValue: window.navigator.language },
+          },
         ],
         droppedAttributesCount: 0,
       });
@@ -316,6 +333,64 @@ describe('initSDK', () => {
         },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
+    });
+
+    it('should not include unfinished spans ', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      embtrace.startPerformanceSpan('my performance span')?.end();
+      // shouldn't get exported
+      embtrace.startPerformanceSpan('my unfinished performance span');
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      const body = fakeFetchGetBody();
+      void expect(body).not.to.be.null;
+      const decompressedStream = new Response(body).body?.pipeThrough(
+        new DecompressionStream('gzip')
+      );
+      // translate from Uint8Array to string
+      const text = await new Response(decompressedStream).text();
+      const parsed = JSON.parse(text) as never;
+
+      expect(parsed['resourceSpans']).to.have.lengthOf(1);
+      const resourceSpan = parsed['resourceSpans'][0];
+      void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
+
+      expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
+      const sessionScopeSpan = resourceSpan['scopeSpans'][0];
+      expect(sessionScopeSpan['scope']).to.deep.equal({
+        name: 'embrace-web-sdk-sessions',
+      });
+      expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
+      expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session');
+      const tracesScopeSpan = resourceSpan['scopeSpans'][1];
+      expect(tracesScopeSpan['scope']).to.deep.equal({
+        name: 'embrace-web-sdk-traces',
+      });
+      expect(tracesScopeSpan['spans']).to.have.lengthOf(1);
+      expect(tracesScopeSpan['spans'][0]['name']).to.be.equal(
+        'my performance span'
+      );
     });
   });
 
@@ -385,13 +460,16 @@ describe('initSDK', () => {
   });
 
   describe('multiple invocations', () => {
+    let consoleErrorStub: SinonStub;
     let consoleWarnStub: SinonStub;
 
     beforeEach(() => {
+      consoleErrorStub = sinon.stub(console, 'error');
       consoleWarnStub = sinon.stub(console, 'warn');
     });
 
     afterEach(() => {
+      consoleErrorStub.restore();
       consoleWarnStub.restore();
     });
 
@@ -443,6 +521,10 @@ describe('initSDK', () => {
       });
       void expect(result1).to.be.false;
       void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+      void expect(consoleWarnStub).not.to.have.been.calledWith(
+        'embrace-sdk',
+        'failed to initialize the SDK: appID should be 5 characters long'
+      );
 
       // 2nd invocation does not omit the web vital instrumentation, this should take effect since the first
       // invocation failed to initialize the SDK

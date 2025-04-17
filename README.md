@@ -67,8 +67,10 @@ const result = sdk.initSDK({
   appVersion: "YOUR_APP_VERSION",
 });
 
-if (!result) {
-  console.log("Failed to initialize Embrace SDK");
+if (!!result) {
+  console.log("Successfully initialized the Embrace SDK");
+} else {
+  console.log("Failed to initialize the Embrace SDK");
 }
 ```
 
@@ -92,10 +94,13 @@ const span = trace.startPerformanceSpan("span-name");
 someAsyncOperation().then(() => span?.end());
 ```
 
-Attributes and events can also be added to the span either on start or later during its lifespan. Our API wraps that of
-an OpenTelemetry `Tracer` so you can
-follow [these examples](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans) for more elaborate
-use-cases.
+Only spans that are explicitly ended will be exported. Attributes and events can also be added to the span either on
+start or later during its lifespan. Our API wraps that of an OpenTelemetry `Tracer` so you can follow
+[these examples](https://opentelemetry.io/docs/languages/js/instrumentation/#create-spans) for more elaborate use-cases.
+
+> [!NOTE]
+> When exporting to Embrace span attribute values must be strings even though the OTel interface allows for a wider
+> range of types
 
 ## Adding logs
 
@@ -339,6 +344,30 @@ sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   logLevel: sdk.DiagLogLevel.INFO,
+});
+```
+
+In addition, initializing the SDK with `ConsoleLogRecordExporter` and `ConsoleSpanExporter` exporters allows you to take
+a more detailed look at the spans and logs that are being exported from the SDK. These can be setup as custom exporters,
+in which case their output will be batched, or wrapped in custom processors to see the telemetry outputted as it gets
+emitted:
+
+```typescript
+import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  logLevel: sdk.DiagLogLevel.INFO,
+
+  // setup as exporters to output with the same batching as when exporting to a collector endpoint
+  spanExporters: [new ConsoleSpanExporter()],
+  logExporters: [new ConsoleLogRecordExporter()],
+
+  // OR, wrap exporters with simple processors to output as soon as telemetry is emitted
+  spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())], 
+  logProcessors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
 });
 ```
 

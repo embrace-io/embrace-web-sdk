@@ -19,3 +19,4 @@ export { FakeSpanProcessor } from './FakeSpanProcessor/index.js';
 export { setupTestWebVitalListeners } from './setupTestWebVitalListeners/index.js';
 export { mockSpan } from './mockEntities/index.js';
 export { InMemoryStorage } from './InMemoryStorage/index.js';
+export { FailingStorage } from './FailingStorage/index.js';
