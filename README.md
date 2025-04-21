@@ -52,6 +52,7 @@ yarn add @embrace-io/web-sdk
 > For CDN installs, see [Including the SDK as a code snippet from CDN](#including-the-sdk-as-a-code-snippet-from-cdn).
 
 ### Initialize the SDK
+
 First sign up for an Embrace account by going to https://dash.embrace.io/signup (see
 [Using without Embrace](#using-without-embrace) if you wish to skip this step).
 
@@ -118,6 +119,7 @@ log.message('Loading not finished in time.', 'error', {
   propertyB: 'valueB'
 });
 ```
+
 ## Adding exceptions
 
 The SDK automatically captures unhandled exceptions.
@@ -131,8 +133,8 @@ try {
   // some operation...
 } catch (e) {
   log.logException(e as Error, true, {
-     propertyA: 'valueA',
-     propertyB: 'valueB'
+    propertyA: 'valueA',
+    propertyB: 'valueB'
   });
 }
 ```
@@ -203,7 +205,7 @@ npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" 
 ```
 
 > [!NOTE]
-> We currently support symbolication of function names only when defined with the function keyword. 
+> We currently support symbolication of function names only when defined with the function keyword.
 > For functions assigned to constants, or variables, you will still see the unsymbolicated token.
 > Line and column numbers, along with file names, will always be symbolicated to the original source.
 
@@ -249,7 +251,7 @@ exporters and pass them in when initializing the SDK. For example to send teleme
 could do the following:
 
 ```typescript
-import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPLogExporter }   from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 sdk.initSDK({
@@ -284,12 +286,15 @@ the SDK as a code snippet from CDN, you can do so by adding the following script
 <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk"></script>
 ```
 
-Note: we recommend you pin specific versions to avoid breaking changes. For example:
+Note: we recommend you pin specific versions to avoid breaking changes. Like:
 
 ```html
 
-<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@0.0.12"></script>
+<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X"></script>
 ```
+
+Replacing `X.X.X` with the version of the SDK you wish to include. Check available version
+on [npm](https://www.npmjs.com/package/@embrace-io/web-sdk).
 
 We recommend you add this script tag to the `<head>` of your HTML file, so that it loads before your app code. This will
 expose the SDK as a global variable `EmbraceWebSdk` on the `window` object. This needs to be added before any script
