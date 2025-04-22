@@ -1,17 +1,19 @@
+import type { Span } from '@opentelemetry/api';
+import type { ExportResult } from '@opentelemetry/core';
+import { ExportResultCode } from '@opentelemetry/core';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
-  mockSessionSpan,
-  mockSpan,
-} from '../../testUtils/mockEntities/ReadableSpan.js';
-import {
+  FakeSessionManager,
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
+import {
+  mockSessionSpan,
+  mockSpan,
+} from '../../testUtils/mockEntities/ReadableSpan.js';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
-import type { ExportResult } from '@opentelemetry/core';
-import { ExportResultCode } from '@opentelemetry/core';
 
 const { expect } = chai;
 
@@ -37,11 +39,15 @@ class FailingSpanExporter extends InMemorySpanExporter {
 describe('EmbraceSessionBatchedSpanProcessor', () => {
   let memoryExporter: InMemorySpanExporter;
   let processor: EmbraceSessionBatchedSpanProcessor;
+  let sessionManager: FakeSessionManager;
 
   beforeEach(() => {
     memoryExporter = setupTestTraceExporter();
+    sessionManager = new FakeSessionManager();
+    sessionManager.currentSessionSpan = { isRecording: () => true } as Span;
     processor = new EmbraceSessionBatchedSpanProcessor({
       exporter: memoryExporter,
+      spanSessionManager: sessionManager,
     });
   });
 
@@ -74,6 +80,13 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     await processor.shutdown();
     processor.onEnd(mockSessionSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+  });
+
+  it('should not export other spans if there is no session recording', () => {
+    sessionManager.currentSessionSpan = { isRecording: () => false } as Span;
+    processor.onEnd(mockSpan);
+    processor.onEnd(mockSessionSpan);
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 
   it('should clear the pending spans after exporting', () => {

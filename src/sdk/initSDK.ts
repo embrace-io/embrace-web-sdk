@@ -7,12 +7,16 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
+  type SpanProcessor,
+  TraceIdRatioBasedSampler,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
+import { createSessionSpanProcessor } from '@opentelemetry/web-common';
+import { log } from '../api-logs/index.js';
 import { session } from '../api-sessions/index.js';
+import { trace } from '../api-traces/index.js';
 import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
 import {
   EmbraceLogExporter,
@@ -31,18 +35,15 @@ import {
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
-import { isValidAppID } from './utils.js';
+import { registry } from './registry.js';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
-import { log } from '../api-logs/index.js';
-import { trace } from '../api-traces/index.js';
 import type {
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
-import { registry } from './registry.js';
+import { isValidAppID } from './utils.js';
 
 export const initSDK = (
   {
@@ -56,6 +57,8 @@ export const initSDK = (
     defaultInstrumentationConfig,
     instrumentations = [],
     contextManager = null,
+    spanSampler,
+    spanSamplingRatio,
     logProcessors = [],
     logLevel = DiagLogLevel.ERROR,
     diagLogger = diag.createComponentLogger({
@@ -103,6 +106,8 @@ export const initSDK = (
       resource: resourceWithWebSDKAttributes,
       spanSessionManager,
       spanExporters,
+      spanSampler,
+      spanSamplingRatio,
       spanProcessors,
       propagator,
       contextManager,
@@ -166,6 +171,8 @@ const setupTraces = ({
   resource,
   spanSessionManager,
   spanExporters,
+  spanSamplingRatio,
+  spanSampler,
   spanProcessors = [],
   propagator = null,
   contextManager = null,
@@ -194,7 +201,13 @@ const setupTraces = ({
     );
   }
 
+  let sampler = spanSampler;
+  if (typeof spanSamplingRatio === 'number') {
+    sampler ??= new TraceIdRatioBasedSampler(spanSamplingRatio);
+  }
+
   const tracerProvider = new WebTracerProvider({
+    sampler,
     resource,
     spanProcessors: finalSpanProcessors,
   });

@@ -8,31 +8,33 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import { ProxySpanSessionManager, session } from '../api-sessions/index.js';
-import type { WebVitalOnReport } from '../instrumentations/index.js';
-import { SDK_VERSION } from '../resources/index.js';
-import {
-  fakeFetchGetBody,
-  fakeFetchGetRequestHeaders,
-  fakeFetchInstall,
-  fakeFetchRespondWith,
-  fakeFetchRestore,
-  FakeInstrumentation,
-  FakeLogRecordProcessor,
-  FakeSpanProcessor,
-  InMemoryDiagLogger,
-  setupTestWebVitalListeners,
-} from '../testUtils/index.js';
-import { initSDK } from './initSDK.js';
 import { log, ProxyLogManager } from '../api-logs/index.js';
+import { ProxySpanSessionManager, session } from '../api-sessions/index.js';
 import { ProxyTraceManager, trace as embtrace } from '../api-traces/index.js';
+import { ProxyUserManager, user } from '../api-users/index.js';
+import type { WebVitalOnReport } from '../instrumentations/index.js';
 import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
 } from '../managers/index.js';
-import { ProxyUserManager, user } from '../api-users/index.js';
+import { SDK_VERSION } from '../resources/index.js';
+import {
+  fakeFetchGetBody,
+  fakeFetchGetCalls,
+  fakeFetchGetRequestHeaders,
+  fakeFetchInstall,
+  fakeFetchRespondWith,
+  fakeFetchRestore,
+  FakeInstrumentation,
+  FakeLogRecordProcessor,
+  FakeSampler,
+  FakeSpanProcessor,
+  InMemoryDiagLogger,
+  setupTestWebVitalListeners,
+} from '../testUtils/index.js';
+import { initSDK } from './initSDK.js';
 import { registry } from './registry.js';
 
 chai.use(sinonChai);
@@ -391,6 +393,314 @@ describe('initSDK', () => {
       expect(tracesScopeSpan['spans'][0]['name']).to.be.equal(
         'my performance span'
       );
+    });
+  });
+  describe('sampling', () => {
+    beforeEach(() => {
+      fakeFetchInstall();
+    });
+
+    afterEach(() => {
+      fakeFetchRestore();
+    });
+    it('should generate all spans by default when no sampling is configured', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(100);
+    });
+    it('should block all spans when custom sampling prevents it', async () => {
+      fakeFetchRespondWith('');
+      const sampler = new FakeSampler();
+      sampler.allowSpans = false;
+      const result = initSDK({
+        appID: 'abc12',
+        spanSampler: sampler,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(0);
+    });
+    it('should allow all spans when custom sampling allows it', async () => {
+      fakeFetchRespondWith('');
+      const sampler = new FakeSampler();
+      sampler.allowSpans = true;
+      const result = initSDK({
+        appID: 'abc12',
+        spanSampler: sampler,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(100);
+    });
+
+    it('should allow half the spans with custom sampling', async () => {
+      fakeFetchRespondWith('');
+      const sampler = new FakeSampler();
+      sampler.allowSpans = true;
+      const result = initSDK({
+        appID: 'abc12',
+        spanSampler: sampler,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        sampler.allowSpans = !sampler.allowSpans;
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(50);
+    });
+
+    it('should sample custom spans', async () => {
+      fakeFetchRespondWith('');
+      const sampler = new FakeSampler();
+      sampler.allowSpans = true;
+      const result = initSDK({
+        appID: 'abc12',
+        spanExporters: [spanExporter],
+        spanSampler: sampler,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+      embtrace.startPerformanceSpan(`customSpanSampled`)?.end();
+      sampler.allowSpans = false;
+      embtrace.startPerformanceSpan(`customSpanNotSampled`)?.end();
+      sampler.allowSpans = true;
+      session.getSpanSessionManager().endSessionSpan();
+      if (result) {
+        await result.flush();
+      }
+      const finishedSpans = spanExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      void expect(finishedSpans[0].name).to.be.equal('customSpanSampled');
+      void expect(finishedSpans[1].name).to.be.equal('emb-session');
+    });
+
+    it('should not throw error when sampling custom spans but not a session', async () => {
+      fakeFetchRespondWith('');
+      const sampler = new FakeSampler();
+      // prevent the session from being sampled
+      sampler.allowSpans = false;
+      const result = initSDK({
+        appID: 'abc12',
+        spanExporters: [spanExporter],
+        spanSampler: sampler,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+      // allow custom span to be created even with no sampled session
+      sampler.allowSpans = true;
+      embtrace.startPerformanceSpan(`customSpanSampled`)?.end();
+      session.getSpanSessionManager().endSessionSpan();
+      if (result) {
+        await result.flush();
+      }
+      const finishedSpans = spanExporter.getFinishedSpans();
+      // only the custom span should be sampled for custom exporters
+      expect(finishedSpans).to.have.lengthOf(1);
+      void expect(finishedSpans[0].name).to.be.equal('customSpanSampled');
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+      // no call to embrace should be made, as there was no session
+      expect(fakeFetchGetCalls().length).to.equal(0);
+      // validate that the custom span is not added to the following session
+      session.getSpanSessionManager().startSessionSpan();
+      session.getSpanSessionManager().endSessionSpan();
+      await new Promise(r => setTimeout(r, 1));
+      expect(fakeFetchGetCalls().length).to.equal(1);
+      const body = fakeFetchGetBody();
+      void expect(body).not.to.be.null;
+      const decompressedStream = new Response(body).body?.pipeThrough(
+        new DecompressionStream('gzip')
+      );
+      // translate from Uint8Array to string
+      const text = await new Response(decompressedStream).text();
+      const parsed = JSON.parse(text) as never;
+      expect(parsed['resourceSpans']).to.have.lengthOf(1);
+      const resourceSpan = parsed['resourceSpans'][0];
+      const scopeSpans = resourceSpan['scopeSpans'];
+      expect(scopeSpans).to.have.lengthOf(1);
+      const customSpans = (
+        scopeSpans as Array<{ scope: { name: string } }>
+      ).find(
+        ({ scope: { name } }) => name === 'embrace-web-sdk-traces' //embrace-web-sdk-traces is the name of our performance spans scope
+      );
+      void expect(customSpans).to.be.undefined;
+    });
+    it('should allow all spans when samplingRatio is configured', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        spanSamplingRatio: 1,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+      expect(fakeFetchGetCalls().length).to.equal(100);
+    });
+    it('should prevent all spans when samplingRatio is configured', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        spanSamplingRatio: 0,
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(0);
+    });
+
+    it('should fix samplingRatio configuration to high', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        spanSamplingRatio: 99999, // the max allowed is 1
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(100);
+    });
+
+    it('should fix samplingRatio configuration to low', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        spanSamplingRatio: -99999, // the min allowed is 0
+        defaultInstrumentationConfig: {
+          // This instrumentation does its own patching of Fetch which interferes with our test stub
+          omit: new Set(['@opentelemetry/instrumentation-fetch']),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // generate 100 session spans
+      for (let i = 0; i < 99; i++) {
+        session.getSpanSessionManager().endSessionSpan();
+        session.getSpanSessionManager().startSessionSpan();
+        // need to await each session independently to avoid hitting the max concurrent limit of the exporter
+        await new Promise(r => setTimeout(r, 1));
+      }
+      // finish the last span, this will complete the 100 spans
+      session.getSpanSessionManager().endSessionSpan();
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      expect(fakeFetchGetCalls().length).to.equal(0);
     });
   });
 

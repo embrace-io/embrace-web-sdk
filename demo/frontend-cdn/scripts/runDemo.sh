@@ -12,7 +12,7 @@ npm run sdk:compile:esm:bundle
 cd ./demo/frontend-cdn || exit
 rm -rf node_modules
 npm ci
-sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' .env.template > .env
+sed -e 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' -e 's/VITE_SAMPLE_PERCENTAGE=1/VITE_SAMPLE_PERCENTAGE=0.5/g' .env.template > .env
 rm -rf build dist
 npm run demo:cdn:frontend:compile
 npm run demo:cdn:frontend:preview

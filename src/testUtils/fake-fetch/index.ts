@@ -64,3 +64,4 @@ export const respondWith = (data: BodyInit, options?: ResponseInit) =>
   );
 
 export const wasCalled = () => !!(window.fetch as SinonStub).firstCall;
+export const getCalls = () => (window.fetch as SinonStub).getCalls();

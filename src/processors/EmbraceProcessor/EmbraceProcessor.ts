@@ -1,14 +1,17 @@
 import { diag, type DiagLogger, type Span } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import { session, type SpanSessionManager } from '../../api-sessions/index.js';
 import type { EmbraceProcessorArgs } from './types.js';
 
 export abstract class EmbraceProcessor implements SpanProcessor {
   private readonly _diag: DiagLogger;
   private readonly _processorName: string;
+  private readonly _sessionManager: SpanSessionManager;
 
   protected constructor({
     diag: providedDiag,
     processorName,
+    spanSessionManager,
   }: EmbraceProcessorArgs) {
     this._processorName = processorName;
     this._diag =
@@ -16,6 +19,8 @@ export abstract class EmbraceProcessor implements SpanProcessor {
       diag.createComponentLogger({
         namespace: processorName,
       });
+    this._sessionManager =
+      spanSessionManager ?? session.getSpanSessionManager();
   }
 
   /* Returns the diag logger */
@@ -26,6 +31,11 @@ export abstract class EmbraceProcessor implements SpanProcessor {
   /* Returns the processor name */
   protected get processorName(): string {
     return this._processorName;
+  }
+
+  /* Returns session provider */
+  protected get sessionManager(): SpanSessionManager {
+    return this._sessionManager;
   }
 
   public abstract forceFlush(): Promise<void>;

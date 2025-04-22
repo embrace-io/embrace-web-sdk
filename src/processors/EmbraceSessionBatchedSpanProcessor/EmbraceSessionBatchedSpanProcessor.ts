@@ -44,6 +44,13 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     }
 
     if (!isSessionSpan(span)) {
+      const currentSession = this.sessionManager.getSessionSpan();
+      if (currentSession === null || !currentSession.isRecording()) {
+        this.diag.debug(
+          'non-session span ended. There is no active session, skipping span.'
+        );
+        return;
+      }
       this.diag.debug('non-session span ended. Adding to pending spans queue.');
       this._pendingSpans.push(span);
     } else {
