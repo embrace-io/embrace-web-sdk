@@ -1,4 +1,10 @@
-import { type Span, type SpanOptions, trace } from '@opentelemetry/api';
+import {
+  diag,
+  type DiagLogger,
+  type Span,
+  type SpanOptions,
+  trace,
+} from '@opentelemetry/api';
 import type {
   TraceManager,
   PerformanceSpanFailedOptions,
@@ -8,8 +14,19 @@ import {
   KEY_EMB_ERROR_CODE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
+import type { EmbraceTraceManagerArgs } from './types.js';
 
 export class EmbraceTraceManager implements TraceManager {
+  private readonly _diag: DiagLogger;
+
+  public constructor({ diag: diagParam }: EmbraceTraceManagerArgs = {}) {
+    this._diag =
+      diagParam ??
+      diag.createComponentLogger({
+        namespace: 'EmbraceTraceManager',
+      });
+  }
+
   public startPerformanceSpan(name: string, options: SpanOptions = {}): Span {
     const tracer = trace.getTracer('embrace-web-sdk-traces');
 
@@ -25,6 +42,9 @@ export class EmbraceTraceManager implements TraceManager {
     }
   ) {
     if (!span) {
+      this._diag.debug(
+        'performanceSpanFailed called with a null span. This is a no-op.'
+      );
       return;
     }
 
