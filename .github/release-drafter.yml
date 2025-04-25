@@ -25,13 +25,14 @@ categories:
 version-resolver:
   major:
     labels:
-      - 'major'
+      - 'semver-major'
   minor:
     labels:
-      - 'minor'
+      - 'semver-minor'
   patch:
     labels:
-      - 'patch'
+      - 'semver-patch'
+      - 'dependencies'
   default: patch
 
 autolabeler:
@@ -45,13 +46,13 @@ autolabeler:
     title:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
   # No major releases until we go out of beta
-  # - label: 'major'
+  # - label: 'semver-major'
   #   title: # anything with a "!" after the type
   #     - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore|deploy|feat).*/'
-  - label: 'minor'
+  - label: 'semver-minor'
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  - label: 'patch'
+  - label: 'semver-patch'
     title: # SAME AS 'fix or maintenance'
       - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
 
