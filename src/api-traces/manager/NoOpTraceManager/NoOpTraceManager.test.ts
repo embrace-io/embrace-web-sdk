@@ -14,11 +14,4 @@ describe('NoOpTraceManager', () => {
       noOpTraceManager.startPerformanceSpan('span-name');
     void expect(span).to.be.null;
   });
-
-  it('should do nothing for performanceSpanFailed', () => {
-    const span = noOpTraceManager.startPerformanceSpan('span-name');
-    void expect(() => {
-      noOpTraceManager.performanceSpanFailed(span, {});
-    }).to.not.throw();
-  });
 });

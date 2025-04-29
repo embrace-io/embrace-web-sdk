@@ -1,15 +1,9 @@
-import type { Span, SpanOptions, TimeInput } from '@opentelemetry/api';
+import type { SpanOptions } from '@opentelemetry/api';
+import type { PerformanceSpan } from '../api/index.js';
 
 export interface TraceManager {
-  startPerformanceSpan: (name: string, options?: SpanOptions) => Span | null;
-  performanceSpanFailed: (
-    span: Span | null,
-    options?: PerformanceSpanFailedOptions
-  ) => void;
+  startPerformanceSpan: (
+    name: string,
+    options?: SpanOptions
+  ) => PerformanceSpan | null;
 }
-
-export type PerformanceSpanFailedOptions = {
-  code?: PerformanceSpanFailureCode;
-  endTime?: TimeInput;
-};
-export type PerformanceSpanFailureCode = 'failure' | 'user_abandon';

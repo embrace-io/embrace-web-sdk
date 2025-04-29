@@ -43,10 +43,10 @@ describe('EmbraceTraceManager', () => {
     );
   });
 
-  it('should offer a wrapper for ending a failed perf span', () => {
+  it('should offer a method for ending a failed perf span', () => {
     const span = manager.startPerformanceSpan('perf-span');
     void expect(span).to.not.be.null;
-    manager.performanceSpanFailed(span);
+    span.fail();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const perfSpan = finishedSpans[0];
@@ -60,7 +60,7 @@ describe('EmbraceTraceManager', () => {
       startTime: 1741650200000,
     });
     void expect(span).to.not.be.null;
-    manager.performanceSpanFailed(span, {
+    span.fail({
       code: 'user_abandon',
       endTime: 1741651200000,
     });

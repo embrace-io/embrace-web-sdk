@@ -91,7 +91,7 @@ const span = trace.startPerformanceSpan("span-name");
 
 someAsyncOperation()
   .then(() => span?.end())
-  .catch(() => trace.performanceSpanFailed(span));
+  .catch(() => span?.fail());
 ```
 
 Attributes and events can also be added to the span either on start or later during its lifespan. Our API wraps that of
