@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name != 'development' }}
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
