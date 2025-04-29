@@ -14,6 +14,11 @@ import type {
 } from '../../api-traces/index.js';
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
 
+/**
+ * EmbracePerformanceSpan for the most part simply delegates to the underlying Span it receives on initialization so
+ * that it satisfies the Span interface. In addition, it gives us a spot where we can implement helpers that are part
+ * of the PerformanceSpan interface.
+ */
 export class EmbracePerformanceSpan implements PerformanceSpan {
   private readonly _span: Span;
 
