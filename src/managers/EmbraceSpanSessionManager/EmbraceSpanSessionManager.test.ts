@@ -8,6 +8,7 @@ import {
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
+import type { VisibilityStateDocument } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -82,7 +83,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'manual'
+      'unknown'
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -160,5 +161,33 @@ describe('EmbraceSpanSessionManager', () => {
       'manual'
     );
     expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
+  });
+
+  it('should start a foreground session when the document is visible', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+    const manager = new EmbraceSpanSessionManager({ visibilityDoc });
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.state', 'foreground');
+  });
+
+  it('should start a background session when the document is hidden', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'hidden',
+    };
+    const manager = new EmbraceSpanSessionManager({ visibilityDoc });
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.state', 'background');
   });
 });

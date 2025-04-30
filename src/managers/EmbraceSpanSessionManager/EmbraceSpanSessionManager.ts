@@ -22,7 +22,10 @@ import {
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
-import type { EmbraceSpanSessionManagerArgs } from './types.js';
+import type {
+  EmbraceSpanSessionManagerArgs,
+  VisibilityStateDocument,
+} from './types.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
@@ -30,10 +33,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _sessionSpan: Span | null = null;
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
+  private readonly _visibilityDoc: VisibilityStateDocument;
 
   public constructor({
     diag: diagParam,
     perf,
+    visibilityDoc = window.document,
   }: EmbraceSpanSessionManagerArgs = {}) {
     this._diag =
       diagParam ??
@@ -41,6 +46,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
         namespace: 'EmbraceSpanSessionManager',
       });
     this._perf = perf ?? new OTelPerformanceManager();
+    this._visibilityDoc = visibilityDoc;
   }
 
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
@@ -106,7 +112,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   public startSessionSpan() {
     //if there was a session in progress already, finish it first.
     if (this._sessionSpan) {
-      this.endSessionSpanInternal('manual');
+      this.endSessionSpanInternal('unknown');
     }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
@@ -114,7 +120,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     this._sessionSpan = tracer.startSpan('emb-session', {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,
-        [KEY_EMB_STATE]: EMB_STATES.Foreground,
+        [KEY_EMB_STATE]:
+          this._visibilityDoc.visibilityState === 'hidden'
+            ? EMB_STATES.Background
+            : EMB_STATES.Foreground,
         [ATTR_SESSION_ID]: this._activeSessionId,
       },
     });

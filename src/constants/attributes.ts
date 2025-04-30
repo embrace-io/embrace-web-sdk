@@ -18,4 +18,5 @@ export enum EMB_TYPES {
 
 export enum EMB_STATES {
   Foreground = 'foreground',
+  Background = 'background',
 }
