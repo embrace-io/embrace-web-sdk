@@ -87,7 +87,7 @@ describe('webSdkResource', () => {
 
     expect(diagLogger.getWarnLogs()).to.deep.equal([
       'Failed to retrieve app instance ID from session storage',
-      'Failed to persist app instance ID to session storage, keeping it in-memory only',
+      'Failed to persist app instance ID to session storage',
     ]);
   });
 
@@ -102,7 +102,7 @@ describe('webSdkResource', () => {
 
     expect(diagLogger.getWarnLogs()).to.deep.equal([
       'Failed to retrieve app instance ID from session storage',
-      'Failed to persist app instance ID to session storage, keeping it in-memory only',
+      'Failed to persist app instance ID to session storage',
     ]);
   });
 });

@@ -21,10 +21,7 @@ export const getAppInstanceId = (
     try {
       pageSessionStorage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, id);
     } catch (e) {
-      diag.warn(
-        'Failed to persist app instance ID to session storage, keeping it in-memory only',
-        e
-      );
+      diag.warn('Failed to persist app instance ID to session storage', e);
     }
   }
 
