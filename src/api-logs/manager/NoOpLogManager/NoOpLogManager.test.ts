@@ -18,7 +18,7 @@ describe('NoOpLogManager', () => {
 
   it('should not throw for logException', () => {
     expect(() => {
-      noOpLogManager.logException(Date.now(), new Error(), true);
+      noOpLogManager.logException(new Error(), true, {}, Date.now());
     }).to.not.throw();
   });
 });
