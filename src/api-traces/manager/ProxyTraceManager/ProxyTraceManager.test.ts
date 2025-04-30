@@ -31,7 +31,7 @@ describe('ProxyTraceManager', () => {
     expect(delegate).to.equal(mockDelegate);
   });
 
-  it('should delegate startSpan to the delegate', () => {
+  it('should delegate startPerformanceSpan to the delegate', () => {
     proxyTraceManager.setDelegate(mockDelegate);
     const span = proxyTraceManager.startPerformanceSpan('span-name');
     expect(span).to.deep.equal({});

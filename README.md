@@ -92,7 +92,9 @@ import { trace } from '@embrace-io/web-sdk';
 
 const span = trace.startPerformanceSpan("span-name");
 
-someAsyncOperation().then(() => span?.end());
+someAsyncOperation()
+  .then(() => span?.end())
+  .catch(() => span?.fail());
 ```
 
 Only spans that are explicitly ended will be exported. Attributes and events can also be added to the span either on

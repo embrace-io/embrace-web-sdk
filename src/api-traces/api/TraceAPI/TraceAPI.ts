@@ -1,6 +1,6 @@
-import type { Span, SpanOptions } from '@opentelemetry/api';
+import type { SpanOptions } from '@opentelemetry/api';
 import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
-import type { TraceAPIArgs } from './types.js';
+import type { PerformanceSpan, TraceAPIArgs } from './types.js';
 
 export class TraceAPI implements TraceManager {
   private static _instance?: TraceAPI;
@@ -31,7 +31,7 @@ export class TraceAPI implements TraceManager {
   public startPerformanceSpan(
     name: string,
     options?: SpanOptions
-  ): Span | null {
+  ): PerformanceSpan | null {
     return this.getTraceManager().startPerformanceSpan(name, options);
   }
 }

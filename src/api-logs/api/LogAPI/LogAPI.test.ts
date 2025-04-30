@@ -1,12 +1,11 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import { type LogManager, ProxyLogManager } from '../../manager/index.js';
 import { LogAPI } from './LogAPI.js';
-import sinonChai from 'sinon-chai';
 
 chai.use(sinonChai);
 const { expect } = chai;
-
 afterEach(() => {
   sinon.restore();
 });
@@ -53,12 +52,12 @@ describe('LogAPI', () => {
 
     const ts = Date.now();
     const err = new Error();
-    logAPI.logException(ts, err, true, { key: 'value' });
+    logAPI.logException(err, true, { key: 'value' }, ts);
     expect(mockLogManager.logException).to.have.been.calledOnceWith(
-      ts,
       err,
       true,
-      { key: 'value' }
+      { key: 'value' },
+      ts
     );
   });
 });

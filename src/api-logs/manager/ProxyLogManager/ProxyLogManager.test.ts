@@ -41,9 +41,14 @@ describe('ProxyLogManager', () => {
 
   it('should delegate logException to the delegate', () => {
     proxyLogManager.setDelegate(mockDelegate);
-    proxyLogManager.logException(Date.now(), new Error(), true, {
-      key1: 'value1',
-    });
+    proxyLogManager.logException(
+      new Error(),
+      true,
+      {
+        key1: 'value1',
+      },
+      Date.now()
+    );
     void expect(mockDelegate.logException).to.have.been.calledOnce;
   });
 });
