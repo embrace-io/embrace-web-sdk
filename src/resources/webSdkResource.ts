@@ -13,8 +13,15 @@ import {
   TEMPLATE_APP_VERSION,
   TEMPLATE_BUNDLE_ID,
 } from './constants/index.js';
+import { KEY_EMB_APP_INSTANCE_ID } from '../constants/index.js';
+import { getAppInstanceId } from './appInstanceId.js';
+import type { GetWebSDKResourceArgs } from './types.js';
 
-export const getWebSDKResource = (appVersion?: string) => {
+export const getWebSDKResource = ({
+  diagLogger,
+  appVersion,
+  pageSessionStorage,
+}: GetWebSDKResourceArgs) => {
   /* We need to trim the app  version to remove any leading/trailing spaces
   added by our cli tool. This is required to guarantee that the version is always
   20 characters long in the final bundle, so sourcemaps don't get confused by
@@ -41,6 +48,7 @@ export const getWebSDKResource = (appVersion?: string) => {
     sdk_simple_version: 1,
     sdk_platform: 'web',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: 'webjs',
+    [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(pageSessionStorage, diagLogger),
   });
   const detectedResources = detectResourcesSync({
     detectors: [browserDetector],

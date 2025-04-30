@@ -88,7 +88,7 @@ describe('EmbraceUserManager', () => {
     const manager = new EmbraceUserManager({ diag, storage });
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'Invalid user object in localStorage, defaulting to a new one'
+      'Invalid user object in storage, defaulting to a new one'
     );
     void expect(manager.getUser()?.['enduser.pseudo.id']).to.have.lengthOf(32);
   });
@@ -99,7 +99,7 @@ describe('EmbraceUserManager', () => {
     const manager = new EmbraceUserManager({ diag, storage });
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'Failed to parse user from localStorage, defaulting to a new one'
+      'Failed to parse user from storage, defaulting to a new one'
     );
     void expect(manager.getUser()?.['enduser.pseudo.id']).to.have.lengthOf(32);
   });
@@ -111,7 +111,7 @@ describe('EmbraceUserManager', () => {
     manager.clearUser();
     expect(diag.getWarnLogs()).to.have.lengthOf(3);
     expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to parse user from localStorage, defaulting to a new one',
+      'Failed to parse user from storage, defaulting to a new one',
       'Failed to persist user object for storage, keeping it in-memory only',
       'Failed to retrieve user object from storage',
     ]);
@@ -126,7 +126,7 @@ describe('EmbraceUserManager', () => {
     manager.clearUser();
     expect(diag.getWarnLogs()).to.have.lengthOf(3);
     expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to parse user from localStorage, defaulting to a new one',
+      'Failed to parse user from storage, defaulting to a new one',
       'Failed to persist user object for storage, keeping it in-memory only',
       'Failed to retrieve user object from storage',
     ]);

@@ -58,12 +58,12 @@ export class EmbraceUserManager implements UserManager {
         this.setUser(existingUser);
       } else {
         this._diag.warn(
-          'Invalid user object in localStorage, defaulting to a new one'
+          'Invalid user object in storage, defaulting to a new one'
         );
       }
     } catch (e) {
       this._diag.warn(
-        'Failed to parse user from localStorage, defaulting to a new one',
+        'Failed to parse user from storage, defaulting to a new one',
         e
       );
     }

@@ -77,7 +77,11 @@ export const initSDK = (
     });
 
     const resourceWithWebSDKAttributes = resource.merge(
-      getWebSDKResource(appVersion)
+      getWebSDKResource({
+        diagLogger,
+        appVersion,
+        pageSessionStorage: window.sessionStorage,
+      })
     );
 
     const sendingToEmbrace = !!appID && isValidAppID(appID);
