@@ -75,4 +75,28 @@ describe('EmbraceTraceManager', () => {
     );
     expect(hrTimeToMilliseconds(perfSpan.endTime)).to.be.equal(1741651200000);
   });
+
+  it('should allow perf spans to be created in parent-child relationships', () => {
+    const parentSpan = manager.startPerformanceSpan('parent-perf-span');
+    void expect(parentSpan).to.not.be.null;
+
+    const childSpan = manager.startPerformanceSpan('child-perf-span', {
+      parentSpan,
+    });
+    void expect(childSpan).to.not.be.null;
+
+    childSpan.end();
+    parentSpan.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    const finishedChildSpan = finishedSpans[0];
+    const finishedParentSpan = finishedSpans[1];
+    expect(finishedChildSpan.name).to.be.equal('child-perf-span');
+    expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
+    expect(finishedChildSpan.parentSpanId).to.equal(
+      finishedParentSpan.spanContext().spanId
+    );
+    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+  });
 });

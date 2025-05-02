@@ -1,11 +1,13 @@
-import type { SpanOptions } from '@opentelemetry/api';
 import type { TraceManager } from '../index.js';
-import type { PerformanceSpan } from '../../api/index.js';
+import type {
+  PerformanceSpan,
+  PerformanceSpanOptions,
+} from '../../api/index.js';
 
 export class NoOpTraceManager implements TraceManager {
   public startPerformanceSpan(
     _name: string,
-    _options?: SpanOptions
+    _options?: PerformanceSpanOptions
   ): PerformanceSpan | null {
     return null;
   }

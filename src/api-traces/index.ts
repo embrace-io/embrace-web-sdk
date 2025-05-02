@@ -4,4 +4,5 @@ export { NoOpTraceManager, ProxyTraceManager } from './manager/index.js';
 export type {
   PerformanceSpan,
   PerformanceSpanFailedOptions,
+  PerformanceSpanOptions,
 } from './api/index.js';
