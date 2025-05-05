@@ -22,10 +22,8 @@ import {
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
-import type {
-  EmbraceSpanSessionManagerArgs,
-  VisibilityStateDocument,
-} from './types.js';
+import type { EmbraceSpanSessionManagerArgs } from './types.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManager {
   private _activeSessionId: string | null = null;
@@ -112,7 +110,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
   public startSessionSpan() {
     //if there was a session in progress already, finish it first.
     if (this._sessionSpan) {
-      this.endSessionSpanInternal('unknown');
+      this.endSessionSpanInternal('manual');
     }
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();

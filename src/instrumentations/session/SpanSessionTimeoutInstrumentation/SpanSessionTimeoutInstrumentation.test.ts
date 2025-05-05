@@ -111,7 +111,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     const sessionSpanA = finishedSpans[0];
     expect(sessionSpanA.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'unknown'
+      'manual'
     );
     expect(sessionSpanA.attributes).to.have.property(
       ATTR_SESSION_ID,

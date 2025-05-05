@@ -9,7 +9,7 @@ import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
-import type { VisibilityStateDocument } from './types.js';
+import type { VisibilityStateDocument } from '../../../common/index.js';
 
 const { expect } = chai;
 

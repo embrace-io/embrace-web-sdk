@@ -8,7 +8,7 @@ import {
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
-import type { VisibilityStateDocument } from './types.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -83,7 +83,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'unknown'
+      'manual'
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
