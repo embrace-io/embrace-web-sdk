@@ -4,6 +4,7 @@ import type {
   ReportOpts,
 } from 'web-vitals/attribution';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
+import type { URLDocument } from '../../../common/index.js';
 
 export type TrackingLevel = 'core' | 'all';
 
@@ -17,4 +18,5 @@ export type WebVitalListeners = Record<
 export type WebVitalsInstrumentationArgs = {
   trackingLevel?: TrackingLevel;
   listeners?: WebVitalListeners;
+  urlDocument?: URLDocument;
 } & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;

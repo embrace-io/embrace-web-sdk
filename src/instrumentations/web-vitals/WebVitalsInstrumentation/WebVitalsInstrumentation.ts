@@ -14,10 +14,13 @@ import type {
   WebVitalsInstrumentationArgs,
 } from './types.js';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import type { URLDocument } from '../../../common/index.js';
 
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _metricsToTrack: Metric['name'][];
   private readonly _listeners: WebVitalListeners;
+  private readonly _urlDocument: URLDocument;
 
   // instrumentation that adds an event to the session span for each web vital report
   public constructor({
@@ -25,6 +28,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     perf,
     trackingLevel = 'core',
     listeners = WEB_VITALS_ID_TO_LISTENER,
+    urlDocument = window.document,
   }: WebVitalsInstrumentationArgs = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
@@ -34,6 +38,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
     this._listeners = listeners;
+    this._urlDocument = urlDocument;
     this._metricsToTrack =
       trackingLevel === 'core' ? [...CORE_WEB_VITALS] : [...ALL_WEB_VITALS];
 
@@ -61,6 +66,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
         const attrs: Attributes = {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+          [ATTR_URL_FULL]: this._urlDocument.URL,
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
           'emb.web_vital.rating': metric.rating,

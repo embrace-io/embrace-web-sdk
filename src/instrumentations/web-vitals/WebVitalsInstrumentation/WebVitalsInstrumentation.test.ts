@@ -16,9 +16,13 @@ import {
 } from '../../../testUtils/index.js';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
+import type { URLDocument } from '../../../common/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
+const urlDocument: URLDocument = {
+  URL: 'https://example.com',
+};
 
 describe('WebVitalsInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
@@ -65,6 +69,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -102,6 +107,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
+      'url.full': 'https://example.com',
     });
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
@@ -111,6 +117,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -151,6 +158,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.value': 22,
       'emb.web_vital.attribution.largestShiftTarget': '"some-target"',
       'emb.web_vital.attribution.largestShiftTime': 3000,
+      'url.full': 'https://example.com',
     });
 
     // Since we have a largestShiftTime attribution time should be based on that
@@ -161,6 +169,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -171,6 +180,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       trackingLevel: 'all',
       listeners: mockWebVitalListeners,
     });
@@ -216,6 +226,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.timeToFirstByte': 20,
       'emb.web_vital.attribution.firstByteToFCP': 40,
       'emb.web_vital.attribution.loadState': '"complete"',
+      'url.full': 'https://example.com',
     });
 
     expect(fcpEvent.time).to.deep.equal([5, 0]);
@@ -225,6 +236,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -271,6 +283,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.resourceLoadDelay': 1000,
       'emb.web_vital.attribution.resourceLoadDuration': 2000,
       'emb.web_vital.attribution.elementRenderDelay': 3000,
+      'url.full': 'https://example.com',
     });
 
     expect(lcpEvent.time).to.deep.equal([5, 0]);
@@ -280,6 +293,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -340,6 +354,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.presentationDelay': 3000,
       'emb.web_vital.attribution.processedEventEntries': '[]',
       'emb.web_vital.attribution.processingDuration': 2000,
+      'url.full': 'https://example.com',
     });
 
     // Time should be based on interactionTime from attribution
@@ -350,6 +365,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -360,6 +376,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       trackingLevel: 'all',
       listeners: mockWebVitalListeners,
     });
@@ -409,6 +426,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.dnsDuration': 60,
       'emb.web_vital.attribution.connectionDuration': 80,
       'emb.web_vital.attribution.requestDuration': 100,
+      'url.full': 'https://example.com',
     });
 
     expect(ttfbEvent.time).to.deep.equal([5, 0]);
@@ -418,6 +436,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -477,6 +496,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
+      'url.full': 'https://example.com',
     });
     expect(lcpEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -490,6 +510,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.resourceLoadDelay': 1000,
       'emb.web_vital.attribution.resourceLoadDuration': 2000,
       'emb.web_vital.attribution.elementRenderDelay': 3000,
+      'url.full': 'https://example.com',
     });
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
@@ -500,6 +521,7 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      urlDocument,
       listeners: mockWebVitalListeners,
     });
 
@@ -542,6 +564,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
+      'url.full': 'https://example.com',
     });
 
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
