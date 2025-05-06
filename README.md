@@ -122,8 +122,10 @@ trigger a network request to export the data:
 import { log } from '@embrace-io/web-sdk';
 
 log.message('Loading not finished in time.', 'error', {
-  propertyA: 'valueA',
-  propertyB: 'valueB'
+  attributes: {
+     propertyA: 'valueA',
+     propertyB: 'valueB'
+  }
 });
 ```
 
@@ -140,8 +142,10 @@ try {
   // some operation...
 } catch (e) {
   log.logException(e as Error, true, {
-    propertyA: 'valueA',
-    propertyB: 'valueB'
+     attributes: {
+       propertyA: 'valueA',
+       propertyB: 'valueB'
+     }
   });
 }
 ```

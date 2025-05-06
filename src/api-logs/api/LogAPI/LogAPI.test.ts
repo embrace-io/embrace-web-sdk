@@ -43,21 +43,28 @@ describe('LogAPI', () => {
     };
     logAPI.setGlobalLogManager(mockLogManager);
 
-    logAPI.message('This is an info log', 'info', { key: 'value' });
+    logAPI.message('This is an info log', 'info', {
+      attributes: { key: 'value' },
+    });
     expect(mockLogManager.message).to.have.been.calledOnceWith(
       'This is an info log',
       'info',
-      { key: 'value' }
+      {
+        attributes: { key: 'value' },
+      }
     );
 
     const ts = Date.now();
     const err = new Error();
-    logAPI.logException(err, true, { key: 'value' }, ts);
-    expect(mockLogManager.logException).to.have.been.calledOnceWith(
-      err,
-      true,
-      { key: 'value' },
-      ts
-    );
+    logAPI.logException(err, {
+      handled: true,
+      attributes: { key: 'value' },
+      timestamp: ts,
+    });
+    expect(mockLogManager.logException).to.have.been.calledOnceWith(err, {
+      handled: true,
+      attributes: { key: 'value' },
+      timestamp: ts,
+    });
   });
 });
