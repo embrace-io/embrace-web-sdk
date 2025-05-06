@@ -60,10 +60,14 @@ npm run sdk:test:watch
 
 ## Publishing
 
-New releases of the SDK are manually triggered through a [Github action workflow](.github/workflows/release.yaml).
-When triggered, a new PR with the next version of the SDK is created. This PR contains a changelog.
-Once the PR is reviewed and merged, a new Github release gets created as a draft. Once that release is manually
-published, it will trigger a publish of the SDK packages to NPM.
+To release a new version of the SDK:
+
+1. Manually run the [Bump packages version](https://github.com/embrace-io/embrace-web-sdk/actions/workflows/release.yaml) 
+action against the `main` branch
+2. Once the action completes a new PR containing the version bump and changelog for the next version of the SDK will be
+created. Review and merge this PR.
+3. Once the PR is merged a new Github release will be created as a draft. Edit the draft and publish it, this will
+trigger a publish of the updated SDK packages to NPM.
 
 Note: the level of the version bump (major, minor, patch) is determined by the type of changes made to the SDK since the
 last release. You can see the requirements for each type of bump in
