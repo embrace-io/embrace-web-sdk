@@ -17,6 +17,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     });
     this._onErrorHandler = (event: ErrorEvent) => {
       this.logManager.logException(event.error as Error, {
+        handled: false,
         timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
       });
     };
@@ -34,6 +35,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       }
 
       this.logManager.logException(error, {
+        handled: false,
         timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
       });
     };

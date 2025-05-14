@@ -48,7 +48,7 @@ export class EmbraceLogManager implements LogManager {
   public logException(
     error: Error,
     {
-      handled = false,
+      handled = true,
       attributes = {},
       timestamp = this._perf.getNowMillis(),
     }: LogExceptionOptions = {}
