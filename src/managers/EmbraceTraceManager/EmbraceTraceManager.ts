@@ -8,7 +8,7 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import { EmbracePerformanceSpan } from './EmbracePerformanceSpan.js';
 
 export class EmbraceTraceManager implements TraceManager {
-  public startPerformanceSpan(
+  public startSpan(
     name: string,
     options: PerformanceSpanOptions = {}
   ): PerformanceSpan {
