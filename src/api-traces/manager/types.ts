@@ -1,8 +1,11 @@
-import type { PerformanceSpan, PerformanceSpanOptions } from '../api/index.js';
+import type {
+  EmbraceExtendedSpan,
+  EmbraceExtendedSpanOptions,
+} from '../api/index.js';
 
 export interface TraceManager {
   startSpan: (
     name: string,
-    options?: PerformanceSpanOptions
-  ) => PerformanceSpan | null;
+    options?: EmbraceExtendedSpanOptions
+  ) => EmbraceExtendedSpan | null;
 }

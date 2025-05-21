@@ -9,17 +9,17 @@ import type {
 } from '@opentelemetry/api';
 import { type Span } from '@opentelemetry/api';
 import type {
-  PerformanceSpan,
-  PerformanceSpanFailedOptions,
+  EmbraceExtendedSpan,
+  EmbraceExtendedSpanFailedOptions,
 } from '../../api-traces/index.js';
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
 
 /**
- * EmbracePerformanceSpan for the most part simply delegates to the underlying Span it receives on initialization so
+ * EmbraceSpan for the most part simply delegates to the underlying Span it receives on initialization so
  * that it satisfies the Span interface. In addition, it gives us a spot where we can implement helpers that are part
- * of the PerformanceSpan interface.
+ * of the EmbraceSpan interface.
  */
-export class EmbracePerformanceSpan implements PerformanceSpan {
+export class EmbraceSpan implements EmbraceExtendedSpan {
   private readonly _span: Span;
 
   public constructor(span: Span) {
@@ -82,7 +82,7 @@ export class EmbracePerformanceSpan implements PerformanceSpan {
   }
 
   public fail(
-    options: PerformanceSpanFailedOptions = {
+    options: EmbraceExtendedSpanFailedOptions = {
       code: 'failure',
     }
   ): void {
