@@ -9,9 +9,8 @@ describe('NoOpTraceManager', () => {
     noOpTraceManager = new NoOpTraceManager();
   });
 
-  it('should return null for startPerformanceSpan', () => {
-    const span: Span | null =
-      noOpTraceManager.startPerformanceSpan('span-name');
+  it('should return null for startSpan', () => {
+    const span: Span | null = noOpTraceManager.startSpan('span-name');
     void expect(span).to.be.null;
   });
 });
