@@ -216,9 +216,9 @@ describe('initSDK', () => {
       (user.getUserManager() as ProxyUserManager).getDelegate()
     ).to.be.instanceOf(EmbraceUserManager);
 
-    embtrace.startPerformanceSpan('my performance span')?.end();
+    embtrace.startSpan('my performance span')?.end();
     // shouldn't get exported
-    embtrace.startPerformanceSpan('my unfinished performance span');
+    embtrace.startSpan('my unfinished performance span');
 
     log.message('my custom log', 'info');
 
@@ -354,9 +354,9 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
-      embtrace.startPerformanceSpan('my performance span')?.end();
+      embtrace.startSpan('my performance span')?.end();
       // shouldn't get exported
-      embtrace.startPerformanceSpan('my unfinished performance span');
+      embtrace.startSpan('my unfinished performance span');
 
       session.getSpanSessionManager().endSessionSpan();
 

@@ -33,7 +33,7 @@ const App = () => {
   };
 
   const handleStartSpan = () => {
-    const span = trace.startPerformanceSpan('demo-span');
+    const span = trace.startSpan('demo-span');
 
     if (span) {
       setSpans([...spans, span]);

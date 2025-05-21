@@ -27,7 +27,7 @@ describe('EmbraceTraceManager', () => {
   });
 
   it('should start and end a perf span', () => {
-    const span = manager.startPerformanceSpan('perf-span');
+    const span = manager.startSpan('perf-span');
     void expect(span).to.not.be.null;
     expect(() => {
       span.end();
@@ -44,7 +44,7 @@ describe('EmbraceTraceManager', () => {
   });
 
   it('should offer a method for ending a failed perf span', () => {
-    const span = manager.startPerformanceSpan('perf-span');
+    const span = manager.startSpan('perf-span');
     void expect(span).to.not.be.null;
     span.fail();
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -56,7 +56,7 @@ describe('EmbraceTraceManager', () => {
   });
 
   it('should allow the code and end time of a failed perf span to be overwritten', () => {
-    const span = manager.startPerformanceSpan('perf-span', {
+    const span = manager.startSpan('perf-span', {
       startTime: 1741650200000,
     });
     void expect(span).to.not.be.null;
@@ -77,10 +77,10 @@ describe('EmbraceTraceManager', () => {
   });
 
   it('should allow perf spans to be created in parent-child relationships', () => {
-    const parentSpan = manager.startPerformanceSpan('parent-perf-span');
+    const parentSpan = manager.startSpan('parent-perf-span');
     void expect(parentSpan).to.not.be.null;
 
-    const childSpan = manager.startPerformanceSpan('child-perf-span', {
+    const childSpan = manager.startSpan('child-perf-span', {
       parentSpan,
     });
     void expect(childSpan).to.not.be.null;

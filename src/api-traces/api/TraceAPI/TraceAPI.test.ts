@@ -29,7 +29,7 @@ describe('TraceAPI', () => {
     const traceAPI = TraceAPI.getInstance();
     const traceManager: TraceManager = {
       // Mock implementation of TraceManager
-      startPerformanceSpan: sinon.stub().returns({} as Span),
+      startSpan: sinon.stub().returns({} as Span),
     };
     traceAPI.setGlobalTraceManager(traceManager);
     const result = traceAPI.getTraceManager();
@@ -40,13 +40,13 @@ describe('TraceAPI', () => {
   it('should forward calls to the trace manager', () => {
     const mockTraceManager: TraceManager = {
       // Mock implementation of TraceManager
-      startPerformanceSpan: sinon.stub().returns({} as Span),
+      startSpan: sinon.stub().returns({} as Span),
     };
     traceAPI.setGlobalTraceManager(mockTraceManager);
 
-    traceAPI.startPerformanceSpan('span-name');
-    void expect(
-      mockTraceManager.startPerformanceSpan
-    ).to.have.been.calledOnceWith('span-name');
+    traceAPI.startSpan('span-name');
+    void expect(mockTraceManager.startSpan).to.have.been.calledOnceWith(
+      'span-name'
+    );
   });
 });
