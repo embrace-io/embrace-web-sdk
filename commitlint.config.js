@@ -20,6 +20,7 @@ export default {
         'test',
         'chore',
         'revert',
+        'breaking',
       ],
     ],
   },
