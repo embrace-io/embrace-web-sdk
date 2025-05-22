@@ -31,10 +31,10 @@ export class TraceAPI implements TraceManager {
     this._proxyTraceManager.setDelegate(traceManager);
   }
 
-  public startPerformanceSpan(
+  public startSpan(
     name: string,
     options?: PerformanceSpanOptions
   ): PerformanceSpan | null {
-    return this.getTraceManager().startPerformanceSpan(name, options);
+    return this.getTraceManager().startSpan(name, options);
   }
 }

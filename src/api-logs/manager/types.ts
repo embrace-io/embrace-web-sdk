@@ -1,19 +1,24 @@
 import type { AttributeValue } from '@opentelemetry/api';
 
+export type LogMessageOptions = {
+  attributes?: Record<string, AttributeValue | undefined>;
+  includeStacktrace?: boolean;
+};
+
+export type LogExceptionOptions = {
+  handled?: boolean;
+  attributes?: Record<string, AttributeValue | undefined>;
+  timestamp?: number;
+};
+
 export interface LogManager {
   message: (
     message: string,
     level: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>,
-    includeStacktrace?: boolean
+    options?: LogMessageOptions
   ) => void;
 
-  logException: (
-    error: Error,
-    handled: boolean,
-    attributes?: Record<string, AttributeValue | undefined>,
-    timestamp?: number
-  ) => void;
+  logException: (error: Error, options?: LogExceptionOptions) => void;
 }
 
 export type LogSeverity = 'info' | 'warning' | 'error';

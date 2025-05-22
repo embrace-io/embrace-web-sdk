@@ -48,7 +48,9 @@ describe('EmbraceLogManager', () => {
         'this is an info log without stacktrace and one attribute',
         'info',
         {
-          attr_key: 'attr value',
+          attributes: {
+            attr_key: 'attr value',
+          },
         }
       );
     }).to.not.throw();
@@ -73,7 +75,9 @@ describe('EmbraceLogManager', () => {
   it('should log a warning log with stacktrace', () => {
     expect(() => {
       manager.message('this is a warning log with stacktrace', 'warning', {
-        attr_key: 'attr value',
+        attributes: {
+          attr_key: 'attr value',
+        },
       });
     }).to.not.throw();
 
@@ -92,14 +96,9 @@ describe('EmbraceLogManager', () => {
 
   it('should log a warning log without stacktrace', () => {
     expect(() => {
-      manager.message(
-        'this is a warning log with stacktrace',
-        'warning',
-        {
-          attr_key: 'attr value',
-        },
-        false
-      );
+      manager.message('this is a warning log with stacktrace', 'warning', {
+        includeStacktrace: false,
+      });
     }).to.not.throw();
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
@@ -109,18 +108,40 @@ describe('EmbraceLogManager', () => {
     expect(log.body).to.equal('this is a warning log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.WARN);
     expect(log.severityText).to.be.equal('WARNING');
+    expect(log.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: 'sys.log',
+    });
+  });
 
-    expect(log.attributes).to.have.property('attr_key', 'attr value');
-    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
-    expect(log.attributes).to.not.have.property(
-      KEY_EMB_JS_EXCEPTION_STACKTRACE
-    );
+  it('should log a warning log without stacktrace and attributes', () => {
+    expect(() => {
+      manager.message('this is a warning log with stacktrace', 'warning', {
+        attributes: {
+          attr_key: 'attr value',
+        },
+        includeStacktrace: false,
+      });
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is a warning log with stacktrace');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.WARN);
+    expect(log.severityText).to.be.equal('WARNING');
+    expect(log.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: 'sys.log',
+      attr_key: 'attr value',
+    });
   });
 
   it('should log an error log with stacktrace', () => {
     expect(() => {
       manager.message('this is an error log with stacktrace', 'error', {
-        attr_key: 'attr value',
+        attributes: {
+          attr_key: 'attr value',
+        },
       });
     }).to.not.throw();
 
@@ -137,16 +158,32 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(KEY_EMB_JS_EXCEPTION_STACKTRACE);
   });
 
+  it('should log an error log with default options', () => {
+    expect(() => {
+      manager.message('this is an error log with stacktrace', 'error');
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is an error log with stacktrace');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+    expect(log.severityText).to.be.equal('ERROR');
+
+    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
+    expect(log.attributes).to.have.property(KEY_EMB_JS_EXCEPTION_STACKTRACE);
+    expect(Object.keys(log.attributes)).to.have.lengthOf(2);
+  });
+
   it('should log an exception with stacktrace', () => {
     expect(() => {
-      manager.logException(
-        new Error('this is an exception'),
-        true,
-        {
+      manager.logException(new Error('this is an exception'), {
+        attributes: {
           attr_key: 'attr value',
         },
-        perf.getNowMillis()
-      );
+        timestamp: perf.getNowMillis(),
+      });
     }).to.not.throw();
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
@@ -172,9 +209,73 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
 
-  it('should log an exception without required attributes', () => {
+  it('should log an exception with attributes', () => {
     expect(() => {
-      manager.logException(new Error('this is an exception'), false);
+      manager.logException(new Error('this is an exception'), {
+        attributes: {
+          attr_key: 'attr value',
+        },
+      });
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is an exception');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+    expect(log.severityText).to.be.equal('ERROR');
+
+    expect(log.attributes).to.have.property('attr_key', 'attr value');
+    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+    expect(log.attributes).to.have.property(
+      KEY_EMB_EXCEPTION_HANDLING,
+      'HANDLED'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+    expect(log.attributes).to.have.property('exception.name', 'Error');
+    expect(log.attributes).to.have.property(
+      ATTR_EXCEPTION_MESSAGE,
+      'this is an exception'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+  });
+
+  it('should log an exception with default options', () => {
+    expect(() => {
+      manager.logException(new Error('this is an exception'));
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is an exception');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+    expect(log.severityText).to.be.equal('ERROR');
+    void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
+      perf.getNowMillis()
+    );
+
+    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+    expect(log.attributes).to.have.property(
+      KEY_EMB_EXCEPTION_HANDLING,
+      'HANDLED'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+    expect(log.attributes).to.have.property('exception.name', 'Error');
+    expect(log.attributes).to.have.property(
+      ATTR_EXCEPTION_MESSAGE,
+      'this is an exception'
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+  });
+
+  it('should allow logging an exception has unhandled', () => {
+    expect(() => {
+      manager.logException(new Error('this is an exception'), {
+        handled: false,
+      });
     }).to.not.throw();
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
@@ -195,10 +296,5 @@ describe('EmbraceLogManager', () => {
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
-    expect(log.attributes).to.have.property(
-      ATTR_EXCEPTION_MESSAGE,
-      'this is an exception'
-    );
-    expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
 });

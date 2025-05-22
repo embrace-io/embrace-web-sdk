@@ -18,6 +18,10 @@ import {
   type PerformanceManager,
 } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
+import type {
+  LogExceptionOptions,
+  LogMessageOptions,
+} from '../../api-logs/manager/index.js';
 
 export class EmbraceLogManager implements LogManager {
   private readonly _perf: PerformanceManager;
@@ -43,9 +47,11 @@ export class EmbraceLogManager implements LogManager {
 
   public logException(
     error: Error,
-    handled: boolean,
-    attributes: Record<string, AttributeValue | undefined> = {},
-    timestamp: number = this._perf.getNowMillis()
+    {
+      handled = true,
+      attributes = {},
+      timestamp = this._perf.getNowMillis(),
+    }: LogExceptionOptions = {}
   ) {
     this._logger.emit({
       timestamp,
@@ -67,8 +73,7 @@ export class EmbraceLogManager implements LogManager {
   public message(
     message: string,
     severity: LogSeverity,
-    attributes?: Record<string, AttributeValue | undefined>,
-    includeStacktrace = true
+    { attributes = {}, includeStacktrace = true }: LogMessageOptions = {}
   ) {
     this._logMessage({
       message,

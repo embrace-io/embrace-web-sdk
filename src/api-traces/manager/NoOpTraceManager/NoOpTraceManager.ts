@@ -5,7 +5,7 @@ import type {
 } from '../../api/index.js';
 
 export class NoOpTraceManager implements TraceManager {
-  public startPerformanceSpan(
+  public startSpan(
     _name: string,
     _options?: PerformanceSpanOptions
   ): PerformanceSpan | null {

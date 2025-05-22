@@ -45,10 +45,12 @@ autolabeler:
   - label: 'feat'
     title:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  # No major releases until we go out of beta
-  # - label: 'semver-major'
-  #   title: # anything with a "!" after the type
-  #     - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore|deploy|feat).*/'
+  - label: 'breaking'
+    title:
+      - '/(EMBR-[0-9]+\s+)?(breaking).*/'
+  - label: 'semver-major'
+    title: # SAME AS 'breaking'
+      - '/(EMBR-[0-9]+\s+)?(breaking).*/'
   - label: 'semver-minor'
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'

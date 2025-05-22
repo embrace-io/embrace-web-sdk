@@ -16,12 +16,10 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
     this._onErrorHandler = (event: ErrorEvent) => {
-      this.logManager.logException(
-        event.error as Error,
-        false,
-        {},
-        this.perf.epochMillisFromOriginOffset(event.timeStamp)
-      );
+      this.logManager.logException(event.error as Error, {
+        handled: false,
+        timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
+      });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       let error: Error;
@@ -36,12 +34,10 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
         error.stack = '';
       }
 
-      this.logManager.logException(
-        error,
-        false,
-        {},
-        this.perf.epochMillisFromOriginOffset(event.timeStamp)
-      );
+      this.logManager.logException(error, {
+        handled: false,
+        timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
+      });
     };
 
     if (this._config.enabled) {
