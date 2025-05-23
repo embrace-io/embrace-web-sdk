@@ -25,8 +25,6 @@ export const bootSDK = (sdk: EmbraceSdk) => {
   // Now that the SDK is fully loaded, we can replace the global definition
   window[GLOBAL_SDK_NAME] = {
     ...sdk,
-    // At this point we don't want onReady to keep queueing callbacks
-    onReady,
     q: callbackQueue,
   };
 

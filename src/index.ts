@@ -6,18 +6,14 @@ import { user } from './api-users/index.js';
 import * as sdk from './sdk/index.js';
 import { bootSDK, onReady } from './sdk/bootSDK.js';
 
-// Making it more testable
-export const init = () => {
-  bootSDK({
-    log,
-    session,
-    trace,
-    user,
-    sdk,
-  });
-};
-
-init();
+bootSDK({
+  log,
+  session,
+  trace,
+  user,
+  sdk,
+  onReady,
+});
 
 export type { ExtendedSpan };
 export { sdk, session, log, trace, user, onReady };

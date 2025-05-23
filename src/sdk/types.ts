@@ -232,6 +232,7 @@ export interface EmbraceSdk {
   sdk: {
     initSDK: InitSDKFunction;
   };
+  onReady: (callback: OnReadyCallback) => void;
 }
 
 export interface SDKRegistryManager {
@@ -242,7 +243,6 @@ export interface SDKRegistryManager {
 
 export interface GlobalSdkAPI extends EmbraceSdk {
   q: OnReadyCallback[];
-  onReady: (callback: OnReadyCallback) => void;
 }
 
 declare global {
