@@ -16,6 +16,7 @@ declare global {
 }
 
 const mockSdk = {
+  onReady,
   log: {},
   session: {},
   trace: {},
