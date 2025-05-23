@@ -37,14 +37,13 @@ import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
 import { trace } from '../api-traces/index.js';
 import type {
-  SDKControl,
-  SDKInitConfig,
+  InitSDKFunction,
   SetupLogsArgs,
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
 
-export const initSDK = (
+export const initSDK: InitSDKFunction = (
   {
     appID,
     appVersion,
@@ -61,8 +60,8 @@ export const initSDK = (
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
-  }: SDKInitConfig = { appID: '' }
-): SDKControl | false => {
+  } = { appID: '' }
+) => {
   try {
     const existingSDK = registry.registered();
     if (existingSDK !== null) {

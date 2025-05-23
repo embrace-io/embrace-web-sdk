@@ -4,11 +4,14 @@
   "version": "0.0.1",
   "scripts": {
     "demo:cdn:frontend:full:preview": "bash ./scripts/runDemo.sh",
+    "demo:cdn:frontend:full:preview:async": "bash ./scripts/runDemo.sh --async",
     "demo:cdn:frontend:compile:clean": "rimraf dist",
     "demo:cdn:frontend:install:clean": "rimraf node_modules",
     "demo:cdn:sync:web:sdk": "ln -f ../../build/esm/bundle.js ./public/bundle.js",
     "demo:cdn:frontend:dev": "vite",
+    "demo:cdn:frontend:dev:async": "VITE_ASYNC_MODE=true vite",
     "demo:cdn:frontend:compile": "tsc -b && vite build",
+    "demo:cdn:frontend:compile:async": "tsc -b && VITE_ASYNC_MODE=true vite build",
     "demo:cdn:frontend:preview": "vite preview"
   },
   "dependencies": {

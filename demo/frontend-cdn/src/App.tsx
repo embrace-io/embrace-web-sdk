@@ -3,11 +3,14 @@ import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 
+const ASYNC_MODE = import.meta.env.VITE_ASYNC_MODE === 'true';
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const getLazyLogger = () => logs.getLogger('embrace-web-sdk-demo-lazy-logger');
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
-// @ts-ignore
-const sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
+let sessionProvider = ASYNC_MODE
+  ? null
+  : // @ts-ignore
+    window.EmbraceWebSdk.session.getSpanSessionManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
@@ -15,15 +18,29 @@ const App = () => {
   const [sessionRefresher, setSessionRefresher] = useState<
     number | undefined
   >();
+  const [initialized, setInitialized] = useState(!ASYNC_MODE);
+
+  useEffect(() => {
+    if (!initialized) {
+      // @ts-ignore
+      window.EmbraceWebSdk.onReady(() => {
+        // @ts-ignore
+        sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
+        setInitialized(true);
+      });
+    }
+  }, [initialized]);
 
   useEffect(() => {
     setSessionRefresher(
       window.setInterval(() => {
-        setCurrentSession(sessionProvider.getSessionId());
+        if (sessionProvider) {
+          setCurrentSession(sessionProvider.getSessionId());
+        }
       }, 1000)
     );
     return () => window.clearInterval(sessionRefresher);
-  }, []);
+  }, [initialized]);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -151,6 +168,10 @@ const App = () => {
       reject();
     });
   };
+
+  if (!initialized) {
+    return null;
+  }
 
   const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
 

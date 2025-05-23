@@ -25,6 +25,10 @@ import type {
 import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumentation-document-load';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
+import type { GLOBAL_SDK_NAME } from './constants.js';
+import type { LogManager } from '../api-logs/index.js';
+import type { TraceManager } from '../api-traces/index.js';
+import type { UserManager } from '../api-users/index.js';
 
 type BaseSDKInitConfig = {
   /**
@@ -154,6 +158,10 @@ export type SDKInitConfig = BaseSDKInitConfig &
     | SpanExportSDKInitConfig
   );
 
+export type InitSDKFunction = (config: SDKInitConfig) => SDKControl | false;
+
+export type OnReadyCallback = () => void;
+
 export interface SDKControl {
   flush: () => Promise<void>;
 }
@@ -216,8 +224,29 @@ export interface DefaultInstrumenationConfig {
   >;
 }
 
+export interface EmbraceSdk {
+  log: LogManager;
+  session: SpanSessionManager;
+  trace: TraceManager;
+  user: UserManager;
+  sdk: {
+    initSDK: InitSDKFunction;
+  };
+}
+
 export interface SDKRegistryManager {
   register: (sdk: SDKControl) => void;
   clear: () => void;
   registered: () => SDKControl | null;
+}
+
+export interface GlobalSdkAPI extends EmbraceSdk {
+  q: OnReadyCallback[];
+  onReady: (callback: OnReadyCallback) => void;
+}
+
+declare global {
+  interface Window {
+    [GLOBAL_SDK_NAME]?: GlobalSdkAPI;
+  }
 }
