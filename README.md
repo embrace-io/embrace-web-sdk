@@ -335,6 +335,35 @@ as you refer to that documentation:
 3) Because our web-cli does not support the CDN version of the SDK, the sourcemaps upload won't work
    (see [Upload sourcemaps](#upload-sourcemaps)). You will not see symbolicated stack traces in Embrace.
 
+
+### Async Loading
+
+If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add this snippet to your HTML file:
+```html
+<script>
+   (function(e,m,b) {
+      e.EmbraceWebSdk=e.EmbraceWebSdk||{q:[],onReady:function(f){e.EmbraceWebSdk.q.push(f);}};
+      s=m.createElement(b);s.async=1;s.src="./bundle.js";
+      b=m.getElementsByTagName(b)[0];b.parentNode.insertBefore(s,b);
+   })(window, document, "script");
+</script>
+```
+
+By deferring the loading of the SDK, any early calls to the SDK need to be wrapped in the `onReady` method:
+
+```javascript
+window.EmbraceWebSdk.onReady(() => {
+   window.EmbraceWebSdk.sdk.initSDK({
+      appVersion: '0.0.1',
+      /*...*/
+   });
+})
+```
+
+This is necessary to ensure that the SDK is fully loaded before you start using it.
+
+**NOTE**: The SDK may miss some early telemetry events emitted before the SDK is initialized if you use this method.
+
 ## Using without Embrace
 
 If you'd prefer not to send data to Embrace you can simply omit the embrace app id when calling `initSDK`. Note that in
