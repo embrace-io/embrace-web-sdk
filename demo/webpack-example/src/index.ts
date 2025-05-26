@@ -8,7 +8,7 @@ const result = sdk.initSDK({
 if (!!result) {
   console.log('Successfully initialized the Embrace SDK');
 } else {
-  console.log('Failed to initialize the Embrace SDK');
+  console.error('Failed to initialize the Embrace SDK');
 }
 
 console.log('Hello This is a Typescript project.');
