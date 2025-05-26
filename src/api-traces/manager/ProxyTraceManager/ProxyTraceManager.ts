@@ -1,9 +1,6 @@
 import type { TraceManager } from '../index.js';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
-import type {
-  EmbraceExtendedSpan,
-  EmbraceExtendedSpanOptions,
-} from '../../api/index.js';
+import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
 
@@ -20,8 +17,8 @@ export class ProxyTraceManager implements TraceManager {
 
   public startSpan(
     name: string,
-    options?: EmbraceExtendedSpanOptions
-  ): EmbraceExtendedSpan | null {
+    options?: ExtendedSpanOptions
+  ): ExtendedSpan | null {
     return this.getDelegate().startSpan(name, options);
   }
 }

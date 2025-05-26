@@ -1,14 +1,11 @@
 import type { TraceManager } from '../index.js';
-import type {
-  EmbraceExtendedSpan,
-  EmbraceExtendedSpanOptions,
-} from '../../api/index.js';
+import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
 
 export class NoOpTraceManager implements TraceManager {
   public startSpan(
     _name: string,
-    _options?: EmbraceExtendedSpanOptions
-  ): EmbraceExtendedSpan | null {
+    _options?: ExtendedSpanOptions
+  ): ExtendedSpan | null {
     return null;
   }
 }

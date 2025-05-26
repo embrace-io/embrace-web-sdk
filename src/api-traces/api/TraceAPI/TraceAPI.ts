@@ -1,7 +1,7 @@
 import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
 import type {
-  EmbraceExtendedSpan,
-  EmbraceExtendedSpanOptions,
+  ExtendedSpan,
+  ExtendedSpanOptions,
   TraceAPIArgs,
 } from './types.js';
 
@@ -33,8 +33,8 @@ export class TraceAPI implements TraceManager {
 
   public startSpan(
     name: string,
-    options?: EmbraceExtendedSpanOptions
-  ): EmbraceExtendedSpan | null {
+    options?: ExtendedSpanOptions
+  ): ExtendedSpan | null {
     return this.getTraceManager().startSpan(name, options);
   }
 }
