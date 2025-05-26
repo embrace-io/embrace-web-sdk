@@ -11,8 +11,10 @@
   "publishConfig": {
     "access": "public"
   },
+  "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
+    "sdk:analyze": "tsx scripts/measureSize.ts",
     "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
     "sdk:compile:clean": "rimraf build",
     "sdk:install:clean": "rimraf node_modules",
@@ -21,7 +23,8 @@
     "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
     "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
     "sdk:test:watch": "npm run sdk:test -- --watch",
-    "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json && npm run sdk:compile:esm:bundle",
+    "sdk:compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "sdk:compile:rollup": "rollup -c",
     "sdk:compile:esm": "tsc --build tsconfig.esm.json",
     "sdk:compile:esm:watch": "tsc --build tsconfig.esm.json --watch",
     "sdk:compile:esnext": "tsc --build tsconfig.esnext.json",
@@ -86,10 +89,10 @@
   ],
   "dependencies": {
     "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/instrumentation": "0.57.0",
     "@opentelemetry/instrumentation-document-load": "0.44.1",
     "@opentelemetry/instrumentation-fetch": "0.57.2",
     "@opentelemetry/instrumentation-xml-http-request": "0.57.2",
-    "@opentelemetry/instrumentation": "0.57.0",
     "@opentelemetry/opentelemetry-browser-detector": "0.57.2",
     "@opentelemetry/otlp-exporter-base": "0.57.2",
     "@opentelemetry/sdk-trace-web": "1.30.1",
@@ -104,6 +107,8 @@
     "@remcovaes/web-test-runner-vite-plugin": "1.2.2",
     "@rollup/plugin-commonjs": "28.0.3",
     "@rollup/plugin-node-resolve": "16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
     "@types/chai": "5.2.2",
     "@types/mocha": "10.0.10",
     "@types/node": "22.15.21",
@@ -124,6 +129,7 @@
     "rimraf": "6.0.1",
     "rollup": "4.41.1",
     "sinon-chai": "4.0.0",
+    "tsx": "^4.19.4",
     "typedoc": "0.28.4",
     "typescript": "5.8.3",
     "typescript-eslint": "8.32.1"

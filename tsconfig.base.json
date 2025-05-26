@@ -2,12 +2,11 @@
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "declaration": true,
-    "declarationMap": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": true,
     "module": "commonjs",
     "newLine": "LF",
+    "noEmit": true,
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
@@ -17,7 +16,6 @@
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "outDir": "build",
     "rootDir": "src",
     "target": "es2017",
     "lib": [
@@ -31,6 +29,7 @@
   ],
   "exclude": [
     "./**/*.test.ts",
+    "./scripts/*.ts",
     "node_modules",
     "demo",
     "cli",
