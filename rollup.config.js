@@ -3,15 +3,20 @@ import resolve from '@rollup/plugin-node-resolve';
 import { defineConfig } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
+import pkg from './package.json' with { type: 'json' };
+
+// Treat all deps as external for NPM build
+const externalDeps = [
+  'tslib',
+  ...Object.keys(pkg.dependencies || {}),
+  ...Object.keys(pkg.peerDependencies || {}),
+];
 
 export default defineConfig([
   // ESM Build
   {
     input: 'src/index.ts',
     plugins: [
-      resolve({
-        browser: true,
-      }),
       typescript({
         tsconfig: './tsconfig.esm.json',
       }),
@@ -24,15 +29,13 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: externalDeps,
   },
 
   // ESNext build
   {
     input: 'src/index.ts',
     plugins: [
-      resolve({
-        browser: true,
-      }),
       typescript({
         tsconfig: './tsconfig.esnext.json',
       }),
@@ -45,15 +48,13 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: externalDeps,
   },
 
   // CJS build
   {
     input: 'src/index.ts',
     plugins: [
-      resolve({
-        browser: true,
-      }),
       typescript({
         tsconfig: './tsconfig.json',
       }),
@@ -64,6 +65,7 @@ export default defineConfig([
       format: 'cjs',
       sourcemap: true,
     },
+    external: externalDeps,
   },
 
   // CDN Build

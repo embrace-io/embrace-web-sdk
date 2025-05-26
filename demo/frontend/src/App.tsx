@@ -62,19 +62,25 @@ const App = () => {
 
   const handleSendEmbraceInfoLog = () => {
     logManager.message('This is an info log', 'info', {
-      key: 'some value for an info log',
+      attributes: {
+        key: 'some value for an info log',
+      },
     });
   };
 
   const handleSendEmbraceWarnLog = () => {
     logManager.message('This is a warning log', 'warning', {
-      key: 'some value for a warning log',
+      attributes: {
+        key: 'some value for an info log',
+      },
     });
   };
 
   const handleSendEmbraceErrorLog = () => {
     logManager.message('This is an error log', 'error', {
-      key: 'some value for an error log',
+      attributes: {
+        key: 'some value for an info log',
+      },
     });
   };
 
