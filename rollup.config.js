@@ -70,12 +70,16 @@ export default defineConfig([
 
   // CDN Build
   {
-    input: 'build/esm/index.js',
+    input: 'src/index.ts',
     plugins: [
+      typescript({
+        tsconfig: './tsconfig.esm.json',
+      }),
       commonjs(),
       resolve({
         browser: true,
       }),
+      terser(),
     ],
     output: {
       file: 'build/iife/bundle.js',

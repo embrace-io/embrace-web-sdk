@@ -7,6 +7,7 @@ const TARGET_DIRS = [
   { name: 'ESM', path: 'build/esm' },
   { name: 'ESNext', path: 'build/esnext' },
   { name: 'CJS (src)', path: 'build/src' },
+  { name: 'CDN script (iife)', path: 'build/iife' },
 ];
 
 const walkDir = (dir: string, ext = '.js'): string[] => {
