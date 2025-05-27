@@ -2,6 +2,7 @@
 
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const Sonda = require('sonda/webpack');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -14,6 +15,7 @@ const config = {
     open: true,
     host: 'localhost',
   },
+  devtool: 'source-map',
   plugins: [
     new HtmlWebpackPlugin({
       template: 'index.html',
@@ -21,6 +23,8 @@ const config = {
 
     // Add your plugins here
     // Learn more about plugins from https://webpack.js.org/configuration/plugins/
+
+    new Sonda(),
   ],
   module: {
     rules: [
