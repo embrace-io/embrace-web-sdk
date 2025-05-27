@@ -5,11 +5,7 @@ const ASYNC_MODE = process.env.VITE_ASYNC_MODE === 'true';
 const SYNC_BUNDLE = `<script src="/bundle.js"></script>`;
 const ASYNC_BUNDLE = `
   <script>
-  (function(e,m,b) {
-        e.EmbraceWebSdk=e.EmbraceWebSdk||{q:[],onReady:function(f){e.EmbraceWebSdk.q.push(f);}};
-        s=m.createElement(b);s.async=1;s.src="./bundle.js";
-        b=m.getElementsByTagName(b)[0];b.parentNode.insertBefore(s,b);
-      })(window, document, "script");
+    !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.src="./bundle.js",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
   </script>
 `;
 

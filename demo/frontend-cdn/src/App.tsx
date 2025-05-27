@@ -23,7 +23,7 @@ const App = () => {
   useEffect(() => {
     if (!initialized) {
       // @ts-ignore
-      window.EmbraceWebSdk.onReady(() => {
+      window.EmbraceWebSdkOnReady.onReady(() => {
         // @ts-ignore
         sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
         setInitialized(true);

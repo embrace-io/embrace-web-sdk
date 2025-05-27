@@ -341,18 +341,14 @@ as you refer to that documentation:
 If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add this snippet to your HTML file:
 ```html
 <script>
-   (function(e,m,b) {
-      e.EmbraceWebSdk=e.EmbraceWebSdk||{q:[],onReady:function(f){e.EmbraceWebSdk.q.push(f);}};
-      s=m.createElement(b);s.async=1;s.src="./bundle.js";
-      b=m.getElementsByTagName(b)[0];b.parentNode.insertBefore(s,b);
-   })(window, document, "script");
+   !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
 </script>
 ```
 
 By deferring the loading of the SDK, any early calls to the SDK need to be wrapped in the `onReady` method:
 
 ```javascript
-window.EmbraceWebSdk.onReady(() => {
+window.EmbraceWebSdkOnReady.onReady(() => {
    window.EmbraceWebSdk.sdk.initSDK({
       appVersion: '0.0.1',
       /*...*/
@@ -362,7 +358,8 @@ window.EmbraceWebSdk.onReady(() => {
 
 This is necessary to ensure that the SDK is fully loaded before you start using it.
 
-**NOTE**: The SDK may miss some early telemetry events emitted before the SDK is initialized if you use this method.
+> [!WARNING]
+> The SDK may miss some early telemetry events emitted before the SDK is initialized if you use this method.
 
 ## Using without Embrace
 

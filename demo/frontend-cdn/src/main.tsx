@@ -8,7 +8,7 @@ const ASYNC_MODE = import.meta.env.VITE_ASYNC_MODE === 'true';
 
 if (ASYNC_MODE) {
   // @ts-ignore
-  window.EmbraceWebSdk.onReady(() => {
+  window.EmbraceWebSdkOnReady.onReady(() => {
     setupOTel();
   });
 } else {
