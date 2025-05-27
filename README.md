@@ -338,7 +338,7 @@ as you refer to that documentation:
 
 ### Async Loading
 
-If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add this snippet to your HTML file:
+If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add the following snippet to your HTML file. Remember to replace `X.X.X` with the version of the SDK you want to include:
 ```html
 <script>
    !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
