@@ -154,10 +154,6 @@ export type SDKInitConfig = BaseSDKInitConfig &
     | SpanExportSDKInitConfig
   );
 
-export type InitSDKFunction = (config: SDKInitConfig) => SDKControl | false;
-
-export type OnReadyCallback = () => void;
-
 export interface SDKControl {
   flush: () => Promise<void>;
 }
