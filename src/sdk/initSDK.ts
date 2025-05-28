@@ -27,7 +27,7 @@ import {
 import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
-  EmbTypeLogRecordProcessor,
+  EmbraceLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
@@ -232,7 +232,7 @@ const setupLogs = ({
     new IdentifiableSessionLogRecordProcessor({
       spanSessionManager,
     }),
-    new EmbTypeLogRecordProcessor(),
+    new EmbraceLogRecordProcessor(),
   ];
 
   logExporters?.forEach(exporter => {
