@@ -48,6 +48,7 @@ export const initSDK = (
   {
     appID,
     appVersion,
+    bundleID,
     resource = Resource.empty(),
     spanExporters = [],
     logExporters = [],
@@ -76,10 +77,15 @@ export const initSDK = (
       logLevel,
     });
 
+    if (bundleID && bundleID.length !== 32) {
+      throw new Error('bundleID should be 32 characters long');
+    }
+
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource({
         diagLogger,
         appVersion,
+        bundleID,
         pageSessionStorage: window.sessionStorage,
       })
     );
