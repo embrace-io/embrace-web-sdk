@@ -20,9 +20,9 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS | null = null;
 
   public constructor({
-    diag,
-    shouldCleanupPathOptionsFromRouteName = true,
-  }: NavigationInstrumentationArgs) {
+                       diag,
+                       shouldCleanupPathOptionsFromRouteName = true,
+                     }: NavigationInstrumentationArgs) {
     super({
       instrumentationName: 'NavigationInstrumentation',
       instrumentationVersion: '1.0.0',
