@@ -332,9 +332,9 @@ the following example:
    });
    ```
 
-3) Similarly, for sourcemap uploads our web-cli looks for a special placeholder string to replace with the real ID of
-the uploaded bundle files. When our SDK is not bundled with your code you will need to provide this placeholder string
-when initializing the sdk as in the following example:
+3) Similarly, for sourcemap uploads our CLI looks for a special placeholder string to replace with the real ID of the
+uploaded bundle files. When our SDK is not bundled with your code you will need to provide this placeholder string when
+initializing the sdk as in the following example:
 
    ```javascript
    sdk.initSDK({
@@ -347,7 +347,7 @@ when initializing the sdk as in the following example:
    > [!NOTE]
    > It is simplest to use this specific string since that is what our CLI tool will look for by default, however any 32
    > character string would be valid. If you do use another value make sure to specify it using the
-   > `--template-bundle-id` flag when invoking `embrace-web-cli`
+   > `--template-bundle-id` flag when invoking `embrace-web-cli upload`
 
 ### Async Loading
 
