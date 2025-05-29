@@ -60,11 +60,20 @@
     "README.md"
   ],
   "exports": {
-    "module": "./build/esm/index.js",
-    "types": "./build/types/index.d.ts",
-    "require": "./build/src/index.js",
-    "import": "./build/esm/index.js",
-    "default": "./build/src/index.js"
+    ".": {
+      "module": "./build/esm/index.js",
+      "types": "./build/types/index.d.ts",
+      "require": "./build/src/index.js",
+      "import": "./build/esm/index.js",
+      "default": "./build/src/index.js"
+    },
+    "./react-instrumentation": {
+      "module": "./build/esm/react-instrumentation.js",
+      "types": "./build/types/react/index.d.ts",
+      "require": "./build/esm/react-instrumentation.js",
+      "import": "./build/esm/react-instrumentation.js",
+      "default": "./build/esm/react-instrumentation.js"
+    }
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
   "bugs": {
@@ -132,5 +141,11 @@
     "typedoc": "0.28.5",
     "typescript": "5.8.3",
     "typescript-eslint": "8.33.0"
+  },
+  "peerDependencies": {
+    "react-router-dom": "^5.0.0 || ^6.0.0"
+  },
+  "optionalDependencies": {
+    "react-router-dom": "^5.0.0 || ^6.0.0"
   }
 }

@@ -12,10 +12,15 @@ const externalDeps = [
   ...Object.keys(pkg.peerDependencies || {}),
 ];
 
+const input = {
+  index: 'src/index.ts',
+  'react-instrumentation': 'src/react/index.ts',
+};
+
 export default defineConfig([
   // ESM Build
   {
-    input: 'src/index.ts',
+    input,
     plugins: [
       typescript({
         tsconfig: './tsconfig.esm.json',
@@ -34,7 +39,7 @@ export default defineConfig([
 
   // ESNext build
   {
-    input: 'src/index.ts',
+    input,
     plugins: [
       typescript({
         tsconfig: './tsconfig.esnext.json',
@@ -53,7 +58,7 @@ export default defineConfig([
 
   // CJS build
   {
-    input: 'src/index.ts',
+    input,
     plugins: [
       typescript({
         tsconfig: './tsconfig.json',
@@ -68,7 +73,7 @@ export default defineConfig([
     external: externalDeps,
   },
 
-  // CDN Build
+  // CDN Build, it only exports the core web sdk and not any additional instrumentation
   {
     input: 'src/index.ts',
     plugins: [
