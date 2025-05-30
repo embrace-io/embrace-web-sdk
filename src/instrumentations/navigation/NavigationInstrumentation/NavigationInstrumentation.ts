@@ -18,9 +18,9 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _currentRouteSpan: Span | null = null;
 
   public constructor({
-    diag,
-    shouldCleanupPathOptionsFromRouteName = true,
-  }: NavigationInstrumentationArgs) {
+                       diag,
+                       shouldCleanupPathOptionsFromRouteName = true,
+                     }: NavigationInstrumentationArgs) {
     super({
       instrumentationName: 'NavigationInstrumentation',
       instrumentationVersion: '1.0.0',
