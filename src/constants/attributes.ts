@@ -6,9 +6,11 @@ export const KEY_EMB_JS_EXCEPTION_STACKTRACE = 'emb.stacktrace.js';
 export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
+export const KEY_VIEW_NAME = 'view.name';
 
 export enum EMB_TYPES {
   Session = 'ux.session',
+  View = 'ux.view',
   Network = 'perf.network_request',
   Perf = 'perf',
   SystemLog = 'sys.log', // SystemLog is a log emb type that tells the Embrace BE to treat this as an Embrace Log to be shown in the dashboard.

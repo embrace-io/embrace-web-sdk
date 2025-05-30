@@ -223,7 +223,7 @@ const App = () => {
             ))}
           </div>
         )}
-        <button onClick={() => history.push('/about')}>
+        <button onClick={() => history.push(`/about/${Math.random()}`)}>
           Navigate to another page
         </button>
       </div>

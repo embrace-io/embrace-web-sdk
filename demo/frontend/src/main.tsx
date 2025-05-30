@@ -4,22 +4,26 @@ import './index.css';
 import App from './App.tsx';
 import { setupOTel } from './otel.js';
 import { createBrowserHistory } from 'history';
-import { Route, Router } from 'react-router-dom';
+import { Route, Router, Switch } from 'react-router-dom';
 import About from './About';
+import { withOTelRouting } from '@embrace-io/web-sdk/react-instrumentation';
 
 const history = createBrowserHistory();
+const OTelRoute = withOTelRouting(Route);
 
-setupOTel({ history });
+setupOTel();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Router history={history}>
-      <Route exact path="/">
-        <App />
-      </Route>
-      <Route path="/about">
-        <About />
-      </Route>
+      <Switch>
+        <OTelRoute exact path="/">
+          <App />
+        </OTelRoute>
+        <OTelRoute path="/about/:id">
+          <About />
+        </OTelRoute>
+      </Switch>
     </Router>
   </StrictMode>
 );

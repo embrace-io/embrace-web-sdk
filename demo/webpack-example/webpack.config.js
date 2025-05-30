@@ -24,7 +24,7 @@ const config = {
     // Add your plugins here
     // Learn more about plugins from https://webpack.js.org/configuration/plugins/
 
-    new Sonda(),
+    ...(isProduction ? [new Sonda()] : []),
   ],
   module: {
     rules: [
