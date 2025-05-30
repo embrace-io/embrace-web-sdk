@@ -235,7 +235,7 @@ describe('initSDK', () => {
     void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
   });
 
-  it('should ensure a provided bundle ID is valid', () => {
+  it('should ensure a provided template bundle ID is valid', () => {
     const diagLogger = new InMemoryDiagLogger();
     const result = initSDK({
       appID: 'abc12',
@@ -408,7 +408,7 @@ describe('initSDK', () => {
       );
     });
 
-    it('should include a custom bundle ID in the resource attributes if provided', async () => {
+    it('should include a custom template bundle ID in the resource attributes if provided', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
         appID: 'abc12',
