@@ -12,13 +12,22 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
-import { setupTestLogExporter } from '../../testUtils/index.js';
+import {
+  setupTestLogExporter,
+  setupTestTraceExporter,
+} from '../../testUtils/index.js';
 import {
   OTelPerformanceManager,
   type PerformanceManager,
 } from '../../utils/index.js';
 import { EmbraceLogManager } from './EmbraceLogManager.js';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import {
+  KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -26,16 +35,28 @@ const { expect } = chai;
 describe('EmbraceLogManager', () => {
   let manager: EmbraceLogManager;
   let memoryExporter: InMemoryLogRecordExporter;
+  let spanExporter: InMemorySpanExporter;
   let perf: PerformanceManager;
+  let spanSessionManager: EmbraceSpanSessionManager;
 
   before(() => {
     memoryExporter = setupTestLogExporter();
+    spanExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {
     memoryExporter.reset();
     perf = new OTelPerformanceManager();
-    manager = new EmbraceLogManager({ perf });
+    spanSessionManager = new EmbraceSpanSessionManager();
+    manager = new EmbraceLogManager({
+      perf,
+      spanSessionManager,
+    });
+  });
+
+  afterEach(() => {
+    memoryExporter.reset();
+    spanExporter.reset();
   });
 
   it('should initialize a EmbraceLogManager', () => {
@@ -296,5 +317,62 @@ describe('EmbraceLogManager', () => {
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
+  });
+
+  it('should report counts of logging on the active session span', () => {
+    spanSessionManager.startSessionSpan();
+
+    // Error logs should be counted
+    manager.message('this is an error log', 'error');
+    manager.message('this is another error log', 'error');
+
+    // Other severities should not
+    manager.message('this is a warning log', 'warning');
+    manager.message('this is an info log', 'info');
+
+    // Unhandled exceptions should be counted
+    manager.logException(new Error('this is an exception'), { handled: false });
+    manager.logException(new Error('this is another exception'), {
+      handled: false,
+    });
+    manager.logException(new Error('this is a third exception'), {
+      handled: false,
+    });
+
+    // Handled exceptions should not
+    manager.logException(new Error('this is a handled exception'), {
+      handled: true,
+    });
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes[KEY_EMB_ERROR_LOG_COUNT]).to.be.equal(2);
+    expect(
+      sessionSpan.attributes[KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT]
+    ).to.be.equal(3);
+  });
+
+  it('should handle report counts of logging when there is no the active session span', () => {
+    expect(() => {
+      manager.message('this is an error log', 'error');
+      manager.logException(new Error('this is an exception'), {
+        handled: false,
+      });
+    }).to.not.throw();
+
+    spanSessionManager.startSessionSpan();
+    spanSessionManager.endSessionSpan();
+
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).not.to.have.property(
+      KEY_EMB_ERROR_LOG_COUNT
+    );
+    expect(sessionSpan.attributes).not.to.have.property(
+      KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
+    );
   });
 });

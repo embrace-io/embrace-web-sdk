@@ -22,14 +22,21 @@ import type {
   LogExceptionOptions,
   LogMessageOptions,
 } from '../../api-logs/manager/index.js';
+import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
+import {
+  KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.js';
 
 export class EmbraceLogManager implements LogManager {
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
+  private readonly _spanSessionManager: SpanSessionManagerInternal;
 
-  public constructor({ perf }: EmbraceLogManagerArgs = {}) {
+  public constructor({ perf, spanSessionManager }: EmbraceLogManagerArgs) {
     this._perf = perf ?? new OTelPerformanceManager();
     this._logger = logs.getLogger('embrace-web-sdk-logs');
+    this._spanSessionManager = spanSessionManager;
   }
 
   private static _logSeverityToSeverityNumber(
@@ -53,6 +60,12 @@ export class EmbraceLogManager implements LogManager {
       timestamp = this._perf.getNowMillis(),
     }: LogExceptionOptions = {}
   ) {
+    if (!handled) {
+      this._spanSessionManager.incrSessionCountForKey(
+        KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
+      );
+    }
+
     this._logger.emit({
       timestamp,
       severityNumber: SeverityNumber.ERROR,
@@ -75,6 +88,10 @@ export class EmbraceLogManager implements LogManager {
     severity: LogSeverity,
     { attributes = {}, includeStacktrace = true }: LogMessageOptions = {}
   ) {
+    if (severity === 'error') {
+      this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
+    }
+
     this._logMessage({
       message,
       severity,

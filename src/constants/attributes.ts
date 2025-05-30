@@ -6,6 +6,9 @@ export const KEY_EMB_JS_EXCEPTION_STACKTRACE = 'emb.stacktrace.js';
 export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
+export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
+export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
+  'emb.unhandled_exceptions_count';
 
 export enum EMB_TYPES {
   Session = 'ux.session',

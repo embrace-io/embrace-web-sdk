@@ -25,6 +25,7 @@ import type {
 import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumentation-document-load';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
+import type { SpanSessionManagerInternal } from '../managers/index.js';
 
 type BaseSDKInitConfig = {
   /**
@@ -177,7 +178,7 @@ export interface SetupLogsArgs {
   resource: Resource;
   logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
-  spanSessionManager: SpanSessionManager;
+  spanSessionManager: SpanSessionManagerInternal;
 }
 
 type OptionalInstrumentations =

@@ -6,10 +6,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import type {
-  ReasonSessionEnded,
-  SpanSessionManager,
-} from '../../api-sessions/index.js';
+import type { ReasonSessionEnded } from '../../api-sessions/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_PREFIX_EMB_PROPERTIES,
@@ -22,13 +19,17 @@ import {
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
-import type { EmbraceSpanSessionManagerArgs } from './types.js';
+import type {
+  EmbraceSpanSessionManagerArgs,
+  SpanSessionManagerInternal,
+} from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 
-export class EmbraceSpanSessionManager implements SpanSessionManager {
+export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
+  private _activeSessionCounts: Record<string, number> | null = null;
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -88,11 +89,17 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
       );
       return;
     }
-    this._sessionSpan.setAttribute(KEY_EMB_SESSION_REASON_ENDED, reason);
+
+    this._sessionSpan.setAttributes({
+      [KEY_EMB_SESSION_REASON_ENDED]: reason,
+      ...this._activeSessionCounts,
+    });
+
     this._sessionSpan.end();
     this._sessionSpan = null;
     this._activeSessionStartTime = null;
     this._activeSessionId = null;
+    this._activeSessionCounts = null;
   }
 
   public getSessionId(): string | null {
@@ -115,6 +122,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
+    this._activeSessionCounts = {};
     this._sessionSpan = tracer.startSpan('emb-session', {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Session,
@@ -125,5 +133,16 @@ export class EmbraceSpanSessionManager implements SpanSessionManager {
         [ATTR_SESSION_ID]: this._activeSessionId,
       },
     });
+  }
+
+  public incrSessionCountForKey(key: string) {
+    if (!this._sessionSpan || !this._activeSessionCounts) {
+      this._diag.debug(
+        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+
+    this._activeSessionCounts[key] = (this._activeSessionCounts[key] || 0) + 1;
   }
 }
