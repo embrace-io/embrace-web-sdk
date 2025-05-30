@@ -239,14 +239,14 @@ describe('initSDK', () => {
     const diagLogger = new InMemoryDiagLogger();
     const result = initSDK({
       appID: 'abc12',
-      bundleID: 'invalid-bundle-id',
+      templateBundleID: 'invalid-bundle-id',
       diagLogger,
     });
     void expect(result).to.be.false;
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: bundleID should be 32 characters long'
+      'failed to initialize the SDK: templateBundleID should be 32 characters long'
     );
   });
 
@@ -412,7 +412,7 @@ describe('initSDK', () => {
       fakeFetchRespondWith('');
       const result = initSDK({
         appID: 'abc12',
-        bundleID: 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH',
+        templateBundleID: 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH',
         defaultInstrumentationConfig: {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub

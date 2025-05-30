@@ -339,7 +339,7 @@ initializing the sdk as in the following example:
    ```javascript
    sdk.initSDK({
      appVersion: '0.0.1',
-     bundleID: 'EmbIOBundleIDfd6996f1007b363f87a',
+     templateBundleID: 'EmbIOBundleIDfd6996f1007b363f87a',
      /*...*/
    });
    ```
