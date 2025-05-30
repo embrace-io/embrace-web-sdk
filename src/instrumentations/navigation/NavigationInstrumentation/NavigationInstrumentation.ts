@@ -48,6 +48,18 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
+  public setCurrentRoute = (route: Route) => {
+    if (!this._config.enabled) {
+      return;
+    }
+
+    if (route.url !== this._currentRoute?.url) {
+      this._endRouteSpan();
+      this._startRouteSpan(route);
+      this._currentRoute = route;
+    }
+  };
+
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
 
