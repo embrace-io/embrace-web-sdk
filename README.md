@@ -150,6 +150,10 @@ try {
 }
 ```
 
+## React Instrumentation
+
+Instrumentation related to React is documented in [REACT.md](./REACT.md).
+
 ## Enriching with metadata
 
 You can add custom properties to be included as part of the current session:
