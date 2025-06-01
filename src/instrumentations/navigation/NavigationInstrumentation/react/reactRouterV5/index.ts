@@ -1,2 +1,2 @@
 export { createReactRouterNavigationInstrumentation } from './createReactRouterNavigationInstrumentation.js';
-export { withOTelRouting } from './withOTelRouting.js';
+export { withEmbraceRouting } from './withEmbraceRouting.js';

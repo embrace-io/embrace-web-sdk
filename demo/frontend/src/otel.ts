@@ -10,7 +10,7 @@ const setupOTel = () => {
     appID: SAMPLE_APP_ID,
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
-    instrumentations: [createReactRouterNavigationInstrumentation({})],
+    instrumentations: [createReactRouterNavigationInstrumentation()],
   });
 
   if (!!result) {

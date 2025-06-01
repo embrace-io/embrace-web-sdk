@@ -6,10 +6,10 @@ import { setupOTel } from './otel.js';
 import { createBrowserHistory } from 'history';
 import { Route, Router, Switch } from 'react-router-dom';
 import About from './About';
-import { withOTelRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
 
 const history = createBrowserHistory();
-const OTelRoute = withOTelRouting(Route);
+const OTelRoute = withEmbraceRouting(Route);
 
 setupOTel();
 

@@ -49,12 +49,15 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   private readonly _startRouteSpan = (route: Route): Span => {
-    this._currentRouteSpan = this.tracer.startSpan(route.path, {
+    this._diag.debug(`Starting route span for url: ${route.url}`);
+
+    const pathName = this._shouldCleanupPathOptionsFromRouteName
+      ? route.path.replace(PATH_OPTIONS_RE, '')
+      : route.path;
+    this._currentRouteSpan = this.tracer.startSpan(pathName, {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.View,
-        [KEY_VIEW_NAME]: this._shouldCleanupPathOptionsFromRouteName
-          ? route.path.replace(PATH_OPTIONS_RE, '')
-          : route.path,
+        [KEY_VIEW_NAME]: pathName,
       },
     });
 
@@ -62,7 +65,8 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   private readonly _endRouteSpan = () => {
-    if (this._currentRouteSpan) {
+    if (this._currentRouteSpan && this._currentRoute) {
+      this._diag.debug(`Ending route span for url: ${this._currentRoute.url}`);
       this._currentRouteSpan.end();
       this._currentRouteSpan = null;
     }
