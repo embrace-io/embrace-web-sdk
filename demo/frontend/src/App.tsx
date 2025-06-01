@@ -3,7 +3,12 @@ import { log, session, trace } from '@embrace-io/web-sdk';
 import { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
-import { useHistory } from 'react-router-dom';
+import {
+  RoutingDemoContextProvider,
+  RoutingDemoNavigationType,
+} from './RoutingDemo/RoutingDemoContext';
+import ReactRouterV4V5 from './RoutingDemo/ReactRouterV4V5';
+import ReactRouterV6Declarative from './RoutingDemo/ReactRouterV6Declarative';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -15,7 +20,8 @@ const App = () => {
   const [sessionRefresher, setSessionRefresher] = useState<
     number | undefined
   >();
-  const history = useHistory();
+  const [navigationType, setNavigationType] =
+    useState<RoutingDemoNavigationType | null>(null);
 
   useEffect(() => {
     setSessionRefresher(
@@ -105,31 +111,31 @@ const App = () => {
   };
 
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
-  function handleThrowError() {
+  const handleThrowError = () => {
     handleThrowErrorA(true);
-  }
+  };
 
-  function handleThrowErrorA(useBranchB: boolean) {
+  const handleThrowErrorA = (useBranchB: boolean) => {
     if (useBranchB) {
       handleThrowErrorB();
     } else {
       handleThrowErrorD();
     }
-  }
+  };
 
-  function handleThrowErrorB() {
+  const handleThrowErrorB = () => {
     handleThrowErrorC();
-  }
+  };
 
-  function handleThrowErrorC() {
+  const handleThrowErrorC = () => {
     handleThrowErrorA(false);
-  }
+  };
 
-  function handleThrowErrorD() {
+  const handleThrowErrorD = () => {
     const e = new Error('This is an error with name ParseError and type Error');
     e.name = 'ParseError';
     throw e;
-  }
+  };
 
   const handleRejectPromise = () => {
     return new Promise((_, reject) => {
@@ -139,9 +145,18 @@ const App = () => {
 
   const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
 
-  return (
-    <>
-      <div className={styles.container}>
+  const renderContent = () => {
+    if (navigationType) {
+      switch (navigationType) {
+        case 'declarativeV4V5':
+          return <ReactRouterV4V5 />;
+        case 'declarativeV6+':
+          return <ReactRouterV6Declarative />;
+      }
+    }
+
+    return (
+      <div className="container">
         Demo
         <div>current session: {currentSession}</div>
         <div className={styles.actions}>
@@ -223,11 +238,20 @@ const App = () => {
             ))}
           </div>
         )}
-        <button onClick={() => history.push(`/about/${Math.random()}`)}>
-          Navigate to another page
+        <button onClick={() => setNavigationType('declarativeV4V5')}>
+          Enter react-router v4/v5 navigation demo
+        </button>
+        <button onClick={() => setNavigationType('declarativeV6+')}>
+          Enter react-router v6+ declarative navigation demo
         </button>
       </div>
-    </>
+    );
+  };
+
+  return (
+    <RoutingDemoContextProvider value={{ navigationType, setNavigationType }}>
+      {renderContent()}
+    </RoutingDemoContextProvider>
   );
 };
 

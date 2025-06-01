@@ -1,2 +1,2 @@
-export { createReactRouterNavigationInstrumentation } from './createReactRouterNavigationInstrumentation.js';
+export { createReactRouterV5NavigationInstrumentation } from './createReactRouterV5NavigationInstrumentation.js';
 export { withEmbraceRouting } from './withEmbraceRouting.js';

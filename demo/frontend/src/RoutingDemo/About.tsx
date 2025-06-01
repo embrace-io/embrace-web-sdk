@@ -1,0 +1,31 @@
+import { useHistory as useHistoryV4V5 } from 'react-router-domv4v5';
+import { useRoutingDemoContext } from './RoutingDemoContext';
+import { useNavigate } from 'react-router-domv6plus';
+
+const About = () => {
+  const { navigationType } = useRoutingDemoContext();
+  const historyV4V5 = useHistoryV4V5();
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    switch (navigationType) {
+      case 'declarativeV4V5':
+        historyV4V5.goBack();
+        break;
+      case 'declarativeV6+':
+        navigate(-1);
+        break;
+      default:
+        console.warn('Unknown navigation type');
+    }
+  };
+
+  return (
+    <div className="container">
+      <h1>About Page</h1>
+      <button onClick={handleGoBack}>Go Back</button>
+    </div>
+  );
+};
+
+export default About;
