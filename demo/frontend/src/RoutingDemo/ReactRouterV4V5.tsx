@@ -1,12 +1,12 @@
 import { Route, Router, Switch } from 'react-router-domv4v5';
-import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRoute } from '@embrace-io/web-sdk/react-instrumentation';
 import Home from './Home';
 import Product from './Product';
 import { createBrowserHistory } from 'history';
 import { useRoutingDemoContext } from './RoutingDemoContext';
 import About from './About';
 
-const EmbraceRoute = withEmbraceRouting(Route);
+const EmbraceRoute = withEmbraceRoute(Route);
 
 const history = createBrowserHistory();
 

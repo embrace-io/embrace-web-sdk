@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { withEmbraceRouting } from './withEmbraceRouting.js';
+import { withEmbraceRoute } from './withEmbraceRoute.js';
 import { getNavigationInstrumentation } from '../../index.js';
 import type { RouteComponentProps } from './types.js';
 import sinonChai from 'sinon-chai';
@@ -8,7 +8,7 @@ import sinonChai from 'sinon-chai';
 chai.use(sinonChai);
 const { expect } = chai;
 
-describe('withEmbraceRouting', () => {
+describe('withEmbraceRoute', () => {
   const navigationInstrumentation = getNavigationInstrumentation({});
   const MockRouteComponent = () => null;
   let setCurrentRouteStub: sinon.SinonStub;
@@ -25,7 +25,7 @@ describe('withEmbraceRouting', () => {
   });
 
   it('should set the current route', () => {
-    const OTelRoute = withEmbraceRouting(MockRouteComponent);
+    const OTelRoute = withEmbraceRoute(MockRouteComponent);
     const props = {
       path: '/test/:id',
       computedMatch: {
@@ -44,7 +44,7 @@ describe('withEmbraceRouting', () => {
   });
 
   it('should not set the current route if the path is undefined', () => {
-    const OTelRoute = withEmbraceRouting(MockRouteComponent);
+    const OTelRoute = withEmbraceRoute(MockRouteComponent);
 
     void OTelRoute({});
 
@@ -52,7 +52,7 @@ describe('withEmbraceRouting', () => {
   });
 
   it('should not set the current route if computedMatch is undefined', () => {
-    const OTelRoute = withEmbraceRouting(MockRouteComponent);
+    const OTelRoute = withEmbraceRoute(MockRouteComponent);
     const props = { path: '/test/:id' };
 
     void OTelRoute(props as RouteComponentProps);
@@ -61,9 +61,9 @@ describe('withEmbraceRouting', () => {
   });
 
   it('should preserve the display name of the wrapped component', () => {
-    const OTelRoute = withEmbraceRouting(MockRouteComponent);
+    const OTelRoute = withEmbraceRoute(MockRouteComponent);
     void expect(OTelRoute.displayName).to.equal(
-      `withEmbraceRouting(MockRouteComponent)`
+      `withEmbraceRoute(MockRouteComponent)`
     );
   });
 });

@@ -21,13 +21,13 @@ sdk.initSDK({
 
 ### React Router V4/V5
 
-If you're using React Router V4 or V5, you can use the `withEmbraceRouting` higher-order component (HOC) to wrap your `Route` components. This will automatically track route changes. `EmbraceRoute` needs to be surrounded by a `<Switch>` component to properly capture the current path.
+If you're using React Router V4 or V5, you can use the `withEmbraceRoute` higher-order component (HOC) to wrap your `Route` components. This will automatically track route changes. `EmbraceRoute` needs to be surrounded by a `<Switch>` component to properly capture the current path.
 
 ```typescript jsx
-import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRoute } from '@embrace-io/web-sdk/react-instrumentation';
 import { Route, Router, Switch } from 'react-router-dom';
 
-const EmbraceRoute = withEmbraceRouting(Route);
+const EmbraceRoute = withEmbraceRoute(Route);
 
 const App = () => {
   return (
@@ -38,6 +38,29 @@ const App = () => {
         <EmbraceRoute path="/contact" component={Contact} />
       </Switch>
     </Router>
+  )
+}
+```
+
+### React Router V6+ in declarative mode
+
+If you're using React Router V6 or later, you can use the `withEmbraceRoutes` higher-order component (HOC) to wrap your `Routes` components. This will automatically track route changes. 
+
+```typescript jsx
+import { withEmbraceRoutes } from '@embrace-io/web-sdk/react-instrumentation';
+import { Route, Routes, BrowserRouter } from 'react-router-dom';
+
+const EmbraceRoutes = withEmbraceRoutes(Routes);
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <EmbraceRoutes>
+        <Route path="/home" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+      </EmbraceRoutes>
+    </BrowserRouter>
   )
 }
 ```

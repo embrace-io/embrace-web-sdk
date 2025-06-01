@@ -33,7 +33,7 @@ const getLastRoute = (
 export const withEmbraceRoutes = <P extends object>(
   WrappedComponent: React.FunctionComponent<P>
 ) => {
-  const RoutesWithEmbraceRouting: React.FC<P> = (props: P) => {
+  const RoutesWithEmbraceRoutes: React.FC<P> = (props: P) => {
     const navigationInstrumentation = getNavigationInstrumentation();
 
     /**
@@ -60,8 +60,8 @@ export const withEmbraceRoutes = <P extends object>(
   };
 
   // Keep wrapped component metadata
-  RoutesWithEmbraceRouting.displayName = `withEmbraceRoutes(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
-  hoistNonReactStatics(RoutesWithEmbraceRouting, WrappedComponent);
+  RoutesWithEmbraceRoutes.displayName = `withEmbraceRoutes(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+  hoistNonReactStatics(RoutesWithEmbraceRoutes, WrappedComponent);
 
-  return RoutesWithEmbraceRouting;
+  return RoutesWithEmbraceRoutes;
 };
