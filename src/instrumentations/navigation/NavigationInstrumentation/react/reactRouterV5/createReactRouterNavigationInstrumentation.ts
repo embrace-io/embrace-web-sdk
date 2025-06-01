@@ -4,5 +4,5 @@ import {
 } from '../../index.js';
 
 export const createReactRouterNavigationInstrumentation = (
-  config: NavigationInstrumentationArgs
+  config: NavigationInstrumentationArgs = {}
 ) => getNavigationInstrumentation(config);

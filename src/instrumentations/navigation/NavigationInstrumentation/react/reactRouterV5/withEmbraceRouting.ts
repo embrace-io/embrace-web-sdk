@@ -6,10 +6,10 @@ import type {
 } from './types.js';
 import { getNavigationInstrumentation } from '../../index.js';
 
-export const withOTelRouting = <P extends RouteComponentProps>(
+export const withEmbraceRouting = <P extends RouteComponentProps>(
   WrappedComponent: React.ComponentType<P>
 ) => {
-  const RouteWithOTelRouting: React.FC<P> = (props: P) => {
+  const RouteWithEmbraceRouting: React.FC<P> = (props: P) => {
     const navigationInstrumentation = getNavigationInstrumentation();
     // Make sure this is Route component
     if (props.path) {
@@ -29,8 +29,8 @@ export const withOTelRouting = <P extends RouteComponentProps>(
   };
 
   // Keep wrapped component metadata
-  RouteWithOTelRouting.displayName = `withOTelRouting(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
-  hoistNonReactStatics(RouteWithOTelRouting, WrappedComponent);
+  RouteWithEmbraceRouting.displayName = `withEmbraceRouting(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+  hoistNonReactStatics(RouteWithEmbraceRouting, WrappedComponent);
 
-  return RouteWithOTelRouting;
+  return RouteWithEmbraceRouting;
 };
