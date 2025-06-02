@@ -2,7 +2,7 @@
 
 Besides using the `traces` and `logs` APIs, the Embrace Web SDK provides a set of tools to instrument commonly used React libraries. 
 
-> [!WARNING]
+> [!TIP]
 > Make sure you call `sdk.initSDK` before your React App is mounted, this will ensure that the SDK is ready to capture traces and logs from the start of your app's lifecycle.
 
 ## React Router
