@@ -348,8 +348,7 @@ initializing the sdk as in the following example:
    });
    ```
 
-   > [!NOTE]
-   > It is simplest to use this specific string since that is what our CLI tool will look for by default, however any 32
+   > NOTE: It is simplest to use this specific string since that is what our CLI tool will look for by default, however any 32
    > character string would be valid. If you do use another value make sure to specify it using the
    > `--template-bundle-id` flag when invoking `embrace-web-cli upload`
 
