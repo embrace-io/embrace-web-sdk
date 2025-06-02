@@ -150,6 +150,10 @@ try {
 }
 ```
 
+## React Instrumentation
+
+Instrumentation related to React is documented in [REACT.md](./REACT.md).
+
 ## Enriching with metadata
 
 You can add custom properties to be included as part of the current session:
@@ -321,20 +325,33 @@ as you refer to that documentation:
    + const { sdk } = window.EmbraceWebSdk;
    ```
 
-2) Because our web-cli does not support the CDN version of the SDK, you will need to make sure to pass in your app
-   version when initializing the sdk. If you don't, then your app version will be reported to Embrace as
-   `EmbIOAppVersionX.X.X`
+2) Our CLI tool does not support injecting an app version when loading from CDN since in that case our SDK is not
+bundled with your code, instead you will need to make sure to pass in your app version when initializing the sdk as in
+the following example:
 
    ```javascript
-     sdk.initSDK({
+   sdk.initSDK({
      appVersion: '0.0.1',
      /*...*/
    });
    ```
 
-3) Because our web-cli does not support the CDN version of the SDK, the sourcemaps upload won't work
-   (see [Upload sourcemaps](#upload-sourcemaps)). You will not see symbolicated stack traces in Embrace.
+3) Similarly, for sourcemap uploads our CLI looks for a special placeholder string to replace with the real ID of the
+uploaded bundle files. When our SDK is not bundled with your code you will need to provide this placeholder string when
+initializing the sdk as in the following example:
 
+   ```javascript
+   sdk.initSDK({
+     appVersion: '0.0.1',
+     templateBundleID: 'EmbIOBundleIDfd6996f1007b363f87a',
+     /*...*/
+   });
+   ```
+
+   > [!NOTE]
+   > It is simplest to use this specific string since that is what our CLI tool will look for by default, however any 32
+   > character string would be valid. If you do use another value make sure to specify it using the
+   > `--template-bundle-id` flag when invoking `embrace-web-cli upload`
 
 ### Async Loading
 

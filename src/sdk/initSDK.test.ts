@@ -235,6 +235,21 @@ describe('initSDK', () => {
     void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
   });
 
+  it('should ensure a provided template bundle ID is valid', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      templateBundleID: 'invalid-bundle-id',
+      diagLogger,
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: templateBundleID should be 32 characters long'
+    );
+  });
+
   describe('export to Embrace', () => {
     beforeEach(() => {
       fakeFetchInstall();
@@ -391,6 +406,60 @@ describe('initSDK', () => {
       expect(tracesScopeSpan['spans'][0]['name']).to.be.equal(
         'my performance span'
       );
+    });
+
+    it('should include a custom template bundle ID in the resource attributes if provided', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        templateBundleID: 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise(r => setTimeout(r, 1));
+
+      const headers = fakeFetchGetRequestHeaders();
+      expect((headers as Record<string, string>)['X-EM-AID']).to.equal('abc12');
+
+      const body = fakeFetchGetBody();
+      void expect(body).not.to.be.null;
+      const decompressedStream = new Response(body).body?.pipeThrough(
+        new DecompressionStream('gzip')
+      );
+      // translate from Uint8Array to string
+      const text = await new Response(decompressedStream).text();
+      const parsed = JSON.parse(text) as never;
+
+      expect(parsed['resourceSpans']).to.have.lengthOf(1);
+      const resourceSpan = parsed['resourceSpans'][0];
+      const resource = resourceSpan['resource'];
+
+      // Different test environments will include different values for the various browser.* attributes, test on a
+      // subset here rather than the full object
+      expect(resource).to.containSubset({
+        attributes: [
+          { key: 'service.name', value: { stringValue: 'embrace-web-sdk' } },
+          {
+            key: 'bundle_id',
+            value: { stringValue: 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH' },
+          },
+        ],
+        droppedAttributesCount: 0,
+      });
     });
   });
 

@@ -101,6 +101,15 @@ type BaseSDKInitConfig = {
    */
   logLevel?: DiagLogLevel;
 
+  /**
+   * templateBundleID should only be provided when loading the SDK from CDN through a script tag. It is used to specify a 32
+   * character placeholder string which will then be substituted by our CLI tool when uploading source maps. See
+   * "Including the SDK as a code snippet from CDN" in our README for more details.
+   *
+   * **default**: undefined
+   */
+  templateBundleID?: string;
+
   diagLogger?: DiagLogger;
 };
 

@@ -8,4 +8,5 @@ export {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_ERROR_CODE,
   KEY_EMB_APP_INSTANCE_ID,
+  KEY_VIEW_NAME,
 } from './attributes.js';

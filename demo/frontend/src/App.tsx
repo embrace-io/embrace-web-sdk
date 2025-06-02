@@ -3,6 +3,7 @@ import { log, session, trace } from '@embrace-io/web-sdk';
 import { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
+import { useHistory } from 'react-router-dom';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -14,6 +15,7 @@ const App = () => {
   const [sessionRefresher, setSessionRefresher] = useState<
     number | undefined
   >();
+  const history = useHistory();
 
   useEffect(() => {
     setSessionRefresher(
@@ -208,17 +210,22 @@ const App = () => {
         <button onClick={handleSendXMLNetworkRequest}>
           Send a XML Network Request
         </button>
-        <div className={styles.spans}>
-          {spans.map((span, index) => (
-            <div className={styles.span} key={index}>
-              <div>Span {index}</div>
+        {spans.length > 0 && (
+          <div className={styles.spans}>
+            {spans.map((span, index) => (
+              <div className={styles.span} key={index}>
+                <div>Span {index}</div>
 
-              <button onClick={() => handleEndSpan(span, index)}>
-                End Span
-              </button>
-            </div>
-          ))}
-        </div>
+                <button onClick={() => handleEndSpan(span, index)}>
+                  End Span
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={() => history.push(`/about/${Math.random()}`)}>
+          Navigate to another page
+        </button>
       </div>
     </>
   );

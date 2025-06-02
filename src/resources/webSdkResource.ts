@@ -20,6 +20,7 @@ import type { GetWebSDKResourceArgs } from './types.js';
 export const getWebSDKResource = ({
   diagLogger,
   appVersion,
+  templateBundleID,
   pageSessionStorage,
 }: GetWebSDKResourceArgs) => {
   /* We need to trim the app  version to remove any leading/trailing spaces
@@ -42,7 +43,7 @@ export const getWebSDKResource = ({
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
     app_version: processedAppVersion,
     app_framework: NATIVE_FRAMEWORK,
-    bundle_id: TEMPLATE_BUNDLE_ID,
+    bundle_id: templateBundleID ?? TEMPLATE_BUNDLE_ID,
     sdk_version: SDK_VERSION,
     [ATTR_TELEMETRY_SDK_VERSION]: SDK_VERSION,
     sdk_simple_version: 1,
