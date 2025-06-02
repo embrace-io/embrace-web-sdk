@@ -3,6 +3,6 @@ import {
   type NavigationInstrumentationArgs,
 } from '../../index.js';
 
-export const createReactRouterV5NavigationInstrumentation = (
+export const createReactRouterDataNavigationInstrumentation = (
   config: NavigationInstrumentationArgs = {}
 ) => getNavigationInstrumentation(config);

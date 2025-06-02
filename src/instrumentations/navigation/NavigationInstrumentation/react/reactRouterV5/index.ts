@@ -1,2 +1,2 @@
-export { createReactRouterV5NavigationInstrumentation } from './createReactRouterV5NavigationInstrumentation.js';
+export { createReactRouterLegacyNavigationInstrumentation } from './createReactRouterLegacyNavigationInstrumentation.js';
 export { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.js';

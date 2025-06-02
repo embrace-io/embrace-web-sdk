@@ -1,14 +1,14 @@
 // Exposes all react specific instrumentation in a way that it is easy to tree-shake. Eventually this should be replaced by its own package.
 import {
-  createReactRouterV5NavigationInstrumentation,
+  createReactRouterLegacyNavigationInstrumentation,
   withEmbraceRoutingLegacy,
 } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV5/index.js';
 import {
-  createReactRouterV6DeclarativeNavigationInstrumentation,
+  createReactRouterDeclarativeNavigationInstrumentation,
   withEmbraceRouting,
 } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV6Declarative/index.js';
 import {
-  createReactRouterV6DataNavigationInstrumentation,
+  createReactRouterDataNavigationInstrumentation,
   listenToRouterChanges,
 } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV6Data/index.js';
 // We don't want to expose React instrumentation in ../instrumentations/index.js
@@ -16,11 +16,11 @@ import {
 import { EmbraceErrorBoundary } from '../instrumentations/exceptions/react/EmbraceErrorBoundary/index.js';
 
 export {
-  createReactRouterV5NavigationInstrumentation,
+  createReactRouterLegacyNavigationInstrumentation,
   withEmbraceRoutingLegacy,
-  createReactRouterV6DeclarativeNavigationInstrumentation,
+  createReactRouterDeclarativeNavigationInstrumentation,
   withEmbraceRouting,
-  createReactRouterV6DataNavigationInstrumentation,
+  createReactRouterDataNavigationInstrumentation,
   listenToRouterChanges,
   EmbraceErrorBoundary,
 };

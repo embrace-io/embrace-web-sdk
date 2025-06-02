@@ -1,2 +1,2 @@
-export { createReactRouterV6DeclarativeNavigationInstrumentation } from './createReactRouterV6DeclarativeNavigationInstrumentation.js';
+export { createReactRouterDeclarativeNavigationInstrumentation } from './createReactRouterDeclarativeNavigationInstrumentation.js';
 export { withEmbraceRouting } from './withEmbraceRouting.js';

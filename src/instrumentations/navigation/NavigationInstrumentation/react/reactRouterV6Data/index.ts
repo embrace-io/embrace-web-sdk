@@ -1,2 +1,2 @@
-export { createReactRouterV6DataNavigationInstrumentation } from './createReactRouterV6DataNavigationInstrumentation.js';
+export { createReactRouterDataNavigationInstrumentation } from './createReactRouterDataNavigationInstrumentation.js';
 export { listenToRouterChanges } from './listenToRouterChanges.js';
