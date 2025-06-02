@@ -1,39 +1,24 @@
-import { useHistory as useHistoryV4V5 } from 'react-router-domv4v5';
 import { useRoutingDemoContext } from './RoutingDemoContext';
-import { useNavigate, Outlet } from 'react-router-domv6plus';
+import { Outlet } from 'react-router-domv6plus';
+import { useMultiVersionNavigate } from './hooks';
 
 const Product = () => {
   const { navigationType } = useRoutingDemoContext();
-  const historyV4V5 = useHistoryV4V5();
-  const navigate = useNavigate();
-
-  const handleGoBack = () => {
-    switch (navigationType) {
-      case 'declarativeV4V5':
-        historyV4V5.goBack();
-        break;
-      case 'declarativeV6+':
-        navigate(-1);
-        break;
-      default:
-        console.warn('Unknown navigation type');
-    }
-  };
-
-  const handleSeeComments = () => {
-    navigate('comments');
-  };
+  const { navigateToPage, navigateBack } =
+    useMultiVersionNavigate(navigationType);
 
   return (
     <div className="container">
       <h1>Product Page</h1>
       {navigationType === 'declarativeV6+' && (
         <>
-          <button onClick={handleSeeComments}>See comments</button>
+          <button onClick={() => navigateToPage('comments')}>
+            See comments
+          </button>
           <Outlet />
         </>
       )}
-      <button onClick={handleGoBack}>Go Back</button>
+      <button onClick={navigateBack}>Go Back</button>
     </div>
   );
 };
