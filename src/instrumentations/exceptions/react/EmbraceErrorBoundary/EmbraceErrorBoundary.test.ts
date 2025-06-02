@@ -4,7 +4,10 @@ import type { LogManager } from '../../../../api-logs/index.js';
 import { log } from '../../../../api-logs/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { setupTestLogExporter } from '../../../../testUtils/index.js';
-import { EmbraceLogManager } from '../../../../managers/index.js';
+import {
+  EmbraceLogManager,
+  EmbraceSpanSessionManager,
+} from '../../../../managers/index.js';
 import type React from 'react';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 
@@ -26,7 +29,9 @@ describe('EmbraceErrorBoundary', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    logManager = new EmbraceLogManager();
+    logManager = new EmbraceLogManager({
+      spanSessionManager: new EmbraceSpanSessionManager(),
+    });
     log.setGlobalLogManager(logManager);
 
     instrumentation = new EmbraceErrorBoundary({
