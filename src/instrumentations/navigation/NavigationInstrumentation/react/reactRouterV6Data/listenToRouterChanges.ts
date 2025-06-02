@@ -2,6 +2,13 @@ import type { ListenToRouterChangesArgs, Match } from './types.js';
 import type { Route } from '../../index.js';
 import { getNavigationInstrumentation } from '../../index.js';
 
+/**
+ * getRouteFromMatches goes through all the matches routes to build the full path
+ * nested routes contain only the partial match, so we need to go through all of them
+ * in order to build the full path.
+ *
+ * Filtering by currentPathname ensures that we only consider routes that are relevant to the current URL.
+ */
 const getRouteFromMatches = (
   matches: Match[],
   currentPathname: string
@@ -45,6 +52,8 @@ export const listenToRouterChanges = ({
   }
 
   return router.subscribe(state => {
+    // State has a list of already matched routes
+    // https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/router/router.ts#L954
     const currentRoute = getRouteFromMatches(
       state.matches,
       state.location.pathname

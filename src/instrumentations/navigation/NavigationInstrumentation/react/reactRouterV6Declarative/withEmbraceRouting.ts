@@ -48,6 +48,8 @@ export const withEmbraceRouting = <P extends object>(
      * here we rely on that matching to get the current route.
      * It's not ideal to rely on internal implementation details, but it's the easier way of getting the current route
      * without having to manually match it or using hooks on each children component
+     *
+     * See: https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/hooks.tsx#L553
      */
     const matchedComponent = WrappedComponent(
       props

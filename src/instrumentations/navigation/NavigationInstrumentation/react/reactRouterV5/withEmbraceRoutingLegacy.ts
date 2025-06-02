@@ -22,6 +22,9 @@ export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
       // Manually setting the type here.
       const routeProps = props as SwitchedRouteComponentProps;
 
+      // Depends on this internal behaviour
+      // https://github.com/remix-run/react-router/blob/v5.3.4/packages/react-router/modules/Switch.js#L40
+      // It shouldn't change as this version is legacy, and it's not being actively worked on
       if (routeProps.computedMatch) {
         navigationInstrumentation.setCurrentRoute({
           path: routeProps.computedMatch.path,
