@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { getNavigationInstrumentation } from '../../index.js';
-import { withEmbraceRoutes } from './withEmbraceRoutes.js';
+import { withEmbraceRouting } from './withEmbraceRouting.js';
 import type { RoutesFunctionalComponentReturn } from './types.js';
 import type React from 'react';
 import type { Route } from '../../index.js';
@@ -11,7 +11,7 @@ chai.use(sinonChai);
 
 const { expect } = chai;
 
-describe('withEmbraceRoutes', () => {
+describe('withEmbraceRouting', () => {
   const navigationInstrumentation = getNavigationInstrumentation({});
   let setCurrentRouteStub: sinon.SinonStub;
 
@@ -39,7 +39,7 @@ describe('withEmbraceRoutes', () => {
       },
     });
 
-    const OTelRoute = withEmbraceRoutes(
+    const OTelRoute = withEmbraceRouting(
       MockRouteComponent as unknown as React.FunctionComponent
     );
 
@@ -91,7 +91,7 @@ describe('withEmbraceRoutes', () => {
       },
     });
 
-    const OTelRoute = withEmbraceRoutes(
+    const OTelRoute = withEmbraceRouting(
       MockRouteComponent as unknown as React.FunctionComponent
     );
 
@@ -109,7 +109,7 @@ describe('withEmbraceRoutes', () => {
       props: {},
     });
 
-    const OTelRoute = withEmbraceRoutes(
+    const OTelRoute = withEmbraceRouting(
       MockRouteComponent as unknown as React.FunctionComponent
     );
 
@@ -128,7 +128,7 @@ describe('withEmbraceRoutes', () => {
       },
     });
 
-    const OTelRoute = withEmbraceRoutes(
+    const OTelRoute = withEmbraceRouting(
       MockRouteComponent as unknown as React.FunctionComponent
     );
 
@@ -142,12 +142,12 @@ describe('withEmbraceRoutes', () => {
       props: {},
     });
 
-    const OTelRoute = withEmbraceRoutes(
+    const OTelRoute = withEmbraceRouting(
       MockRouteComponent as unknown as React.FunctionComponent
     );
 
     void expect(OTelRoute.displayName).to.equal(
-      `withEmbraceRoutes(MockRouteComponent)`
+      `withEmbraceRouting(MockRouteComponent)`
     );
   });
 });

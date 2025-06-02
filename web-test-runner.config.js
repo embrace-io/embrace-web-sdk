@@ -16,6 +16,6 @@ export default {
   files: ['src/**/*.test.ts'],
   plugins: [vitePlugin()],
   browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
-  // filterBrowserLogs: log =>
-  //   removeViteLogging(log) && removeGlobalExceptionTestError(log),
+  filterBrowserLogs: log =>
+    removeViteLogging(log) && removeGlobalExceptionTestError(log),
 };

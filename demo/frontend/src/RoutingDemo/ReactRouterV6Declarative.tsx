@@ -4,9 +4,9 @@ import Product from './Product';
 import { useRoutingDemoContext } from './RoutingDemoContext';
 import About from './About';
 import ProductComments from './ProductComments';
-import { withEmbraceRoutes } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
 
-const EmbraceRoutes = withEmbraceRoutes(Routes);
+const EmbraceRoutes = withEmbraceRouting(Routes);
 
 const ReactRouterV6Declarative = () => {
   const { setNavigationType } = useRoutingDemoContext();
