@@ -10,7 +10,7 @@ const Product = () => {
   return (
     <div className="container">
       <h1>Product Page</h1>
-      {navigationType === 'declarativeV6+' && (
+      {navigationType !== 'declarativeV4V5' && (
         <>
           <button onClick={() => navigateToPage('comments')}>
             See comments

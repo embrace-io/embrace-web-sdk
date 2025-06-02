@@ -1,4 +1,5 @@
 import { log, session, trace } from '@embrace-io/web-sdk';
+import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
 import { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
@@ -9,7 +10,7 @@ import {
 } from './RoutingDemo/RoutingDemoContext';
 import ReactRouterV4V5 from './RoutingDemo/ReactRouterV4V5';
 import ReactRouterV6Declarative from './RoutingDemo/ReactRouterV6Declarative';
-import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
+import ReactRouterV6Data from './RoutingDemo/ReactRouterV6Data';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
@@ -154,6 +155,8 @@ const App = () => {
           return <ReactRouterV4V5 />;
         case 'declarativeV6+':
           return <ReactRouterV6Declarative />;
+        case 'data':
+          return <ReactRouterV6Data />;
       }
     }
 
@@ -245,6 +248,9 @@ const App = () => {
         </button>
         <button onClick={() => setNavigationType('declarativeV6+')}>
           Enter react-router v6+ declarative navigation demo
+        </button>
+        <button onClick={() => setNavigationType('data')}>
+          Enter react-router v6+ data navigation demo
         </button>
         <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
           <ComponentWithErrorInRender />

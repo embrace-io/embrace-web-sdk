@@ -7,3 +7,8 @@ export interface VisibilityStateDocument {
 export interface URLDocument {
   URL: string;
 }
+
+// Useful for testing so that we can pass in a location-like object and change its pathname
+export interface PathnameDocument {
+  pathname: string;
+}

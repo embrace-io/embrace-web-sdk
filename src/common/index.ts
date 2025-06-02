@@ -1,1 +1,5 @@
-export type { VisibilityStateDocument, URLDocument } from './types.js';
+export type {
+  VisibilityStateDocument,
+  URLDocument,
+  PathnameDocument,
+} from './types.js';
