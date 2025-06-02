@@ -9,6 +9,8 @@ import {
 } from './RoutingDemo/RoutingDemoContext';
 import ReactRouterV4V5 from './RoutingDemo/ReactRouterV4V5';
 import ReactRouterV6Declarative from './RoutingDemo/ReactRouterV6Declarative';
+import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
+import ComponentWithErrorInRender from './ComponentWithErrorInRender';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -244,6 +246,9 @@ const App = () => {
         <button onClick={() => setNavigationType('declarativeV6+')}>
           Enter react-router v6+ declarative navigation demo
         </button>
+        <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+          <ComponentWithErrorInRender />
+        </EmbraceErrorBoundary>
       </div>
     );
   };

@@ -7,10 +7,14 @@ import {
   createReactRouterV6DeclarativeNavigationInstrumentation,
   withEmbraceRouting,
 } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV6Declarative/index.js';
+// We don't want to expose React instrumentation in ../instrumentations/index.js
+// eslint-disable-next-line regex/invalid
+import { EmbraceErrorBoundary } from '../instrumentations/exceptions/react/EmbraceErrorBoundary/index.js';
 
 export {
   createReactRouterV5NavigationInstrumentation,
   withEmbraceRoutingLegacy,
   createReactRouterV6DeclarativeNavigationInstrumentation,
   withEmbraceRouting,
+  EmbraceErrorBoundary,
 };
