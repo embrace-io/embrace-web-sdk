@@ -123,8 +123,8 @@ import { log } from '@embrace-io/web-sdk';
 
 log.message('Loading not finished in time.', 'error', {
   attributes: {
-     propertyA: 'valueA',
-     propertyB: 'valueB'
+    propertyA: 'valueA',
+    propertyB: 'valueB'
   }
 });
 ```
@@ -141,11 +141,12 @@ import { log } from '@embrace-io/web-sdk';
 try {
   // some operation...
 } catch (e) {
-  log.logException(e as Error, true, {
-     attributes: {
-       propertyA: 'valueA',
-       propertyB: 'valueB'
-     }
+  log.logException(e as Error, {
+    handled: true,
+    attributes: {
+      propertyA: 'valueA',
+      propertyB: 'valueB'
+    }
   });
 }
 ```
