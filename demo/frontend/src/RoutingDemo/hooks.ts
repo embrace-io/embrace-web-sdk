@@ -26,6 +26,7 @@ const useMultiVersionNavigate = (
           history.push(page);
           break;
         case 'declarativeV6+':
+        case 'data':
           navigate(page);
           break;
         default:
@@ -41,6 +42,7 @@ const useMultiVersionNavigate = (
         history.goBack();
         break;
       case 'declarativeV6+':
+      case 'data':
         navigate(-1);
         break;
       default:
