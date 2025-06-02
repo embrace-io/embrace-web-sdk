@@ -11,16 +11,12 @@ To instrument React Router, depending on how on your version and mode, add the R
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
-// Only import and use the one that you're using in your app.
-import { createReactRouterDeclarativeNavigationInstrumentation, createReactRouterLegacyNavigationInstrumentation, createReactRouterDataNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
+import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 
 sdk.initSDK({
   // ...Other configs
   instrumentations: [
-    // Only import and use the one that you're using in your app.
-    createReactRouterLegacyNavigationInstrumentation(),
-    createReactRouterDeclarativeNavigationInstrumentation(),
-    createReactRouterDataNavigationInstrumentation(),
+    createReactRouterNavigationInstrumentation(),
   ],
 })
 ```
