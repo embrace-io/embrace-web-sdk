@@ -7,7 +7,7 @@ Besides using the `traces` and `logs` APIs, the Embrace Web SDK provides a set o
 
 ## React Router
 
-To instrument React Router, depending on how on your version and mode, add the React Router navigation instrumentation when you init the Embrace Web SDK.
+To instrument React Router, add the React Router navigation instrumentation when you init the Embrace Web SDK.
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
