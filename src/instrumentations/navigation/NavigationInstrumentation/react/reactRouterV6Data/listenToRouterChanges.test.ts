@@ -12,11 +12,16 @@ const { expect } = chai;
 describe('listenToRouterChanges', () => {
   const navigationInstrumentation = getNavigationInstrumentation({});
   let setCurrentRouteStub: sinon.SinonStub;
+  let setInstrumentationTypeStub: sinon.SinonStub;
 
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
       'setCurrentRoute'
+    );
+    setInstrumentationTypeStub = sinon.stub(
+      navigationInstrumentation,
+      'setInstrumentationType'
     );
   });
 
@@ -58,6 +63,11 @@ describe('listenToRouterChanges', () => {
       url: '/test/123',
       path: '/test/:123',
     });
+
+    void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
+    void expect(setInstrumentationTypeStub.firstCall.firstArg).to.equal(
+      'react_router_data'
+    );
   });
 
   it('should not set the initial state', () => {
