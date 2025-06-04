@@ -7,6 +7,7 @@ export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
 export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
+export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
 export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
   'emb.unhandled_exceptions_count';
 export const KEY_VIEW_NAME = 'view.name';
@@ -25,3 +26,17 @@ export enum EMB_STATES {
   Foreground = 'foreground',
   Background = 'background',
 }
+
+export enum EMB_NAVIGATION_INSTRUMENTATIONS {
+  DeclarativeLegacy = 'react_router_declarative_legacy',
+  Declarative = 'react_router_declarative',
+  Data = 'react_router_data',
+}
+
+export enum EMB_ERROR_INSTRUMENTATIONS {
+  ReactErrorBoundary = 'react_error_boundary',
+}
+
+export type EMB_INSTRUMENTATIONS =
+  | EMB_NAVIGATION_INSTRUMENTATIONS
+  | EMB_ERROR_INSTRUMENTATIONS;

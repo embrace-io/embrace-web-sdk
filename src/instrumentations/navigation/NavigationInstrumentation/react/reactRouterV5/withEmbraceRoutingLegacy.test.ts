@@ -12,11 +12,16 @@ describe('withEmbraceRoutingLegacy', () => {
   const navigationInstrumentation = getNavigationInstrumentation({});
   const MockRouteComponent = () => null;
   let setCurrentRouteStub: sinon.SinonStub;
+  let setInstrumentationTypeStub: sinon.SinonStub;
 
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
       'setCurrentRoute'
+    );
+    setInstrumentationTypeStub = sinon.stub(
+      navigationInstrumentation,
+      'setInstrumentationType'
     );
   });
 
@@ -40,6 +45,11 @@ describe('withEmbraceRoutingLegacy', () => {
     void expect(setCurrentRouteStub.calledOnce).to.be.true;
     void expect(setCurrentRouteStub).to.have.been.calledOnceWith(
       props.computedMatch
+    );
+
+    void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
+    void expect(setInstrumentationTypeStub.firstCall.args[0]).to.equal(
+      'react_router_declarative_legacy'
     );
   });
 

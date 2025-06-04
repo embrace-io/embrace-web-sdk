@@ -14,11 +14,16 @@ const { expect } = chai;
 describe('withEmbraceRouting', () => {
   const navigationInstrumentation = getNavigationInstrumentation({});
   let setCurrentRouteStub: sinon.SinonStub;
+  let setInstrumentationTypeStub: sinon.SinonStub;
 
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
       'setCurrentRoute'
+    );
+    setInstrumentationTypeStub = sinon.stub(
+      navigationInstrumentation,
+      'setInstrumentationType'
     );
   });
 
@@ -50,6 +55,11 @@ describe('withEmbraceRouting', () => {
     const callArgs = setCurrentRouteStub.firstCall.args[0] as Route;
     void expect(callArgs.path).to.equal('/test/:id');
     void expect(callArgs.url).to.equal('/test/123');
+
+    void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
+    void expect(setInstrumentationTypeStub.firstCall.args[0]).to.equal(
+      'react_router_declarative'
+    );
   });
 
   it('should set the current route for a nested route', () => {

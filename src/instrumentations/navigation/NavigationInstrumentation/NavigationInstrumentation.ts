@@ -6,6 +6,8 @@ import {
   KEY_EMB_TYPE,
   KEY_VIEW_NAME,
 } from '../../../constants/index.js';
+import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
+import { KEY_EMB_INSTRUMENTATION } from '../../../constants/index.js';
 
 // Regular expression to match path options in the format "(option)"
 // Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)" to "/order/:orderState"
@@ -13,9 +15,9 @@ const PATH_OPTIONS_RE = /\(.*?\)/g;
 
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
-
   private _currentRoute: Route | null = null;
   private _currentRouteSpan: Span | null = null;
+  private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS | null = null;
 
   public constructor({
     diag,
@@ -35,6 +37,12 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       this.enable();
     }
   }
+
+  public setInstrumentationType = (
+    instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS
+  ) => {
+    this._instrumentationType = instrumentationType;
+  };
 
   public setCurrentRoute = (route: Route) => {
     if (!this._config.enabled) {
@@ -60,6 +68,13 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
         [KEY_VIEW_NAME]: pathName,
       },
     });
+
+    if (this._instrumentationType) {
+      this._currentRouteSpan.setAttribute(
+        KEY_EMB_INSTRUMENTATION,
+        this._instrumentationType
+      );
+    }
 
     return this._currentRouteSpan;
   };

@@ -2,6 +2,10 @@ import * as React from 'react';
 import type { PropsWithChildren } from 'react';
 import type { LogManager } from '../../../../api-logs/index.js';
 import { log } from '../../../../api-logs/index.js';
+import {
+  EMB_ERROR_INSTRUMENTATIONS,
+  KEY_EMB_INSTRUMENTATION,
+} from '../../../../constants/index.js';
 
 type EmbraceErrorBoundaryProps = {
   fallback: () => React.ReactNode;
@@ -34,6 +38,8 @@ export class EmbraceErrorBoundary<
       handled: false,
       attributes: {
         'react.component_stack': errorInfo.componentStack ?? undefined,
+        [KEY_EMB_INSTRUMENTATION]:
+          EMB_ERROR_INSTRUMENTATIONS.ReactErrorBoundary,
       },
     });
   }

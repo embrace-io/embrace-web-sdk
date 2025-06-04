@@ -5,6 +5,10 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
+import {
+  EMB_NAVIGATION_INSTRUMENTATIONS,
+  KEY_EMB_INSTRUMENTATION,
+} from '../../../constants/index.js';
 
 const { expect } = chai;
 
@@ -52,6 +56,35 @@ describe('NavigationInstrumentation', () => {
       'Ending route span for url: /test/123',
       'Starting route span for url: /test/1235',
     ]);
+  });
+
+  it('should start and end route span when the route changes with given instrumentationType', () => {
+    navigationInstrumentation = new NavigationInstrumentation({ diag });
+    navigationInstrumentation.setInstrumentationType(
+      EMB_NAVIGATION_INSTRUMENTATIONS.Data
+    );
+    navigationInstrumentation.setCurrentRoute({
+      path: '/test/:id',
+      url: '/test/123',
+    });
+
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+    navigationInstrumentation.setCurrentRoute({
+      path: '/test/:id',
+      url: '/test/1235',
+    });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+
+    const span = finishedSpans[0];
+    expect(span.name).to.equal('/test/:id');
+    expect(span.attributes).to.deep.equal({
+      'emb.type': 'ux.view',
+      'view.name': '/test/:id',
+      [KEY_EMB_INSTRUMENTATION]: EMB_NAVIGATION_INSTRUMENTATIONS.Data,
+    });
   });
 
   it('should clean up the path options from the route name if configured', () => {

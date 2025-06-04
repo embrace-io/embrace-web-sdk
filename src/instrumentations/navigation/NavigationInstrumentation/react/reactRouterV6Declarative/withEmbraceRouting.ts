@@ -3,6 +3,7 @@ import React from 'react';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import { getNavigationInstrumentation } from '../../index.js';
 import type { Route } from '../../index.js';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
 
 // Routes can be nested, we need to traverse the routeContext to find the last route
 const getLastRoute = (
@@ -33,9 +34,12 @@ const getLastRoute = (
 export const withEmbraceRouting = <P extends object>(
   WrappedComponent: React.FunctionComponent<P>
 ) => {
-  const RoutesWithEmbraceRouting: React.FC<P> = (props: P) => {
-    const navigationInstrumentation = getNavigationInstrumentation();
+  const navigationInstrumentation = getNavigationInstrumentation();
+  navigationInstrumentation.setInstrumentationType(
+    EMB_NAVIGATION_INSTRUMENTATIONS.Declarative
+  );
 
+  const RoutesWithEmbraceRouting: React.FC<P> = (props: P) => {
     /**
      * React-router v6+ implementation is very different from v5
      * It doesn't have a <Switch> component that injects props into <Route>

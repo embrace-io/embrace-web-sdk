@@ -10,6 +10,10 @@ import {
 } from '../../../../managers/index.js';
 import type React from 'react';
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  EMB_ERROR_INSTRUMENTATIONS,
+  KEY_EMB_INSTRUMENTATION,
+} from '../../../../constants/attributes.js';
 
 const { expect } = chai;
 
@@ -68,6 +72,7 @@ describe('EmbraceErrorBoundary', () => {
       'exception.message': 'Some error, at some component',
       'exception.stacktrace': error.stack,
       'react.component_stack': errorInfo.componentStack,
+      [KEY_EMB_INSTRUMENTATION]: EMB_ERROR_INSTRUMENTATIONS.ReactErrorBoundary,
     });
   });
 
