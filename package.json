@@ -52,10 +52,14 @@
   },
   "files": [
     "build/esm/**/*.js",
+    "build/esm/**/*.js.map",
     "build/esnext/**/*.js",
+    "build/esnext/**/*.js.map",
     "build/src/**/*.js",
+    "build/src/**/*.js.map",
     "build/iife/**/*.js",
     "build/types/**/*.d.ts",
+    "build/types/**/*.d.ts.map",
     "LICENSE",
     "README.md"
   ],
@@ -70,9 +74,15 @@
     "./react-instrumentation": {
       "module": "./build/esm/react-instrumentation.js",
       "types": "./build/types/react/index.d.ts",
-      "require": "./build/esm/react-instrumentation.js",
+      "require": "./build/src/react-instrumentation.js",
       "import": "./build/esm/react-instrumentation.js",
       "default": "./build/esm/react-instrumentation.js"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "react-instrumentation": ["build/types/react/index.d.ts"],
+      "*": ["build/types/index.d.ts"]
     }
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
