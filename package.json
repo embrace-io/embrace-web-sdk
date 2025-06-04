@@ -1,6 +1,6 @@
 {
   "name": "@embrace-io/web-sdk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "build/iife/bundle.js",
@@ -81,8 +81,12 @@
   },
   "typesVersions": {
     "*": {
-      "react-instrumentation": ["build/types/react/index.d.ts"],
-      "*": ["build/types/index.d.ts"]
+      "react-instrumentation": [
+        "build/types/react/index.d.ts"
+      ],
+      "*": [
+        "build/types/index.d.ts"
+      ]
     }
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
