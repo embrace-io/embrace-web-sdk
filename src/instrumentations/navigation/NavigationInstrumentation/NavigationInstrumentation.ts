@@ -18,6 +18,8 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _currentRoute: Route | null = null;
   private _currentRouteSpan: Span | null = null;
   private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS | null = null;
+  private _removeSessionStartedFn: (() => void) | null = null;
+  private _removeSessionEndedFn: (() => void) | null = null;
 
   public constructor({
     diag,
@@ -56,8 +58,49 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
+  private readonly _setupSessionListeners = () => {
+    if (!this._removeSessionStartedFn) {
+      this._removeSessionStartedFn =
+        this.sessionManager.addSessionStartedListener(() => {
+          if (this._currentRoute && !this._currentRouteSpan) {
+            this._diag.debug('Session started, starting route span.');
+
+            this._startRouteSpan(this._currentRoute);
+          }
+        });
+    }
+  };
+
+  private readonly _setupSessionEndedListeners = () => {
+    if (!this._removeSessionEndedFn) {
+      this._removeSessionEndedFn = this.sessionManager.addSessionEndedListener(
+        () => {
+          if (this._currentRouteSpan) {
+            this._diag.debug('Session ended, ending route span.');
+
+            this._endRouteSpan();
+          }
+        }
+      );
+    }
+  };
+
+  private readonly _cleanUpSessionListeners = () => {
+    if (this._removeSessionStartedFn) {
+      this._removeSessionStartedFn();
+      this._removeSessionStartedFn = null;
+    }
+
+    if (this._removeSessionEndedFn) {
+      this._removeSessionEndedFn();
+      this._removeSessionEndedFn = null;
+    }
+  };
+
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
+    this._setupSessionListeners();
+    this._setupSessionEndedListeners();
 
     const pathName = this._shouldCleanupPathOptionsFromRouteName
       ? route.path.replace(PATH_OPTIONS_RE, '')
@@ -94,6 +137,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   public disable = () => {
+    this._cleanUpSessionListeners();
     this.setConfig({
       enabled: false,
     });
