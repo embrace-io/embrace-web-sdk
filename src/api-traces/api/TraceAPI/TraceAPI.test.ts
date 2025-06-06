@@ -1,9 +1,10 @@
 import * as sinon from 'sinon';
 import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
-import type { Span } from '@opentelemetry/api';
+import type { Context, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { TraceAPI } from './TraceAPI.js';
+import type { ExtendedSpan } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -30,6 +31,8 @@ describe('TraceAPI', () => {
     const traceManager: TraceManager = {
       // Mock implementation of TraceManager
       startSpan: sinon.stub().returns({} as Span),
+      setSpan: sinon.stub(),
+      getSpan: sinon.stub(),
     };
     traceAPI.setGlobalTraceManager(traceManager);
     const result = traceAPI.getTraceManager();
@@ -41,12 +44,28 @@ describe('TraceAPI', () => {
     const mockTraceManager: TraceManager = {
       // Mock implementation of TraceManager
       startSpan: sinon.stub().returns({} as Span),
+      setSpan: sinon.stub(),
+      getSpan: sinon.stub(),
     };
     traceAPI.setGlobalTraceManager(mockTraceManager);
 
     traceAPI.startSpan('span-name');
     void expect(mockTraceManager.startSpan).to.have.been.calledOnceWith(
       'span-name'
+    );
+
+    const mockContext = {} as Context;
+
+    const mockSpan = {} as ExtendedSpan;
+    traceAPI.setSpan(mockContext, mockSpan);
+    void expect(mockTraceManager.setSpan).to.have.been.calledOnceWith(
+      mockContext,
+      mockSpan
+    );
+
+    traceAPI.getSpan(mockContext);
+    void expect(mockTraceManager.getSpan).to.have.been.calledOnceWith(
+      mockContext
     );
   });
 });

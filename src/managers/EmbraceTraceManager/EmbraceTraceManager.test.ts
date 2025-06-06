@@ -5,6 +5,8 @@ import sinonChai from 'sinon-chai';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.js';
 import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { EmbraceTraceManager } from './EmbraceTraceManager.js';
+import { context } from '@opentelemetry/api';
+import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -98,5 +100,39 @@ describe('EmbraceTraceManager', () => {
       finishedParentSpan.spanContext().spanId
     );
     void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+  });
+
+  it('should get a context by setting a span', () => {
+    const span = manager.startSpan('test-span');
+    void expect(span).to.not.be.null;
+
+    const newContext = manager.setSpan(context.active(), span);
+    void expect(context).to.not.be.null;
+
+    const retrievedSpan = manager.getSpan(newContext);
+    void expect(retrievedSpan).to.not.be.null;
+    void expect(retrievedSpan?.spanContext().spanId).to.equal(
+      span.spanContext().spanId
+    );
+  });
+
+  it('should return an EmbraceExtendedSpan when getting a span from context', () => {
+    const span = manager.startSpan('test-span');
+    void expect(span).to.not.be.null;
+
+    const newContext = manager.setSpan(context.active(), span);
+    void expect(context).to.not.be.null;
+
+    const retrievedSpan = manager.getSpan(newContext);
+    void expect(retrievedSpan).to.not.be.undefined;
+    void expect(retrievedSpan).to.be.instanceOf(EmbraceExtendedSpan);
+    void expect(retrievedSpan?.spanContext().spanId).to.equal(
+      span.spanContext().spanId
+    );
+  });
+
+  it('should return undefined if no span is found in the context', () => {
+    const span = manager.getSpan(context.active());
+    void expect(span).to.be.undefined;
   });
 });
