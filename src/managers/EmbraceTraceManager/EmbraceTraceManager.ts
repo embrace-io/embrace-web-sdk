@@ -12,7 +12,7 @@ export class EmbraceTraceManager implements TraceManager {
   public startSpan(
     name: string,
     options: ExtendedSpanOptions = {},
-    ctx = context.active()
+    ctx?: Context
   ): ExtendedSpan {
     const tracer = trace.getTracer('embrace-web-sdk-traces');
 
