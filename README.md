@@ -39,14 +39,20 @@ Currently, only Spans and Logs are supported, but other signals will be added in
 npm:
 
 ```sh
-npm install @embrace-io/web-sdk
+npm install --save @embrace-io/web-sdk @opentelemetry/api@^1 @opentelemetry/sdk-trace-web@^1
+
 ```
 
 yarn:
 
 ```sh
-yarn add @embrace-io/web-sdk
+yarn add @embrace-io/web-sdk @opentelemetry/api@^1 @opentelemetry/sdk-trace-web@^1
 ```
+
+#### Why do I need to install `@opentelemetry/api` and `@opentelemetry/sdk-trace-web`?
+
+These packages are used internally to emit telemetry in the OpenTelemetry format. We list them as `peerDependencies` to 
+avoid bundling them and prevent version conflicts if you use the OpenTelemetry SDK directly in your application.
 
 > [!TIP]
 > For CDN installs, see [Including the SDK as a code snippet from CDN](#including-the-sdk-as-a-code-snippet-from-cdn).
