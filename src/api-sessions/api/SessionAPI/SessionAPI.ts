@@ -63,4 +63,12 @@ export class SessionAPI implements SpanSessionManager {
   public startSessionSpan() {
     this.getSpanSessionManager().startSessionSpan();
   }
+
+  public addSessionStartedListener(listener: () => void): () => void {
+    return this.getSpanSessionManager().addSessionStartedListener(listener);
+  }
+
+  public addSessionEndedListener(listener: () => void): () => void {
+    return this.getSpanSessionManager().addSessionEndedListener(listener);
+  }
 }
