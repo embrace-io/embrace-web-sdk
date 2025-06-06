@@ -69,9 +69,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
           }
         });
     }
-  };
 
-  private readonly _setupSessionEndedListeners = () => {
     if (!this._removeSessionEndedFn) {
       this._removeSessionEndedFn = this.sessionManager.addSessionEndedListener(
         () => {
@@ -100,7 +98,6 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
     this._setupSessionListeners();
-    this._setupSessionEndedListeners();
 
     const pathName = this._shouldCleanupPathOptionsFromRouteName
       ? route.path.replace(PATH_OPTIONS_RE, '')
