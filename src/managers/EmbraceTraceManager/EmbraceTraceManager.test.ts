@@ -102,6 +102,63 @@ describe('EmbraceTraceManager', () => {
     void expect(finishedParentSpan.parentSpanId).to.be.undefined;
   });
 
+  it('should allow perf spans to be created in parent-child relationships via context and not parentSpan', () => {
+    const parentSpan = manager.startSpan('parent-perf-span');
+    void expect(parentSpan).to.not.be.null;
+
+    const parentContext = manager.setSpan(context.active(), parentSpan);
+
+    const childSpan = manager.startSpan('child-perf-span', {}, parentContext);
+    void expect(childSpan).to.not.be.null;
+
+    childSpan.end();
+    parentSpan.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    const finishedChildSpan = finishedSpans[0];
+    const finishedParentSpan = finishedSpans[1];
+    expect(finishedChildSpan.name).to.be.equal('child-perf-span');
+    expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
+    expect(finishedChildSpan.parentSpanId).to.equal(
+      finishedParentSpan.spanContext().spanId
+    );
+    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+  });
+
+  it('should prioritize parentSpan option if both context and parentSpan are provided', () => {
+    const parentSpan = manager.startSpan('parent-perf-span');
+    void expect(parentSpan).to.not.be.null;
+
+    const contextParentSpan = manager.startSpan('context-parent-perf-span');
+    void expect(contextParentSpan).to.not.be.null;
+
+    const parentContext = manager.setSpan(context.active(), parentSpan);
+
+    const childSpan = manager.startSpan(
+      'child-perf-span',
+      {
+        parentSpan,
+      },
+      parentContext
+    );
+    void expect(childSpan).to.not.be.null;
+
+    childSpan.end();
+    parentSpan.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    const finishedChildSpan = finishedSpans[0];
+    const finishedParentSpan = finishedSpans[1];
+    expect(finishedChildSpan.name).to.be.equal('child-perf-span');
+    expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
+    expect(finishedChildSpan.parentSpanId).to.equal(
+      finishedParentSpan.spanContext().spanId
+    );
+    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+  });
+
   it('should get a context by setting a span', () => {
     const span = manager.startSpan('test-span');
     void expect(span).to.not.be.null;

@@ -18,5 +18,10 @@ export interface ExtendedSpan extends Span {
 }
 
 export type ExtendedSpanOptions = SpanOptions & {
+  /*
+   * Parent span to use for this span.
+   * It provides an easier way to set the parent span, instead of setting the context as 3rd argument.
+   * When sending both `parentSpan` and `context`, the `parentSpan` will take precedence.
+   */
   parentSpan?: Span;
 };
