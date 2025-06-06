@@ -40,6 +40,8 @@ describe('SessionAPI', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      addSessionEndedListener: sinon.stub(),
+      addSessionStartedListener: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(sessionManager);
     const result = sessionAPI.getSpanSessionManager();
@@ -59,6 +61,8 @@ describe('SessionAPI', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      addSessionEndedListener: sinon.stub(),
+      addSessionStartedListener: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(mockSpanSessionManager);
 
@@ -94,5 +98,13 @@ describe('SessionAPI', () => {
       'custom-key',
       'custom value'
     );
+
+    sessionAPI.addSessionEndedListener(() => {});
+    void expect(mockSpanSessionManager.addSessionEndedListener).to.have.been
+      .calledOnce;
+
+    sessionAPI.addSessionStartedListener(() => {});
+    void expect(mockSpanSessionManager.addSessionStartedListener).to.have.been
+      .calledOnce;
   });
 });
