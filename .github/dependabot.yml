@@ -16,9 +16,20 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
+      # All these packages are marked as experimental, so only apply patch updates
+      opentelemetry-experimental:
+        patterns:
+          - "@opentelemetry/instrumentation-*"
+          - "@opentelemetry/opentelemetry-browser-detector"
+          - "@opentelemetry/otlp-exporter-base"
+          - "@opentelemetry/web-common"
+        update-types:
+          - patch
       opentelemetry:
         patterns:
           - "@opentelemetry/*"
+        update-types:
+          - minor
       react:
         patterns:
           - "react*"
