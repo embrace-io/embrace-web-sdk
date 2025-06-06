@@ -57,4 +57,16 @@ describe('NoOpSpanSessionManager', () => {
       );
     }).to.not.throw();
   });
+
+  it('should do nothing for addSessionStartedListener', () => {
+    expect(() => {
+      noOpSpanSessionManager.addSessionStartedListener(() => {});
+    }).to.not.throw();
+  });
+
+  it('should do nothing for addSessionEndedListener', () => {
+    expect(() => {
+      noOpSpanSessionManager.addSessionEndedListener(() => {});
+    }).to.not.throw();
+  });
 });

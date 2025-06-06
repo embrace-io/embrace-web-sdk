@@ -1,6 +1,7 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/index.js';
 import {
@@ -189,5 +190,41 @@ describe('EmbraceSpanSessionManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property('emb.state', 'background');
+  });
+
+  it('should call the session start listener when starting a session', () => {
+    const listener = sinon.stub();
+    const manager = new EmbraceSpanSessionManager();
+    const removeListener = manager.addSessionStartedListener(listener);
+
+    void expect(listener).to.not.have.been.calledOnce;
+
+    manager.startSessionSpan();
+
+    void expect(listener).to.have.been.calledOnce;
+
+    removeListener();
+    manager.startSessionSpan();
+
+    void expect(listener).to.have.been.calledOnce;
+  });
+
+  it('should call the session ended listener when ending a session', () => {
+    const listener = sinon.stub();
+    const manager = new EmbraceSpanSessionManager();
+    const removeListener = manager.addSessionEndedListener(listener);
+
+    void expect(listener).to.not.have.been.calledOnce;
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    void expect(listener).to.have.been.calledOnce;
+
+    removeListener();
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    void expect(listener).to.have.been.calledOnce;
   });
 });

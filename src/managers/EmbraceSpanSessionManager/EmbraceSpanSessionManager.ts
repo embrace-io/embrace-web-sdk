@@ -21,6 +21,8 @@ import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
+  SessionEndedListener,
+  SessionStartedListener,
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
@@ -30,6 +32,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: Span | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
+  private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
+  private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
+
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -100,6 +105,14 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._activeSessionStartTime = null;
     this._activeSessionId = null;
     this._activeSessionCounts = null;
+
+    for (const listener of this._sessionEndedListeners) {
+      try {
+        listener();
+      } catch (error) {
+        this._diag.warn('Error while executing session ended listener', error);
+      }
+    }
   }
 
   public getSessionId(): string | null {
@@ -133,6 +146,17 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         [ATTR_SESSION_ID]: this._activeSessionId,
       },
     });
+
+    for (const listener of this._sessionStartedListeners) {
+      try {
+        listener();
+      } catch (error) {
+        this._diag.warn(
+          'Error while executing session started listener',
+          error
+        );
+      }
+    }
   }
 
   public incrSessionCountForKey(key: string) {
@@ -144,5 +168,21 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._activeSessionCounts[key] = (this._activeSessionCounts[key] || 0) + 1;
+  }
+
+  public addSessionStartedListener(listener: SessionStartedListener) {
+    const listenerIndex = this._sessionStartedListeners.push(listener);
+
+    return () => {
+      this._sessionStartedListeners.splice(listenerIndex - 1, 1);
+    };
+  }
+
+  public addSessionEndedListener(listener: SessionEndedListener) {
+    const listenerIndex = this._sessionEndedListeners.push(listener);
+
+    return () => {
+      this._sessionEndedListeners.splice(listenerIndex - 1, 1);
+    };
   }
 }

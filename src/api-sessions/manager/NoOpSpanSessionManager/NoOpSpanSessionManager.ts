@@ -31,4 +31,12 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   public startSessionSpan(): void {
     // do nothing.
   }
+
+  public addSessionStartedListener(_listener: () => void): void {
+    // do nothing.
+  }
+
+  public addSessionEndedListener(_listener: () => void): void {
+    // do nothing.
+  }
 }

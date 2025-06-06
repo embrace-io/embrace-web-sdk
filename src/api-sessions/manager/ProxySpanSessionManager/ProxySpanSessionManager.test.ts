@@ -24,6 +24,8 @@ describe('ProxySpanSessionManager', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      addSessionStartedListener: sinon.stub(),
+      addSessionEndedListener: sinon.stub(),
     };
   });
 
@@ -99,6 +101,24 @@ describe('ProxySpanSessionManager', () => {
     expect(mockDelegate.addProperty).to.have.been.calledOnceWith(
       'some-custom-key',
       'some custom value'
+    );
+  });
+
+  it('should delegate addSessionStartedListener to the delegate', () => {
+    const listener = () => {};
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.addSessionStartedListener(listener);
+    expect(mockDelegate.addSessionStartedListener).to.have.been.calledOnceWith(
+      listener
+    );
+  });
+
+  it('should delegate addSessionEndedListener to the delegate', () => {
+    const listener = () => {};
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.addSessionEndedListener(listener);
+    expect(mockDelegate.addSessionEndedListener).to.have.been.calledOnceWith(
+      listener
     );
   });
 });

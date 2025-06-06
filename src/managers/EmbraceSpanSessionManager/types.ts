@@ -12,3 +12,6 @@ export interface EmbraceSpanSessionManagerArgs {
 export interface SpanSessionManagerInternal extends SpanSessionManager {
   incrSessionCountForKey: (key: string) => void;
 }
+
+export type SessionStartedListener = () => void;
+export type SessionEndedListener = () => void;

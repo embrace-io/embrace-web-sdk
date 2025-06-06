@@ -46,4 +46,12 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   public startSessionSpan() {
     this.getDelegate().startSessionSpan();
   }
+
+  public addSessionStartedListener(listener: () => void): void {
+    this.getDelegate().addSessionStartedListener(listener);
+  }
+
+  public addSessionEndedListener(listener: () => void): void {
+    this.getDelegate().addSessionEndedListener(listener);
+  }
 }
