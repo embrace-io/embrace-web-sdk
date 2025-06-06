@@ -1,8 +1,12 @@
 import type { Attributes } from '@opentelemetry/api';
-import type { MetricWithAttribution } from 'web-vitals/attribution';
+import type {
+  CLSAttribution,
+  INPAttribution,
+  LCPAttribution,
+  MetricWithAttribution,
+} from 'web-vitals/attribution';
 import { type Metric } from 'web-vitals/attribution';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
-import { withErrorFallback } from '../../../utils/index.js';
 import {
   ALL_WEB_VITALS,
   CORE_WEB_VITALS,
@@ -16,6 +20,82 @@ import type {
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type { URLDocument } from '../../../common/index.js';
+
+const webVitalAttributionToReport = (
+  name: Metric['name'],
+  metric: MetricWithAttribution
+) => {
+  const attributes: Attributes = {};
+  const toReport: {
+    key: string;
+    value: string | boolean | number | undefined;
+  }[] = [];
+
+  if (name === 'CLS') {
+    // https://www.npmjs.com/package/web-vitals#CLSAttribution
+    const attribution = metric.attribution as CLSAttribution;
+    toReport.push(
+      ...[
+        {
+          key: 'largestShiftTarget',
+          value: attribution.largestShiftTarget,
+        },
+        {
+          key: 'largestShiftValue',
+          value: attribution.largestShiftValue,
+        },
+      ]
+    );
+  } else if (name === 'INP') {
+    // https://www.npmjs.com/package/web-vitals#inpattribution
+    const attribution = metric.attribution as INPAttribution;
+    toReport.push(
+      ...[
+        { key: 'interactionTarget', value: attribution.interactionTarget },
+        { key: 'interactionType', value: attribution.interactionType },
+        { key: 'nextPaintTime', value: attribution.nextPaintTime },
+        { key: 'inputDelay', value: attribution.inputDelay },
+        { key: 'processingDuration', value: attribution.processingDuration },
+        { key: 'presentationDelay', value: attribution.presentationDelay },
+        { key: 'totalScriptDuration', value: attribution.totalScriptDuration },
+        {
+          key: 'totalStyleAndLayoutDuration',
+          value: attribution.totalStyleAndLayoutDuration,
+        },
+        { key: 'totalPaintDuration', value: attribution.totalPaintDuration },
+        {
+          key: 'totalUnattributedDuration',
+          value: attribution.totalUnattributedDuration,
+        },
+        { key: 'loadState', value: attribution.loadState },
+      ]
+    );
+  } else if (name === 'LCP') {
+    // https://www.npmjs.com/package/web-vitals#lcpattribution
+    const attribution = metric.attribution as LCPAttribution;
+    toReport.push(
+      ...[
+        { key: 'target', value: attribution.target },
+        { key: 'url', value: attribution.url },
+        { key: 'timeToFirstByte', value: attribution.timeToFirstByte },
+        { key: 'resourceLoadDelay', value: attribution.resourceLoadDelay },
+        {
+          key: 'resourceLoadDuration',
+          value: attribution.resourceLoadDuration,
+        },
+        { key: 'elementRenderDelay', value: attribution.elementRenderDelay },
+      ]
+    );
+  }
+
+  toReport.forEach(report => {
+    if (report.value !== undefined) {
+      attributes[`emb.web_vital.attribution.${report.key}`] = report.value;
+    }
+  });
+
+  return attributes;
+};
 
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _metricsToTrack: Metric['name'][];
@@ -73,19 +153,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           'emb.web_vital.id': metric.id,
           'emb.web_vital.delta': metric.delta,
           'emb.web_vital.value': metric.value,
+          ...webVitalAttributionToReport(name, metric),
         };
-
-        Object.entries(metric.attribution).forEach(([key, value]) => {
-          attrs[`emb.web_vital.attribution.${key}`] =
-            typeof value === 'number'
-              ? value
-              : withErrorFallback(
-                  JSON.stringify,
-                  'Error: unable to serialize the value as JSON. Likely a js circular structure.',
-                  false,
-                  this._diag
-                )(value);
-        });
 
         currentSessionSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
