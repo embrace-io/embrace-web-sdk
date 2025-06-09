@@ -120,7 +120,7 @@ export default tseslint.config({
         // import type { something } from './index.js'; is valid
         {
           regex:
-            "import .* from '\\.{1,2}(?:\\/\.\.)*\\/([a-zA-Z0-9_-])+\\/([a-zA-Z0-9_-])+\\/.+'",
+            "import .* from '\\.{1,2}(?:\\/..)*\\/([a-zA-Z0-9_-])+\\/([a-zA-Z0-9_-])+\\/.+'",
           message: `Relative imports should never include more than 1 folder. If you need access to a nested folder consider reexporting it from the intermediate folders.`,
         },
         // make sure all relative imports are reference the index.js file
