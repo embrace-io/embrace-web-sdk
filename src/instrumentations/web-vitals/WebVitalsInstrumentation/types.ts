@@ -19,4 +19,5 @@ export type WebVitalsInstrumentationArgs = {
   trackingLevel?: TrackingLevel;
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;
+  urlAttribution?: boolean;
 } & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
