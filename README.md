@@ -32,6 +32,8 @@ for.
 
 Currently, only Spans and Logs are supported, but other signals will be added in the future.
 
+More documentation and examples can be found in our [Web Documentation](https://embrace.io/docs/web/getting-started/)
+
 ## Quick Start
 
 ### Install the package
