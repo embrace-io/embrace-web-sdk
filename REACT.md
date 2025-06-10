@@ -1,6 +1,7 @@
 # Instrumenting a React app with the Embrace Web SDK
 
-Besides using the `traces` and `logs` APIs, the Embrace Web SDK provides a set of tools to instrument commonly used React libraries. 
+You can use any of the Embrace Web SDK features in your React application. However, we provide some additional automatic 
+instrumentation to make it easier to instrument some common React libraries and patterns.
 
 > [!TIP]
 > Make sure you call `sdk.initSDK` before your React App is mounted, this will ensure that the SDK is ready to capture traces and logs from the start of your app's lifecycle.
@@ -40,27 +41,6 @@ const App = () => {
         <EmbraceRoute path="/contact" component={Contact} />
       </Switch>
     </Router>
-  );
-}
-```
-
-## Error Boundary
-
-To capture rendering errors in your React components, you can use the `EmbraceErrorBoundary` component. This component will automatically capture errors that on any of its children components render and send them to Embrace.
-
-```typescript jsx
-import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
-
-const App = () => {
-  return (
-    <EmbraceErrorBoundary fallback={() => <YourFallbackComponent />}>
-      <>
-        {/* Your app components go here */}
-        <Home />
-        <About />
-        <Contact />
-      </>
-    </EmbraceErrorBoundary>
   );
 }
 ```
@@ -132,5 +112,32 @@ const App = () => {
   return (
     <RouterProvider router={router} />
   )
+}
+```
+
+### Configuration
+
+You can configure the React Router instrumentation by passing options to the `createReactRouterNavigationInstrumentation` function.
+For now, the only option available is `shouldCleanupPathOptionsFromRouteName`.
+If set to `true`, the instrumentation will remove path options from the route name, e.g. it will convert `/order/:orderState(pending|shipped|delivered)` to `/order/:orderState`.
+
+## Error Boundary
+
+To capture rendering errors in your React components, you can use the `EmbraceErrorBoundary` component. This component will automatically capture errors that on any of its children components render and send them to Embrace.
+
+```typescript jsx
+import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
+
+const App = () => {
+  return (
+    <EmbraceErrorBoundary fallback={() => <YourFallbackComponent />}>
+      <>
+        {/* Your app components go here */}
+        <Home />
+        <About />
+        <Contact />
+      </>
+    </EmbraceErrorBoundary>
+  );
 }
 ```
