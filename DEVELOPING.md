@@ -21,7 +21,7 @@ The code within `src/` is divided as follows:
     * Serializes telemetry into payloads for sending data to Embrace
 * `instrumentations/`
     * Responsible for producing telemetry signals. Should be loosely coupled with the SDK and only assume functionality
-      provided by high-level APIS (which may be no-ops if the SDK has not been initialized). Should allow themselves to
+      provided by high-level APIs (which may be no-ops if the SDK has not been initialized). Should allow themselves to
       be
       turned off at any point.
 * `processors/`
@@ -62,7 +62,7 @@ npm run sdk:test:watch
 
 To release a new version of the SDK:
 
-1. Manually run the [Bump packages version](https://github.com/embrace-io/embrace-web-sdk/actions/workflows/release.yaml) 
+1. Manually run the [Bump packages version](https://github.com/embrace-io/embrace-web-sdk/actions/workflows/release.yaml)
 action against the `main` branch
 2. Once the action completes a new PR containing the version bump and changelog for the next version of the SDK will be
 created. Review and merge this PR.
