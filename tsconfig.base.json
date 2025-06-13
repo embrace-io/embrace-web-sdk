@@ -1,39 +1,28 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "inlineSources": true,
-    "module": "commonjs",
-    "newLine": "LF",
+    "isolatedModules": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "noEmit": true,
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
-    "pretty": true,
+    "rootDir": "src",
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
-    "rootDir": "src",
-    "target": "es2017",
-    "lib": [
-      "es2017",
-      "dom",
-      "dom.iterable"
-    ],
-    "esModuleInterop": true,
+    "target": "ESNext",
+    "verbatimModuleSyntax": true
   },
-  "include": [
-    "./**/*.ts"
-  ],
-  "exclude": [
-    "./**/*.test.ts",
-    "./scripts/*.ts",
-    "node_modules",
-    "demo",
-    "cli",
-    "build"
-  ]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["./src/**/*.test.ts"]
 }
