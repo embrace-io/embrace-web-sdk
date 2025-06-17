@@ -7,6 +7,7 @@ export interface EmbraceSpanSessionManagerArgs {
   diag?: DiagLogger;
   perf?: PerformanceManager;
   visibilityDoc?: VisibilityStateDocument;
+  storage?: Storage;
 }
 
 export interface SpanSessionManagerInternal extends SpanSessionManager {

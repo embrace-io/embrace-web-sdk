@@ -1,5 +1,6 @@
 export { session } from './sessionAPI.js';
 export type {
+  PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
 } from './manager/index.js';

@@ -1,4 +1,8 @@
-export type { ReasonSessionEnded, SpanSessionManager } from './types.js';
+export type {
+  PropertyOptions,
+  ReasonSessionEnded,
+  SpanSessionManager,
+} from './types.js';
 
 export { NoOpSpanSessionManager } from './NoOpSpanSessionManager/index.js';
 export { ProxySpanSessionManager } from './ProxySpanSessionManager/index.js';

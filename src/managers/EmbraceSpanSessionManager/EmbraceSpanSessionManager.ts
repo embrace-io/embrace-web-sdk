@@ -24,6 +24,7 @@ import type {
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
+import type { PropertyOptions } from '../../api-sessions/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -36,11 +37,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
+  private readonly _storage: Storage;
 
   public constructor({
     diag: diagParam,
     perf,
     visibilityDoc = window.document,
+    storage = window.localStorage,
   }: EmbraceSpanSessionManagerArgs = {}) {
     this._diag =
       diagParam ??
@@ -49,6 +52,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       });
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
+    this._storage = storage;
   }
 
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
@@ -56,7 +60,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+        'Trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -69,14 +73,33 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     );
   }
 
-  public addProperty(key: string, value: string) {
+  public addProperty(key: string, value: string, options?: PropertyOptions) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+        'Trying to add properties to a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
+
+    if (options && options.lifespan === 'permanent') {
+      try {
+        this._storage.setItem(KEY_PREFIX_EMB_PROPERTIES + key, value);
+      } catch (error) {
+        this._diag.error('Failed to set permanent property', error);
+      }
+    }
     this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
+  }
+
+  public removeProperty(key: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'Trying to remove properties to a session, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+
+    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, '');
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
@@ -88,7 +111,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to end a session, but there is no session in progress. This is a no-op.'
+        'Trying to end a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -160,7 +183,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public incrSessionCountForKey(key: string) {
     if (!this._sessionSpan || !this._activeSessionCounts) {
       this._diag.debug(
-        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
+        'Trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
