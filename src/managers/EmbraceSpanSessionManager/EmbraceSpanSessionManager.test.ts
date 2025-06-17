@@ -3,13 +3,16 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/index.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
+import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_PREFIX_EMB_PROPERTIES,
+} from '../../constants/attributes.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -18,15 +21,18 @@ describe('EmbraceSpanSessionManager', () => {
   let manager: EmbraceSpanSessionManager;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
+  let storage: InMemoryStorage;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
+    storage = new InMemoryStorage();
   });
 
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    manager = new EmbraceSpanSessionManager({ diag });
+    manager = new EmbraceSpanSessionManager({ diag, storage });
+    storage.clear();
   });
 
   it('should initialize a EmbraceSpanSessionManager', () => {
@@ -95,7 +101,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(finishedSpans).to.have.lengthOf(0);
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to end a session, but there is no session in progress. This is a no-op.'
+      'Trying to end a session, but there is no session in progress. This is a no-op.'
     );
   });
 
@@ -104,7 +110,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+      'Trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
     );
   });
 
@@ -134,7 +140,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+      'Trying to add properties to a session, but there is no session in progress. This is a no-op.'
     );
   });
 
@@ -226,5 +232,55 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
 
     void expect(listener).to.have.been.calledOnce;
+  });
+
+  it('should store permanent properties in localStorage', () => {
+    const key = 'permanent-key';
+    const value = 'permanent-value';
+    manager.startSessionSpan();
+    manager.addProperty(key, value, {
+      lifespan: 'permanent',
+    });
+
+    const storedValue = storage.getItem(`emb.properties.${key}`);
+    expect(storedValue).to.equal(value);
+  });
+
+  it('should not store session properties in localStorage', () => {
+    const key = 'permanent-key';
+    const value = 'permanent-value';
+    manager.startSessionSpan();
+    manager.addProperty(key, value);
+
+    const storedValue = storage.getItem(`emb.properties.${key}`);
+    void expect(storedValue).to.be.undefined;
+  });
+
+  it('should not store default session properties in localStorage', () => {
+    const key = 'permanent-key';
+    const value = 'permanent-value';
+    manager.startSessionSpan();
+    manager.addProperty(key, value, {
+      // @ts-expect-error asserting an invalid value for lifespan
+      lifespan: 'invalid',
+    });
+
+    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
+    void expect(storedValue).to.be.undefined;
+  });
+
+  it('should persist permanent properties across sessions', () => {
+    const key = 'permanent-key';
+    const value = 'permanent-value';
+    manager.startSessionSpan();
+    manager.addProperty(key, value, { lifespan: 'permanent' });
+
+    const storedValue = storage.getItem(`emb.properties.${key}`);
+    expect(storedValue).to.equal(value);
+
+    manager.endSessionSpan();
+    manager.startSessionSpan();
+    const storedValue2 = storage.getItem(`emb.properties.${key}`);
+    expect(storedValue2).to.equal(value);
   });
 });
