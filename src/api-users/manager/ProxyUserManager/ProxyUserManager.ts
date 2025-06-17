@@ -1,4 +1,4 @@
-import type { User, UserManager } from '../index.js';
+import type { UserManager } from '../index.js';
 import { NoOpUserManager } from '../NoOpUserManager/index.js';
 
 const NOOP_USER_MANAGER = new NoOpUserManager();
@@ -14,15 +14,15 @@ export class ProxyUserManager implements UserManager {
     this._delegate = delegate;
   }
 
-  public clearUser(): void {
-    this.getDelegate().clearUser();
+  public getUserId(): string | null {
+    return this.getDelegate().getUserId();
   }
 
-  public getUser(): User | null {
-    return this.getDelegate().getUser();
+  public setUserId(userId: string): void {
+    this.getDelegate().setUserId(userId);
   }
 
-  public setUser(user: User): void {
-    this.getDelegate().setUser(user);
+  public clearUserId(): void {
+    this.getDelegate().clearUserId();
   }
 }

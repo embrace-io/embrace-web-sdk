@@ -29,6 +29,8 @@ import {
   EmbraceSessionBatchedSpanProcessor,
   EmbraceLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
+  UserSpanProcessor,
+  UserLogRecordProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -112,6 +114,7 @@ export const initSDK = (
       enduserPseudoID,
       resource: resourceWithWebSDKAttributes,
       spanSessionManager,
+      userManager,
       spanExporters,
       spanProcessors,
       propagator,
@@ -123,6 +126,7 @@ export const initSDK = (
       appID,
       enduserPseudoID,
       resource: resourceWithWebSDKAttributes,
+      userManager,
       logExporters,
       logProcessors,
       spanSessionManager,
@@ -175,6 +179,7 @@ const setupTraces = ({
   enduserPseudoID,
   resource,
   spanSessionManager,
+  userManager,
   spanExporters,
   spanProcessors = [],
   propagator = null,
@@ -187,6 +192,7 @@ const setupTraces = ({
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
     new EmbraceNetworkSpanProcessor(),
+    new UserSpanProcessor({ userManager }),
   ];
 
   spanExporters?.forEach(exporter => {
@@ -222,6 +228,7 @@ const setupLogs = ({
   appID,
   enduserPseudoID,
   resource,
+  userManager,
   logExporters,
   logProcessors,
   spanSessionManager,
@@ -239,6 +246,7 @@ const setupLogs = ({
       spanSessionManager,
     }),
     new EmbraceLogRecordProcessor(),
+    new UserLogRecordProcessor({ userManager }),
   ];
 
   logExporters?.forEach(exporter => {

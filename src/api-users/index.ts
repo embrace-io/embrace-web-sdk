@@ -1,5 +1,9 @@
 export { user } from './userAPI.js';
-export type { UserManager, User } from './manager/index.js';
+export type {
+  UserManager,
+  UserManagerInternal,
+  User,
+} from './manager/index.js';
 export {
   NoOpUserManager,
   ProxyUserManager,

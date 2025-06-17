@@ -5,6 +5,14 @@ export interface User {
 }
 
 export interface UserManager {
+  getUserId: () => string | null;
+
+  setUserId: (userId: string) => void;
+
+  clearUserId: () => void;
+}
+
+export interface UserManagerInternal extends UserManager {
   getUser: () => User | null;
 
   setUser: (user: User) => void;

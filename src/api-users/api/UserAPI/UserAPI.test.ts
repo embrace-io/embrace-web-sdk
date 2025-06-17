@@ -36,9 +36,9 @@ describe('UserAPI', () => {
   it('should set and get the global user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
-      getUser: sinon.stub().returns({ id: 'mockUserId' }),
-      setUser: sinon.stub(),
-      clearUser: sinon.stub(),
+      getUserId: sinon.stub().returns({ id: 'mockUserId' }),
+      setUserId: sinon.stub(),
+      clearUserId: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
     const userManager = userAPI.getUserManager();
@@ -51,20 +51,20 @@ describe('UserAPI', () => {
   it('should forward calls to the user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
-      getUser: sinon.stub().returns({ id: 'mockUserId' }),
-      setUser: sinon.stub(),
-      clearUser: sinon.stub(),
+      getUserId: sinon.stub().returns({ id: 'mockUserId' }),
+      setUserId: sinon.stub(),
+      clearUserId: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
 
-    void expect(userAPI.getUser()).to.not.be.null;
-    void expect(mockUserManager.getUser).to.have.been.calledOnce;
+    void expect(userAPI.getUserId()).to.not.be.null;
+    void expect(mockUserManager.getUserId).to.have.been.calledOnce;
 
     const user = { [KEY_ENDUSER_PSEUDO_ID]: 'newUserId' };
-    userAPI.setUser(user);
-    expect(mockUserManager.setUser).to.have.been.calledOnceWith(user);
+    userAPI.setUserId('newUserId');
+    expect(mockUserManager.setUserId).to.have.been.calledOnceWith(user);
 
-    userAPI.clearUser();
-    void expect(mockUserManager.clearUser).to.have.been.calledOnce;
+    userAPI.clearUserId();
+    void expect(mockUserManager.clearUserId).to.have.been.calledOnce;
   });
 });
