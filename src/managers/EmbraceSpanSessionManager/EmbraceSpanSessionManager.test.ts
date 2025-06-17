@@ -275,12 +275,32 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     manager.addProperty(key, value, { lifespan: 'permanent' });
 
-    const storedValue = storage.getItem(`emb.properties.${key}`);
-    expect(storedValue).to.equal(value);
+    const storedProperty = storage.getItem(`emb.properties.${key}`);
+    expect(storedProperty).to.equal(value);
 
     manager.endSessionSpan();
     manager.startSessionSpan();
-    const storedValue2 = storage.getItem(`emb.properties.${key}`);
-    expect(storedValue2).to.equal(value);
+    const storedProperty2 = storage.getItem(`emb.properties.${key}`);
+    expect(storedProperty2).to.equal(value);
+  });
+
+  it('should not persist permanent properties across sessions that have been removed', () => {
+    const key = 'permanent-key';
+    const value = 'permanent-value';
+    manager.startSessionSpan();
+    manager.addProperty(key, value, { lifespan: 'permanent' });
+
+    let storedProperty = storage.getItem(`emb.properties.${key}`);
+    expect(storedProperty).to.equal(value);
+
+    manager.removeProperty(key);
+    // TODO decide if we should remove the value immediately or on session end
+    // storedProperty = storage.getItem(`emb.properties.${key}`);
+    // void expect(storedProperty).to.be.undefined;
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    storedProperty = storage.getItem(`emb.properties.${key}`);
+    void expect(storedProperty).to.be.undefined;
   });
 });

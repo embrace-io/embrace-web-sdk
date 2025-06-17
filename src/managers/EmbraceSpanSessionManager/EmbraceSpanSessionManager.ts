@@ -99,6 +99,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
+    try {
+      this._storage.removeItem(KEY_PREFIX_EMB_PROPERTIES + key);
+    } catch (error) {
+      this._diag.error('Failed to remove permanent property', error);
+    }
+
     this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, '');
   }
 
