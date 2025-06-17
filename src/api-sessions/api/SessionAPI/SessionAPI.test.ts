@@ -40,6 +40,7 @@ describe('SessionAPI', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      removeProperty: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
     };
@@ -61,6 +62,7 @@ describe('SessionAPI', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      removeProperty: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
     };

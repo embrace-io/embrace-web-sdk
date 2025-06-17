@@ -24,6 +24,7 @@ describe('ProxySpanSessionManager', () => {
       endSessionSpanInternal: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
+      removeProperty: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
     };
@@ -101,6 +102,14 @@ describe('ProxySpanSessionManager', () => {
     expect(mockDelegate.addProperty).to.have.been.calledOnceWith(
       'some-custom-key',
       'some custom value'
+    );
+  });
+
+  it('should delegate removeProperty to the delegate', () => {
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.removeProperty('some-custom-key');
+    expect(mockDelegate.removeProperty).to.have.been.calledOnceWith(
+      'some-custom-key'
     );
   });
 
