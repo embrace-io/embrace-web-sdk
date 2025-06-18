@@ -1,4 +1,4 @@
-import { sdk } from '@embrace-io/web-sdk';
+import { sdk, user } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
@@ -18,6 +18,8 @@ const setupOTel = () => {
   } else {
     console.log('Failed to initialize the Embrace SDK');
   }
+
+  user.setUserId('test-user-id');
 };
 
 export { setupOTel };
