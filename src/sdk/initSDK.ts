@@ -13,7 +13,7 @@ import {
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
-import { KEY_ENDUSER_PSEUDO_ID, user } from '../api-users/index.js';
+import { user } from '../api-users/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
@@ -101,7 +101,7 @@ export const initSDK = (
     }
 
     const userManager = setupUser();
-    const enduserPseudoID = userManager.getUser()?.[KEY_ENDUSER_PSEUDO_ID];
+    const enduserPseudoID = userManager.getEmbraceUserId();
     if (sendingToEmbrace && !enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
     }

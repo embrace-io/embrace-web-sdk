@@ -27,6 +27,10 @@ export class UserAPI implements UserManager {
     this._proxyUserManager.setDelegate(userManager);
   }
 
+  public getEmbraceUserId(): string {
+    return this.getUserManager().getEmbraceUserId();
+  }
+
   public getUserId(): string | null {
     return this.getUserManager().getUserId();
   }

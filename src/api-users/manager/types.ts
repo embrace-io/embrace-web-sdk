@@ -5,6 +5,8 @@ export interface User {
 }
 
 export interface UserManager {
+  getEmbraceUserId: () => string;
+
   getUserId: () => string | null;
 
   setUserId: (userId: string) => void;
@@ -13,9 +15,7 @@ export interface UserManager {
 }
 
 export interface UserManagerInternal extends UserManager {
-  getUser: () => User | null;
+  setEmbraceUserId: (userId: string) => void;
 
-  setUser: (user: User) => void;
-
-  clearUser: () => void;
+  clearEmbraceUserId: () => void;
 }

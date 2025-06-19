@@ -33,6 +33,7 @@ describe('UserAPI', () => {
   it('should set and get the global user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
+      getEmbraceUserId: sinon.stub().returns('mockEmbraceUserId'),
       getUserId: sinon.stub().returns('mockUserId'),
       setUserId: sinon.stub(),
       clearUserId: sinon.stub(),
@@ -48,11 +49,15 @@ describe('UserAPI', () => {
   it('should forward calls to the user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
+      getEmbraceUserId: sinon.stub().returns('mockEmbraceUserId'),
       getUserId: sinon.stub().returns('mockUserId'),
       setUserId: sinon.stub(),
       clearUserId: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
+
+    void expect(userAPI.getEmbraceUserId()).to.equal('mockEmbraceUserId');
+    void expect(mockUserManager.getEmbraceUserId).to.have.been.calledOnce;
 
     void expect(userAPI.getUserId()).to.not.be.null;
     void expect(mockUserManager.getUserId).to.have.been.calledOnce;

@@ -14,6 +14,10 @@ export class ProxyUserManager implements UserManager {
     this._delegate = delegate;
   }
 
+  public getEmbraceUserId(): string {
+    return this.getDelegate().getEmbraceUserId();
+  }
+
   public getUserId(): string | null {
     return this.getDelegate().getUserId();
   }

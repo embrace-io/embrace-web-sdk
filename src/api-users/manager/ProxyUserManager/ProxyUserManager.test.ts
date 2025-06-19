@@ -14,6 +14,7 @@ describe('ProxyUserManager', () => {
   beforeEach(() => {
     proxyUserManager = new ProxyUserManager();
     mockDelegate = {
+      getEmbraceUserId: sinon.stub().returns('mockEmbraceUserId'),
       getUserId: sinon.stub().returns('mockUserId'),
       setUserId: sinon.stub(),
       clearUserId: sinon.stub(),
@@ -29,6 +30,12 @@ describe('ProxyUserManager', () => {
     proxyUserManager.setDelegate(mockDelegate);
     const delegate = proxyUserManager.getDelegate();
     expect(delegate).to.equal(mockDelegate);
+  });
+
+  it('should delegate getEmbraceUserId to the delegate', () => {
+    proxyUserManager.setDelegate(mockDelegate);
+    const embraceUserId = proxyUserManager.getEmbraceUserId();
+    expect(embraceUserId).to.equal('mockEmbraceUserId');
   });
 
   it('should delegate getUser to the delegate', () => {
