@@ -445,7 +445,7 @@ sdk.initSDK({
 
 ### How is data exported from the SDK
 
-Refer to [DATA_EXPORT.md](/.DATA_EXPORT.md) for details on how data is exported from the SDK.
+Refer to [DATA_EXPORT.md](./DATA_EXPORT.md) for details on how data is exported from the SDK.
 
 ## Support
 
