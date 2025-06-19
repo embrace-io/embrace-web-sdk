@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import type { User } from '../index.js';
 import { NoOpUserManager } from './NoOpUserManager.js';
 
 describe('NoOpUserManager', () => {
@@ -9,20 +8,25 @@ describe('NoOpUserManager', () => {
     noOpUserManager = new NoOpUserManager();
   });
 
+  it('should return an empty string for getEmbraceUserId', () => {
+    const embraceUserId: string = noOpUserManager.getEmbraceUserId();
+    void expect(embraceUserId).to.equal('');
+  });
+
   it('should return null for getUser', () => {
-    const user: User | null = noOpUserManager.getUser();
-    void expect(user).to.be.null;
+    const userId: string | null = noOpUserManager.getUserId();
+    void expect(userId).to.be.null;
   });
 
   it('should do nothing for setUser', () => {
     void expect(() => {
-      noOpUserManager.setUser();
+      noOpUserManager.setUserId();
     }).to.not.throw();
   });
 
   it('should do nothing for clearUser', () => {
     expect(() => {
-      noOpUserManager.clearUser();
+      noOpUserManager.clearUserId();
     }).to.not.throw();
   });
 });

@@ -1,15 +1,15 @@
-import type { User, UserManager } from '../index.js';
+import type { UserManager } from '../index.js';
 
 export class NoOpUserManager implements UserManager {
-  public clearUser(): void {
-    // do nothing.
+  public getEmbraceUserId(): string {
+    return '';
   }
 
-  public getUser(): User | null {
+  public getUserId(): string | null {
     return null;
   }
 
-  public setUser(): void {
-    // do nothing.
-  }
+  public setUserId(): void {}
+
+  public clearUserId(): void {}
 }

@@ -26,6 +26,7 @@ import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumen
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type { SpanSessionManagerInternal } from '../managers/index.js';
+import type { UserManager } from '../api-users/index.js';
 
 type BaseSDKInitConfig = {
   /**
@@ -174,6 +175,7 @@ export interface SetupTracesArgs {
   enduserPseudoID?: string;
   resource: Resource;
   spanSessionManager: SpanSessionManager;
+  userManager: UserManager;
   spanExporters?: SpanExporter[];
   spanProcessors: SpanProcessor[];
   propagator?: TextMapPropagator | null;
@@ -185,6 +187,7 @@ export interface SetupLogsArgs {
   appID?: string;
   enduserPseudoID?: string;
   resource: Resource;
+  userManager: UserManager;
   logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
   spanSessionManager: SpanSessionManagerInternal;

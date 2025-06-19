@@ -1,10 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import type { UserManager } from '../../manager/index.js';
-import {
-  KEY_ENDUSER_PSEUDO_ID,
-  ProxyUserManager,
-} from '../../manager/index.js';
+import { ProxyUserManager } from '../../manager/index.js';
 import { UserAPI } from './UserAPI.js';
 import sinonChai from 'sinon-chai';
 
@@ -36,9 +33,10 @@ describe('UserAPI', () => {
   it('should set and get the global user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
-      getUser: sinon.stub().returns({ id: 'mockUserId' }),
-      setUser: sinon.stub(),
-      clearUser: sinon.stub(),
+      getEmbraceUserId: sinon.stub().returns('mockEmbraceUserId'),
+      getUserId: sinon.stub().returns('mockUserId'),
+      setUserId: sinon.stub(),
+      clearUserId: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
     const userManager = userAPI.getUserManager();
@@ -51,20 +49,23 @@ describe('UserAPI', () => {
   it('should forward calls to the user manager', () => {
     const mockUserManager: UserManager = {
       // Mock implementation of UserManager
-      getUser: sinon.stub().returns({ id: 'mockUserId' }),
-      setUser: sinon.stub(),
-      clearUser: sinon.stub(),
+      getEmbraceUserId: sinon.stub().returns('mockEmbraceUserId'),
+      getUserId: sinon.stub().returns('mockUserId'),
+      setUserId: sinon.stub(),
+      clearUserId: sinon.stub(),
     };
     userAPI.setGlobalUserManager(mockUserManager);
 
-    void expect(userAPI.getUser()).to.not.be.null;
-    void expect(mockUserManager.getUser).to.have.been.calledOnce;
+    void expect(userAPI.getEmbraceUserId()).to.equal('mockEmbraceUserId');
+    void expect(mockUserManager.getEmbraceUserId).to.have.been.calledOnce;
 
-    const user = { [KEY_ENDUSER_PSEUDO_ID]: 'newUserId' };
-    userAPI.setUser(user);
-    expect(mockUserManager.setUser).to.have.been.calledOnceWith(user);
+    void expect(userAPI.getUserId()).to.not.be.null;
+    void expect(mockUserManager.getUserId).to.have.been.calledOnce;
 
-    userAPI.clearUser();
-    void expect(mockUserManager.clearUser).to.have.been.calledOnce;
+    userAPI.setUserId('newUserId');
+    expect(mockUserManager.setUserId).to.have.been.calledOnceWith('newUserId');
+
+    userAPI.clearUserId();
+    void expect(mockUserManager.clearUserId).to.have.been.calledOnce;
   });
 });
