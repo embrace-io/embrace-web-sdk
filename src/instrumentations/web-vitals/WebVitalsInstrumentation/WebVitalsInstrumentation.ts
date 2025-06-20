@@ -103,9 +103,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
-  private _attributedURLForINP: string | undefined;
-  private _attributedURLForLCP: string | undefined;
-  private _attributedURLForCLS: string | undefined;
+  private readonly _attributedURL: Record<Metric['name'], string | undefined> =
+    {
+      INP: undefined,
+      LCP: undefined,
+      CLS: undefined,
+      FCP: undefined,
+      TTFB: undefined,
+    };
   private _largestShiftTargetForCLS: string | undefined;
 
   // instrumentation that adds an event to the session span for each web vital report
@@ -178,7 +183,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       // for updates to the scores and keep track of the URL to attribute for each
       this._listeners.INP?.(
         () => {
-          this._attributedURLForINP = this._urlDocument.URL;
+          this._attributedURL.INP = this._urlDocument.URL;
         },
         {
           reportAllChanges: true,
@@ -186,7 +191,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       );
       this._listeners.LCP?.(
         () => {
-          this._attributedURLForLCP = this._urlDocument.URL;
+          this._attributedURL.LCP = this._urlDocument.URL;
         },
         {
           reportAllChanges: true,
@@ -204,7 +209,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ) {
             this._largestShiftTargetForCLS =
               clsMetric.attribution.largestShiftTarget;
-            this._attributedURLForCLS = this._urlDocument.URL;
+            this._attributedURL.CLS = this._urlDocument.URL;
           }
         },
         {
@@ -231,20 +236,20 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _getAttributedURLForMetric(metric: MetricWithAttribution): string {
-    if (metric.name === 'INP' && this._attributedURLForINP) {
-      return this._attributedURLForINP;
+    if (metric.name === 'INP' && this._attributedURL.INP) {
+      return this._attributedURL.INP;
     }
 
-    if (metric.name === 'LCP' && this._attributedURLForLCP) {
-      return this._attributedURLForLCP;
+    if (metric.name === 'LCP' && this._attributedURL.LCP) {
+      return this._attributedURL.LCP;
     }
 
     if (
       metric.name === 'CLS' &&
-      this._attributedURLForCLS &&
+      this._attributedURL.CLS &&
       metric.attribution.largestShiftTarget === this._largestShiftTargetForCLS
     ) {
-      return this._attributedURLForCLS;
+      return this._attributedURL.CLS;
     }
 
     return this._urlDocument.URL;
