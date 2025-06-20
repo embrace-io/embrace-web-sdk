@@ -19,6 +19,7 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
@@ -42,6 +43,7 @@ import type {
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
+  SetupSessionArgs,
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
@@ -106,7 +108,10 @@ export const initSDK = (
       throw new Error('userID is required when using Embrace exporter');
     }
 
-    const spanSessionManager = setupSession();
+    const limitManager = setupLimits();
+    const spanSessionManager = setupSession({
+      limitManager,
+    });
 
     const tracerProvider = setupTraces({
       sendingToEmbrace,
@@ -119,6 +124,7 @@ export const initSDK = (
       spanProcessors,
       propagator,
       contextManager,
+      limitManager,
     });
 
     const loggerProvider = setupLogs({
@@ -130,6 +136,7 @@ export const initSDK = (
       logExporters,
       logProcessors,
       spanSessionManager,
+      limitManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -167,8 +174,27 @@ const setupUser = () => {
   return embraceUserManager;
 };
 
-const setupSession = () => {
-  const embraceSpanSessionManager = new EmbraceSpanSessionManager();
+const setupLimits = () =>
+  new EmbraceLimitManager({
+    maxLogsBySeverity: {
+      info: 100,
+      warning: 200,
+      error: 500,
+    },
+    maxLogLength: 128,
+    maxNetworkRequests: 10_000,
+    maxSpans: 1_000,
+    maxSpanAttributes: 50,
+    maxSpanEvents: 10,
+    maxAttributesPerSpanEvent: 10,
+    maxBreadcrumbs: 100,
+    maxBreadcrumbLength: 256,
+    maxSessionProperties: 100,
+  });
+const setupSession = ({ limitManager }: SetupSessionArgs) => {
+  const embraceSpanSessionManager = new EmbraceSpanSessionManager({
+    limitManager,
+  });
   session.setGlobalSessionManager(embraceSpanSessionManager);
   return embraceSpanSessionManager;
 };
@@ -184,6 +210,7 @@ const setupTraces = ({
   spanProcessors = [],
   propagator = null,
   contextManager = null,
+  limitManager,
 }: SetupTracesArgs) => {
   const embraceTraceManager = new EmbraceTraceManager();
   trace.setGlobalTraceManager(embraceTraceManager);
@@ -206,6 +233,7 @@ const setupTraces = ({
           appID,
           userID: enduserPseudoID,
         }),
+        limitManager,
       })
     );
   }
@@ -232,8 +260,12 @@ const setupLogs = ({
   logExporters,
   logProcessors,
   spanSessionManager,
+  limitManager,
 }: SetupLogsArgs) => {
-  const embraceLogManager = new EmbraceLogManager({ spanSessionManager });
+  const embraceLogManager = new EmbraceLogManager({
+    spanSessionManager,
+    limitManager,
+  });
   log.setGlobalLogManager(embraceLogManager);
 
   const loggerProvider = new LoggerProvider({

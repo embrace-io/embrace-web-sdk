@@ -26,6 +26,7 @@ import type {
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -38,12 +39,14 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
+  private readonly _limitManager: LimitManagerInternal;
 
   public constructor({
     diag: diagParam,
     perf,
     visibilityDoc = window.document,
-  }: EmbraceSpanSessionManagerArgs = {}) {
+    limitManager,
+  }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
       diag.createComponentLogger({
@@ -51,6 +54,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       });
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
+    this._limitManager = limitManager;
   }
 
   // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
@@ -62,6 +66,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
+
+    if (!this._limitManager.allowBreadcrumb(name)) {
+      return;
+    }
+
     this._sessionSpan.addEvent(
       'emb-breadcrumb',
       {
@@ -78,6 +87,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
+
+    if (!this._limitManager.allowSessionProperty(key, value)) {
+      return;
+    }
+
     this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
   }
 
@@ -113,6 +127,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         this._diag.warn('Error while executing session ended listener', error);
       }
     }
+
+    // For the limit manager to add a session ended listener it would need a reference to this
+    // session manager which would create a circular dependency
+    this._limitManager.reset();
   }
 
   public getSessionId(): string | null {

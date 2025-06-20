@@ -27,16 +27,23 @@ import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 
 export class EmbraceLogManager implements LogManager {
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _limitManager: LimitManagerInternal;
 
-  public constructor({ perf, spanSessionManager }: EmbraceLogManagerArgs) {
+  public constructor({
+    perf,
+    spanSessionManager,
+    limitManager,
+  }: EmbraceLogManagerArgs) {
     this._perf = perf ?? new OTelPerformanceManager();
     this._logger = logs.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
+    this._limitManager = limitManager;
   }
 
   private static _logSeverityToSeverityNumber(
@@ -115,6 +122,10 @@ export class EmbraceLogManager implements LogManager {
     attributes?: Record<string, AttributeValue | undefined>;
     stackTrace?: string;
   }) {
+    if (!this._limitManager.allowLog(severity, attributes)) {
+      return;
+    }
+
     this._logger.emit({
       timestamp,
       severityNumber: EmbraceLogManager._logSeverityToSeverityNumber(severity),
