@@ -15,6 +15,7 @@
   "scripts": {
     "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
     "sdk:analyze": "tsx scripts/measureSize.ts",
+    "sdk:analyze:clean": "rimraf .sonda",
     "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
     "sdk:compile:clean": "rimraf build",
     "sdk:install:clean": "rimraf node_modules",
