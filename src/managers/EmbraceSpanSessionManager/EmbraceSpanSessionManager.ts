@@ -80,8 +80,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
-
-    if (options && options.lifespan === 'permanent') {
+    if (options?.lifespan === 'permanent') {
       try {
         this._storage.setItem(KEY_PREFIX_EMB_PROPERTIES + key, value);
       } catch (error) {

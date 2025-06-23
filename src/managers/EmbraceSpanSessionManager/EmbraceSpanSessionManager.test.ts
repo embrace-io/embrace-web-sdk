@@ -294,9 +294,9 @@ describe('EmbraceSpanSessionManager', () => {
     expect(storedProperty).to.equal(value);
 
     manager.removeProperty(key);
-    // TODO decide if we should remove the value immediately or on session end
-    // storedProperty = storage.getItem(`emb.properties.${key}`);
-    // void expect(storedProperty).to.be.undefined;
+    storedProperty = storage.getItem(`emb.properties.${key}`);
+    void expect(storedProperty).to.be.undefined;
+
     manager.endSessionSpan();
 
     manager.startSessionSpan();
