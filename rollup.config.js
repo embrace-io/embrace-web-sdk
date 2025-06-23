@@ -90,6 +90,7 @@ export default defineConfig([
       file: 'build/iife/bundle.js',
       format: 'iife',
       name: 'EmbraceWebSdk',
+      sourcemap: true,
     },
   },
 ]);
