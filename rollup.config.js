@@ -1,8 +1,9 @@
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
-import { defineConfig } from 'rollup';
-import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
+import { defineConfig } from 'rollup';
+import Sonda from 'sonda/rollup';
 import pkg from './package.json' with { type: 'json' };
 
 // Treat all deps as external for NPM build
@@ -22,6 +23,16 @@ export default defineConfig([
   {
     input,
     plugins: [
+      Sonda({
+        enabled: false,
+        format: 'html',
+        outputDir: 'node_modules/.sonda',
+        open: true,
+        deep: false,
+        sources: false,
+        gzip: true,
+        brotli: false,
+      }),
       typescript({
         tsconfig: './tsconfig.esm.json',
       }),
@@ -41,6 +52,16 @@ export default defineConfig([
   {
     input,
     plugins: [
+      Sonda({
+        enabled: false,
+        format: 'html',
+        outputDir: 'node_modules/.sonda',
+        open: true,
+        deep: false,
+        sources: false,
+        gzip: true,
+        brotli: false,
+      }),
       typescript({
         tsconfig: './tsconfig.esnext.json',
       }),
@@ -60,6 +81,16 @@ export default defineConfig([
   {
     input,
     plugins: [
+      Sonda({
+        enabled: false,
+        format: 'html',
+        outputDir: 'node_modules/.sonda',
+        open: true,
+        deep: false,
+        sources: false,
+        gzip: true,
+        brotli: false,
+      }),
       typescript({
         tsconfig: './tsconfig.json',
       }),
@@ -77,6 +108,16 @@ export default defineConfig([
   {
     input: 'src/index.ts',
     plugins: [
+      Sonda({
+        enabled: false,
+        format: 'html',
+        outputDir: 'node_modules/.sonda',
+        open: true,
+        deep: false,
+        sources: false,
+        gzip: true,
+        brotli: false,
+      }),
       typescript({
         tsconfig: './tsconfig.esm.json',
       }),
