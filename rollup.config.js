@@ -18,21 +18,23 @@ const input = {
   'react-instrumentation': 'src/react/index.ts',
 };
 
+const sondaOptions = {
+  enabled: false,
+  format: 'html',
+  outputDir: '.sonda',
+  open: true,
+  deep: true,
+  sources: false,
+  gzip: false,
+  brotli: false,
+};
+
 export default defineConfig([
   // ESM Build
   {
     input,
     plugins: [
-      Sonda({
-        enabled: false,
-        format: 'html',
-        outputDir: 'node_modules/.sonda',
-        open: true,
-        deep: false,
-        sources: false,
-        gzip: true,
-        brotli: false,
-      }),
+      Sonda(sondaOptions),
       typescript({
         tsconfig: './tsconfig.esm.json',
       }),
@@ -52,16 +54,7 @@ export default defineConfig([
   {
     input,
     plugins: [
-      Sonda({
-        enabled: false,
-        format: 'html',
-        outputDir: 'node_modules/.sonda',
-        open: true,
-        deep: false,
-        sources: false,
-        gzip: true,
-        brotli: false,
-      }),
+      Sonda(sondaOptions),
       typescript({
         tsconfig: './tsconfig.esnext.json',
       }),
@@ -81,16 +74,7 @@ export default defineConfig([
   {
     input,
     plugins: [
-      Sonda({
-        enabled: false,
-        format: 'html',
-        outputDir: 'node_modules/.sonda',
-        open: true,
-        deep: false,
-        sources: false,
-        gzip: true,
-        brotli: false,
-      }),
+      Sonda(sondaOptions),
       typescript({
         tsconfig: './tsconfig.json',
       }),
@@ -108,16 +92,7 @@ export default defineConfig([
   {
     input: 'src/index.ts',
     plugins: [
-      Sonda({
-        enabled: false,
-        format: 'html',
-        outputDir: 'node_modules/.sonda',
-        open: true,
-        deep: false,
-        sources: false,
-        gzip: true,
-        brotli: false,
-      }),
+      Sonda(sondaOptions),
       typescript({
         tsconfig: './tsconfig.esm.json',
       }),
