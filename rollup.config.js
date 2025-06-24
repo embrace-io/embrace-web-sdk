@@ -5,7 +5,13 @@ import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 import pkg from './package.json' with { type: 'json' };
 
+const deps = Object.keys(pkg.dependencies || {});
 const peerDeps = Object.keys(pkg.peerDependencies || {});
+
+const isExternal = id =>
+  peerDeps.includes(id) ||
+  deps.includes(id) ||
+  deps.some(dep => id.startsWith(dep + '/'));
 
 const input = {
   index: 'src/index.ts',
@@ -30,6 +36,7 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: isExternal,
   },
 
   // ESNext build
@@ -38,6 +45,7 @@ export default defineConfig([
     plugins: [
       typescript({
         tsconfig: './tsconfig.json',
+        target: 'esnext',
       }),
       terser(),
     ],
@@ -48,6 +56,7 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: isExternal,
   },
 
   // CJS build
@@ -67,6 +76,7 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: isExternal,
   },
 
   // CDN Build, it only exports the core web sdk and not any additional instrumentation
@@ -79,7 +89,9 @@ export default defineConfig([
       }),
       commonjs(),
       resolve({
-        browser: true,
+        mainFields: ['esnext', 'module', 'browser', 'main'],
+        extensions: ['.js', '.ts', '.jsx', '.tsx'],
+        preferBuiltins: false,
       }),
       terser(),
     ],
