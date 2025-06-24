@@ -14,7 +14,9 @@ export const lighthouseTest = base.extend<
   }
 >({
   port: [
-    async (_, use) => {
+    // Playwright wants this to be {}
+    // eslint-disable-next-line no-empty-pattern
+    async ({}, use) => {
       const port = await getPort();
       await use(port);
     },
