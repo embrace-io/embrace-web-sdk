@@ -17,8 +17,10 @@ const compat = new FlatCompat({
 
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config({
-  files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-  ignores: ['*.config.{js,mjs}'],
+  files: [
+    './src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
+    './cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
+  ],
   extends: [
     pluginJs.configs.recommended,
     tseslint.configs.strictTypeChecked,
