@@ -14,7 +14,7 @@ export const cdpSessionTest = base.extend<
   }
 >({
   port: [
-    async ({}, use) => {
+    async (_, use) => {
       const port = await getPort();
       await use(port);
     },
@@ -23,7 +23,7 @@ export const cdpSessionTest = base.extend<
   chromeBrowser: [
     async ({ port }, use) => {
       const chromeBrowser = await chromium.launch({
-        args: [`--remote-debugging-port=${port}`],
+        args: [`--remote-debugging-port=${port.toString()}`],
         headless: true,
       });
       await use(chromeBrowser);

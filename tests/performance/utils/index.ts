@@ -1,2 +1,2 @@
-export { cdpSessionTest } from './cdp-session-test';
-export { lighthouseTest } from './lighthouse-test';
+export { cdpSessionTest } from './cdp-session-test.js';
+export { lighthouseTest } from './lighthouse-test.js';

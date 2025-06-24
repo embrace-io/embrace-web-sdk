@@ -1,7 +1,7 @@
 import { cdpSessionTest } from '../utils/index.js';
 import type { Metric, TestPage } from '../types/index.js';
 import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/index.js';
-import { CDPSession } from 'playwright';
+import type { CDPSession } from 'playwright';
 
 type MemoryResult = {
   heapSize: Metric;

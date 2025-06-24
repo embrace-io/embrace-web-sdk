@@ -14,7 +14,7 @@ export const lighthouseTest = base.extend<
   }
 >({
   port: [
-    async ({}, use) => {
+    async (_, use) => {
       const port = await getPort();
       await use(port);
     },
@@ -24,7 +24,7 @@ export const lighthouseTest = base.extend<
     async ({ port }, use) => {
       const userDataDir = path.join(os.tmpdir(), 'pw', String(Math.random()));
       const context = await chromium.launchPersistentContext(userDataDir, {
-        args: [`--remote-debugging-port=${port}`],
+        args: [`--remote-debugging-port=${port.toString()}`],
       });
       await use(context);
       await context.close();
