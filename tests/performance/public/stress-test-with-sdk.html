@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk"></script>
+  <meta charset="UTF-8" />
+  <title>SDK Stress Test App</title>
+  <style>
+      body {
+          font-family: sans-serif;
+          margin: 0;
+          padding: 0;
+      }
+      #log {
+          height: 300px;
+          overflow-y: scroll;
+          border-top: 1px solid #ccc;
+          padding: 10px;
+          background: #f9f9f9;
+          font-size: 12px;
+      }
+  </style>
+</head>
+<body>
+<h1>Stress Test App</h1>
+<div id="stats">
+  <p>Memory: <span id="memory">-</span></p>
+  <p>Iterations: <span id="iterations">0</span></p>
+</div>
+<canvas id="canvas" width="300" height="300"></canvas>
+<div id="log"></div>
+
+<script>
+  let iteration = 0;
+  const logEl = document.getElementById('log');
+  const iterationsEl = document.getElementById('iterations');
+  const memoryEl = document.getElementById('memory');
+  const { sdk, log } = window.EmbraceWebSdk;
+
+  const bigData = [];
+
+  async function simulateNetworkCall() {
+    try {
+      await fetch('https://jsonplaceholder.typicode.com/todos/' + (iteration % 200 + 1));
+    } catch (e) {
+      console.warn('Network call failed:', e);
+    }
+  }
+
+  function simulateDomUpdate() {
+    const entry = document.createElement('div');
+    entry.textContent = `Iteration ${iteration} at ${new Date().toISOString()}`;
+    logEl.appendChild(entry);
+    if (logEl.children.length > 100) {
+      logEl.removeChild(logEl.firstChild);
+    }
+  }
+
+  function simulateMemoryGrowth() {
+    const arr = new Array(10000).fill({ x: iteration });
+    bigData.push(arr);
+    if (bigData.length > 200) {
+      bigData.shift(); // prevent full crash
+    }
+  }
+
+  function updateMemoryStats() {
+    if (performance.memory) {
+      const used = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
+      memoryEl.textContent = `${used} MB`;
+    }
+  }
+
+  function animateCanvas() {
+    const ctx = document.getElementById('canvas').getContext('2d');
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.fillStyle = `hsl(${iteration % 360}, 100%, 50%)`;
+    ctx.beginPath();
+    ctx.arc(150, 150, 50 + Math.sin(iteration / 10) * 30, 0, Math.PI * 2);
+    ctx.fill();
+    requestAnimationFrame(animateCanvas);
+  }
+
+  sdk.initSDK({
+    appID: "abcde",
+    appVersion: '1.0',
+    logLevel: sdk.DiagLogLevel.DEBUG,
+  });
+
+  async function tick() {
+    iteration++;
+    iterationsEl.textContent = iteration;
+    simulateDomUpdate();
+    simulateMemoryGrowth();
+    updateMemoryStats();
+    simulateNetworkCall();
+
+    log.message('Some log', 'info');
+  }
+
+  animateCanvas();
+  setInterval(tick, 300);
+</script>
+</body>
+</html>
