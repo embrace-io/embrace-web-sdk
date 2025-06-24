@@ -1,4 +1,4 @@
-import zlib from 'zlib';
+import zlib from 'node:zlib';
 
 interface UploadToApiArgs {
   jsContent: string;
