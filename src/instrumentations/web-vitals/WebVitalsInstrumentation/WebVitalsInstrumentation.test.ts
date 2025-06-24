@@ -2,7 +2,10 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { MetricWithAttribution } from 'web-vitals/attribution';
+import type {
+  CLSMetricWithAttribution,
+  MetricWithAttribution,
+} from 'web-vitals/attribution';
 import {
   session,
   type SpanSessionManager,
@@ -504,5 +507,171 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
     expect(lcpEvent.time).to.deep.equal([5, 0]);
+  });
+
+  it('should attribute the correct URL for INP metrics', () => {
+    const testDocument: URLDocument = {
+      URL: 'https://first.com',
+    };
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument: testDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: true,
+    });
+
+    void expect(inpStub).to.have.been.callCount(2);
+    const inpFinalReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+    const inpChangeReportFunc = inpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    const inpMetric = {
+      name: 'INP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        interactionTarget: 'some-target',
+        interactionTime: 19000,
+        nextPaintTime: 18000,
+        interactionType: 'pointer',
+        processedEventEntries: [],
+        longAnimationFrameEntries: [],
+        inputDelay: 1000,
+        processingDuration: 2000,
+        presentationDelay: 3000,
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution;
+
+    inpChangeReportFunc(inpMetric);
+    // should be attributed to this URL since that is when the last change to the metric occurred
+    testDocument.URL = 'https://second.com';
+    inpChangeReportFunc(inpMetric);
+    testDocument.URL = 'https://third.com';
+    inpFinalReportFunc(inpMetric);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const inpEvent = sessionSpan.events[0];
+
+    expect(inpEvent.name).to.be.equal('emb-web-vitals-report-INP');
+    expect(inpEvent.attributes).to.containSubset({
+      'url.full': 'https://second.com',
+    });
+  });
+
+  it('should attribute the correct URL for LCP metrics', () => {
+    const testDocument: URLDocument = {
+      URL: 'https://first.com',
+    };
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument: testDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: true,
+    });
+
+    void expect(lcpStub).to.have.been.callCount(2);
+    const lcpFinalReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    const lcpChangeReportFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    const lcpMetric = {
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+      },
+    } as MetricWithAttribution;
+
+    lcpChangeReportFunc(lcpMetric);
+    // should be attributed to this URL since that is when the last change to the metric occurred
+    testDocument.URL = 'https://second.com';
+    lcpChangeReportFunc(lcpMetric);
+    testDocument.URL = 'https://third.com';
+    lcpFinalReportFunc(lcpMetric);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const lcpEvent = sessionSpan.events[0];
+
+    expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
+    expect(lcpEvent.attributes).to.containSubset({
+      'url.full': 'https://second.com',
+    });
+  });
+
+  it('should attribute the correct URL for CLS metrics', () => {
+    const testDocument: URLDocument = {
+      URL: 'https://first.com',
+    };
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument: testDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: true,
+    });
+
+    void expect(clsStub).to.have.been.callCount(2);
+    const clsFinalReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    const clsChangeReportFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+    const clsMetric = {
+      name: 'CLS',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftTarget: 'some-target-1',
+      },
+    } as CLSMetricWithAttribution;
+
+    clsChangeReportFunc(clsMetric);
+    // should be attributed to this URL since that is when the last change to the metric occurred and largestShiftTarget
+    // was changed
+    clsMetric.attribution.largestShiftTarget = 'some-target-2';
+    testDocument.URL = 'https://second.com';
+    clsChangeReportFunc(clsMetric);
+    // should NOT be attributed to this URL since the largestShiftTarget didn't change
+    testDocument.URL = 'https://third.com';
+    clsChangeReportFunc(clsMetric);
+    clsFinalReportFunc(clsMetric);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
+    expect(clsEvent.attributes).to.containSubset({
+      'url.full': 'https://second.com',
+    });
   });
 });

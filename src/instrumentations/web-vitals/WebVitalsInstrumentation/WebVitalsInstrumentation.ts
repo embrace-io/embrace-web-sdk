@@ -1,11 +1,12 @@
 import type { Attributes } from '@opentelemetry/api';
 import type {
   CLSAttribution,
+  CLSMetricWithAttribution,
   INPAttribution,
   LCPAttribution,
   MetricWithAttribution,
+  Metric,
 } from 'web-vitals/attribution';
-import { type Metric } from 'web-vitals/attribution';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import {
   ALL_WEB_VITALS,
@@ -101,6 +102,16 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _metricsToTrack: Metric['name'][];
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
+  private readonly _urlAttribution: boolean;
+  private readonly _attributedURL: Record<Metric['name'], string | undefined> =
+    {
+      INP: undefined,
+      LCP: undefined,
+      CLS: undefined,
+      FCP: undefined,
+      TTFB: undefined,
+    };
+  private _largestShiftTargetForCLS: string | undefined;
 
   // instrumentation that adds an event to the session span for each web vital report
   public constructor({
@@ -109,6 +120,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     trackingLevel = 'core',
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument = window.document,
+    urlAttribution = false,
   }: WebVitalsInstrumentationArgs = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
@@ -121,6 +133,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._urlDocument = urlDocument;
     this._metricsToTrack =
       trackingLevel === 'core' ? [...CORE_WEB_VITALS] : [...ALL_WEB_VITALS];
+    this._urlAttribution = urlAttribution;
 
     if (this._config.enabled) {
       this.enable();
@@ -146,7 +159,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
         const attrs: Attributes = {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
-          [ATTR_URL_FULL]: this._urlDocument.URL,
+          [ATTR_URL_FULL]: this._getAttributedURLForMetric(metric),
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
           'emb.web_vital.rating': metric.rating,
@@ -163,6 +176,47 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         );
       });
     });
+
+    if (this._urlAttribution) {
+      // When these web vitals make their final report (e.g. when the listeners w/ reportAllChanges=false trigger) the
+      // document's URL at that time may not match what it was at the time the scores were last updated. Instead, listen
+      // for updates to the scores and keep track of the URL to attribute for each
+      this._listeners.INP?.(
+        () => {
+          this._attributedURL.INP = this._urlDocument.URL;
+        },
+        {
+          reportAllChanges: true,
+        }
+      );
+      this._listeners.LCP?.(
+        () => {
+          this._attributedURL.LCP = this._urlDocument.URL;
+        },
+        {
+          reportAllChanges: true,
+        }
+      );
+      this._listeners.CLS?.(
+        (metric: MetricWithAttribution) => {
+          const clsMetric = metric as CLSMetricWithAttribution;
+          // A layout shift could cause CLS to change its rating but because the score is cumulative this might not
+          // correspond with an updated `largestShiftTarget`. Since we want to tie the attributed URL to the page that
+          // the `largestShiftTarget` was on we only update the attributed URL if that target has changed
+          if (
+            this._largestShiftTargetForCLS !==
+            clsMetric.attribution.largestShiftTarget
+          ) {
+            this._largestShiftTargetForCLS =
+              clsMetric.attribution.largestShiftTarget;
+            this._attributedURL.CLS = this._urlDocument.URL;
+          }
+        },
+        {
+          reportAllChanges: true,
+        }
+      );
+    }
   }
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
@@ -179,5 +233,25 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     }
 
     return this.perf.getNowMillis();
+  }
+
+  private _getAttributedURLForMetric(metric: MetricWithAttribution): string {
+    if (metric.name === 'INP' && this._attributedURL.INP) {
+      return this._attributedURL.INP;
+    }
+
+    if (metric.name === 'LCP' && this._attributedURL.LCP) {
+      return this._attributedURL.LCP;
+    }
+
+    if (
+      metric.name === 'CLS' &&
+      this._attributedURL.CLS &&
+      metric.attribution.largestShiftTarget === this._largestShiftTargetForCLS
+    ) {
+      return this._attributedURL.CLS;
+    }
+
+    return this._urlDocument.URL;
   }
 }
