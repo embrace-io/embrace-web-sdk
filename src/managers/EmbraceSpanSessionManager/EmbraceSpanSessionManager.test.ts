@@ -242,7 +242,7 @@ describe('EmbraceSpanSessionManager', () => {
       lifespan: 'permanent',
     });
 
-    const storedValue = storage.getItem(`emb.properties.${key}`);
+    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
     expect(storedValue).to.equal(value);
   });
 
@@ -252,7 +252,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     manager.addProperty(key, value);
 
-    const storedValue = storage.getItem(`emb.properties.${key}`);
+    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
     void expect(storedValue).to.be.undefined;
   });
 
@@ -275,32 +275,36 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     manager.addProperty(key, value, { lifespan: 'permanent' });
 
-    const storedProperty = storage.getItem(`emb.properties.${key}`);
+    const storedProperty = storage.getItem(
+      `${KEY_PREFIX_EMB_PROPERTIES}${key}`
+    );
     expect(storedProperty).to.equal(value);
 
     manager.endSessionSpan();
     manager.startSessionSpan();
-    const storedProperty2 = storage.getItem(`emb.properties.${key}`);
+    const storedProperty2 = storage.getItem(
+      `${KEY_PREFIX_EMB_PROPERTIES}${key}`
+    );
     expect(storedProperty2).to.equal(value);
   });
 
-  it('should not persist permanent properties across sessions that have been removed', () => {
+  it('should not persist permanent properties that have been removed', () => {
     const key = 'permanent-key';
     const value = 'permanent-value';
     manager.startSessionSpan();
     manager.addProperty(key, value, { lifespan: 'permanent' });
 
-    let storedProperty = storage.getItem(`emb.properties.${key}`);
+    let storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
     expect(storedProperty).to.equal(value);
 
     manager.removeProperty(key);
-    storedProperty = storage.getItem(`emb.properties.${key}`);
+    storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
     void expect(storedProperty).to.be.undefined;
 
     manager.endSessionSpan();
 
     manager.startSessionSpan();
-    storedProperty = storage.getItem(`emb.properties.${key}`);
+    storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
     void expect(storedProperty).to.be.undefined;
   });
 });
