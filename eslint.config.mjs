@@ -18,6 +18,7 @@ const compat = new FlatCompat({
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config({
   files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+  ignores: ['*.config.{js,mjs}'],
   extends: [
     pluginJs.configs.recommended,
     tseslint.configs.strictTypeChecked,
@@ -140,7 +141,11 @@ export default tseslint.config({
   languageOptions: {
     globals: globals.browser,
     parserOptions: {
-      project: ['./tsconfig.test.json', './cli/tsconfig.json'],
+      project: [
+        './tsconfig.json',
+        './tsconfig.test.json',
+        './cli/tsconfig.json',
+      ],
       tsconfigRootDir: import.meta.dirname,
     },
   },
