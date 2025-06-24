@@ -11,6 +11,7 @@ npm run sdk:compile
 cd ./cli || exit
 rm -rf build
 npm run cli:compile
+chmod +x build/index.js
 #build demo locally
 cd ../demo/frontend || exit
 sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' .env.template > .env
