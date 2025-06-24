@@ -1,13 +1,8 @@
 {
-  "extends": "./tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "esModuleInterop": true
   },
-  "exclude": [
-    "./scripts/*.ts",
-    "node_modules",
-    "demo",
-    "cli",
-    "build"
-  ]
+  "include": ["./src/**/*.test.ts"],
+  "exclude": []
 }

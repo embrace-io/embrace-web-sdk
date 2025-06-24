@@ -28,7 +28,7 @@ export class EmbraceTraceManager implements TraceManager {
     );
   }
 
-  public setSpan = trace.setSpan;
+  public setSpan: TraceManager['setSpan'] = trace.setSpan;
 
   public getSpan(context: Context) {
     const span = trace.getSpan(context);

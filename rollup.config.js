@@ -5,12 +5,7 @@ import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
 import pkg from './package.json' with { type: 'json' };
 
-// Treat all deps as external for NPM build
-const externalDeps = [
-  'tslib',
-  ...Object.keys(pkg.dependencies || {}),
-  ...Object.keys(pkg.peerDependencies || {}),
-];
+const peerDeps = Object.keys(pkg.peerDependencies || {});
 
 const input = {
   index: 'src/index.ts',
@@ -23,7 +18,8 @@ export default defineConfig([
     input,
     plugins: [
       typescript({
-        tsconfig: './tsconfig.esm.json',
+        tsconfig: './tsconfig.json',
+        target: 'es2017',
       }),
       terser(),
     ],
@@ -34,7 +30,6 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
-    external: externalDeps,
   },
 
   // ESNext build
@@ -42,7 +37,7 @@ export default defineConfig([
     input,
     plugins: [
       typescript({
-        tsconfig: './tsconfig.esnext.json',
+        tsconfig: './tsconfig.json',
       }),
       terser(),
     ],
@@ -53,7 +48,6 @@ export default defineConfig([
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
-    external: externalDeps,
   },
 
   // CJS build
@@ -62,6 +56,7 @@ export default defineConfig([
     plugins: [
       typescript({
         tsconfig: './tsconfig.json',
+        target: 'es2017',
       }),
       terser(),
     ],
@@ -69,8 +64,9 @@ export default defineConfig([
       dir: 'build/src',
       format: 'cjs',
       sourcemap: true,
+      preserveModules: true,
+      preserveModulesRoot: 'src',
     },
-    external: externalDeps,
   },
 
   // CDN Build, it only exports the core web sdk and not any additional instrumentation
@@ -78,7 +74,8 @@ export default defineConfig([
     input: 'src/index.ts',
     plugins: [
       typescript({
-        tsconfig: './tsconfig.esm.json',
+        tsconfig: './tsconfig.json',
+        target: 'es6',
       }),
       commonjs(),
       resolve({
@@ -92,5 +89,6 @@ export default defineConfig([
       name: 'EmbraceWebSdk',
       sourcemap: true,
     },
+    external: peerDeps,
   },
 ]);
