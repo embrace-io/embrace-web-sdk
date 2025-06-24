@@ -1,4 +1,4 @@
-import type { TestPage } from '../types/test.js';
+import type { TestPage } from '../types/index.js';
 
 const EMBRACE_API_REGEX =
   /https:\/\/[a-z]-[a-z0-9]{5}\.data\.emb-api\.com\/v2\/(spans|logs)/;

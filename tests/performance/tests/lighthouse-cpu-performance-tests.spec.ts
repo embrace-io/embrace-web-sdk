@@ -1,7 +1,7 @@
-import { lighthouseTest } from '../utils/lighthouse-test.js';
+import { lighthouseTest } from '../utils/index.js';
 import lighthouse from 'lighthouse';
-import type { Metric, TestPage } from '../types/test.js';
-import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/test.js';
+import type { Metric, TestPage } from '../types/index.js';
+import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/index.js';
 
 type AuditResult = {
   numericValue?: number;
@@ -49,11 +49,11 @@ const calculateDifference = (
 lighthouseTest.describe('Lighthouse CPU Performance Tests', () => {
   lighthouseTest.beforeEach(async ({ context }) => {
     await context.route(EMBRACE_API_REGEX, route => {
-      route.fulfill({ status: 200, body: '0' });
+      void route.fulfill({ status: 200, body: '0' });
     });
   });
 
-  lighthouseTest(`Tests CPU Utilization`, async ({ port, context }) => {
+  lighthouseTest(`Tests CPU Utilization`, async ({ port }) => {
     const results: Partial<Record<TestPage, LighthouseResult>> = {};
 
     for (const page of Object.values(PAGES)) {

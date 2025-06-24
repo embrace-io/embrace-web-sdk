@@ -1,7 +1,7 @@
-import { cdpSessionTest } from '../utils/cdp-session-test.js';
-import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/test.js';
-import type { Metric, TestPage } from '../types/test.js';
-import type { CDPSession } from 'playwright';
+import { cdpSessionTest } from '../utils/index.js';
+import type { Metric, TestPage } from '../types/index.js';
+import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/index.js';
+import { CDPSession } from 'playwright';
 
 type MemoryResult = {
   heapSize: Metric;
@@ -38,7 +38,7 @@ const calculateMemoryDifference = (
 cdpSessionTest.describe('Memory Performance Tests', () => {
   cdpSessionTest.beforeEach(async ({ context }) => {
     await context.route(EMBRACE_API_REGEX, route => {
-      route.fulfill({ status: 200, body: '0' });
+      void route.fulfill({ status: 200, body: '0' });
     });
   });
 
@@ -66,8 +66,8 @@ cdpSessionTest.describe('Memory Performance Tests', () => {
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(
       Object.values(difference).map(metric => ({
-        value: metric.value.toFixed(2),
-        description: metric.description,
+        Value: `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(2)}`,
+        Description: metric.description,
       }))
     );
   });
