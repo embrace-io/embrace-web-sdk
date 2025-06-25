@@ -65,17 +65,19 @@
   ],
   "exports": {
     ".": {
+      "esnext": "./build/esnext/index.js",
       "module": "./build/esm/index.js",
       "types": "./build/types/index.d.ts",
-      "require": "./build/src/index.js",
       "import": "./build/esm/index.js",
+      "require": "./build/src/index.js",
       "default": "./build/src/index.js"
     },
     "./react-instrumentation": {
+      "esnext": "./build/esnext/react-instrumentation.js",
       "module": "./build/esm/react-instrumentation.js",
       "types": "./build/types/react/index.d.ts",
-      "require": "./build/src/react-instrumentation.js",
       "import": "./build/esm/react-instrumentation.js",
+      "require": "./build/src/react-instrumentation.js",
       "default": "./build/src/react-instrumentation.js"
     }
   },
