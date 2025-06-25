@@ -18,6 +18,22 @@ const input = {
   'react-instrumentation': 'src/react/index.ts',
 };
 
+// Suppress irrelevant warnings to keep the build output clean
+const onwarn = (warning, warn) => {
+  const ignoredWarnings = [
+    'CIRCULAR_DEPENDENCY', // Circular dependencies are bundled, so no issue
+    'CYCLIC_CROSS_CHUNK_REEXPORT', // Barrel exports are intentional
+    'THIS_IS_UNDEFINED', // 'this' conversion to 'undefined' is preferred
+    'SOURCEMAP_ERROR', // Some node_modules have invalid sourcemaps
+  ];
+
+  if (ignoredWarnings.includes(warning.code)) {
+    return;
+  }
+
+  warn(warning);
+};
+
 export default defineConfig([
   // ESM Build
   {
@@ -37,6 +53,7 @@ export default defineConfig([
       preserveModulesRoot: 'src',
     },
     external: isExternal,
+    onwarn,
   },
 
   // ESNext build
@@ -57,6 +74,7 @@ export default defineConfig([
       preserveModulesRoot: 'src',
     },
     external: isExternal,
+    onwarn,
   },
 
   // CJS build
@@ -77,6 +95,7 @@ export default defineConfig([
       preserveModulesRoot: 'src',
     },
     external: isExternal,
+    onwarn,
   },
 
   // CDN Build, it only exports the core web sdk and not any additional instrumentation
@@ -102,5 +121,6 @@ export default defineConfig([
       sourcemap: true,
     },
     external: peerDeps,
+    onwarn,
   },
 ]);
