@@ -1,8 +1,9 @@
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
-import { defineConfig } from 'rollup';
-import typescript from '@rollup/plugin-typescript';
+import swc from '@rollup/plugin-swc';
 import terser from '@rollup/plugin-terser';
+import { defineConfig } from 'rollup';
+import Sonda from 'sonda/rollup';
 import pkg from './package.json' with { type: 'json' };
 
 const deps = Object.keys(pkg.dependencies || {});
@@ -34,17 +35,32 @@ const onwarn = (warning, warn) => {
   warn(warning);
 };
 
+const plugins = ({ target }) => [
+  Sonda({
+    enabled: false,
+    gzip: true,
+    sources: true,
+  }),
+  resolve({
+    mainFields: ['esnext', 'browser', 'module', 'main'],
+    extensions: ['.js', '.ts', '.jsx', '.tsx'],
+  }),
+  commonjs(),
+  swc({
+    swc: {
+      sourceMaps: true,
+      jsc: {
+        target,
+      },
+    },
+  }),
+];
+
 export default defineConfig([
   // ESM Build
   {
     input,
-    plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        target: 'es2017',
-      }),
-      terser(),
-    ],
+    plugins: plugins({ target: 'es2022' }),
     output: {
       dir: 'build/esm',
       format: 'esm',
@@ -59,13 +75,7 @@ export default defineConfig([
   // ESNext build
   {
     input,
-    plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        target: 'esnext',
-      }),
-      terser(),
-    ],
+    plugins: plugins({ target: 'esnext' }),
     output: {
       dir: 'build/esnext',
       format: 'esm',
@@ -80,13 +90,7 @@ export default defineConfig([
   // CJS build
   {
     input,
-    plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        target: 'es2017',
-      }),
-      terser(),
-    ],
+    plugins: plugins({ target: 'es2022' }),
     output: {
       dir: 'build/src',
       format: 'cjs',
@@ -101,19 +105,7 @@ export default defineConfig([
   // CDN Build, it only exports the core web sdk and not any additional instrumentation
   {
     input: 'src/index.ts',
-    plugins: [
-      typescript({
-        tsconfig: './tsconfig.json',
-        target: 'es6',
-      }),
-      commonjs(),
-      resolve({
-        mainFields: ['esnext', 'module', 'browser', 'main'],
-        extensions: ['.js', '.ts', '.jsx', '.tsx'],
-        preferBuiltins: false,
-      }),
-      terser(),
-    ],
+    plugins: [...plugins({ target: 'es6' }), terser()],
     output: {
       file: 'build/iife/bundle.js',
       format: 'iife',
