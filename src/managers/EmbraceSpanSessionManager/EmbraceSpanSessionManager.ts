@@ -103,13 +103,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     );
   }
 
+  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
   public endSessionSpan() {
     this.endSessionSpanInternal('manual');
   }
 
   // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(

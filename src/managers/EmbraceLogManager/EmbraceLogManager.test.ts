@@ -13,6 +13,7 @@ import {
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
 import {
+  InMemoryDiagLogger,
   setupTestLogExporter,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
@@ -28,6 +29,10 @@ import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+} from '../EmbraceLimitManager/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -38,6 +43,8 @@ describe('EmbraceLogManager', () => {
   let spanExporter: InMemorySpanExporter;
   let perf: PerformanceManager;
   let spanSessionManager: EmbraceSpanSessionManager;
+  let limitManager: EmbraceLimitManager;
+  let diag: InMemoryDiagLogger;
 
   before(() => {
     memoryExporter = setupTestLogExporter();
@@ -47,10 +54,32 @@ describe('EmbraceLogManager', () => {
   beforeEach(() => {
     memoryExporter.reset();
     perf = new OTelPerformanceManager();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    diag = new InMemoryDiagLogger();
+    limitManager = new EmbraceLimitManager({
+      diag,
+      ...DEFAULT_LIMITS,
+      maxAllowed: {
+        ...DEFAULT_LIMITS.maxAllowed,
+        error_log: 20,
+        warning_log: 4,
+      },
+      maxLength: {
+        ...DEFAULT_LIMITS.maxLength,
+        info_log: 60,
+      },
+      maxAttributes: {
+        ...DEFAULT_LIMITS.maxAttributes,
+        error_log: 2,
+      },
+    });
+
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager,
+    });
     manager = new EmbraceLogManager({
       perf,
       spanSessionManager,
+      limitManager,
     });
   });
 
@@ -373,6 +402,133 @@ describe('EmbraceLogManager', () => {
     );
     expect(sessionSpan.attributes).not.to.have.property(
       KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
+    );
+  });
+
+  it('should limit the amount of logs per severity per session', () => {
+    spanSessionManager.startSessionSpan();
+
+    for (let i = 0; i < 10; i++) {
+      manager.message('this is a warning log', 'warning');
+    }
+
+    for (let i = 0; i < 10; i++) {
+      manager.message('this is an error log', 'error');
+    }
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(14);
+
+    // The warning logs should be limited
+    for (let i = 0; i < 4; i++) {
+      expect(finishedLogs[i].body).to.equal('this is a warning log');
+    }
+
+    // All the error logs should be available
+    for (let i = 4; i < 14; i++) {
+      expect(finishedLogs[i].body).to.equal('this is an error log');
+    }
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes['emb.warning_log.drop.count']).to.be.equal(6);
+    expect(sessionSpan.attributes).not.to.have.property(
+      'emb.error_log.drop.count'
+    );
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(6);
+    for (let i = 0; i < warningLogs.length; i++) {
+      expect(warningLogs[i]).to.equal(
+        'disallowing warning_log because the maximum number of 4 has already been reached for this session'
+      );
+    }
+
+    // A new session should reset the limit
+    memoryExporter.reset();
+    spanSessionManager.startSessionSpan();
+    manager.message('this is a warning log', 'warning');
+    const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(nextSessionFinishedLogs).to.have.lengthOf(1);
+    expect(nextSessionFinishedLogs[0].body).to.equal('this is a warning log');
+  });
+
+  it('should truncate log messages', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.message('this is an info log', 'info');
+    manager.message(
+      'this is an info log which has a message longer than the allowed maximum length',
+      'info'
+    );
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(2);
+    expect(finishedLogs[0].body).to.equal('this is an info log');
+    expect(finishedLogs[1].body).to.equal(
+      'this is an info log which has a message longer than the allo'
+    );
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes['emb.info_log.truncate_string.count']
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(1);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating info_log because it is longer than 60 characters: "this is an info log which has a message longer than the allowed maximum length"'
+    );
+  });
+
+  it('should truncate log attributes', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.message('this is an error log', 'error', {
+      attributes: {
+        key1: '1',
+        key2: '2',
+      },
+    });
+
+    manager.message('this is an error log with truncated attributes', 'error', {
+      attributes: {
+        key1: '1',
+        key2: '2',
+        key3: '3',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(2);
+    expect(finishedLogs[0].body).to.equal('this is an error log');
+    expect(finishedLogs[1].body).to.equal(
+      'this is an error log with truncated attributes'
+    );
+
+    expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[0].attributes['key2']).to.be.equal('2');
+
+    expect(finishedLogs[1].attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[1].attributes['key2']).to.be.equal('2');
+    // Is it deterministic that this is always the one to be removed? Need to sort the keys?
+    expect(finishedLogs[1].attributes).not.to.have.property('key3');
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes['emb.error_log.truncate_attributes.count']
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(1);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating error_log attributes because there are more than 2 set'
     );
   });
 });

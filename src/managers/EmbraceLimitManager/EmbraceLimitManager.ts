@@ -75,7 +75,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   private _truncateString(type: LengthLimitedType, body: string) {
     if (body.length > this._maxLength[type]) {
       this._diag.warn(
-        `truncating ${type} because it is longer than ${this._maxLength[type].toString()}: "${body}"`
+        `truncating ${type} because it is longer than ${this._maxLength[type].toString()} characters: "${body}"`
       );
 
       this._incrDiagnosticCount(type, 'truncate_string');
@@ -99,10 +99,11 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       const truncatedAttributes: Record<string, AttributeValue | undefined> =
         {};
 
-      for (let i = 0; i <= this._maxAttributes[type]; i++) {
+      for (let i = 0; i < this._maxAttributes[type]; i++) {
         truncatedAttributes[keys[i]] = attributes[keys[i]];
       }
 
+      this._incrDiagnosticCount(type, 'truncate_attributes');
       return truncatedAttributes;
     }
 
@@ -173,7 +174,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   }
 
   private _incrDiagnosticCount(type: LimitedType, operation: LimitOperation) {
-    const key = `emb.${type}.${operation}.count`;
+    const key = `emb.applied_limit.${type}.${operation}.count`;
 
     this._diagnosticCounts[key] = (this._diagnosticCounts[key] || 0) + 1;
   }

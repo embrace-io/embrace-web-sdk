@@ -10,6 +10,10 @@ import {
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+} from '../EmbraceLimitManager/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -18,6 +22,7 @@ describe('EmbraceSpanSessionManager', () => {
   let manager: EmbraceSpanSessionManager;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
+  let limitManager: EmbraceLimitManager;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -26,7 +31,22 @@ describe('EmbraceSpanSessionManager', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    manager = new EmbraceSpanSessionManager({ diag });
+    limitManager = new EmbraceLimitManager({
+      diag,
+      ...DEFAULT_LIMITS,
+      maxAllowed: {
+        ...DEFAULT_LIMITS.maxAllowed,
+        breadcrumb: 3,
+        session_property: 4,
+      },
+      maxLength: {
+        ...DEFAULT_LIMITS.maxLength,
+        breadcrumb: 50,
+        session_property: 20,
+      },
+    });
+
+    manager = new EmbraceSpanSessionManager({ diag, limitManager });
   });
 
   it('should initialize a EmbraceSpanSessionManager', () => {
@@ -168,7 +188,10 @@ describe('EmbraceSpanSessionManager', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
     };
-    const manager = new EmbraceSpanSessionManager({ visibilityDoc });
+    const manager = new EmbraceSpanSessionManager({
+      visibilityDoc,
+      limitManager,
+    });
     manager.startSessionSpan();
     manager.endSessionSpan();
 
@@ -182,7 +205,10 @@ describe('EmbraceSpanSessionManager', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
     };
-    const manager = new EmbraceSpanSessionManager({ visibilityDoc });
+    const manager = new EmbraceSpanSessionManager({
+      visibilityDoc,
+      limitManager,
+    });
     manager.startSessionSpan();
     manager.endSessionSpan();
 
@@ -194,7 +220,7 @@ describe('EmbraceSpanSessionManager', () => {
 
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
-    const manager = new EmbraceSpanSessionManager();
+    const manager = new EmbraceSpanSessionManager({ limitManager });
     const removeListener = manager.addSessionStartedListener(listener);
 
     void expect(listener).to.not.have.been.calledOnce;
@@ -211,7 +237,7 @@ describe('EmbraceSpanSessionManager', () => {
 
   it('should call the session ended listener when ending a session', () => {
     const listener = sinon.stub();
-    const manager = new EmbraceSpanSessionManager();
+    const manager = new EmbraceSpanSessionManager({ limitManager });
     const removeListener = manager.addSessionEndedListener(listener);
 
     void expect(listener).to.not.have.been.calledOnce;
@@ -226,5 +252,165 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
 
     void expect(listener).to.have.been.calledOnce;
+  });
+
+  it('should limit the amount of breadcrumbs per session', () => {
+    manager.startSessionSpan();
+
+    for (let i = 0; i < 10; i++) {
+      manager.addBreadcrumb('this is a breadcrumb');
+    }
+
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(3);
+
+    for (let i = 0; i < 3; i++) {
+      expect(sessionSpan.events[i].name).to.equal('emb-breadcrumb');
+      expect(sessionSpan.events[i].attributes).to.have.property(
+        'message',
+        'this is a breadcrumb'
+      );
+    }
+
+    expect(sessionSpan.attributes['emb.breadcrumb.drop.count']).to.be.equal(7);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(7);
+    for (let i = 0; i < warningLogs.length; i++) {
+      expect(warningLogs[i]).to.equal(
+        'disallowing breadcrumb because the maximum number of 3 has already been reached for this session'
+      );
+    }
+
+    // A new session should reset the limit
+    memoryExporter.reset();
+    manager.startSessionSpan();
+    manager.addBreadcrumb('this is a breadcrumb');
+    manager.endSessionSpan();
+    const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
+    expect(nextSessionFinishedSpans).to.have.lengthOf(1);
+    const nexSessionSpan = nextSessionFinishedSpans[0];
+    expect(nexSessionSpan.events).to.have.lengthOf(1);
+    expect(nexSessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(nexSessionSpan.events[0].attributes).to.have.property(
+      'message',
+      'this is a breadcrumb'
+    );
+  });
+
+  it('should truncate breadcrumb names', () => {
+    manager.startSessionSpan();
+
+    manager.addBreadcrumb('this is a breadcrumb');
+    manager.addBreadcrumb(
+      'this is a breadcrumb which has a name longer than the allowed maximum length'
+    );
+
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(2);
+    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[0].attributes).to.have.property(
+      'message',
+      'this is a breadcrumb'
+    );
+    expect(sessionSpan.events[1].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[1].attributes).to.have.property(
+      'message',
+      'this is a breadcrumb which has a name longer than '
+    );
+
+    expect(
+      sessionSpan.attributes['emb.breadcrumb.truncate_string.count']
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(1);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating breadcrumb because it is longer than 50 characters: "this is a breadcrumb which has a name longer than the allowed maximum length"'
+    );
+  });
+
+  it('should limit the amount of session properties per session', () => {
+    manager.startSessionSpan();
+
+    for (let i = 0; i < 10; i++) {
+      manager.addProperty(`property${i.toString()}`, i.toString());
+    }
+
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+
+    for (let i = 0; i < 10; i++) {
+      const prop = `emb.properties.property${i.toString()}`;
+      if (i < 4) {
+        expect(sessionSpan.attributes).to.have.property(prop, i.toString());
+      } else {
+        expect(sessionSpan.attributes).not.to.have.property(prop);
+      }
+    }
+
+    expect(
+      sessionSpan.attributes['emb.session_property.drop.count']
+    ).to.be.equal(6);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(6);
+    for (let i = 0; i < warningLogs.length; i++) {
+      expect(warningLogs[i]).to.equal(
+        'disallowing session_property because the maximum number of 4 has already been reached for this session'
+      );
+    }
+
+    // A new session should reset the limit
+    memoryExporter.reset();
+    manager.startSessionSpan();
+    manager.addProperty('my-new-prop', 'new');
+    manager.endSessionSpan();
+    const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
+    expect(nextSessionFinishedSpans).to.have.lengthOf(1);
+    const nexSessionSpan = nextSessionFinishedSpans[0];
+    expect(nexSessionSpan.attributes).to.have.property(
+      'emb.properties.my-new-prop',
+      'new'
+    );
+  });
+
+  it('should truncate session property keys and values', () => {
+    manager.startSessionSpan();
+
+    manager.addProperty('key1', '1');
+    manager.addProperty(
+      'session-property-with-long-key',
+      'session property long value'
+    );
+
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.properties.session-property-wit',
+      'session property lon'
+    );
+
+    expect(
+      sessionSpan.attributes['emb.session_property.truncate_string.count']
+    ).to.be.equal(2);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(2);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating session_property because it is longer than 20 characters: "session-property-with-long-key"'
+    );
+    expect(diag.getWarnLogs()[1]).to.equal(
+      'truncating session_property because it is longer than 20 characters: "session property long value"'
+    );
   });
 });

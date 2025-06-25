@@ -24,6 +24,8 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  DEFAULT_LIMITS,
+  DEFAULT_MAX_LOG_ATTRIBUTES,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
@@ -47,11 +49,6 @@ import type {
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
-import {
-  MAX_BREADCRUMBS,
-  MAX_LOG_ATTRIBUTES,
-  MAX_SESSION_PROPERTIES,
-} from './constants.js';
 
 export const initSDK = (
   {
@@ -113,7 +110,7 @@ export const initSDK = (
       throw new Error('userID is required when using Embrace exporter');
     }
 
-    const limitManager = setupLimits();
+    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = setupSession({
       limitManager,
     });
@@ -179,30 +176,6 @@ const setupUser = () => {
   return embraceUserManager;
 };
 
-const setupLimits = () =>
-  new EmbraceLimitManager({
-    maxAllowed: {
-      error_log: 500,
-      warning_log: 200,
-      info_log: 100,
-      breadcrumb: MAX_BREADCRUMBS,
-      session_property: MAX_SESSION_PROPERTIES,
-      span: 1_000,
-      network_request: 10_000,
-    },
-    maxLength: {
-      error_log: 128,
-      warning_log: 128,
-      info_log: 128,
-      breadcrumb: 256,
-      session_property: 256,
-    },
-    maxAttributes: {
-      error_log: MAX_LOG_ATTRIBUTES,
-      warning_log: MAX_LOG_ATTRIBUTES,
-      info_log: MAX_LOG_ATTRIBUTES,
-    },
-  });
 const setupSession = ({ limitManager }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
@@ -256,11 +229,11 @@ const setupTraces = ({
     spanLimits: {
       // Session properties are stored as attributes on the session span, add a
       // buffer here so that there is room for our internal attributes
-      attributeCountLimit: MAX_SESSION_PROPERTIES * 2,
+      attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
       attributePerEventCountLimit: 20,
       // Breadcrumbs are stored as events on the session span, add a
       // buffer here so that there is room for our internal events
-      eventCountLimit: MAX_BREADCRUMBS * 2,
+      eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
     },
   });
 
@@ -292,7 +265,7 @@ const setupLogs = ({
   const loggerProvider = new LoggerProvider({
     resource,
     logRecordLimits: {
-      attributeCountLimit: MAX_LOG_ATTRIBUTES,
+      attributeCountLimit: DEFAULT_MAX_LOG_ATTRIBUTES,
     },
   });
 

@@ -30,11 +30,7 @@ export type LimitedType =
   | LengthLimitedType
   | AttributeLimitedType;
 
-export type LimitOperation =
-  | 'drop'
-  | 'truncate_string'
-  | 'truncate_attributes'
-  | 'truncate_events';
+export type LimitOperation = 'drop' | 'truncate_string' | 'truncate_attributes';
 
 export type LimitedBreadcrumb = {
   name: string;
