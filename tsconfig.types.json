@@ -1,12 +1,12 @@
 {
-  "extends": "./tsconfig.base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "declarationDir": "build/types",
-    "rootDir": "src",
     "outDir": "build/types"
   },
   "include": ["src"]

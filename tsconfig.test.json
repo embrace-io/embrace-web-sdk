@@ -1,13 +1,6 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "esModuleInterop": true
-  },
-  "exclude": [
-    "./scripts/*.ts",
-    "node_modules",
-    "demo",
-    "cli",
-    "build"
-  ]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "include": ["./src/**/*.test.ts"],
+  "exclude": []
 }

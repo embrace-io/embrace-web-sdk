@@ -34,6 +34,7 @@ const getGzipSize = (file: string): Promise<number> =>
       async function* (source) {
         for await (const chunk of source) size += chunk.length;
         resolve(size);
+        yield size;
       },
       err => err && reject(err)
     );
@@ -45,7 +46,7 @@ const analyzeFolder = async (name: string, path: string) => {
     let totalRaw = 0;
     let totalGzip = 0;
 
-    console.log(`\n📂 ${name} — ${files.length} JS files\n`);
+    console.log(`📂 ${name} — ${files.length} JS files`);
 
     for (const file of files) {
       const rawSize = getSize(file);
@@ -56,7 +57,7 @@ const analyzeFolder = async (name: string, path: string) => {
     }
 
     console.log(
-      `📊 Total for ${name}: ${Math.round(totalRaw / 1024)} KB raw / ${Math.round(
+      `📊 ${Math.round(totalRaw / 1024)} KB raw / ${Math.round(
         totalGzip / 1024
       )} KB gzip\n`
     );
