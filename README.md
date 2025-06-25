@@ -239,7 +239,7 @@ sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   defaultInstrumentationConfig: {
-    omit: new Set(['@opentelemetry-instrumentation-fetch']),
+    omit: new Set(['@opentelemetry/instrumentation-fetch']),
     'web-vitals': {
       trackingLevel: 'all'
     }
@@ -436,7 +436,7 @@ sdk.initSDK({
   logExporters: [new ConsoleLogRecordExporter()],
 
   // OR, wrap exporters with simple processors to output as soon as telemetry is emitted
-  spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())], 
+  spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
   logProcessors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
 });
 ```
