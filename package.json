@@ -65,18 +65,20 @@
   ],
   "exports": {
     ".": {
+      "esnext": "./build/esnext/index.js",
       "module": "./build/esm/index.js",
       "types": "./build/types/index.d.ts",
-      "require": "./build/src/index.js",
       "import": "./build/esm/index.js",
+      "require": "./build/src/index.js",
       "default": "./build/src/index.js"
     },
     "./react-instrumentation": {
+      "esnext": "./build/esnext/react-instrumentation.js",
       "module": "./build/esm/react-instrumentation.js",
       "types": "./build/types/react/index.d.ts",
-      "require": "./build/src/react-instrumentation.js",
       "import": "./build/esm/react-instrumentation.js",
-      "default": "./build/esm/react-instrumentation.js"
+      "require": "./build/src/react-instrumentation.js",
+      "default": "./build/src/react-instrumentation.js"
     }
   },
   "typesVersions": {
@@ -137,8 +139,9 @@
     "@remcovaes/web-test-runner-vite-plugin": "1.2.2",
     "@rollup/plugin-commonjs": "28.0.6",
     "@rollup/plugin-node-resolve": "16.0.1",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^12.1.2",
+    "@rollup/plugin-swc": "0.4.0",
+    "@rollup/plugin-terser": "0.4.4",
+    "@swc/core": "1.12.6",
     "@types/chai": "5.2.2",
     "@types/hoist-non-react-statics": "^3.3.6",
     "@types/mocha": "10.0.10",
