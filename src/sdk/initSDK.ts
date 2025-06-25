@@ -47,6 +47,11 @@ import type {
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
+import {
+  MAX_BREADCRUMBS,
+  MAX_LOG_ATTRIBUTES,
+  MAX_SESSION_PROPERTIES,
+} from './constants.js';
 
 export const initSDK = (
   {
@@ -176,20 +181,27 @@ const setupUser = () => {
 
 const setupLimits = () =>
   new EmbraceLimitManager({
-    maxLogsBySeverity: {
-      info: 100,
-      warning: 200,
-      error: 500,
+    maxAllowed: {
+      error_log: 500,
+      warning_log: 200,
+      info_log: 100,
+      breadcrumb: MAX_BREADCRUMBS,
+      session_property: MAX_SESSION_PROPERTIES,
+      span: 1_000,
+      network_request: 10_000,
     },
-    maxLogLength: 128,
-    maxNetworkRequests: 10_000,
-    maxSpans: 1_000,
-    maxSpanAttributes: 50,
-    maxSpanEvents: 10,
-    maxAttributesPerSpanEvent: 10,
-    maxBreadcrumbs: 100,
-    maxBreadcrumbLength: 256,
-    maxSessionProperties: 100,
+    maxLength: {
+      error_log: 128,
+      warning_log: 128,
+      info_log: 128,
+      breadcrumb: 256,
+      session_property: 256,
+    },
+    maxAttributes: {
+      error_log: MAX_LOG_ATTRIBUTES,
+      warning_log: MAX_LOG_ATTRIBUTES,
+      info_log: MAX_LOG_ATTRIBUTES,
+    },
   });
 const setupSession = ({ limitManager }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
@@ -241,6 +253,15 @@ const setupTraces = ({
   const tracerProvider = new WebTracerProvider({
     resource,
     spanProcessors: finalSpanProcessors,
+    spanLimits: {
+      // Session properties are stored as attributes on the session span, add a
+      // buffer here so that there is room for our internal attributes
+      attributeCountLimit: MAX_SESSION_PROPERTIES * 2,
+      attributePerEventCountLimit: 20,
+      // Breadcrumbs are stored as events on the session span, add a
+      // buffer here so that there is room for our internal events
+      eventCountLimit: MAX_BREADCRUMBS * 2,
+    },
   });
 
   tracerProvider.register({
@@ -270,6 +291,9 @@ const setupLogs = ({
 
   const loggerProvider = new LoggerProvider({
     resource,
+    logRecordLimits: {
+      attributeCountLimit: MAX_LOG_ATTRIBUTES,
+    },
   });
 
   const finalLogProcessors: LogRecordProcessor[] = [

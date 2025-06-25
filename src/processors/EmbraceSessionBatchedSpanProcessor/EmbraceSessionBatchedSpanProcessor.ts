@@ -49,7 +49,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
     if (!isSessionSpan(span)) {
       this.diag.debug('non-session span ended. Adding to pending spans queue.');
-      if (!this._limitManager.allowSpan(span)) {
+      if (this._limitManager.dropReadableSpan(span)) {
         return;
       }
       this._pendingSpans.push(span);

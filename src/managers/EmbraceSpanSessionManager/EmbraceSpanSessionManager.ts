@@ -57,8 +57,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._limitManager = limitManager;
   }
 
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
-
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
@@ -67,14 +65,16 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    if (!this._limitManager.allowBreadcrumb(name)) {
+    const limitedBreadcrumb = this._limitManager.limitBreadcrumb(name);
+
+    if (limitedBreadcrumb === 'dropped') {
       return;
     }
 
     this._sessionSpan.addEvent(
       'emb-breadcrumb',
       {
-        message: name,
+        message: limitedBreadcrumb.name,
       },
       this._perf.getNowMillis()
     );
@@ -88,11 +88,19 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    if (!this._limitManager.allowSessionProperty(key, value)) {
+    const limitedSessionProperty = this._limitManager.limitSessionProperty(
+      key,
+      value
+    );
+
+    if (limitedSessionProperty === 'dropped') {
       return;
     }
 
-    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
+    this._sessionSpan.setAttribute(
+      KEY_PREFIX_EMB_PROPERTIES + limitedSessionProperty.key,
+      limitedSessionProperty.value
+    );
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
@@ -101,6 +109,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   }
 
   // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
+  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(
@@ -112,6 +121,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionSpan.setAttributes({
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
+      ...this._limitManager.getDiagnosticCounts(),
     });
 
     this._sessionSpan.end();

@@ -122,7 +122,13 @@ export class EmbraceLogManager implements LogManager {
     attributes?: Record<string, AttributeValue | undefined>;
     stackTrace?: string;
   }) {
-    if (!this._limitManager.allowLog(severity, attributes)) {
+    const limitedLog = this._limitManager.limitLog(
+      message,
+      severity,
+      attributes
+    );
+
+    if (limitedLog === 'dropped') {
       return;
     }
 
@@ -130,9 +136,9 @@ export class EmbraceLogManager implements LogManager {
       timestamp,
       severityNumber: EmbraceLogManager._logSeverityToSeverityNumber(severity),
       severityText: severity.toUpperCase(),
-      body: message,
+      body: limitedLog.message,
       attributes: {
-        ...attributes,
+        ...limitedLog.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
         ...(stackTrace
           ? {
