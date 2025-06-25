@@ -3,7 +3,11 @@ import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogR
 import { setupTestLogExporter } from '../../testUtils/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
-import { EmbraceSpanSessionManager } from '../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.js';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 
@@ -15,7 +19,9 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   let logger: Logger;
 
   before(() => {
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     memoryExporter = setupTestLogExporter([
       new IdentifiableSessionLogRecordProcessor({
         spanSessionManager,

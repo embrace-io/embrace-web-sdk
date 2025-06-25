@@ -5,6 +5,8 @@ import { log } from '../../../../api-logs/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { setupTestLogExporter } from '../../../../testUtils/index.js';
 import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../../managers/index.js';
@@ -33,8 +35,10 @@ describe('EmbraceErrorBoundary', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
+    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager(),
+      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+      limitManager,
     });
     log.setGlobalLogManager(logManager);
 

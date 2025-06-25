@@ -8,7 +8,9 @@ import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
+import { EmbraceLimitManager } from '../../../managers/index.js';
 import {
+  DEFAULT_LIMITS,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
@@ -41,8 +43,10 @@ describe('GlobalExceptionInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
+    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager(),
+      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+      limitManager,
     });
     log.setGlobalLogManager(logManager);
     clock = sinon.useFakeTimers();

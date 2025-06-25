@@ -7,7 +7,11 @@ import {
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
@@ -35,7 +39,10 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({ perf });
+    spanSessionManager = new EmbraceSpanSessionManager({
+      perf,
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
   });
 

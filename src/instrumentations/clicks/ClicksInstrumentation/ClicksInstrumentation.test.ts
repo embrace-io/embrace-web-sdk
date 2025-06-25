@@ -4,7 +4,11 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
@@ -27,7 +31,9 @@ describe('ClicksInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();
     testContainer = document.createElement('div');

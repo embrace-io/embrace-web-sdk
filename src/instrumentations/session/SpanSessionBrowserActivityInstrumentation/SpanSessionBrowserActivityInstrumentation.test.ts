@@ -7,7 +7,11 @@ import {
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
@@ -32,7 +36,9 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
     memoryExporter.reset();
     clock = sinon.useFakeTimers();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
   });
 

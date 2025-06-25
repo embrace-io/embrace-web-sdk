@@ -6,7 +6,11 @@ import {
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/index.js';
 import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.js';
 
@@ -22,7 +26,9 @@ describe('SpanSessionOnLoadInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
   });
 

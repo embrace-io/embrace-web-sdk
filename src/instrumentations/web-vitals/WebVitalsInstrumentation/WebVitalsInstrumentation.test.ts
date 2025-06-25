@@ -7,7 +7,11 @@ import {
   session,
   type SpanSessionManager,
 } from '../../../api-sessions/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
   MockPerformanceManager,
@@ -47,7 +51,9 @@ describe('WebVitalsInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();
     const testWebVitalListeners = setupTestWebVitalListeners();
