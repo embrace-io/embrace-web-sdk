@@ -33,7 +33,8 @@ const getGzipSize = (file: string): Promise<number> =>
       createGzip(),
       async function* (source) {
         for await (const chunk of source) size += chunk.length;
-        yield resolve(size);
+        resolve(size);
+        yield size;
       },
       err => err && reject(err)
     );
