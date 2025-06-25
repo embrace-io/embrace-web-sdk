@@ -275,7 +275,9 @@ describe('EmbraceSpanSessionManager', () => {
       );
     }
 
-    expect(sessionSpan.attributes['emb.breadcrumb.drop.count']).to.be.equal(7);
+    expect(
+      sessionSpan.attributes['emb.applied_limit.breadcrumb.drop.count']
+    ).to.be.equal(7);
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(7);
@@ -326,7 +328,9 @@ describe('EmbraceSpanSessionManager', () => {
     );
 
     expect(
-      sessionSpan.attributes['emb.breadcrumb.truncate_string.count']
+      sessionSpan.attributes[
+        'emb.applied_limit.breadcrumb.truncate_string.count'
+      ]
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
@@ -357,7 +361,7 @@ describe('EmbraceSpanSessionManager', () => {
     }
 
     expect(
-      sessionSpan.attributes['emb.session_property.drop.count']
+      sessionSpan.attributes['emb.applied_limit.session_property.drop.count']
     ).to.be.equal(6);
 
     const warningLogs = diag.getWarnLogs();
@@ -402,7 +406,9 @@ describe('EmbraceSpanSessionManager', () => {
     );
 
     expect(
-      sessionSpan.attributes['emb.session_property.truncate_string.count']
+      sessionSpan.attributes[
+        'emb.applied_limit.session_property.truncate_string.count'
+      ]
     ).to.be.equal(2);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(2);

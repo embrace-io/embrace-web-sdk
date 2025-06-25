@@ -433,9 +433,11 @@ describe('EmbraceLogManager', () => {
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes['emb.warning_log.drop.count']).to.be.equal(6);
+    expect(
+      sessionSpan.attributes['emb.applied_limit.warning_log.drop.count']
+    ).to.be.equal(6);
     expect(sessionSpan.attributes).not.to.have.property(
-      'emb.error_log.drop.count'
+      'emb.applied_limit.error_log.drop.count'
     );
 
     const warningLogs = diag.getWarnLogs();
@@ -476,7 +478,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(
-      sessionSpan.attributes['emb.info_log.truncate_string.count']
+      sessionSpan.attributes['emb.applied_limit.info_log.truncate_string.count']
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
@@ -523,7 +525,9 @@ describe('EmbraceLogManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(
-      sessionSpan.attributes['emb.error_log.truncate_attributes.count']
+      sessionSpan.attributes[
+        'emb.applied_limit.error_log.truncate_attributes.count'
+      ]
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
