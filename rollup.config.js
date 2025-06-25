@@ -9,9 +9,11 @@ import pkg from './package.json' with { type: 'json' };
 const deps = Object.keys(pkg.dependencies || {});
 const peerDeps = Object.keys(pkg.peerDependencies || {});
 
+// Determine external dependencies to exclude from the bundle
 const isExternal = id =>
   peerDeps.includes(id) ||
   deps.includes(id) ||
+  // Include dependencies that reference subdirectories
   deps.some(dep => id.startsWith(dep + '/'));
 
 const input = {
@@ -35,29 +37,31 @@ const onwarn = (warning, warn) => {
   warn(warning);
 };
 
+// Configure plugins based on the target build environment
 const plugins = ({ target }) => [
   Sonda({
-    enabled: false,
-    gzip: true,
-    sources: true,
+    enabled: false, // Disable Sonda instrumentation for now
+    open: false, // Open Sonda report in browser
+    gzip: true, // Show gzip compression estimate
+    sources: false, // Include source files in Sonda report - useful for debugging but can be unsafe in private repos
   }),
   resolve({
-    mainFields: ['esnext', 'browser', 'module', 'main'],
-    extensions: ['.js', '.ts', '.jsx', '.tsx'],
+    mainFields: ['esnext', 'browser', 'module', 'main'], // Resolve priority for entry points, prefer esnext
+    extensions: ['.js', '.ts', '.jsx', '.tsx'], // Required because we import .ts files with .js extension
   }),
-  commonjs(),
+  commonjs(), // Convert CommonJS modules to ES modules
   swc({
     swc: {
-      sourceMaps: true,
+      sourceMaps: true, // Generate source maps
       jsc: {
-        target,
+        target, // Set JavaScript target version
       },
     },
   }),
 ];
 
 export default defineConfig([
-  // ESM Build
+  // ESM Build: Modern JavaScript modules for browsers and bundlers
   {
     input,
     plugins: plugins({ target: 'es2022' }),
@@ -65,14 +69,14 @@ export default defineConfig([
       dir: 'build/esm',
       format: 'esm',
       sourcemap: true,
-      preserveModules: true,
+      preserveModules: true, // Keep module structure intact
       preserveModulesRoot: 'src',
     },
     external: isExternal,
     onwarn,
   },
 
-  // ESNext build
+  // ESNext Build: No language coercion applied
   {
     input,
     plugins: plugins({ target: 'esnext' }),
@@ -87,7 +91,7 @@ export default defineConfig([
     onwarn,
   },
 
-  // CJS build
+  // CJS Build: CommonJS modules for older bundlers
   {
     input,
     plugins: plugins({ target: 'es2022' }),
@@ -102,14 +106,14 @@ export default defineConfig([
     onwarn,
   },
 
-  // CDN Build, it only exports the core web sdk and not any additional instrumentation
+  // CDN Build: IIFE bundle for direct browser usage
   {
     input: 'src/index.ts',
-    plugins: [...plugins({ target: 'es6' }), terser()],
+    plugins: [...plugins({ target: 'es6' }), terser()], // Minify for smaller bundle size
     output: {
       file: 'build/iife/bundle.js',
       format: 'iife',
-      name: 'EmbraceWebSdk',
+      name: 'EmbraceWebSdk', // Global variable name for the SDK
       sourcemap: true,
     },
     external: peerDeps,
