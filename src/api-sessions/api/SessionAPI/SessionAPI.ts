@@ -15,13 +15,13 @@ export class SessionAPI implements SpanSessionManager {
   }
 
   public static getInstance(): SessionAPI {
-    if (!this._instance) {
-      this._instance = new SessionAPI({
+    if (!SessionAPI._instance) {
+      SessionAPI._instance = new SessionAPI({
         proxySpanSessionManager: new ProxySpanSessionManager(),
       });
     }
 
-    return this._instance;
+    return SessionAPI._instance;
   }
 
   public getSpanSessionManager: () => SpanSessionManager = () => {

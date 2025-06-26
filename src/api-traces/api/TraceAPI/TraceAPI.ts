@@ -15,13 +15,13 @@ export class TraceAPI implements TraceManager {
   }
 
   public static getInstance(): TraceAPI {
-    if (!this._instance) {
-      this._instance = new TraceAPI({
+    if (!TraceAPI._instance) {
+      TraceAPI._instance = new TraceAPI({
         proxyTraceManager: new ProxyTraceManager(),
       });
     }
 
-    return this._instance;
+    return TraceAPI._instance;
   }
 
   public getTraceManager: () => TraceManager = () => {

@@ -15,13 +15,13 @@ export class LogAPI implements LogManager {
   }
 
   public static getInstance(): LogAPI {
-    if (!this._instance) {
-      this._instance = new LogAPI({
+    if (!LogAPI._instance) {
+      LogAPI._instance = new LogAPI({
         proxyLogManager: new ProxyLogManager(),
       });
     }
 
-    return this._instance;
+    return LogAPI._instance;
   }
 
   public getLogManager: () => LogManager = () => {
