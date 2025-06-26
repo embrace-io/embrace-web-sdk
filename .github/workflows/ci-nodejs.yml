@@ -366,9 +366,8 @@ jobs:
       - name: Post or update PR comment with performance results
         if: ${{ success() }}
         run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           BODY="$(cat performance-results.md)"
-          gh api "/repos/$REPO/issues/$PR_NUMBER/comments" --paginate > comments.json
+          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
           COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
           
           if [[ -n "$COMMENT_ID" ]]; then
