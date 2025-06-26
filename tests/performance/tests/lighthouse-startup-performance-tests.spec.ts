@@ -1,8 +1,17 @@
-import { lighthouseTest } from '../utils/index.js';
 import lighthouse from 'lighthouse';
-import type { Metric, TestPage } from '../types/index.js';
-import { BASE_URL, EMBRACE_API_REGEX, PAGES } from '../constants/index.js';
+import type { TestPage } from '../types/index.js';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
+import fs from 'node:fs';
+import { test } from '@playwright/test';
+import getPort from 'get-port';
+import { chromium } from 'playwright';
+import path from 'path';
+import os from 'os';
 
+type Metric = {
+  value: number;
+  description: string;
+};
 type AuditResult = {
   numericValue?: number;
   description?: string;
@@ -11,6 +20,17 @@ type LighthouseResult = {
   totalBlockingTime: Metric;
   mainThreadTime: Metric;
   scriptEval: Metric;
+};
+
+const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
+  baseline: {
+    name: 'baseline',
+    path: '/lighthouse-test.html',
+  },
+  'with-sdk': {
+    name: 'with-sdk',
+    path: '/lighthouse-test.html?use_sdk=true',
+  },
 };
 
 const mapResultToMetric = (result: AuditResult): Metric => ({
@@ -46,18 +66,26 @@ const calculateDifference = (
   };
 };
 
-lighthouseTest.describe('Lighthouse CPU Performance Tests', () => {
-  lighthouseTest.beforeEach(async ({ context }) => {
-    await context.route(EMBRACE_API_REGEX, route => {
-      void route.fulfill({ status: 200, body: '0' });
-    });
-  });
+test.describe('Lighthouse Performance Tests', () => {
+  const results: Partial<Record<TestPage, LighthouseResult>> = {};
 
-  lighthouseTest(`Tests CPU Utilization`, async ({ port }) => {
-    const results: Partial<Record<TestPage, LighthouseResult>> = {};
+  for (const page of Object.values(PAGES)) {
+    test(`Run lighthouse for ${page.name}`, async () => {
+      // Launch a new context for each test to ensure a clean slate
+      const port = await getPort();
+      const userDataDir = path.join(os.tmpdir(), 'pw', String(Math.random()));
+      const context = await chromium.launchPersistentContext(userDataDir, {
+        args: [`--remote-debugging-port=${port.toString()}`],
+      });
 
-    for (const page of Object.values(PAGES)) {
+      await context.route(EMBRACE_API_REGEX, route => {
+        console.log('faked request');
+
+        void route.fulfill({ status: 200, body: '0' });
+      });
+
       const url = `${BASE_URL}${page.path}`;
+      const outputPath = `./test-results/${page.name}-lighthouse`;
 
       const result = await lighthouse(url, {
         port,
@@ -66,9 +94,17 @@ lighthouseTest.describe('Lighthouse CPU Performance Tests', () => {
         pauseAfterLoadMs: 5000,
       });
 
+      test.expect(result).toBeDefined();
+
       if (!result) {
-        continue;
+        return;
       }
+
+      fs.writeFileSync(
+        `${outputPath}.json`,
+        JSON.stringify(result.lhr, null, 2)
+      );
+      fs.writeFileSync(`${outputPath}.html`, result.report[1]);
 
       const audits = result.lhr.audits;
       results[page.name] = {
@@ -76,8 +112,10 @@ lighthouseTest.describe('Lighthouse CPU Performance Tests', () => {
         mainThreadTime: mapResultToMetric(audits['mainthread-work-breakdown']),
         scriptEval: mapResultToMetric(audits['bootup-time']),
       };
-    }
+    });
+  }
 
+  test.afterAll(() => {
     const difference = calculateDifference(results);
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(

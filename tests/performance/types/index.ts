@@ -1,1 +1,1 @@
-export type { Metric, TestPage } from './test.js';
+export type { TestPage } from './test.js';
