@@ -30,7 +30,7 @@ export class EmbraceTraceManager implements TraceManager {
 
   public setSpan: TraceManager['setSpan'] = trace.setSpan;
 
-  public getSpan(context: Context): EmbraceExtendedSpan | undefined {
+  public getSpan(context: Context): ExtendedSpan | undefined {
     const span = trace.getSpan(context);
 
     if (span) {
