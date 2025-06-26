@@ -1,21 +1,21 @@
 version: 2
 updates:
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     cooldown:
       default-days: 5
 
-  - package-ecosystem: 'npm'
+  - package-ecosystem: "npm"
     directories:
-      - '/'
-      - '/cli'
-      - '/demo/frontend'
-      - '/demo/frontend-cdn'
-      - '/demo/frontend-sdk'
+      - "/"
+      - "/cli"
+      - "/demo/frontend"
+      - "/demo/frontend-cdn"
+      - "/demo/frontend-sdk"
     schedule:
-      interval: 'weekly'
+      interval: "weekly"
     cooldown:
       default-days: 5
     open-pull-requests-limit: 5
@@ -24,53 +24,52 @@ updates:
       # Production dependencies - keep separate and prioritized
       open-telemetry:
         patterns:
-          - '@opentelemetry/*'
+          - "@opentelemetry/*"
 
       production-deps:
         patterns:
-          - 'hoist-non-react-statics'
-          - 'uuid'
-          - 'web-vitals'
+          - "hoist-non-react-statics"
+          - "uuid"
+          - "web-vitals"
 
       # Build and dev tools - batch together
       dev-tooling:
         patterns:
-          - '@swc/*'
-          - 'es-check'
-          - 'esbuild'
-          - 'globals'
-          - 'publint'
-          - 'sonda'
-          - 'terser'
-          - 'tsdown'
-          - 'tsx'
-          - 'typescript'
-          - '*vite*'
+          - "@swc/*"
+          - "es-check"
+          - "esbuild"
+          - "globals"
+          - "publint"
+          - "sonda"
+          - "terser"
+          - "tsdown"
+          - "tsx"
+          - "typescript"
+          - "*vite*"
 
       # Type definitions
       types:
         patterns:
-          - '@types/*'
+          - "@types/*"
 
       # Commit and code quality tools
       code-quality:
         patterns:
-          - '@commitlint/*'
-          - '*eslint*'
-          - '*prettier*'
+          - "@commitlint/*"
+          - "@biomejs/biome"
 
       # Testing
       test-tools:
         patterns:
-          - '*chai*'
-          - '*chrome*'
-          - '*jest*'
-          - '*mocha*'
-          - '*playwright*'
-          - '*sinon*'
-          - '*test-runner*'
+          - "*chai*"
+          - "*chrome*"
+          - "*jest*"
+          - "*mocha*"
+          - "*playwright*"
+          - "*sinon*"
+          - "*test-runner*"
 
       # React ecosystem
       react:
         patterns:
-          - '*react*'
+          - "*react*"

@@ -11,12 +11,6 @@ import {
 } from './constants.js';
 import { processSourceFiles } from './processSourceFiles.js';
 
-/*
-  disabling eslint check for any type, as the args parsed from cli do not have specific types*
-  We validate the input under cli/src/validateInput.ts
- */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment*/
-
 // Use commander to parse command-line options
 const program = new Command();
 
