@@ -25,7 +25,6 @@ import {
   EmbraceTraceManager,
   EmbraceUserManager,
   DEFAULT_LIMITS,
-  DEFAULT_MAX_LOG_ATTRIBUTES,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
@@ -264,9 +263,6 @@ const setupLogs = ({
 
   const loggerProvider = new LoggerProvider({
     resource,
-    logRecordLimits: {
-      attributeCountLimit: DEFAULT_MAX_LOG_ATTRIBUTES,
-    },
   });
 
   const finalLogProcessors: LogRecordProcessor[] = [
