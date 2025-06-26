@@ -338,7 +338,36 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:test:performance
-    
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+      - name: Create PR comment with performance results
+        if: ${{ success() }}
+        run: |
+          echo "## Performance results" > performance-results.md
+          echo "" >> performance-results.md
+          echo "### CDP Performance Tests" >> performance-results.md
+          echo "" >> performance-results.md
+          cat ./tests/performance/test-results/cdp-performance-tests.md >> performance-results.md
+          echo "" >> performance-results.md
+          echo "### Lighthouse Startup Performance Tests" >> performance-results.md
+          echo "" >> performance-results.md
+          cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
+
+      - name: Add comment to PR
+        uses: thollander/actions-comment-pull-request@v3
+        if: ${{ success() }}
+        with:
+          file-path: performance-results.md
+          comment-tag: 'performance-results'
 
   commitlint:
     needs: configure

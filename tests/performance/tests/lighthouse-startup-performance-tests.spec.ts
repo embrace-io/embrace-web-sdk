@@ -1,5 +1,5 @@
 import lighthouse from 'lighthouse';
-import type { TestPage } from '../types/index.js';
+import type { Metric, TestPage } from '../types/index.js';
 import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
 import fs from 'node:fs';
 import { test } from '@playwright/test';
@@ -7,21 +7,30 @@ import getPort from 'get-port';
 import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';
+import jsonToMarkdownTable from '../utils/json-to-markdown-table';
 
-type Metric = {
-  value: number;
-  description: string;
-};
 type AuditResult = {
   numericValue?: number;
   description?: string;
 };
+type LighthouseMetric = {
+  value: number;
+  description: string;
+};
 type LighthouseResult = {
-  totalBlockingTime: Metric;
-  mainThreadTime: Metric;
-  scriptEval: Metric;
+  totalBlockingTime: LighthouseMetric;
+  mainThreadTime: LighthouseMetric;
+  scriptEval: LighthouseMetric;
 };
 
+const LIGHTHOUSE_METRIC_TO_HUMAN_READABLE: Record<
+  keyof LighthouseResult,
+  string
+> = {
+  totalBlockingTime: 'Total Blocking Time',
+  mainThreadTime: 'Main Thread Time',
+  scriptEval: 'Script Evaluation Time',
+};
 const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
   baseline: {
     name: 'baseline',
@@ -33,7 +42,7 @@ const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
   },
 };
 
-const mapResultToMetric = (result: AuditResult): Metric => ({
+const mapResultToMetric = (result: AuditResult): LighthouseMetric => ({
   value: result.numericValue ?? 0,
   description: result.description || '',
 });
@@ -85,7 +94,7 @@ test.describe('Lighthouse Performance Tests', () => {
       });
 
       const url = `${BASE_URL}${page.path}`;
-      const outputPath = `./test-results/${page.name}-lighthouse`;
+      const outputPath = `./test-results/lighthouse-startup-performance-tests-${page.name}-lighthouse-report`;
 
       const result = await lighthouse(url, {
         port,
@@ -117,6 +126,32 @@ test.describe('Lighthouse Performance Tests', () => {
 
   test.afterAll(() => {
     const difference = calculateDifference(results);
+    const differenceInMetrics: Record<string, Metric[]> = {
+      ...Object.entries(difference).reduce((acc, [key, metric]) => {
+        return {
+          ...acc,
+          [LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]]:
+            [
+              {
+                value: metric.value,
+                name: 'Difference',
+                unit: 'ms',
+              },
+              {
+                value: metric.description,
+                name: 'Description',
+                unit: '',
+              },
+            ],
+        };
+      }, {}),
+    };
+
+    fs.writeFileSync(
+      './test-results/lighthouse-startup-performance-tests.md',
+      jsonToMarkdownTable(differenceInMetrics)
+    );
+
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(
       Object.values(difference).map(metric => ({

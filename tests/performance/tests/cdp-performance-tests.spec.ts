@@ -1,4 +1,4 @@
-import type { TestPage } from '../types/index.js';
+import type { Metric, TestPage } from '../types/index.js';
 import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
 import type { CDPSession } from 'playwright';
 import { chromium } from 'playwright';
@@ -7,13 +7,9 @@ import type { Page } from '@playwright/test';
 import zlib from 'node:zlib';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
+import { resultsToMarkdownTable } from '../utils';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
-type Metric = {
-  value: number;
-  name: string;
-  unit: string;
-};
 type PerformanceSnapshot = Record<PerformanceMetric, number>;
 type Results = Record<TestPage, Record<string, PerformanceSnapshot>>;
 type Step = {
@@ -63,6 +59,8 @@ const METRIC_HUMAN_READABLE_TO_UNIT_MAP: Record<string, string> = {
   'Script Duration': 'ms',
   'Task Duration': 'ms',
   'Heap Used Size': 'MB',
+  'Number of Requests': ' requests',
+  'Size of Requests': 'KB',
 };
 
 const startTrace = async (cdpSession: CDPSession) => {
@@ -103,6 +101,9 @@ const getPerformanceSnapshot = async (
   const raw = await cdpSession.send('Performance.getMetrics');
   const metrics = Object.fromEntries(raw.metrics.map(m => [m.name, m.value]));
 
+  // To capture new metrics, you can add them to the object below
+  // Remember to add the new metric to PerformanceMetric and METRIC_HUMAN_READABLE_TO_UNIT_MAP
+  // No need to change the rest of the test
   return {
     // Transform s to ms
     scriptDuration: metrics.ScriptDuration * 1000 || 0,
@@ -152,7 +153,7 @@ const STEPS: Step[] = [
   },
 ];
 
-test.describe('Memory Performance Tests', () => {
+test.describe('CDP Performance Tests', () => {
   const results: Results = {
     baseline: {},
     'with-sdk': {},
@@ -193,7 +194,7 @@ test.describe('Memory Performance Tests', () => {
               const json = result.toString('utf-8');
 
               fs.writeFileSync(
-                `./test-results/${new Date().getTime().toString()}-request.json`,
+                `./test-results/cdp-performance-tests-${new Date().getTime().toString()}-request.json`,
                 JSON.stringify(JSON.parse(json), null, 2)
               );
             } catch (e) {
@@ -208,7 +209,7 @@ test.describe('Memory Performance Tests', () => {
       await cdpSession.send('Performance.enable');
 
       const url = `${BASE_URL}${testPage.path}`;
-      const outputPath = `./test-results/${testPage.name}-tracing.json`;
+      const outputPath = `./test-results/cdp-performance-tests-${testPage.name}-tracing.json`;
 
       const traceEvents: unknown[] = [];
       cdpSession.on('Tracing.dataCollected', event => {
@@ -261,14 +262,47 @@ test.describe('Memory Performance Tests', () => {
   }
 
   test.afterAll(() => {
-    const difference = calculateDifference(results);
+    const difference: Record<string, Metric[]> = {
+      Requests: [
+        {
+          name: 'Number of Requests',
+          value: numberOfRequests,
+          unit: ' requests',
+        },
+        {
+          name: 'Size of Requests',
+          value: sizeOfRequests / 1024, // Convert to KB
+          unit: 'KB',
+        },
+      ],
+      ...calculateDifference(results),
+    };
+
+    const total = Object.values(difference).reduce<Record<string, number>>(
+      (acc, metrics) => ({
+        ...acc,
+        ...Object.fromEntries(
+          metrics.map(metric => [
+            metric.name,
+            (acc[metric.name] ?? 0) + metric.value,
+          ])
+        ),
+      }),
+      {}
+    );
+    difference['Total'] = Object.entries(total).map(([name, value]) => ({
+      name,
+      value,
+      unit: METRIC_HUMAN_READABLE_TO_UNIT_MAP[name],
+    }));
+
+    fs.writeFileSync(
+      './test-results/cdp-performance-tests.md',
+      resultsToMarkdownTable(difference)
+    );
+
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table([
-      {
-        Step: 'Requests',
-        'Number of Requests': numberOfRequests,
-        'Size of Requests': `${(sizeOfRequests / 1024).toFixed(2)} KB`,
-      },
       ...Object.entries(difference).map(([step, metrics]) => ({
         Step: step,
         ...Object.values(metrics).reduce(
@@ -281,29 +315,6 @@ test.describe('Memory Performance Tests', () => {
           {}
         ),
       })),
-      {
-        Step: 'Total',
-        ...Object.entries(
-          Object.values(difference).reduce<Record<string, number>>(
-            (acc, metrics) => ({
-              ...acc,
-              ...Object.fromEntries(
-                metrics.map(metric => [
-                  metric.name,
-                  (acc[metric.name] ?? 0) + metric.value,
-                ])
-              ),
-            }),
-            {}
-          )
-        ).reduce<Record<string, string>>(
-          (acc, [name, value]) => ({
-            ...acc,
-            [name]: `${value > 0 ? '+' : ''}${value.toFixed(2)}${METRIC_HUMAN_READABLE_TO_UNIT_MAP[name]}`,
-          }),
-          {}
-        ),
-      },
     ]);
   });
 });
