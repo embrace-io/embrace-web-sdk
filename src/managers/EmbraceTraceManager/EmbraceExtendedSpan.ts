@@ -3,11 +3,11 @@ import type {
   Link,
   Attributes,
   AttributeValue,
+  Span,
   SpanContext,
   SpanStatus,
   TimeInput,
 } from '@opentelemetry/api';
-import { type Span } from '@opentelemetry/api';
 import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,

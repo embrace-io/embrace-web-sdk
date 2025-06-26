@@ -1,7 +1,7 @@
 export { session } from './sessionAPI.js';
 export type {
-  SpanSessionManager,
   ReasonSessionEnded,
+  SpanSessionManager,
 } from './manager/index.js';
 export {
   NoOpSpanSessionManager,
