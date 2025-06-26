@@ -7,7 +7,7 @@ import type { Page } from '@playwright/test';
 import zlib from 'node:zlib';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
-import { resultsToMarkdownTable } from '../utils';
+import { resultsToMarkdownTable } from '../utils/index.js';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
 type PerformanceSnapshot = Record<PerformanceMetric, number>;

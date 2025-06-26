@@ -7,7 +7,7 @@ import getPort from 'get-port';
 import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';
-import jsonToMarkdownTable from '../utils/json-to-markdown-table';
+import { resultsToMarkdownTable } from '../utils/index.js';
 
 type AuditResult = {
   numericValue?: number;
@@ -149,7 +149,7 @@ test.describe('Lighthouse Performance Tests', () => {
 
     fs.writeFileSync(
       './test-results/lighthouse-startup-performance-tests.md',
-      jsonToMarkdownTable(differenceInMetrics)
+      resultsToMarkdownTable(differenceInMetrics)
     );
 
     // TODO: add thresholds for each metric and fail the test if they are not met
