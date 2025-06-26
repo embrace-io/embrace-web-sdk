@@ -352,7 +352,8 @@ jobs:
       - name: Create PR comment with performance results
         if: ${{ success() }}
         run: |
-          echo "## Performance results" > performance-results.md
+          echo '<!-- performance-results -->' > performance-results.md
+          echo "## Performance results" >> performance-results.md
           echo "" >> performance-results.md
           echo "### CDP Performance Tests" >> performance-results.md
           echo "" >> performance-results.md
@@ -362,12 +363,25 @@ jobs:
           echo "" >> performance-results.md
           cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
 
-      - name: Add comment to PR
-        uses: thollander/actions-comment-pull-request@v3
+      - name: Post or update PR comment with performance results
         if: ${{ success() }}
-        with:
-          file-path: performance-results.md
-          comment-tag: 'performance-results'
+        run: |
+          PR_NUMBER=$(gh pr view --json number -q .number)
+          BODY="$(cat performance-results.md)"
+          COMMENT_ID=$(gh pr view "$PR_NUMBER" --json comments -q ".comments[] | select(.body | contains(\"<!-- performance-results -->\")) | .id")
+          
+          if [[ -n "$COMMENT_ID" ]]; then
+            echo "Updating comment $COMMENT_ID"
+            gh api \
+              --method PATCH \
+              "/repos/${GITHUB_REPOSITORY}/issues/comments/${COMMENT_ID}" \
+              -f body="$BODY"
+          else
+            echo "Creating new comment"
+            gh pr comment "$PR_NUMBER" --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   commitlint:
     needs: configure
