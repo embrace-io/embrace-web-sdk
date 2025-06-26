@@ -366,7 +366,7 @@ jobs:
       - name: Post or update PR comment with performance results
         if: ${{ success() }}
         run: |
-          PR_NUMBER=$(gh pr view --json number -q .number)
+          PR_NUMBER="${{ github.event.pull_request.number }}"
           BODY="$(cat performance-results.md)"
           COMMENT_ID=$(gh pr view "$PR_NUMBER" --json comments -q ".comments[] | select(.body | contains(\"<!-- performance-results -->\")) | .id")
           
