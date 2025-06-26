@@ -10,8 +10,6 @@ import type { ReasonSessionEnded } from '../../api-sessions/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/attributes.js';
-import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_STATE,
@@ -128,7 +126,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   }
 
   public startSessionSpan() {
-    //if there was a session in progress already, finish it first.
+    // if there is a session already in progress, end it first
     if (this._sessionSpan) {
       this.endSessionSpanInternal('manual');
     }

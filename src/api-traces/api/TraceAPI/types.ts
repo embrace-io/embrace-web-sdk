@@ -1,6 +1,5 @@
+import type { Span, SpanOptions, TimeInput } from '@opentelemetry/api';
 import type { ProxyTraceManager } from '../../manager/index.js';
-import type { SpanOptions } from '@opentelemetry/api';
-import { type Span, type TimeInput } from '@opentelemetry/api';
 
 export interface TraceAPIArgs {
   proxyTraceManager: ProxyTraceManager;

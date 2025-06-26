@@ -4,12 +4,12 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/index.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
