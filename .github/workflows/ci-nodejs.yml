@@ -332,7 +332,7 @@ jobs:
       - name: Build SKD
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:build
+          npm run sdk:compile
 
       - name: Test performance
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
