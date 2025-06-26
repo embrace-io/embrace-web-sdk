@@ -368,13 +368,14 @@ jobs:
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
           BODY="$(cat performance-results.md)"
-          COMMENT_ID=$(gh pr view "$PR_NUMBER" --json comments -q ".comments[] | select(.body | contains(\"<!-- performance-results -->\")) | .id")
+          gh api "/repos/$REPO/issues/$PR_NUMBER/comments" --paginate > comments.json
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
           
           if [[ -n "$COMMENT_ID" ]]; then
             echo "Updating comment $COMMENT_ID"
             gh api \
               --method PATCH \
-              "/repos/${GITHUB_REPOSITORY}/issues/comments/${COMMENT_ID}" \
+              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
               -f body="$BODY"
           else
             echo "Creating new comment"
