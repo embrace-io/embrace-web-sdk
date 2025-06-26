@@ -3,16 +3,17 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { VisibilityStateDocument } from '../../common/index.js';
+import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_PREFIX_EMB_PROPERTIES,
+} from '../../constants/attributes.js';
 import {
   InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
-import {
-  KEY_EMB_SESSION_REASON_ENDED,
-  KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/attributes.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
