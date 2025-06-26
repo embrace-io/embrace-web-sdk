@@ -1,4 +1,9 @@
-import type { Span, SpanOptions, TimeInput } from '@opentelemetry/api';
+import type {
+  Attributes,
+  Span,
+  SpanOptions,
+  TimeInput,
+} from '@opentelemetry/api';
 import type { ProxyTraceManager } from '../../manager/index.js';
 
 export interface TraceAPIArgs {
@@ -13,6 +18,16 @@ export type ExtendedSpanFailedOptions = {
 };
 
 export interface ExtendedSpan extends Span {
+  /**
+   * Exposing the span's current attributes provides similar functionality to OpenTelemetry's ReadableSpan,
+   * without requiring full implementation of the ReadableSpan interface. This is marked as readonly to prevent
+   * accidental modification of the attributes, and to align with OpenTelemetry's ReadableSpan interface.
+   *
+   * Ideally, we create a new interface that merges Span, ReadableSpan and the not-yet-implemented Writable Span
+   * described here:
+   * https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
+   */
+  readonly attributes: Attributes;
   fail: (options?: ExtendedSpanFailedOptions) => void;
 }
 

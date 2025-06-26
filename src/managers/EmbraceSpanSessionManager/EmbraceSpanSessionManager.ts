@@ -25,11 +25,13 @@ import type {
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import type { PropertyOptions } from '../../api-sessions/index.js';
+import { EmbraceExtendedSpan } from '../index.js';
+import type { ExtendedSpan } from '../../index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
-  private _sessionSpan: Span | null = null;
+  private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
@@ -55,8 +57,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._storage = storage;
   }
 
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
-
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
@@ -64,6 +64,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
+
     this._sessionSpan.addEvent(
       'emb-breadcrumb',
       {
@@ -80,20 +81,23 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
+
     if (options?.lifespan === 'permanent') {
       try {
         this._storage.setItem(KEY_PREFIX_EMB_PROPERTIES + key, value);
       } catch (error) {
-        this._diag.error('Failed to set permanent property', error);
+        this._diag.error('Failed to set permanent session property', error);
       }
     }
+
     this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
+    this._diag.info('Session property added', this._sessionSpan.attributes);
   }
 
   public removeProperty(key: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'Trying to remove properties to a session, but there is no session in progress. This is a no-op.'
+        'Trying to remove a session property, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -101,10 +105,18 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     try {
       this._storage.removeItem(KEY_PREFIX_EMB_PROPERTIES + key);
     } catch (error) {
-      this._diag.error('Failed to remove permanent property', error);
+      this._diag.error('Failed to remove permanent session property', error);
     }
 
-    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, '');
+    if (this._sessionSpan.attributes[KEY_PREFIX_EMB_PROPERTIES + key]) {
+      const attributesWithoutKey = Object.entries(
+        this._sessionSpan.attributes
+      ).filter(([k]) => k !== KEY_PREFIX_EMB_PROPERTIES + key);
+      // @ts-expect-error mutation is required to remove a property
+      this._sessionSpan.attributes = Object.fromEntries(attributesWithoutKey);
+    }
+
+    this._diag.info('Session property removed', this._sessionSpan.attributes);
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
@@ -158,20 +170,36 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     if (this._sessionSpan) {
       this.endSessionSpanInternal('manual');
     }
+
+    const permanentSessionProperties: Record<string, string> = {};
+    for (let i = 0; i < this._storage.length; i++) {
+      const key = this._storage.key(i);
+      if (key?.startsWith(KEY_PREFIX_EMB_PROPERTIES)) {
+        const value = this._storage.getItem(key);
+        if (value) {
+          permanentSessionProperties[key] = value;
+          console.log(key, value);
+        }
+      }
+    }
+
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
-    this._sessionSpan = tracer.startSpan('emb-session', {
-      attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.Session,
-        [KEY_EMB_STATE]:
-          this._visibilityDoc.visibilityState === 'hidden'
-            ? EMB_STATES.Background
-            : EMB_STATES.Foreground,
-        [ATTR_SESSION_ID]: this._activeSessionId,
-      },
-    });
+    this._sessionSpan = new EmbraceExtendedSpan(
+      tracer.startSpan('emb-session', {
+        attributes: {
+          [KEY_EMB_TYPE]: EMB_TYPES.Session,
+          [KEY_EMB_STATE]:
+            this._visibilityDoc.visibilityState === 'hidden'
+              ? EMB_STATES.Background
+              : EMB_STATES.Foreground,
+          [ATTR_SESSION_ID]: this._activeSessionId,
+          ...permanentSessionProperties,
+        },
+      })
+    );
 
     for (const listener of this._sessionStartedListeners) {
       try {

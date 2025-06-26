@@ -38,6 +38,8 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
     this._spanContext = _spanContext;
   }
 
+  public attributes: Attributes = {};
+
   public fail(_options?: ExtendedSpanFailedOptions) {}
 
   public spanContext(): SpanContext {

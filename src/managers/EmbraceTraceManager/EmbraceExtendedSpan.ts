@@ -20,10 +20,27 @@ import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
  * of the EmbraceSpan interface.
  */
 export class EmbraceExtendedSpan implements ExtendedSpan {
-  private readonly _span: Span;
+  private readonly _span: ExtendedSpan;
 
   public constructor(span: Span) {
-    this._span = span;
+    this._span = span as ExtendedSpan;
+  }
+
+  /**
+   * Expose attributes, mimicking the behavior of OpenTelemetry's ReadableSpan.
+   */
+  public get attributes(): Attributes {
+    return this._span.attributes;
+  }
+
+  /**
+   * @internal
+   * WARNING: This is for internal use only. Please use setAttribute() to change attribute values.
+   */
+  // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
+  set attributes(attributes: Attributes) {
+    // @ts-expect-error mutation is required to remove a property
+    this._span.attributes = attributes;
   }
 
   public addEvent(
