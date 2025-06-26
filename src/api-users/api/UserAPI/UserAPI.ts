@@ -10,13 +10,13 @@ export class UserAPI implements UserManager {
   }
 
   public static getInstance(): UserAPI {
-    if (!this._instance) {
-      this._instance = new UserAPI({
+    if (!UserAPI._instance) {
+      UserAPI._instance = new UserAPI({
         proxyUserManager: new ProxyUserManager(),
       });
     }
 
-    return this._instance;
+    return UserAPI._instance;
   }
 
   public getUserManager(): UserManager {
