@@ -18,6 +18,10 @@ export const restore = () => {
   (window.fetch as SinonStub).restore();
 };
 
+export const resetHistory = () => {
+  (window.fetch as SinonStub).resetHistory();
+};
+
 export const getMethod = () => {
   const firstArg = (window.fetch as SinonStub).firstCall.args[0] as Parameters<
     typeof window.fetch

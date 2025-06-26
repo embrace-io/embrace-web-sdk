@@ -2,7 +2,10 @@ import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { Resource } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import {
+  InMemorySpanExporter,
+  type ReadableSpan,
+} from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -22,6 +25,7 @@ import {
   FakeSpanProcessor,
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
+  fakeFetchResetHistory,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
 import { log, ProxyLogManager } from '../api-logs/index.js';
@@ -37,6 +41,47 @@ import { registry } from './registry.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
+
+type ExportedSpan = ReadableSpan & {
+  attributes: {
+    key: string;
+    value: {
+      stringValue: string;
+    };
+  }[];
+};
+
+const getLastSessionExportedSpans = async () => {
+  // Needed to allow the transport to actually send its data off to fetch
+  await new Promise(r => setTimeout(r, 1));
+
+  const body = fakeFetchGetBody();
+  void expect(body).not.to.be.null;
+  const decompressedStream = new Response(body).body?.pipeThrough(
+    new DecompressionStream('gzip')
+  );
+  // translate from Uint8Array to string
+  const text = await new Response(decompressedStream).text();
+  const parsed = JSON.parse(text) as never;
+
+  expect(parsed['resourceSpans']).to.have.lengthOf(1);
+  const resourceSpan = parsed['resourceSpans'][0];
+  void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
+
+  expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
+  const sessionScopeSpan = resourceSpan['scopeSpans'][0];
+  expect(sessionScopeSpan['scope']).to.deep.equal({
+    name: 'embrace-web-sdk-sessions',
+  });
+  expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
+  expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session');
+  const tracesScopeSpan = resourceSpan['scopeSpans'][1];
+  expect(tracesScopeSpan['scope']).to.deep.equal({
+    name: 'embrace-web-sdk-traces',
+  });
+
+  return tracesScopeSpan['spans'] as ExportedSpan[];
+};
 
 describe('initSDK', () => {
   let spanExporter: InMemorySpanExporter;
@@ -375,37 +420,9 @@ describe('initSDK', () => {
 
       session.getSpanSessionManager().endSessionSpan();
 
-      // Needed to allow the transport to actually send its data off to fetch
-      await new Promise(r => setTimeout(r, 1));
+      const exportedSpans = await getLastSessionExportedSpans();
 
-      const body = fakeFetchGetBody();
-      void expect(body).not.to.be.null;
-      const decompressedStream = new Response(body).body?.pipeThrough(
-        new DecompressionStream('gzip')
-      );
-      // translate from Uint8Array to string
-      const text = await new Response(decompressedStream).text();
-      const parsed = JSON.parse(text) as never;
-
-      expect(parsed['resourceSpans']).to.have.lengthOf(1);
-      const resourceSpan = parsed['resourceSpans'][0];
-      void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
-
-      expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
-      const sessionScopeSpan = resourceSpan['scopeSpans'][0];
-      expect(sessionScopeSpan['scope']).to.deep.equal({
-        name: 'embrace-web-sdk-sessions',
-      });
-      expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
-      expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session');
-      const tracesScopeSpan = resourceSpan['scopeSpans'][1];
-      expect(tracesScopeSpan['scope']).to.deep.equal({
-        name: 'embrace-web-sdk-traces',
-      });
-      expect(tracesScopeSpan['spans']).to.have.lengthOf(1);
-      expect(tracesScopeSpan['spans'][0]['name']).to.be.equal(
-        'my performance span'
-      );
+      expect(exportedSpans[0]['name']).to.be.equal('my performance span');
     });
 
     it('should include a custom template bundle ID in the resource attributes if provided', async () => {
@@ -460,6 +477,239 @@ describe('initSDK', () => {
         ],
         droppedAttributesCount: 0,
       });
+    });
+
+    it('should apply a max on the number of spans recorded per session', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      await new Promise(r => setTimeout(r, 1));
+
+      // Capped at 1000 spans per session
+      for (let i = 0; i < 1100; i++) {
+        embtrace.startSpan(`my-span-${i.toString()}`).end();
+      }
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1000);
+      for (let i = 0; i < exportedSpans.length; i++) {
+        expect(exportedSpans[i]['name']).to.equal(`my-span-${i.toString()}`);
+      }
+
+      fakeFetchResetHistory();
+
+      session.getSpanSessionManager().startSessionSpan();
+
+      // Limit should be reset for the next session
+      for (let i = 0; i < 100; i++) {
+        embtrace.startSpan(`my-next-session-span-${i.toString()}`).end();
+      }
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      const nextSessionExportedSpans = await getLastSessionExportedSpans();
+      expect(nextSessionExportedSpans).to.have.lengthOf(100);
+      for (let i = 0; i < nextSessionExportedSpans.length; i++) {
+        expect(nextSessionExportedSpans[i]['name']).to.equal(
+          `my-next-session-span-${i.toString()}`
+        );
+      }
+    });
+
+    it('should apply limits on the events of an individual span', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      await new Promise(r => setTimeout(r, 1));
+
+      const span = embtrace.startSpan('my-span');
+
+      // Capped at 200 events per span
+      for (let i = 0; i < 300; i++) {
+        span.addEvent(`span-event-${i.toString()}`);
+      }
+
+      span.end();
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+
+      const exportedEvents = exportedSpans[0].events;
+      expect(exportedEvents).to.have.lengthOf(200);
+
+      for (let i = 0; i < exportedEvents.length; i++) {
+        // Default OTel limiting of events drops the oldest events when the limit
+        // is reached, because we went 100 over the limit that means we dropped the first 100:
+        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
+        const expected = i + 100;
+        expect(exportedEvents[i]['name']).to.equal(
+          `span-event-${expected.toString()}`
+        );
+      }
+    });
+
+    it('should apply limits on the attributes of an individual span', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      await new Promise(r => setTimeout(r, 1));
+
+      const span = embtrace.startSpan('my-span');
+
+      // Capped at 200 attributes per span
+      for (let i = 0; i < 300; i++) {
+        span.setAttribute(`span-attribute-${i.toString()}`, i.toString());
+      }
+
+      span.end();
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+
+      const exportedAttributes = exportedSpans[0].attributes;
+      expect(exportedAttributes).to.have.lengthOf(200);
+
+      expect(exportedAttributes[0].key).to.equal('emb.type');
+      expect(exportedAttributes[1].key).to.equal('session.id');
+      for (let i = 2; i < exportedAttributes.length; i++) {
+        // Newest attributes are dropped when the limit is reached, start counting after
+        // the 2 internal attributes added by our API
+        const expected = i - 2;
+        expect(exportedAttributes[i].key).to.equal(
+          `span-attribute-${expected.toString()}`
+        );
+        expect(exportedAttributes[i].value).to.deep.equal({
+          stringValue: expected.toString(),
+        });
+      }
+    });
+
+    it('should apply limits on the events of an individual span', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      await new Promise(r => setTimeout(r, 1));
+
+      const span = embtrace.startSpan('my-span');
+
+      // Capped at 200 events per span
+      for (let i = 0; i < 300; i++) {
+        span.addEvent(`span-event-${i.toString()}`);
+      }
+
+      span.end();
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+
+      const exportedEvents = exportedSpans[0].events;
+      expect(exportedEvents).to.have.lengthOf(200);
+
+      for (let i = 0; i < exportedEvents.length; i++) {
+        // Default OTel limiting of events drops the oldest events when the limit
+        // is reached, because we went 100 over the limit that means we dropped the first 100:
+        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
+        const expected = i + 100;
+        expect(exportedEvents[i]['name']).to.equal(
+          `span-event-${expected.toString()}`
+        );
+      }
+    });
+
+    // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
+    // used:
+    // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
+    xit('should apply limits on the attributes of an individual span event', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      await new Promise(r => setTimeout(r, 1));
+
+      const span = embtrace.startSpan('my-span');
+      const spanEventAttributes: Record<string, string> = {};
+
+      // Capped at 20 attributes per span event
+      for (let i = 0; i < 40; i++) {
+        spanEventAttributes[`span-event-attribute-${i.toString()}`] =
+          i.toString();
+      }
+
+      span.addEvent('span-event', spanEventAttributes);
+      span.end();
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+
+      const exportedEvents = exportedSpans[0].events;
+      expect(exportedEvents).to.have.lengthOf(1);
+
+      expect(exportedEvents[0].attributes).to.have.lengthOf(20);
     });
   });
 
