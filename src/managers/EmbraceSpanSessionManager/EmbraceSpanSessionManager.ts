@@ -60,7 +60,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'Trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -77,7 +77,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public addProperty(key: string, value: string, options?: PropertyOptions) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'Trying to add properties to a session, but there is no session in progress. This is a no-op.'
+        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -97,7 +97,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public removeProperty(key: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'Trying to remove a session property, but there is no session in progress. This is a no-op.'
+        'trying to remove a session property, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -128,7 +128,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'Trying to end a session, but there is no session in progress. This is a no-op.'
+        'trying to end a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
@@ -218,7 +218,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public incrSessionCountForKey(key: string) {
     if (!this._sessionSpan || !this._activeSessionCounts) {
       this._diag.debug(
-        'Trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
+        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
       );
       return;
     }

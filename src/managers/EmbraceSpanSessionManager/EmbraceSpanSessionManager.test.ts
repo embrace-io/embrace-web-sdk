@@ -102,7 +102,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(finishedSpans).to.have.lengthOf(0);
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'Trying to end a session, but there is no session in progress. This is a no-op.'
+      'trying to end a session, but there is no session in progress. This is a no-op.'
     );
   });
 
@@ -111,7 +111,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'Trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
     );
   });
 
@@ -141,7 +141,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'Trying to add properties to a session, but there is no session in progress. This is a no-op.'
+      'trying to add properties to a session, but there is no session in progress. This is a no-op.'
     );
   });
 
