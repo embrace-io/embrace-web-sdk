@@ -178,7 +178,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         const value = this._storage.getItem(key);
         if (value) {
           permanentSessionProperties[key] = value;
-          console.log(key, value);
+          this._diag.info(
+            `Loaded permanent session property: ${key} = ${value}`
+          );
         }
       }
     }
