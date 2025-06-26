@@ -27,7 +27,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   }
 
   /**
-   * Expose attributes, mimicking the behavior of OpenTelemetry's ReadableSpan.
+   * Expose attributes by extending OpenTelemetry's ReadableSpan.
    */
   public get attributes(): Attributes {
     return this._span.attributes;
