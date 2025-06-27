@@ -8,6 +8,12 @@ import zlib from 'node:zlib';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
 import { resultsToMarkdownTable } from '../utils/index.js';
+import {
+  TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
+  TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
+  TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
+  TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
+} from '../config/index.js';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
 type PerformanceSnapshot = Record<PerformanceMetric, number>;
@@ -61,6 +67,13 @@ const METRIC_HUMAN_READABLE_TO_UNIT_MAP: Record<string, string> = {
   'Heap Used Size': 'MB',
   'Number of Requests': ' requests',
   'Size of Requests': 'KB',
+};
+const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
+  'Script Duration': TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
+  'Task Duration': TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
+  'Heap Used Size': TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
+  'Number of Requests': Infinity, // No threshold for number of requests
+  'Size of Requests': TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
 };
 
 const startTrace = async (cdpSession: CDPSession) => {
@@ -301,7 +314,17 @@ test.describe('CDP Performance Tests', () => {
       resultsToMarkdownTable(difference)
     );
 
-    // TODO: add thresholds for each metric and fail the test if they are not met
+    // Check thresholds
+    for (const metric of Object.values(difference['Total'])) {
+      test
+        .expect(
+          metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name],
+          `Threshold exceeded for ${metric.name}: ${metric.value} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name]} ${metric.unit})`
+        )
+        .toBeTruthy();
+    }
+
+    // Keep table for local runs
     console.table([
       ...Object.entries(difference).map(([step, metrics]) => ({
         Step: step,

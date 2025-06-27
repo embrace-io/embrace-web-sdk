@@ -8,6 +8,11 @@ import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';
 import { resultsToMarkdownTable } from '../utils/index.js';
+import {
+  MAIN_THREAD_TIME_THRESHOLD_IN_MS,
+  SCRIPT_EVAL_THRESHOLD_IN_MS,
+  TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
+} from '../config';
 
 type AuditResult = {
   numericValue?: number;
@@ -40,6 +45,11 @@ const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
     name: 'with-sdk',
     path: '/lighthouse-test.html?use_sdk=true',
   },
+};
+const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
+  'Total Blocking Time': TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
+  'Main Thread Time': MAIN_THREAD_TIME_THRESHOLD_IN_MS,
+  'Script Evaluation Time': SCRIPT_EVAL_THRESHOLD_IN_MS,
 };
 
 const mapResultToMetric = (result: AuditResult): LighthouseMetric => ({
@@ -151,6 +161,21 @@ test.describe('Lighthouse Performance Tests', () => {
       './test-results/lighthouse-startup-performance-tests.md',
       resultsToMarkdownTable(differenceInMetrics)
     );
+
+    // Check thresholds
+    for (const [metricName, metric] of Object.entries(difference)) {
+      const name =
+        LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[
+          metricName as keyof LighthouseResult
+        ];
+
+      test
+        .expect(
+          metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name],
+          `Threshold exceeded for ${name}: ${metric.value} ms (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name]} ms)`
+        )
+        .toBeTruthy();
+    }
 
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(
