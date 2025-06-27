@@ -12,7 +12,7 @@ import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
   TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
-} from '../config';
+} from '../config/index.js';
 
 type AuditResult = {
   numericValue?: number;
