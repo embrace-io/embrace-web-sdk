@@ -288,7 +288,7 @@ describe('EmbraceSpanSessionManager', () => {
     void expect(storedAttribute3).to.be.undefined;
   });
 
-  it('should not persist session properties after seesion end', () => {
+  it('should not persist session properties after session end', () => {
     const propertyKey = 'session-only-key';
     const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
     const value = 'session-only-value';
