@@ -37,8 +37,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
    * @internal
    * WARNING: This is for internal use only. Please use setAttribute() to change attribute values.
    */
-  // eslint-disable-next-line @typescript-eslint/explicit-member-accessibility
-  set attributes(attributes: Attributes) {
+  public set attributes(attributes: Attributes) {
     // @ts-expect-error mutation is required to remove a property
     this._span.attributes = attributes;
   }
