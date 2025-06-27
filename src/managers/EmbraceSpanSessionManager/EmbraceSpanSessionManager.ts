@@ -33,7 +33,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
-  // @note properties are not prefixed with KEY_PREFIX_EMB_PROPERTIES
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
