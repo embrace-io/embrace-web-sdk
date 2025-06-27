@@ -495,6 +495,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
+      // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
       // Capped at 1000 spans per session
@@ -546,6 +547,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
+      // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
@@ -591,6 +593,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
+      // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
@@ -640,6 +643,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
+      // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
@@ -688,6 +692,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
+      // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
