@@ -54,6 +54,10 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
     return this;
   }
 
+  public removeAttribute(_key: string): this {
+    return this;
+  }
+
   public addEvent(
     _name: string,
     _attributesOrStartTime?: Attributes | TimeInput,

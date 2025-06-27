@@ -20,6 +20,7 @@ export type ExtendedSpanFailedOptions = {
  * https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
  */
 export interface ExtendedSpan extends Span, Pick<ReadableSpan, 'attributes'> {
+  removeAttribute: (key: string) => this;
   fail: (options?: ExtendedSpanFailedOptions) => void;
 }
 
