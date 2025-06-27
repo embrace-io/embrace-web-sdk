@@ -236,76 +236,119 @@ describe('EmbraceSpanSessionManager', () => {
   });
 
   it('should store permanent properties in localStorage', () => {
-    const key = 'permanent-key';
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
     const value = 'permanent-value';
+
     manager.startSessionSpan();
-    manager.addProperty(key, value, {
+    manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
 
-    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
-    expect(storedValue).to.equal(value);
+    let storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
+
+    manager.endSessionSpan();
+
+    storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
   });
 
   it('should not store session properties in localStorage', () => {
-    const key = 'permanent-key';
-    const value = 'permanent-value';
+    const propertyKey = 'session-only-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'session-only-value';
     manager.startSessionSpan();
-    manager.addProperty(key, value);
+    manager.addProperty(propertyKey, value);
 
-    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
+    const storedValue = storage.getItem(attributeKey);
     void expect(storedValue).to.be.undefined;
   });
 
-  it('should not store default session properties in localStorage', () => {
-    const key = 'permanent-key';
+  it('should not store permanent properties in localStorage that have been removed', () => {
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
     const value = 'permanent-value';
+
     manager.startSessionSpan();
-    manager.addProperty(key, value, {
-      // @ts-expect-error asserting an invalid value for lifespan
-      lifespan: 'invalid',
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
     });
-
-    const storedValue = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
-    void expect(storedValue).to.be.undefined;
-  });
-
-  it('should persist permanent properties across sessions', () => {
-    const key = 'permanent-key';
-    const value = 'permanent-value';
-    manager.startSessionSpan();
-    manager.addProperty(key, value, { lifespan: 'permanent' });
-
-    const storedProperty = storage.getItem(
-      `${KEY_PREFIX_EMB_PROPERTIES}${key}`
-    );
-    expect(storedProperty).to.equal(value);
-
-    manager.endSessionSpan();
-    manager.startSessionSpan();
-    const storedProperty2 = storage.getItem(
-      `${KEY_PREFIX_EMB_PROPERTIES}${key}`
-    );
-    expect(storedProperty2).to.equal(value);
-  });
-
-  it('should not persist permanent properties that have been removed', () => {
-    const key = 'permanent-key';
-    const value = 'permanent-value';
-    manager.startSessionSpan();
-    manager.addProperty(key, value, { lifespan: 'permanent' });
-
-    let storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
-    expect(storedProperty).to.equal(value);
-
-    manager.removeProperty(key);
-    storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
-    void expect(storedProperty).to.be.undefined;
-
+    const storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
     manager.endSessionSpan();
 
     manager.startSessionSpan();
-    storedProperty = storage.getItem(`${KEY_PREFIX_EMB_PROPERTIES}${key}`);
-    void expect(storedProperty).to.be.undefined;
+    manager.removeProperty(propertyKey);
+    const storedAttribute2 = storage.getItem(attributeKey);
+    void expect(storedAttribute2).to.be.undefined;
+    manager.endSessionSpan();
+
+    const storedAttribute3 = storage.getItem(attributeKey);
+    void expect(storedAttribute3).to.be.undefined;
+  });
+
+  it('should not persist session properties after seesion end', () => {
+    const propertyKey = 'session-only-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'session-only-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      attributeKey,
+      value
+    );
+  });
+
+  it('should persist permanent properties into new sessions', () => {
+    const permanentPropertyKey = 'permanent-key';
+    const permanentAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${permanentPropertyKey}`;
+    const permanentValue = 'permanent-value';
+    const sessionOnlyPropertyKey = 'session-only-key';
+    const sessionOnlyAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${sessionOnlyPropertyKey}`;
+    const sessionOnlyValue = 'session-only-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(sessionOnlyPropertyKey, sessionOnlyValue);
+    manager.addProperty(permanentPropertyKey, permanentValue, {
+      lifespan: 'permanent',
+    });
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      sessionOnlyAttributeKey,
+      sessionOnlyValue
+    );
+    expect(manager.getSessionSpan()?.attributes).to.have.property(
+      permanentAttributeKey,
+      permanentValue
+    );
+  });
+
+  it('should not persist removed permanent properties into new sessions', () => {
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'permanent-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
+    });
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    manager.removeProperty(propertyKey);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      attributeKey,
+      value
+    );
   });
 });

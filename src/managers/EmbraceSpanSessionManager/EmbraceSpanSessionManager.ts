@@ -1,8 +1,9 @@
 import {
+  type Attributes,
+  type AttributeValue,
   diag,
   type DiagLogger,
   type HrTime,
-  type Span,
   trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
@@ -28,11 +29,24 @@ import type { PropertyOptions } from '../../api-sessions/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 
+class PropertiesMap extends Map<string, AttributeValue> {
+  public toAttributes(): Attributes {
+    return Object.fromEntries(
+      this.entries().map(([key, value]) => [
+        `${KEY_PREFIX_EMB_PROPERTIES}${key}`,
+        String(value),
+      ])
+    );
+  }
+}
+
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
+  // @note properties are not prefixed with KEY_PREFIX_EMB_PROPERTIES
+  private readonly _sessionProperties = new PropertiesMap();
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
@@ -55,6 +69,35 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
+  }
+
+  // retrieve permanent properties from localStorage
+  private _getPermanentAttributes(): Attributes {
+    const permanentAttributes = new Map();
+    try {
+      for (let i = 0; i < this._storage.length; i++) {
+        const key = this._storage.key(i);
+        if (key?.startsWith(KEY_PREFIX_EMB_PROPERTIES)) {
+          const value = this._storage.getItem(key);
+          if (value) {
+            permanentAttributes.set(key, value);
+          }
+        }
+      }
+    } catch (error) {
+      this._diag.warn('Error loading permanent session properties', error);
+    }
+    return Object.fromEntries(permanentAttributes.entries()) as Attributes;
+  }
+
+  // helper method to get sessionSpan attributes, session properties held in memory,
+  // and permanent attributes from localStorage
+  private _getSessionAttributes(): Attributes {
+    const spanAttributes = this._sessionSpan?.attributes ?? {};
+    const sessionAttributes = this._sessionProperties.toAttributes();
+    const permanentAttributes = this._getPermanentAttributes();
+
+    return { ...spanAttributes, ...sessionAttributes, ...permanentAttributes };
   }
 
   public addBreadcrumb(name: string) {
@@ -82,16 +125,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
+    this._sessionProperties.set(key, value);
+
     if (options?.lifespan === 'permanent') {
       try {
         this._storage.setItem(KEY_PREFIX_EMB_PROPERTIES + key, value);
       } catch (error) {
-        this._diag.error('Failed to set permanent session property', error);
+        this._diag.warn('Failed to set permanent session property', error);
       }
     }
-
-    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
-    this._diag.info('Session property added', this._sessionSpan.attributes);
   }
 
   public removeProperty(key: string) {
@@ -102,21 +144,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
+    this._sessionProperties.delete(key);
+
     try {
-      this._storage.removeItem(KEY_PREFIX_EMB_PROPERTIES + key);
+      if (this._storage.getItem(KEY_PREFIX_EMB_PROPERTIES + key)) {
+        this._storage.removeItem(KEY_PREFIX_EMB_PROPERTIES + key);
+      }
     } catch (error) {
-      this._diag.error('Failed to remove permanent session property', error);
+      this._diag.warn('Error removing permanent session property', error);
     }
-
-    if (this._sessionSpan.attributes[KEY_PREFIX_EMB_PROPERTIES + key]) {
-      const attributesWithoutKey = Object.entries(
-        this._sessionSpan.attributes
-      ).filter(([k]) => k !== KEY_PREFIX_EMB_PROPERTIES + key);
-      // @ts-expect-error mutation is required to remove a property
-      this._sessionSpan.attributes = Object.fromEntries(attributesWithoutKey);
-    }
-
-    this._diag.info('Session property removed', this._sessionSpan.attributes);
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
@@ -134,12 +170,14 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._sessionSpan.setAttributes({
+      ...this._getSessionAttributes(),
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
     });
 
     this._sessionSpan.end();
     this._sessionSpan = null;
+    this._sessionProperties.clear();
     this._activeSessionStartTime = null;
     this._activeSessionId = null;
     this._activeSessionCounts = null;
@@ -157,7 +195,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return this._activeSessionId;
   }
 
-  public getSessionSpan(): Span | null {
+  public getSessionSpan(): ExtendedSpan | null {
     return this._sessionSpan;
   }
 
@@ -171,20 +209,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this.endSessionSpanInternal('manual');
     }
 
-    const permanentSessionProperties: Record<string, string> = {};
-    for (let i = 0; i < this._storage.length; i++) {
-      const key = this._storage.key(i);
-      if (key?.startsWith(KEY_PREFIX_EMB_PROPERTIES)) {
-        const value = this._storage.getItem(key);
-        if (value) {
-          permanentSessionProperties[key] = value;
-          this._diag.info(
-            `Loaded permanent session property: ${key} = ${value}`
-          );
-        }
-      }
-    }
-
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
@@ -192,13 +216,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionSpan = new EmbraceExtendedSpan(
       tracer.startSpan('emb-session', {
         attributes: {
+          ...this._getSessionAttributes(),
           [KEY_EMB_TYPE]: EMB_TYPES.Session,
           [KEY_EMB_STATE]:
             this._visibilityDoc.visibilityState === 'hidden'
               ? EMB_STATES.Background
               : EMB_STATES.Foreground,
           [ATTR_SESSION_ID]: this._activeSessionId,
-          ...permanentSessionProperties,
         },
       })
     );
