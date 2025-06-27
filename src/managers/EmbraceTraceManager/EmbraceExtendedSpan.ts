@@ -35,7 +35,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
 
   /**
    * @internal
-   * WARNING: This is for internal use only. Please use setAttribute() to change attribute values.
+   * WARNING: This is for internal use only and replaces all attributes. Please use setAttribute() to append/change attribute values.
    */
   public set attributes(attributes: Attributes) {
     // @ts-expect-error mutation is required to remove a property
