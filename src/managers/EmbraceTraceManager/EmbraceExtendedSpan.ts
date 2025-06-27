@@ -33,15 +33,6 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
     return this._span.attributes;
   }
 
-  /**
-   * @internal
-   * WARNING: This is for internal use only and replaces all attributes. Please use setAttribute() to append/change attribute values.
-   */
-  public set attributes(attributes: Attributes) {
-    // @ts-expect-error mutation is required to remove a property
-    this._span.attributes = attributes;
-  }
-
   public addEvent(
     name: string,
     attributesOrStartTime?: Attributes | TimeInput,
