@@ -76,14 +76,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return Object.fromEntries(permanentAttributes.entries()) as Attributes;
   }
 
-  // helper method to get sessionSpan attributes, session properties held in memory,
-  // and permanent attributes from localStorage
-  private _getSessionAttributes(): Attributes {
-    const spanAttributes = this._sessionSpan?.attributes ?? {};
-    const permanentAttributes = this._getPermanentAttributes();
-    return { ...spanAttributes, ...permanentAttributes };
-  }
-
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
@@ -160,7 +152,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._sessionSpan.setAttributes({
-      ...this._getSessionAttributes(),
+      ...this._getPermanentAttributes(),
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
     });
@@ -205,7 +197,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionSpan = new EmbraceExtendedSpan(
       tracer.startSpan('emb-session', {
         attributes: {
-          ...this._getSessionAttributes(),
+          ...this._getPermanentAttributes(),
           [KEY_EMB_TYPE]: EMB_TYPES.Session,
           [KEY_EMB_STATE]:
             this._visibilityDoc.visibilityState === 'hidden'
