@@ -76,7 +76,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
 
   public removeAttribute(key: string): this {
     const { [key]: _, ...attributes } = this._span.attributes;
-    // @ts-expect-error Mimic proposed behavior in https://github.com/open-telemetry/opentelemetry-js/blob/main/packages/opentelemetry-sdk-trace-base/src/trace/ReadableSpan.ts#L104
+    // @ts-expect-error Read/write spans are allowed per the spec https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
     this._span.attributes = attributes;
     return this;
   }
