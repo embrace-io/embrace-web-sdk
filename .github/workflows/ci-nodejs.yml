@@ -350,7 +350,7 @@ jobs:
           rm -f ${{ env.TEST_STATUS_FILE }}
 
       - name: Create PR comment with performance results
-        if: ${{ success() }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
           echo '<!-- performance-results -->' > performance-results.md
           echo "## Performance results" >> performance-results.md
@@ -364,7 +364,7 @@ jobs:
           cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
 
       - name: Post or update PR comment with performance results
-        if: ${{ success() && needs.environment.outputs.name == 'development' }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
           BODY="$(cat performance-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
@@ -378,7 +378,7 @@ jobs:
               -f body="$BODY"
           else
             echo "Creating new comment"
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -437,6 +437,12 @@ jobs:
         run: |
           npm ci --strict-peer-deps
 
+      # We need the SDK to be built, so we can use it in the sample apps
+      - name: Build SKD
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:compile
+
       - name: Install npm dependencies for sample app
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
@@ -459,7 +465,7 @@ jobs:
           rm -f ${{ env.TEST_STATUS_FILE }}
 
       - name: Create PR comment with bundle results
-        if: ${{ success() }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
           echo '<!-- bundle-results -->' > bundle-results.md
           echo "## Bundle results" >> bundle-results.md
@@ -469,7 +475,7 @@ jobs:
           cat ./tests/bundle/test-results/vite-tests.md >> bundle-results.md
 
       - name: Post or update PR comment with performance results
-        if: ${{ success() && needs.environment.outputs.name == 'development' }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
           BODY="$(cat bundle-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
@@ -483,7 +489,7 @@ jobs:
               -f body="$BODY"
           else
             echo "Creating new comment"
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
