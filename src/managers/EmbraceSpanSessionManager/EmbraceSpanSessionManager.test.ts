@@ -351,4 +351,22 @@ describe('EmbraceSpanSessionManager', () => {
       value
     );
   });
+
+  it('should have emb.cold_start = true only in first session', () => {
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    let finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    let sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
+  });
 });
