@@ -1,3 +1,3 @@
-import processSondaReport from './process-sonda-report';
+import processSondaReport from './process-sonda-report.js';
 
 export { processSondaReport };
