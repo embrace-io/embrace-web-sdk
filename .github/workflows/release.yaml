@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
     timeout-minutes: 2
     steps:
-      - uses: embrace-io/release-drafter@c3db6ed8d1ba035bbf9edcd5d89c1d5064d98dfb # fork from v6.1.0
+      - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
         id: release_drafter
         with:
           # dry run, we just want to identify the next version, not publish it yet
