@@ -7,7 +7,7 @@ import getPort from 'get-port';
 import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';
-import { resultsToMarkdownTable } from '../utils/index.js';
+import { resultsToMarkdownTable } from '../../utils/index.js';
 import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
