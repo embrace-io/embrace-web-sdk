@@ -8,12 +8,13 @@ import {
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { ReasonSessionEnded } from '../../api-sessions/index.js';
 import {
-  KEY_EMB_SESSION_REASON_ENDED,
-  KEY_PREFIX_EMB_PROPERTIES,
   EMB_STATES,
   EMB_TYPES,
+  KEY_EMB_COLD_START,
+  KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
+  KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
@@ -33,6 +34,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
+  private _coldStart: boolean = true; // Whether the session was started from a new page load or not.
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
@@ -204,9 +206,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
               ? EMB_STATES.Background
               : EMB_STATES.Foreground,
           [ATTR_SESSION_ID]: this._activeSessionId,
+          [KEY_EMB_COLD_START]: this._coldStart,
         },
       })
     );
+
+    this._coldStart = false;
 
     for (const listener of this._sessionStartedListeners) {
       try {
