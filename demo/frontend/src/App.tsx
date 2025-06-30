@@ -71,6 +71,29 @@ const App = () => {
     }
   };
 
+  const handleAddPermanentSessionProperty = (key: string, value: string) => {
+    const sessionSpan = sessionProvider.getSessionSpan();
+    if (sessionSpan) {
+      session.addProperty(key, value, {
+        lifespan: 'permanent',
+      });
+    }
+  };
+
+  const handleAddSessionProperty = (key: string, value: string) => {
+    const sessionSpan = sessionProvider.getSessionSpan();
+    if (sessionSpan) {
+      session.addProperty(key, value);
+    }
+  };
+
+  const handleRemoveSessionProperty = (key: string) => {
+    const sessionSpan = sessionProvider.getSessionSpan();
+    if (sessionSpan) {
+      session.removeProperty(key);
+    }
+  };
+
   const handleSendEmbraceInfoLog = () => {
     logManager.message('This is an info log', 'info', {
       attributes: {
@@ -162,7 +185,7 @@ const App = () => {
 
     return (
       <div className="container">
-        Demo
+        <h1>[••] demo</h1>
         <div>current session: {currentSession}</div>
         <div className={styles.actions}>
           <button
@@ -174,10 +197,16 @@ const App = () => {
           <button
             onClick={handleStartSessionSpan}
             disabled={!isSessionSpanStarted}
+            title="Force a new Session Span to start"
           >
             Override Session span
           </button>
-          <button onClick={handleEndSessionSpan}>End Session Span</button>
+          <button
+            onClick={handleEndSessionSpan}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            End Session Span
+          </button>
         </div>
         <button
           onClick={handleStartSpan}
@@ -190,6 +219,38 @@ const App = () => {
           disabled={sessionProvider.getSessionSpan() === null}
         >
           Send Embrace Info Log
+        </button>
+        <button
+          onClick={() =>
+            handleAddPermanentSessionProperty(
+              'permanent-key',
+              'permanent-value'
+            )
+          }
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
+          Add Permanent Session Property
+        </button>
+
+        <button
+          onClick={() => handleRemoveSessionProperty('permanent-key')}
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
+          Remove Permanent Session Property
+        </button>
+        <button
+          onClick={() =>
+            handleAddSessionProperty('session-key', 'session-value')
+          }
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
+          Add Session Property
+        </button>
+        <button
+          onClick={() => handleRemoveSessionProperty('session-key')}
+          disabled={sessionProvider.getSessionSpan() === null}
+        >
+          Remove Session Property
         </button>
         <button
           onClick={handleSendEmbraceWarnLog}

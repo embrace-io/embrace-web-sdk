@@ -38,6 +38,8 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
     this._spanContext = _spanContext;
   }
 
+  public attributes: Attributes = {};
+
   public fail(_options?: ExtendedSpanFailedOptions) {}
 
   public spanContext(): SpanContext {
@@ -49,6 +51,10 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
   }
 
   public setAttributes(_attributes: Attributes): this {
+    return this;
+  }
+
+  public removeAttribute(_key: string): this {
     return this;
   }
 
