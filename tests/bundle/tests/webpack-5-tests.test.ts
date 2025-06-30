@@ -1,6 +1,6 @@
 import { runBundlerBuildSmokeTest } from '../utils/index.js';
 
-await runBundlerBuildSmokeTest('../vite-7', {
+await runBundlerBuildSmokeTest('../webpack-5', {
   targets: ['esnext', 'es2015'],
-  bundlerName: 'Vite 7',
+  bundlerName: 'Webpack 5',
 });

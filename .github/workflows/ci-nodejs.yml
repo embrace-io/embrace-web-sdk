@@ -476,7 +476,6 @@ jobs:
       
           for file in ./tests/bundle/test-results/*.md; do
             cat "$file" >> bundle-results.md
-            echo -e "\n---\n" >> bundle-results.md
           done
 
       - name: Post or update PR comment with performance results
