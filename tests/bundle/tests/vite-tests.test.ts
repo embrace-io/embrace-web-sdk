@@ -25,7 +25,7 @@ await test.describe('Vite Bundle Tests', async () => {
   > = {};
 
   test.before(async () => {
-    await execAsync('npm run build:prepare', {
+    await execAsync('npm run build:clean', {
       cwd: APP_DIR,
     });
   });

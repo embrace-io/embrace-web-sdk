@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:clean": "rm -rf dist && rm -rf .sonda",
-    "build:tsc": "tsc -b",
-    "build:prepare": "npm run build:clean && npm run build:tsc",
+    "build:clean": "rimraf dist .sonda",
     "build:esnext": "vite build --config vite.config.esnext.ts",
     "build:es2015": "vite build --config vite.config.es2015.ts"
   },
