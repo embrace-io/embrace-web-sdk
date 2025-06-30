@@ -350,7 +350,7 @@ jobs:
           rm -f ${{ env.TEST_STATUS_FILE }}
 
       - name: Create PR comment with performance results
-        if: ${{ success() }}
+        if: ${{ success() && needs.environment.outputs.name == 'development' }}
         run: |
           echo '<!-- performance-results -->' > performance-results.md
           echo "## Performance results" >> performance-results.md
@@ -364,7 +364,7 @@ jobs:
           cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
 
       - name: Post or update PR comment with performance results
-        if: ${{ success() }}
+        if: ${{ success() && needs.environment.outputs.name == 'development' }}
         run: |
           BODY="$(cat performance-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
