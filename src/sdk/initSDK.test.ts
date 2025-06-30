@@ -342,6 +342,7 @@ describe('initSDK', () => {
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
         { key: 'emb.state', value: { stringValue: 'foreground' } },
+        { key: 'emb.cold_start', value: { boolValue: true } },
         {
           key: 'session.id',
           value: { stringValue: sessionID },
