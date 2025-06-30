@@ -498,6 +498,7 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         uses: actions/upload-artifact@v4
         with:
+          include-hidden-files: true
           name: bundle-results
           path: tests/bundle/*/.sonda/**/*.html
 
