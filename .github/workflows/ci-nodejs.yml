@@ -441,7 +441,7 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           cd ./tests/bundle/app
-          npm ci --strict-peer-deps
+          npm install
 
       - name: Test Bundle
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
