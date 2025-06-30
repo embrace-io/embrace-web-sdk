@@ -378,7 +378,7 @@ jobs:
               -f body="$BODY"
           else
             echo "Creating new comment"
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
