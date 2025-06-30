@@ -360,6 +360,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     let sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
+    memoryExporter.reset();
 
     manager.startSessionSpan();
     manager.endSessionSpan();
