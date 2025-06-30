@@ -1,8 +1,8 @@
 import {
+  type Attributes,
   diag,
   type DiagLogger,
   type HrTime,
-  type Span,
   trace,
 } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
@@ -25,24 +25,29 @@ import type {
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
+import type { PropertyOptions } from '../../api-sessions/index.js';
+import { EmbraceExtendedSpan } from '../index.js';
+import type { ExtendedSpan } from '../../index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
-  private _sessionSpan: Span | null = null;
+  private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
-  private _coldStart: boolean; // Whether the session was started from a new page load or not.
+  private _coldStart: boolean = true; // Whether the session was started from a new page load or not.
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
+  private readonly _storage: Storage;
 
   public constructor({
     diag: diagParam,
     perf,
     visibilityDoc = window.document,
+    storage = window.localStorage,
   }: EmbraceSpanSessionManagerArgs = {}) {
     this._diag =
       diagParam ??
@@ -51,10 +56,27 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       });
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
-    this._coldStart = true;
+    this._storage = storage;
   }
 
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'user_ended'
+  // retrieve permanent properties from localStorage
+  private _getPermanentAttributes(): Attributes {
+    const permanentAttributes = new Map();
+    try {
+      for (let i = 0; i < this._storage.length; i++) {
+        const key = this._storage.key(i);
+        if (key?.startsWith(KEY_PREFIX_EMB_PROPERTIES)) {
+          const value = this._storage.getItem(key);
+          if (value) {
+            permanentAttributes.set(key, value);
+          }
+        }
+      }
+    } catch (error) {
+      this._diag.warn('Error loading permanent session properties', error);
+    }
+    return Object.fromEntries(permanentAttributes.entries()) as Attributes;
+  }
 
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
@@ -63,6 +85,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       );
       return;
     }
+
     this._sessionSpan.addEvent(
       'emb-breadcrumb',
       {
@@ -72,14 +95,48 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     );
   }
 
-  public addProperty(key: string, value: string) {
+  public addProperty(
+    propertyKey: string,
+    value: string,
+    options?: PropertyOptions
+  ) {
     if (!this._sessionSpan) {
       this._diag.debug(
         'trying to add properties to a session, but there is no session in progress. This is a no-op.'
       );
       return;
     }
-    this._sessionSpan.setAttribute(KEY_PREFIX_EMB_PROPERTIES + key, value);
+
+    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + propertyKey;
+    this._sessionSpan.setAttribute(attributeKey, value);
+
+    if (options?.lifespan === 'permanent') {
+      try {
+        this._storage.setItem(attributeKey, value);
+      } catch (error) {
+        this._diag.warn('Failed to set permanent session property', error);
+      }
+    }
+  }
+
+  public removeProperty(propertyKey: string) {
+    if (!this._sessionSpan) {
+      this._diag.debug(
+        'trying to remove a session property, but there is no session in progress. This is a no-op.'
+      );
+      return;
+    }
+
+    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + propertyKey;
+    this._sessionSpan.removeAttribute(attributeKey);
+
+    try {
+      if (this._storage.getItem(attributeKey)) {
+        this._storage.removeItem(attributeKey);
+      }
+    } catch (error) {
+      this._diag.warn('Error removing permanent session property', error);
+    }
   }
 
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
@@ -97,6 +154,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._sessionSpan.setAttributes({
+      ...this._getPermanentAttributes(),
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
     });
@@ -120,7 +178,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return this._activeSessionId;
   }
 
-  public getSessionSpan(): Span | null {
+  public getSessionSpan(): ExtendedSpan | null {
     return this._sessionSpan;
   }
 
@@ -133,21 +191,25 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     if (this._sessionSpan) {
       this.endSessionSpanInternal('manual');
     }
+
     const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
-    this._sessionSpan = tracer.startSpan('emb-session', {
-      attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.Session,
-        [KEY_EMB_STATE]:
-          this._visibilityDoc.visibilityState === 'hidden'
-            ? EMB_STATES.Background
-            : EMB_STATES.Foreground,
-        [ATTR_SESSION_ID]: this._activeSessionId,
-        [KEY_EMB_COLD_START]: this._coldStart,
-      },
-    });
+    this._sessionSpan = new EmbraceExtendedSpan(
+      tracer.startSpan('emb-session', {
+        attributes: {
+          ...this._getPermanentAttributes(),
+          [KEY_EMB_TYPE]: EMB_TYPES.Session,
+          [KEY_EMB_STATE]:
+            this._visibilityDoc.visibilityState === 'hidden'
+              ? EMB_STATES.Background
+              : EMB_STATES.Foreground,
+          [ATTR_SESSION_ID]: this._activeSessionId,
+          [KEY_EMB_COLD_START]: this._coldStart,
+        },
+      })
+    );
 
     this._coldStart = false;
 
