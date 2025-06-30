@@ -342,11 +342,11 @@ describe('initSDK', () => {
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
         { key: 'emb.state', value: { stringValue: 'foreground' } },
-        { key: 'emb.cold_start', value: { boolValue: true } },
         {
           key: 'session.id',
           value: { stringValue: sessionID },
         },
+        { key: 'emb.cold_start', value: { boolValue: true } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
     });
