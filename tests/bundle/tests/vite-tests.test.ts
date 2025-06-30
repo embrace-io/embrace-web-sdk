@@ -32,11 +32,6 @@ await test.describe('Vite Bundle Tests', async () => {
 
   for (const target of TARGETS) {
     await test.it(`should run build:${target} without errors`, async () => {
-      const sondaReportPath = resolve(
-        __dirname,
-        `../app/.sonda/${target}/sonda_0.json`
-      );
-
       const { stderr } = await execAsync(`npm run build:${target}`, {
         cwd: APP_DIR,
       });
@@ -47,11 +42,15 @@ await test.describe('Vite Bundle Tests', async () => {
         `Build for ${target} should not produce any errors`
       );
 
+      const sondaReportPath = resolve(
+        __dirname,
+        `../app/.sonda/${target}/sonda_0.json`
+      );
       const report = await processSondaReport(sondaReportPath);
 
       assert.ok(
         report.totalGzipSize < TOTAL_GZIP_SIZE_THRESHOLD_IN_KB,
-        `Gzip size of ${report.totalUncompressedSize.toString(2)} KB for ${target} exceeds threshold of ${TOTAL_GZIP_SIZE_THRESHOLD_IN_KB.toFixed(2)} KB`
+        `Gzip size of ${report.totalGzipSize.toFixed(2)} KB for ${target} exceeds threshold of ${TOTAL_GZIP_SIZE_THRESHOLD_IN_KB.toFixed(2)} KB`
       );
 
       results[target] = report;

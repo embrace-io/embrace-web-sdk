@@ -500,7 +500,7 @@ jobs:
         with:
           name: bundle-results
           path: |
-            ./tests/bundle/*/.sonda/**/*.html
+            tests/bundle/*/.sonda/**/*.html
 
   commitlint:
     needs: configure
