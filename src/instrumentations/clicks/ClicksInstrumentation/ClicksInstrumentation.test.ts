@@ -1,9 +1,7 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import {
-  session,
-  type SpanSessionManager,
-} from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,

@@ -1,12 +1,10 @@
-import {
-  type Attributes,
-  diag,
-  type DiagLogger,
-  type HrTime,
-  trace,
-} from '@opentelemetry/api';
+import { diag, trace } from '@opentelemetry/api';
+import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
-import type { ReasonSessionEnded } from '../../api-sessions/index.js';
+import type {
+  ReasonSessionEnded,
+  PropertyOptions,
+} from '../../api-sessions/index.js';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -25,7 +23,6 @@ import type {
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
-import type { PropertyOptions } from '../../api-sessions/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 

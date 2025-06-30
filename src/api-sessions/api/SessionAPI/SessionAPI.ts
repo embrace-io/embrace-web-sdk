@@ -2,11 +2,9 @@ import type { HrTime } from '@opentelemetry/api';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
+  SpanSessionManager,
 } from '../../manager/index.js';
-import {
-  ProxySpanSessionManager,
-  type SpanSessionManager,
-} from '../../manager/index.js';
+import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
 
 export class SessionAPI implements SpanSessionManager {

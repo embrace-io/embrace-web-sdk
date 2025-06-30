@@ -9,8 +9,7 @@ import {
   EMBRACE_USER_STORAGE_KEY_DEPRECATED,
 } from './constants.js';
 import type { EmbraceUserManagerArgs } from './types.js';
-import { isUserId } from './types.js';
-import { isUser } from './types.js';
+import { isUserId, isUser } from './types.js';
 
 export class EmbraceUserManager implements UserManagerInternal {
   private readonly _diag: DiagLogger;

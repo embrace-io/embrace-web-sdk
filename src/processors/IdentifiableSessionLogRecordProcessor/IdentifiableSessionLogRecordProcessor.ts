@@ -1,5 +1,4 @@
-import type { LogRecord } from '@opentelemetry/sdk-logs';
-import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,

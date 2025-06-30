@@ -16,10 +16,8 @@ import {
   setupTestLogExporter,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import {
-  OTelPerformanceManager,
-  type PerformanceManager,
-} from '../../utils/index.js';
+import { OTelPerformanceManager } from '../../utils/index.js';
+import type { PerformanceManager } from '../../utils/index.js';
 import { EmbraceLogManager } from './EmbraceLogManager.js';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';

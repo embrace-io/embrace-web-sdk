@@ -1,5 +1,4 @@
-import type { LogRecord } from '@opentelemetry/sdk-logs';
-import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { EmbraceLogRecordProcessorArgs } from './types.js';
 import type { URLDocument } from '../../common/index.js';
