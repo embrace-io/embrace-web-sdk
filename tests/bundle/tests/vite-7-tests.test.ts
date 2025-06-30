@@ -12,13 +12,13 @@ import fs from 'node:fs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
 
-const APP_DIR = resolve(__dirname, '../app');
+const APP_DIR = resolve(__dirname, '../vite-7');
 // To add more targets, add them to the TARGETS array below.
 // Also create a vite-config file for each target in the app directory.
 // Then add the corresponding build script in package.json, e.g.: build:esnext, build:es2015, etc.
 const TARGETS = ['esnext', 'es2015'];
 
-await test.describe('Vite Bundle Tests', async () => {
+await test.describe('Vite 7 Bundle Tests', async () => {
   const results: Record<
     string,
     Awaited<ReturnType<typeof processSondaReport>>
@@ -42,10 +42,7 @@ await test.describe('Vite Bundle Tests', async () => {
         `Build for ${target} should not produce any errors`
       );
 
-      const sondaReportPath = resolve(
-        __dirname,
-        `../app/.sonda/${target}/sonda_0.json`
-      );
+      const sondaReportPath = resolve(APP_DIR, `.sonda/${target}/sonda_0.json`);
       const report = await processSondaReport(sondaReportPath);
 
       assert.ok(
@@ -60,7 +57,7 @@ await test.describe('Vite Bundle Tests', async () => {
   test.after(() => {
     const tabledResults = Object.entries(results).reduce(
       (acc, [target, report]) => {
-        acc[target] = [
+        acc[`vite7:${target}`] = [
           {
             name: 'Total Uncompressed Size',
             value: report.totalUncompressedSize,
@@ -80,7 +77,7 @@ await test.describe('Vite Bundle Tests', async () => {
 
     fs.writeFileSync(
       './test-results/vite-tests.md',
-      resultsToMarkdownTable(tabledResults)
+      `### Vite Bundle Tests \n\n${resultsToMarkdownTable(tabledResults)}`
     );
   });
 });

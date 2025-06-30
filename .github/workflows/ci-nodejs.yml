@@ -443,11 +443,15 @@ jobs:
         run: |
           npm run sdk:compile
 
-      - name: Install npm dependencies for sample app
+      # TODO: cache
+      - name: Install npm dependencies for sample apps
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          cd ./tests/bundle/app
-          npm install
+          find ./tests/bundle -type f -name package.json | while read pkg; do
+            dir=$(dirname "$pkg")
+            echo "Installing dependencies in $dir"
+            npm install --prefix "$dir"
+          done
 
       - name: Test Bundle
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -469,10 +473,11 @@ jobs:
         run: |
           echo '<!-- bundle-results -->' > bundle-results.md
           echo "## Bundle results" >> bundle-results.md
-          echo "" >> bundle-results.md
-          echo "### Vite Bundle Tests" >> bundle-results.md
-          echo "" >> bundle-results.md
-          cat ./tests/bundle/test-results/vite-tests.md >> bundle-results.md
+      
+          for file in ./tests/bundle/test-results/*.md; do
+            cat "$file" >> bundle-results.md
+            echo -e "\n---\n" >> bundle-results.md
+          done
 
       - name: Post or update PR comment with performance results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
