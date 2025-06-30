@@ -1,9 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  ProxySpanSessionManager,
-  type SpanSessionManager,
-} from '../../manager/index.js';
+import { ProxySpanSessionManager } from '../../manager/index.js';
+import type { SpanSessionManager } from '../../manager/index.js';
 import { SessionAPI } from './SessionAPI.js';
 import type { HrTime, Span } from '@opentelemetry/api';
 import sinonChai from 'sinon-chai';

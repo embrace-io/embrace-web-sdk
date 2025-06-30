@@ -1,9 +1,10 @@
+import { ProxyLogManager } from '../../manager/index.js';
 import type {
   LogExceptionOptions,
+  LogManager,
   LogMessageOptions,
   LogSeverity,
 } from '../../manager/index.js';
-import { type LogManager, ProxyLogManager } from '../../manager/index.js';
 import type { LogAPIArgs } from './types.js';
 
 export class LogAPI implements LogManager {

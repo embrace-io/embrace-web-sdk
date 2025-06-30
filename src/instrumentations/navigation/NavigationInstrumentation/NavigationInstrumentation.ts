@@ -5,9 +5,9 @@ import {
   EMB_TYPES,
   KEY_EMB_TYPE,
   KEY_VIEW_NAME,
+  KEY_EMB_INSTRUMENTATION,
 } from '../../../constants/index.js';
 import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
-import { KEY_EMB_INSTRUMENTATION } from '../../../constants/index.js';
 
 // Regular expression to match path options in the format "(option)"
 // Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)" to "/order/:orderState"

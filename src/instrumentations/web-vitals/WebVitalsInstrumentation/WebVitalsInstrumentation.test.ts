@@ -6,10 +6,8 @@ import type {
   CLSMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
-import {
-  session,
-  type SpanSessionManager,
-} from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { EmbraceSpanSessionManager } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
