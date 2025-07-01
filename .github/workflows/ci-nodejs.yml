@@ -601,7 +601,7 @@ jobs:
 
       - name: Install NPM dependencies
         run: |
-          npm ci --strict-peer-deps
+          npm ci --include-workspace-root --strict-peer-deps
 
       - name: Run 'npm publish'
         env:
