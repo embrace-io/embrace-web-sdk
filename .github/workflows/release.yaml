@@ -62,7 +62,10 @@ jobs:
         run: |
           # get the next version from the release-drafter output
           NEXT_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
-          RELEASE_BODY=$(cat << 'RELEASE_BODY_EOF'${{ steps.release_drafter.outputs.body }}RELEASE_BODY_EOF)
+          RELEASE_BODY=$(cat << 'RELEASE_BODY_EOF'
+          ${{ steps.release_drafter.outputs.body }}
+          RELEASE_BODY_EOF
+          )
           # create a new branch for the release
           git checkout -b "release-$NEXT_VERSION"
           # commit the changes
