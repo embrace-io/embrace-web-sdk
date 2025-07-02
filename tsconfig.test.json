@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.json",
   "include": ["./src/**/*.test.ts", "./tests/**/*.ts"],
-  "exclude": [],
+  "exclude": ["node_modules", "./tests/bundle"],
   "compilerOptions": {
     "rootDir": "."
   }

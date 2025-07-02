@@ -7,7 +7,7 @@ import type { Page } from '@playwright/test';
 import zlib from 'node:zlib';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
-import { resultsToMarkdownTable } from '../utils/index.js';
+import { resultsToMarkdownTable } from '../../utils/index.js';
 import {
   TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
   TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,

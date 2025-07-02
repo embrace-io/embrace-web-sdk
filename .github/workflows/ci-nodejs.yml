@@ -394,6 +394,118 @@ jobs:
             ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
             ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
 
+  test-bundle:
+    needs:
+      - configure
+      - environment
+    runs-on: ubuntu-latest
+    # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
+    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      # We need the SDK to be built, so we can use it in the sample apps
+      - name: Build SKD
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:compile
+
+      # TODO: cache
+      - name: Install npm dependencies for sample apps
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          find ./tests/bundle -type f -name package.json | while read pkg; do
+            dir=$(dirname "$pkg")
+            echo "Installing dependencies in $dir"
+            npm install --prefix "$dir"
+          done
+
+      - name: Test Bundle
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:test:bundle
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+      - name: Create PR comment with bundle results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          echo '<!-- bundle-results -->' > bundle-results.md
+          echo "## Bundle results" >> bundle-results.md
+      
+          for file in ./tests/bundle/test-results/*.md; do
+            cat "$file" >> bundle-results.md
+          done
+
+      - name: Post or update PR comment with performance results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          BODY="$(cat bundle-results.md)"
+          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- bundle-results -->"))| .id' comments.json)
+          
+          if [[ -n "$COMMENT_ID" ]]; then
+            echo "Updating comment $COMMENT_ID"
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              -f body="$BODY"
+          else
+            echo "Creating new comment"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update artifact with bundle results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: bundle-results
+          path: tests/bundle/*/.sonda/**/*.html
+
   commitlint:
     needs: configure
     timeout-minutes: 5
