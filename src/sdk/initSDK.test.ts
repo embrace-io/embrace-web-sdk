@@ -576,7 +576,7 @@ describe('initSDK', () => {
       }
     });
 
-    it('should apply limits on the attributes of an individual span', async () => {
+    it('should apply limits on the number of attributes of an individual span', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
         appID: 'abc12',
@@ -624,6 +624,46 @@ describe('initSDK', () => {
           stringValue: expected.toString(),
         });
       }
+    });
+
+    it('should apply limits on the length of span attribute values', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      const span = embtrace.startSpan('my-span');
+
+      const attributeValue = [];
+      // Capped at 1024 characters per span attribute value
+      for (let i = 0; i < 2000; i++) {
+        attributeValue.push('a');
+      }
+
+      span.setAttribute('large-attribute', attributeValue.join(''));
+
+      span.end();
+      session.getSpanSessionManager().endSessionSpan();
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+      expect(exportedSpans[0].attributes[2].key).to.equal('large-attribute');
+      expect(exportedSpans[0].attributes[2].value.stringValue).to.have.lengthOf(
+        1024
+      );
     });
 
     it('should apply limits on the events of an individual span', async () => {

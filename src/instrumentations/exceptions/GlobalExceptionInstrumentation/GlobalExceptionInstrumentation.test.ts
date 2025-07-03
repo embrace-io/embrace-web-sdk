@@ -8,8 +8,8 @@ import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
-import { EmbraceLimitManager } from '../../../managers/index.js';
 import {
+  EmbraceLimitManager,
   DEFAULT_LIMITS,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
