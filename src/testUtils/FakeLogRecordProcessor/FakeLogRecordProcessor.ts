@@ -1,5 +1,4 @@
-import type { LogRecord } from '@opentelemetry/sdk-logs';
-import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 
 export class FakeLogRecordProcessor implements LogRecordProcessor {
   public forceFlush(): Promise<void> {

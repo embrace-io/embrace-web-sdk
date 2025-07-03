@@ -20,10 +20,17 @@ import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
  * of the EmbraceSpan interface.
  */
 export class EmbraceExtendedSpan implements ExtendedSpan {
-  private readonly _span: Span;
+  private readonly _span: ExtendedSpan;
 
   public constructor(span: Span) {
-    this._span = span;
+    this._span = span as ExtendedSpan;
+  }
+
+  /**
+   * Expose attributes by extending OpenTelemetry's ReadableSpan.
+   */
+  public get attributes(): Attributes {
+    return this._span.attributes;
   }
 
   public addEvent(
@@ -64,6 +71,13 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
 
   public setAttributes(attributes: Attributes): this {
     this._span.setAttributes(attributes);
+    return this;
+  }
+
+  public removeAttribute(key: string): this {
+    const { [key]: _, ...attributes } = this._span.attributes;
+    // @ts-expect-error Read/write spans are allowed per the spec https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
+    this._span.attributes = attributes;
     return this;
   }
 

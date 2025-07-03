@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SDK Stress Test App</title>
+  <!-- Add a blocking script to simulate someone bundling the SDK-->
+  <script src="/bundle.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const usesSDK = urlParams.has('use_sdk');
+
+    if (usesSDK) {
+      window.EmbraceWebSdk.sdk.initSDK({
+        appID: '11111',
+        appVersion: '0.0.1',
+      });
+    }
+  </script>
+</head>
+<body>
+<h1>Stress Test App</h1>
+</body>
+</html>

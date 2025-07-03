@@ -1,9 +1,10 @@
 import type { HrTime } from '@opentelemetry/api';
-import type { ReasonSessionEnded } from '../../manager/index.js';
-import {
-  ProxySpanSessionManager,
-  type SpanSessionManager,
+import type {
+  PropertyOptions,
+  ReasonSessionEnded,
+  SpanSessionManager,
 } from '../../manager/index.js';
+import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
 
 export class SessionAPI implements SpanSessionManager {
@@ -36,8 +37,16 @@ export class SessionAPI implements SpanSessionManager {
     this.getSpanSessionManager().addBreadcrumb(name);
   }
 
-  public addProperty(key: string, value: string): void {
-    this.getSpanSessionManager().addProperty(key, value);
+  public addProperty(
+    key: string,
+    value: string,
+    options?: PropertyOptions
+  ): void {
+    this.getSpanSessionManager().addProperty(key, value, options);
+  }
+
+  public removeProperty(key: string): void {
+    this.getSpanSessionManager().removeProperty(key);
   }
 
   public endSessionSpan() {

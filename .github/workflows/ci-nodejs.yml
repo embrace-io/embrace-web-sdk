@@ -8,8 +8,7 @@ on:
     types: [released]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 env:
   NODE_VERSION: '22.x'
@@ -29,14 +28,16 @@ jobs:
         id: choose_environment
         run: |
           # Finalized releases get deployed to prod
-          if [ '${{ github.event_name }}' == 'release' ] && [ '${{ github.event.action }}' == 'released' ]; then
+          if [ '${{ github.event_name }}' == 'release' ] && [ '${GITHUB_EVENT_ACTION}' == 'released' ]; then
               echo 'name=production' >> $GITHUB_OUTPUT
           # All pushes to main get deployed to staging
-          elif [ '${{ github.ref }}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
+          elif [ '${GITHUB_REF}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
               echo 'name=staging' >> $GITHUB_OUTPUT
           else
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
+        env:
+          GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
   configure:
     runs-on: ubuntu-latest
@@ -79,6 +80,8 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -131,13 +134,15 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
-          if [[ '${{ github.event_name }}/${{ github.event.action }}' == 'release/released' || '${{ github.actor }}' == 'dependabot[bot]' ]]; then
+          if [[ '${{ github.event_name }}/${GITHUB_EVENT_ACTION}' == 'release/released' || '${GITHUB_ACTOR}' == 'dependabot[bot]' ]]; then
             argsCoverage=''
           else
             argsCoverage='--config=web-test-runner.coverage.config.js'
             echo 'TEST_COLLECTED_COVERAGE=true' >> $GITHUB_ENV
           fi
           npm run sdk:test -- $argsCoverage
+        env:
+          GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -187,6 +192,8 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -250,6 +257,268 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
+  test-performance:
+    needs:
+      - configure
+      - environment
+    runs-on: ubuntu-latest
+    # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
+    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    permissions:
+      pull-request: write
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
+
+      # We need the SDK to be built, so we can use it during performance tests
+      - name: Build SKD
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:compile
+
+      - name: Test performance
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:test:performance
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+      - name: Create PR comment with performance results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          echo '<!-- performance-results -->' > performance-results.md
+          echo "## Performance results" >> performance-results.md
+          echo "" >> performance-results.md
+          echo "### CDP Performance Tests" >> performance-results.md
+          echo "" >> performance-results.md
+          cat ./tests/performance/test-results/cdp-performance-tests.md >> performance-results.md
+          echo "" >> performance-results.md
+          echo "### Lighthouse Startup Performance Tests" >> performance-results.md
+          echo "" >> performance-results.md
+          cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
+
+      - name: Post or update PR comment with performance results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          BODY="$(cat performance-results.md)"
+          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
+
+          if [[ -n "$COMMENT_ID" ]]; then
+            echo "Updating comment $COMMENT_ID"
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              -f body="$BODY"
+          else
+            echo "Creating new comment"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update artifact with performance results
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results
+          path: |
+            ./tests/performance/test-results/cdp-performance-tests-baseline-tracing.json
+            ./tests/performance/test-results/cdp-performance-tests-with-sdk-tracing.json
+            ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
+            ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
+
+  test-bundle:
+    needs:
+      - configure
+      - environment
+    runs-on: ubuntu-latest
+    # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
+    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      # We need the SDK to be built, so we can use it in the sample apps
+      - name: Build SKD
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:compile
+
+      # TODO: cache
+      - name: Install npm dependencies for sample apps
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          find ./tests/bundle -type f -name package.json | while read pkg; do
+            dir=$(dirname "$pkg")
+            echo "Installing dependencies in $dir"
+            npm install --prefix "$dir"
+          done
+
+      - name: Test Bundle
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:test:bundle
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+      - name: Create PR comment with bundle results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          echo '<!-- bundle-results -->' > bundle-results.md
+          echo "## Bundle results" >> bundle-results.md
+      
+          for file in ./tests/bundle/test-results/*.md; do
+            cat "$file" >> bundle-results.md
+          done
+
+      - name: Post or update PR comment with performance results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        run: |
+          BODY="$(cat bundle-results.md)"
+          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- bundle-results -->"))| .id' comments.json)
+          
+          if [[ -n "$COMMENT_ID" ]]; then
+            echo "Updating comment $COMMENT_ID"
+            gh api \
+              --method PATCH \
+              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
+              -f body="$BODY"
+          else
+            echo "Creating new comment"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update artifact with bundle results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: bundle-results
+          path: tests/bundle/*/.sonda/**/*.html
+
   commitlint:
     needs: configure
     timeout-minutes: 5
@@ -262,6 +531,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -311,6 +581,8 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
@@ -364,6 +636,8 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
@@ -408,6 +682,8 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -447,6 +723,8 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -457,7 +735,7 @@ jobs:
 
       - name: Install NPM dependencies
         run: |
-          npm ci --strict-peer-deps
+          npm ci --include-workspace-root --strict-peer-deps
 
       - name: Run 'npm publish'
         env:

@@ -1,7 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { type LogManager, ProxyLogManager } from '../../manager/index.js';
+import { ProxyLogManager } from '../../manager/index.js';
+import type { LogManager } from '../../manager/index.js';
 import { LogAPI } from './LogAPI.js';
 
 chai.use(sinonChai);

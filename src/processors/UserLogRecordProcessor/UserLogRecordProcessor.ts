@@ -1,5 +1,4 @@
-import type { LogRecord } from '@opentelemetry/sdk-logs';
-import { type LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { UserLogRecordProcessorArgs } from './types.js';
 import type { UserManager } from '../../api-users/index.js';

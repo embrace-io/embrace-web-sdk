@@ -1,9 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  session,
-  type SpanSessionManager,
-} from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/index.js';
 import {
   DEFAULT_LIMITS,

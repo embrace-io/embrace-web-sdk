@@ -8,6 +8,7 @@ export interface EmbraceSpanSessionManagerArgs {
   diag?: DiagLogger;
   perf?: PerformanceManager;
   visibilityDoc?: VisibilityStateDocument;
+  storage?: Storage;
   limitManager: LimitManagerInternal;
 }
 

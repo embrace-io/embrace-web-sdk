@@ -1,4 +1,4 @@
-import { type AttributeValue } from '@opentelemetry/api';
+import type { AttributeValue } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -13,10 +13,8 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
-import {
-  OTelPerformanceManager,
-  type PerformanceManager,
-} from '../../utils/index.js';
+import { OTelPerformanceManager } from '../../utils/index.js';
+import type { PerformanceManager } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 import type {
   LogExceptionOptions,

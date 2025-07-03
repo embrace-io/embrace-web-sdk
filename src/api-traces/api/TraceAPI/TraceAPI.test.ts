@@ -1,5 +1,6 @@
 import * as sinon from 'sinon';
-import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
+import { ProxyTraceManager } from '../../manager/index.js';
+import type { TraceManager } from '../../manager/index.js';
 import type { Context, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';

@@ -1,4 +1,5 @@
-import { ProxyTraceManager, type TraceManager } from '../../manager/index.js';
+import { ProxyTraceManager } from '../../manager/index.js';
+import type { TraceManager } from '../../manager/index.js';
 import type {
   ExtendedSpan,
   ExtendedSpanOptions,

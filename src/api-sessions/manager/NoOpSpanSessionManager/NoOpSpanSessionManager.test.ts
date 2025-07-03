@@ -58,6 +58,12 @@ describe('NoOpSpanSessionManager', () => {
     }).to.not.throw();
   });
 
+  it('should do nothing for removeProperty', () => {
+    expect(() => {
+      noOpSpanSessionManager.removeProperty('some-custom-key');
+    }).to.not.throw();
+  });
+
   it('should do nothing for addSessionStartedListener', () => {
     expect(() => {
       noOpSpanSessionManager.addSessionStartedListener(() => {});

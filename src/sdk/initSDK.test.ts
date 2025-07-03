@@ -2,10 +2,8 @@ import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { Resource } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import {
-  InMemorySpanExporter,
-  type ReadableSpan,
-} from '@opentelemetry/sdk-trace-web';
+import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -391,6 +389,7 @@ describe('initSDK', () => {
           key: 'session.id',
           value: { stringValue: sessionID },
         },
+        { key: 'emb.cold_start', value: { boolValue: true } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
     });

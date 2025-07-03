@@ -1,4 +1,5 @@
-import { diag, type DiagLogger, type Span } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
+import type { DiagLogger, Span } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { EmbraceProcessorArgs } from './types.js';
 

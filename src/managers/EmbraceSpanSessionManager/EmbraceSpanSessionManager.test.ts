@@ -3,10 +3,14 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../constants/index.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_PREFIX_EMB_PROPERTIES,
+} from '../../constants/attributes.js';
+import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
@@ -22,10 +26,12 @@ describe('EmbraceSpanSessionManager', () => {
   let manager: EmbraceSpanSessionManager;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
+  let storage: InMemoryStorage;
   let limitManager: EmbraceLimitManager;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
+    storage = new InMemoryStorage();
   });
 
   beforeEach(() => {
@@ -46,7 +52,8 @@ describe('EmbraceSpanSessionManager', () => {
       },
     });
 
-    manager = new EmbraceSpanSessionManager({ diag, limitManager });
+    manager = new EmbraceSpanSessionManager({ diag, storage, limitManager });
+    storage.clear();
   });
 
   it('should initialize a EmbraceSpanSessionManager', () => {
@@ -418,5 +425,141 @@ describe('EmbraceSpanSessionManager', () => {
     expect(diag.getWarnLogs()[1]).to.equal(
       'truncating session_property because it is longer than 20 characters: "session property long value"'
     );
+  });
+
+  it('should store permanent properties in localStorage', () => {
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'permanent-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
+    });
+
+    let storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
+
+    manager.endSessionSpan();
+
+    storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
+  });
+
+  it('should not store session properties in localStorage', () => {
+    const propertyKey = 'session-only-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'session-only-value';
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value);
+
+    const storedValue = storage.getItem(attributeKey);
+    void expect(storedValue).to.be.undefined;
+  });
+
+  it('should not store permanent properties in localStorage that have been removed', () => {
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'permanent-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
+    });
+    const storedAttribute = storage.getItem(attributeKey);
+    expect(storedAttribute).to.equal(value);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    manager.removeProperty(propertyKey);
+    const storedAttribute2 = storage.getItem(attributeKey);
+    void expect(storedAttribute2).to.be.undefined;
+    manager.endSessionSpan();
+
+    const storedAttribute3 = storage.getItem(attributeKey);
+    void expect(storedAttribute3).to.be.undefined;
+  });
+
+  it('should not persist session properties after session end', () => {
+    const propertyKey = 'session-only-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'session-only-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      attributeKey,
+      value
+    );
+  });
+
+  it('should persist permanent properties into new sessions', () => {
+    const permanentPropertyKey = 'permanent-key';
+    const permanentAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${permanentPropertyKey}`;
+    const permanentValue = 'permanent-value';
+    const sessionOnlyPropertyKey = 'session-only-key';
+    const sessionOnlyAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${sessionOnlyPropertyKey}`;
+    const sessionOnlyValue = 'session-only-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(sessionOnlyPropertyKey, sessionOnlyValue);
+    manager.addProperty(permanentPropertyKey, permanentValue, {
+      lifespan: 'permanent',
+    });
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      sessionOnlyAttributeKey,
+      sessionOnlyValue
+    );
+    expect(manager.getSessionSpan()?.attributes).to.have.property(
+      permanentAttributeKey,
+      permanentValue
+    );
+  });
+
+  it('should not persist removed permanent properties into new sessions', () => {
+    const propertyKey = 'permanent-key';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'permanent-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
+    });
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    manager.removeProperty(propertyKey);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      attributeKey,
+      value
+    );
+  });
+
+  it('should have emb.cold_start = true only in first session', () => {
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    let finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    let sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
+    memoryExporter.reset();
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
   });
 });
