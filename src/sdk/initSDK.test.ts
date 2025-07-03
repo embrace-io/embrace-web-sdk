@@ -347,7 +347,7 @@ describe('initSDK', () => {
           value: { stringValue: sessionID },
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
-        { key: 'emb.session_number', value: { intValue: 1 } },
+        { key: 'emb.session_number', value: { intValue: 6 } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
     });

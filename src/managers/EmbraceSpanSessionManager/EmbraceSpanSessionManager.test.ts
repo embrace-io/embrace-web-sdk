@@ -373,6 +373,7 @@ describe('EmbraceSpanSessionManager', () => {
     // Any following session should have emb.cold_start = false
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 2);
+    memoryExporter.reset();
 
     manager.startSessionSpan();
     manager.endSessionSpan();
@@ -383,5 +384,6 @@ describe('EmbraceSpanSessionManager', () => {
     // Any following session should have emb.cold_start = false
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 3);
+    memoryExporter.reset();
   });
 });
