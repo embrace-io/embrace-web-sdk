@@ -146,8 +146,8 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     }
 
     return {
-      key: this._truncateString('session_property', key),
-      value: this._truncateString('session_property', value),
+      key: this._truncateString('session_property_key', key),
+      value: this._truncateString('session_property_value', value),
     };
   }
 

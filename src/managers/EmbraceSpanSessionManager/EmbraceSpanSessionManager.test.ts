@@ -48,7 +48,8 @@ describe('EmbraceSpanSessionManager', () => {
       maxLength: {
         ...DEFAULT_LIMITS.maxLength,
         breadcrumb: 50,
-        session_property: 20,
+        session_property_key: 20,
+        session_property_value: 40,
       },
     });
 
@@ -399,7 +400,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.addProperty('key1', '1');
     manager.addProperty(
       'session-property-with-long-key',
-      'session property long value'
+      'session property long value with extra information'
     );
 
     manager.endSessionSpan();
@@ -409,21 +410,27 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(sessionSpan.attributes).to.have.property(
       'emb.properties.session-property-wit',
-      'session property lon'
+      'session property long value with extra i'
     );
 
     expect(
       sessionSpan.attributes[
-        'emb.applied_limit.session_property.truncate_string.count'
+        'emb.applied_limit.session_property_key.truncate_string.count'
       ]
-    ).to.be.equal(2);
+    ).to.be.equal(1);
+
+    expect(
+      sessionSpan.attributes[
+        'emb.applied_limit.session_property_value.truncate_string.count'
+      ]
+    ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(2);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating session_property because it is longer than 20 characters: "session-property-with-long-key"'
+      'truncating session_property_key because it is longer than 20 characters: "session-property-with-long-key"'
     );
     expect(diag.getWarnLogs()[1]).to.equal(
-      'truncating session_property because it is longer than 20 characters: "session property long value"'
+      'truncating session_property_value because it is longer than 40 characters: "session property long value with extra information"'
     );
   });
 

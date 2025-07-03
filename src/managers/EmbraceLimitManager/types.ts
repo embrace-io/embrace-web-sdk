@@ -21,7 +21,8 @@ export type MaxLimitedType =
 export type LengthLimitedType =
   | LogLimitedType
   | 'breadcrumb'
-  | 'session_property';
+  | 'session_property_key'
+  | 'session_property_value';
 
 export type AttributeLimitedType = LogLimitedType;
 
