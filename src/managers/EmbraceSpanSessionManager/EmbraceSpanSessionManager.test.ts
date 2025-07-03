@@ -352,14 +352,16 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
-  it('should have emb.cold_start = true only in first session', () => {
+  it('should have the right internal diagnostic attributes', () => {
     manager.startSessionSpan();
     manager.endSessionSpan();
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     let sessionSpan = finishedSpans[0];
+    // First session should have emb.cold_start = true, and number be one.
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
     memoryExporter.reset();
 
     manager.startSessionSpan();
@@ -368,6 +370,18 @@ describe('EmbraceSpanSessionManager', () => {
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     sessionSpan = finishedSpans[0];
+    // Any following session should have emb.cold_start = false
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 2);
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    // Any following session should have emb.cold_start = false
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 3);
   });
 });
