@@ -115,6 +115,7 @@ export default defineConfig([
       format: 'iife',
       name: 'EmbraceWebSdk', // Global variable name for the SDK
       sourcemap: true,
+      footer: 'window.EmbraceWebSdk = EmbraceWebSdk;',
     },
     external: peerDeps,
     onwarn,
