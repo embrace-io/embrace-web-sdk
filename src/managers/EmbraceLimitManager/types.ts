@@ -22,7 +22,9 @@ export type LengthLimitedType =
   | LogLimitedType
   | 'breadcrumb'
   | 'session_property_key'
-  | 'session_property_value';
+  | 'session_property_value'
+  | 'log_attribute_key'
+  | 'log_attribute_value';
 
 export type AttributeLimitedType = LogLimitedType;
 

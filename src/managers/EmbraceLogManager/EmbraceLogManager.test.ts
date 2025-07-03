@@ -64,6 +64,8 @@ describe('EmbraceLogManager', () => {
       maxLength: {
         ...DEFAULT_LIMITS.maxLength,
         info_log: 60,
+        log_attribute_key: 10,
+        log_attribute_value: 12,
       },
       maxAttributes: {
         ...DEFAULT_LIMITS.maxAttributes,
@@ -485,7 +487,7 @@ describe('EmbraceLogManager', () => {
     );
   });
 
-  it('should truncate log attributes', () => {
+  it('should truncate the number of log attributes', () => {
     spanSessionManager.startSessionSpan();
 
     manager.message('this is an error log', 'error', {
@@ -515,7 +517,7 @@ describe('EmbraceLogManager', () => {
 
     expect(finishedLogs[1].attributes['key1']).to.be.equal('1');
     expect(finishedLogs[1].attributes['key2']).to.be.equal('2');
-    // Is it deterministic that this is always the one to be removed? Need to sort the keys?
+    // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
     expect(finishedLogs[1].attributes).not.to.have.property('key3');
 
     spanSessionManager.endSessionSpan();
@@ -531,6 +533,47 @@ describe('EmbraceLogManager', () => {
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
       'truncating error_log attributes because there are more than 2 set'
+    );
+  });
+
+  it('should truncate the key and value of a log attribute', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.message('this is an error log', 'error', {
+      attributes: {
+        'a-very-long-log-attribute-key': 'a-very-long-log-attribute-value',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].body).to.equal('this is an error log');
+
+    expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
+      'a-very-long-'
+    );
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes[
+        'emb.applied_limit.log_attribute_key.truncate_string.count'
+      ]
+    ).to.be.equal(1);
+    expect(
+      sessionSpan.attributes[
+        'emb.applied_limit.log_attribute_value.truncate_string.count'
+      ]
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(2);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating log_attribute_key because it is longer than 10 characters: "a-very-long-log-attribute-key"'
+    );
+    expect(diag.getWarnLogs()[1]).to.equal(
+      'truncating log_attribute_value because it is longer than 12 characters: "a-very-long-log-attribute-value"'
     );
   });
 });

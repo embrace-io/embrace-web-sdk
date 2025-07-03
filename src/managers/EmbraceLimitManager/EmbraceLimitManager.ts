@@ -87,7 +87,9 @@ export class EmbraceLimitManager implements LimitManagerInternal {
 
   private _truncateAttributes(
     type: AttributeLimitedType,
-    attributes: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined>,
+    keyType: LengthLimitedType,
+    valueType: LengthLimitedType
   ) {
     const keys = Object.keys(attributes);
 
@@ -95,19 +97,20 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       this._diag.warn(
         `truncating ${type} attributes because there are more than ${this._maxAttributes[type].toString()} set`
       );
-
-      const truncatedAttributes: Record<string, AttributeValue | undefined> =
-        {};
-
-      for (let i = 0; i < this._maxAttributes[type]; i++) {
-        truncatedAttributes[keys[i]] = attributes[keys[i]];
-      }
-
       this._incrDiagnosticCount(type, 'truncate_attributes');
-      return truncatedAttributes;
     }
 
-    return attributes;
+    const truncatedAttributes: Record<string, AttributeValue | undefined> = {};
+
+    for (let i = 0; i < Math.min(keys.length, this._maxAttributes[type]); i++) {
+      const truncatedKey = this._truncateString(keyType, keys[i]);
+      truncatedAttributes[truncatedKey] = this._truncateString(
+        valueType,
+        attributes[keys[i]]?.toString() || ''
+      );
+    }
+
+    return truncatedAttributes;
   }
 
   public limitBreadcrumb(name: string): LimitedBreadcrumb | 'dropped' {
@@ -133,7 +136,12 @@ export class EmbraceLimitManager implements LimitManagerInternal {
 
     return {
       message: this._truncateString(logType, message),
-      attributes: this._truncateAttributes(logType, attributes),
+      attributes: this._truncateAttributes(
+        logType,
+        attributes,
+        'log_attribute_key',
+        'log_attribute_value'
+      ),
     };
   }
 
