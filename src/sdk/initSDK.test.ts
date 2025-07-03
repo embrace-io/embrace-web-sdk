@@ -261,6 +261,10 @@ describe('initSDK', () => {
 
     it('should include the correct resource attributes', async () => {
       fakeFetchRespondWith('');
+
+      // Hardcode the session_number so that we validate it gets incremented by one.
+      localStorage.setItem('embrace_session_number', '15');
+
       const result = initSDK({
         appID: 'abc12',
         appVersion: 'my-app-version',
@@ -279,8 +283,8 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise(r => setTimeout(r, 1));
 
-      const sessionID = session.getSpanSessionManager().getSessionId();
-      session.getSpanSessionManager().endSessionSpan();
+      const sessionID = session.getSessionId();
+      session.endSessionSpan();
 
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise(r => setTimeout(r, 1));
@@ -347,7 +351,7 @@ describe('initSDK', () => {
           value: { stringValue: sessionID },
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
-        { key: 'emb.session_number', value: { intValue: 6 } },
+        { key: 'emb.session_number', value: { intValue: 16 } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
       ]);
     });
