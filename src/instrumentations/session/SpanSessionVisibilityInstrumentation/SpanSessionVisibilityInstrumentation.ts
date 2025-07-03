@@ -1,11 +1,16 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import type { TimeoutRef } from '../../../utils/index.js';
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _onVisibilityChange: (event: Event) => void;
+  private _currentVisibilityState: DocumentVisibilityState;
+  private _checkVisibilityTimeout: TimeoutRef | null;
+  private readonly _checkVisibilityChange: () => void;
+  private readonly _onVisibilityChange: () => void;
 
   public constructor({
     diag,
+    visibilityWaitTimeMs = 15000,
     backgroundSessions = false,
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
@@ -15,6 +20,29 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       config: {},
       diag,
     });
+
+    this._currentVisibilityState = visibilityDoc.visibilityState;
+    this._checkVisibilityTimeout = null;
+    this._checkVisibilityChange = () => {
+      this._diag.debug(
+        `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`
+      );
+
+      if (this._checkVisibilityTimeout) {
+        clearTimeout(this._checkVisibilityTimeout);
+      }
+      this._checkVisibilityTimeout = setTimeout(() => {
+        if (this._currentVisibilityState != visibilityDoc.visibilityState) {
+          this._currentVisibilityState = visibilityDoc.visibilityState;
+          this._onVisibilityChange();
+        } else {
+          this._diag.debug(
+            `Visibility was not changed after timeout happened: ${visibilityDoc.visibilityState}`
+          );
+        }
+      }, visibilityWaitTimeMs);
+    };
+
     this._onVisibilityChange = () => {
       this._diag.debug(
         `Visibility change detected: ${visibilityDoc.visibilityState}`
@@ -40,10 +68,10 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   }
 
   public disable(): void {
-    window.removeEventListener('visibilitychange', this._onVisibilityChange);
+    window.removeEventListener('visibilitychange', this._checkVisibilityChange);
   }
 
   public enable(): void {
-    window.addEventListener('visibilitychange', this._onVisibilityChange);
+    window.addEventListener('visibilitychange', this._checkVisibilityChange);
   }
 }
