@@ -270,7 +270,7 @@ jobs:
       matrix:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     permissions:
-      pull-request: write
+      pull-requests: write
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -410,6 +410,8 @@ jobs:
       - configure
       - environment
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -497,7 +499,7 @@ jobs:
           BODY="$(cat bundle-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
           COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- bundle-results -->"))| .id' comments.json)
-          
+
           if [[ -n "$COMMENT_ID" ]]; then
             echo "Updating comment $COMMENT_ID"
             gh api \
