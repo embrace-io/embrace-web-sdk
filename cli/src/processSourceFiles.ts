@@ -50,6 +50,7 @@ export const processSourceFiles = async ({
     appVersion,
     templateBundleID,
     templateAppVersion,
+    upload,
   });
   if (validationError) {
     console.error('Input Validation Error: ', validationError);

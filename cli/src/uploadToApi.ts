@@ -27,6 +27,13 @@ export const uploadToApi = async ({
   dryRun,
   upload,
 }: UploadToApiArgs): Promise<void> => {
+  console.log(
+    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload'
+  );
+  if (dryRun || !upload) {
+    return;
+  }
+
   // prepare the body for the API request as a gzipped JSON object
   const body = new Blob([
     zlib.gzipSync(
@@ -42,12 +49,7 @@ export const uploadToApi = async ({
   formData.append('app', appID);
   formData.append('token', token);
   formData.append('file', body);
-  console.log(
-    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload'
-  );
-  if (dryRun || !upload) {
-    return;
-  }
+
   try {
     console.log(`Uploading to API bundle ID ${bundleID}, appID ${appID}`);
     const response = await fetch(host + pathForUpload + storeType, {
