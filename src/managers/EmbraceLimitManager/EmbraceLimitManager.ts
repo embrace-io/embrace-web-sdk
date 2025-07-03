@@ -182,7 +182,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   }
 
   private _incrDiagnosticCount(type: LimitedType, operation: LimitOperation) {
-    const key = `emb.applied_limit.${type}.${operation}.count`;
+    const key = `emb.app.applied_limit.${type}.${operation}.count`;
 
     this._diagnosticCounts[key] = (this._diagnosticCounts[key] || 0) + 1;
   }
