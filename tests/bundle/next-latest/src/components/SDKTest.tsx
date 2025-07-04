@@ -20,10 +20,17 @@ const SDKTest = () => {
     }
   };
 
+  const handleNavigateToAnotherPage = () => {
+    window.location.href = 'https://example.com';
+  };
+
   return (
     <section>
       <button onClick={handleEndSession}>End Session</button>
       <button onClick={handleSendLog}>Send Log</button>
+      <button onClick={handleNavigateToAnotherPage}>
+        Navigate to Another Page
+      </button>
     </section>
   );
 };

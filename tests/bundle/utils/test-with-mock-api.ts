@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test';
-import { EMBRACE_API_REGEX } from '../constants/index.js';
+// import { EMBRACE_API_REGEX } from '../constants/index.js';
 import zlib from 'node:zlib';
 import path, { dirname } from 'node:path';
 import fs from 'node:fs';
@@ -77,24 +77,32 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           }
         });
 
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ message: 'ok' }),
-        });
+        await route.continue();
+        // await route.fulfill({
+        //   status: 200,
+        //   contentType: 'application/json',
+        //   body: JSON.stringify({ message: 'ok' }),
+        // });
       };
+      // match with localhost:3001/v2/spans or localhost:3001/v2/logs
+      const regex = new RegExp(
+        `^${process.env.EMBRACE_API_URL || 'http://localhost:3001'}/v2/(spans|logs)$`
+      );
 
-      await page.route(EMBRACE_API_REGEX, handler);
+      await page.route(regex, handler);
       await use(requests);
-      await page.unroute(EMBRACE_API_REGEX, handler);
     },
     { scope: 'test' },
   ],
   waitForRequest: [
     async ({ page }, use) => {
+      const regex = new RegExp(
+        `^${process.env.EMBRACE_API_URL || 'http://localhost:3001'}/v2/(spans|logs)$`
+      );
+
       await use(async () => {
         await page.waitForResponse(
-          request => request.url().match(EMBRACE_API_REGEX) !== null
+          request => request.url().match(regex) !== null
         );
       });
     },

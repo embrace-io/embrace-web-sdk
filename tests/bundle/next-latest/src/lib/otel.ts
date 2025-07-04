@@ -1,6 +1,6 @@
 'use client';
 
-import { sdk } from '@embrace-io/web-sdk';
+import { sdk, session } from '@embrace-io/web-sdk';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 
@@ -14,6 +14,8 @@ if (typeof window !== 'undefined') {
     logExporters: [new ConsoleLogRecordExporter()],
     logLevel: sdk.DiagLogLevel.ALL,
   });
+
+  window.EMBRACE_CURRENT_SESSION_ID = session.getSessionId();
 }
 
 export default sdkControl;
