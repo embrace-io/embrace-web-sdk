@@ -39,7 +39,6 @@ jobs:
               echo "Setting environment=development"
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
-
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
