@@ -9,6 +9,7 @@ import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
+  KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
@@ -25,6 +26,7 @@ import type {
 import type { VisibilityStateDocument } from '../../common/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
+import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -73,6 +75,20 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.warn('Error loading permanent session properties', error);
     }
     return Object.fromEntries(permanentAttributes.entries()) as Attributes;
+  }
+
+  // Increment and return the session number stored in local storage.
+  // This is not perfect in the sense that there may be a race condition between tabs.
+  // Eventually a lock could be implemented, but for now this solution should work fine.
+  public _getSessionNumber(): number {
+    const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
+    let number = value ? parseInt(value, 10) : 0;
+    number++;
+    this._storage.setItem(
+      EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+      number.toString()
+    );
+    return number;
   }
 
   public addBreadcrumb(name: string) {
@@ -204,6 +220,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
               : EMB_STATES.Foreground,
           [ATTR_SESSION_ID]: this._activeSessionId,
           [KEY_EMB_COLD_START]: this._coldStart,
+          [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
         },
       })
     );
