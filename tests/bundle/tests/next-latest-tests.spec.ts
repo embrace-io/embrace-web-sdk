@@ -81,50 +81,50 @@ test.use({
 });
 
 test.describe('Next Latest e2e Tests', () => {
-  // test('it should load the home page without errors', async ({
-  //   page,
-  //   navigateAndWaitUntilReady,
-  // }) => {
-  //   await navigateAndWaitUntilReady();
-  //
-  //   const title = await page.textContent('h1');
-  //   test.expect(title).toBe('Next Test App');
-  // });
+  test('it should load the home page without errors', async ({
+    page,
+    navigateAndWaitUntilReady,
+  }) => {
+    await navigateAndWaitUntilReady();
 
-  // test('it should end a session and send a request to the API', async ({
-  //   requests,
-  //   waitForRequest,
-  //   navigateAndWaitUntilReady,
-  //   page,
-  // }) => {
-  //   await navigateAndWaitUntilReady();
-  //   const button = page.getByRole('button', { name: 'End Session' });
-  //   await button.click();
-  //   await waitForRequest();
-  //
-  //   test.expect(requests).toHaveLength(1);
-  //   extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-  //     'next-latest-session.json'
-  //   );
-  // });
+    const title = await page.textContent('h1');
+    test.expect(title).toBe('Next Test App');
+  });
 
-  // test('it should send a log', async ({
-  //   page,
-  //   requests,
-  //   waitForRequest,
-  //   navigateAndWaitUntilReady,
-  // }) => {
-  //   await navigateAndWaitUntilReady();
-  //
-  //   const button = page.getByRole('button', { name: 'Send Log' });
-  //   await button.click();
-  //   await waitForRequest();
-  //
-  //   test.expect(requests).toHaveLength(1);
-  //   extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-  //     'next-latest-send-log.json'
-  //   );
-  // });
+  test('it should end a session and send a request to the API', async ({
+    requests,
+    waitForRequest,
+    navigateAndWaitUntilReady,
+    page,
+  }) => {
+    await navigateAndWaitUntilReady();
+    const button = page.getByRole('button', { name: 'End Session' });
+    await button.click();
+    await waitForRequest();
+
+    test.expect(requests).toHaveLength(1);
+    extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+      'next-latest-session.json'
+    );
+  });
+
+  test('it should send a log', async ({
+    page,
+    requests,
+    waitForRequest,
+    navigateAndWaitUntilReady,
+  }) => {
+    await navigateAndWaitUntilReady();
+
+    const button = page.getByRole('button', { name: 'Send Log' });
+    await button.click();
+    await waitForRequest();
+
+    test.expect(requests).toHaveLength(1);
+    extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+      'next-latest-send-log.json'
+    );
+  });
 
   test('it should end the session and send it to the API if the page closes', async ({
     navigateAndWaitUntilReady,

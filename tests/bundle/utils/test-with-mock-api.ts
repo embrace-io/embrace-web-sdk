@@ -246,17 +246,22 @@ const expect = testWithMockApi.expect.extend({
     }
   },
   toMatchSpan: (received: ISpan, expected: ISpan) => {
-    expect(received).toEqual(
-      // Ignore fields that change on every run like traceId, spanId, etc.
-      expect.objectContaining({
-        name: expected.name,
-        kind: expected.kind,
-        droppedAttributesCount: expected.droppedAttributesCount,
-        droppedEventsCount: expected.droppedEventsCount,
-        status: expected.status,
-        droppedLinksCount: expected.droppedLinksCount,
-      })
-    );
+    // Use this instead of objectContaining for a better error message
+    expect({
+      name: received.name,
+      kind: received.kind,
+      droppedAttributesCount: received.droppedAttributesCount,
+      droppedEventsCount: received.droppedEventsCount,
+      status: received.status,
+      droppedLinksCount: received.droppedLinksCount,
+    }).toEqual({
+      name: expected.name,
+      kind: expected.kind,
+      droppedAttributesCount: expected.droppedAttributesCount,
+      droppedEventsCount: expected.droppedEventsCount,
+      status: expected.status,
+      droppedLinksCount: expected.droppedLinksCount,
+    });
 
     expect(received.attributes).toMatchAttributes(expected.attributes, {
       message: `Attributes mismatch for span ${received.name}`,
@@ -274,15 +279,18 @@ const expect = testWithMockApi.expect.extend({
     };
   },
   toMatchLog: (received: ILogRecord, expected: ILogRecord) => {
-    expect(received).toEqual(
-      // Ignore fields that change on every run like timeUnixNano, etc.
-      expect.objectContaining({
-        body: expected.body,
-        severityNumber: expected.severityNumber,
-        severityText: expected.severityText,
-        droppedAttributesCount: expected.droppedAttributesCount,
-      })
-    );
+    // Use this instead of objectContaining for a better error message
+    expect({
+      body: received.body,
+      severityNumber: received.severityNumber,
+      severityText: received.severityText,
+      droppedAttributesCount: received.droppedAttributesCount,
+    }).toEqual({
+      body: expected.body,
+      severityNumber: expected.severityNumber,
+      severityText: expected.severityText,
+      droppedAttributesCount: expected.droppedAttributesCount,
+    });
 
     expect(received.attributes).toMatchAttributes(expected.attributes, {
       message: `Attributes mismatch for log ${JSON.stringify(received.body)}`,
@@ -356,13 +364,25 @@ const expect = testWithMockApi.expect.extend({
                 const expectedEntity = expectedScopes[entityIndex];
 
                 if (receivedEntity && expectedEntity) {
-                  if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
-                    expect(receivedEntity).toMatchSpan(expectedEntity);
-                  } else if (
-                    !isSpan(receivedEntity) &&
-                    !isSpan(expectedEntity)
-                  ) {
-                    expect(receivedEntity).toMatchLog(expectedEntity);
+                  try {
+                    if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
+                      expect(receivedEntity).toMatchSpan(expectedEntity);
+                    } else if (
+                      !isSpan(receivedEntity) &&
+                      !isSpan(expectedEntity)
+                    ) {
+                      expect(receivedEntity).toMatchLog(expectedEntity);
+                    }
+                  } catch (e) {
+                    const entityName = isSpan(receivedEntity)
+                      ? receivedEntity.name
+                      : receivedEntity.body?.stringValue || '';
+
+                    return {
+                      pass: false,
+                      message: () =>
+                        `Entity ${entityName} in scope ${resourceIndex} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
+                    };
                   }
                 } else {
                   return {

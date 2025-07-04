@@ -2,11 +2,34 @@ import { createServer } from 'http';
 import zlib from 'node:zlib';
 import { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types';
 import { ReceivedSpans } from '../types.js';
+import { IncomingMessage } from 'node:http';
 
 const PORT = 3001;
 const receivedSpans: ReceivedSpans = {};
 
-const server = createServer((req, res) => {
+const parseGzip = async (req: IncomingMessage): Promise<Object> => {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      const buffer = Buffer.concat(chunks);
+      zlib.gunzip(buffer, (err, decoded) => {
+        if (err) {
+          reject(err);
+        } else {
+          try {
+            resolve(JSON.parse(decoded.toString('utf-8')));
+          } catch (parseError) {
+            reject(parseError);
+          }
+        }
+      });
+    });
+  });
+};
+
+const server = createServer(async (req, res) => {
   // allow cors
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -15,68 +38,55 @@ const server = createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
+
     return;
   }
 
   if (req.method === 'GET' && req.url === '/health-check') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
+
     return;
   }
 
   if (req.url == '/received-spans') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
+
+    return;
+  }
+
+  if (req.url?.includes('logs')) {
+    res.writeHead(200);
+    res.end('OK');
+
     return;
   }
 
   if (req.url?.includes('spans')) {
-    const chunks: Buffer[] = [];
+    const request: IExportTraceServiceRequest = await parseGzip(req);
 
-    req.on('data', chunk => chunks.push(chunk));
-    req.on('end', () => {
-      const buffer = Buffer.concat(chunks);
+    const sessionSpan =
+      request.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
+        span => span.name === 'emb-session'
+      );
+    const sessionId = sessionSpan?.attributes?.find(
+      attr => attr.key === 'session.id'
+    )?.value.stringValue;
 
-      const handleData = (data: Buffer) => {
-        try {
-          const json = JSON.parse(data.toString('utf-8'));
+    if (!sessionId) {
+      res.writeHead(400);
+      res.end('Session ID not found');
+      return;
+    }
 
-          const sessionSpan = (
-            json as IExportTraceServiceRequest
-          ).resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-            span => span.name === 'emb-session'
-          );
+    receivedSpans[sessionId] = true;
+    console.log('Stored a new session ID:', sessionId);
 
-          const sessionId = sessionSpan?.attributes?.find(
-            attr => attr.key === 'session.id'
-          )?.value.stringValue;
+    res.writeHead(200);
+    res.end('OK');
 
-          if (!sessionId) {
-            res.writeHead(400);
-            res.end('Session ID not found');
-            return;
-          }
-
-          receivedSpans[sessionId] = true;
-          console.log('Stored a new session ID:', sessionId);
-
-          res.writeHead(200);
-          res.end('OK');
-        } catch (err) {
-          res.writeHead(400);
-          res.end('Invalid JSON');
-        }
-      };
-
-      zlib.gunzip(buffer, (err, decoded) => {
-        if (err) {
-          res.writeHead(400);
-          res.end('Failed to decompress');
-        } else {
-          handleData(decoded);
-        }
-      });
-    });
+    return;
   }
 });
 
