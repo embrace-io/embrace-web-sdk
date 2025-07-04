@@ -385,5 +385,19 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 3);
     memoryExporter.reset();
+
+    // instantiate a new manager w/ the same storage instance, should get a cold start again but a session number of 4
+    manager = new EmbraceSpanSessionManager({ diag, storage });
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    // Any following session should have emb.cold_start = false
+    expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 4);
+    memoryExporter.reset();
   });
 });
