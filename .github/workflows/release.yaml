@@ -67,6 +67,8 @@ jobs:
         run: |
           # get the next version from the release-drafter output
           NEXT_VERSION="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
+          echo "PR Body:"
+          echo "$STEPS_RELEASE_DRAFTER_OUTPUTS_BODY"
           # create a new branch for the release
           git checkout -b "release-$NEXT_VERSION"
           # commit the changes
