@@ -14,6 +14,7 @@ interface ValidateInputArgs {
   cliVersion: string;
   templateBundleID: string;
   templateAppVersion: string;
+  upload: boolean;
 }
 
 export const validateInput = ({
@@ -28,6 +29,7 @@ export const validateInput = ({
   appVersion,
   templateBundleID,
   templateAppVersion,
+  upload,
 }: ValidateInputArgs): string | null => {
   if (!jsFilePath.trim()) {
     return 'JS file path cannot be empty.';
@@ -40,10 +42,10 @@ export const validateInput = ({
   if (!mapFilePath.trim()) {
     return 'Map file path cannot be empty.';
   }
-  if (!token.trim()) {
+  if (upload && !token.trim()) {
     return 'Token cannot be empty.';
   }
-  if (token.length !== 32) {
+  if (upload && token.length !== 32) {
     return 'Token must be 32 characters long.';
   }
   if (!appID.trim()) {

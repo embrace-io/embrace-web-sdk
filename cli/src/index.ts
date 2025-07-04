@@ -37,9 +37,10 @@ program
       .makeOptionMandatory()
   )
   .addOption(
-    new Option('-t, --token <token>', 'API token to authenticate with Embrace')
-      .env('EMB_SOURCE_UPLOAD_API_TOKEN')
-      .makeOptionMandatory()
+    new Option(
+      '-t, --token <token>',
+      'API token to authenticate with Embrace'
+    ).env('EMB_SOURCE_UPLOAD_API_TOKEN')
   )
   .addOption(
     new Option('-a, --app-id <appID>', 'Application ID')
