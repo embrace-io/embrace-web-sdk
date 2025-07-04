@@ -8,7 +8,8 @@ on:
     types: [released]
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 env:
   NODE_VERSION: '22.x'
@@ -28,16 +29,14 @@ jobs:
         id: choose_environment
         run: |
           # Finalized releases get deployed to prod
-          if [ '${{ github.event_name }}' == 'release' ] && [ '${GITHUB_EVENT_ACTION}' == 'released' ]; then
+          if [ '${{ github.event_name }}' == 'release' ] && [ '${{ github.event.action }}' == 'released' ]; then
               echo 'name=production' >> $GITHUB_OUTPUT
           # All pushes to main get deployed to staging
-          elif [ '${GITHUB_REF}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
+          elif [ '${{ github.ref }}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
               echo 'name=staging' >> $GITHUB_OUTPUT
           else
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
-        env:
-          GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
   configure:
     runs-on: ubuntu-latest
@@ -80,8 +79,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -134,15 +131,13 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
-          if [[ '${{ github.event_name }}/${GITHUB_EVENT_ACTION}' == 'release/released' || '${GITHUB_ACTOR}' == 'dependabot[bot]' ]]; then
+          if [[ '${{ github.event_name }}/${{ github.event.action }}' == 'release/released' || '${{ github.actor }}' == 'dependabot[bot]' ]]; then
             argsCoverage=''
           else
             argsCoverage='--config=web-test-runner.coverage.config.js'
             echo 'TEST_COLLECTED_COVERAGE=true' >> $GITHUB_ENV
           fi
           npm run sdk:test -- $argsCoverage
-        env:
-          GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -192,8 +187,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -289,8 +282,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -380,7 +371,7 @@ jobs:
           BODY="$(cat performance-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
           COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
-
+          
           if [[ -n "$COMMENT_ID" ]]; then
             echo "Updating comment $COMMENT_ID"
             gh api \
@@ -437,8 +428,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -533,7 +522,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -583,8 +571,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - uses: actions/setup-node@v4
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
@@ -638,8 +624,6 @@ jobs:
 
       - uses: actions/checkout@v4
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
 
       - uses: actions/setup-node@v4
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
@@ -684,8 +668,6 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -725,8 +707,6 @@ jobs:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

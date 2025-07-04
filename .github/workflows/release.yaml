@@ -24,8 +24,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -35,9 +33,8 @@ jobs:
       - name: Update package.json version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION: ${{ steps.release_drafter.outputs.resolved_version }}
         run: |
-          version="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
+          version="${{ steps.release_drafter.outputs.resolved_version }}"
            if [ -z "$version"]; then
             echo 'Version is empty. Exiting'
             exit 1
@@ -62,13 +59,11 @@ jobs:
       - name: commit and create PR with the next release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION: ${{ steps.release_drafter.outputs.resolved_version }}
-          STEPS_RELEASE_DRAFTER_OUTPUTS_BODY: ${{ steps.release_drafter.outputs.body }}
         run: |
           # get the next version from the release-drafter output
-          NEXT_VERSION="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
+          NEXT_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
           RELEASE_BODY=$(cat << 'RELEASE_BODY_EOF'
-          ${STEPS_RELEASE_DRAFTER_OUTPUTS_BODY}
+          ${{ steps.release_drafter.outputs.body }}
           RELEASE_BODY_EOF
           )
           # create a new branch for the release
@@ -80,4 +75,4 @@ jobs:
           git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
-          gh pr create --base main --title "release: bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${GITHUB_ACTOR}" --label "release"
+          gh pr create --base main --title "release: bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${{ github.actor }}" --label "release"
