@@ -340,7 +340,7 @@ jobs:
         run: npm run playwright -- install-deps
 
       # We need the SDK to be built, so we can use it during performance tests
-      - name: Build SKD
+      - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:compile
@@ -453,7 +453,7 @@ jobs:
           npm ci --strict-peer-deps
 
       # We need the SDK to be built, so we can use it in the sample apps
-      - name: Build SKD
+      - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:compile
