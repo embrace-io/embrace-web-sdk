@@ -553,6 +553,42 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
+  it('should handle removing permanent properties that have long keys', () => {
+    const propertyKey = 'permanent-key-that-is-longer-than-the-character-limit';
+    const truncatedKey = 'permanent-key-that-i';
+    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${truncatedKey}`;
+    const longAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
+    const value = 'permanent-value';
+
+    manager.startSessionSpan();
+    manager.addProperty(propertyKey, value, {
+      lifespan: 'permanent',
+    });
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.have.property(
+      attributeKey,
+      value
+    );
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      longAttributeKey,
+      value
+    );
+    manager.removeProperty(propertyKey);
+    manager.endSessionSpan();
+
+    manager.startSessionSpan();
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      attributeKey,
+      value
+    );
+    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
+      longAttributeKey,
+      value
+    );
+  });
+
   it('should have emb.cold_start = true only in first session', () => {
     manager.startSessionSpan();
     manager.endSessionSpan();

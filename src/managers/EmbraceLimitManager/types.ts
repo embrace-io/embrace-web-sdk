@@ -63,4 +63,5 @@ export interface LimitManagerInternal {
   limitBreadcrumb: (name: string) => LimitedBreadcrumb | 'dropped';
   reset: () => void;
   getDiagnosticCounts: () => Record<string, number>;
+  truncateString: (type: LengthLimitedType, body: string) => string;
 }

@@ -143,8 +143,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    // TODO truncate key
-    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + propertyKey;
+    // We truncate long session property keys on addProperty so need to apply the same logic here
+    const attributeKey =
+      KEY_PREFIX_EMB_PROPERTIES +
+      this._limitManager.truncateString('session_property_key', propertyKey);
     this._sessionSpan.removeAttribute(attributeKey);
 
     try {

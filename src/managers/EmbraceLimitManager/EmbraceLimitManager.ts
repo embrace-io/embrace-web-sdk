@@ -72,7 +72,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     return false;
   }
 
-  private _truncateString(type: LengthLimitedType, body: string) {
+  public truncateString(type: LengthLimitedType, body: string) {
     if (body.length > this._maxLength[type]) {
       this._diag.warn(
         `truncating ${type} because it is longer than ${this._maxLength[type].toString()} characters: "${body}"`
@@ -103,8 +103,8 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     const truncatedAttributes: Record<string, AttributeValue | undefined> = {};
 
     for (let i = 0; i < Math.min(keys.length, this._maxAttributes[type]); i++) {
-      const truncatedKey = this._truncateString(keyType, keys[i]);
-      truncatedAttributes[truncatedKey] = this._truncateString(
+      const truncatedKey = this.truncateString(keyType, keys[i]);
+      truncatedAttributes[truncatedKey] = this.truncateString(
         valueType,
         attributes[keys[i]]?.toString() || ''
       );
@@ -119,7 +119,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     }
 
     return {
-      name: this._truncateString('breadcrumb', name),
+      name: this.truncateString('breadcrumb', name),
     };
   }
 
@@ -135,7 +135,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     }
 
     return {
-      message: this._truncateString(logType, message),
+      message: this.truncateString(logType, message),
       attributes: this._truncateAttributes(
         logType,
         attributes,
@@ -154,8 +154,8 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     }
 
     return {
-      key: this._truncateString('session_property_key', key),
-      value: this._truncateString('session_property_value', value),
+      key: this.truncateString('session_property_key', key),
+      value: this.truncateString('session_property_value', value),
     };
   }
 
