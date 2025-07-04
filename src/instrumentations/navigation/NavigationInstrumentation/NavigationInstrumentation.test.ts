@@ -9,7 +9,11 @@ import {
   EMB_NAVIGATION_INSTRUMENTATIONS,
   KEY_EMB_INSTRUMENTATION,
 } from '../../../constants/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import { session } from '../../../api-sessions/index.js';
 
 const { expect } = chai;
@@ -27,7 +31,9 @@ describe('NavigationInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
   });
 

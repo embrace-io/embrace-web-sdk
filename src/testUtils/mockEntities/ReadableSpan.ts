@@ -25,6 +25,13 @@ export const mockSpan: ReadableSpan = {
   droppedLinksCount: 0,
 };
 
+export const mockNetworkRequestSpan: ReadableSpan = {
+  ...mockSpan,
+  attributes: {
+    'emb.type': 'perf.network_request',
+  },
+};
+
 export const mockSessionSpan: ReadableSpan = {
   ...mockSpan,
   name: 'mock session span',

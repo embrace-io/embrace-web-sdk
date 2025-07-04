@@ -28,12 +28,15 @@ jobs:
         id: choose_environment
         run: |
           # Finalized releases get deployed to prod
-          if [ '${{ github.event_name }}' == 'release' ] && [ '${GITHUB_EVENT_ACTION}' == 'released' ]; then
+          if [ '${{ github.event_name }}' == 'release' ] && [ "$GITHUB_EVENT_ACTION" == 'released' ]; then
+              echo "Setting environment=production"
               echo 'name=production' >> $GITHUB_OUTPUT
           # All pushes to main get deployed to staging
-          elif [ '${GITHUB_REF}' == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
+          elif [ "$GITHUB_REF" == 'refs/heads/main' ] && [ '${{ github.event_name }}' == 'push' ]; then
+              echo "Setting environment=staging"
               echo 'name=staging' >> $GITHUB_OUTPUT
           else
+              echo "Setting environment=development"
               echo 'name=development' >> $GITHUB_OUTPUT
           fi
         env:
@@ -134,7 +137,7 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
-          if [[ '${{ github.event_name }}/${GITHUB_EVENT_ACTION}' == 'release/released' || '${GITHUB_ACTOR}' == 'dependabot[bot]' ]]; then
+          if [[ "${{ github.event_name }}/$GITHUB_EVENT_ACTION" == 'release/released' || "$GITHUB_ACTOR" == 'dependabot[bot]' ]]; then
             argsCoverage=''
           else
             argsCoverage='--config=web-test-runner.coverage.config.js'
@@ -340,7 +343,7 @@ jobs:
         run: npm run playwright -- install-deps
 
       # We need the SDK to be built, so we can use it during performance tests
-      - name: Build SKD
+      - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:compile
@@ -453,7 +456,7 @@ jobs:
           npm ci --strict-peer-deps
 
       # We need the SDK to be built, so we can use it in the sample apps
-      - name: Build SKD
+      - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:compile

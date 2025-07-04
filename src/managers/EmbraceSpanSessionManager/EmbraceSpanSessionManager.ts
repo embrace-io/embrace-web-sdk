@@ -24,6 +24,7 @@ import type {
   SpanSessionManagerInternal,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
@@ -41,13 +42,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
+  private readonly _limitManager: LimitManagerInternal;
 
   public constructor({
     diag: diagParam,
     perf,
     visibilityDoc = window.document,
     storage = window.localStorage,
-  }: EmbraceSpanSessionManagerArgs = {}) {
+    limitManager,
+  }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
       diag.createComponentLogger({
@@ -56,6 +59,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
+    this._limitManager = limitManager;
   }
 
   // retrieve permanent properties from localStorage
@@ -99,10 +103,16 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
+    const limitedBreadcrumb = this._limitManager.limitBreadcrumb(name);
+
+    if (limitedBreadcrumb === 'dropped') {
+      return;
+    }
+
     this._sessionSpan.addEvent(
       'emb-breadcrumb',
       {
-        message: name,
+        message: limitedBreadcrumb.name,
       },
       this._perf.getNowMillis()
     );
@@ -120,8 +130,17 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + propertyKey;
-    this._sessionSpan.setAttribute(attributeKey, value);
+    const limitedSessionProperty = this._limitManager.limitSessionProperty(
+      propertyKey,
+      value
+    );
+
+    if (limitedSessionProperty === 'dropped') {
+      return;
+    }
+
+    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + limitedSessionProperty.key;
+    this._sessionSpan.setAttribute(attributeKey, limitedSessionProperty.value);
 
     if (options?.lifespan === 'permanent') {
       try {
@@ -140,7 +159,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + propertyKey;
+    // We truncate long session property keys on addProperty so need to apply the same logic here
+    const attributeKey =
+      KEY_PREFIX_EMB_PROPERTIES +
+      this._limitManager.truncateString('session_property_key', propertyKey);
     this._sessionSpan.removeAttribute(attributeKey);
 
     try {
@@ -152,6 +174,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
   }
 
+  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'manual'
   // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
   public endSessionSpan() {
     this.endSessionSpanInternal('manual');
@@ -170,6 +193,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       ...this._getPermanentAttributes(),
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
+      ...this._limitManager.getDiagnosticCounts(),
     });
 
     this._sessionSpan.end();
@@ -185,6 +209,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         this._diag.warn('Error while executing session ended listener', error);
       }
     }
+
+    // For the limit manager to add a session ended listener it would need a reference to this
+    // session manager which would create a circular dependency
+    this._limitManager.reset();
   }
 
   public getSessionId(): string | null {

@@ -9,6 +9,7 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
+import type { LimitManagerInternal } from '../../managers/index.js';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
@@ -17,9 +18,11 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
+  private readonly _limitManager: LimitManagerInternal;
 
   public constructor({
     exporter,
+    limitManager,
     ...parentArgs
   }: EmbraceSessionBatchedSpanProcessorArgs) {
     super({
@@ -28,6 +31,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     });
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
+    this._limitManager = limitManager;
   }
 
   public override forceFlush(): Promise<void> {
@@ -45,6 +49,9 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
     if (!isSessionSpan(span)) {
       this.diag.debug('non-session span ended. Adding to pending spans queue.');
+      if (this._limitManager.dropReadableSpan(span)) {
+        return;
+      }
       this._pendingSpans.push(span);
     } else {
       this.diag.debug('session span ended. Exporting all pending spans.');
