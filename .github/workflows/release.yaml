@@ -67,10 +67,7 @@ jobs:
         run: |
           # get the next version from the release-drafter output
           NEXT_VERSION="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
-          RELEASE_BODY=$(cat << 'RELEASE_BODY_EOF'
-          ${STEPS_RELEASE_DRAFTER_OUTPUTS_BODY}
-          RELEASE_BODY_EOF
-          )
+          echo ${STEPS_RELEASE_DRAFTER_OUTPUTS_BODY} > body.txt
           # create a new branch for the release
           git checkout -b "release-$NEXT_VERSION"
           # commit the changes
@@ -80,4 +77,4 @@ jobs:
           git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
-          gh pr create --base main --title "release: bump version to $NEXT_VERSION" --body "$RELEASE_BODY" -a "${GITHUB_ACTOR}" --label "release"
+          gh pr create --base main --title "release: bump version to $NEXT_VERSION" --body-file body.txt -a "${GITHUB_ACTOR}" --label "release"
