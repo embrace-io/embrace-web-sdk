@@ -187,6 +187,8 @@ const App = () => {
       <div className="container">
         <h1>[••] demo</h1>
         <div>current session: {currentSession}</div>
+
+        {/* Current Session: */}
         <div className={styles.actions}>
           <button
             onClick={handleStartSessionSpan}
@@ -208,88 +210,13 @@ const App = () => {
             End Session Span
           </button>
         </div>
+
+        {/* Custom Spans: */}
         <button
           onClick={handleStartSpan}
           disabled={sessionProvider.getSessionSpan() === null}
         >
           Start Span
-        </button>
-        <button
-          onClick={handleSendEmbraceInfoLog}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Send Embrace Info Log
-        </button>
-        <button
-          onClick={() =>
-            handleAddPermanentSessionProperty(
-              'permanent-key',
-              'permanent-value'
-            )
-          }
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Add Permanent Session Property
-        </button>
-
-        <button
-          onClick={() => handleRemoveSessionProperty('permanent-key')}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Remove Permanent Session Property
-        </button>
-        <button
-          onClick={() =>
-            handleAddSessionProperty('session-key', 'session-value')
-          }
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Add Session Property
-        </button>
-        <button
-          onClick={() => handleRemoveSessionProperty('session-key')}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Remove Session Property
-        </button>
-        <button
-          onClick={handleSendEmbraceWarnLog}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Send Embrace Warning Log
-        </button>
-        <button
-          onClick={handleSendEmbraceErrorLog}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Send Embrace Error Log
-        </button>
-        <button
-          onClick={handleRecordException}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Record Exception
-        </button>
-        <button
-          onClick={handleThrowError}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Throw Error
-        </button>
-        <button
-          onClick={handleRejectPromise}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Reject Promise
-        </button>
-        <button onClick={handleSendFetchNetworkRequest}>
-          Send a Fetch Network Request
-        </button>
-        <button onClick={handleSendFetchNetworkRequest404}>
-          Send a Fetch Network Request (404)
-        </button>
-        <button onClick={handleSendXMLNetworkRequest}>
-          Send a XML Network Request
         </button>
         {spans.length > 0 && (
           <div className={styles.spans}>
@@ -304,15 +231,128 @@ const App = () => {
             ))}
           </div>
         )}
-        <button onClick={() => setNavigationType('declarativeV4V5')}>
-          Enter react-router v4/v5 navigation demo
-        </button>
-        <button onClick={() => setNavigationType('declarativeV6+')}>
-          Enter react-router v6+ declarative navigation demo
-        </button>
-        <button onClick={() => setNavigationType('data')}>
-          Enter react-router v6+ data navigation demo
-        </button>
+
+        {/* Embrace Logs: */}
+        <div className={styles.actions}>
+          <button
+            onClick={handleSendEmbraceInfoLog}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Send Embrace Info Log
+          </button>
+          <button
+            onClick={handleSendEmbraceWarnLog}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Send Embrace Warning Log
+          </button>
+          <button
+            onClick={handleSendEmbraceErrorLog}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Send Embrace Error Log
+          </button>
+        </div>
+
+        {/* Properties: */}
+        <div className={styles.actions}>
+          <button
+            onClick={() =>
+              handleAddPermanentSessionProperty(
+                'permanent-key',
+                'permanent-value'
+              )
+            }
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Add Permanent Session Property
+          </button>
+
+          <button
+            onClick={() => handleRemoveSessionProperty('permanent-key')}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Remove Permanent Session Property
+          </button>
+        </div>
+        <div className={styles.actions}>
+          <button
+            onClick={() =>
+              handleAddSessionProperty('session-key', 'session-value')
+            }
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Add Session Property
+          </button>
+          <button
+            onClick={() => handleRemoveSessionProperty('session-key')}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Remove Session Property
+          </button>
+        </div>
+
+        {/* Exceptions: */}
+        <div className={styles.actions}>
+          <button
+            onClick={handleRecordException}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Record Exception
+          </button>
+          <button
+            onClick={handleThrowError}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Throw Error
+          </button>
+          <button
+            onClick={handleRejectPromise}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Reject Promise
+          </button>
+        </div>
+
+        {/* Network: */}
+        <div className={styles.actions}>
+          <button onClick={handleSendFetchNetworkRequest}>
+            Send a Fetch Network Request
+          </button>
+          <button onClick={handleSendFetchNetworkRequest404}>
+            Send a Fetch Network Request (404)
+          </button>
+          <button onClick={handleSendXMLNetworkRequest}>
+            Send a XML Network Request
+          </button>
+        </div>
+
+        {/* React: */}
+        <div className={styles.actions}>
+          <button onClick={() => setNavigationType('declarativeV4V5')}>
+            Enter react-router v4/v5 navigation demo
+          </button>
+          <button onClick={() => setNavigationType('declarativeV6+')}>
+            Enter react-router v6+ declarative navigation demo
+          </button>
+          <button onClick={() => setNavigationType('data')}>
+            Enter react-router v6+ data navigation demo
+          </button>
+        </div>
+
+        {/* Navigation: */}
+        <div className={styles.actions}>
+          <a href="https://google.com">
+            Navigate to google.com
+          </a>
+          <a href="/">
+            Open demo in same tab
+          </a>
+          <a href="/" target="_blank">
+            Open demo in new tab
+          </a>
+        </div>
+
         <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
           <ComponentWithErrorInRender />
         </EmbraceErrorBoundary>
