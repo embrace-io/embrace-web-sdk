@@ -3,7 +3,11 @@ import * as sinon from 'sinon';
 import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from '../../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
@@ -21,7 +25,9 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   });
 
   beforeEach(() => {
-    spanSessionManager = new EmbraceSpanSessionManager();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+    });
     session.setGlobalSessionManager(spanSessionManager);
   });
 

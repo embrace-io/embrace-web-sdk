@@ -19,10 +19,12 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  DEFAULT_LIMITS,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
@@ -42,6 +44,7 @@ import type {
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
+  SetupSessionArgs,
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
@@ -106,7 +109,10 @@ export const initSDK = (
       throw new Error('userID is required when using Embrace exporter');
     }
 
-    const spanSessionManager = setupSession();
+    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    const spanSessionManager = setupSession({
+      limitManager,
+    });
 
     const tracerProvider = setupTraces({
       sendingToEmbrace,
@@ -119,6 +125,7 @@ export const initSDK = (
       spanProcessors,
       propagator,
       contextManager,
+      limitManager,
     });
 
     const loggerProvider = setupLogs({
@@ -130,6 +137,7 @@ export const initSDK = (
       logExporters,
       logProcessors,
       spanSessionManager,
+      limitManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -167,8 +175,10 @@ const setupUser = () => {
   return embraceUserManager;
 };
 
-const setupSession = () => {
-  const embraceSpanSessionManager = new EmbraceSpanSessionManager();
+const setupSession = ({ limitManager }: SetupSessionArgs) => {
+  const embraceSpanSessionManager = new EmbraceSpanSessionManager({
+    limitManager,
+  });
   session.setGlobalSessionManager(embraceSpanSessionManager);
   return embraceSpanSessionManager;
 };
@@ -184,6 +194,7 @@ const setupTraces = ({
   spanProcessors = [],
   propagator = null,
   contextManager = null,
+  limitManager,
 }: SetupTracesArgs) => {
   const embraceTraceManager = new EmbraceTraceManager();
   trace.setGlobalTraceManager(embraceTraceManager);
@@ -206,6 +217,7 @@ const setupTraces = ({
           appID,
           userID: enduserPseudoID,
         }),
+        limitManager,
       })
     );
   }
@@ -213,6 +225,16 @@ const setupTraces = ({
   const tracerProvider = new WebTracerProvider({
     resource,
     spanProcessors: finalSpanProcessors,
+    spanLimits: {
+      // Session properties are stored as attributes on the session span, add a
+      // buffer here so that there is room for our internal attributes
+      attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
+      attributePerEventCountLimit: 20,
+      // Breadcrumbs are stored as events on the session span, add a
+      // buffer here so that there is room for our internal events
+      eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
+      attributeValueLengthLimit: 1024,
+    },
   });
 
   tracerProvider.register({
@@ -232,8 +254,12 @@ const setupLogs = ({
   logExporters,
   logProcessors,
   spanSessionManager,
+  limitManager,
 }: SetupLogsArgs) => {
-  const embraceLogManager = new EmbraceLogManager({ spanSessionManager });
+  const embraceLogManager = new EmbraceLogManager({
+    spanSessionManager,
+    limitManager,
+  });
   log.setGlobalLogManager(embraceLogManager);
 
   const loggerProvider = new LoggerProvider({

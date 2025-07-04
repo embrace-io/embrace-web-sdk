@@ -25,7 +25,10 @@ import type {
 import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumentation-document-load';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
-import type { SpanSessionManagerInternal } from '../managers/index.js';
+import type {
+  LimitManagerInternal,
+  SpanSessionManagerInternal,
+} from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
 
 type BaseSDKInitConfig = {
@@ -169,6 +172,10 @@ export interface SDKControl {
   flush: () => Promise<void>;
 }
 
+export interface SetupSessionArgs {
+  limitManager: LimitManagerInternal;
+}
+
 export interface SetupTracesArgs {
   sendingToEmbrace: boolean;
   appID?: string;
@@ -180,6 +187,7 @@ export interface SetupTracesArgs {
   spanProcessors: SpanProcessor[];
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
+  limitManager: LimitManagerInternal;
 }
 
 export interface SetupLogsArgs {
@@ -191,6 +199,7 @@ export interface SetupLogsArgs {
   logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
   spanSessionManager: SpanSessionManagerInternal;
+  limitManager: LimitManagerInternal;
 }
 
 type OptionalInstrumentations =
