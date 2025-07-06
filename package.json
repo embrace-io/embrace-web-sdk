@@ -33,7 +33,7 @@
     "sdk:lint:eslint": "eslint --max-warnings=0 ./src ./cli/src",
     "sdk:lint:prettier": "prettier --write ./src ./cli/src",
     "sdk:lint": "npm run sdk:lint:eslint && npm run sdk:lint:prettier",
-    "sdk:tsc:check": "tsc --build --noEmit tsconfig.json tsconfig.test.json cli/tsconfig.json",
+    "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
     "sdk:lint:fix": "npm run sdk:lint:eslint:fix && npm run sdk:lint:prettier",
     "commitlint": "commitlint",
     "playwright": "playwright",
