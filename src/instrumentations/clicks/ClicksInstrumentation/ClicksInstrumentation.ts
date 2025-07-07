@@ -19,7 +19,12 @@ import { getHTMLElementFriendlyName } from './utils.js';
 export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
-  public constructor({ diag, perf }: ClicksInstrumentationArgs = {}) {
+  public constructor({
+    diag,
+    perf,
+    shouldTrack,
+    innerTextForElement,
+  }: ClicksInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SpanSessionBrowserActivityInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -38,6 +43,10 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
         return;
       }
 
+      if (shouldTrack && !shouldTrack(element)) {
+        return;
+      }
+
       try {
         const currentSessionSpan = this.sessionManager.getSessionSpan();
         if (currentSessionSpan) {
@@ -45,7 +54,12 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
             'click',
             {
               'emb.type': 'ux.tap',
-              'view.name': getHTMLElementFriendlyName(element),
+              'view.name': getHTMLElementFriendlyName(
+                element,
+                innerTextForElement
+                  ? innerTextForElement(element)
+                  : element.innerText
+              ),
               'tap.coords': `${event.x.toString()},${event.y.toString()}`,
             },
             this.perf.epochMillisFromOriginOffset(event.timeStamp)

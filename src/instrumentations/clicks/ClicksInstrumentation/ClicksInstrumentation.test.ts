@@ -258,4 +258,79 @@ describe('ClicksInstrumentation', () => {
       'view.name': '<button>button2</button>',
     });
   });
+
+  it('should allow tracking to be omitted for certain elements', () => {
+    instrumentation = new ClicksInstrumentation({
+      diag,
+      shouldTrack: element => !element.hasAttribute('data-is-sensitive'),
+    });
+    const target1 = document.createElement('div');
+    target1.setAttribute('data-is-sensitive', 'true');
+    target1.innerText = 'should not track';
+    testContainer.append(target1);
+
+    const target2 = document.createElement('div');
+    target2.innerText = 'should track';
+    testContainer.append(target2);
+
+    target1.click();
+    target2.click();
+    spanSessionManager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const clickEvent = sessionSpan.events[0];
+
+    void expect(clickEvent.name).to.be.equal('click');
+
+    void expect(clickEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<div>should track</div>',
+    });
+  });
+
+  it('should allow the inner text parsing to be customized for certain elements', () => {
+    instrumentation = new ClicksInstrumentation({
+      diag,
+      innerTextForElement: element =>
+        element.hasAttribute('data-is-sensitive')
+          ? '[REDACTED]'
+          : element.innerText,
+    });
+    const target1 = document.createElement('div');
+    target1.setAttribute('data-is-sensitive', 'true');
+    target1.innerText = 'should not track';
+    testContainer.append(target1);
+
+    const target2 = document.createElement('div');
+    target2.innerText = 'should track';
+    testContainer.append(target2);
+
+    target1.click();
+    target2.click();
+    spanSessionManager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(2);
+
+    void expect(sessionSpan.events[0].name).to.be.equal('click');
+    void expect(sessionSpan.events[0].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<div>[REDACTED]</div>',
+    });
+
+    void expect(sessionSpan.events[1].name).to.be.equal('click');
+    void expect(sessionSpan.events[1].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<div>should track</div>',
+    });
+  });
 });
