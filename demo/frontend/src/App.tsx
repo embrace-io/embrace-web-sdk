@@ -105,7 +105,7 @@ const App = () => {
   const handleSendEmbraceWarnLog = () => {
     logManager.message('This is a warning log', 'warning', {
       attributes: {
-        key: 'some value for an info log',
+        key: 'some value for an warning log',
       },
     });
   };
@@ -113,7 +113,7 @@ const App = () => {
   const handleSendEmbraceErrorLog = () => {
     logManager.message('This is an error log', 'error', {
       attributes: {
-        key: 'some value for an info log',
+        key: 'some value for an error log',
       },
     });
   };
