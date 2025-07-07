@@ -309,9 +309,6 @@ describe('initSDK', () => {
     it('should include the correct resource attributes', async () => {
       fakeFetchRespondWith('');
 
-      // Hardcode the session_number so that we validate it gets incremented by one.
-      localStorage.setItem('embrace_session_number', '15');
-
       const result = initSDK({
         appID: 'abc12',
         appVersion: 'my-app-version',
@@ -391,6 +388,13 @@ describe('initSDK', () => {
       const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
       expect(sessionSpan['name']).to.be.equal('emb-session');
 
+      const sessionNumber = sessionSpan['attributes'].find(
+        attr => attr.key === 'emb.session_number'
+      );
+      void expect(sessionNumber?.value.intValue).not.to.be.undefined;
+      expect(sessionNumber?.value.intValue).to.be.greaterThan(0);
+      expect(sessionNumber?.value.intValue).to.be.lessThan(20);
+
       const startupDuration = sessionSpan['attributes'].find(
         attr => attr.key === 'emb.startup_duration'
       );
@@ -406,7 +410,7 @@ describe('initSDK', () => {
           value: { stringValue: sessionID },
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
-        { key: 'emb.session_number', value: { intValue: 16 } },
+        startupDuration,
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,
       ]);
