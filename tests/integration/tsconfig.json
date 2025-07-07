@@ -1,14 +1,5 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "strict": true,
-    "outDir": "dist",
-  },
-  "exclude": [
-    "platforms"
-  ],
+  "extends": "../../tsconfig.json",
+  "include": ["**/*.ts"],
+  "exclude": ["platforms"]
 }

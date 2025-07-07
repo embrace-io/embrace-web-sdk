@@ -1,25 +1,25 @@
 import { test as base } from '@playwright/test';
-// import { EMBRACE_API_REGEX } from '../constants/index.js';
 import zlib from 'node:zlib';
 import path, { dirname } from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
-import {
-  IExportLogsServiceRequest,
-  ILogRecord,
-  IResourceLogs,
-  IScopeLogs,
-} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types';
-import {
+import type { Route, Request } from 'playwright';
+// eslint-disable-next-line regex/invalid
+import type { IKeyValue } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
+import type {
   IEvent,
   IExportTraceServiceRequest,
   IResourceSpans,
   IScopeSpans,
   ISpan,
-} from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types';
-import { IKeyValue, IResource } from '@opentelemetry/otlp-transformer';
-import { Route, Request } from 'playwright';
+} from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
+import type {
+  IExportLogsServiceRequest,
+  ILogRecord,
+  IResourceLogs,
+  IScopeLogs,
+} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -69,7 +69,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
               requests.push({
                 url: request.url(),
                 headers: request.headers(),
-                data: JSON.parse(json),
+                data: JSON.parse(json) as Record<string, unknown>,
               });
             } catch (e) {
               console.error('Failed to parse request to JSON:', e);
@@ -128,19 +128,16 @@ const getAttributeValue = (
 
 const isResourceSpan = (
   entity: IResourceSpans | IResourceLogs
-): entity is IResourceSpans => {
-  return (entity as IResourceSpans).scopeSpans !== undefined;
-};
+): entity is IResourceSpans =>
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  (entity as IResourceSpans).scopeSpans !== undefined;
 
-const isScopeSpan = (
-  entity: IScopeSpans | IScopeLogs
-): entity is IScopeSpans => {
-  return (entity as IScopeSpans).spans !== undefined;
-};
+const isScopeSpan = (entity: IScopeSpans | IScopeLogs): entity is IScopeSpans =>
+  (entity as IScopeSpans).spans !== undefined;
 
-const isSpan = (entity: ISpan | ILogRecord): entity is ISpan => {
-  return (entity as ISpan).spanId !== undefined;
-};
+const isSpan = (entity: ISpan | ILogRecord): entity is ISpan =>
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  (entity as ISpan).spanId !== undefined;
 
 const expect = testWithMockApi.expect.extend({
   toMatchAttributes: (
@@ -182,7 +179,7 @@ const expect = testWithMockApi.expect.extend({
         return {
           pass: false,
           message: () =>
-            `${extraMessage}Attribute mismatch at index ${index}: expected ${expectedAttr.key} to be ${chalk.green(expectedValue)}, but got ${receivedAttr.key} with value ${chalk.red(receivedValue)}${INTENDED_CHANGE_MESSAGE}`,
+            `${extraMessage}Attribute mismatch at index ${index.toString()}: expected ${expectedAttr.key} to be ${chalk.green(expectedValue)}, but got ${receivedAttr.key} with value ${chalk.red(receivedValue)}${INTENDED_CHANGE_MESSAGE}`,
         };
       }
     }
@@ -337,7 +334,7 @@ const expect = testWithMockApi.expect.extend({
                 return {
                   pass: false,
                   message: () =>
-                    `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}`,
+                    `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}`,
                 };
               }
 
@@ -357,32 +354,24 @@ const expect = testWithMockApi.expect.extend({
               ] of receivedScopes.entries()) {
                 const expectedEntity = expectedScopes[entityIndex];
 
-                if (receivedEntity && expectedEntity) {
-                  try {
-                    if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
-                      expect(receivedEntity).toMatchSpan(expectedEntity);
-                    } else if (
-                      !isSpan(receivedEntity) &&
-                      !isSpan(expectedEntity)
-                    ) {
-                      expect(receivedEntity).toMatchLog(expectedEntity);
-                    }
-                  } catch (e) {
-                    const entityName = isSpan(receivedEntity)
-                      ? receivedEntity.name
-                      : receivedEntity.body?.stringValue || '';
-
-                    return {
-                      pass: false,
-                      message: () =>
-                        `Entity ${entityName} in scope ${resourceIndex} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
-                    };
+                try {
+                  if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
+                    expect(receivedEntity).toMatchSpan(expectedEntity);
+                  } else if (
+                    !isSpan(receivedEntity) &&
+                    !isSpan(expectedEntity)
+                  ) {
+                    expect(receivedEntity).toMatchLog(expectedEntity);
                   }
-                } else {
+                } catch (e) {
+                  const entityName = isSpan(receivedEntity)
+                    ? receivedEntity.name
+                    : receivedEntity.body?.stringValue || '';
+
                   return {
                     pass: false,
                     message: () =>
-                      `Expected entity at index ${entityIndex} in scope ${resourceIndex} to match${INTENDED_CHANGE_MESSAGE}`,
+                      `Entity ${entityName} in scope ${resourceIndex.toString()} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
                   };
                 }
               }
@@ -418,16 +407,14 @@ const expect = testWithMockApi.expect.extend({
     const expectedString = fs.readFileSync(filePath, 'utf-8');
 
     try {
-      const expectedResources =
-        received.data && received.data.resourceSpans
-          ? (JSON.parse(expectedString) as IExportTraceServiceRequest)
-              .resourceSpans
-          : (JSON.parse(expectedString) as IExportLogsServiceRequest)
-              .resourceLogs;
-      const receivedResources =
-        received.data && received.data.resourceSpans
-          ? (received.data as IExportTraceServiceRequest).resourceSpans
-          : (received.data as IExportLogsServiceRequest).resourceLogs;
+      const expectedResources = received.data.resourceSpans
+        ? (JSON.parse(expectedString) as IExportTraceServiceRequest)
+            .resourceSpans
+        : (JSON.parse(expectedString) as IExportLogsServiceRequest)
+            .resourceLogs;
+      const receivedResources = received.data.resourceSpans
+        ? (received.data as IExportTraceServiceRequest).resourceSpans
+        : (received.data as IExportLogsServiceRequest).resourceLogs;
 
       expect(expectedResources).toMatchOTelEntities(receivedResources);
     } catch (e) {

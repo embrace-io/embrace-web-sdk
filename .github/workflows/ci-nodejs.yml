@@ -475,8 +475,8 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         # Build needs to run first so e2e tests can use the built apps and not build again
         run: |
-          sdk:test:integration:build
-          sdk:test:integration:e2e
+          npm run sdk:test:integration:build
+          npm run sdk:test:integration:e2e
 
       - name: Cache successful test results
         if: ${{ success() }}

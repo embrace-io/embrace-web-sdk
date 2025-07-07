@@ -1,7 +1,7 @@
 import testWithMockApi, {
   expect as extendedMockApiTestExpect,
 } from './test-with-mock-api.js';
-import { ReceivedSpans } from '../types';
+import type { ReceivedSpans } from '../index.js';
 
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionBatchedSpanProcessor non-session span ended';
@@ -73,7 +73,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       }
 
       const response = await fetch('http://localhost:3001/received-spans');
-      const receivedSpans: ReceivedSpans = await response.json();
+      const receivedSpans = (await response.json()) as ReceivedSpans;
 
       testE2E.expect(receivedSpans).toHaveProperty(currentSessionId);
     });
@@ -86,7 +86,7 @@ type RunE2ETestsOptions = {
   numberOfExpectedSpans: number;
 };
 
-const runE2ETests = async ({
+const runE2ETests = ({
   url,
   name,
   numberOfExpectedSpans,
@@ -96,7 +96,7 @@ const runE2ETests = async ({
   testE2E.describe(`${name} E2E Tests`, () => {
     testE2E(
       'it should load the home page without errors',
-      async ({ page, navigateAndWaitUntilReady }) => {
+      async ({ navigateAndWaitUntilReady }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
       }
     );

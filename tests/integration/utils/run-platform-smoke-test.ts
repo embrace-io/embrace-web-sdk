@@ -1,10 +1,10 @@
 import test from 'node:test';
-import { processSondaReport } from './index';
+import { processSondaReport } from './index.js';
 import assert from 'node:assert';
 import { dirname, resolve } from 'node:path';
-import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config';
+import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.js';
 import fs from 'node:fs';
-import { resultsToMarkdownTable } from '../../utils';
+import { resultsToMarkdownTable } from '../../utils/index.js';
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -113,25 +113,24 @@ const runPlatformBuildSmokeTest = async (
         return;
       }
 
-      const tabledResults = Object.entries(results).reduce(
-        (acc, [target, report]) => {
-          acc[`${platformName} - ${target}`] = [
-            {
-              name: 'Total Uncompressed Size',
-              value: report.totalUncompressedSize,
-              unit: 'KB',
-            },
-            {
-              name: 'Total Gzip Size',
-              value: report.totalGzipSize,
-              unit: 'KB',
-            },
-          ];
+      const tabledResults = Object.entries(results).reduce<
+        Record<string, { name: string; value: number; unit: string }[]>
+      >((acc, [target, report]) => {
+        acc[`${platformName} - ${target}`] = [
+          {
+            name: 'Total Uncompressed Size',
+            value: report.totalUncompressedSize,
+            unit: 'KB',
+          },
+          {
+            name: 'Total Gzip Size',
+            value: report.totalGzipSize,
+            unit: 'KB',
+          },
+        ];
 
-          return acc;
-        },
-        {} as Record<string, { name: string; value: number; unit: string }[]>
-      );
+        return acc;
+      }, {});
 
       // Creat folder if it doesn't exist
       const resultsDir = './build-test-results';
