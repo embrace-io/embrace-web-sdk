@@ -410,7 +410,7 @@ describe('initSDK', () => {
           value: { stringValue: sessionID },
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
-        startupDuration,
+        sessionNumber,
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,
       ]);
