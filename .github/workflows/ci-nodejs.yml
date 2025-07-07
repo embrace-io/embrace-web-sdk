@@ -512,7 +512,8 @@ jobs:
         # Build needs to run first so e2e tests can use the built apps and not build again
         run: |
           npm run sdk:test:integration:build
-          npm run sdk:test:integration:e2e
+        # Run the tests in a virtual display, since Playwright needs a display to run
+          xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' npm run sdk:test:integration:e2e
 
       - name: Cache successful test results
         if: ${{ success() }}
