@@ -28,7 +28,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         clearTimeout(this._checkVisibilityTimeout);
       }
 
-      // When switching to visible, we want to happen as soon as it's triggered
+      // When switching to visible, we want to trigger the event immediately
       if (
         visibilityDoc.visibilityState === 'visible' &&
         this._currentVisibilityState != visibilityDoc.visibilityState
