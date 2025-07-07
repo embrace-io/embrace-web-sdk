@@ -33,6 +33,8 @@ import {
   IdentifiableSessionLogRecordProcessor,
   UserSpanProcessor,
   UserLogRecordProcessor,
+  LogRecordScrubProcessor,
+  SpanScrubProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -48,6 +50,8 @@ import type {
   SetupTracesArgs,
 } from './types.js';
 import { registry } from './registry.js';
+import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
+import type { AttributeScrubber } from '../common/index.js';
 
 export const initSDK = (
   {
@@ -63,6 +67,9 @@ export const initSDK = (
     instrumentations = [],
     contextManager = null,
     logProcessors = [],
+    attributeScrubbers = [],
+    enableDefaultAttributeScrubbing = true,
+    additionalQueryParamsToScrub = [],
     logLevel = DiagLogLevel.ERROR,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
@@ -114,6 +121,13 @@ export const initSDK = (
       limitManager,
     });
 
+    const finalAttributeScrubbers: AttributeScrubber[] = [
+      ...(enableDefaultAttributeScrubbing
+        ? getDefaultAttributeScrubbers(additionalQueryParamsToScrub)
+        : []),
+      ...attributeScrubbers,
+    ];
+
     const tracerProvider = setupTraces({
       sendingToEmbrace,
       appID,
@@ -126,6 +140,7 @@ export const initSDK = (
       propagator,
       contextManager,
       limitManager,
+      attributeScrubbers: finalAttributeScrubbers,
     });
 
     const loggerProvider = setupLogs({
@@ -138,6 +153,7 @@ export const initSDK = (
       logProcessors,
       spanSessionManager,
       limitManager,
+      attributeScrubbers: finalAttributeScrubbers,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -195,6 +211,7 @@ const setupTraces = ({
   propagator = null,
   contextManager = null,
   limitManager,
+  attributeScrubbers,
 }: SetupTracesArgs) => {
   const embraceTraceManager = new EmbraceTraceManager();
   trace.setGlobalTraceManager(embraceTraceManager);
@@ -204,6 +221,7 @@ const setupTraces = ({
     createSessionSpanProcessor(spanSessionManager),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
+    new SpanScrubProcessor({ attributeScrubbers }),
   ];
 
   spanExporters?.forEach(exporter => {
@@ -255,6 +273,7 @@ const setupLogs = ({
   logProcessors,
   spanSessionManager,
   limitManager,
+  attributeScrubbers,
 }: SetupLogsArgs) => {
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
@@ -273,6 +292,7 @@ const setupLogs = ({
     }),
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
+    new LogRecordScrubProcessor({ attributeScrubbers }),
   ];
 
   logExporters?.forEach(exporter => {
