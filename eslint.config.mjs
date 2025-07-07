@@ -21,6 +21,8 @@ export default tseslint.config([
     files: [
       './src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
       './cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
+      './tests/**/*.{js,mjs,cjs,ts,jsx,tsx}',
+      './demo/**/*.{js,mjs,cjs,ts,jsx,tsx}',
     ],
     extends: [
       pluginJs.configs.recommended,
@@ -149,11 +151,7 @@ export default tseslint.config([
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        project: [
-          './tsconfig.json',
-          './tsconfig.test.json',
-          './cli/tsconfig.json',
-        ],
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
     },

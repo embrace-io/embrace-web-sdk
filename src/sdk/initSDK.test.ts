@@ -45,6 +45,10 @@ type ExportedSpan = ReadableSpan & {
     key: string;
     value: {
       stringValue: string;
+    } & {
+      intValue: number;
+    } & {
+      doubleValue: number;
     };
   }[];
 };
@@ -384,8 +388,16 @@ describe('initSDK', () => {
         name: 'embrace-web-sdk-sessions',
       });
       expect(scopeSpan['spans']).to.have.lengthOf(1);
-      const sessionSpan = scopeSpan['spans'][0];
+      const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
       expect(sessionSpan['name']).to.be.equal('emb-session');
+
+      const startupDuration = sessionSpan['attributes'].find(
+        attr => attr.key === 'emb.startup_duration'
+      );
+      void expect(startupDuration?.value.doubleValue).not.to.be.undefined;
+      expect(startupDuration?.value.doubleValue).to.be.greaterThan(0);
+      expect(startupDuration?.value.doubleValue).to.be.lessThan(100);
+
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
         { key: 'emb.state', value: { stringValue: 'foreground' } },
@@ -396,6 +408,7 @@ describe('initSDK', () => {
         { key: 'emb.cold_start', value: { boolValue: true } },
         { key: 'emb.session_number', value: { intValue: 16 } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
+        startupDuration,
       ]);
     });
 

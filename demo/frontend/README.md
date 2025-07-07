@@ -36,7 +36,7 @@ With all of these, here are the steps to run the demo app referencing the latest
 6. Copy the file located at `demo/frontend/.env.template` to `demo/frontend/.env` and modify with your custom envs.
 7. Run `npm run demo:frontend:dev` in the `demo/frontend` directory. This will start the demo app in development mode,
    with hot reloading enabled.
-8. Open your browser and go to `http://localhost:5173/`. You should see the demo app running.  
+8. Open your browser and go to `http://localhost:5173/`. You should see the demo app running.
    If you make changes to the demo frontend app, then the hot reloading will automatically reload the app in the
    browser. If you make changes to the sdk, then you will need to recompile the sdk and restart the demo app (steps 2,
    3, 4, 5, 6). If you want to test the demo app in production mode, bundled, then repeat steps 1 through 5 and then.
@@ -73,7 +73,7 @@ With all of these, here are the steps to run the demo app referencing the latest
 6. Copy the file located at `demo/frontend/.env.template` to `demo/frontend/.env` and modify with your custom envs.
 7. Run `npm run demo:frontend:compile` in the `demo/frontend` directory. This will build the demo app in production
    mode. The output will be at `demo/frontend/dist`
-7. Run `npm run demo:frontend:upload:sourcemaps:dry -- -b <path_to_bundle_file.js> -m <path_to_map_file.js.map>` in
+8. Run `npm run demo:frontend:upload:sourcemaps:dry -- -b <path_to_bundle_file.js> -m <path_to_map_file.js.map>` in
    the `demo/frontend` directory. This will trigger a "dry" run to
    upload the sourcemaps to embrace. As this is a dry run, it won't actually upload anything. If you do want to
    upload source maps, you need to use `npm run demo:frontend:upload:sourcemaps:stg` or
