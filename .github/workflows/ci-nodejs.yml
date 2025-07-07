@@ -408,7 +408,7 @@ jobs:
             ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
             ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
 
-  test-bundle:
+  test-integration:
     needs:
       - configure
       - environment
@@ -462,19 +462,21 @@ jobs:
           npm run sdk:compile
 
       # TODO: cache
-      - name: Install npm dependencies for sample apps
+      - name: Install npm dependencies for platforms
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          find ./tests/bundle -type f -name package.json | while read pkg; do
+          find ./tests/integration -type f -name package.json | while read pkg; do
             dir=$(dirname "$pkg")
             echo "Installing dependencies in $dir"
             npm install --prefix "$dir"
           done
 
-      - name: Test Bundle
+      - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        # Build needs to run first so e2e tests can use the built apps and not build again
         run: |
-          npm run sdk:test:bundle
+          sdk:test:integration:build
+          sdk:test:integration:e2e
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -486,22 +488,22 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      - name: Create PR comment with bundle results
+      - name: Create PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          echo '<!-- bundle-results -->' > bundle-results.md
-          echo "## Bundle results" >> bundle-results.md
+          echo '<!-- build-results -->' > build-results.md
+          echo "## build results" >> build-results.md
       
-          for file in ./tests/bundle/test-results/*.md; do
-            cat "$file" >> bundle-results.md
+          for file in ./tests/integration/build-test-results/*.md; do
+            cat "$file" >> build-results.md
           done
 
-      - name: Post or update PR comment with performance results
+      - name: Post or update PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          BODY="$(cat bundle-results.md)"
+          BODY="$(cat build-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- bundle-results -->"))| .id' comments.json)
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- build-results -->"))| .id' comments.json)
 
           if [[ -n "$COMMENT_ID" ]]; then
             echo "Updating comment $COMMENT_ID"
@@ -516,13 +518,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update artifact with bundle results
+      - name: Update artifact with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: bundle-results
-          path: tests/bundle/*/.sonda/**/*.html
+          name: build-results
+          path: tests/integration/*/.sonda/**/*.html
 
   commitlint:
     needs: configure

@@ -23,7 +23,8 @@
     "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
     "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
     "sdk:test:performance": "cd tests/performance && npm run test",
-    "sdk:test:bundle": "cd tests/bundle && npm run test",
+    "sdk:test:integration:build": "cd tests/integration && npm run tests:integration:build",
+    "sdk:test:integration:e2e": "cd tests/integration && npm run tests:integration:e2e",
     "sdk:test:watch": "npm run sdk:test -- --watch",
     "sdk:compile": "npm run sdk:compile:esm && npm run sdk:compile:types",
     "sdk:compile:esm": "rollup -c",
@@ -185,6 +186,6 @@
     "demo/frontend-cdn",
     "demo/webpack-example",
     "tests/performance",
-    "tests/bundle"
+    "tests/integration"
   ]
 }

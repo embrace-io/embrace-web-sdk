@@ -1,0 +1,22 @@
+{
+  "name": "build-tests",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "tests:integration:build": "EMBRACE_DATA_URL=http://localhost:3001 npx tsx --test \"./**/*.test.ts\" --test-timeout=20000",
+    "tests:integration:e2e": "EMBRACE_DATA_URL=http://localhost:3001 npx playwright test",
+    "tests:integration:e2e:update-golden": "EMBRACE_DATA_URL=http://localhost:3001 UPDATE_GOLDEN=1 npx playwright test"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@opentelemetry/otlp-transformer": "0.34.0",
+    "@playwright/test": "^1.53.2",
+    "jest-diff": "^30.0.3",
+    "playwright": "^1.53.2",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

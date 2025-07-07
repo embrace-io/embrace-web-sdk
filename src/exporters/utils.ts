@@ -5,4 +5,6 @@ export const getEmbraceHeaders = (
   'X-EM-AID': appID,
   'X-EM-DID': userID,
 });
-export const getDataURL = (_appId: string): string => `http://localhost:3001`;
+
+export const getDataURL = (appID: string): string =>
+  process.env.EMBRACE_DATA_URL || `https://a-${appID}.data.emb-api.com`;
