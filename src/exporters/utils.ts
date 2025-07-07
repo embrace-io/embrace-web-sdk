@@ -7,6 +7,6 @@ export const getEmbraceHeaders = (
 });
 
 export const getDataURL = (appID: string): string =>
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  (process && process.env.EMBRACE_DATA_URL) ||
-  `https://a-${appID}.data.emb-api.com`;
+  typeof process !== 'undefined' && process.env.EMBRACE_DATA_URL
+    ? process.env.EMBRACE_DATA_URL
+    : `https://a-${appID}.data.emb-api.com`;
