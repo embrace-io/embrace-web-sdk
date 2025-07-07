@@ -455,6 +455,42 @@ jobs:
         run: |
           npm ci --strict-peer-deps
 
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
+
+
       # We need the SDK to be built, so we can use it in the sample apps
       - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
