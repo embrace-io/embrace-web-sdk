@@ -143,4 +143,34 @@ describe('SpanSessionVisibilityInstrumentation', () => {
 
     void expect(spanSessionManager.getSessionSpan()).not.to.be.null;
   });
+
+  it('should not end a session when visibility changes to hidden and visible within less than visibilityWaitTimeMs', async () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityWaitTimeMs: 1000,
+      visibilityDoc,
+    });
+
+    spanSessionManager.startSessionSpan();
+    const sessionSpan = spanSessionManager.getSessionSpan();
+    void expect(sessionSpan).to.not.be.null;
+
+    // Trigger hidden and visible events within less than visibilityWaitTimeMs
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    // Wait some time less than 1s and trigger visible again.
+    await new Promise(r => setTimeout(r, 10));
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+
+    // No session should have ended:
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(0);
+
+    // The session span should still be the same as before
+    void expect(spanSessionManager.getSessionSpan()).to.equal(sessionSpan);
+  });
 });
