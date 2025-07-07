@@ -510,9 +510,9 @@ jobs:
       - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         # Build needs to run first so e2e tests can use the built apps and not build again
+        # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
           npm run sdk:test:integration:build
-        # Run the tests in a virtual display, since Playwright needs a display to run
           xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' npm run sdk:test:integration:e2e
 
       - name: Cache successful test results
