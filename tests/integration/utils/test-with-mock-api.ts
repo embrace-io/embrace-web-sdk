@@ -78,13 +78,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
         });
 
         await route.continue();
-        // await route.fulfill({
-        //   status: 200,
-        //   contentType: 'application/json',
-        //   body: JSON.stringify({ message: 'ok' }),
-        // });
       };
-      // match with localhost:3001/v2/spans or localhost:3001/v2/logs
       const regex = new RegExp(
         `^${process.env.EMBRACE_API_URL || 'http://localhost:3001'}/v2/(spans|logs)$`
       );
@@ -338,16 +332,6 @@ const expect = testWithMockApi.expect.extend({
             : expectedEntities[scopeIndex].logRecords;
 
           if (receivedScope.scope) {
-            // For some instrumentation is not possible to compare spans/logs by name and attributes
-            // as spans/logs are created in different orders and there's no way of matching them with the previous results
-            if (
-              INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON.includes(
-                receivedScope.scope.name
-              )
-            ) {
-              continue;
-            }
-
             if (receivedScopes && expectedScopes) {
               if (receivedScopes.length !== expectedScopes.length) {
                 return {
@@ -355,6 +339,16 @@ const expect = testWithMockApi.expect.extend({
                   message: () =>
                     `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}`,
                 };
+              }
+
+              // For some instrumentation is not possible to compare spans/logs by name and attributes
+              // as spans/logs are created in different orders and there's no way of matching them with the previous results
+              if (
+                INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON.includes(
+                  receivedScope.scope.name
+                )
+              ) {
+                continue;
               }
 
               for (const [
