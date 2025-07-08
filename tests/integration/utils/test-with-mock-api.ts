@@ -20,6 +20,7 @@ import type {
   IResourceLogs,
   IScopeLogs,
 } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
+import { diff } from 'jest-diff';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -149,10 +150,12 @@ const expect = testWithMockApi.expect.extend({
 
     // First check if they have the same length
     if (received.length !== expected.length) {
+      const attributesDiff = diff(received, expected);
+
       return {
         pass: false,
         message: () =>
-          `${extraMessage}Expected attributes to have the same length, but got ${chalk.red(received.length)} and ${chalk.green(expected.length)}${INTENDED_CHANGE_MESSAGE}`,
+          `${extraMessage}Expected attributes to have the same length, but got\n ${attributesDiff || 'error getting diff'}`,
       };
     }
 
