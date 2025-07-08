@@ -62,15 +62,13 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       });
     });
   },
-  validateThatSessionEnded: async ({ getCurrentSessionId, page }, use) => {
+  validateThatSessionEnded: async ({ getCurrentSessionId }, use) => {
     await use(async (sessionId?: string) => {
       const currentSessionId = sessionId || (await getCurrentSessionId());
 
-      if (!page.isClosed()) {
-        // Easy way of making sure the server registered the session end
-        // If this gets flaky, we can increase the timeout or read the server logs
-        await page.waitForTimeout(500); // Wait for 1 second to ensure the session is ended
-      }
+      // Easy way of making sure the server registered the session end
+      // If this gets flaky, we can increase the timeout or read the server logs
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const response = await fetch('http://localhost:3001/received-spans');
       const receivedSpans = (await response.json()) as ReceivedSpans;
@@ -132,9 +130,6 @@ const runE2ETests = ({
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
-
-        await page.pause();
-
         await waitForRequest();
 
         testE2E.expect(requests).toHaveLength(1);

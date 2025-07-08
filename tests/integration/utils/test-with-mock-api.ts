@@ -97,11 +97,9 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       await page.pause();
 
       await use(async () => {
-        await page.waitForResponse(request => {
-          console.log(`Waiting for request to match ${request.url()}`);
-
-          return request.url().match(regex) !== null;
-        });
+        await page.waitForResponse(
+          request => request.url().match(regex) !== null
+        );
       });
     },
     { scope: 'test' },
