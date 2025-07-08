@@ -1,5 +1,6 @@
-import testWithMockApi from // expect as extendedMockApiTestExpect,
-'./test-with-mock-api.js';
+import testWithMockApi, {
+  expect as extendedMockApiTestExpect,
+} from './test-with-mock-api.js';
 import type { ReceivedSpans } from '../index.js';
 
 const EXPECTED_SPAN_ENDED_TEXT =
@@ -90,7 +91,7 @@ const runE2ETests = ({
   name,
   numberOfExpectedSpans,
 }: RunE2ETestsOptions) => {
-  // const codifiedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+  const codifiedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
   testE2E.describe(`${name} E2E Tests`, () => {
     testE2E(
@@ -125,20 +126,20 @@ const runE2ETests = ({
       }
     );
 
-    // testE2E(
-    //   'it should end a session and send a request to the API',
-    //   async ({ requests, waitForRequest, navigateAndWaitUntilReady, page }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //     const button = page.getByRole('button', { name: 'End Session' });
-    //     await button.click();
-    //     await waitForRequest();
-    //
-    //     testE2E.expect(requests).toHaveLength(1);
-    //     extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-    //       `${codifiedName}-session.json`
-    //     );
-    //   }
-    // );
+    testE2E(
+      'it should end a session and send a request to the API',
+      async ({ requests, waitForRequest, navigateAndWaitUntilReady, page }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        const button = page.getByRole('button', { name: 'End Session' });
+        await button.click();
+        await waitForRequest();
+
+        testE2E.expect(requests).toHaveLength(1);
+        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          `${codifiedName}-session.json`
+        );
+      }
+    );
     //
     // testE2E(
     //   'it should send a log',
