@@ -513,7 +513,7 @@ jobs:
         # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
           npm run sdk:test:integration:build
-          xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' npm run sdk:test:integration:e2e
+          npm run sdk:test:integration:e2e:ci
 
       - name: Cache successful test results
         if: ${{ success() }}
