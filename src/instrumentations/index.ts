@@ -23,3 +23,4 @@ export {
   type WebVitalsInstrumentationArgs,
 } from './web-vitals/index.js';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';
+export { getNavigationInstrumentation } from './navigation/index.js';
