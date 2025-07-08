@@ -80,9 +80,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
 
         await route.continue();
       };
-      const regex = new RegExp(
-        `^${process.env.EMBRACE_API_URL || 'http://localhost:3001'}/v2/(spans|logs)$`
-      );
+      const regex = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
 
       await page.route(regex, handler);
       await use(requests);
@@ -91,14 +89,15 @@ const testWithMockApi = base.extend<TestWithMockApi>({
   ],
   waitForRequest: [
     async ({ page }, use) => {
-      const regex = new RegExp(
-        `^${process.env.EMBRACE_API_URL || 'http://localhost:3001'}/v2/(spans|logs)$`
-      );
+      const regex = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
+      await page.pause();
 
       await use(async () => {
-        await page.waitForResponse(
-          request => request.url().match(regex) !== null
-        );
+        await page.waitForResponse(request => {
+          console.log(`Waiting for request to match ${request.url()}`);
+
+          return request.url().match(regex) !== null;
+        });
       });
     },
     { scope: 'test' },
