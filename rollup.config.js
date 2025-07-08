@@ -71,6 +71,7 @@ export default defineConfig([
       sourcemap: true,
       preserveModules: true, // Keep module structure intact
       preserveModulesRoot: 'src',
+      sourcemapDebugIds: true,
     },
     external: isExternal,
     onwarn,
@@ -86,6 +87,7 @@ export default defineConfig([
       sourcemap: true,
       preserveModules: true,
       preserveModulesRoot: 'src',
+      sourcemapDebugIds: true,
     },
     external: isExternal,
     onwarn,
@@ -101,6 +103,7 @@ export default defineConfig([
       sourcemap: true,
       preserveModules: true,
       preserveModulesRoot: 'src',
+      sourcemapDebugIds: true,
     },
     external: isExternal,
     onwarn,
@@ -116,6 +119,7 @@ export default defineConfig([
       // global variable name for the SDK
       name: 'EmbraceWebSdk',
       sourcemap: true,
+      sourcemapDebugIds: true,
       // TODO create a new entry file that sets the window variable explicitly and remove this line.
       // This is a workaround to assign the SDK to the global window object so users can lazyload the SDK.
       // By default, rollup creates the export with 'var' and assumes the SDK is being used in a script tag,
