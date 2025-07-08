@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "tests:integration:build": "EMBRACE_DATA_URL=http://localhost:3001 npx tsx --test \"./tests/build/*.test.ts\" --test-timeout=20000",
+    "tests:integration:build": "echo 'Test files:' && ls tests/build && EMBRACE_DATA_URL=http://localhost:3001 npx tsx --test \"tests/build/*.test.ts\" --test-timeout=20000",
     "tests:integration:e2e": "EMBRACE_DATA_URL=http://localhost:3001 npx playwright test",
     "tests:integration:e2e:update-golden": "EMBRACE_DATA_URL=http://localhost:3001 UPDATE_GOLDEN=1 npx playwright test"
   },
