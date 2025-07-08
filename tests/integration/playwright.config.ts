@@ -18,8 +18,4 @@ export default defineConfig({
     },
   ],
   testMatch: '**/*.spec.ts',
-  use: {
-    // We need to run tests in a real browser to test visibility of the tab
-    headless: false,
-  },
 });

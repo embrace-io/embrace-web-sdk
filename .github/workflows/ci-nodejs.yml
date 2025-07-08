@@ -513,7 +513,7 @@ jobs:
         # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
           npm run sdk:test:integration:build
-          npm run sdk:test:integration:e2e:ci
+          npm run sdk:test:integration:e2e
 
       - name: Cache successful test results
         if: ${{ success() }}
