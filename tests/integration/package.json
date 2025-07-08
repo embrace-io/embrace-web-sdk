@@ -6,7 +6,7 @@
     "tests:integration:build": "pwd && ls && EMBRACE_DATA_URL=http://localhost:3001 npx tsx --test \"tests/build/*.test.ts\" --test-timeout=20000",
     "tests:integration:e2e": "EMBRACE_DATA_URL=http://localhost:3001 npx playwright test",
     "tests:integration:e2e:update-golden": "EMBRACE_DATA_URL=http://localhost:3001 UPDATE_GOLDEN=1 npx playwright test",
-    "tests:integration:e2e:ci": "xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' npm run tests:integration:e2e"
+    "tests:integration:e2e:ci": "xvfb-run --auto-servernum --server-args='-screen 0 1280x720x24' EMBRACE_DATA_URL=http://localhost:3001 npx playwright test"
   },
   "author": "",
   "license": "ISC",
