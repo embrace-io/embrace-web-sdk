@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "tests:integration:build": "EMBRACE_DATA_URL=http://localhost:3001 npx tsx --test \"tests/build/*.test.ts\" --test-timeout=20000",
-    "tests:integration:e2e": "DEBUG=pw:browser*,pw:api EMBRACE_DATA_URL=http://localhost:3001 npx playwright test",
+    "tests:integration:e2e": "ls -R server && DEBUG=pw:browser*,pw:api EMBRACE_DATA_URL=http://localhost:3001 npx playwright test",
     "tests:integration:e2e:update-golden": "EMBRACE_DATA_URL=http://localhost:3001 UPDATE_GOLDEN=1 npx playwright test"
   },
   "author": "",
