@@ -130,4 +130,27 @@ describe('EmbraceLogExporter', () => {
     const parsed = JSON.parse(text) as never;
     expect(parsed).to.deep.equal(expectedBody);
   });
+
+  it('should use the provided embraceDataURL', async () => {
+    const mockEmbraceDataURL = 'http://localhost:3000';
+
+    fakeFetchRespondWith('');
+    const args: EmbraceLogExporterArgs = {
+      appID: mockAppID,
+      userID: mockUserID,
+      embraceDataURL: mockEmbraceDataURL,
+    };
+
+    const exporter = new EmbraceLogExporter(args);
+
+    await new Promise<void>(resolve => {
+      exporter.export(mockLogs, result => {
+        expect(result.code).to.equal(ExportResultCode.SUCCESS);
+        resolve();
+      });
+    });
+
+    expect(fakeFetchGetMethod()).to.equal('POST');
+    expect(fakeFetchGetUrl()).to.equal(`${mockEmbraceDataURL}/v2/logs`);
+  });
 });
