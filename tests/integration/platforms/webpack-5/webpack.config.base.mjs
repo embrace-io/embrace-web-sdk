@@ -1,6 +1,8 @@
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import webpack from 'webpack'
 
+console.log('Using webpack 5 config for integration tests', process.env.EMBRACE_DATA_URL);
+
 export default {
   devtool: 'source-map',
   entry: './src/index.tsx',

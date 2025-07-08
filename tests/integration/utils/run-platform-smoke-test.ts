@@ -66,6 +66,8 @@ const runPlatformBuildSmokeTest = async (
             cwd: platformPath,
           });
 
+          console.log('Build output:', stdout);
+
           onSuccess?.(target, stdout);
 
           if (includePlatformSizeTest) {
