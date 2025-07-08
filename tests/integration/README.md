@@ -66,6 +66,7 @@ These log fields are ignored during the comparison:
 These attributes are ignored during the comparison:
 - session.id
 - log.record.uid
+- emb.startup_duration
 
 Some instrumentation may also produce a non-deterministic list of spans or logs, for these we only compare the amount of spans or logs, not their content:
 - @opentelemetry/instrumentation-document-load

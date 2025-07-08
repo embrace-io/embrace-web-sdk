@@ -6,8 +6,8 @@ runE2ETests({
   numberOfExpectedSpans: 3,
 });
 
-// runE2ETests({
-//   name: 'Webpack 5 ES2015',
-//   url: 'http://localhost:3001/public/webpack-5/es2015/index.html',
-//   numberOfExpectedSpans: 3,
-// });
+runE2ETests({
+  name: 'Webpack 5 ES2015',
+  url: 'http://localhost:3001/public/webpack-5/es2015/index.html',
+  numberOfExpectedSpans: 3,
+});

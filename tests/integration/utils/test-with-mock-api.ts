@@ -44,7 +44,11 @@ type TestWithMockApi = {
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   '@opentelemetry/instrumentation-document-load',
 ];
-const IGNORED_ATTRIBUTES_LIST = ['session.id', 'log.record.uid'];
+const IGNORED_ATTRIBUTES_LIST = [
+  'session.id',
+  'log.record.uid',
+  'emb.startup_duration',
+];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
   requests: [
