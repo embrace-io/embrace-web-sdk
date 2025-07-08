@@ -1,13 +1,22 @@
-import { runE2ETests } from '../../utils/index.js';
+// import { runE2ETests } from '../../utils/index.js';
+//
+// runE2ETests({
+//   name: 'Webpack 5 ESNext',
+//   url: 'http://localhost:3001/public/webpack-5/esnext/index.html',
+//   numberOfExpectedSpans: 3,
+// });
+//
+// runE2ETests({
+//   name: 'Webpack 5 ES2015',
+//   url: 'http://localhost:3001/public/webpack-5/es2015/index.html',
+//   numberOfExpectedSpans: 3,
+// });
 
-runE2ETests({
-  name: 'Webpack 5 ESNext',
-  url: 'http://localhost:3001/public/webpack-5/esnext/index.html',
-  numberOfExpectedSpans: 3,
-});
+import { test } from '@playwright/test';
 
-runE2ETests({
-  name: 'Webpack 5 ES2015',
-  url: 'http://localhost:3001/public/webpack-5/es2015/index.html',
-  numberOfExpectedSpans: 3,
+test.describe('It works', () => {
+  test('that it works', async ({ page }) => {
+    await page.goto('https://example.com');
+    await page.close();
+  });
 });

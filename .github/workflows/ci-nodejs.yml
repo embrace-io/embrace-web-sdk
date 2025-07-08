@@ -482,13 +482,13 @@ jobs:
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: cd tests/integration && npm run playwright -- install --with-deps
+        run: npm run playwright -- install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: cd tests/integration && npm run playwright -- install-deps
+        run: npm run playwright -- install-deps
 
 
       # We need the SDK to be built, so we can use it in the sample apps
