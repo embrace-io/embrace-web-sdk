@@ -10,7 +10,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
   public constructor({
     diag,
-    visibilityWaitTimeMs = 15000,
+    visibilityWaitTimeMs = 0,
     backgroundSessions = false,
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
