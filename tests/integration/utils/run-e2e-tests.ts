@@ -140,22 +140,22 @@ const runE2ETests = ({
         );
       }
     );
-    //
-    // testE2E(
-    //   'it should send a log',
-    //   async ({ page, requests, waitForRequest, navigateAndWaitUntilReady }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //
-    //     const button = page.getByRole('button', { name: 'Send Log' });
-    //     await button.click();
-    //     await waitForRequest();
-    //
-    //     testE2E.expect(requests).toHaveLength(1);
-    //     extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-    //       `${codifiedName}-send-log.json`
-    //     );
-    //   }
-    // );
+
+    testE2E(
+      'it should send a log',
+      async ({ page, requests, waitForRequest, navigateAndWaitUntilReady }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+
+        const button = page.getByRole('button', { name: 'Send Log' });
+        await button.click();
+        await waitForRequest();
+
+        testE2E.expect(requests).toHaveLength(1);
+        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          `${codifiedName}-send-log.json`
+        );
+      }
+    );
     //
     // testE2E(
     //   'it should end the session and send it to the API if the page closes',
