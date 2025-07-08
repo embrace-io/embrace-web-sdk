@@ -24,6 +24,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._currentVisibilityState = visibilityDoc.visibilityState;
     this._checkVisibilityTimeout = null;
     this._checkVisibilityChange = () => {
+      if (visibilityWaitTimeMs <= 0) {
+        // If no timeout configured, events are forwarded directly.
+        this._currentVisibilityState = visibilityDoc.visibilityState;
+        this._onVisibilityChange();
+        return;
+      }
       if (this._checkVisibilityTimeout) {
         clearTimeout(this._checkVisibilityTimeout);
       }
