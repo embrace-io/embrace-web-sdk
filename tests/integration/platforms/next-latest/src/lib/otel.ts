@@ -19,6 +19,7 @@ if (typeof window !== 'undefined') {
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     logLevel: sdk.DiagLogLevel.ALL,
+    embraceDataURL: 'http://localhost:3001',
   });
 
   window.EMBRACE_CURRENT_SESSION_ID = session.getSessionId();

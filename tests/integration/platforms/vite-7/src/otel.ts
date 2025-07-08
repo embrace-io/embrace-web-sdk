@@ -7,6 +7,7 @@ const sdkControl = sdk.initSDK({
   spanExporters: [new ConsoleSpanExporter()],
   logExporters: [new ConsoleLogRecordExporter()],
   logLevel: sdk.DiagLogLevel.ALL,
+  embraceDataURL: 'http://localhost:3001',
 });
 
 declare global {

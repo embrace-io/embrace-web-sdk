@@ -1,4 +1,5 @@
-import { defineConfig, type BuildEnvironmentOptions } from 'vite';
+import { defineConfig } from 'vite';
+import type { BuildEnvironmentOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import Sonda from 'sonda/vite';
 
@@ -16,11 +17,6 @@ export default ({ target, outDir, sondaOutput }: CreateConfigArgs) =>
       sourcemap: true,
       target,
       outDir,
-    },
-    define: {
-      'process.env.EMBRACE_DATA_URL': JSON.stringify(
-        process.env.EMBRACE_DATA_URL
-      ),
     },
     plugins: [
       react({

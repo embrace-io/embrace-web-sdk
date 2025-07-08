@@ -132,6 +132,9 @@ const runE2ETests = ({
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
+
+        await page.pause();
+
         await waitForRequest();
 
         testE2E.expect(requests).toHaveLength(1);

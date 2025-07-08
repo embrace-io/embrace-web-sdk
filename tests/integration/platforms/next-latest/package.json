@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "next lint",
     "build:clean": "rimraf .next",
-    "build:es2020": "EMBRACE_DATA_URL=http://localhost:3001 next build"
+    "build:es2020": "next build"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../..",

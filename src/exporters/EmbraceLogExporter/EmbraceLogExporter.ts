@@ -7,11 +7,15 @@ import type { EmbraceLogExporterArgs } from './types.js';
 import { getLogEndpoint } from './utils.js';
 
 export class EmbraceLogExporter extends OTLPFetchLogExporter {
-  public constructor({ appID, userID }: EmbraceLogExporterArgs) {
+  public constructor({
+    appID,
+    userID,
+    embraceDataURL,
+  }: EmbraceLogExporterArgs) {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       headers: getEmbraceHeaders(appID, userID),
-      url: getLogEndpoint(appID),
+      url: getLogEndpoint(appID, embraceDataURL),
     });
   }
 }

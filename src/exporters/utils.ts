@@ -6,7 +6,5 @@ export const getEmbraceHeaders = (
   'X-EM-DID': userID,
 });
 
-export const getDataURL = (appID: string): string =>
-  typeof process !== 'undefined' && process.env.EMBRACE_DATA_URL
-    ? process.env.EMBRACE_DATA_URL
-    : `https://a-${appID}.data.emb-api.com`;
+export const getDataURL = (appID: string, embraceDataURL?: string): string =>
+  embraceDataURL || `https://a-${appID}.data.emb-api.com`;
