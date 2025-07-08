@@ -156,110 +156,110 @@ const runE2ETests = ({
         );
       }
     );
-    //
-    // testE2E(
-    //   'it should end the session and send it to the API if the page closes',
-    //   async ({
-    //     navigateAndWaitUntilReady,
-    //     page,
-    //     validateThatSessionEnded,
-    //     getCurrentSessionId,
-    //   }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //     const currentSessionId = await getCurrentSessionId();
-    //
-    //     await page.close();
-    //
-    //     await validateThatSessionEnded(currentSessionId);
-    //   }
-    // );
-    //
-    // testE2E(
-    //   'it should end the session and send it to the API if the page loses focus',
-    //   async ({ navigateAndWaitUntilReady, page, validateThatSessionEnded }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //
-    //     // Simulate losing focus by minimizing the page or changing the tab
-    //     // Playwright runs every tab separately, so they don't behave like real browser tabs
-    //     await page.evaluate(() => {
-    //       Object.defineProperty(document, 'visibilityState', {
-    //         value: 'hidden',
-    //         writable: true,
-    //       });
-    //       window.dispatchEvent(new Event('visibilitychange'));
-    //     });
-    //
-    //     await validateThatSessionEnded();
-    //   }
-    // );
-    //
-    // testE2E(
-    //   'it should end the session and send it to the API if the page refreshes',
-    //   async ({
-    //     navigateAndWaitUntilReady,
-    //     page,
-    //     validateThatSessionEnded,
-    //     getCurrentSessionId,
-    //   }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //     const currentSessionId = await getCurrentSessionId();
-    //
-    //     await page.reload();
-    //
-    //     await validateThatSessionEnded(currentSessionId);
-    //   }
-    // );
-    //
-    // testE2E(
-    //   'it should end the session and send it to the API if the user navigates to another page',
-    //   async ({
-    //     navigateAndWaitUntilReady,
-    //     page,
-    //     validateThatSessionEnded,
-    //     getCurrentSessionId,
-    //   }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //     const currentSessionId = await getCurrentSessionId();
-    //
-    //     const button = page.getByRole('button', {
-    //       name: 'Navigate to Another Page',
-    //     });
-    //     await button.click();
-    //
-    //     await validateThatSessionEnded(currentSessionId);
-    //   }
-    // );
-    //
-    // testE2E(
-    //   'it should end the session and send it to the API if the user navigates to another page via the browser bar',
-    //   async ({
-    //     navigateAndWaitUntilReady,
-    //     page,
-    //     validateThatSessionEnded,
-    //     getCurrentSessionId,
-    //   }) => {
-    //     await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-    //     const currentSessionId = await getCurrentSessionId();
-    //
-    //     // Simulate navigation by changing the URL directly
-    //     // This is a workaround since Playwright does not support changing the URL bar directly
-    //     // Not exactly the same as a user typing in the URL bar, but is the best we can do
-    //     await page.goto('https://example.com');
-    //
-    //     await validateThatSessionEnded(currentSessionId);
-    //   }
-    // );
-    //
-    // testE2E.skip(
-    //   '[REQUIRES MANUAL TESTING] it should end the session and send it to the API if the browser closes',
-    //   async () => {
-    //     // This test is skipped because Playwright does not support closing the browser programmatically
-    //     // in a way that would trigger the session end. It requires manual intervention.
-    //     // You can run this test manually by closing the browser after navigating to the page.
-    //     // browser.close() kills the browser instance immediately, without triggering the session end.
-    //     // await browser.close();
-    //   }
-    // );
+
+    testE2E(
+      'it should end the session and send it to the API if the page closes',
+      async ({
+        navigateAndWaitUntilReady,
+        page,
+        validateThatSessionEnded,
+        getCurrentSessionId,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        const currentSessionId = await getCurrentSessionId();
+
+        await page.close();
+
+        await validateThatSessionEnded(currentSessionId);
+      }
+    );
+
+    testE2E(
+      'it should end the session and send it to the API if the page loses focus',
+      async ({ navigateAndWaitUntilReady, page, validateThatSessionEnded }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+
+        // Simulate losing focus by minimizing the page or changing the tab
+        // Playwright runs every tab separately, so they don't behave like real browser tabs
+        await page.evaluate(() => {
+          Object.defineProperty(document, 'visibilityState', {
+            value: 'hidden',
+            writable: true,
+          });
+          window.dispatchEvent(new Event('visibilitychange'));
+        });
+
+        await validateThatSessionEnded();
+      }
+    );
+
+    testE2E(
+      'it should end the session and send it to the API if the page refreshes',
+      async ({
+        navigateAndWaitUntilReady,
+        page,
+        validateThatSessionEnded,
+        getCurrentSessionId,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        const currentSessionId = await getCurrentSessionId();
+
+        await page.reload();
+
+        await validateThatSessionEnded(currentSessionId);
+      }
+    );
+
+    testE2E(
+      'it should end the session and send it to the API if the user navigates to another page',
+      async ({
+        navigateAndWaitUntilReady,
+        page,
+        validateThatSessionEnded,
+        getCurrentSessionId,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        const currentSessionId = await getCurrentSessionId();
+
+        const button = page.getByRole('button', {
+          name: 'Navigate to Another Page',
+        });
+        await button.click();
+
+        await validateThatSessionEnded(currentSessionId);
+      }
+    );
+
+    testE2E(
+      'it should end the session and send it to the API if the user navigates to another page via the browser bar',
+      async ({
+        navigateAndWaitUntilReady,
+        page,
+        validateThatSessionEnded,
+        getCurrentSessionId,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        const currentSessionId = await getCurrentSessionId();
+
+        // Simulate navigation by changing the URL directly
+        // This is a workaround since Playwright does not support changing the URL bar directly
+        // Not exactly the same as a user typing in the URL bar, but is the best we can do
+        await page.goto('https://example.com');
+
+        await validateThatSessionEnded(currentSessionId);
+      }
+    );
+
+    testE2E.skip(
+      '[REQUIRES MANUAL TESTING] it should end the session and send it to the API if the browser closes',
+      async () => {
+        // This test is skipped because Playwright does not support closing the browser programmatically
+        // in a way that would trigger the session end. It requires manual intervention.
+        // You can run this test manually by closing the browser after navigating to the page.
+        // browser.close() kills the browser instance immediately, without triggering the session end.
+        // await browser.close();
+      }
+    );
   });
 };
 
