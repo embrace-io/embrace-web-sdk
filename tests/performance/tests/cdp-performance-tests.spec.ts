@@ -174,10 +174,6 @@ test.describe('CDP Performance Tests', () => {
   let numberOfRequests = 0;
   let sizeOfRequests = 0;
 
-  test('it should fail', () => {
-    test.expect(true).toBe(false);
-  });
-
   for (const testPage of Object.values(PAGES)) {
     test(`Tests Performance for ${testPage.name}`, async () => {
       // Start a new context on each test to make sure we have a clean slate
