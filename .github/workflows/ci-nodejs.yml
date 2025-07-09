@@ -71,7 +71,7 @@ jobs:
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
