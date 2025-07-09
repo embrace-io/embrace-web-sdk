@@ -52,6 +52,7 @@ import type {
 import { registry } from './registry.js';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
 import type { AttributeScrubber } from '../common/index.js';
+import { OTelPerformanceManager } from '../utils/index.js';
 
 export const initSDK = (
   {
@@ -77,6 +78,9 @@ export const initSDK = (
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
+    const perf = new OTelPerformanceManager();
+    const initSDKStart = perf.getNowMillis();
+
     const existingSDK = registry.registered();
     if (existingSDK !== null) {
       diagLogger.warn(
@@ -176,6 +180,10 @@ export const initSDK = (
     };
 
     registry.register(sdkControl);
+
+    spanSessionManager.recordStartupDuration(
+      perf.getNowMillis() - initSDKStart
+    );
 
     return sdkControl;
   } catch (e) {

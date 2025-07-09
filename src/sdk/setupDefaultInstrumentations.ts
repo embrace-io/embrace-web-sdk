@@ -50,15 +50,19 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
-      new FetchInstrumentation(config['@opentelemetry/instrumentation-fetch'])
+      new FetchInstrumentation({
+        ...config['network'],
+        ...config['@opentelemetry/instrumentation-fetch'],
+      })
     );
   }
 
   if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
     instrumentations.push(
-      new XMLHttpRequestInstrumentation(
-        config['@opentelemetry/instrumentation-xml-http-request']
-      )
+      new XMLHttpRequestInstrumentation({
+        ...config['network'],
+        ...config['@opentelemetry/instrumentation-xml-http-request'],
+      })
     );
   }
 

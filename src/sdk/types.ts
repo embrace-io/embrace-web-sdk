@@ -242,6 +242,10 @@ type OptionalInstrumentations =
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
+interface NetworkInstrumentationArgs {
+  ignoreUrls?: Array<string | RegExp>;
+}
+
 export interface DefaultInstrumenationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
@@ -251,6 +255,11 @@ export interface DefaultInstrumenationConfig {
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
+
+  // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
+  // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
+  network?: NetworkInstrumentationArgs;
+
   /*
     Remove 'enabled' from the accepted config for the @opentelemetry instrumentations. This parameter is misleading
     since we are going to call `registerInstrumentations` for every instrumentation we include here even if their
