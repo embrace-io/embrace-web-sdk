@@ -4,14 +4,18 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "clean": "npm run demo:frontend:install:clean && npm run demo:frontend:compile:clean",
+    "compile": "npm run demo:frontend:compile:clean && npm run demo:frontend:compile",
+    "dev": "npm run demo:frontend:dev",
+    "demo": "npm run demo:frontend:full:preview",
     "demo:frontend:full:preview": "bash ./scripts/runDemo.sh",
-    "demo:frontend:compile:clean": "rimraf dist",
+    "demo:frontend:compile:clean": "rimraf .sonda dist",
     "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
     "demo:frontend:upload:sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
     "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1",
-    "demo:frontend:preview": "vite preview"
+    "demo:frontend:preview": "vite preview --open"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../..",

@@ -14,6 +14,10 @@
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
+    "clean": "rimraf .sonda build dist node_modules",
+    "compile": "npm run sdk:compile:clean && npm run sdk:compile",
+    "dev": "npm run sdk:compile:esm:watch & npm run dev --workspace=embrace-web-sdk-react-demo",
+    "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
     "sdk:analyze": "tsx scripts/measureSize.ts",
     "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
     "sdk:compile:clean": "rimraf build .sonda",

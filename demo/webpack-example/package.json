@@ -3,6 +3,7 @@
   "description": "My webpack project",
   "name": "webpack-project",
   "scripts": {
+    "clean": "rimraf .sonda dist node_modules",
     "build": "webpack --mode=production --node-env=production",
     "build:dev": "webpack --mode=development",
     "serve": "webpack serve",
