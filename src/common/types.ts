@@ -12,3 +12,8 @@ export interface URLDocument {
 export interface PathnameDocument {
   pathname: string;
 }
+
+export interface AttributeScrubber {
+  key: string;
+  scrub: (value: string) => string;
+}
