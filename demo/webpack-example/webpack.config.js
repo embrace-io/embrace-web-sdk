@@ -2,7 +2,7 @@
 
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const Sonda = require('sonda/webpack');
+const Sonda = require('sonda').SondaWebpackPlugin;
 
 const isProduction = process.env.NODE_ENV === 'production';
 
