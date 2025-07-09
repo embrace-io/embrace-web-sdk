@@ -9,11 +9,12 @@
     "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
     "demo:frontend:compile": "tsc -b && vite build",
-    "demo:frontend:upload:sourcemaps": "embrace-web-cli upload -a 5przi --app-version 0.0.1",
-    "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d -a 5przi --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
+    "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1",
     "demo:frontend:preview": "vite preview"
   },
   "dependencies": {
+    "@embrace-io/web-cli": "file:../../cli",
     "@embrace-io/web-sdk": "file:../..",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/api-logs": "0.57.2",
