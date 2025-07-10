@@ -7,7 +7,7 @@ import { getConfigURL } from './utils.js';
 import { diag } from '@opentelemetry/api';
 import type { DiagLogger } from '@opentelemetry/api';
 import {
-  DEFAULT_REMOTE_CONFIG,
+  DEFAULT_CONFIG,
   LOCAL_STORAGE_ETAG_KEY,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
 } from './constants.js';
@@ -30,7 +30,7 @@ export class EmbraceConfigManager implements ConfigManager {
       namespace: 'embrace-registry',
     }),
     storage = localStorage,
-    // Allow users to provide a default remote config
+    // Allow users to provide a default config
     defaultConfig = {},
   }: RemoteConfigManagerArgs = {}) {
     if (appID && appVersion && deviceId) {
@@ -49,9 +49,9 @@ export class EmbraceConfigManager implements ConfigManager {
     this._restoredEtagFromStorage();
 
     this._sdkConfig = {
-      // Merge the default remote config with any user-provided defaults
+      // Merge the default config with any user-provided defaults
       // making sure user-provided values take precedence
-      ...DEFAULT_REMOTE_CONFIG,
+      ...DEFAULT_CONFIG,
       ...defaultConfig,
       // Stored remote config values will override both defaults and user-provided defaults
       ...(storedRemoteConfig || {}),

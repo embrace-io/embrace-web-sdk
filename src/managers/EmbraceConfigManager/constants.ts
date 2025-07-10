@@ -1,6 +1,6 @@
-import type { RemoteConfig } from './types.js';
+import type { SDKConfig } from '../../common/index.js';
 
-export const DEFAULT_REMOTE_CONFIG: RemoteConfig = {
+export const DEFAULT_CONFIG: SDKConfig = {
   threshold: 1,
 };
 
