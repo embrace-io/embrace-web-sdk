@@ -30,7 +30,7 @@ import type {
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
-import type { AttributeScrubber } from '../common/index.js';
+import type { AttributeScrubber, SDKConfig } from '../common/index.js';
 
 type BaseSDKInitConfig = {
   /**
@@ -116,7 +116,6 @@ type BaseSDKInitConfig = {
   templateBundleID?: string;
 
   /**
-   * attributeScrubbers
    * AttributeScrubber is an interface that allows scrubbing potentially sensitive data before being emitted by the SDK.
    * Each scrubber specifies an attribute key it is concerned with and a function which is supplied with the string from
    * an AttributeValue whenever that key is encountered on a Log or Span. The string returned by the function is then
@@ -150,6 +149,14 @@ type BaseSDKInitConfig = {
    * embraceDataURL is used to specify a custom Embrace data URL. This is only used for testing purposes.
    */
   embraceDataURL?: string;
+
+  /**
+   * config is an optional SDKConfig object that can be used to configure the SDK. If an Embrace appID is provided, the
+   * configuration can be set remotely through the Embrace dashboard.
+   *
+   * **default**: undefined
+   */
+  config?: SDKConfig;
 };
 
 /*
@@ -225,6 +232,7 @@ export interface SetupTracesArgs {
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
+  config?: SDKConfig;
 }
 
 export interface SetupLogsArgs {

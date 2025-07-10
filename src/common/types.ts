@@ -17,3 +17,12 @@ export interface AttributeScrubber {
   key: string;
   scrub: (value: string) => string;
 }
+
+export interface SDKConfig {
+  /**
+   * Ratio of traces that are sampled. 1 means 100% of traces are sampled.
+   *
+   * **default**: 1
+   */
+  threshold?: number;
+}

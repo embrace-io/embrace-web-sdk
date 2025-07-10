@@ -7,11 +7,11 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -24,6 +24,7 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceConfigManager,
   DEFAULT_LIMITS,
 } from '../managers/index.js';
 import {
@@ -76,6 +77,7 @@ export const initSDK = (
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
+    config,
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
@@ -120,6 +122,14 @@ export const initSDK = (
     if (sendingToEmbrace && !enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
     }
+
+    const remoteConfigManager = new EmbraceConfigManager({
+      appID,
+      appVersion,
+      defaultConfig: config,
+      deviceId: enduserPseudoID,
+    });
+    void remoteConfigManager.refreshRemoteConfig();
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = setupSession({
