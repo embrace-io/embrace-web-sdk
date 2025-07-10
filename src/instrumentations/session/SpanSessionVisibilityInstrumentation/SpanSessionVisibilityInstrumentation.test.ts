@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import { setupTestTraceExporter } from '../../../testUtils/index.js';
 import {
   DEFAULT_LIMITS,
@@ -45,29 +45,22 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   });
 
   it('should start a session when visibility changes to visible', () => {
-    instrumentation = new SpanSessionVisibilityInstrumentation();
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'hidden',
+    };
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityDoc,
+    });
+
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
+
+    visibilityDoc.visibilityState = 'visible';
     window.dispatchEvent(new Event('visibilitychange'));
+
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
   });
 
   it('should end the previous a session and start a new one when visibility changes to visible', () => {
-    instrumentation = new SpanSessionVisibilityInstrumentation();
-    spanSessionManager.startSessionSpan();
-    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
-    window.dispatchEvent(new Event('visibilitychange'));
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_ENDED,
-      'state_changed'
-    );
-
-    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
-  });
-
-  it('should end a session when visibility is hidden and not start a new one by default', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
     };
@@ -75,10 +68,41 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     instrumentation = new SpanSessionVisibilityInstrumentation({
       visibilityDoc,
     });
+    spanSessionManager.startSessionSpan();
+    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed'
+    );
+
+    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+  });
+
+  it('should end a session when visibility changes to hidden and not start a new one by default', async () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityWaitTimeMs: 1,
+      visibilityDoc,
+    });
 
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    visibilityDoc.visibilityState = 'hidden';
     window.dispatchEvent(new Event('visibilitychange'));
+    // Wait for _onVisibilityChange to be called after visibilityWaitTimeMs
+    await new Promise(r => setTimeout(r, 10));
+
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -90,9 +114,9 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
   });
 
-  it('should end a session when visibility is hidden and start a new one when background sessions are enabled', () => {
+  it('should end a session when visibility changes to hidden and start a new one when background sessions are enabled and no visibility wait time configured', () => {
     const visibilityDoc: VisibilityStateDocument = {
-      visibilityState: 'hidden',
+      visibilityState: 'visible',
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation({
@@ -102,7 +126,10 @@ describe('SpanSessionVisibilityInstrumentation', () => {
 
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    visibilityDoc.visibilityState = 'hidden';
     window.dispatchEvent(new Event('visibilitychange'));
+
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -112,5 +139,65 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     );
 
     void expect(spanSessionManager.getSessionSpan()).not.to.be.null;
+  });
+
+  it('should end a session when visibility changes to hidden and start a new one when background sessions are enabled', async () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityWaitTimeMs: 1,
+      visibilityDoc,
+      backgroundSessions: true,
+    });
+
+    spanSessionManager.startSessionSpan();
+    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    // Wait for _onVisibilityChange to be called after visibilityWaitTimeMs
+    await new Promise(r => setTimeout(r, 100));
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed'
+    );
+
+    void expect(spanSessionManager.getSessionSpan()).not.to.be.null;
+  });
+
+  it('should not end a session when visibility changes to hidden and visible within less than visibilityWaitTimeMs', async () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityWaitTimeMs: 1000,
+      visibilityDoc,
+    });
+
+    spanSessionManager.startSessionSpan();
+    const sessionSpan = spanSessionManager.getSessionSpan();
+    void expect(sessionSpan).to.not.be.null;
+
+    // Trigger hidden and visible events within less than visibilityWaitTimeMs
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    // Wait some time less than 1s and trigger visible again.
+    await new Promise(r => setTimeout(r, 10));
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+
+    // No session should have ended:
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(0);
+
+    // The session span should still be the same as before
+    void expect(spanSessionManager.getSessionSpan()).to.equal(sessionSpan);
   });
 });

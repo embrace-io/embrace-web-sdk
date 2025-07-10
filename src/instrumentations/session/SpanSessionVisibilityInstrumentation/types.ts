@@ -5,6 +5,7 @@ export type SpanSessionVisibilityInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
   'diag'
 > & {
+  visibilityWaitTimeMs?: number; // visibilityWaitTimeMs indicates how much time to wait before checking if the visibilityDoc visibility changed or not
   backgroundSessions?: boolean;
   visibilityDoc?: VisibilityStateDocument;
 };
