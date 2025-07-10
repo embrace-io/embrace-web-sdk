@@ -47,7 +47,7 @@ type BaseSDKInitConfig = {
    *
    * **default**: undefined
    */
-  defaultInstrumentationConfig?: DefaultInstrumenationConfig;
+  defaultInstrumentationConfig?: DefaultInstrumentationConfig;
 
   /**
    * instrumentations can be set to include instrumentations beyond the default ones provided by Embrace. This does not
@@ -246,7 +246,7 @@ interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
 }
 
-export interface DefaultInstrumenationConfig {
+export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;

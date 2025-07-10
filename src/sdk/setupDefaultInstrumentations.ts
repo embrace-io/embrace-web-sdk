@@ -11,10 +11,10 @@ import {
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import type { DefaultInstrumenationConfig } from './types.js';
+import type { DefaultInstrumentationConfig } from './types.js';
 
 export const setupDefaultInstrumentations = (
-  config: DefaultInstrumenationConfig = {}
+  config: DefaultInstrumentationConfig = {}
 ): Instrumentation[] => {
   /*
     These instrumentations are core to managing the session lifecycle and so are not optional
