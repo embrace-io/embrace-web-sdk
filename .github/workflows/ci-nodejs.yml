@@ -261,6 +261,14 @@ jobs:
           rm -f ${{ env.TEST_STATUS_FILE }}
 
   test-performance:
+    env:
+      TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB: ${{ vars.TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB }}
+      TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS: ${{ vars.TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS }}
+      TOTAL_TASK_DURATION_THRESHOLD_IN_MS: ${{ vars.TOTAL_TASK_DURATION_THRESHOLD_IN_MS }}
+      TOTAL_HEAP_SIZE_THRESHOLD_IN_MB: ${{ vars.TOTAL_HEAP_SIZE_THRESHOLD_IN_MB }}
+      TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS: ${{ vars.TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS }}
+      MAIN_THREAD_TIME_THRESHOLD_IN_MS: ${{ vars.MAIN_THREAD_TIME_THRESHOLD_IN_MS }}
+      SCRIPT_EVAL_THRESHOLD_IN_MS: ${{ vars.SCRIPT_EVAL_THRESHOLD_IN_MS }}
     needs:
       - configure
       - environment
@@ -556,12 +564,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update artifact with build results
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        if: ${{ needs.environment.outputs.name == 'development' }}
         uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
           name: build-results
           path: tests/integration/*/.sonda/**/*.html
+
+      - name: Update artifact with lighthouse results
+        if: ${{ needs.environment.outputs.name == 'development' }}
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: lighthouse-results
+          path: tests/integration/test-results/*.html
 
   commitlint:
     needs: configure
@@ -803,6 +819,3 @@ jobs:
             author: ${{ github.actor }}
             release_url: ${{ github.event.release.html_url }}
             release_name: ${{ github.event.release.name }}
-
-
-/home/runner/.cache/ms-playwright/chromium_headless_shell-1181/chrome-linux:
