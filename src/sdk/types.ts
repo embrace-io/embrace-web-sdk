@@ -145,6 +145,11 @@ type BaseSDKInitConfig = {
   additionalQueryParamsToScrub?: string[];
 
   diagLogger?: DiagLogger;
+
+  /**
+   * embraceDataURL is used to specify a custom Embrace data URL. This is only used for testing purposes.
+   */
+  embraceDataURL?: string;
 };
 
 /*
@@ -219,6 +224,7 @@ export interface SetupTracesArgs {
   contextManager?: ContextManager | null;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  embraceDataURL?: string;
 }
 
 export interface SetupLogsArgs {
@@ -232,6 +238,7 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  embraceDataURL?: string;
 }
 
 type OptionalInstrumentations =

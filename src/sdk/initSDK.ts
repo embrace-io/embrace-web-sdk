@@ -72,6 +72,7 @@ export const initSDK = (
     enableDefaultAttributeScrubbing = true,
     additionalQueryParamsToScrub = [],
     logLevel = DiagLogLevel.ERROR,
+    embraceDataURL,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
@@ -145,6 +146,7 @@ export const initSDK = (
       contextManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
+      embraceDataURL,
     });
 
     const loggerProvider = setupLogs({
@@ -158,6 +160,7 @@ export const initSDK = (
       spanSessionManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
+      embraceDataURL,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -220,6 +223,7 @@ const setupTraces = ({
   contextManager = null,
   limitManager,
   attributeScrubbers,
+  embraceDataURL,
 }: SetupTracesArgs) => {
   const embraceTraceManager = new EmbraceTraceManager();
   trace.setGlobalTraceManager(embraceTraceManager);
@@ -241,6 +245,7 @@ const setupTraces = ({
       new EmbraceSessionBatchedSpanProcessor({
         exporter: new EmbraceTraceExporter({
           appID,
+          embraceDataURL,
           userID: enduserPseudoID,
         }),
         limitManager,
@@ -282,6 +287,7 @@ const setupLogs = ({
   spanSessionManager,
   limitManager,
   attributeScrubbers,
+  embraceDataURL,
 }: SetupLogsArgs) => {
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
@@ -312,6 +318,7 @@ const setupLogs = ({
       new BatchLogRecordProcessor(
         new EmbraceLogExporter({
           appID,
+          embraceDataURL,
           userID: enduserPseudoID,
         })
       )

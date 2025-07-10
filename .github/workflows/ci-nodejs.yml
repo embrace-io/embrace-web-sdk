@@ -261,6 +261,14 @@ jobs:
           rm -f ${{ env.TEST_STATUS_FILE }}
 
   test-performance:
+    env:
+      TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB: ${{ vars.TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB }}
+      TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS: ${{ vars.TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS }}
+      TOTAL_TASK_DURATION_THRESHOLD_IN_MS: ${{ vars.TOTAL_TASK_DURATION_THRESHOLD_IN_MS }}
+      TOTAL_HEAP_SIZE_THRESHOLD_IN_MB: ${{ vars.TOTAL_HEAP_SIZE_THRESHOLD_IN_MB }}
+      TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS: ${{ vars.TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS }}
+      MAIN_THREAD_TIME_THRESHOLD_IN_MS: ${{ vars.MAIN_THREAD_TIME_THRESHOLD_IN_MS }}
+      SCRIPT_EVAL_THRESHOLD_IN_MS: ${{ vars.SCRIPT_EVAL_THRESHOLD_IN_MS }}
     needs:
       - configure
       - environment
@@ -408,7 +416,7 @@ jobs:
             ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
             ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
 
-  test-bundle:
+  test-integration:
     needs:
       - configure
       - environment
@@ -455,6 +463,42 @@ jobs:
         run: |
           npm ci --strict-peer-deps
 
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
+
+
       # We need the SDK to be built, so we can use it in the sample apps
       - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -462,19 +506,18 @@ jobs:
           npm run sdk:compile
 
       # TODO: cache
-      - name: Install npm dependencies for sample apps
+      - name: Install npm dependencies for platforms
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          find ./tests/bundle -type f -name package.json | while read pkg; do
-            dir=$(dirname "$pkg")
-            echo "Installing dependencies in $dir"
-            npm install --prefix "$dir"
-          done
+          npm run sdk:test:integration:e2e:install-dependencies
 
-      - name: Test Bundle
+      - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        # Build needs to run first so e2e tests can use the built apps and not build again
+        # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
-          npm run sdk:test:bundle
+          npm run sdk:test:integration:build
+          npm run sdk:test:integration:e2e
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -486,22 +529,22 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      - name: Create PR comment with bundle results
+      - name: Create PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          echo '<!-- bundle-results -->' > bundle-results.md
-          echo "## Bundle results" >> bundle-results.md
+          echo '<!-- build-results -->' > build-results.md
+          echo "## build results" >> build-results.md
       
-          for file in ./tests/bundle/test-results/*.md; do
-            cat "$file" >> bundle-results.md
+          for file in ./tests/integration/build-test-results/*.md; do
+            cat "$file" >> build-results.md
           done
 
-      - name: Post or update PR comment with performance results
+      - name: Post or update PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          BODY="$(cat bundle-results.md)"
+          BODY="$(cat build-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- bundle-results -->"))| .id' comments.json)
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- build-results -->"))| .id' comments.json)
 
           if [[ -n "$COMMENT_ID" ]]; then
             echo "Updating comment $COMMENT_ID"
@@ -516,13 +559,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update artifact with bundle results
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+      - name: Update artifact with build results
+        if: ${{ needs.environment.outputs.name == 'development' }}
         uses: actions/upload-artifact@v4
         with:
           include-hidden-files: true
-          name: bundle-results
-          path: tests/bundle/*/.sonda/**/*.html
+          name: build-results
+          path: tests/integration/platforms/*/.sonda/**/*.html
 
   commitlint:
     needs: configure
