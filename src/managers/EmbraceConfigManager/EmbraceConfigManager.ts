@@ -2,13 +2,13 @@ import type {
   RemoteConfig,
   ConfigManager,
   RemoteConfigManagerArgs,
+  StoredRemoteConfig,
 } from './types.js';
-import { getConfigURL } from './utils.js';
+import { getConfigURL, parseRemoteConfig } from './utils.js';
 import { diag } from '@opentelemetry/api';
 import type { DiagLogger } from '@opentelemetry/api';
 import {
   DEFAULT_CONFIG,
-  LOCAL_STORAGE_ETAG_KEY,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
 } from './constants.js';
 import type { SDKConfig } from '../../common/index.js';
@@ -27,7 +27,7 @@ export class EmbraceConfigManager implements ConfigManager {
     appVersion,
     deviceId,
     diag: diagParam = diag.createComponentLogger({
-      namespace: 'embrace-registry',
+      namespace: 'embrace-config-manager',
     }),
     storage = localStorage,
     // Allow users to provide a default config
@@ -46,7 +46,10 @@ export class EmbraceConfigManager implements ConfigManager {
     this._storage = storage;
 
     const storedRemoteConfig = this._getRemoteConfigFromStorage();
-    this._restoredEtagFromStorage();
+
+    if (storedRemoteConfig) {
+      this._etag = storedRemoteConfig.etag;
+    }
 
     this._sdkConfig = {
       // Merge the default config with any user-provided defaults
@@ -54,7 +57,9 @@ export class EmbraceConfigManager implements ConfigManager {
       ...DEFAULT_CONFIG,
       ...defaultConfig,
       // Stored remote config values will override both defaults and user-provided defaults
-      ...(storedRemoteConfig || {}),
+      ...(storedRemoteConfig
+        ? parseRemoteConfig(storedRemoteConfig.config)
+        : {}),
     };
   }
 
@@ -69,16 +74,26 @@ export class EmbraceConfigManager implements ConfigManager {
     }
 
     try {
-      const remoteConfig = await this._fetchRemoteConfig(this._remoteConfigURL);
+      const remoteConfigResponse = await this._fetchRemoteConfig(
+        this._remoteConfigURL
+      );
 
-      this._sdkConfig = {
-        threshold: remoteConfig.threshold / 100,
-      };
+      if (!remoteConfigResponse) {
+        this._diag.debug('No changes in remote config, skipping update');
+        return;
+      }
 
+      const [remoteConfig, etag] = remoteConfigResponse;
       this._storage.setItem(
         LOCAL_STORAGE_REMOTE_CONFIG_KEY,
-        JSON.stringify(this._sdkConfig)
+        JSON.stringify({
+          config: remoteConfig,
+          etag,
+        } as StoredRemoteConfig)
       );
+
+      this._sdkConfig = parseRemoteConfig(remoteConfig);
+      this._etag = etag;
     } catch (error: unknown) {
       this._diag.warn(
         `Failed to refresh remote config: ${error instanceof Error ? error.message : String(error)}`
@@ -86,14 +101,14 @@ export class EmbraceConfigManager implements ConfigManager {
     }
   }
 
-  private _getRemoteConfigFromStorage(): SDKConfig | null {
+  private _getRemoteConfigFromStorage(): StoredRemoteConfig | null {
     try {
       const configString = this._storage.getItem(
         LOCAL_STORAGE_REMOTE_CONFIG_KEY
       );
 
       if (configString) {
-        return JSON.parse(configString) as SDKConfig;
+        return JSON.parse(configString) as StoredRemoteConfig;
       }
 
       return null;
@@ -106,45 +121,30 @@ export class EmbraceConfigManager implements ConfigManager {
     }
   }
 
-  private _restoredEtagFromStorage() {
-    try {
-      this._etag = this._storage.getItem(LOCAL_STORAGE_ETAG_KEY);
-    } catch (error) {
-      this._diag.warn(
-        `Failed to retrieve ETag from storage: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  private _setEtagToStorage(etag: string) {
-    try {
-      this._storage.setItem(LOCAL_STORAGE_ETAG_KEY, etag);
-      this._etag = etag;
-    } catch (error) {
-      this._diag.warn(
-        `Failed to set ETag in storage: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  private async _fetchRemoteConfig(url: string): Promise<RemoteConfig> {
+  private async _fetchRemoteConfig(
+    url: string
+  ): Promise<[RemoteConfig, string | null] | null> {
     const response = await fetch(url, {
       headers: this._etag ? { 'If-None-Match': this._etag } : {},
     });
+
+    const etag = response.headers.get('etag');
+
+    // Nothing changed, return null
+    if (response.status === 304) {
+      return null;
+    }
 
     if (!response.ok) {
       this._diag.warn(
         `Failed to fetch remote config from ${url}: ${response.statusText}`
       );
+
+      return null;
     }
 
-    const etag = response.headers.get('etag') || null;
+    const remoteConfig = (await response.json()) as RemoteConfig;
 
-    if (etag && etag !== this._etag) {
-      this._setEtagToStorage(etag);
-      this._etag = etag;
-    }
-
-    return (await response.json()) as RemoteConfig;
+    return [remoteConfig, etag];
   }
 }
