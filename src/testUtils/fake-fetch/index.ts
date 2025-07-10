@@ -62,7 +62,7 @@ export const getRequestHeaders = () => {
   return getOptions()?.headers ?? {};
 };
 
-export const respondWith = (data: BodyInit, options?: ResponseInit) =>
+export const respondWith = (data: BodyInit | null, options?: ResponseInit) =>
   (window.fetch as SinonStub).returns(
     Promise.resolve(new Response(data, options))
   );

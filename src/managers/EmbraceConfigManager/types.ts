@@ -11,6 +11,11 @@ export type RemoteConfig = {
   threshold: number; // Number from 1 to 100
 };
 
+export type StoredRemoteConfig = {
+  config: RemoteConfig;
+  etag: string | null;
+};
+
 export interface RemoteConfigManagerArgs {
   appID?: string;
   appVersion?: string;

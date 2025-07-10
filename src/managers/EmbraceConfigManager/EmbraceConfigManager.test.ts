@@ -9,10 +9,7 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
 } from '../../testUtils/index.js';
-import {
-  LOCAL_STORAGE_ETAG_KEY,
-  LOCAL_STORAGE_REMOTE_CONFIG_KEY,
-} from './constants.js';
+import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.js';
 
 const { expect } = chai;
 
@@ -60,7 +57,10 @@ describe('EmbraceConfigManager', () => {
     storage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
-        threshold: 0.75,
+        etag: null,
+        config: {
+          threshold: 75,
+        },
       })
     );
 
@@ -92,7 +92,6 @@ describe('EmbraceConfigManager', () => {
     });
     expect(diag.getWarnLogs()).to.deep.equal([
       "Failed to parse remote config from storage: Cannot read properties of null (reading 'getItem')",
-      "Failed to retrieve ETag from storage: Cannot read properties of null (reading 'getItem')",
     ]);
   });
 
@@ -200,7 +199,15 @@ describe('EmbraceConfigManager', () => {
   });
 
   it('should use the stored etag in the request headers, and update it if changes', async () => {
-    storage.setItem(LOCAL_STORAGE_ETAG_KEY, 'stored-etag');
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: 'stored-etag',
+        config: {
+          threshold: 75,
+        },
+      })
+    );
 
     fakeFetchRespondWith(
       JSON.stringify({
@@ -223,10 +230,63 @@ describe('EmbraceConfigManager', () => {
     });
 
     await configManager.refreshRemoteConfig();
+    const config = configManager.getConfig();
 
+    expect(config).to.deep.equal({
+      threshold: 0.8,
+    });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
     });
-    expect(storage.getItem(LOCAL_STORAGE_ETAG_KEY)).to.equal('new-etag');
+    expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
+      JSON.stringify({ config: { threshold: 80 }, etag: 'new-etag' })
+    );
+  });
+
+  it('should not update the config if the remote config has not changed', async () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        config: {
+          threshold: 75,
+        },
+        etag: 'stored-etag',
+      })
+    );
+
+    fakeFetchRespondWith(null, {
+      status: 304, // Not Modified
+      statusText: 'Not Modified',
+      headers: {
+        ETag: '"stored-etag"',
+      },
+    });
+
+    const configManager = new EmbraceConfigManager({
+      appID: 'test-app',
+      appVersion: '1.0.0',
+      deviceId: 'test-device',
+      storage,
+      diag,
+      defaultConfig: {
+        threshold: 0.5,
+      },
+    });
+
+    await configManager.refreshRemoteConfig();
+    const config = configManager.getConfig();
+
+    expect(diag.getDebugLogs()).to.deep.equal([
+      'No changes in remote config, skipping update',
+    ]);
+    expect(config).to.deep.equal({
+      threshold: 0.75,
+    });
+    expect(fakeFetchGetRequestHeaders()).to.deep.equal({
+      'If-None-Match': 'stored-etag',
+    });
+    expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
+      JSON.stringify({ config: { threshold: 75 }, etag: 'stored-etag' })
+    );
   });
 });
