@@ -17,9 +17,10 @@ export default {
   plugins: [
     vitePlugin({
       optimizeDeps: {
-        entries: []
-      }
-    })
+        // Will cause errors when it crawls the demo/ and tests/ directories for html files from other app builds
+        entries: [],
+      },
+    }),
   ],
   browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
   filterBrowserLogs: log =>
