@@ -16,6 +16,7 @@ if (typeof window !== 'undefined') {
   console.log('sdk initialized');
   sdkControl = sdk.initSDK({
     appID: '11111',
+    appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     logLevel: sdk.DiagLogLevel.ALL,

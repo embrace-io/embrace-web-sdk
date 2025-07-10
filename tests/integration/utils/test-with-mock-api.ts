@@ -5,8 +5,11 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
 import type { Route, Request } from 'playwright';
-// eslint-disable-next-line regex/invalid
-import type { IKeyValue } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
+
+import type {
+  IKeyValue,
+  IResource,
+} from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
 import type {
   IEvent,
   IExportTraceServiceRequest,
@@ -48,6 +51,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
   'emb.startup_duration',
+  'emb.app_instance_id',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
@@ -183,7 +187,7 @@ const expect = testWithMockApi.expect.extend({
         return {
           pass: false,
           message: () =>
-            `${extraMessage}Attribute mismatch at index ${index.toString()}: expected ${expectedAttr.key} to be ${chalk.green(expectedValue)}, but got ${receivedAttr.key} with value ${chalk.red(receivedValue)}${INTENDED_CHANGE_MESSAGE}`,
+            `${extraMessage}Attribute mismatch at index ${index.toString()}: expected ${expectedAttr.key} to be ${chalk.green(expectedValue)}, but got ${receivedAttr.key} with value ${chalk.red(receivedValue)}`,
         };
       }
     }
@@ -239,6 +243,22 @@ const expect = testWithMockApi.expect.extend({
         message: () => (e as Error).message,
       };
     }
+  },
+  toMatchResource: (received: IResource, expected: IResource) => {
+    expect({
+      droppedAttributesCount: received.droppedAttributesCount,
+    }).toEqual({
+      droppedAttributesCount: expected.droppedAttributesCount,
+    });
+
+    expect(received.attributes).toMatchAttributes(expected.attributes, {
+      message: `Attributes mismatch for resource`,
+    });
+
+    return {
+      pass: true,
+      message: () => 'Resources match',
+    };
   },
   toMatchSpan: (received: ISpan, expected: ISpan) => {
     // Use this instead of objectContaining for a better error message
@@ -323,6 +343,20 @@ const expect = testWithMockApi.expect.extend({
         const expectedEntities = isResourceSpan(expected[resourceIndex])
           ? expected[resourceIndex].scopeSpans
           : expected[resourceIndex].scopeLogs;
+
+        if (receivedResource.resource && expected[resourceIndex].resource) {
+          try {
+            expect(receivedResource.resource).toMatchResource(
+              expected[resourceIndex].resource
+            );
+          } catch (e) {
+            return {
+              pass: false,
+              message: () =>
+                `Resource in scope ${resourceIndex.toString()} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
+            };
+          }
+        }
 
         for (const [scopeIndex, receivedScope] of receivedEntities.entries()) {
           const receivedScopes = isScopeSpan(receivedScope)

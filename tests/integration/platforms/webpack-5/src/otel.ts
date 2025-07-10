@@ -4,6 +4,7 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 
 const sdkControl = sdk.initSDK({
   appID: '11111',
+  appVersion: '1.0.0',
   spanExporters: [new ConsoleSpanExporter()],
   logExporters: [new ConsoleLogRecordExporter()],
   logLevel: sdk.DiagLogLevel.ALL,
