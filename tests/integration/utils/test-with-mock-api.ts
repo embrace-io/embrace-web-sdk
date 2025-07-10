@@ -52,6 +52,8 @@ const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.startup_duration',
   'emb.app_instance_id',
+  // CI runs on Linux, devs might use different OS
+  'browser.platform',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
