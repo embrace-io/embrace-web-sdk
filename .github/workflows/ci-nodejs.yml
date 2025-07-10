@@ -71,7 +71,7 @@ jobs:
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
@@ -183,7 +183,7 @@ jobs:
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
@@ -280,7 +280,7 @@ jobs:
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
@@ -428,7 +428,7 @@ jobs:
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
@@ -574,7 +574,7 @@ jobs:
         with:
           path: |
             ${{ env.LINT_STATUS_FILE }}
-          key: lint.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if lint previously succeeded
         run: |
@@ -629,7 +629,7 @@ jobs:
         with:
           path: |
             ${{ env.TYPE_CHECK_STATUS_FILE }}
-          key: type_check.sha-${{ github.sha }}.txt
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
 
       - name: Check if type check previously succeeded
         run: |

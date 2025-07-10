@@ -398,9 +398,14 @@ describe('initSDK', () => {
       const startupDuration = sessionSpan['attributes'].find(
         attr => attr.key === 'emb.startup_duration'
       );
-      void expect(startupDuration?.value.doubleValue).not.to.be.undefined;
-      expect(startupDuration?.value.doubleValue).to.be.greaterThan(0);
-      expect(startupDuration?.value.doubleValue).to.be.lessThan(100);
+
+      // The millisecond value is rounded in FireFox+Webkit and exported as intValue but in Chrome it is doubleValue
+      // so check for both here, the backend should be ok to receive it either way
+      const startupDurationValue =
+        startupDuration?.value.doubleValue || startupDuration?.value.intValue;
+      void expect(startupDurationValue).not.to.be.undefined;
+      expect(startupDurationValue).to.be.greaterThan(0);
+      expect(startupDurationValue).to.be.lessThan(100);
 
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
@@ -776,6 +781,233 @@ describe('initSDK', () => {
       expect(exportedEvents).to.have.lengthOf(1);
 
       expect(exportedEvents[0].attributes).to.have.lengthOf(20);
+    });
+
+    it('should apply default data scrubbing to span and log url attribute values', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        logExporters: [logExporter],
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      embtrace
+        .startSpan('my-span', {
+          attributes: {
+            'url.full':
+              'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+            safe: 'some other attr',
+          },
+        })
+        .end();
+
+      log.message('my custom log', 'info', {
+        attributes: {
+          'url.path':
+            'https://username:password@www.example.com/some/other/path',
+          'url.query': 'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+          safe: 'some other attr',
+        },
+      });
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      if (result) {
+        await result.flush();
+      }
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+        key: 'url.full',
+        value: {
+          stringValue:
+            'https://example.com/some/path/?foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
+        },
+      });
+      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+        key: 'safe',
+        value: {
+          stringValue: 'some other attr',
+        },
+      });
+
+      const finishedLogRecords = logExporter.getFinishedLogRecords();
+      expect(finishedLogRecords).to.have.lengthOf(1);
+      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+        'https://REDACTED:REDACTED@www.example.com/some/other/path'
+      );
+      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+        'foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED'
+      );
+      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+        'some other attr'
+      );
+    });
+
+    it('should allow default data scrubbing to be turned off', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        enableDefaultAttributeScrubbing: false,
+        logExporters: [logExporter],
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      embtrace
+        .startSpan('my-span', {
+          attributes: {
+            'url.full':
+              'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+            safe: 'some other attr',
+          },
+        })
+        .end();
+
+      log.message('my custom log', 'info', {
+        attributes: {
+          'url.path':
+            'https://username:password@www.example.com/some/other/path',
+          'url.query': 'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+          safe: 'some other attr',
+        },
+      });
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      if (result) {
+        await result.flush();
+      }
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+        key: 'url.full',
+        value: {
+          stringValue:
+            'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+        },
+      });
+      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+        key: 'safe',
+        value: {
+          stringValue: 'some other attr',
+        },
+      });
+
+      const finishedLogRecords = logExporter.getFinishedLogRecords();
+      expect(finishedLogRecords).to.have.lengthOf(1);
+      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+        'https://username:password@www.example.com/some/other/path'
+      );
+      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+        'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey'
+      );
+      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+        'some other attr'
+      );
+    });
+
+    it('should allow custom attribute scrubbers and query string tokens to be specified', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        logExporters: [logExporter],
+        attributeScrubbers: [
+          { key: 'safe', scrub: value => value + ' ALTERED' },
+        ],
+        additionalQueryParamsToScrub: ['foo'],
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise(r => setTimeout(r, 1));
+
+      embtrace
+        .startSpan('my-span', {
+          attributes: {
+            'url.full':
+              'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+            safe: 'some other attr',
+          },
+        })
+        .end();
+
+      log.message('my custom log', 'info', {
+        attributes: {
+          'url.path':
+            'https://username:password@www.example.com/some/other/path',
+          'url.query': 'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
+          safe: 'some other attr',
+        },
+      });
+
+      session.getSpanSessionManager().endSessionSpan();
+
+      if (result) {
+        await result.flush();
+      }
+
+      const exportedSpans = await getLastSessionExportedSpans();
+      expect(exportedSpans).to.have.lengthOf(1);
+      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+        key: 'url.full',
+        value: {
+          stringValue:
+            'https://example.com/some/path/?foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
+        },
+      });
+      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+        key: 'safe',
+        value: {
+          stringValue: 'some other attr ALTERED',
+        },
+      });
+
+      const finishedLogRecords = logExporter.getFinishedLogRecords();
+      expect(finishedLogRecords).to.have.lengthOf(1);
+      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+        'https://REDACTED:REDACTED@www.example.com/some/other/path'
+      );
+      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+        'foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED'
+      );
+      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+        'some other attr ALTERED'
+      );
     });
   });
 

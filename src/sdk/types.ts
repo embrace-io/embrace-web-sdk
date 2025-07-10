@@ -30,6 +30,7 @@ import type {
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
+import type { AttributeScrubber } from '../common/index.js';
 
 type BaseSDKInitConfig = {
   /**
@@ -114,6 +115,35 @@ type BaseSDKInitConfig = {
    */
   templateBundleID?: string;
 
+  /**
+   * attributeScrubbers
+   * AttributeScrubber is an interface that allows scrubbing potentially sensitive data before being emitted by the SDK.
+   * Each scrubber specifies an attribute key it is concerned with and a function which is supplied with the string from
+   * an AttributeValue whenever that key is encountered on a Log or Span. The string returned by the function is then
+   * used in place of the original value
+   *
+   * **default**: []
+   */
+  attributeScrubbers?: AttributeScrubber[];
+
+  /**
+   * enableDefaultAttributeScrubbing specifies whether the default attribute scrubbers provided the SDK should be used.
+   * These default scrubbers redact sensitive information in various url.* attributes following the recommendations
+   * from: https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L33
+   *
+   * **default**: true
+   */
+  enableDefaultAttributeScrubbing?: boolean;
+
+  /**
+   * additionalQueryParamsToScrub specifies a list of query string parameter keys whose values will be scrubbed by the
+   * default attribute scrubber. This list is in addition to the default keys that are checked by the SDK one provided
+   * by the SDK, see DEFAULT_SENSITIVE_TOKENS in src/sdk/defaultAttributeScrubbers.ts
+   *
+   * **default**: []
+   */
+  additionalQueryParamsToScrub?: string[];
+
   diagLogger?: DiagLogger;
 };
 
@@ -188,6 +218,7 @@ export interface SetupTracesArgs {
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
   limitManager: LimitManagerInternal;
+  attributeScrubbers: AttributeScrubber[];
 }
 
 export interface SetupLogsArgs {
@@ -200,6 +231,7 @@ export interface SetupLogsArgs {
   logProcessors: LogRecordProcessor[];
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
+  attributeScrubbers: AttributeScrubber[];
 }
 
 type OptionalInstrumentations =
@@ -210,6 +242,10 @@ type OptionalInstrumentations =
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
+interface NetworkInstrumentationArgs {
+  ignoreUrls?: Array<string | RegExp>;
+}
+
 export interface DefaultInstrumenationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
@@ -219,6 +255,11 @@ export interface DefaultInstrumenationConfig {
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
+
+  // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
+  // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
+  network?: NetworkInstrumentationArgs;
+
   /*
     Remove 'enabled' from the accepted config for the @opentelemetry instrumentations. This parameter is misleading
     since we are going to call `registerInstrumentations` for every instrumentation we include here even if their

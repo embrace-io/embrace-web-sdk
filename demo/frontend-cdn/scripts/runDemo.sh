@@ -23,7 +23,8 @@ cd ./demo/frontend-cdn || exit
 
 # create .env file if it doesn't exist
 if [ ! -f .env ]; then
-  sed 's/VITE_APP_ID=your_app_id/VITE_APP_ID=5przi/g' .env.template > .env
+  echo ".env file not found, create one from template and add app id"
+  exit 1
 fi
 
 rm -rf build dist

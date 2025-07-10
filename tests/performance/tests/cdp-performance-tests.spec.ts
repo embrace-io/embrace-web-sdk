@@ -319,7 +319,7 @@ test.describe('CDP Performance Tests', () => {
       test
         .expect(
           metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name],
-          `Threshold exceeded for ${metric.name}: ${metric.value} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name]} ${metric.unit})`
+          `Threshold exceeded for ${metric.name}: ${metric.value.toString()} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name].toString()} ${metric.unit})`
         )
         .toBeTruthy();
     }
