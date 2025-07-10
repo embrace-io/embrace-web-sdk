@@ -25,6 +25,7 @@
     "sdk:test:performance": "cd tests/performance && npm run test",
     "sdk:test:integration:build": "cd tests/integration && npm run tests:integration:build",
     "sdk:test:integration:e2e": "cd tests/integration && npm run tests:integration:e2e",
+    "sdk:test:integration:e2e:install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
     "sdk:test:integration:e2e:update-golden": "cd tests/integration && npm run tests:integration:e2e:update-golden",
     "sdk:test:watch": "npm run sdk:test -- --watch",
     "sdk:compile": "npm run sdk:compile:esm && npm run sdk:compile:types",

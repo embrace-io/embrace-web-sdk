@@ -509,11 +509,7 @@ jobs:
       - name: Install npm dependencies for platforms
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          find ./tests/integration -type f -name package.json | while read pkg; do
-            dir=$(dirname "$pkg")
-            echo "Installing dependencies in $dir"
-            npm install --prefix "$dir"
-          done
+          npm run sdk:test:integration:e2e:install-dependencies
 
       - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
