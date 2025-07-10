@@ -14,7 +14,14 @@ const removeGlobalExceptionTestError = ({ args }) =>
 export default {
   nodeResolve: true,
   files: ['src/**/*.test.ts'],
-  plugins: [vitePlugin()],
+  plugins: [
+    vitePlugin({
+      optimizeDeps: {
+        // Will cause errors when it crawls the demo/ and tests/ directories for html files from other app builds
+        entries: [],
+      },
+    }),
+  ],
   browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
   filterBrowserLogs: log =>
     removeViteLogging(log) && removeGlobalExceptionTestError(log),

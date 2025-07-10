@@ -47,7 +47,7 @@ type BaseSDKInitConfig = {
    *
    * **default**: undefined
    */
-  defaultInstrumentationConfig?: DefaultInstrumenationConfig;
+  defaultInstrumentationConfig?: DefaultInstrumentationConfig;
 
   /**
    * instrumentations can be set to include instrumentations beyond the default ones provided by Embrace. This does not
@@ -145,6 +145,11 @@ type BaseSDKInitConfig = {
   additionalQueryParamsToScrub?: string[];
 
   diagLogger?: DiagLogger;
+
+  /**
+   * embraceDataURL is used to specify a custom Embrace data URL. This is only used for testing purposes.
+   */
+  embraceDataURL?: string;
 };
 
 /*
@@ -219,6 +224,7 @@ export interface SetupTracesArgs {
   contextManager?: ContextManager | null;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  embraceDataURL?: string;
 }
 
 export interface SetupLogsArgs {
@@ -232,6 +238,7 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  embraceDataURL?: string;
 }
 
 type OptionalInstrumentations =
@@ -246,7 +253,7 @@ interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
 }
 
-export interface DefaultInstrumenationConfig {
+export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;

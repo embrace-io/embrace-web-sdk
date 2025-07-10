@@ -5,5 +5,6 @@ export const getEmbraceHeaders = (
   'X-EM-AID': appID,
   'X-EM-DID': userID,
 });
-export const getDataURL = (appID: string): string =>
-  `https://a-${appID}.data.emb-api.com`;
+
+export const getDataURL = (appID: string, embraceDataURL?: string): string =>
+  embraceDataURL || `https://a-${appID}.data.emb-api.com`;

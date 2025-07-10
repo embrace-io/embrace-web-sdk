@@ -7,11 +7,15 @@ import type { EmbraceTraceExporterArgs } from './types.js';
 import { getTraceEndpoint } from './utils.js';
 
 export class EmbraceTraceExporter extends OTLPFetchTraceExporter {
-  public constructor({ appID, userID }: EmbraceTraceExporterArgs) {
+  public constructor({
+    appID,
+    userID,
+    embraceDataURL,
+  }: EmbraceTraceExporterArgs) {
     super({
       ...DEFAULT_EMBRACE_EXPORTER_CONFIG,
       headers: getEmbraceHeaders(appID, userID),
-      url: getTraceEndpoint(appID),
+      url: getTraceEndpoint(appID, embraceDataURL),
     });
   }
 }
