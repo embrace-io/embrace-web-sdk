@@ -30,7 +30,7 @@ import type {
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
-import type { AttributeScrubber } from '../common/index.js';
+import type { AttributeScrubber, SDKConfig } from '../common/index.js';
 
 export interface DynamicSDKConfig {
   /**
