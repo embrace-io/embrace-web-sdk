@@ -565,15 +565,7 @@ jobs:
         with:
           include-hidden-files: true
           name: build-results
-          path: tests/integration/*/.sonda/**/*.html
-
-      - name: Update artifact with lighthouse results
-        if: ${{ needs.environment.outputs.name == 'development' }}
-        uses: actions/upload-artifact@v4
-        with:
-          include-hidden-files: true
-          name: lighthouse-results
-          path: tests/integration/test-results/*.html
+          path: tests/integration/platforms/*/.sonda/**/*.html
 
   commitlint:
     needs: configure
