@@ -51,7 +51,11 @@ npm run demo
 
 ## 🔧 Development Mode
 
-The demo app uses your local SDK source code instead of the published npm package. In the demo's `package.json`, the dependency `"@embrace-io/web-sdk": "file:../.."` creates a direct link to the SDK source code two directories up. This means any changes you make to the SDK will be immediately available in the demo app.
+The demo app uses your local SDK source code instead of the published npm
+package. In the demo's `package.json`, the dependency
+`"@embrace-io/web-sdk": "file:../.."` creates a direct link to the SDK source
+code two directories up. This means any changes you make to the SDK will be
+immediately available in the demo app.
 
 For the fastest development experience with hot reloading:
 
