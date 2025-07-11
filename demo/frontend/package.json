@@ -6,9 +6,8 @@
   "scripts": {
     "clean": "npm run demo:frontend:install:clean && npm run demo:frontend:compile:clean",
     "compile": "npm run demo:frontend:compile:clean && npm run demo:frontend:compile",
-    "dev": "npm run demo:frontend:dev",
-    "demo": "npm run demo:frontend:full:preview",
-    "demo:frontend:full:preview": "bash ./scripts/runDemo.sh",
+    "dev": "npm run demo:frontend:dev -- --open",
+    "demo": "bash ./scripts/runDemo.sh",
     "demo:frontend:compile:clean": "rimraf .sonda dist",
     "demo:frontend:install:clean": "rimraf node_modules",
     "demo:frontend:dev": "vite",
