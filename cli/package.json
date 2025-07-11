@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run cli:compile:clean & npm run cli:compile",
     "cli:test": "echo \"Error: no test specified\" && exit 1",
     "cli:tsc": "tsc",
-    "cli:compile": "npm run cli:tsc",
+    "cli:compile": "npm run cli:tsc && chmod +x build/index.js",
     "cli:lint:fix": "eslint --fix ./src",
     "cli:compile:clean": "npx rimraf build",
     "cli:install:clean": "npx rimraf node_modules"
