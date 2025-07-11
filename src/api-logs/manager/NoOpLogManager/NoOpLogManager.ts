@@ -6,7 +6,7 @@ import type {
 } from '../index.js';
 
 export class NoOpLogManager implements LogManager {
-  public logException(_error: Error, _options?: LogExceptionOptions) {
+  public logException(_error: unknown, _options?: LogExceptionOptions) {
     // no op
   }
 

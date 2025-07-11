@@ -578,4 +578,188 @@ describe('EmbraceLogManager', () => {
       'truncating log_attribute_value because it is longer than 12 characters: "a-very-long-log-attribute-value"'
     );
   });
+
+  describe('log exceptions with non Error types', () => {
+    it('should handle strings', () => {
+      expect(() => {
+        manager.logException('this is a string error');
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('this is a string error');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'String');
+      expect(log.attributes).to.have.property('exception.name', 'String');
+      expect(log.attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        'this is a string error'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+
+    it('should handle numbers', () => {
+      expect(() => {
+        manager.logException(123);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('123');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'number');
+      expect(log.attributes).to.have.property('exception.name', 'number');
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_MESSAGE, '123');
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+
+    it('should handle objects', () => {
+      const dummyObj = new Map<string, string>();
+      for (let i = 1; i <= 20; i++) {
+        dummyObj.set(`key${String(i)}`, `value${String(i)}`);
+      }
+
+      const errorObj = Object.fromEntries(dummyObj);
+
+      expect(() => {
+        manager.logException(errorObj);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal(
+        '{"key1":"value1","key2":"value2","key3":"value3","key4":"value4","key5":"value5","key6":"value6","key7":"value7","key8":"value8","key9":"value9","key10":"value10","key11":"value11","key12":"value12","key13":"value13","key14":"value14","key15":"value15","key16":"value16","key17":"value17","key18":"value18","key19":"value19","key20":"value20"}'
+      );
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Object');
+      expect(log.attributes).to.have.property('exception.name', 'Object');
+      expect(log.attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        '{"key1":"value1","key2":"value2","key3":"value3","key4":"value4","key5":"value5","key6":"value6","key7":"value7","key8":"value8","key9":"value9","key10":"value10","key11":"value11","key12":"value12","key13":"value13","key14":"value14","key15":"value15","key16":"value16","key17":"value17","key18":"value18","key19":"value19","key20":"value20"}'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+
+    it('should handle malformed object (circular references)', () => {
+      const errorObj = {
+        message: {},
+      };
+      // Create circular reference
+      // @ts-expect-error create circular reference
+      errorObj.message.self = errorObj.message;
+
+      expect(() => {
+        manager.logException(errorObj);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('[unable to serialize error]');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Object');
+      expect(log.attributes).to.have.property('exception.name', 'Object');
+      expect(log.attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        '[unable to serialize error]'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+
+    it('logException called with an undefined error', () => {
+      expect(() => {
+        manager.logException(null);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('logException called with an undefined error');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+      expect(log.attributes).to.have.property('exception.name', 'Error');
+      expect(log.attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        'logException called with an undefined error'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+
+    it('should handle undefined', () => {
+      expect(() => {
+        // @ts-expect-error testing undefined
+        manager.logException();
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('logException called with an undefined error');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_EXCEPTION_HANDLING,
+        'HANDLED'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+      expect(log.attributes).to.have.property('exception.name', 'Error');
+      expect(log.attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        'logException called with an undefined error'
+      );
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+      expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
+    });
+  });
 });

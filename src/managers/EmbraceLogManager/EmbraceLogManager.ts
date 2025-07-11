@@ -58,32 +58,48 @@ export class EmbraceLogManager implements LogManager {
   }
 
   public logException(
-    error: Error,
+    error: unknown,
     {
       handled = true,
       attributes = {},
       timestamp = this._perf.getNowMillis(),
     }: LogExceptionOptions = {}
   ) {
+    if (!error) {
+      error = new Error('undefined logException');
+    }
+
+    // real user input may be null but TS doesn't know that
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (attributes == null || typeof attributes !== 'object') {
+      console.warn(
+        'EmbraceLogManager: attributes must be a non-null object',
+        attributes
+      );
+      attributes = {};
+    }
+
     if (!handled) {
       this._spanSessionManager.incrSessionCountForKey(
         KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
       );
     }
 
+    const normalizedError = EmbraceLogManager._normalizeErrorData(error);
+
     this._logger.emit({
       timestamp,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
-      body: error.message || '',
+      body: normalizedError.message,
       attributes: {
         ...attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
         [KEY_EMB_EXCEPTION_HANDLING]: handled ? 'HANDLED' : 'UNHANDLED',
-        [ATTR_EXCEPTION_TYPE]: error.constructor.name,
-        ['exception.name']: error.name,
-        [ATTR_EXCEPTION_MESSAGE]: error.message,
-        [ATTR_EXCEPTION_STACKTRACE]: error.stack,
+        [ATTR_EXCEPTION_TYPE]: normalizedError.type,
+        ['exception.name']: normalizedError.name,
+        [ATTR_EXCEPTION_MESSAGE]: normalizedError.message,
+        [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
       },
     });
   }
@@ -93,17 +109,22 @@ export class EmbraceLogManager implements LogManager {
     severity: LogSeverity,
     { attributes = {}, includeStacktrace = true }: LogMessageOptions = {}
   ) {
+    if (!message || typeof message !== 'string') {
+      console.warn('EmbraceLogManager: message must be a string');
+      return;
+    }
+
     if (severity === 'error') {
       this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
     }
 
     this._logMessage({
-      message,
+      message: message.trim(),
       severity,
       timestamp: this._perf.getNowMillis(),
       attributes,
       stackTrace:
-        includeStacktrace && severity != 'info' ? new Error().stack : undefined,
+        includeStacktrace && severity != 'info' ? new Error().stack : '',
     });
   }
 
@@ -145,5 +166,56 @@ export class EmbraceLogManager implements LogManager {
           : {}),
       },
     });
+  }
+
+  private static _normalizeErrorData(error: unknown): {
+    message: string;
+    type: string;
+    name: string;
+    stack: string;
+  } {
+    if (error instanceof Error) {
+      return {
+        message: error.message.trim(),
+        type: error.constructor.name,
+        name: error.name,
+        stack: error.stack || '',
+      };
+    }
+
+    // For non-Error types, generate a new stack trace
+    const userCallStack = new Error().stack || '';
+
+    if (typeof error === 'string') {
+      return {
+        message: error.trim(),
+        type: 'String',
+        name: 'String',
+        stack: userCallStack,
+      };
+    }
+
+    if (error && typeof error === 'object') {
+      let message = '';
+      try {
+        message = JSON.stringify(error);
+      } catch {
+        message = '[unable to serialize error]';
+      }
+
+      return {
+        message,
+        type: error.constructor.name,
+        name: error.constructor.name,
+        stack: userCallStack,
+      };
+    }
+
+    return {
+      message: String(error).trim(),
+      type: typeof error,
+      name: typeof error,
+      stack: userCallStack,
+    };
   }
 }

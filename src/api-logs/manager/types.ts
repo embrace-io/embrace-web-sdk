@@ -18,7 +18,7 @@ export interface LogManager {
     options?: LogMessageOptions
   ) => void;
 
-  logException: (error: Error, options?: LogExceptionOptions) => void;
+  logException: (error: unknown, options?: LogExceptionOptions) => void;
 }
 
 export type LogSeverity = 'info' | 'warning' | 'error';

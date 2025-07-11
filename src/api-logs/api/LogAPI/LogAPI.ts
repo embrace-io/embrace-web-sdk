@@ -33,7 +33,7 @@ export class LogAPI implements LogManager {
     this._proxyLogManager.setDelegate(logManager);
   }
 
-  public logException(error: Error, options?: LogExceptionOptions) {
+  public logException(error: unknown, options?: LogExceptionOptions) {
     this.getLogManager().logException(error, options);
   }
 
