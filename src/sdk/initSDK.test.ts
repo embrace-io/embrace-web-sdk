@@ -24,6 +24,8 @@ import {
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
   fakeFetchResetHistory,
+  fakeFetchWasCalled,
+  fakeFetchGetUrl,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
 import { log, ProxyLogManager } from '../api-logs/index.js';
@@ -53,11 +55,11 @@ type ExportedSpan = ReadableSpan & {
   }[];
 };
 
-const getLastSessionExportedSpans = async () => {
+const getLastSessionExportedSpans = async (callNumber = 0) => {
   // Needed to allow the transport to actually send its data off to fetch
   await new Promise(r => setTimeout(r, 1));
 
-  const body = fakeFetchGetBody();
+  const body = fakeFetchGetBody(callNumber);
   void expect(body).not.to.be.null;
   const decompressedStream = new Response(body).body?.pipeThrough(
     new DecompressionStream('gzip')
@@ -297,7 +299,7 @@ describe('initSDK', () => {
     );
   });
 
-  describe('export to Embrace', () => {
+  describe('communication with Embrace', () => {
     beforeEach(() => {
       fakeFetchInstall();
     });
@@ -336,10 +338,11 @@ describe('initSDK', () => {
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise(r => setTimeout(r, 1));
 
-      const headers = fakeFetchGetRequestHeaders();
+      const headers = fakeFetchGetRequestHeaders(1);
       expect((headers as Record<string, string>)['X-EM-AID']).to.equal('abc12');
 
-      const body = fakeFetchGetBody();
+      const body = fakeFetchGetBody(1);
+
       void expect(body).not.to.be.null;
       const decompressedStream = new Response(body).body?.pipeThrough(
         new DecompressionStream('gzip')
@@ -442,7 +445,7 @@ describe('initSDK', () => {
 
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
 
       expect(exportedSpans[0]['name']).to.be.equal('my performance span');
     });
@@ -527,7 +530,7 @@ describe('initSDK', () => {
 
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1000);
       for (let i = 0; i < exportedSpans.length; i++) {
         expect(exportedSpans[i]['name']).to.equal(`my-span-${i.toString()}`);
@@ -544,7 +547,7 @@ describe('initSDK', () => {
 
       session.getSpanSessionManager().endSessionSpan();
 
-      const nextSessionExportedSpans = await getLastSessionExportedSpans();
+      const nextSessionExportedSpans = await getLastSessionExportedSpans(0);
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
       for (let i = 0; i < nextSessionExportedSpans.length; i++) {
         expect(nextSessionExportedSpans[i]['name']).to.equal(
@@ -582,7 +585,7 @@ describe('initSDK', () => {
       span.end();
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedEvents = exportedSpans[0].events;
@@ -628,7 +631,7 @@ describe('initSDK', () => {
       span.end();
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
@@ -681,7 +684,7 @@ describe('initSDK', () => {
       span.end();
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[2].key).to.equal('large-attribute');
       expect(exportedSpans[0].attributes[2].value.stringValue).to.have.lengthOf(
@@ -718,7 +721,7 @@ describe('initSDK', () => {
       span.end();
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedEvents = exportedSpans[0].events;
@@ -770,7 +773,7 @@ describe('initSDK', () => {
       span.end();
       session.getSpanSessionManager().endSessionSpan();
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedEvents = exportedSpans[0].events;
@@ -824,7 +827,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -899,7 +902,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -977,7 +980,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans();
+      const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -1003,6 +1006,33 @@ describe('initSDK', () => {
       );
       expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
         'some other attr ALTERED'
+      );
+    });
+
+    it('should refresh the remote config', () => {
+      fakeFetchRespondWith(
+        JSON.stringify({
+          threshold: 90,
+        })
+      );
+
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            '@opentelemetry/instrumentation-document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(fakeFetchGetUrl()).to.contain(
+        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=my-app-version&deviceId='
       );
     });
   });
