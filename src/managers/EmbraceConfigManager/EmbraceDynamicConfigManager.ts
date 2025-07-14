@@ -38,7 +38,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     storage = localStorage,
     // Allow users to provide a default config
     defaultConfig = {},
-  }: RemoteConfigManagerArgs = {}) {
+  }: DynamicConfigManagerArgs = {}) {
     if (appID && appVersion && deviceId) {
       this._remoteConfigURL = getConfigURL(appID, {
         appVersion,
