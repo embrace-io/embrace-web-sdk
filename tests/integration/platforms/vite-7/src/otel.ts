@@ -9,6 +9,7 @@ const sdkControl = sdk.initSDK({
   logExporters: [new ConsoleLogRecordExporter()],
   logLevel: sdk.DiagLogLevel.ALL,
   embraceDataURL: 'http://localhost:3001',
+  embraceConfigURL: 'http://localhost:3001',
 });
 
 declare global {

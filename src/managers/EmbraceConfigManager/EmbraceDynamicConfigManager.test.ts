@@ -305,4 +305,36 @@ describe('EmbraceDynamicConfigManager', () => {
       JSON.stringify({ config: { threshold: 75 }, etag: 'stored-etag' })
     );
   });
+
+  it('should support a custom remote config URL', async () => {
+    const customURL = 'https://custom-config-url.com/config';
+    fakeFetchRespondWith(
+      JSON.stringify({
+        threshold: 90,
+      }),
+      {
+        status: 200,
+      }
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({
+      appID: 'test-app',
+      appVersion: '1.0.0',
+      deviceId: 'test-device',
+      embraceConfigURL: customURL,
+      storage,
+      diag,
+    });
+
+    await configManager.refreshRemoteConfig();
+
+    const config = configManager.getConfig();
+
+    expect(config).to.deep.equal({
+      samplingPct: 90,
+    });
+    expect(fakeFetchGetUrl()).to.equal(
+      `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`
+    );
+  });
 });

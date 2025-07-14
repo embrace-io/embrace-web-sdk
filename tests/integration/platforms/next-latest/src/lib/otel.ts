@@ -21,6 +21,7 @@ if (typeof window !== 'undefined') {
     logExporters: [new ConsoleLogRecordExporter()],
     logLevel: sdk.DiagLogLevel.ALL,
     embraceDataURL: 'http://localhost:3001',
+    embraceConfigURL: 'http://localhost:3001',
   });
 
   window.EMBRACE_CURRENT_SESSION_ID = session.getSessionId();

@@ -24,4 +24,5 @@ export interface EmbraceDynamicConfigManagerArgs {
   diag?: DiagLogger;
   storage?: Storage;
   defaultConfig?: Partial<DynamicSDKConfig>;
+  embraceConfigURL?: string;
 }

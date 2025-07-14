@@ -75,6 +75,7 @@ export const initSDK = (
     additionalQueryParamsToScrub = [],
     logLevel = DiagLogLevel.ERROR,
     embraceDataURL,
+    embraceConfigURL,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
@@ -130,6 +131,7 @@ export const initSDK = (
       new EmbraceDynamicConfigManager({
         appID,
         appVersion,
+        embraceConfigURL,
         defaultConfig: dynamicSDKConfig,
         deviceId: enduserPseudoID,
       });

@@ -166,6 +166,11 @@ type BaseSDKInitConfig = {
   embraceDataURL?: string;
 
   /**
+   * embraceConfigURL is used to specify a custom Embrace configuration URL. This is only used for testing purposes.
+   */
+  embraceConfigURL?: string;
+
+  /**
    * dynamicSDKConfigManager is used to manage dynamic SDK configuration. The manager can connect to a
    * remote configuration service to fetch the latest configuration. By default, the SDK will use a config manager that
    * fetches configuration from the Embrace dashboard if an appID is provided.
