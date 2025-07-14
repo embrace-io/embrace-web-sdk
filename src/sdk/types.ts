@@ -34,7 +34,7 @@ import type { AttributeScrubber } from '../common/index.js';
 
 export interface DynamicSDKConfig {
   /**
-   * Pct of traces that are sampled. 100% means all traces are sampled.
+   * Pct of users that are sampled. 100% means all users are sampled.
    *
    * **default**: 100
    */
