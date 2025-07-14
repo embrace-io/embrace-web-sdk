@@ -38,7 +38,7 @@ export interface DynamicSDKConfig {
    *
    * **default**: 100
    */
-  threshold?: number;
+  samplingPct: number;
 }
 
 export interface DynamicConfigManager {
