@@ -1,6 +1,6 @@
 import type {
   RemoteConfig,
-  RemoteConfigManagerArgs,
+  EmbraceDynamicConfigManagerArgs,
   StoredRemoteConfig,
 } from './types.js';
 import { getConfigURL } from './utils.js';
@@ -38,7 +38,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     storage = localStorage,
     // Allow users to provide a default config
     defaultConfig = {},
-  }: DynamicConfigManagerArgs = {}) {
+  }: EmbraceDynamicConfigManagerArgs = {}) {
     if (appID && appVersion && deviceId) {
       this._remoteConfigURL = getConfigURL(appID, {
         appVersion,

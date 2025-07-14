@@ -17,7 +17,7 @@ export type StoredRemoteConfig = {
   etag: string | null;
 };
 
-export interface RemoteConfigManagerArgs {
+export interface EmbraceDynamicConfigManagerArgs {
   appID?: string;
   appVersion?: string;
   deviceId?: string;
