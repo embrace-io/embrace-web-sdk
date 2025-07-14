@@ -13,3 +13,4 @@ export {
   DEFAULT_MAX_LOG_ATTRIBUTES,
 } from './EmbraceLimitManager/index.js';
 export { EmbraceDynamicConfigManager } from './EmbraceConfigManager/index.js';
+export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.js';
