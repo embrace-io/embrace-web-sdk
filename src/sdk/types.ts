@@ -1,8 +1,8 @@
 import type {
   ContextManager,
-  TextMapPropagator,
   DiagLogger,
   DiagLogLevel,
+  TextMapPropagator,
 } from '@opentelemetry/api';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { Resource } from '@opentelemetry/resources';
@@ -30,7 +30,22 @@ import type {
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
-import type { AttributeScrubber, SDKConfig } from '../common/index.js';
+import type { AttributeScrubber } from '../common/index.js';
+
+export interface DynamicSDKConfig {
+  /**
+   * Pct of traces that are sampled. 100% means all traces are sampled.
+   *
+   * **default**: 100
+   */
+  threshold?: number;
+}
+
+export interface DynamicConfigManager {
+  refreshRemoteConfig: () => Promise<void>;
+  setConfig: (config: Partial<DynamicSDKConfig>) => void;
+  getConfig: () => DynamicSDKConfig;
+}
 
 type BaseSDKInitConfig = {
   /**
@@ -151,12 +166,22 @@ type BaseSDKInitConfig = {
   embraceDataURL?: string;
 
   /**
-   * config is an optional SDKConfig object that can be used to configure the SDK. If an Embrace appID is provided, the
-   * configuration can be set remotely through the Embrace dashboard.
+   * dynamicSDKConfigManager is used to manage dynamic SDK configuration. The manager can connect to a
+   * remote configuration service to fetch the latest configuration. By default, the SDK will use a config manager that
+   * fetches configuration from the Embrace dashboard if an appID is provided.
    *
    * **default**: undefined
    */
-  config?: SDKConfig;
+  dynamicSDKConfigManager?: DynamicConfigManager;
+
+  /**
+   * dynamicSDKConfig is an optional object that can be used to configure the SDK. Everything in this configuration
+   * can be set dynamically at any time after the SDK has been initialized.
+   * If an Embrace appID is provided, the configuration can be set remotely through the Embrace dashboard.
+   *
+   * **default**: undefined
+   */
+  dynamicSDKConfig?: DynamicSDKConfig;
 };
 
 /*
@@ -212,6 +237,7 @@ export type SDKInitConfig = BaseSDKInitConfig &
 
 export interface SDKControl {
   flush: () => Promise<void>;
+  setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
 }
 
 export interface SetupSessionArgs {
@@ -232,7 +258,7 @@ export interface SetupTracesArgs {
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
-  config?: SDKConfig;
+  dynamicSDKConfig?: DynamicSDKConfig;
 }
 
 export interface SetupLogsArgs {

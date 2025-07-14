@@ -1,5 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { SDKConfig } from '../../common/index.js';
+
+import type { DynamicSDKConfig } from '../../sdk/index.js';
 
 export type RemoteConfigURLParams = {
   osVersion: string;
@@ -22,10 +23,5 @@ export interface RemoteConfigManagerArgs {
   deviceId?: string;
   diag?: DiagLogger;
   storage?: Storage;
-  defaultConfig?: Partial<SDKConfig>;
-}
-
-export interface ConfigManager {
-  refreshRemoteConfig: () => Promise<void>;
-  getConfig: () => SDKConfig;
+  defaultConfig?: Partial<DynamicSDKConfig>;
 }

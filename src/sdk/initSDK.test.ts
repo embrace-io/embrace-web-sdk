@@ -38,6 +38,7 @@ import {
 } from '../managers/index.js';
 import { ProxyUserManager, user } from '../api-users/index.js';
 import { registry } from './registry.js';
+import type { DynamicConfigManager } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -297,6 +298,32 @@ describe('initSDK', () => {
     expect(diagLogger.getErrorLogs()[0]).to.equal(
       'failed to initialize the SDK: templateBundleID should be 32 characters long'
     );
+  });
+
+  it('should allow setting dynamic config through the SDK', () => {
+    const myCustomConfigManager: DynamicConfigManager = {
+      refreshRemoteConfig: sinon.stub(),
+      setConfig: sinon.stub(),
+      getConfig: sinon.stub(),
+    };
+
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      diagLogger,
+      dynamicSDKConfigManager: myCustomConfigManager,
+    });
+    void expect(result).not.to.be.false;
+
+    if (result) {
+      result.setDynamicConfig({ threshold: 50 });
+
+      void expect(myCustomConfigManager.refreshRemoteConfig).to.have.been
+        .calledOnce;
+      expect(myCustomConfigManager.setConfig).to.have.been.calledOnceWith({
+        threshold: 50,
+      });
+    }
   });
 
   describe('communication with Embrace', () => {
@@ -1009,7 +1036,7 @@ describe('initSDK', () => {
       );
     });
 
-    it('should refresh the remote config', () => {
+    it('should refresh the remote config using Embrace if not dynamic config manager is provided', () => {
       fakeFetchRespondWith(
         JSON.stringify({
           threshold: 90,

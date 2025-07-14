@@ -1,25 +1,27 @@
 import type {
   RemoteConfig,
-  ConfigManager,
   RemoteConfigManagerArgs,
   StoredRemoteConfig,
 } from './types.js';
-import { getConfigURL, parseRemoteConfig } from './utils.js';
+import { getConfigURL } from './utils.js';
 import { diag } from '@opentelemetry/api';
 import type { DiagLogger } from '@opentelemetry/api';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
 } from './constants.js';
-import type { SDKConfig } from '../../common/index.js';
+import type {
+  DynamicConfigManager,
+  DynamicSDKConfig,
+} from '../../sdk/index.js';
 
-export class EmbraceConfigManager implements ConfigManager {
+export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   // Set to null if appID is not provided, in that case only rely on local config
   private readonly _remoteConfigURL: string | null = null;
   private readonly _diag: DiagLogger;
   private readonly _storage: Storage;
 
-  private _sdkConfig: SDKConfig;
+  private _sdkConfig: DynamicSDKConfig;
   private _etag: string | null = null;
 
   public constructor({
@@ -57,13 +59,18 @@ export class EmbraceConfigManager implements ConfigManager {
       ...DEFAULT_CONFIG,
       ...defaultConfig,
       // Stored remote config values will override both defaults and user-provided defaults
-      ...(storedRemoteConfig
-        ? parseRemoteConfig(storedRemoteConfig.config)
-        : {}),
+      ...(storedRemoteConfig ? storedRemoteConfig.config : {}),
     };
   }
 
-  public getConfig(): SDKConfig {
+  public setConfig(config: Partial<DynamicSDKConfig>): void {
+    this._sdkConfig = {
+      ...this._sdkConfig,
+      ...config,
+    };
+  }
+
+  public getConfig(): DynamicSDKConfig {
     return this._sdkConfig;
   }
 
@@ -92,7 +99,7 @@ export class EmbraceConfigManager implements ConfigManager {
         } as StoredRemoteConfig)
       );
 
-      this._sdkConfig = parseRemoteConfig(remoteConfig);
+      this._sdkConfig = remoteConfig;
       this._etag = etag;
     } catch (error: unknown) {
       this._diag.warn(

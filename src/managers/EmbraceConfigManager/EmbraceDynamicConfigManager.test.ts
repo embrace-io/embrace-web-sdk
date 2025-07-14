@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { EmbraceConfigManager } from './EmbraceConfigManager.js';
+import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.js';
 import {
   fakeFetchGetRequestHeaders,
   fakeFetchGetUrl,
@@ -13,7 +13,7 @@ import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.js';
 
 const { expect } = chai;
 
-describe('EmbraceConfigManager', () => {
+describe('EmbraceDynamicConfigManager', () => {
   let diag: InMemoryDiagLogger;
   let storage: InMemoryStorage;
 
@@ -29,27 +29,43 @@ describe('EmbraceConfigManager', () => {
     storage.clear();
   });
 
-  it('should get the default config for an app not connected to Embrace', () => {
-    const configManager = new EmbraceConfigManager();
+  it('should set the config using setConfig method', () => {
+    const configManager = new EmbraceDynamicConfigManager({
+      defaultConfig: {
+        threshold: 50,
+      },
+    });
+
+    configManager.setConfig({ threshold: 30 });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 1,
+      threshold: 30,
+    });
+  });
+
+  it('should get the default config for an app not connected to Embrace', () => {
+    const configManager = new EmbraceDynamicConfigManager();
+
+    const config = configManager.getConfig();
+
+    expect(config).to.deep.equal({
+      threshold: 100,
     });
   });
 
   it('should get the user-provided config for an app not connected to Embrace', () => {
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       defaultConfig: {
-        threshold: 0.5,
+        threshold: 50,
       },
     });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 0.5,
+      threshold: 50,
     });
   });
 
@@ -64,22 +80,22 @@ describe('EmbraceConfigManager', () => {
       })
     );
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       storage,
       defaultConfig: {
-        threshold: 0.5,
+        threshold: 50,
       },
     });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 0.75,
+      threshold: 75,
     });
   });
 
   it('should not fail if storage is not available', () => {
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
       storage: null,
       diag,
@@ -88,7 +104,7 @@ describe('EmbraceConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 1,
+      threshold: 100,
     });
     expect(diag.getWarnLogs()).to.deep.equal([
       "Failed to parse remote config from storage: Cannot read properties of null (reading 'getItem')",
@@ -96,14 +112,14 @@ describe('EmbraceConfigManager', () => {
   });
 
   it('should not fetch the remote config if is not connected to Embrace', async () => {
-    const configManager = new EmbraceConfigManager();
+    const configManager = new EmbraceDynamicConfigManager();
 
     await configManager.refreshRemoteConfig();
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 1,
+      threshold: 100,
     });
   });
 
@@ -117,7 +133,7 @@ describe('EmbraceConfigManager', () => {
       }
     );
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       appID: 'test-app',
       appVersion: '1.0.0',
       deviceId: 'test-device',
@@ -130,7 +146,7 @@ describe('EmbraceConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 0.8,
+      threshold: 80,
     });
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-test-app.config.emb-api.com/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device'
@@ -142,7 +158,7 @@ describe('EmbraceConfigManager', () => {
       status: 200,
     });
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       appID: 'test-app',
       appVersion: '1.0.0',
       deviceId: 'test-device',
@@ -155,7 +171,7 @@ describe('EmbraceConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 1,
+      threshold: 100,
     });
     expect(diag.getWarnLogs()).to.deep.equal([
       "Failed to refresh remote config: Failed to execute 'json' on 'Response': Unexpected end of JSON input",
@@ -175,7 +191,7 @@ describe('EmbraceConfigManager', () => {
       }
     );
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       appID: 'test-app',
       appVersion: '1.0.0',
       deviceId: 'test-device',
@@ -221,7 +237,7 @@ describe('EmbraceConfigManager', () => {
       }
     );
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       appID: 'test-app',
       appVersion: '1.0.0',
       deviceId: 'test-device',
@@ -233,7 +249,7 @@ describe('EmbraceConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 0.8,
+      threshold: 80,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
@@ -262,14 +278,14 @@ describe('EmbraceConfigManager', () => {
       },
     });
 
-    const configManager = new EmbraceConfigManager({
+    const configManager = new EmbraceDynamicConfigManager({
       appID: 'test-app',
       appVersion: '1.0.0',
       deviceId: 'test-device',
       storage,
       diag,
       defaultConfig: {
-        threshold: 0.5,
+        threshold: 50,
       },
     });
 
@@ -280,7 +296,7 @@ describe('EmbraceConfigManager', () => {
       'No changes in remote config, skipping update',
     ]);
     expect(config).to.deep.equal({
-      threshold: 0.75,
+      threshold: 75,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',

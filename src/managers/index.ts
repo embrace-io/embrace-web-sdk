@@ -12,4 +12,4 @@ export {
   DEFAULT_LIMITS,
   DEFAULT_MAX_LOG_ATTRIBUTES,
 } from './EmbraceLimitManager/index.js';
-export { EmbraceConfigManager } from './EmbraceConfigManager/index.js';
+export { EmbraceDynamicConfigManager } from './EmbraceConfigManager/index.js';

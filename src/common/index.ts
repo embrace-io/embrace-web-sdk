@@ -3,5 +3,4 @@ export type {
   URLDocument,
   PathnameDocument,
   AttributeScrubber,
-  SDKConfig,
 } from './types.js';
