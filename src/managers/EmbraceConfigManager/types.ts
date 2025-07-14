@@ -1,5 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { SDKConfig } from '../../common/index.js';
+
+import type { DynamicSDKConfig } from '../../sdk/index.js';
 
 import type { DynamicSDKConfig } from '../../sdk/index.js';
 

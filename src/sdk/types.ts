@@ -30,7 +30,22 @@ import type {
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
-import type { AttributeScrubber, SDKConfig } from '../common/index.js';
+import type { AttributeScrubber } from '../common/index.js';
+
+export interface DynamicSDKConfig {
+  /**
+   * Pct of traces that are sampled. 100% means all traces are sampled.
+   *
+   * **default**: 100
+   */
+  threshold?: number;
+}
+
+export interface DynamicConfigManager {
+  refreshRemoteConfig: () => Promise<void>;
+  setConfig: (config: Partial<DynamicSDKConfig>) => void;
+  getConfig: () => DynamicSDKConfig;
+}
 
 export interface DynamicSDKConfig {
   /**
