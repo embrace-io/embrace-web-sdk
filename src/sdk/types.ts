@@ -179,7 +179,7 @@ type BaseSDKInitConfig = {
    * can be set dynamically at any time after the SDK has been initialized.
    * If an Embrace appID is provided, the configuration can be set remotely through the Embrace dashboard.
    *
-   * **default**: undefined
+   * **default**: EmbraceDynamicConfigManager
    */
   dynamicSDKConfig?: Partial<DynamicSDKConfig>;
 };
