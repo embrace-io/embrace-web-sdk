@@ -1,35 +1,42 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "npm"
+      interval: 'weekly'
+  - package-ecosystem: 'npm'
     directories:
-      - "/"
-      - "/cli"
-      - "/demo/frontend"
+      - '/'
+      - '/cli'
+      - '/demo/frontend'
+      - '/demo/frontend-cdn'
+      - '/demo/webpack-example'
+      - '/tests/performance'
+      - '/tests/integration'
+
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     open-pull-requests-limit: 50
     groups:
       eslint:
         patterns:
-          - "*eslint*"
+          - '*eslint*'
       # All these packages are marked as experimental, so only apply patch updates
       opentelemetry-experimental:
         patterns:
-          - "@opentelemetry/instrumentation-*"
-          - "@opentelemetry/opentelemetry-browser-detector"
-          - "@opentelemetry/otlp-exporter-base"
-          - "@opentelemetry/web-common"
+          - '@opentelemetry/api-logs'
+          - '@opentelemetry/instrumentation*'
+          - '@opentelemetry/opentelemetry-browser-detector'
+          - '@opentelemetry/otlp-*'
+          - '@opentelemetry/sdk-logs'
+          - '@opentelemetry/web-common'
         update-types:
           - patch
       opentelemetry:
         patterns:
-          - "@opentelemetry/*"
+          - '@opentelemetry/*'
         update-types:
           - minor
       react:
         patterns:
-          - "react*"
+          - 'react*'
