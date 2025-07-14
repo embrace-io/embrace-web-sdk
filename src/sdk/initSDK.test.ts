@@ -316,12 +316,12 @@ describe('initSDK', () => {
     void expect(result).not.to.be.false;
 
     if (result) {
-      result.setDynamicConfig({ threshold: 50 });
+      result.setDynamicConfig({ samplingPct: 50 });
 
       void expect(myCustomConfigManager.refreshRemoteConfig).to.have.been
         .calledOnce;
       expect(myCustomConfigManager.setConfig).to.have.been.calledOnceWith({
-        threshold: 50,
+        samplingPct: 50,
       });
     }
   });

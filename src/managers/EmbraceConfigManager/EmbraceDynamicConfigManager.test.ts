@@ -32,16 +32,16 @@ describe('EmbraceDynamicConfigManager', () => {
   it('should set the config using setConfig method', () => {
     const configManager = new EmbraceDynamicConfigManager({
       defaultConfig: {
-        threshold: 50,
+        samplingPct: 50,
       },
     });
 
-    configManager.setConfig({ threshold: 30 });
+    configManager.setConfig({ samplingPct: 30 });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 30,
+      samplingPct: 30,
     });
   });
 
@@ -51,21 +51,21 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 100,
+      samplingPct: 100,
     });
   });
 
   it('should get the user-provided config for an app not connected to Embrace', () => {
     const configManager = new EmbraceDynamicConfigManager({
       defaultConfig: {
-        threshold: 50,
+        samplingPct: 50,
       },
     });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 50,
+      samplingPct: 50,
     });
   });
 
@@ -83,14 +83,14 @@ describe('EmbraceDynamicConfigManager', () => {
     const configManager = new EmbraceDynamicConfigManager({
       storage,
       defaultConfig: {
-        threshold: 50,
+        samplingPct: 50,
       },
     });
 
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 75,
+      samplingPct: 75,
     });
   });
 
@@ -104,7 +104,7 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 100,
+      samplingPct: 100,
     });
     expect(diag.getWarnLogs()).to.deep.equal([
       "Failed to parse remote config from storage: Cannot read properties of null (reading 'getItem')",
@@ -119,7 +119,7 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 100,
+      samplingPct: 100,
     });
   });
 
@@ -146,7 +146,7 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 80,
+      samplingPct: 80,
     });
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-test-app.config.emb-api.com/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device'
@@ -171,7 +171,7 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 100,
+      samplingPct: 100,
     });
     expect(diag.getWarnLogs()).to.deep.equal([
       "Failed to refresh remote config: Failed to execute 'json' on 'Response': Unexpected end of JSON input",
@@ -249,7 +249,7 @@ describe('EmbraceDynamicConfigManager', () => {
     const config = configManager.getConfig();
 
     expect(config).to.deep.equal({
-      threshold: 80,
+      samplingPct: 80,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
@@ -285,7 +285,7 @@ describe('EmbraceDynamicConfigManager', () => {
       storage,
       diag,
       defaultConfig: {
-        threshold: 50,
+        samplingPct: 50,
       },
     });
 
@@ -296,7 +296,7 @@ describe('EmbraceDynamicConfigManager', () => {
       'No changes in remote config, skipping update',
     ]);
     expect(config).to.deep.equal({
-      threshold: 75,
+      samplingPct: 75,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',

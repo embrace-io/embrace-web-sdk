@@ -15,6 +15,10 @@ import type {
   DynamicSDKConfig,
 } from '../../sdk/index.js';
 
+const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => ({
+  samplingPct: remoteConfig.threshold,
+});
+
 export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   // Set to null if appID is not provided, in that case only rely on local config
   private readonly _remoteConfigURL: string | null = null;
@@ -59,7 +63,9 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
       ...DEFAULT_CONFIG,
       ...defaultConfig,
       // Stored remote config values will override both defaults and user-provided defaults
-      ...(storedRemoteConfig ? storedRemoteConfig.config : {}),
+      ...(storedRemoteConfig
+        ? parseRemoteConfig(storedRemoteConfig.config)
+        : {}),
     };
   }
 
@@ -99,7 +105,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
         } as StoredRemoteConfig)
       );
 
-      this._sdkConfig = remoteConfig;
+      this._sdkConfig = parseRemoteConfig(remoteConfig);
       this._etag = etag;
     } catch (error: unknown) {
       this._diag.warn(
