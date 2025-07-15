@@ -47,21 +47,6 @@ export interface DynamicConfigManager {
   getConfig: () => DynamicSDKConfig;
 }
 
-export interface DynamicSDKConfig {
-  /**
-   * Pct of users that are sampled. 100% means all users are sampled.
-   *
-   * **default**: 100
-   */
-  samplingPct: number;
-}
-
-export interface DynamicConfigManager {
-  refreshRemoteConfig: () => Promise<void>;
-  setConfig: (config: Partial<DynamicSDKConfig>) => void;
-  getConfig: () => DynamicSDKConfig;
-}
-
 type BaseSDKInitConfig = {
   /**
    * appVersion is used to distinguish between different releases of your application. It can be set here if the value
