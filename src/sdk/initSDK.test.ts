@@ -401,8 +401,8 @@ describe('initSDK', () => {
           { key: 'sdk_simple_version', value: { intValue: 1 } },
           { key: 'sdk_platform', value: { stringValue: 'web' } },
           {
-            key: 'browser.language',
-            value: { stringValue: window.navigator.language },
+            key: 'user_agent.original',
+            value: { stringValue: window.navigator.userAgent },
           },
         ],
         droppedAttributesCount: 0,
