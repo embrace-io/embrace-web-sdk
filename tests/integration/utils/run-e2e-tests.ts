@@ -175,6 +175,34 @@ const runE2ETests = ({
     );
 
     testE2E(
+      'it should init the SDK if it is sampled out by remote config',
+      async ({
+        page,
+        navigateAndWaitUntilReady,
+        withRemoteConfig,
+        getCurrentSessionId,
+      }) => {
+        await withRemoteConfig({
+          threshold: 0,
+        });
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        let currentSessionId: string | null = await getCurrentSessionId();
+
+        // First load works as expected as we don't wait for the remote config to be applied
+        testE2E.expect(currentSessionId).not.toBeNull();
+
+        await page.reload();
+
+        // After reload, the session id should not be set as it is sampled out
+        currentSessionId = await page.evaluate(
+          () => window.EMBRACE_CURRENT_SESSION_ID,
+          {}
+        );
+        testE2E.expect(currentSessionId).toBeNull();
+      }
+    );
+
+    testE2E(
       'it should end the session and send it to the API if the page closes',
       async ({
         navigateAndWaitUntilReady,
