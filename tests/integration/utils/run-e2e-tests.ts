@@ -126,11 +126,16 @@ const runE2ETests = ({
 
     testE2E(
       'it should end a session and send a request to the API',
-      async ({ requests, waitForRequest, navigateAndWaitUntilReady, page }) => {
+      async ({
+        requests,
+        waitForOTelRequest,
+        navigateAndWaitUntilReady,
+        page,
+      }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
-        await waitForRequest();
+        await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
@@ -141,17 +146,31 @@ const runE2ETests = ({
 
     testE2E(
       'it should send a log',
-      async ({ page, requests, waitForRequest, navigateAndWaitUntilReady }) => {
+      async ({
+        page,
+        requests,
+        waitForOTelRequest,
+        navigateAndWaitUntilReady,
+      }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
         const button = page.getByRole('button', { name: 'Send Log' });
         await button.click();
-        await waitForRequest();
+        await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
           `${codifiedName}-send-log.json`
         );
+      }
+    );
+
+    testE2E(
+      'it should fetch the remote config',
+      async ({ page, waitForRemoteConfigRequest, withRemoteConfig }) => {
+        await withRemoteConfig();
+        void page.goto(url);
+        await waitForRemoteConfigRequest();
       }
     );
 

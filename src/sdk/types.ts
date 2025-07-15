@@ -1,8 +1,8 @@
 import type {
   ContextManager,
-  TextMapPropagator,
   DiagLogger,
   DiagLogLevel,
+  TextMapPropagator,
 } from '@opentelemetry/api';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { Resource } from '@opentelemetry/resources';
@@ -31,6 +31,21 @@ import type {
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
 import type { AttributeScrubber } from '../common/index.js';
+
+export interface DynamicSDKConfig {
+  /**
+   * Pct of users that are sampled. 100% means all users are sampled.
+   *
+   * **default**: 100
+   */
+  samplingPct: number;
+}
+
+export interface DynamicConfigManager {
+  refreshRemoteConfig: () => Promise<void>;
+  setConfig: (config: Partial<DynamicSDKConfig>) => void;
+  getConfig: () => DynamicSDKConfig;
+}
 
 type BaseSDKInitConfig = {
   /**
@@ -116,7 +131,6 @@ type BaseSDKInitConfig = {
   templateBundleID?: string;
 
   /**
-   * attributeScrubbers
    * AttributeScrubber is an interface that allows scrubbing potentially sensitive data before being emitted by the SDK.
    * Each scrubber specifies an attribute key it is concerned with and a function which is supplied with the string from
    * an AttributeValue whenever that key is encountered on a Log or Span. The string returned by the function is then
@@ -150,6 +164,29 @@ type BaseSDKInitConfig = {
    * embraceDataURL is used to specify a custom Embrace data URL. This is only used for testing purposes.
    */
   embraceDataURL?: string;
+
+  /**
+   * embraceConfigURL is used to specify a custom Embrace configuration URL. This is only used for testing purposes.
+   */
+  embraceConfigURL?: string;
+
+  /**
+   * dynamicSDKConfigManager is used to manage dynamic SDK configuration. The manager can connect to a
+   * remote configuration service to fetch the latest configuration. By default, the SDK will use a config manager that
+   * fetches configuration from the Embrace dashboard if an appID is provided.
+   *
+   * **default**: undefined
+   */
+  dynamicSDKConfigManager?: DynamicConfigManager;
+
+  /**
+   * dynamicSDKConfig is an optional object that can be used to configure the SDK. Everything in this configuration
+   * can be set dynamically at any time after the SDK has been initialized.
+   * If an Embrace appID is provided, the configuration can be set remotely through the Embrace dashboard.
+   *
+   * **default**: EmbraceDynamicConfigManager
+   */
+  dynamicSDKConfig?: Partial<DynamicSDKConfig>;
 };
 
 /*
@@ -205,6 +242,7 @@ export type SDKInitConfig = BaseSDKInitConfig &
 
 export interface SDKControl {
   flush: () => Promise<void>;
+  setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
 }
 
 export interface SetupSessionArgs {
@@ -225,6 +263,7 @@ export interface SetupTracesArgs {
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
+  dynamicSDKConfig?: DynamicSDKConfig;
 }
 
 export interface SetupLogsArgs {

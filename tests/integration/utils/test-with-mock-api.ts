@@ -30,6 +30,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/__golden__');
 const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run test:e2e:update-golden instead.`;
 const shouldUpdateGolden = process.env.UPDATE_GOLDEN === '1';
+const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
+  threshold: 100, // Default to 100% for tests
+};
+const OTEL_REQUEST_REGEX = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
+const REMOTE_CONFIG_REGEX = new RegExp('^https?:\\/\\/.*\\/v2\\/config\\?.*');
 
 type EmbraceDataRequest = {
   url: string;
@@ -39,7 +44,10 @@ type EmbraceDataRequest = {
 
 type TestWithMockApi = {
   requests: EmbraceDataRequest[];
-  waitForRequest: () => Promise<void>;
+  waitForRequest: (url: RegExp) => Promise<void>;
+  waitForOTelRequest: () => Promise<void>;
+  waitForRemoteConfigRequest: () => Promise<void>;
+  withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -52,11 +60,37 @@ const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.startup_duration',
   'emb.app_instance_id',
-  // CI runs on Linux, devs might use different OS
-  'browser.platform',
+  // CI runs on Linux, devs might use different OS, thus different user agent
+  'user_agent.original',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
+  waitForRequest: [
+    async ({ page }, use) => {
+      await use(async url => {
+        await page.waitForResponse(
+          request => request.url().match(url) !== null
+        );
+      });
+    },
+    { scope: 'test' },
+  ],
+  waitForOTelRequest: [
+    async ({ waitForRequest }, use) => {
+      await use(async () => {
+        await waitForRequest(OTEL_REQUEST_REGEX);
+      });
+    },
+    { scope: 'test' },
+  ],
+  waitForRemoteConfigRequest: [
+    async ({ waitForRequest }, use) => {
+      await use(async () => {
+        await waitForRequest(REMOTE_CONFIG_REGEX);
+      });
+    },
+    { scope: 'test' },
+  ],
   requests: [
     async ({ page }, use) => {
       const requests: EmbraceDataRequest[] = [];
@@ -90,24 +124,23 @@ const testWithMockApi = base.extend<TestWithMockApi>({
 
         await route.continue();
       };
-      const regex = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
 
-      await page.route(regex, handler);
+      await page.route(OTEL_REQUEST_REGEX, handler);
       await use(requests);
     },
     { scope: 'test' },
   ],
-  waitForRequest: [
-    async ({ page }, use) => {
-      const regex = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
-      await page.pause();
-
-      await use(async () => {
-        await page.waitForResponse(
-          request => request.url().match(regex) !== null
-        );
-      });
-    },
+  withRemoteConfig: [
+    async ({ page }, use) =>
+      use(async (remoteConfig?: Record<string, unknown>) => {
+        await page.route(REMOTE_CONFIG_REGEX, async route => {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify(remoteConfig || DEFAULT_REMOTE_CONFIG),
+          });
+        });
+      }),
     { scope: 'test' },
   ],
 });

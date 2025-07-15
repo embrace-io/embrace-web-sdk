@@ -39,6 +39,7 @@ describe('webSdkResource', () => {
       'telemetry.sdk.language': 'webjs',
       'telemetry.sdk.name': 'embrace-web-sdk',
       'telemetry.sdk.version': SDK_VERSION,
+      'user_agent.original': window.navigator.userAgent,
     });
   });
 

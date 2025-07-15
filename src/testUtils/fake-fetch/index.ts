@@ -5,8 +5,8 @@ import * as sinon from 'sinon';
 
 const withRequest = (arg: unknown) => arg instanceof window.Request;
 
-export const getOptions = () =>
-  ((window.fetch as SinonStub).firstCall.args[1] || {}) as Parameters<
+export const getOptions = (callNumber = 0) =>
+  ((window.fetch as SinonStub).getCall(callNumber).args[1] || {}) as Parameters<
     typeof window.fetch
   >[1];
 
@@ -22,49 +22,47 @@ export const resetHistory = () => {
   (window.fetch as SinonStub).resetHistory();
 };
 
-export const getMethod = () => {
-  const firstArg = (window.fetch as SinonStub).firstCall.args[0] as Parameters<
-    typeof window.fetch
-  >[0];
+export const getMethod = (callNumber = 0) => {
+  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
+    .args[0] as Parameters<typeof window.fetch>[0];
   if (withRequest(firstArg)) {
     return firstArg.method;
   }
-  return getOptions()?.method ?? 'get';
+  return getOptions(callNumber)?.method ?? 'get';
 };
 
-export const getBody = () => {
-  const firstArg = (window.fetch as SinonStub).firstCall.args[0] as Parameters<
-    typeof window.fetch
-  >[0];
+export const getBody = (callNumber = 0) => {
+  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
+    .args[0] as Parameters<typeof window.fetch>[0];
   if (withRequest(firstArg)) {
     return firstArg.body;
   }
-  return getOptions()?.body ?? '';
+  return getOptions(callNumber)?.body ?? '';
 };
 
-export const getUrl = () => {
-  const firstArg = (window.fetch as SinonStub).firstCall.args[0] as Parameters<
-    typeof window.fetch
-  >[0];
+export const getUrl = (callNumber = 0) => {
+  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
+    .args[0] as Parameters<typeof window.fetch>[0];
   if (withRequest(firstArg)) {
     return firstArg.url;
   }
   return firstArg;
 };
 
-export const getRequestHeaders = () => {
-  const firstArg = (window.fetch as SinonStub).firstCall.args[0] as Parameters<
-    typeof window.fetch
-  >[0];
+export const getRequestHeaders = (callNumber = 0) => {
+  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
+    .args[0] as Parameters<typeof window.fetch>[0];
+
   if (withRequest(firstArg)) {
     return firstArg.headers;
   }
-  return getOptions()?.headers ?? {};
+  return getOptions(callNumber)?.headers ?? {};
 };
 
-export const respondWith = (data: BodyInit, options?: ResponseInit) =>
+export const respondWith = (data: BodyInit | null, options?: ResponseInit) =>
   (window.fetch as SinonStub).returns(
     Promise.resolve(new Response(data, options))
   );
 
-export const wasCalled = () => !!(window.fetch as SinonStub).firstCall;
+export const wasCalled = (callNumber = 0) =>
+  !!(window.fetch as SinonStub).getCall(callNumber);

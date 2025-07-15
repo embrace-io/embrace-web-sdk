@@ -7,11 +7,11 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -24,6 +24,7 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceDynamicConfigManager,
   DEFAULT_LIMITS,
 } from '../managers/index.js';
 import {
@@ -43,6 +44,7 @@ import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
 import { trace } from '../api-traces/index.js';
 import type {
+  DynamicSDKConfig,
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
@@ -73,9 +75,12 @@ export const initSDK = (
     additionalQueryParamsToScrub = [],
     logLevel = DiagLogLevel.ERROR,
     embraceDataURL,
+    embraceConfigURL,
     diagLogger = diag.createComponentLogger({
       namespace: 'embrace-sdk',
     }),
+    dynamicSDKConfigManager: providedDynamicSDKConfigManager,
+    dynamicSDKConfig,
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
@@ -120,6 +125,17 @@ export const initSDK = (
     if (sendingToEmbrace && !enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
     }
+
+    const dynamicConfigManager =
+      providedDynamicSDKConfigManager ??
+      new EmbraceDynamicConfigManager({
+        appID,
+        appVersion,
+        embraceConfigURL,
+        defaultConfig: dynamicSDKConfig,
+        deviceId: enduserPseudoID,
+      });
+    void dynamicConfigManager.refreshRemoteConfig();
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = setupSession({
@@ -175,7 +191,10 @@ export const initSDK = (
 
     diagLogger.info('successfully initialized the SDK');
 
-    const sdkControl = {
+    const sdkControl: SDKControl = {
+      setDynamicConfig: (config: Partial<DynamicSDKConfig>) => {
+        dynamicConfigManager.setConfig(config);
+      },
       flush: async () => {
         await tracerProvider.forceFlush();
         await loggerProvider.forceFlush();
