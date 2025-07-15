@@ -28,7 +28,7 @@ import { diff } from 'jest-diff';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/__golden__');
-const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run test:e2e:update-golden instead.`;
+const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run sdk:test:integration:e2e:update-golden instead.`;
 const shouldUpdateGolden = process.env.UPDATE_GOLDEN === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
@@ -367,7 +367,13 @@ const expect = testWithMockApi.expect.extend({
         return {
           pass: false,
           message: () =>
-            `Expected ${chalk.green(expected.length)} scope entities, but got ${chalk.red(received.length)}${INTENDED_CHANGE_MESSAGE}`,
+            `Expected ${chalk.green(expected.length)} scope entities, but got ${chalk.red(received.length)}${INTENDED_CHANGE_MESSAGE}\n${
+              diff(expected, received, {
+                expand: true,
+                aAnnotation: 'Expected',
+                bAnnotation: 'Received',
+              }) || ''
+            }`,
         };
       }
 
@@ -407,7 +413,13 @@ const expect = testWithMockApi.expect.extend({
                 return {
                   pass: false,
                   message: () =>
-                    `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}`,
+                    `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}\n${
+                      diff(receivedScopes, expectedScopes, {
+                        expand: true,
+                        aAnnotation: 'Received',
+                        bAnnotation: 'Expected',
+                      }) || ''
+                    }`,
                 };
               }
 

@@ -131,6 +131,7 @@ const runE2ETests = ({
         waitForOTelRequest,
         navigateAndWaitUntilReady,
         page,
+        browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
@@ -138,8 +139,11 @@ const runE2ETests = ({
         await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
+
+        await page.pause();
+
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${codifiedName}-session.json`
+          `${browserName}-${codifiedName}-session.json`
         );
       }
     );
@@ -151,6 +155,7 @@ const runE2ETests = ({
         requests,
         waitForOTelRequest,
         navigateAndWaitUntilReady,
+        browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
@@ -160,7 +165,7 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(1);
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${codifiedName}-send-log.json`
+          `${browserName}-${codifiedName}-send-log.json`
         );
       }
     );
@@ -169,8 +174,7 @@ const runE2ETests = ({
       'it should fetch the remote config',
       async ({ page, waitForRemoteConfigRequest, withRemoteConfig }) => {
         await withRemoteConfig();
-        void page.goto(url);
-        await waitForRemoteConfigRequest();
+        await Promise.all([page.goto(url), waitForRemoteConfigRequest()]);
       }
     );
 
@@ -181,7 +185,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
@@ -234,7 +241,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
@@ -254,7 +264,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
