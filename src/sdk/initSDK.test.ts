@@ -1069,7 +1069,7 @@ describe('initSDK', () => {
       );
     });
 
-    it.only('should disable the SDK', async () => {
+    it('should disable the SDK', async () => {
       const myCustomConfigManager: DynamicConfigManager = {
         refreshRemoteConfig: sinon.stub(),
         setConfig: sinon.stub(),
