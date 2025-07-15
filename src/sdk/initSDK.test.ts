@@ -1,4 +1,4 @@
-import { diag, DiagLogLevel, trace, context } from '@opentelemetry/api';
+import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { Resource } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
@@ -1069,7 +1069,7 @@ describe('initSDK', () => {
       );
     });
 
-    it('should disable the SDK', async () => {
+    it('should disable the SDK', () => {
       const myCustomConfigManager: DynamicConfigManager = {
         refreshRemoteConfig: sinon.stub(),
         setConfig: sinon.stub(),
@@ -1087,56 +1087,10 @@ describe('initSDK', () => {
         spanExporters: [spanExporter],
       });
       void expect(result).to.be.false;
+      // We can't test the global managers not being set because other tests will have already initialized it
       expect(diagLogger.getDebugLogs()).to.be.deep.equal([
-        'No existing app instance ID found in session storage, creating a new one',
         'SDK is disabled, skipping initialization.',
       ]);
-
-      session.endSessionSpan();
-
-      // Needed to allow the transport to actually send its data off to fetch
-      await new Promise(r => setTimeout(r, 1));
-
-      void expect(fakeFetchWasCalled()).to.be.false;
-      expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
-
-      log.message('some log', 'info');
-
-      void expect(fakeFetchWasCalled()).to.be.false;
-      expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
-
-      // All public APIs should be no-ops and not throw errors
-      // Test a few no-op public APIs, this should be covered in other tests but
-      // is worth double-checking that we're not registering any manager
-      expect(() => {
-        const currentContext = context.active();
-
-        // trace
-        embtrace.getSpan(currentContext);
-        embtrace.setSpan(currentContext, embtrace.startSpan('Test Span'));
-        const span = embtrace.startSpan('Test Span');
-        void expect(span.isRecording()).to.be.false;
-        span.addEvent('Test Event');
-        span.setAttribute('Test Attribute', 'Test Value');
-        span.fail();
-        span.end();
-
-        // log
-        log.message('Test Log', 'info');
-        log.logException(new Error('Test Error'));
-
-        // user
-        user.setUserId('test-user-id');
-        user.clearUserId();
-        user.getEmbraceUserId();
-
-        // session
-        session.getSessionId();
-        session.getSessionSpan();
-        session.getSessionStartTime();
-        session.addProperty('r1', 'my-resource-attr');
-        session.removeProperty('r2');
-      }).to.not.throw();
     });
   });
 
