@@ -1,0 +1,29 @@
+{
+  "name": "otel",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "../../..",
+    "@opentelemetry/context-zone": "latest",
+    "@opentelemetry/instrumentation": "latest",
+    "@opentelemetry/instrumentation-document-load": "latest",
+    "@opentelemetry/sdk-logs": "latest",
+    "@opentelemetry/sdk-trace-base": "latest",
+    "@opentelemetry/sdk-trace-web": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "eslint": "^9.30.1",
+    "globals": "^16.3.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.35.1",
+    "vite": "^7.0.3"
+  }
+}
