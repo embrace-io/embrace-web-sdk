@@ -1,10 +1,10 @@
-import { browserDetector } from '@opentelemetry/opentelemetry-browser-detector';
-import { detectResourcesSync, Resource } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
 import {
   ATTR_SERVICE_NAME,
   ATTR_TELEMETRY_SDK_LANGUAGE,
   ATTR_TELEMETRY_SDK_NAME,
   ATTR_TELEMETRY_SDK_VERSION,
+  ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions';
 import {
   EMBRACE_SERVICE_NAME,
@@ -38,7 +38,7 @@ export const getWebSDKResource = ({
   */
   const processedAppVersion = appVersion ?? TEMPLATE_APP_VERSION.trim();
 
-  let resource = new Resource({
+  return new Resource({
     [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
     app_version: processedAppVersion,
@@ -50,10 +50,6 @@ export const getWebSDKResource = ({
     sdk_platform: 'web',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: 'webjs',
     [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(pageSessionStorage, diagLogger),
+    [ATTR_USER_AGENT_ORIGINAL]: window.navigator.userAgent,
   });
-  const detectedResources = detectResourcesSync({
-    detectors: [browserDetector],
-  });
-  resource = resource.merge(detectedResources);
-  return resource;
 };
