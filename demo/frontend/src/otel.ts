@@ -8,12 +8,13 @@ const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 const setupOTel = () => {
   const result = sdk.initSDK({
     appID: SAMPLE_APP_ID,
+    appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     instrumentations: [createReactRouterNavigationInstrumentation()],
   });
 
-  if (!!result) {
+  if (result) {
     console.log('Successfully initialized the Embrace SDK', SAMPLE_APP_ID);
   } else {
     console.log('Failed to initialize the Embrace SDK', SAMPLE_APP_ID);
