@@ -1,0 +1,31 @@
+{
+  "name": "vite-otel-latest",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.esnext.ts",
+    "build:clean": "rimraf dist .sonda",
+    "build:esnext": "vite build --config vite.config.esnext.ts",
+    "build:es2015": "vite build --config vite.config.es2015.ts"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../..",
+    "@opentelemetry/context-zone": "latest",
+    "@opentelemetry/instrumentation": "latest",
+    "@opentelemetry/instrumentation-document-load": "latest",
+    "@opentelemetry/sdk-logs": "latest",
+    "@opentelemetry/sdk-trace-base": "latest",
+    "@opentelemetry/sdk-trace-web": "latest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.1",
+    "eslint": "^9.30.1",
+    "globals": "^16.3.0",
+    "rimraf": "^6.0.1",
+    "sonda": "^0.8.2",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.35.1",
+    "vite": "^7.0.3"
+  }
+}

@@ -1,4 +1,4 @@
-import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
+import { diag, DiagLogLevel, trace, context } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { Resource } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
@@ -9,7 +9,11 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import { ProxySpanSessionManager, session } from '../api-sessions/index.js';
+import {
+  NoOpSpanSessionManager,
+  ProxySpanSessionManager,
+  session,
+} from '../api-sessions/index.js';
 import type { WebVitalOnReport } from '../instrumentations/index.js';
 import { SDK_VERSION } from '../resources/index.js';
 import {
@@ -28,15 +32,19 @@ import {
   fakeFetchGetUrl,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
-import { log, ProxyLogManager } from '../api-logs/index.js';
-import { ProxyTraceManager, trace as embtrace } from '../api-traces/index.js';
+import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.js';
+import {
+  NoOpTraceManager,
+  ProxyTraceManager,
+  trace as embtrace,
+} from '../api-traces/index.js';
 import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
 } from '../managers/index.js';
-import { ProxyUserManager, user } from '../api-users/index.js';
+import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
 import { registry } from './registry.js';
 import type { DynamicConfigManager } from './types.js';
 
@@ -304,7 +312,9 @@ describe('initSDK', () => {
     const myCustomConfigManager: DynamicConfigManager = {
       refreshRemoteConfig: sinon.stub(),
       setConfig: sinon.stub(),
-      getConfig: sinon.stub(),
+      getConfig: () => ({
+        samplingPct: 100,
+      }),
     };
 
     const diagLogger = new InMemoryDiagLogger();
@@ -1065,6 +1075,75 @@ describe('initSDK', () => {
       expect(fakeFetchGetUrl()).to.contain(
         'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=my-app-version&deviceId='
       );
+    });
+
+    it('should disable the SDK', () => {
+      const noOpLogManager = new NoOpLogManager();
+      const noOpTraceManager = new NoOpTraceManager();
+      const noOpSpanSessionManager = new NoOpSpanSessionManager();
+      const noOpUserSessionManager = new NoOpUserManager();
+
+      log.setGlobalLogManager(noOpLogManager);
+      embtrace.setGlobalTraceManager(noOpTraceManager);
+      session.setGlobalSessionManager(noOpSpanSessionManager);
+      user.setGlobalUserManager(noOpUserSessionManager);
+
+      const myCustomConfigManager: DynamicConfigManager = {
+        refreshRemoteConfig: sinon.stub(),
+        setConfig: sinon.stub(),
+        getConfig: () => ({
+          samplingPct: 0,
+        }),
+      };
+
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        dynamicSDKConfigManager: myCustomConfigManager,
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+      });
+      void expect(result).to.be.false;
+      expect(diagLogger.getDebugLogs()).to.be.deep.equal([
+        'SDK is disabled, skipping initialization.',
+      ]);
+
+      // All public APIs should be no-ops and not throw errors
+      // Test a few no-op public APIs, this should be covered in other tests but
+      // is worth double-checking that we're not registering any manager
+      expect(() => {
+        const currentContext = context.active();
+
+        // trace
+        embtrace.getSpan(currentContext);
+        embtrace.setSpan(currentContext, embtrace.startSpan('Test Span'));
+        const span = embtrace.startSpan('Test Span');
+        void expect(span.isRecording()).to.be.false;
+        span.addEvent('Test Event');
+        span.setAttribute('Test Attribute', 'Test Value');
+        span.fail();
+        span.end();
+
+        // log
+        log.message('Test Log', 'info');
+        log.logException(new Error('Test Error'));
+
+        // user
+        user.setUserId('test-user-id');
+        user.clearUserId();
+        user.getEmbraceUserId();
+
+        // session
+        session.getSessionId();
+        session.getSessionSpan();
+        session.getSessionStartTime();
+        session.addProperty('r1', 'my-resource-attr');
+        session.removeProperty('r2');
+      }).to.not.throw();
+
+      expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
+      expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
     });
   });
 

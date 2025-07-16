@@ -26,6 +26,7 @@ import {
   EmbraceUserManager,
   EmbraceDynamicConfigManager,
   DEFAULT_LIMITS,
+  EmbraceSDKFeaturesManager,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
@@ -136,6 +137,17 @@ export const initSDK = (
         deviceId: enduserPseudoID,
       });
     void dynamicConfigManager.refreshRemoteConfig();
+
+    const sdkFeaturesManager = new EmbraceSDKFeaturesManager({
+      dynamicConfigManager,
+      deviceId: enduserPseudoID,
+    });
+
+    if (!sdkFeaturesManager.isSDKEnabled()) {
+      diagLogger.debug('SDK is disabled, skipping initialization.');
+
+      return false;
+    }
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = setupSession({

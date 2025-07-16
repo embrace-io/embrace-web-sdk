@@ -106,9 +106,9 @@ describe('EmbraceDynamicConfigManager', () => {
     expect(config).to.deep.equal({
       samplingPct: 100,
     });
-    expect(diag.getWarnLogs()).to.deep.equal([
-      "Failed to parse remote config from storage: Cannot read properties of null (reading 'getItem')",
-    ]);
+    expect(diag.getWarnLogs()[0]).to.contain(
+      'Failed to parse remote config from storage'
+    );
   });
 
   it('should not fetch the remote config if is not connected to Embrace', async () => {
@@ -173,9 +173,7 @@ describe('EmbraceDynamicConfigManager', () => {
     expect(config).to.deep.equal({
       samplingPct: 100,
     });
-    expect(diag.getWarnLogs()).to.deep.equal([
-      "Failed to refresh remote config: Failed to execute 'json' on 'Response': Unexpected end of JSON input",
-    ]);
+    expect(diag.getWarnLogs()[0]).to.contain('Failed to refresh remote config');
   });
 
   it('should send etag in the request headers if available', async () => {

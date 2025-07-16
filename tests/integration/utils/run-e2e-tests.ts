@@ -131,6 +131,7 @@ const runE2ETests = ({
         waitForOTelRequest,
         navigateAndWaitUntilReady,
         page,
+        browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
@@ -138,8 +139,11 @@ const runE2ETests = ({
         await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
+
+        await page.pause();
+
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${codifiedName}-session.json`
+          `${browserName}-${codifiedName}-session.json`
         );
       }
     );
@@ -151,6 +155,7 @@ const runE2ETests = ({
         requests,
         waitForOTelRequest,
         navigateAndWaitUntilReady,
+        browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
@@ -160,7 +165,7 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(1);
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${codifiedName}-send-log.json`
+          `${browserName}-${codifiedName}-send-log.json`
         );
       }
     );
@@ -169,8 +174,35 @@ const runE2ETests = ({
       'it should fetch the remote config',
       async ({ page, waitForRemoteConfigRequest, withRemoteConfig }) => {
         await withRemoteConfig();
-        void page.goto(url);
-        await waitForRemoteConfigRequest();
+        await Promise.all([page.goto(url), waitForRemoteConfigRequest()]);
+      }
+    );
+
+    testE2E(
+      'it should init the SDK if it is sampled out by remote config',
+      async ({
+        page,
+        navigateAndWaitUntilReady,
+        withRemoteConfig,
+        getCurrentSessionId,
+      }) => {
+        await withRemoteConfig({
+          threshold: 0,
+        });
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        let currentSessionId: string | null = await getCurrentSessionId();
+
+        // First load works as expected as we don't wait for the remote config to be applied
+        testE2E.expect(currentSessionId).not.toBeNull();
+
+        await page.reload();
+
+        // After reload, the session id should not be set as it is sampled out
+        currentSessionId = await page.evaluate(
+          () => window.EMBRACE_CURRENT_SESSION_ID,
+          {}
+        );
+        testE2E.expect(currentSessionId).toBeNull();
       }
     );
 
@@ -181,7 +213,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
@@ -234,7 +269,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
@@ -254,7 +292,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
