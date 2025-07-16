@@ -3,6 +3,7 @@ import type { AttributeValue } from '@opentelemetry/api';
 export type LogMessageOptions = {
   attributes?: Record<string, AttributeValue | undefined>;
   includeStacktrace?: boolean;
+  stacktrace?: string;
 };
 
 export type LogExceptionOptions = {

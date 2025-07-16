@@ -112,7 +112,11 @@ export class EmbraceLogManager implements LogManager {
   public message(
     message: string,
     severity: LogSeverity,
-    { attributes = {}, includeStacktrace = true }: LogMessageOptions = {}
+    {
+      attributes = {},
+      includeStacktrace = true,
+      stacktrace,
+    }: LogMessageOptions = {}
   ) {
     if (!message || typeof message !== 'string') {
       this._diag.warn('Message must be a string');
@@ -123,13 +127,19 @@ export class EmbraceLogManager implements LogManager {
       this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
     }
 
+    let stacktraceString = '';
+    if (stacktrace) {
+      stacktraceString = stacktrace;
+    } else if (includeStacktrace && severity !== 'info') {
+      stacktraceString = new Error().stack || '';
+    }
+
     this._logMessage({
       message: message.trim(),
       severity,
       timestamp: this._perf.getNowMillis(),
       attributes,
-      stackTrace:
-        includeStacktrace && severity != 'info' ? new Error().stack : '',
+      stacktrace: stacktraceString,
     });
   }
 
@@ -138,13 +148,13 @@ export class EmbraceLogManager implements LogManager {
     severity,
     timestamp,
     attributes = {},
-    stackTrace,
+    stacktrace,
   }: {
     message: string;
     severity: LogSeverity;
     timestamp: number;
     attributes?: Record<string, AttributeValue | undefined>;
-    stackTrace?: string;
+    stacktrace?: string;
   }) {
     const limitedLog = this._limitManager.limitLog(
       message,
@@ -164,9 +174,9 @@ export class EmbraceLogManager implements LogManager {
       attributes: {
         ...limitedLog.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
-        ...(stackTrace
+        ...(stacktrace
           ? {
-              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stackTrace,
+              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
             }
           : {}),
       },
@@ -177,7 +187,7 @@ export class EmbraceLogManager implements LogManager {
     message: string;
     type: string;
     name: string;
-    stack: string;
+    stack: string; // 'stack' not 'stacktrace' here to match the standard Error.stack property name
   } {
     if (error instanceof Error) {
       return {
