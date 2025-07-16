@@ -27,7 +27,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
     super({
-      instrumentationName: 'SpanSessionOnLoadInstrumentation',
+      instrumentationName: 'SpanSessionVisibilityInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
@@ -91,6 +91,9 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         !this._interactionSinceLastVisibilityChange;
 
       if (isLimitedSession) {
+        this._diag.debug(
+          'Not ending the session since it is considered limited'
+        );
         // If this session still meets the definition of a limited session don't yet end it but instead just record
         // the visibility change as a breadcrumb
         this.sessionManager.addBreadcrumb(
