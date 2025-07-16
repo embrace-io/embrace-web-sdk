@@ -2,6 +2,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { OTelPerformanceManager } from './OTelPerformanceManager.js';
 import type { PerformanceClock } from './types.js';
+import type { HrTime } from '@opentelemetry/api';
 
 const { expect } = chai;
 
@@ -38,5 +39,11 @@ describe('OTelPerformanceManager', () => {
   it('should handle zero offset', () => {
     const result = performanceManager.epochMillisFromOriginOffset(0);
     expect(result).to.equal(1000); // timeOrigin (1000) + offset (0)
+  });
+
+  it('should get the milliseconds since a given HR time', () => {
+    // HR time is [seconds, nanoseconds]
+    const startTime: HrTime = [1, 100000000];
+    expect(performanceManager.millisSinceHRTime(startTime)).to.equal(400);
   });
 });

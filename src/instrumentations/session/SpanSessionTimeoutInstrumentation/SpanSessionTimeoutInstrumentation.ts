@@ -1,4 +1,3 @@
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { TimeoutRef } from '../../../utils/index.js';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import { TIMEOUT_TIME } from './constants.js';
@@ -56,12 +55,7 @@ export class SpanSessionTimeoutInstrumentation extends EmbraceInstrumentationBas
     // validate that there is an active session, as it may already been finished for other reasons.
     if (currentSessionStartTime) {
       // check how much time has passed since the session started
-      const currentTime = this.perf.getNowHRTime();
-      const currentTimeMillis = hrTimeToMilliseconds(currentTime);
-      const currentSessionStartTimeMillis = hrTimeToMilliseconds(
-        currentSessionStartTime
-      );
-      const timePassed = currentTimeMillis - currentSessionStartTimeMillis;
+      const timePassed = this.perf.millisSinceHRTime(currentSessionStartTime);
       const remainingTime = TIMEOUT_TIME - timePassed;
       // if the remaining time is 0 or less, the session has already timed out.
       if (remainingTime <= 0) {
