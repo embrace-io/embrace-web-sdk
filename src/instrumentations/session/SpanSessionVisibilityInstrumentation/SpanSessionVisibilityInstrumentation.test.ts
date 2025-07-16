@@ -282,7 +282,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     spanSessionManager.startSessionSpan();
 
     // The duration of the session is less than limitedSessionMaxDurationMs but there's been a user interaction, the session should end
-    window.dispatchEvent(new Event('keydown'));
+    window.dispatchEvent(new Event('mousedown'));
     nowStub.returns(400);
     visibilityDoc.visibilityState = 'hidden';
     window.dispatchEvent(new Event('visibilitychange'));

@@ -7,7 +7,7 @@ import {
 } from '../../../utils/index.js';
 import type { TimeoutRef } from '../../../utils/index.js';
 
-const SESSION_INTERACTION_EVENTS = ['keydown', 'mousedown'];
+const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private _currentVisibilityState: DocumentVisibilityState;
