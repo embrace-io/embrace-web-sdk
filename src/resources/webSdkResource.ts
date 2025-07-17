@@ -51,5 +51,6 @@ export const getWebSDKResource = ({
     [ATTR_TELEMETRY_SDK_LANGUAGE]: 'webjs',
     [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(pageSessionStorage, diagLogger),
     [ATTR_USER_AGENT_ORIGINAL]: window.navigator.userAgent,
+    screen_resolution: `${window.screen.width}x${window.screen.height}`,
   });
 };
