@@ -88,6 +88,7 @@ export default tseslint.config([
         },
       ],
       'no-restricted-syntax': ['error', 'ExportAllDeclaration'],
+      '@typescript-eslint/restrict-template-expressions': 'off',
       'prefer-arrow-functions/prefer-arrow-functions': [
         'error',
         {
