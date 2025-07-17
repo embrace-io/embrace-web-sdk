@@ -1,28 +1,44 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import {
+  bulkAddEventListener,
+  bulkRemoveEventListener,
+  throttle,
+} from '../../../utils/index.js';
 import type { TimeoutRef } from '../../../utils/index.js';
+
+const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private _currentVisibilityState: DocumentVisibilityState;
   private _checkVisibilityTimeout: TimeoutRef | null;
+  private _interactionSinceLastVisibilityChange: boolean;
+  private readonly _avoidEndingLimitedSessions: boolean;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
+  private readonly _onInteractionThrottled: () => void;
 
   public constructor({
     diag,
+    perf,
     visibilityWaitTimeMs = 0,
+    limitedSessionMaxDurationMs = 0,
     backgroundSessions = false,
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
     super({
-      instrumentationName: 'SpanSessionOnLoadInstrumentation',
+      instrumentationName: 'SpanSessionVisibilityInstrumentation',
       instrumentationVersion: '1.0.0',
-      config: {},
       diag,
+      perf,
+      config: {},
     });
 
     this._currentVisibilityState = visibilityDoc.visibilityState;
     this._checkVisibilityTimeout = null;
+    this._interactionSinceLastVisibilityChange = false;
+    this._avoidEndingLimitedSessions = limitedSessionMaxDurationMs > 0;
+
     this._checkVisibilityChange = () => {
       if (visibilityWaitTimeMs <= 0) {
         // If no timeout configured, events are forwarded directly.
@@ -63,20 +79,48 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       this._diag.debug(
         `Visibility change detected: ${visibilityDoc.visibilityState}`
       );
-      this.sessionManager.endSessionSpanInternal('state_changed');
 
-      if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
+      const currentSessionStartTime = this.sessionManager.getSessionStartTime();
+
+      // A limited session is one that is shorter than a specified duration threshold and contains no user interactions
+      const isLimitedSession =
+        this._avoidEndingLimitedSessions &&
+        currentSessionStartTime !== null &&
+        this.perf.millisSinceHRTime(currentSessionStartTime) <
+          limitedSessionMaxDurationMs &&
+        !this._interactionSinceLastVisibilityChange;
+
+      if (isLimitedSession) {
         this._diag.debug(
-          'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled'
+          'Not ending the session since it is considered limited'
         );
-        this.sessionManager.startSessionSpan();
-      } else if (visibilityDoc.visibilityState === 'visible') {
-        this._diag.debug(
-          'Starting a session since document visibility switched to visible'
+        // If this session still meets the definition of a limited session don't yet end it but instead just record
+        // the visibility change as a breadcrumb
+        this.sessionManager.addBreadcrumb(
+          `Tab visibility changed to ${visibilityDoc.visibilityState}`
         );
-        this.sessionManager.startSessionSpan();
+      } else {
+        this.sessionManager.endSessionSpanInternal('state_changed');
+
+        if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
+          this._diag.debug(
+            'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled'
+          );
+          this.sessionManager.startSessionSpan();
+        } else if (visibilityDoc.visibilityState === 'visible') {
+          this._diag.debug(
+            'Starting a session since document visibility switched to visible'
+          );
+          this.sessionManager.startSessionSpan();
+        }
       }
+
+      this._interactionSinceLastVisibilityChange = false;
     };
+
+    this._onInteractionThrottled = throttle(() => {
+      this._interactionSinceLastVisibilityChange = true;
+    }, 1000);
 
     if (this._config.enabled) {
       this.enable();
@@ -85,9 +129,25 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
   public disable(): void {
     window.removeEventListener('visibilitychange', this._checkVisibilityChange);
+
+    if (this._avoidEndingLimitedSessions) {
+      bulkRemoveEventListener({
+        target: window,
+        events: SESSION_INTERACTION_EVENTS,
+        callback: this._onInteractionThrottled,
+      });
+    }
   }
 
   public enable(): void {
     window.addEventListener('visibilitychange', this._checkVisibilityChange);
+
+    if (this._avoidEndingLimitedSessions) {
+      bulkAddEventListener({
+        target: window,
+        events: SESSION_INTERACTION_EVENTS,
+        callback: this._onInteractionThrottled,
+      });
+    }
   }
 }

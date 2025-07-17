@@ -1,5 +1,10 @@
-import { millisToHrTime, otperformance } from '@opentelemetry/core';
+import {
+  hrTimeToMilliseconds,
+  millisToHrTime,
+  otperformance,
+} from '@opentelemetry/core';
 import type { PerformanceClock, PerformanceManager } from './types.js';
+import type { HrTime } from '@opentelemetry/api';
 
 export class OTelPerformanceManager implements PerformanceManager {
   private readonly _clock: PerformanceClock;
@@ -15,4 +20,7 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   public getNowMillis = () =>
     this.epochMillisFromOriginOffset(this._clock.now()); // otperformance.now() returns milliseconds since timeOrigin, timeOrigin is the time from epoch to the start of the page load
+
+  public millisSinceHRTime = (time: HrTime) =>
+    this.getNowMillis() - hrTimeToMilliseconds(time);
 }

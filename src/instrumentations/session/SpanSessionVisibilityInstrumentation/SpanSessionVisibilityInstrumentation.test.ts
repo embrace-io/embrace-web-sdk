@@ -12,21 +12,32 @@ import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityIns
 import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { VisibilityStateDocument } from '../../../common/index.js';
+import { OTelPerformanceManager } from '../../../utils/index.js';
+import type { PerformanceManager } from '../../../utils/index.js';
+import type { SinonStub } from 'sinon';
 
 const { expect } = chai;
 
 describe('SpanSessionVisibilityInstrumentation', () => {
+  let nowStub: SinonStub;
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: SpanSessionVisibilityInstrumentation;
   let spanSessionManager: SpanSessionManager;
+  let perf: PerformanceManager;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
   });
 
   beforeEach(() => {
+    nowStub = sinon.stub().returns(0);
+    perf = new OTelPerformanceManager({
+      timeOrigin: 0,
+      now: nowStub,
+    });
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf,
     });
     session.setGlobalSessionManager(spanSessionManager);
   });
@@ -199,5 +210,116 @@ describe('SpanSessionVisibilityInstrumentation', () => {
 
     // The session span should still be the same as before
     void expect(spanSessionManager.getSessionSpan()).to.equal(sessionSpan);
+  });
+
+  it('should not end a session when its duration is less than limitedSessionMaxDurationMs', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      limitedSessionMaxDurationMs: 1000,
+      visibilityDoc,
+      perf,
+    });
+
+    spanSessionManager.startSessionSpan();
+
+    // While duration of the session is less than limitedSessionMaxDurationMs, no session should have ended
+    nowStub.returns(400);
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    nowStub.returns(600);
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+    nowStub.returns(800);
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+    // Once the duration of the session is more than limitedSessionMaxDurationMs, the session should end
+    nowStub.returns(1100);
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed'
+    );
+
+    // There should be a breadcrumb for each visibility change that did not end the session
+    expect(sessionSpan.events).to.have.lengthOf(3);
+    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[0].attributes).to.have.property(
+      'message',
+      'Tab visibility changed to hidden'
+    );
+    expect(sessionSpan.events[1].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[1].attributes).to.have.property(
+      'message',
+      'Tab visibility changed to visible'
+    );
+    expect(sessionSpan.events[2].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[2].attributes).to.have.property(
+      'message',
+      'Tab visibility changed to hidden'
+    );
+  });
+
+  it('should end a session when its duration is less than limitedSessionMaxDurationMs if there has been user interactions', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      limitedSessionMaxDurationMs: 1000,
+      visibilityDoc,
+      perf,
+    });
+
+    spanSessionManager.startSessionSpan();
+
+    // The duration of the session is less than limitedSessionMaxDurationMs but there's been a user interaction, the session should end
+    window.dispatchEvent(new Event('mousedown'));
+    nowStub.returns(400);
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    let finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    let sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed'
+    );
+    memoryExporter.reset();
+
+    spanSessionManager.startSessionSpan();
+
+    // User activity should be reset for the new session so it should not end if its duration is less than limitedSessionMaxDurationMs
+    nowStub.returns(800);
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+    // Limited session should then be ended as normal once its duration passes limitedSessionMaxDurationMs
+    nowStub.returns(1800);
+    visibilityDoc.visibilityState = 'visible';
+    window.dispatchEvent(new Event('visibilitychange'));
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed'
+    );
+
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(sessionSpan.events[0].attributes).to.have.property(
+      'message',
+      'Tab visibility changed to hidden'
+    );
   });
 });
