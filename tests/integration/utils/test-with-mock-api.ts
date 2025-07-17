@@ -66,11 +66,18 @@ const IGNORED_ATTRIBUTES_LIST = [
 
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
-    async ({ page }, use) => {
+    async ({ page, requests }, use) => {
       await use(async url => {
-        await page.waitForResponse(
-          request => request.url().match(url) !== null
-        );
+        await Promise.any([
+          // Wait for the request to be made or
+          page.waitForResponse(request => request.url().match(url) !== null),
+          // Check if the request has already been made
+          new Promise(resolve => {
+            if (requests.length > 0 && requests.find(r => r.url.match(url))) {
+              resolve(undefined);
+            }
+          }),
+        ]);
       });
     },
     { scope: 'test' },

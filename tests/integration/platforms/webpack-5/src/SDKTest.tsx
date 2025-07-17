@@ -20,7 +20,7 @@ const SDKTest = () => {
   };
 
   const handleNavigateToAnotherPage = () => {
-    window.location.href = 'https://example.com';
+    window.location.href = 'about:blank';
   };
 
   return (

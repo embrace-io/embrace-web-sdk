@@ -174,4 +174,11 @@ export default tseslint.config([
       'import/no-nodejs-modules': 'error',
     },
   },
+  {
+    files: ['./src/tests/integration/platforms/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+    rules: {
+      'require-extensions/require-extension': 'off',
+      'import/extensions': 'off',
+    },
+  }
 ]);
