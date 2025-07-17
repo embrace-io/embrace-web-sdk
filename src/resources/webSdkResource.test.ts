@@ -40,7 +40,7 @@ describe('webSdkResource', () => {
       'telemetry.sdk.name': 'embrace-web-sdk',
       'telemetry.sdk.version': SDK_VERSION,
       'user_agent.original': window.navigator.userAgent,
-      screen_resolution: `${window.screen.width.toString()}x${window.screen.height.toString()}`,
+      screen_resolution: `${window.screen.width}x${window.screen.height}`,
     });
   });
 
