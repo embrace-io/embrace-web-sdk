@@ -4,7 +4,10 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
+import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_SESSION_REASON_STARTED,
+} from '../../../constants/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -62,6 +65,16 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
         void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
         expect(diag.getDebugLogs()).to.have.lengthOf(1);
         expect(diag.getDebugLogs()[0]).to.equal('Activity detected');
+
+        memoryExporter.reset();
+        spanSessionManager.endSessionSpan();
+        const finishedSpans = memoryExporter.getFinishedSpans();
+        expect(finishedSpans).to.have.lengthOf(1);
+        const sessionSpan = finishedSpans[0];
+        expect(sessionSpan.attributes).to.have.property(
+          KEY_EMB_SESSION_REASON_STARTED,
+          'activity'
+        );
       });
     });
   });

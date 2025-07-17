@@ -65,6 +65,14 @@ describe('ProxySpanSessionManager', () => {
     void expect(mockDelegate.startSessionSpan).to.have.been.calledOnce;
   });
 
+  it('should delegate startSessionSpan to the delegate with options', () => {
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    proxySpanSessionManager.startSessionSpan({ reason: 'start reason' });
+    expect(mockDelegate.startSessionSpan).to.have.been.calledOnceWith({
+      reason: 'start reason',
+    });
+  });
+
   it('should delegate endSessionSpan to the delegate', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.endSessionSpan();

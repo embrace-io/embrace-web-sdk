@@ -3,6 +3,7 @@ import type {
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
+  StartSessionOptions,
 } from '../../manager/index.js';
 import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
@@ -69,8 +70,8 @@ export class SessionAPI implements SpanSessionManager {
     return this.getSpanSessionManager().getSessionStartTime();
   }
 
-  public startSessionSpan() {
-    this.getSpanSessionManager().startSessionSpan();
+  public startSessionSpan(options?: StartSessionOptions) {
+    this.getSpanSessionManager().startSessionSpan(options);
   }
 
   public addSessionStartedListener(listener: () => void): () => void {

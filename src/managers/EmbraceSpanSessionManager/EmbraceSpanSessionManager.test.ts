@@ -6,6 +6,7 @@ import sinonChai from 'sinon-chai';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_SESSION_REASON_STARTED,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.js';
 import {
@@ -636,5 +637,17 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 4);
     memoryExporter.reset();
+  });
+
+  it('should allow starting a session with a reason', () => {
+    manager.startSessionSpan({ reason: 'start reason' });
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'start reason'
+    );
   });
 });

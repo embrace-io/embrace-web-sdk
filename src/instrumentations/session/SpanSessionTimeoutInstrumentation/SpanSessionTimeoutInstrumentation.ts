@@ -45,7 +45,7 @@ export class SpanSessionTimeoutInstrumentation extends EmbraceInstrumentationBas
       clearTimeout(this._sessionTimeout);
     }
     this.sessionManager.endSessionSpanInternal('timer');
-    this.sessionManager.startSessionSpan();
+    this.sessionManager.startSessionSpan({ reason: 'timer' });
     // set a new check in TIMEOUT_TIME for the session we just started
     this._sessionTimeout = setTimeout(this._checkTimeout, TIMEOUT_TIME);
   };

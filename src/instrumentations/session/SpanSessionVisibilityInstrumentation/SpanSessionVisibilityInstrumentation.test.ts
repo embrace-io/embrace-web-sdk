@@ -9,7 +9,10 @@ import {
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
-import { KEY_EMB_SESSION_REASON_ENDED } from '../../../constants/index.js';
+import {
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_SESSION_REASON_STARTED,
+} from '../../../constants/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { VisibilityStateDocument } from '../../../common/index.js';
 import { OTelPerformanceManager } from '../../../utils/index.js';
@@ -69,6 +72,15 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     window.dispatchEvent(new Event('visibilitychange'));
 
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'visible'
+    );
   });
 
   it('should end the previous a session and start a new one when visibility changes to visible', () => {
@@ -171,15 +183,25 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     // Wait for _onVisibilityChange to be called after visibilityWaitTimeMs
     await new Promise(r => setTimeout(r, 100));
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
+    let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    let sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
       'state_changed'
     );
 
     void expect(spanSessionManager.getSessionSpan()).not.to.be.null;
+
+    memoryExporter.reset();
+    spanSessionManager.endSessionSpan();
+    finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'hidden'
+    );
   });
 
   it('should not end a session when visibility changes to hidden and visible within less than visibilityWaitTimeMs', async () => {

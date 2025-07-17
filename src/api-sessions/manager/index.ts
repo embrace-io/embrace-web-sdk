@@ -1,4 +1,5 @@
 export type {
+  StartSessionOptions,
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
