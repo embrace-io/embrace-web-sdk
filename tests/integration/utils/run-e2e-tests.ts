@@ -302,7 +302,7 @@ const runE2ETests = ({
         // Simulate navigation by changing the URL directly
         // This is a workaround since Playwright does not support changing the URL bar directly
         // Not exactly the same as a user typing in the URL bar, but is the best we can do
-        await page.goto('https://example.com');
+        await page.goto('about:blank');
 
         await validateThatSessionEnded(currentSessionId);
       }
