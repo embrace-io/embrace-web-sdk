@@ -600,6 +600,9 @@ describe('EmbraceSpanSessionManager', () => {
     // First session should have emb.cold_start = true, and number be one.
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
+    expect(sessionSpan.attributes).not.to.have.property(
+      'emb.session_start_type'
+    );
     memoryExporter.reset();
 
     manager.startSessionSpan();
