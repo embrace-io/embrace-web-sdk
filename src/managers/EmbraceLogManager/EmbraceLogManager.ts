@@ -1,4 +1,5 @@
-import type { AttributeValue } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
+import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -28,16 +29,23 @@ import {
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 
 export class EmbraceLogManager implements LogManager {
+  private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
 
   public constructor({
+    diag: diagParam,
     perf,
     spanSessionManager,
     limitManager,
   }: EmbraceLogManagerArgs) {
+    this._diag =
+      diagParam ??
+      diag.createComponentLogger({
+        namespace: 'EmbraceLogManager',
+      });
     this._perf = perf ?? new OTelPerformanceManager();
     this._logger = logs.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
@@ -72,10 +80,7 @@ export class EmbraceLogManager implements LogManager {
     // real user input may be null but TS doesn't know that
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (attributes == null || typeof attributes !== 'object') {
-      console.warn(
-        'EmbraceLogManager: attributes must be a non-null object',
-        attributes
-      );
+      this._diag.warn('attributes must be a non-null object', attributes);
       attributes = {};
     }
 
@@ -110,7 +115,7 @@ export class EmbraceLogManager implements LogManager {
     { attributes = {}, includeStacktrace = true }: LogMessageOptions = {}
   ) {
     if (!message || typeof message !== 'string') {
-      console.warn('EmbraceLogManager: message must be a string');
+      this._diag.warn('Message must be a string');
       return;
     }
 
