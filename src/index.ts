@@ -1,10 +1,15 @@
 import { log } from './api-logs/index.js';
 import { session } from './api-sessions/index.js';
-import { trace } from './api-traces/index.js';
 import type { ExtendedSpan } from './api-traces/index.js';
+import { trace } from './api-traces/index.js';
 import { user } from './api-users/index.js';
-import * as sdk from './sdk/index.js';
 import { getNavigationInstrumentation } from './instrumentations/index.js';
+import type {
+  DynamicConfigManager,
+  DynamicSDKConfig,
+  Span,
+} from './sdk/index.js';
+import * as sdk from './sdk/index.js';
 
-export type { ExtendedSpan };
-export { sdk, session, log, trace, user, getNavigationInstrumentation };
+export { getNavigationInstrumentation, log, sdk, session, trace, user };
+export type { DynamicConfigManager, DynamicSDKConfig, ExtendedSpan, Span };
