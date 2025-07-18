@@ -13,7 +13,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "npm run sdk:compile:clean & npm run sdk:compile",
+    "prepublishOnly": "npm run sdk:compile:clean && npm run sdk:compile",
     "clean": "npm run clean --workspaces --if-present && npx rimraf .sonda build node_modules",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
     "dev": "npm run sdk:compile:esm:watch & npm run sdk:compile:types:watch & npm run dev --workspace=embrace-web-sdk-react-demo",
