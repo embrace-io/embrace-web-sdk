@@ -19,6 +19,6 @@ export class SpanSessionOnLoadInstrumentation extends EmbraceInstrumentationBase
   }
 
   public enable(): void {
-    this.sessionManager.startSessionSpan({ reason: 'load' });
+    this.sessionManager.startSessionSpan({ reason: 'init' });
   }
 }

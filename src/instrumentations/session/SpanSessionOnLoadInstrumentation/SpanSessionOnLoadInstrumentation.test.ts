@@ -48,7 +48,7 @@ describe('SpanSessionOnLoadInstrumentation', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_STARTED,
-      'load'
+      'init'
     );
   });
 
