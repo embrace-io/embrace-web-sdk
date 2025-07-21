@@ -5,6 +5,7 @@ export const KEY_EMB_SESSION_NUMBER = 'emb.session_number';
 export const KEY_EMB_STARTUP_DURATION = 'emb.startup_duration';
 export const KEY_PREFIX_EMB_PROPERTIES = 'emb.properties.';
 export const KEY_EMB_SESSION_REASON_ENDED = 'emb.session_end_type';
+export const KEY_EMB_SESSION_REASON_STARTED = 'emb.session_start_type';
 export const KEY_EMB_JS_EXCEPTION_STACKTRACE = 'emb.stacktrace.js';
 export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';

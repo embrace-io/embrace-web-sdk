@@ -80,6 +80,23 @@ mode:
 npm run sdk:test:watch
 ```
 
+## Integration Testing
+
+Run the integration tests and build all prerequisites with:
+
+```bash
+npm run sdk:compile
+npm run sdk:test:integration:e2e:install-dependencies
+npm run sdk:test:integration:build
+npm run sdk:test:integration:e2e
+```
+
+To update golden files replace the last command with:
+
+```bash
+npm run sdk:test:integration:e2e:update-golden
+```
+
 ## Publishing
 
 To release a new version of the SDK:

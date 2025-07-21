@@ -77,7 +77,7 @@ export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrument
     }
     // if there was no active session, start one
     if (!this.sessionManager.getSessionId()) {
-      this.sessionManager.startSessionSpan();
+      this.sessionManager.startSessionSpan({ reason: 'activity' });
     }
     this._activityTimeout = setTimeout(this._onInactivity, TIMEOUT_TIME);
   };

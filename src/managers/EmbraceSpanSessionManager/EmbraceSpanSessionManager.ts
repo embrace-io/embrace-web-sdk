@@ -4,6 +4,7 @@ import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating'
 import type {
   ReasonSessionEnded,
   PropertyOptions,
+  StartSessionOptions,
 } from '../../api-sessions/index.js';
 import {
   EMB_STATES,
@@ -11,6 +12,7 @@ import {
   KEY_EMB_COLD_START,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_SESSION_REASON_STARTED,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
@@ -230,7 +232,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return this._activeSessionStartTime;
   }
 
-  public startSessionSpan() {
+  public startSessionSpan(options?: StartSessionOptions) {
     // if there is a session already in progress, end it first
     if (this._sessionSpan) {
       this.endSessionSpanInternal('manual');
@@ -240,19 +242,26 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
+
+    const attributes: Attributes = {
+      ...this._getPermanentAttributes(),
+      [KEY_EMB_TYPE]: EMB_TYPES.Session,
+      [KEY_EMB_STATE]:
+        this._visibilityDoc.visibilityState === 'hidden'
+          ? EMB_STATES.Background
+          : EMB_STATES.Foreground,
+      [ATTR_SESSION_ID]: this._activeSessionId,
+      [KEY_EMB_COLD_START]: this._coldStart,
+      [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
+    };
+
+    if (options?.reason) {
+      attributes[KEY_EMB_SESSION_REASON_STARTED] = options.reason;
+    }
+
     this._sessionSpan = new EmbraceExtendedSpan(
       tracer.startSpan('emb-session', {
-        attributes: {
-          ...this._getPermanentAttributes(),
-          [KEY_EMB_TYPE]: EMB_TYPES.Session,
-          [KEY_EMB_STATE]:
-            this._visibilityDoc.visibilityState === 'hidden'
-              ? EMB_STATES.Background
-              : EMB_STATES.Foreground,
-          [ATTR_SESSION_ID]: this._activeSessionId,
-          [KEY_EMB_COLD_START]: this._coldStart,
-          [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
-        },
+        attributes,
       })
     );
 

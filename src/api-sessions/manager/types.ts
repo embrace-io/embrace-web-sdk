@@ -7,7 +7,7 @@ export interface SpanSessionManager {
 
   getSessionSpan: () => Span | null;
 
-  startSessionSpan: () => void;
+  startSessionSpan: (options?: StartSessionOptions) => void;
 
   endSessionSpan: () => void;
 
@@ -35,4 +35,8 @@ export type ReasonSessionEnded =
 
 export type PropertyOptions = {
   lifespan?: 'permanent';
+};
+
+export type StartSessionOptions = {
+  reason?: string;
 };

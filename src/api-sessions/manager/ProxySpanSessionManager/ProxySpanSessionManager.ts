@@ -3,6 +3,7 @@ import type {
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
+  StartSessionOptions,
 } from '../index.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
 
@@ -55,8 +56,8 @@ export class ProxySpanSessionManager implements SpanSessionManager {
     return this.getDelegate().getSessionStartTime();
   }
 
-  public startSessionSpan() {
-    this.getDelegate().startSessionSpan();
+  public startSessionSpan(options?: StartSessionOptions) {
+    this.getDelegate().startSessionSpan(options);
   }
 
   public addSessionStartedListener(listener: () => void): () => void {

@@ -80,6 +80,11 @@ describe('SessionAPI', () => {
     void expect(mockSpanSessionManager.startSessionSpan).to.have.been
       .calledOnce;
 
+    sessionAPI.startSessionSpan({ reason: 'start reason' });
+    expect(mockSpanSessionManager.startSessionSpan).to.have.been.calledWith({
+      reason: 'start reason',
+    });
+
     sessionAPI.endSessionSpan();
     void expect(mockSpanSessionManager.endSessionSpan).to.have.been.calledOnce;
 

@@ -14,6 +14,11 @@ Also install dependencies for each platform you want to test:
 cd platforms/<platform> && npm install
 ```
 
+If you need to install all of them you can instead run the following from the repo root:
+```bash
+sdk:test:integration:e2e:install-dependencies
+```
+
 There are two kinds of integration tests:
 1. **Build Tests**: These tests verify that the SDKs can be built correctly for each platform. Optionally, 
 they check the size of the built SDKs and ensure they meet the expected criteria. 
@@ -43,6 +48,12 @@ npm run tests:integration:e2e # This will run the end-to-end tests for all platf
 ```
 
 **Note**: The end-to-end tests require that all platforms have been built successfully, by running the build tests first.
+Also make sure that if you have made local changes to the SDK that you are running against those latest updates by
+rebuilding the SDK:
+
+```bash
+npm run sdk:compile
+```
 
 ### Golden Files
 
