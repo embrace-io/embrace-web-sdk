@@ -181,7 +181,7 @@ export class EmbraceLogManager implements LogManager {
   } {
     if (error instanceof Error) {
       return {
-        message: error.message.trim(),
+        message: typeof error.message === 'string' ? error.message.trim() : '',
         type: error.constructor.name,
         name: error.name,
         stack: error.stack || '',
@@ -193,7 +193,7 @@ export class EmbraceLogManager implements LogManager {
 
     if (typeof error === 'string') {
       return {
-        message: error.trim(),
+        message: String(error).trim(),
         type: 'String',
         name: 'String',
         stack: userCallStack,
