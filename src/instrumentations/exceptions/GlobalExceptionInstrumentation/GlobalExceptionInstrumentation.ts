@@ -16,7 +16,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
     this._onErrorHandler = (event: ErrorEvent) => {
-      this.logManager.logException(event.error as Error, {
+      this.logManager.logException(event.error, {
         handled: false,
         timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
       });

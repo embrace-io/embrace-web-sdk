@@ -19,7 +19,7 @@ export class ProxyLogManager implements LogManager {
     this._delegate = delegate;
   }
 
-  public logException(error: Error, options?: LogExceptionOptions) {
+  public logException(error: unknown, options?: LogExceptionOptions) {
     this.getDelegate().logException(error, options);
   }
 
