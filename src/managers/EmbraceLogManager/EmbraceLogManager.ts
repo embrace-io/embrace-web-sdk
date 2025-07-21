@@ -128,10 +128,12 @@ export class EmbraceLogManager implements LogManager {
     }
 
     let stacktraceString = '';
-    if (stacktrace) {
-      stacktraceString = stacktrace;
-    } else if (includeStacktrace && severity !== 'info') {
-      stacktraceString = new Error().stack || '';
+    if (severity !== 'info') {
+      if (stacktrace) {
+        stacktraceString = stacktrace;
+      } else if (includeStacktrace) {
+        stacktraceString = new Error().stack || '';
+      }
     }
 
     this._logMessage({
