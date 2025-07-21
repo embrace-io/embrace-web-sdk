@@ -74,7 +74,7 @@ export class EmbraceLogManager implements LogManager {
     }: LogExceptionOptions = {}
   ) {
     if (!error) {
-      error = new Error('undefined logException');
+      error = new Error('logException received an undefined error');
     }
 
     // real user input may be null but TS doesn't know that

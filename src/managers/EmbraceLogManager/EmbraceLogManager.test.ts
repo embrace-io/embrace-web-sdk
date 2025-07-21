@@ -705,7 +705,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
     });
 
-    it('logException called with an undefined error', () => {
+    it('logException received an undefined error', () => {
       expect(() => {
         manager.logException(null);
       }).to.not.throw();
@@ -714,7 +714,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs).to.have.lengthOf(1);
       const log = finishedLogs[0];
 
-      expect(log.body).to.equal('logException called with an undefined error');
+      expect(log.body).to.equal('logException received an undefined error');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
       expect(log.severityText).to.be.equal('ERROR');
 
@@ -727,7 +727,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property('exception.name', 'Error');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        'logException called with an undefined error'
+        'logException received an undefined error'
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -743,7 +743,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs).to.have.lengthOf(1);
       const log = finishedLogs[0];
 
-      expect(log.body).to.equal('logException called with an undefined error');
+      expect(log.body).to.equal('logException received an undefined error');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
       expect(log.severityText).to.be.equal('ERROR');
 
@@ -756,7 +756,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property('exception.name', 'Error');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        'logException called with an undefined error'
+        'logException received an undefined error'
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
