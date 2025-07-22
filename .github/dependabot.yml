@@ -17,26 +17,12 @@ updates:
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 50
+    ignore:
+      - dependency-name: '@opentelemetry/*'
     groups:
       eslint:
         patterns:
           - '*eslint*'
-      opentelemetry:
-        patterns:
-          - '@opentelemetry/*'
-        update-types:
-          - minor
-      # All these packages are marked as experimental, so only apply patch updates
-      opentelemetry-experimental:
-        patterns:
-          - '@opentelemetry/api-logs'
-          - '@opentelemetry/instrumentation*'
-          - '@opentelemetry/opentelemetry-browser-detector'
-          - '@opentelemetry/otlp-*'
-          - '@opentelemetry/sdk-logs'
-          - '@opentelemetry/web-common'
-        update-types:
-          - patch
       react:
         patterns:
           - 'react*'
