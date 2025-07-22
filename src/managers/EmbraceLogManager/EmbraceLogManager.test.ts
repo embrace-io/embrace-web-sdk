@@ -762,4 +762,69 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
     });
   });
+
+  describe('messages with stacktrace passed in', () => {
+    it('should log an info log but ignore stacktrace when stacktrace passed in', () => {
+      expect(() => {
+        manager.message('this is an info log with a stacktrace', 'info', {
+          stacktrace: 'i am stacktrace passed in by the user',
+        });
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('this is an info log with a stacktrace');
+      expect(log.severityNumber).to.be.equal(SeverityNumber.INFO);
+      expect(log.severityText).to.be.equal('INFO');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
+      expect(log.attributes).to.not.have.property(
+        KEY_EMB_JS_EXCEPTION_STACKTRACE
+      );
+    });
+
+    it('should log a warning log with stacktrace passed in', () => {
+      expect(() => {
+        manager.message('this is a warning log with a stacktrace', 'warning', {
+          stacktrace: 'i am stacktrace passed in by the user',
+        });
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('this is a warning log with a stacktrace');
+      expect(log.severityText).to.be.equal('WARNING');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_JS_EXCEPTION_STACKTRACE,
+        'i am stacktrace passed in by the user'
+      );
+    });
+
+    it('should log an error log with stacktrace passed in', () => {
+      expect(() => {
+        manager.message('this is an error log with a stacktrace', 'error', {
+          stacktrace: 'i am stacktrace passed in by the user',
+        });
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('this is an error log with a stacktrace');
+      expect(log.severityText).to.be.equal('ERROR');
+
+      expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
+      expect(log.attributes).to.have.property(
+        KEY_EMB_JS_EXCEPTION_STACKTRACE,
+        'i am stacktrace passed in by the user'
+      );
+    });
+  });
 });
