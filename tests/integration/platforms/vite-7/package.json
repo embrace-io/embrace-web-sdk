@@ -5,14 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.esnext.ts",
+    "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
     "build:clean": "rimraf dist .sonda",
     "build:esnext": "vite build --config vite.config.esnext.ts",
     "build:es2015": "vite build --config vite.config.es2015.ts"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../..",
-    "@opentelemetry/sdk-logs": "0.203.0",
-    "@opentelemetry/sdk-trace-web": "2.0.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -28,6 +27,6 @@
     "sonda": "^0.8.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
-    "vite": "^7.0.0"
+    "vite": "^7.0.3"
   }
 }
