@@ -764,7 +764,7 @@ describe('EmbraceLogManager', () => {
   });
 
   describe('messages with stacktrace passed in', () => {
-    it('should log an info log with stacktrace passed in', () => {
+    it('should log an info log but ignore stacktrace when stacktrace passed in', () => {
       expect(() => {
         manager.message('this is an info log with a stacktrace', 'info', {
           stacktrace: 'i am stacktrace passed in by the user',
@@ -780,9 +780,8 @@ describe('EmbraceLogManager', () => {
       expect(log.severityText).to.be.equal('INFO');
 
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
-      expect(log.attributes).to.have.property(
-        KEY_EMB_JS_EXCEPTION_STACKTRACE,
-        'i am stacktrace passed in by the user'
+      expect(log.attributes).to.not.have.property(
+        KEY_EMB_JS_EXCEPTION_STACKTRACE
       );
     });
 
