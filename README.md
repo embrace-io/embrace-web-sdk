@@ -386,18 +386,27 @@ If you'd prefer not to send data to Embrace you can simply omit the embrace app 
 this case at least one custom exporter needs to be configured following the steps
 from [Custom exporters](#custom-exporters) or else the SDK considers the configuration invalid.
 
+## Browser Support
+
+The SDK is intended to be imported as a module and transpiled by a bundler. We provide multiple builds of the SDK: ESNext and ES2022 module versions for use in modern build pipelines. OpenTelemetry set their current minumum language feature support to ES2022. Our default ESM SDK targets this as well to ensure compatibility. See more details in the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
+
+We recommend importing the ESNext version of the SDK if your bundler supports it and letting your build pipeline handle the transpilation. This will ensure that the SDK you import is the smallest possible size.
+
+We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum compatibility with older browsers.
+
+**Note:** we currently provide a CommonJS version of the SDK but it is not recommended for new projects and will be removed in a future release.
+
 ## Troubleshooting
 
 ### Compatibility with OTel packages
 
-The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. If you
-wish to customize the sdk behaviour by configuring custom resources, exporters, processors or instrumentations you
-should make sure to use versions of the OTel packages that are compatible with what the SDK uses. The next table
-summarizes those compatible versions of the OTel packages:
+The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. **Important:** The Embrace Web SDK only supports OpenTelemetry 1.x packages. OpenTelemetry 2.x (and above) is **not supported** and will not work with this SDK at this time.
 
-| Open Telemetry APIs | Core  | Instrumentations & Contrib |
-|---------------------|-------|----------------------------|
-| ^1.9.0              | ^1.30 | ^0.57.0                    |
+If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations, you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
+
+| Open Telemetry APIs | Core    | Instrumentations & Contrib |
+|---------------------|---------|----------------------------|
+| 1.9.0               | 1.30.1  | 0.57.2                     |
 
 For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
 and [package-lock.json](./package-lock.json) files.
