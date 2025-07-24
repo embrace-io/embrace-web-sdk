@@ -21,8 +21,6 @@ export default tseslint.config([
     files: [
       './src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
       './cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
-      './tests/**/*.{js,mjs,cjs,ts,jsx,tsx}',
-      './demo/**/*.{js,mjs,cjs,ts,jsx,tsx}',
     ],
     extends: [
       pluginJs.configs.recommended,
@@ -174,11 +172,4 @@ export default tseslint.config([
       'import/no-nodejs-modules': 'error',
     },
   },
-  {
-    files: ['./src/tests/integration/platforms/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-    rules: {
-      'require-extensions/require-extension': 'off',
-      'import/extensions': 'off',
-    },
-  }
 ]);
