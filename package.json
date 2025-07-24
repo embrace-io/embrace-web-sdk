@@ -49,16 +49,6 @@
     "playwright": "playwright",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "./src/**/*": [
-      "npm run sdk:lint:eslint:fix",
-      "npm run sdk:lint:prettier"
-    ],
-    "./cli/src/**/*": [
-      "npm run sdk:lint:eslint:fix",
-      "npm run sdk:lint:prettier"
-    ]
-  },
   "files": [
     "build/esm/**/*.js",
     "build/esm/**/*.js.map",
