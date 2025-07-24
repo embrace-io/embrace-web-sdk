@@ -10,9 +10,8 @@ import type {
   LogRecordExporter,
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { SpanSessionManager } from '../api-sessions/index.js';
-import type { SpanExporter } from '@opentelemetry/sdk-trace-base';
 import type {
   ClicksInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
