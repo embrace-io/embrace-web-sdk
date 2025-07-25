@@ -68,7 +68,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
 
       // Easy way of making sure the server registered the session end
       // If this gets flaky, we can increase the timeout or read the server logs
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const response = await fetch('http://localhost:3001/received-spans');
       const receivedSpans = (await response.json()) as ReceivedSpans;
@@ -137,6 +137,12 @@ const runE2ETests = ({
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
         await waitForOTelRequest();
+
+        if (requests.length === 0) {
+          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
+          // yet populated
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
 
         testE2E.expect(requests).toHaveLength(1);
 
