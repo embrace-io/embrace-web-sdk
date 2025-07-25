@@ -20,7 +20,6 @@ sdk.initSDK({
   appID: '',
   appVersion: 'YOUR_APP_VERSION',
   logLevel: sdk.DiagLogLevel.INFO,
-  // @ts-expect-error our sdk is not compatible with otel 2.x
   spanExporters: [new ConsoleSpanExporter()],
   logExporters: [new ConsoleLogRecordExporter()],
 });

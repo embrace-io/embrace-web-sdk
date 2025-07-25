@@ -1,4 +1,4 @@
-import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,
@@ -23,7 +23,7 @@ export class IdentifiableSessionLogRecordProcessor
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: LogRecord) {
+  public onEmit(logRecord: SdkLogRecord) {
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
       [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),

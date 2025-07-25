@@ -1,6 +1,6 @@
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import { mockIResource } from './IResource.js';
+import { mockResource } from './Resource.js';
 
 export const mockSpan: ReadableSpan = {
   name: 'mock span',
@@ -18,8 +18,8 @@ export const mockSpan: ReadableSpan = {
   events: [],
   duration: [0, 0],
   ended: true,
-  resource: mockIResource,
-  instrumentationLibrary: { name: 'test', version: '1' },
+  resource: mockResource,
+  instrumentationScope: { name: 'test', version: '1' },
   droppedAttributesCount: 0,
   droppedEventsCount: 0,
   droppedLinksCount: 0,

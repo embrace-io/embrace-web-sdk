@@ -1,7 +1,7 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { Resource } from '@opentelemetry/resources';
+import { emptyResource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
@@ -62,7 +62,7 @@ export const initSDK = (
     appID,
     appVersion,
     templateBundleID,
-    resource = Resource.empty(),
+    resource = emptyResource(),
     spanExporters = [],
     logExporters = [],
     spanProcessors = [],
@@ -326,10 +326,6 @@ const setupLogs = ({
   });
   log.setGlobalLogManager(embraceLogManager);
 
-  const loggerProvider = new LoggerProvider({
-    resource,
-  });
-
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new IdentifiableSessionLogRecordProcessor({
@@ -356,9 +352,10 @@ const setupLogs = ({
     );
   }
 
-  for (const logProcessor of finalLogProcessors) {
-    loggerProvider.addLogRecordProcessor(logProcessor);
-  }
+  const loggerProvider = new LoggerProvider({
+    resource,
+    processors: finalLogProcessors,
+  });
 
   logs.setGlobalLoggerProvider(loggerProvider);
 

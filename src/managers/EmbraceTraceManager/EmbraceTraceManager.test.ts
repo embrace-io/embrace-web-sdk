@@ -96,10 +96,10 @@ describe('EmbraceTraceManager', () => {
     const finishedParentSpan = finishedSpans[1];
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
-    expect(finishedChildSpan.parentSpanId).to.equal(
+    expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
       finishedParentSpan.spanContext().spanId
     );
-    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+    void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
 
   it('should allow perf spans to be created in parent-child relationships via context and not parentSpan', () => {
@@ -120,10 +120,10 @@ describe('EmbraceTraceManager', () => {
     const finishedParentSpan = finishedSpans[1];
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
-    expect(finishedChildSpan.parentSpanId).to.equal(
+    expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
       finishedParentSpan.spanContext().spanId
     );
-    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+    void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
 
   it('should prioritize parentSpan option if both context and parentSpan are provided', () => {
@@ -153,10 +153,10 @@ describe('EmbraceTraceManager', () => {
     const finishedParentSpan = finishedSpans[1];
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
-    expect(finishedChildSpan.parentSpanId).to.equal(
+    expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
       finishedParentSpan.spanContext().spanId
     );
-    void expect(finishedParentSpan.parentSpanId).to.be.undefined;
+    void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
 
   it('should get a context by setting a span', () => {

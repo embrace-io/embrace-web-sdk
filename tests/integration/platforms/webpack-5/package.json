@@ -5,14 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "webpack serve --config webpack.config.esnext.mjs --mode development",
+    "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
     "build:clean": "rimraf dist .sonda",
     "build:esnext": "webpack --config webpack.config.esnext.mjs --mode production",
     "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../..",
-    "@opentelemetry/sdk-logs": "0.57.2",
-    "@opentelemetry/sdk-trace-web": "1.30.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
