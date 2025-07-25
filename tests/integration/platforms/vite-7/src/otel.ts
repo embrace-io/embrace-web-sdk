@@ -1,6 +1,6 @@
 import { sdk, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 
 const sdkControl = sdk.initSDK({
   appID: '11111',

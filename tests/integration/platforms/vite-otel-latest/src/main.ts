@@ -3,7 +3,7 @@ import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 
 const provider = new WebTracerProvider();
