@@ -32,13 +32,17 @@ jobs:
           node-version: '22.x'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
+      - name: Setup ack
+        run: |
+          sudo apt-get update
+          sudo apt-get install ack
       - name: Update package.json version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION: ${{ steps.release_drafter.outputs.resolved_version }}
         run: |
           version="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
-           if [ -z "$version"]; then
+          if [ -z "$version" ]; then
             echo 'Version is empty. Exiting'
             exit 1
           fi
