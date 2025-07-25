@@ -42,22 +42,25 @@ jobs:
             echo 'Version is empty. Exiting'
             exit 1
           fi
-          # bump the version
+          PREVIOUS_VERSION=$(jq '.version' package.json)
+
           echo 'Updating package.json version to $version'
+
           # update sdk version
           jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
-          npm i
+
           # update cli version
-          cd cli
-          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+          jq --arg version "$version" '.version = $version' cli/package.json > tmp.json && mv tmp.json cli/package.json
+
+          # update the golden files
+          pushd tests/integration/tests/__golden__
+          ack $PREVIOUS_VERSION -l | xargs -I@ sed -i "" "s/$PREVIOUS_VERSION/\"$version\"/g" @
+          popd
+
+          # update package-lock.json
           npm i
-          # update demo versions
-          cd ../demo/frontend
-          npm i
-          cd ../frontend-cdn
-          npm i
-          # run the linter to update the version hardcoded in code
-          cd ../..
+
+          # update constants files
           npm run sdk:lint:fix
       - name: commit and create PR with the next release
         env:
