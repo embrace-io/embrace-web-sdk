@@ -5,8 +5,8 @@
   "scripts": {
     "demo:cdn:frontend:full:preview": "bash ./scripts/runDemo.sh",
     "demo:cdn:frontend:full:preview:async": "bash ./scripts/runDemo.sh --async",
-    "demo:cdn:frontend:compile:clean": "rimraf dist",
-    "demo:cdn:frontend:install:clean": "rimraf node_modules",
+    "demo:cdn:frontend:compile:clean": "npx rimraf dist",
+    "demo:cdn:frontend:install:clean": "npx rimraf node_modules",
     "demo:cdn:sync:web:sdk": "ln -f ../../build/iife/bundle.js ./public/bundle.js",
     "demo:cdn:frontend:dev": "vite",
     "demo:cdn:frontend:dev:async": "VITE_ASYNC_MODE=true vite",
@@ -27,7 +27,6 @@
     "@types/react-dom": "19.1.6",
     "@vitejs/plugin-react": "4.7.0",
     "globals": "16.3.0",
-    "rimraf": "6.0.1",
     "typescript": "5.8.3",
     "vite": "7.0.6"
   }

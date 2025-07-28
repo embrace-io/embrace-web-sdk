@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "start": "next start",
     "lint": "next lint",
-    "build:clean": "rimraf .next",
+    "build:clean": "npx rimraf .next",
     "build:es2020": "next build"
   },
   "dependencies": {
@@ -24,7 +24,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^15.3.4",
-    "rimraf": "^6.0.1",
     "typescript": "^5"
   }
 }
