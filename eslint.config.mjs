@@ -18,11 +18,12 @@ const compat = new FlatCompat({
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config([
   {
+    ignores: ['./**/build', './**/dist', './**/public'],
+  },
+  {
     files: [
       './src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
       './cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
-      './tests/**/*.{js,mjs,cjs,ts,jsx,tsx}',
-      './demo/**/*.{js,mjs,cjs,ts,jsx,tsx}',
     ],
     extends: [
       pluginJs.configs.recommended,
@@ -37,6 +38,7 @@ export default tseslint.config([
       ...compat.plugins('require-extensions'),
     ],
     rules: {
+      'import/no-nodejs-modules': 'error',
       'object-shorthand': ['error', 'always'],
       'class-methods-use-this': 'off',
       'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
@@ -169,16 +171,9 @@ export default tseslint.config([
     },
   },
   {
-    files: ['./src/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+    files: ['./cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
     rules: {
-      'import/no-nodejs-modules': 'error',
+      'import/no-nodejs-modules': 'off',
     },
   },
-  {
-    files: ['./src/tests/integration/platforms/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
-    rules: {
-      'require-extensions/require-extension': 'off',
-      'import/extensions': 'off',
-    },
-  }
 ]);
