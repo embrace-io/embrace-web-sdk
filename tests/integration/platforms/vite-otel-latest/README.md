@@ -19,7 +19,6 @@ This test uses the latest versions of:
 - `@opentelemetry/instrumentation`
 - `@opentelemetry/instrumentation-document-load`
 - `@opentelemetry/sdk-logs`
-- `@opentelemetry/sdk-trace-base`
 - `@opentelemetry/sdk-trace-web`
 
 Compare with the SDK's [supported versions](../../../README.md#compatibility-with-otel-packages):

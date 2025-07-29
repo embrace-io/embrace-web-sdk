@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    timeout-minutes: 2
+    timeout-minutes: 10
     steps:
       - uses: release-drafter/release-drafter@b1476f6e6eb133afa41ed8589daba6dc69b4d3f5 # v6.1.0
         id: release_drafter
@@ -32,32 +32,39 @@ jobs:
           node-version: '22.x'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
+      - name: Setup ack
+        run: |
+          sudo apt-get update
+          sudo apt-get install ack
       - name: Update package.json version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION: ${{ steps.release_drafter.outputs.resolved_version }}
         run: |
           version="${STEPS_RELEASE_DRAFTER_OUTPUTS_RESOLVED_VERSION}"
-           if [ -z "$version"]; then
+          if [ -z "$version" ]; then
             echo 'Version is empty. Exiting'
             exit 1
           fi
-          # bump the version
+          PREVIOUS_VERSION=$(jq '.version' package.json)
+
           echo 'Updating package.json version to $version'
+
           # update sdk version
           jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
-          npm i
+
           # update cli version
-          cd cli
-          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
+          jq --arg version "$version" '.version = $version' cli/package.json > tmp.json && mv tmp.json cli/package.json
+
+          # update the golden files
+          pushd tests/integration/tests/__golden__
+          ack $PREVIOUS_VERSION -l | xargs -I@ sed -i "" "s/$PREVIOUS_VERSION/\"$version\"/g" @
+          popd
+
+          # update package-lock.json
           npm i
-          # update demo versions
-          cd ../demo/frontend
-          npm i
-          cd ../frontend-cdn
-          npm i
-          # run the linter to update the version hardcoded in code
-          cd ../..
+
+          # update constants files
           npm run sdk:lint:fix
       - name: commit and create PR with the next release
         env:
