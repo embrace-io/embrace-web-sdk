@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.esnext.ts",
-    "build:clean": "rimraf dist .sonda",
+    "build:clean": "npx rimraf dist .sonda",
     "build:esnext": "vite build --config vite.config.esnext.ts",
     "build:es2015": "vite build --config vite.config.es2015.ts"
   },

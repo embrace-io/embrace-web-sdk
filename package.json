@@ -18,7 +18,7 @@
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
     "dev": "npm run sdk:compile:esm:watch & npm run sdk:compile:types:watch & npm run dev --workspace=embrace-web-sdk-react-demo",
     "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
-    "sdk:analyze": "tsx scripts/measureSize.ts",
+    "sdk:analyze": "npx tsx scripts/measureSize.ts",
     "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
     "sdk:compile:clean": "npx rimraf build .sonda",
     "sdk:install:clean": "npx rimraf node_modules",
@@ -166,7 +166,6 @@
     "rimraf": "6.0.1",
     "rollup": "4.46.0",
     "sinon-chai": "4.0.0",
-    "tsx": "^4.19.4",
     "typedoc": "0.28.8",
     "typescript": "5.8.3",
     "typescript-eslint": "8.38.0"
