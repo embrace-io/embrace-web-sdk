@@ -167,6 +167,15 @@ import { session } from '@embrace-io/web-sdk';
 session.addProperty("my-custom-property", "some value");
 ```
 
+These properties will, by default, only be included in the current session.
+If you want to add permanent properties that are sent across all sessions, you can configure the lifespan option:
+
+```typescript
+session.addProperty("my-custom-property", "some value", {
+   lifespan: 'permanent',
+});
+```
+
 ## Keeping your app version up-to-date
 
 Embrace uses the `appVersion` you provide to segment collected telemetry and allow you to view differences between
