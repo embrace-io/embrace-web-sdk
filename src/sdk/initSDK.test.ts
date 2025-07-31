@@ -436,7 +436,7 @@ describe('initSDK', () => {
       expect(sessionNumber?.value.intValue).to.be.lessThan(20);
 
       const startupDuration = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.startup_duration'
+        attr => attr.key === 'emb.sdk_startup_duration'
       );
 
       // The millisecond value is rounded in FireFox+Webkit and exported as intValue but in Chrome it is doubleValue

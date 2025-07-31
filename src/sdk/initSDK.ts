@@ -215,7 +215,7 @@ export const initSDK = (
 
     registry.register(sdkControl);
 
-    spanSessionManager.recordStartupDuration(
+    spanSessionManager.recordSDKStartupDuration(
       perf.getNowMillis() - initSDKStart
     );
 
