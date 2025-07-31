@@ -436,16 +436,11 @@ describe('initSDK', () => {
       expect(sessionNumber?.value.intValue).to.be.lessThan(20);
 
       const startupDuration = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.startup_duration'
+        attr => attr.key === 'emb.sdk_startup_duration'
       );
-
-      // The millisecond value is rounded in FireFox+Webkit and exported as intValue but in Chrome it is doubleValue
-      // so check for both here, the backend should be ok to receive it either way
-      const startupDurationValue =
-        startupDuration?.value.doubleValue || startupDuration?.value.intValue;
-      void expect(startupDurationValue).not.to.be.undefined;
-      expect(startupDurationValue).to.be.greaterThan(0);
-      expect(startupDurationValue).to.be.lessThan(100);
+      void expect(startupDuration?.value.intValue).not.to.be.undefined;
+      expect(startupDuration?.value.intValue).to.be.greaterThan(0);
+      expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },

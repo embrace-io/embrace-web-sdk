@@ -58,7 +58,7 @@ const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
-  'emb.startup_duration',
+  'emb.sdk_startup_duration',
   'emb.app_instance_id',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
