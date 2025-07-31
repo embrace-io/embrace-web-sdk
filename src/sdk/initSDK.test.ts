@@ -439,8 +439,8 @@ describe('initSDK', () => {
         attr => attr.key === 'emb.sdk_startup_duration'
       );
       void expect(startupDuration?.value.doubleValue).not.to.be.undefined;
-      expect(startupDuration?.value.doubleValue).to.be.greaterThan(0);
-      expect(startupDuration?.value.doubleValue).to.be.lessThan(100);
+      expect(startupDuration?.value.intValue).to.be.greaterThan(0);
+      expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
