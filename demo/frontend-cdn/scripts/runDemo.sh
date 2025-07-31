@@ -8,17 +8,13 @@ for arg in "$@"; do
   fi
 done
 
-# move to sdk directory (root)
-cd ../..
-#print current node version
-node -v
-#build sdk locally
-rm -rf node_modules
-npm ci
-rm -rf build
-npm run compile
-#build demo locally
-cd ./demo/frontend-cdn || exit
+# clean workspaces
+npm run clean --prefix ../..
+
+# compile sdk and build demo
+npm ci --prefix ../..
+npm run compile --prefix ../..
+npm install
 
 # create .env file if it doesn't exist
 if [ ! -f .env ]; then

@@ -30,7 +30,7 @@ fi
 npm run clean --prefix ../..
 
 # compile sdk and build demo
-npm install
+npm ci --prefix ../..
 npm run build
 
 # add env vars from .env file to the current environment
