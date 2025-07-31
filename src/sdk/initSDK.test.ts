@@ -438,7 +438,7 @@ describe('initSDK', () => {
       const startupDuration = sessionSpan['attributes'].find(
         attr => attr.key === 'emb.sdk_startup_duration'
       );
-      void expect(startupDuration?.value.doubleValue).not.to.be.undefined;
+      void expect(startupDuration?.value.intValue).not.to.be.undefined;
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
