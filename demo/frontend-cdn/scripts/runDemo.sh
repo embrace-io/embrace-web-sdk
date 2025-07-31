@@ -16,8 +16,7 @@ node -v
 rm -rf node_modules
 npm ci
 rm -rf build
-npm run sdk:compile:esm
-npm run sdk:compile:esm:bundle
+npm run compile
 #build demo locally
 cd ./demo/frontend-cdn || exit
 
