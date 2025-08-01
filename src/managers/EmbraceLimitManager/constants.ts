@@ -19,7 +19,7 @@ export const DEFAULT_LIMITS: EmbraceLimitManagerArgs = {
     error_log: 128,
     warning_log: 128,
     info_log: 128,
-    exception: 1028,
+    exception: 1024,
     breadcrumb: 256,
     session_property_key: 128,
     session_property_value: 256,
