@@ -37,8 +37,8 @@ export const isNetworkSpan = (
   if (
     (span.attributes[ATTR_HTTP_REQUEST_METHOD] || // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[SEMATTRS_HTTP_METHOD]) &&
-    (span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || // eslint-disable-next-line @typescript-eslint/no-deprecated
-      span.attributes[SEMATTRS_HTTP_STATUS_CODE])
+    (typeof span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] === 'number' || // eslint-disable-next-line @typescript-eslint/no-deprecated
+      typeof span.attributes[SEMATTRS_HTTP_STATUS_CODE] === 'number')
   ) {
     const url = // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[ATTR_URL_FULL] ?? span.attributes[SEMATTRS_HTTP_URL];

@@ -136,6 +136,41 @@ const App = () => {
     req.send();
   };
 
+  const handleCancelFetchNetworkRequest = () => {
+    const controller = new AbortController();
+    void fetch(POKEMON_URL, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+
+    controller.abort();
+  };
+
+  const handleCancelXMLNetworkRequest = () => {
+    const req = new XMLHttpRequest();
+    req.open('GET', POKEMON_URL, true);
+    req.send();
+    req.abort();
+  };
+
+  const handleThrowDOMException = () => {
+    window.atob('!@#$');
+  };
+
+  const handleThrowString = () => {
+    throw 'my error as a string';
+  };
+
+  const handleThrowUndefined = () => {
+    throw undefined;
+  };
+
+  const handleFailedResourceLoad = () => {
+    var img = document.createElement('img');
+    img.src = '/something/that/doesnotexist.png';
+    document.getElementById('root')?.appendChild(img);
+  };
+
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
   const handleThrowError = () => {
     handleThrowErrorA(true);
@@ -314,6 +349,34 @@ const App = () => {
           </button>
         </div>
 
+        {/* Weird Exceptions: */}
+        <div className={styles.actions}>
+          <button
+            onClick={handleThrowDOMException}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Throw DOM Exception
+          </button>
+          <button
+            onClick={handleThrowString}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Throw String
+          </button>
+          <button
+            onClick={handleThrowUndefined}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Throw Undefined
+          </button>
+          <button
+            onClick={handleFailedResourceLoad}
+            disabled={sessionProvider.getSessionSpan() === null}
+          >
+            Trigger Failed Resource Load
+          </button>
+        </div>
+
         {/* Network: */}
         <div className={styles.actions}>
           <button onClick={handleSendFetchNetworkRequest}>
@@ -324,6 +387,16 @@ const App = () => {
           </button>
           <button onClick={handleSendXMLNetworkRequest}>
             Send a XML Network Request
+          </button>
+        </div>
+
+        {/* Cancelled Network: */}
+        <div className={styles.actions}>
+          <button onClick={handleCancelFetchNetworkRequest}>
+            Cancel a Fetch Network Request
+          </button>
+          <button onClick={handleCancelXMLNetworkRequest}>
+            Cancel a XML Network Request
           </button>
         </div>
 
@@ -342,12 +415,8 @@ const App = () => {
 
         {/* Navigation: */}
         <div className={styles.actions}>
-          <a href="https://google.com">
-            Navigate to google.com
-          </a>
-          <a href="/">
-            Open demo in same tab
-          </a>
+          <a href="https://google.com">Navigate to google.com</a>
+          <a href="/">Open demo in same tab</a>
           <a href="/" target="_blank">
             Open demo in new tab
           </a>
