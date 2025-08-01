@@ -60,16 +60,21 @@ describe('EmbraceLogManager', () => {
         ...DEFAULT_LIMITS.maxAllowed,
         error_log: 20,
         warning_log: 4,
+        exception: 3,
       },
       maxLength: {
         ...DEFAULT_LIMITS.maxLength,
         info_log: 60,
+        exception: 50,
         log_attribute_key: 10,
         log_attribute_value: 12,
+        exception_attribute_key: 10,
+        exception_attribute_value: 12,
       },
       maxAttributes: {
         ...DEFAULT_LIMITS.maxAttributes,
         error_log: 2,
+        exception: 3,
       },
     });
 
@@ -579,6 +584,170 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  it('should limit the amount of exceptions per session', () => {
+    spanSessionManager.startSessionSpan();
+
+    for (let i = 0; i < 10; i++) {
+      manager.logException(new Error('this is an exception'));
+    }
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(3);
+
+    for (let i = 0; i < 3; i++) {
+      expect(finishedLogs[i].body).to.equal('this is an exception');
+    }
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes['emb.app.applied_limit.exception.drop.count']
+    ).to.be.equal(7);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(7);
+    for (let i = 0; i < warningLogs.length; i++) {
+      expect(warningLogs[i]).to.equal(
+        'disallowing exception because the maximum number of 3 has already been reached for this session'
+      );
+    }
+
+    // A new session should reset the limit
+    memoryExporter.reset();
+    spanSessionManager.startSessionSpan();
+    manager.logException(new Error('this is an exception'));
+    const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(nextSessionFinishedLogs).to.have.lengthOf(1);
+    expect(nextSessionFinishedLogs[0].body).to.equal('this is an exception');
+  });
+
+  it('should truncate exception messages', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.logException(
+      new Error(
+        'this is an exception which has a message longer than the allowed maximum length'
+      )
+    );
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].body).to.equal(
+      'this is an exception which has a message longer th'
+    );
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes[
+        'emb.app.applied_limit.exception.truncate_string.count'
+      ]
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(1);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating exception because it is longer than 50 characters: "this is an exception which has a message longer than the allowed maximum length"'
+    );
+  });
+
+  it('should truncate the number of exception attributes', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.logException('this is an exception', {
+      attributes: {
+        key1: '1',
+        key2: '2',
+        key3: '3',
+      },
+    });
+
+    manager.logException('this is an exception with truncated attributes', {
+      attributes: {
+        key1: '1',
+        key2: '2',
+        key3: '3',
+        key4: '4',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(2);
+    expect(finishedLogs[0].body).to.equal('this is an exception');
+    expect(finishedLogs[1].body).to.equal(
+      'this is an exception with truncated attributes'
+    );
+
+    expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[0].attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[0].attributes['key3']).to.be.equal('3');
+
+    expect(finishedLogs[1].attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[1].attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
+    expect(finishedLogs[1].attributes).not.to.have.property('key4');
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes[
+        'emb.app.applied_limit.exception.truncate_attributes.count'
+      ]
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(1);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating exception attributes because there are more than 3 set'
+    );
+  });
+
+  it('should truncate the key and value of an exception attribute', () => {
+    spanSessionManager.startSessionSpan();
+
+    manager.logException('this is an exception', {
+      attributes: {
+        'a-very-long-exception-attribute-key':
+          'a-very-long-exception-attribute-value',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].body).to.equal('this is an exception');
+
+    expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
+      'a-very-long-'
+    );
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(
+      sessionSpan.attributes[
+        'emb.app.applied_limit.exception_attribute_key.truncate_string.count'
+      ]
+    ).to.be.equal(1);
+    expect(
+      sessionSpan.attributes[
+        'emb.app.applied_limit.exception_attribute_value.truncate_string.count'
+      ]
+    ).to.be.equal(1);
+
+    expect(diag.getWarnLogs()).to.have.lengthOf(2);
+    expect(diag.getWarnLogs()[0]).to.equal(
+      'truncating exception_attribute_key because it is longer than 10 characters: "a-very-long-exception-attribute-key"'
+    );
+    expect(diag.getWarnLogs()[1]).to.equal(
+      'truncating exception_attribute_value because it is longer than 12 characters: "a-very-long-exception-attribute-value"'
+    );
+  });
+
   describe('log exceptions with non Error types', () => {
     it('should handle strings', () => {
       expect(() => {
@@ -650,7 +819,7 @@ describe('EmbraceLogManager', () => {
       const log = finishedLogs[0];
 
       expect(log.body).to.equal(
-        '{"key1":"value1","key2":"value2","key3":"value3","key4":"value4","key5":"value5","key6":"value6","key7":"value7","key8":"value8","key9":"value9","key10":"value10","key11":"value11","key12":"value12","key13":"value13","key14":"value14","key15":"value15","key16":"value16","key17":"value17","key18":"value18","key19":"value19","key20":"value20"}'
+        '{"key1":"value1","key2":"value2","key3":"value3","'
       );
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
       expect(log.severityText).to.be.equal('ERROR');
@@ -664,7 +833,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property('exception.name', 'Object');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        '{"key1":"value1","key2":"value2","key3":"value3","key4":"value4","key5":"value5","key6":"value6","key7":"value7","key8":"value8","key9":"value9","key10":"value10","key11":"value11","key12":"value12","key13":"value13","key14":"value14","key15":"value15","key16":"value16","key17":"value17","key18":"value18","key19":"value19","key20":"value20"}'
+        '{"key1":"value1","key2":"value2","key3":"value3","'
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');

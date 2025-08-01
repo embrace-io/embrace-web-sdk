@@ -92,18 +92,27 @@ export class EmbraceLogManager implements LogManager {
 
     const normalizedError = EmbraceLogManager._normalizeErrorData(error);
 
+    const limitedException = this._limitManager.limitException(
+      normalizedError.message,
+      attributes
+    );
+
+    if (limitedException === 'dropped') {
+      return;
+    }
+
     this._logger.emit({
       timestamp,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
-      body: normalizedError.message,
+      body: limitedException.message,
       attributes: {
-        ...attributes,
+        ...limitedException.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
         [KEY_EMB_EXCEPTION_HANDLING]: handled ? 'HANDLED' : 'UNHANDLED',
         [ATTR_EXCEPTION_TYPE]: normalizedError.type,
         ['exception.name']: normalizedError.name,
-        [ATTR_EXCEPTION_MESSAGE]: normalizedError.message,
+        [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
       },
     });
