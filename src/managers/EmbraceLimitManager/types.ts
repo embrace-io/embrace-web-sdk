@@ -13,6 +13,7 @@ export type LogLimitedType = 'error_log' | 'warning_log' | 'info_log';
 
 export type MaxLimitedType =
   | LogLimitedType
+  | 'exception'
   | 'span'
   | 'network_request'
   | 'breadcrumb'
@@ -20,13 +21,16 @@ export type MaxLimitedType =
 
 export type LengthLimitedType =
   | LogLimitedType
+  | 'exception'
   | 'breadcrumb'
   | 'session_property_key'
   | 'session_property_value'
   | 'log_attribute_key'
-  | 'log_attribute_value';
+  | 'log_attribute_value'
+  | 'exception_attribute_key'
+  | 'exception_attribute_value';
 
-export type AttributeLimitedType = LogLimitedType;
+export type AttributeLimitedType = LogLimitedType | 'exception';
 
 export type LimitedType =
   | MaxLimitedType
@@ -44,6 +48,11 @@ export type LimitedLog = {
   attributes: Record<string, AttributeValue | undefined>;
 };
 
+export type LimitedException = {
+  message: string;
+  attributes: Record<string, AttributeValue | undefined>;
+};
+
 export type LimitedSessionProperty = {
   key: string;
   value: string;
@@ -56,6 +65,10 @@ export interface LimitManagerInternal {
     severity: LogSeverity,
     attributes: Record<string, AttributeValue | undefined>
   ) => LimitedLog | 'dropped';
+  limitException: (
+    message: string,
+    attributes: Record<string, AttributeValue | undefined>
+  ) => LimitedException | 'dropped';
   limitSessionProperty: (
     key: string,
     value: string

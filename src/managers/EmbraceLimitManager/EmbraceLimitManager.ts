@@ -6,6 +6,7 @@ import type {
   EmbraceLimitManagerArgs,
   LengthLimitedType,
   LimitedBreadcrumb,
+  LimitedException,
   LimitedLog,
   LimitedSessionProperty,
   LimitedType,
@@ -29,6 +30,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
 
   private _diagnosticCounts: Record<string, number> = {};
   private _currentCount: Record<MaxLimitedType, number> = {
+    exception: 0,
     error_log: 0,
     warning_log: 0,
     info_log: 0,
@@ -123,6 +125,25 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     };
   }
 
+  public limitException(
+    message: string,
+    attributes: Record<string, AttributeValue | undefined>
+  ): LimitedException | 'dropped' {
+    if (this._dropIfMaxReached('exception')) {
+      return 'dropped';
+    }
+
+    return {
+      message: this.truncateString('exception', message),
+      attributes: this._truncateAttributes(
+        'exception',
+        attributes,
+        'exception_attribute_key',
+        'exception_attribute_value'
+      ),
+    };
+  }
+
   public limitLog(
     message: string,
     severity: LogSeverity,
@@ -171,6 +192,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   public reset(): void {
     this._diagnosticCounts = {};
     this._currentCount = {
+      exception: 0,
       error_log: 0,
       warning_log: 0,
       info_log: 0,
