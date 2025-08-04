@@ -152,4 +152,49 @@ describe('EmbraceUserManager', () => {
     void expect(storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY)).to.be.undefined;
     void expect(manager.getUserId()).to.be.undefined;
   });
+
+  it('should handle getting an external user id when storage is failing', () => {
+    const manager = new EmbraceUserManager({
+      diag,
+      storage: new FailingStorage(),
+    });
+    diag.clear();
+
+    expect(manager.getUserId()).to.equal(null);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.deep.equal([
+      'Failed to retrieve user id from storage',
+    ]);
+  });
+
+  it('should handle setting an external user id when storage is failing', () => {
+    const manager = new EmbraceUserManager({
+      diag,
+      storage: new FailingStorage(),
+    });
+    diag.clear();
+
+    expect(() => {
+      manager.setUserId('my-id');
+    }).not.to.throw();
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.deep.equal(['Failed to store user id']);
+  });
+
+  it('should handle clearing an external user id when storage is failing', () => {
+    const manager = new EmbraceUserManager({
+      diag,
+      storage: new FailingStorage(),
+    });
+    diag.clear();
+
+    expect(() => {
+      manager.clearUserId();
+    }).not.to.throw();
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.deep.equal(['Failed to clear user id']);
+  });
 });

@@ -10,6 +10,7 @@ import {
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.js';
 import {
+  FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
@@ -652,5 +653,26 @@ describe('EmbraceSpanSessionManager', () => {
       KEY_EMB_SESSION_REASON_STARTED,
       'start reason'
     );
+  });
+
+  it('should default to session number 1 when storage is failing', () => {
+    manager = new EmbraceSpanSessionManager({
+      diag,
+      limitManager,
+      storage: new FailingStorage(),
+    });
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.deep.equal([
+      'Failed to retrieve session number from storage',
+    ]);
   });
 });
