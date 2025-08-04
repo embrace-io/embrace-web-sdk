@@ -120,4 +120,30 @@ describe('EmbraceNetworkSpanProcessor', () => {
       'url.full': '/some/path',
     });
   });
+
+  it('should add emb.type for network requests with a 0 response code', () => {
+    tracer
+      .startSpan('network-request', {
+        attributes: {
+          'http.request.method': 'GET',
+          'http.response.status_code': 0,
+          'http.response.body.size': 10,
+          'http.request.body.size': 20,
+          'url.full': 'https://example.com',
+        },
+      })
+      .end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const networkRequest = finishedSpans[0];
+    expect(networkRequest.attributes).to.be.deep.equal({
+      'emb.type': 'perf.network_request',
+      'http.request.method': 'GET',
+      'http.response.status_code': 0,
+      'http.response.body.size': 10,
+      'http.request.body.size': 20,
+      'url.full': 'https://example.com',
+    });
+  });
 });
