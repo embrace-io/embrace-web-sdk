@@ -168,7 +168,7 @@ const App = () => {
   const handleFailedResourceLoad = () => {
     var img = document.createElement('img');
     img.src = '/something/that/doesnotexist.png';
-    document.getElementById('root')?.appendChild(img);
+    document.body.appendChild(img);
   };
 
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
