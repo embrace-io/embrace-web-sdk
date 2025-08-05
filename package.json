@@ -82,12 +82,12 @@
       "default": "./build/src/react-instrumentation.js"
     },
     "./recording": {
-      "esnext": "./build/esnext/recording/index.js",
-      "module": "./build/esm/recording/index.js",
+      "esnext": "./build/esnext/recording.js",
+      "module": "./build/esm/recording.js",
       "types": "./build/types/recording/index.d.ts",
-      "import": "./build/esm/recording/index.js",
-      "require": "./build/src/recording/index.js",
-      "default": "./build/src/recording/index.js"
+      "import": "./build/esm/recording.js",
+      "require": "./build/src/recording.js",
+      "default": "./build/src/recording.js"
     }
   },
   "typesVersions": {

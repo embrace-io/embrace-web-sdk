@@ -7,11 +7,11 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -19,25 +19,26 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  DEFAULT_LIMITS,
+  EmbraceAttachmentManager,
+  EmbraceDynamicConfigManager,
   EmbraceLimitManager,
   EmbraceLogManager,
+  EmbraceNoOpRecordingManager,
+  EmbraceSDKFeaturesManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-  EmbraceDynamicConfigManager,
-  EmbraceSDKFeaturesManager,
-  EmbraceNoOpRecordingManager,
-  DEFAULT_LIMITS,
 } from '../managers/index.js';
 import {
+  EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
-  EmbraceLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
-  UserSpanProcessor,
-  UserLogRecordProcessor,
   LogRecordScrubProcessor,
   SpanScrubProcessor,
+  UserLogRecordProcessor,
+  UserSpanProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -156,6 +157,9 @@ export const initSDK = (
     recordingManager.startRecording();
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+
+    const attachmentManager = new EmbraceAttachmentManager({ appID });
+
     const spanSessionManager = setupSession({
       limitManager,
     });
@@ -193,9 +197,10 @@ export const initSDK = (
       logProcessors,
       spanSessionManager,
       limitManager,
+      recordingManager,
+      attachmentManager,
       attributeScrubbers: finalAttributeScrubbers,
       embraceDataURL,
-      recordingManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -324,14 +329,16 @@ const setupLogs = ({
   logProcessors,
   spanSessionManager,
   limitManager,
+  recordingManager,
+  attachmentManager,
   attributeScrubbers,
   embraceDataURL,
-  // recordingManager,
 }: SetupLogsArgs) => {
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
     limitManager,
-    // recordingManager,
+    recordingManager,
+    attachmentManager,
   });
   log.setGlobalLogManager(embraceLogManager);
 

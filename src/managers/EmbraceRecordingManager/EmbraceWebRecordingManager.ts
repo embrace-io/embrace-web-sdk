@@ -8,7 +8,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 
 export class EmbraceWebRecordingManager implements EmbraceRecordingManager {
   private readonly _diag: DiagLogger;
-  private readonly _events: unknown[][] = [];
+  private readonly _events: unknown[][] = [[]];
   private readonly _takeSnapshotEveryNms: number;
 
   private _stopRecordingHandler?: () => void = undefined;

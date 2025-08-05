@@ -61,14 +61,13 @@ const App = () => {
   };
 
   const handleRecordException = () => {
-    const sessionSpan = sessionProvider.getSessionSpan();
-    if (sessionSpan) {
-      sessionSpan.recordException({
-        name: 'Error',
-        message: 'This is an error',
-        stack: 'Error: This is an error',
-      });
-    }
+    logManager.logException(new Error('this is a handled exception with replay enabled'), {
+      handled: true,
+      attributes: {
+        key1: 'value1',
+      },
+      includeReplay: true,
+    });
   };
 
   const handleAddPermanentSessionProperty = (key: string, value: string) => {
@@ -95,10 +94,11 @@ const App = () => {
   };
 
   const handleSendEmbraceInfoLog = () => {
-    logManager.message('This is an info log', 'info', {
+    logManager.message('This is an info log with replay enabled', 'info', {
       attributes: {
         key: 'some value for an info log',
       },
+      includeReplay: true,
     });
   };
 
@@ -333,7 +333,7 @@ const App = () => {
             onClick={handleRecordException}
             disabled={sessionProvider.getSessionSpan() === null}
           >
-            Record Exception
+            Record Handled Exception
           </button>
           <button
             onClick={handleThrowError}

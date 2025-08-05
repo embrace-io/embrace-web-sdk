@@ -7,7 +7,7 @@ export interface EmbraceRecordingManager<Events = unknown> {
 }
 
 export interface EmbraceRecordingManagerArgs {
-  diag: DiagLogger;
+  diag?: DiagLogger;
 
   /**
    * Defines the interval in milliseconds at which a snapshot of the recording is taken.

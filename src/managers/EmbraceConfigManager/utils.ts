@@ -1,8 +1,8 @@
 import type { RemoteConfigURLParams } from './types.js';
 
 export const getConfigURL = (
-  appId: string,
+  appID: string,
   { osVersion, appVersion, deviceId }: RemoteConfigURLParams,
   embraceConfigURL?: string
 ): string =>
-  `${embraceConfigURL || `https://a-${appId}.config.emb-api.com`}/v2/config?appId=${appId}&osVersion=${osVersion}&appVersion=${appVersion}&deviceId=${deviceId}`;
+  `${embraceConfigURL || `https://a-${appID}.config.emb-api.com`}/v2/config?appId=${appID}&osVersion=${osVersion}&appVersion=${appVersion}&deviceId=${deviceId}`;

@@ -25,6 +25,7 @@ import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumen
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
+  AttachmentManagerInternal,
   EmbraceRecordingManager,
   LimitManagerInternal,
   SpanSessionManagerInternal,
@@ -283,9 +284,10 @@ export interface SetupLogsArgs {
   logProcessors: LogRecordProcessor[];
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
+  recordingManager: EmbraceRecordingManager;
+  attachmentManager: AttachmentManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
-  recordingManager: EmbraceRecordingManager;
 }
 
 type OptionalInstrumentations =

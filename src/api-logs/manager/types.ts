@@ -4,12 +4,14 @@ export type LogMessageOptions = {
   attributes?: Record<string, AttributeValue | undefined>;
   includeStacktrace?: boolean;
   stacktrace?: string;
+  includeReplay?: boolean;
 };
 
 export type LogExceptionOptions = {
   handled?: boolean;
   attributes?: Record<string, AttributeValue | undefined>;
   timestamp?: number;
+  includeReplay?: boolean;
 };
 
 export interface LogManager {

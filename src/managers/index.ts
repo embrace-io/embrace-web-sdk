@@ -3,6 +3,8 @@ export { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager/index.js'
 export type { SpanSessionManagerInternal } from './EmbraceSpanSessionManager/index.js';
 export { EmbraceLimitManager } from './EmbraceLimitManager/index.js';
 export type { LimitManagerInternal } from './EmbraceLimitManager/index.js';
+export { EmbraceAttachmentManager } from './EmbraceAttachmentManager/index.js';
+export type { AttachmentManagerInternal } from './EmbraceAttachmentManager/index.js';
 export {
   EmbraceExtendedSpan,
   EmbraceTraceManager,

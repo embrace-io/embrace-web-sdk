@@ -14,7 +14,7 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
-import { OTelPerformanceManager } from '../../utils/index.js';
+import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 import type {
@@ -27,6 +27,8 @@ import {
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
+import type { AttachmentManagerInternal } from '../EmbraceAttachmentManager/index.js';
+import type { EmbraceRecordingManager } from '../EmbraceRecordingManager/index.js';
 
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
@@ -34,12 +36,16 @@ export class EmbraceLogManager implements LogManager {
   private readonly _logger: Logger;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _recordingManager: EmbraceRecordingManager;
+  private readonly _attachmentManager: AttachmentManagerInternal;
 
   public constructor({
     diag: diagParam,
     perf,
     spanSessionManager,
     limitManager,
+    recordingManager,
+    attachmentManager,
   }: EmbraceLogManagerArgs) {
     this._diag =
       diagParam ??
@@ -50,6 +56,8 @@ export class EmbraceLogManager implements LogManager {
     this._logger = logs.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
     this._limitManager = limitManager;
+    this._recordingManager = recordingManager;
+    this._attachmentManager = attachmentManager;
   }
 
   private static _logSeverityToSeverityNumber(
@@ -71,6 +79,7 @@ export class EmbraceLogManager implements LogManager {
       handled = true,
       attributes = {},
       timestamp = this._perf.getNowMillis(),
+      includeReplay = false,
     }: LogExceptionOptions = {}
   ) {
     if (!error) {
@@ -101,6 +110,10 @@ export class EmbraceLogManager implements LogManager {
       return;
     }
 
+    if (includeReplay) {
+      this._includeReplay(limitedException.attributes);
+    }
+
     this._logger.emit({
       timestamp,
       severityNumber: SeverityNumber.ERROR,
@@ -125,6 +138,7 @@ export class EmbraceLogManager implements LogManager {
       attributes = {},
       includeStacktrace = true,
       stacktrace,
+      includeReplay = false,
     }: LogMessageOptions = {}
   ) {
     if (!message || typeof message !== 'string') {
@@ -145,30 +159,8 @@ export class EmbraceLogManager implements LogManager {
       }
     }
 
-    this._logMessage({
-      message: message.trim(),
-      severity,
-      timestamp: this._perf.getNowMillis(),
-      attributes,
-      stacktrace: stacktraceString,
-    });
-  }
-
-  private _logMessage({
-    message,
-    severity,
-    timestamp,
-    attributes = {},
-    stacktrace,
-  }: {
-    message: string;
-    severity: LogSeverity;
-    timestamp: number;
-    attributes?: Record<string, AttributeValue | undefined>;
-    stacktrace?: string;
-  }) {
     const limitedLog = this._limitManager.limitLog(
-      message,
+      message.trim(),
       severity,
       attributes
     );
@@ -177,8 +169,12 @@ export class EmbraceLogManager implements LogManager {
       return;
     }
 
+    if (includeReplay) {
+      this._includeReplay(limitedLog.attributes);
+    }
+
     this._logger.emit({
-      timestamp,
+      timestamp: this._perf.getNowMillis(),
       severityNumber: EmbraceLogManager._logSeverityToSeverityNumber(severity),
       severityText: severity.toUpperCase(),
       body: limitedLog.message,
@@ -187,7 +183,7 @@ export class EmbraceLogManager implements LogManager {
         [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
         ...(stacktrace
           ? {
-              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
+              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktraceString,
             }
           : {}),
       },
@@ -243,5 +239,20 @@ export class EmbraceLogManager implements LogManager {
       name: typeof error,
       stack: userCallStack,
     };
+  }
+
+  private _includeReplay(
+    attributes: Record<string, AttributeValue | undefined>
+  ) {
+    // Upload of attachment is done async as we do not want to risk losing the log.
+    const attachmentID = generateUUID();
+    void this._attachmentManager.uploadAttachment(
+      attachmentID,
+      JSON.stringify(this._recordingManager.getRecentEvents())
+    );
+
+    // Temporary add this as custom attributes.
+    attributes['attachment_id'] = attachmentID;
+    attributes['attachment_type'] = 'replay';
   }
 }

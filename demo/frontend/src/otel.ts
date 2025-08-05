@@ -2,6 +2,7 @@ import { sdk, user } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
+import { createEmbraceWebRecordingManager } from '@embrace-io/web-sdk/recording';
 
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 
@@ -12,6 +13,7 @@ const setupOTel = () => {
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     instrumentations: [createReactRouterNavigationInstrumentation()],
+    recordingManager: createEmbraceWebRecordingManager({}),
   });
 
   if (result) {
