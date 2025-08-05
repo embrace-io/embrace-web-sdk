@@ -25,8 +25,9 @@ import {
   EmbraceTraceManager,
   EmbraceUserManager,
   EmbraceDynamicConfigManager,
-  DEFAULT_LIMITS,
   EmbraceSDKFeaturesManager,
+  EmbraceNoOpRecordingManager,
+  DEFAULT_LIMITS,
 } from '../managers/index.js';
 import {
   EmbraceNetworkSpanProcessor,
@@ -82,6 +83,7 @@ export const initSDK = (
     }),
     dynamicSDKConfigManager: providedDynamicSDKConfigManager,
     dynamicSDKConfig,
+    recordingManager: providedRecordingManager,
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
@@ -149,6 +151,10 @@ export const initSDK = (
       return false;
     }
 
+    const recordingManager =
+      providedRecordingManager ?? new EmbraceNoOpRecordingManager();
+    recordingManager.startRecording();
+
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = setupSession({
       limitManager,
@@ -189,6 +195,7 @@ export const initSDK = (
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
       embraceDataURL,
+      recordingManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -319,10 +326,12 @@ const setupLogs = ({
   limitManager,
   attributeScrubbers,
   embraceDataURL,
+  // recordingManager,
 }: SetupLogsArgs) => {
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
     limitManager,
+    // recordingManager,
   });
   log.setGlobalLogManager(embraceLogManager);
 

@@ -19,6 +19,7 @@ const isExternal = id =>
 const input = {
   index: 'src/index.ts',
   'react-instrumentation': 'src/react/index.ts',
+  recording: 'src/recording/index.ts',
 };
 
 // Suppress irrelevant warnings to keep the build output clean

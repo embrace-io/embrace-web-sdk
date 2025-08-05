@@ -25,6 +25,7 @@ import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumen
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
+  EmbraceRecordingManager,
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../managers/index.js';
@@ -186,6 +187,13 @@ type BaseSDKInitConfig = {
    * **default**: EmbraceDynamicConfigManager
    */
   dynamicSDKConfig?: Partial<DynamicSDKConfig>;
+
+  /**
+   * recordingManager takes an EmbraceRecordingManager which is used internally by the SDK to do screen recording.
+   * The SDK provides a working implementation that uses rrweb to record the screen that you can create
+   * using `createEmbraceWebRecordingManager`. If no recording manager is provided, recording is disabled.
+   */
+  recordingManager?: EmbraceRecordingManager;
 };
 
 /*
@@ -277,6 +285,7 @@ export interface SetupLogsArgs {
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
+  recordingManager: EmbraceRecordingManager;
 }
 
 type OptionalInstrumentations =

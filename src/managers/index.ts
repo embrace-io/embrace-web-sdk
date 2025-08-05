@@ -14,3 +14,5 @@ export {
 } from './EmbraceLimitManager/index.js';
 export { EmbraceDynamicConfigManager } from './EmbraceConfigManager/index.js';
 export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.js';
+export { EmbraceNoOpRecordingManager } from './EmbraceRecordingManager/index.js';
+export type { EmbraceRecordingManager } from './EmbraceRecordingManager/index.js';
