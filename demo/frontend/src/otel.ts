@@ -1,4 +1,4 @@
-import { sdk, user } from '@embrace-io/web-sdk';
+import { ReplayInstrumentation, sdk, user } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
@@ -11,7 +11,14 @@ const setupOTel = () => {
     appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
-    instrumentations: [createReactRouterNavigationInstrumentation()],
+    instrumentations: [
+      createReactRouterNavigationInstrumentation(),
+      new ReplayInstrumentation({
+        // turn off compression for easier debugging
+        compress: false,
+      }),
+    ],
+    logLevel: sdk.DiagLogLevel.DEBUG, // Enable debug logs to see replay events
   });
 
   if (result) {

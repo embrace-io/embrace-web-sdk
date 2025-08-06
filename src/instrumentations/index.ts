@@ -24,3 +24,7 @@ export {
 } from './web-vitals/index.js';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';
 export { getNavigationInstrumentation } from './navigation/index.js';
+export {
+  ReplayInstrumentation,
+  type ReplayInstrumentationArgs,
+} from './replay/index.js';
