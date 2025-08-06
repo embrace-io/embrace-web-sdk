@@ -123,15 +123,28 @@ export class EmbraceUserManager implements UserManagerInternal {
 
   // This is the external user id that can be set by the user
   public getUserId(): string | null {
-    return this._storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY);
+    try {
+      return this._storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY);
+    } catch (e) {
+      this._diag.warn('Failed to retrieve user id from storage', e);
+      return null;
+    }
   }
 
   // Use storage as source of truth so multiple tabs can share the same user id
   public setUserId(userId: string): void {
-    this._storage.setItem(EMBRACE_EXTERNAL_USER_ID_KEY, userId);
+    try {
+      this._storage.setItem(EMBRACE_EXTERNAL_USER_ID_KEY, userId);
+    } catch (e) {
+      this._diag.warn('Failed to store user id', e);
+    }
   }
 
   public clearUserId(): void {
-    this._storage.removeItem(EMBRACE_EXTERNAL_USER_ID_KEY);
+    try {
+      this._storage.removeItem(EMBRACE_EXTERNAL_USER_ID_KEY);
+    } catch (e) {
+      this._diag.warn('Failed to clear user id', e);
+    }
   }
 }

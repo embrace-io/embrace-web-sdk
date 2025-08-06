@@ -2,11 +2,11 @@ import type { DiagLogger } from '@opentelemetry/api';
 
 // TODO this helper could be contributed back to the OpenTelemetry community
 export class InMemoryDiagLogger implements DiagLogger {
-  private readonly _errorLogs: string[] = [];
-  private readonly _warnLogs: string[] = [];
-  private readonly _infoLogs: string[] = [];
-  private readonly _debugLogs: string[] = [];
-  private readonly _verboseLogs: string[] = [];
+  private _errorLogs: string[] = [];
+  private _warnLogs: string[] = [];
+  private _infoLogs: string[] = [];
+  private _debugLogs: string[] = [];
+  private _verboseLogs: string[] = [];
 
   public debug(message: string): void {
     this._debugLogs.push(message);
@@ -46,5 +46,13 @@ export class InMemoryDiagLogger implements DiagLogger {
 
   public getVerboseLogs(): string[] {
     return this._verboseLogs;
+  }
+
+  public clear(): void {
+    this._errorLogs = [];
+    this._warnLogs = [];
+    this._infoLogs = [];
+    this._debugLogs = [];
+    this._verboseLogs = [];
   }
 }

@@ -16,7 +16,7 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
-  KEY_EMB_STARTUP_DURATION,
+  KEY_EMB_SDK_STARTUP_DURATION,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
@@ -38,7 +38,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
   private _coldStart: boolean = true; // Whether the session was started from a new page load or not.
-  private _startupDuration: number = 0;
+  private _sdkStartupDuration: number = 0;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
@@ -89,14 +89,19 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   // This is not perfect in the sense that there may be a race condition between tabs.
   // Eventually a lock could be implemented, but for now this solution should work fine.
   public _getSessionNumber(): number {
-    const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
-    let number = value ? parseInt(value, 10) : 0;
-    number++;
-    this._storage.setItem(
-      EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-      number.toString()
-    );
-    return number;
+    try {
+      const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
+      let number = value ? parseInt(value, 10) : 0;
+      number++;
+      this._storage.setItem(
+        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+        number.toString()
+      );
+      return number;
+    } catch (e) {
+      this._diag.warn('Failed to retrieve session number from storage', e);
+      return 1;
+    }
   }
 
   public addBreadcrumb(name: string) {
@@ -198,7 +203,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
       ...this._limitManager.getDiagnosticCounts(),
-      [KEY_EMB_STARTUP_DURATION]: this._startupDuration,
+      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
     });
 
     this._sessionSpan.end();
@@ -306,7 +311,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     };
   }
 
-  public recordStartupDuration(duration: number) {
-    this._startupDuration = duration;
+  public recordSDKStartupDuration(duration: number) {
+    this._sdkStartupDuration = Math.ceil(duration);
   }
 }

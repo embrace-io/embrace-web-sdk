@@ -68,12 +68,22 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
 
       // Easy way of making sure the server registered the session end
       // If this gets flaky, we can increase the timeout or read the server logs
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const timeout = setTimeout(() => {
+        throw new Error('Server did not register the session end in time');
+      }, 2000);
 
-      const response = await fetch('http://localhost:3001/received-spans');
-      const receivedSpans = (await response.json()) as ReceivedSpans;
+      await new Promise(resolve => {
+        const interval = setInterval(async () => {
+          const response = await fetch('http://localhost:3001/received-spans');
+          const receivedSpans = (await response.json()) as ReceivedSpans;
 
-      testE2E.expect(receivedSpans).toHaveProperty(currentSessionId);
+          if (receivedSpans[currentSessionId]) {
+            clearInterval(interval);
+            clearTimeout(timeout);
+            resolve(null);
+          }
+        }, 200);
+      });
     });
   },
 });
@@ -145,8 +155,6 @@ const runE2ETests = ({
         }
 
         testE2E.expect(requests).toHaveLength(1);
-
-        await page.pause();
 
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
           `${browserName}-${codifiedName}-session.json`
