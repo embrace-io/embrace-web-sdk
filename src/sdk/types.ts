@@ -14,6 +14,7 @@ import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { SpanSessionManager } from '../api-sessions/index.js';
 import type {
   ClicksInstrumentationArgs,
+  DocumentLoadInstrumentationConfig,
   GlobalExceptionInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
@@ -21,7 +22,6 @@ import type {
   SpanSessionVisibilityInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.js';
-import type { DocumentLoadInstrumentationConfig } from '@opentelemetry/instrumentation-document-load';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type {

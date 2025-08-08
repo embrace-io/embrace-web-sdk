@@ -8,8 +8,8 @@ import {
   WebVitalsInstrumentation,
   ClicksInstrumentation,
   EmbraceInstrumentationBase,
+  DocumentLoadInstrumentation,
 } from '../instrumentations/index.js';
-import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
