@@ -214,7 +214,7 @@ export class EmbraceLogManager implements LogManager {
 
     if (typeof error === 'string') {
       return {
-        message: String(error).trim(),
+        message: error.trim(),
         type: 'String',
         name: 'String',
         stack: userCallStack,
