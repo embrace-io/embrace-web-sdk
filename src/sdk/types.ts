@@ -303,7 +303,7 @@ type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'web-vital'
-  | '@opentelemetry/instrumentation-document-load'
+  | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
@@ -325,6 +325,7 @@ export interface DefaultInstrumentationConfig {
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
+  'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
   // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
@@ -335,10 +336,6 @@ export interface DefaultInstrumentationConfig {
     since we are going to call `registerInstrumentations` for every instrumentation we include here even if their
     config has enabled=false. Instead, use `omit` to specify which default instrumentations should be turned off.
    */
-  '@opentelemetry/instrumentation-document-load'?: Omit<
-    DocumentLoadInstrumentationConfig,
-    'enabled'
-  >;
   '@opentelemetry/instrumentation-fetch'?: Omit<
     FetchInstrumentationConfig,
     'enabled'

@@ -1,14 +1,14 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import {
+  ClicksInstrumentation,
+  DocumentLoadInstrumentation,
+  EmbraceInstrumentationBase,
   GlobalExceptionInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
-  ClicksInstrumentation,
-  EmbraceInstrumentationBase,
-  DocumentLoadInstrumentation,
 } from '../instrumentations/index.js';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -45,11 +45,9 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(new WebVitalsInstrumentation(config['web-vital']));
   }
 
-  if (!config.omit?.has('@opentelemetry/instrumentation-document-load')) {
+  if (!config.omit?.has('document-load')) {
     instrumentations.push(
-      new DocumentLoadInstrumentation(
-        config['@opentelemetry/instrumentation-document-load']
-      )
+      new DocumentLoadInstrumentation(config['document-load'])
     );
   }
 

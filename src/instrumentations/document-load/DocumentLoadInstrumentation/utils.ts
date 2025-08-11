@@ -1,31 +1,17 @@
 /*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Adapted from OpenTelemetry document-load instrumentation
+ * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  */
 
 import type { Span } from '@opentelemetry/api';
-import { otperformance } from '@opentelemetry/core';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
 import { EventNames } from './enums/EventNames.js';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
-  const performanceNavigationTiming = otperformance.getEntriesByType(
-    // @ts-expect-error node types dont include browser navigation
-    'navigation'
-  )[0];
+  const performanceNavigationTiming =
+    window.performance.getEntriesByType('navigation')[0];
 
   const keys = Object.values(PerformanceTimingNames);
   keys.forEach((key: PerformanceTimingNames) => {
@@ -46,8 +32,7 @@ const performancePaintNames = {
 };
 
 export const addSpanPerformancePaintEvents = (span: Span) => {
-  // @ts-expect-error node types dont include browser navigation
-  const performancePaintTiming = otperformance.getEntriesByType('paint');
+  const performancePaintTiming = window.performance.getEntriesByType('paint');
   performancePaintTiming.forEach(({ name, startTime }) => {
     if (hasKey(performancePaintNames, name)) {
       span.addEvent(performancePaintNames[name], startTime);

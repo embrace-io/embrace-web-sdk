@@ -1,55 +1,43 @@
 /*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Adapted from OpenTelemetry document-load instrumentation
+ * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  */
 
 import type { Span } from '@opentelemetry/api';
-import { context, propagation, trace, ROOT_CONTEXT } from '@opentelemetry/api';
+import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import type { PerformanceEntries as OtelPerformanceEntries } from '@opentelemetry/sdk-trace-web';
-
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   addSpanNetworkEvent,
   addSpanNetworkEvents,
   hasKey,
   PerformanceTimingNames,
 } from '@opentelemetry/sdk-trace-web';
-import {
-  InstrumentationBase,
-  safeExecuteInTheMiddle,
-} from '@opentelemetry/instrumentation';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+import { AttributeNames } from './enums/AttributeNames.js';
 import type {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
 } from './types.js';
-import { AttributeNames } from './enums/AttributeNames.js';
 
-type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {};
+type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
+  deliveryType?: string;
+  entryType?: string;
+  initiatorType?: string;
+  renderBlockingStatus?: string;
+  transferSize?: number;
+};
 
-import {
-  addSpanPerformancePaintEvents,
-  getPerformanceNavigationEntries,
-} from './utils.js';
 import {
   ATTR_HTTP_URL,
   ATTR_HTTP_USER_AGENT,
 } from '@opentelemetry/semantic-conventions/incubating';
-
-const PACKAGE_NAME = '@opentelemetry/instrumentation-document-load';
-const PACKAGE_VERSION = '1.0.0';
-const otperformance = window.performance;
+import {
+  addSpanPerformancePaintEvents,
+  getPerformanceNavigationEntries,
+} from './utils.js';
 
 type PerformanceEntries = OtelPerformanceEntries & {
   deliveryType?: string;
@@ -67,28 +55,45 @@ const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
 const ATTR_RESPONSE_STATUS = 'response_status';
 const ATTR_TRANSFER_SIZE = 'transfer_size';
 
-export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoadInstrumentationConfig> {
-  public readonly component: string = 'DocumentLoadInstrumentation';
-  public readonly version: string = '1.0.0';
-  private readonly _boundOnDocumentLoaded: () => void;
+export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
+  private readonly _onDocumentLoaded: () => void;
 
-  public constructor(config: DocumentLoadInstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._boundOnDocumentLoaded = this._onDocumentLoaded.bind(this);
+  public constructor({
+    diag,
+    perf,
+    enabled,
+    applyCustomAttributesOnSpan,
+    ignorePerformancePaintEvents = false,
+    ignoreNetworkEvents = false,
+  }: DocumentLoadInstrumentationConfig = {}) {
+    super({
+      instrumentationName: 'DocumentLoadInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      perf,
+      config: {
+        enabled,
+        applyCustomAttributesOnSpan,
+        ignorePerformancePaintEvents,
+        ignoreNetworkEvents,
+      },
+    });
+
+    this._onDocumentLoaded = () => {
+      // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd
+      window.setTimeout(() => {
+        this._collectPerformance();
+      }, 0);
+    };
+
+    if (this._config.enabled) {
+      this.enable();
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
-  public init() {}
-
-  /**
-   * callback to be executed when page is loaded
-   */
-  private _onDocumentLoaded() {
-    // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd.
-    // Support for event "loadend" is very limited and cannot be used
-    window.setTimeout(() => {
-      this._collectPerformance();
-    });
+  protected override init(): void {
+    this._diag.debug('Initializing document load instrumentation');
+    return undefined;
   }
 
   /**
@@ -97,7 +102,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    */
   private _addResourcesSpans(rootSpan: Span): void {
     const resources: EmbracePerformanceResourceTiming[] =
-      otperformance.getEntriesByType('resource');
+      performance.getEntriesByType('resource');
     resources.forEach(resource => {
       this._initResourceSpan(resource, rootSpan);
     });
@@ -106,7 +111,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   /**
    * Collects information about performance and creates appropriate spans
    */
-  private _collectPerformance() {
+  private _collectPerformance(): void {
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       e => e.getAttribute('name') === TRACE_PARENT_HEADER
     );
@@ -264,29 +269,17 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         resource,
         this.getConfig().ignoreNetworkEvents
       );
-
-      span.setAttribute(
-        PerformanceTimingNames.DECODED_BODY_SIZE,
-        resource.decodedBodySize
-      );
-      span.setAttribute(
-        ATTR_DELIVERY_TYPE,
-        // @ts-expect-error otel has an incomplete implementation
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        resource.deliveryType
-      );
-      span.setAttribute(
-        PerformanceTimingNames.ENCODED_BODY_SIZE,
-        resource.encodedBodySize
-      );
+      if (resource.deliveryType) {
+        span.setAttribute(ATTR_DELIVERY_TYPE, resource.deliveryType);
+      }
       span.setAttribute(ATTR_ENTRY_TYPE, resource.entryType);
       span.setAttribute(ATTR_INITIATOR_TYPE, resource.initiatorType);
-      span.setAttribute(
-        ATTR_RENDER_BLOCKING_STATUS,
-        // @ts-expect-error otel has an incomplete implementation
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        resource.renderBlockingStatus
-      );
+      if (resource.renderBlockingStatus) {
+        span.setAttribute(
+          ATTR_RENDER_BLOCKING_STATUS,
+          resource.renderBlockingStatus
+        );
+      }
       span.setAttribute(ATTR_RESPONSE_STATUS, resource.responseStatus);
       span.setAttribute(ATTR_TRANSFER_SIZE, resource.transferSize);
 
@@ -335,7 +328,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
     if (window.document.readyState === 'complete') {
       this._onDocumentLoaded();
     } else {
-      window.addEventListener('load', this._boundOnDocumentLoaded);
+      window.addEventListener('load', this._onDocumentLoaded);
     }
   }
 
@@ -390,20 +383,12 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
     }
   }
 
-  /**
-   * implements enable function
-   */
-  public override enable() {
-    // remove previously attached load to avoid adding the same event twice
-    // in case of multiple enable calling.
-    window.removeEventListener('load', this._boundOnDocumentLoaded);
+  public enable(): void {
+    window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
   }
 
-  /**
-   * implements disable function
-   */
-  public override disable() {
-    window.removeEventListener('load', this._boundOnDocumentLoaded);
+  public disable(): void {
+    window.removeEventListener('load', this._onDocumentLoaded);
   }
 }

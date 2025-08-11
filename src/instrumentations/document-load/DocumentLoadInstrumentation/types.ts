@@ -1,21 +1,10 @@
 /*
- * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Adapted from OpenTelemetry document-load instrumentation
+ * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  */
 
 import type { Span } from '@opentelemetry/api';
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
 
 export interface DocumentLoadCustomAttributeFunction {
   (span: Span): void;
@@ -25,18 +14,15 @@ export interface ResourceFetchCustomAttributeFunction {
   (span: Span, resource: PerformanceResourceTiming): void;
 }
 
-/**
- * DocumentLoadInstrumentationPlugin Config
- */
-export interface DocumentLoadInstrumentationConfig
-  extends InstrumentationConfig {
+export type DocumentLoadInstrumentationConfig = Pick<
+  EmbraceInstrumentationBaseArgs,
+  'diag' | 'perf'
+> & {
   /** Function for adding custom attributes on the document load, document fetch and or resource fetch spans */
   applyCustomAttributesOnSpan?: {
     documentLoad?: DocumentLoadCustomAttributeFunction;
     documentFetch?: DocumentLoadCustomAttributeFunction;
     resourceFetch?: ResourceFetchCustomAttributeFunction;
-    deliveryType?: DocumentLoadCustomAttributeFunction;
-    renderBlockingStatus?: DocumentLoadCustomAttributeFunction;
   };
 
   /** Ignore adding network events as span events for document fetch and resource fetch spans.
@@ -72,4 +58,7 @@ export interface DocumentLoadInstrumentationConfig
    * firstPaint
    */
   ignorePerformancePaintEvents?: boolean;
-}
+
+  /** Whether the instrumentation is enabled */
+  enabled?: boolean;
+};
