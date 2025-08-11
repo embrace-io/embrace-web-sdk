@@ -4,12 +4,23 @@ import {
 } from '@remcovaes/web-test-runner-vite-plugin';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-// Generated on purpose in src/instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.test.ts
-const removeGlobalExceptionTestError = ({ args }) =>
-  !args.some(
-    arg =>
-      typeof arg == 'string' && arg.includes('GlobalExceptionTestErrorName')
-  );
+// These errors are generated on purpose in
+// src/instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.test.ts
+const removeGlobalExceptionTestError = ({ args, type }) => {
+  if (
+    args.some(
+      arg =>
+        typeof arg == 'string' && arg.includes('GlobalExceptionTestErrorName')
+    )
+  ) {
+    return false;
+  }
+
+  // Logged when we trigger an ErrorEvent with only `message` and no `error`
+  if (type === 'error' && args.length === 1 && args[0] === undefined) {
+    return false;
+  }
+};
 
 export default {
   nodeResolve: true,
