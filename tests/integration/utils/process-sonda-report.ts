@@ -46,10 +46,10 @@ const EMBRACE_SDK_PATH_REGEX = new RegExp(
 /**
  * Processes a Sonda report to calculate the total uncompressed and gzip sizes of resources in kb.
  */
-const processSondaReport = async (sondaReportPath: string) => {
+const processSondaReport = (sondaReportPath: string) => {
   const reportPath = resolve(__dirname, sondaReportPath);
   const raw = readFileSync(reportPath, 'utf-8');
-  const sondaReport: SondaReport = JSON.parse(raw);
+  const sondaReport: SondaReport = JSON.parse(raw) as SondaReport;
 
   let totalUncompressedSize = 0;
   let totalGzipSize = 0;
