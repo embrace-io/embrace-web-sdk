@@ -3,17 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
+    "build": "npm run build:clean && npm run build:es2020",
     "build:clean": "npx rimraf .next",
     "build:es2020": "next build"
   },
   "dependencies": {
-    "@embrace-io/web-sdk": "file:../../..",
-    "@opentelemetry/sdk-logs": "0.57.2",
-    "@opentelemetry/sdk-trace-web": "1.30.1",
-    "next": "15.3.4",
+    "@embrace-io/web-sdk": "file:../../../..",
+    "next": "latest",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -23,7 +22,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^15.3.4",
+    "eslint-config-next": "latest",
     "typescript": "^5"
   }
 }
