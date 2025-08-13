@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "start": "next start",
     "lint": "next lint",
     "build": "npm run build:clean && npm run build:es2020",
@@ -11,7 +11,7 @@
     "build:es2020": "next build"
   },
   "dependencies": {
-    "@embrace-io/web-sdk": "file:../../..",
+    "@embrace-io/web-sdk": "file:../../../..",
     "next": "latest",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
