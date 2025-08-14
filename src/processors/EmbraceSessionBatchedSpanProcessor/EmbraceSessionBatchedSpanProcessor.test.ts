@@ -7,13 +7,15 @@ import {
   mockSpan,
 } from '../../testUtils/mockEntities/ReadableSpan.js';
 import {
+  FailingStorage,
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
 import type { ExportResult } from '@opentelemetry/core';
 import { ExportResultCode } from '@opentelemetry/core';
-import { EmbraceLimitManager, DEFAULT_LIMITS } from '../../managers/index.js';
+import { DEFAULT_LIMITS, EmbraceLimitManager } from '../../managers/index.js';
 
 const { expect } = chai;
 
@@ -203,5 +205,307 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     processor.onEnd(mockSessionSpan);
     const nextFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextFinishedSpans).to.have.lengthOf(2);
+  });
+
+  describe('storage functionality', () => {
+    let inMemoryStorage: InMemoryStorage;
+    let processorWithStorage: EmbraceSessionBatchedSpanProcessor;
+
+    beforeEach(() => {
+      inMemoryStorage = new InMemoryStorage();
+      processorWithStorage = new EmbraceSessionBatchedSpanProcessor({
+        exporter: memoryExporter,
+        limitManager,
+        storage: inMemoryStorage,
+      });
+    });
+
+    afterEach(async () => {
+      await processorWithStorage.shutdown();
+    });
+
+    describe('getPendingSpansCount', () => {
+      it('should return 0 when no spans are pending', () => {
+        expect(processorWithStorage.getPendingSpansCount()).to.equal(0);
+      });
+
+      it('should return correct count when spans are pending', () => {
+        processorWithStorage.onEnd(mockSpan);
+        expect(processorWithStorage.getPendingSpansCount()).to.equal(1);
+
+        processorWithStorage.onEnd(mockSpan);
+        expect(processorWithStorage.getPendingSpansCount()).to.equal(2);
+      });
+
+      it('should return 0 after session span is processed', () => {
+        processorWithStorage.onEnd(mockSpan);
+        processorWithStorage.onEnd(mockSpan);
+        expect(processorWithStorage.getPendingSpansCount()).to.equal(2);
+
+        processorWithStorage.onEnd(mockSessionSpan);
+        expect(processorWithStorage.getPendingSpansCount()).to.equal(0);
+      });
+    });
+
+    describe('storePendingSpans', () => {
+      it('should store spans to storage with correct key format', () => {
+        processorWithStorage.onEnd(mockSpan);
+        const sessionId = '732C0D87B14849BCAC153B5EB64B672D';
+
+        processorWithStorage.storePendingSpans(sessionId, mockSessionSpan);
+
+        expect(inMemoryStorage.length).to.equal(1);
+        const key = inMemoryStorage.key(0);
+        expect(key).to.match(
+          /^embrace_pending_732C0D87B14849BCAC153B5EB64B672D_\d+$/
+        );
+      });
+
+      it('should store both session span and pending spans', () => {
+        processorWithStorage.onEnd(mockSpan);
+        processorWithStorage.onEnd(mockNetworkRequestSpan);
+        const sessionId = '732C0D87B14849BCAC153B5EB64B672D';
+
+        processorWithStorage.storePendingSpans(sessionId, mockSessionSpan);
+
+        const key = inMemoryStorage.key(0);
+        expect(key).to.not.equal(null);
+        const storedData = inMemoryStorage.getItem(key as string);
+        expect(storedData).to.not.equal(null);
+        const parsedSpans = JSON.parse(storedData as string) as ReadableSpan[];
+
+        expect(parsedSpans).to.have.lengthOf(3); // session span + 2 pending spans
+        expect(parsedSpans[0])
+          .to.have.property('attributes')
+          .that.has.property('emb.type', 'ux.session');
+        expect(parsedSpans[1]).to.have.property('name', 'mock span');
+        expect(parsedSpans[2])
+          .to.have.property('attributes')
+          .that.has.property('emb.type', 'perf.network_request');
+      });
+
+      it('should store just the session span if no other is pending', () => {
+        const sessionId = '732C0D87B14849BCAC153B5EB64B672D';
+
+        processorWithStorage.storePendingSpans(sessionId, mockSessionSpan);
+
+        expect(inMemoryStorage.length).to.equal(1); // Only session span stored
+        const key = inMemoryStorage.key(0);
+        expect(key).to.not.equal(null);
+        const storedData = inMemoryStorage.getItem(key as string);
+        expect(storedData).to.not.equal(null);
+        const parsedSpans = JSON.parse(storedData as string) as ReadableSpan[];
+
+        expect(parsedSpans).to.have.lengthOf(1); // Only session span
+        expect(parsedSpans[0])
+          .to.have.property('attributes')
+          .that.has.property('emb.type', 'ux.session');
+      });
+
+      it('should handle storage errors gracefully', () => {
+        const diagLogger = new InMemoryDiagLogger();
+        const failingStorage = new FailingStorage();
+
+        const processorWithFailingStorage =
+          new EmbraceSessionBatchedSpanProcessor({
+            exporter: memoryExporter,
+            limitManager,
+            storage: failingStorage,
+            diag: diagLogger,
+          });
+
+        processorWithFailingStorage.onEnd(mockSpan);
+        processorWithFailingStorage.storePendingSpans(
+          'test-session',
+          mockSessionSpan
+        );
+
+        expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+        expect(diagLogger.getErrorLogs()[0]).to.include(
+          'Failed to store spans to storage'
+        );
+      });
+    });
+
+    describe('clearStoredSpans', () => {
+      beforeEach(() => {
+        // Pre-populate storage with spans for different sessions
+        inMemoryStorage.setItem(
+          'embrace_pending_session1_1000',
+          JSON.stringify([mockSpan])
+        );
+        inMemoryStorage.setItem(
+          'embrace_pending_session2_1000',
+          JSON.stringify([mockSpan])
+        );
+        inMemoryStorage.setItem('other_key', 'other_value');
+      });
+
+      it('should clear all spans for a specific session', () => {
+        expect(inMemoryStorage.length).to.equal(3);
+
+        processorWithStorage.clearStoredSpans('session1');
+
+        expect(inMemoryStorage.length).to.equal(2);
+        expect(
+          inMemoryStorage.getItem('embrace_pending_session1_1000')
+        ).to.equal(undefined);
+        expect(
+          inMemoryStorage.getItem('embrace_pending_session2_1000')
+        ).to.not.equal(null);
+        expect(inMemoryStorage.getItem('other_key')).to.not.equal(null);
+      });
+
+      it('should not affect other sessions or keys', () => {
+        processorWithStorage.clearStoredSpans('session1');
+
+        expect(
+          inMemoryStorage.getItem('embrace_pending_session2_1000')
+        ).to.equal(JSON.stringify([mockSpan]));
+        expect(inMemoryStorage.getItem('other_key')).to.equal('other_value');
+      });
+
+      it('should handle non-existent session gracefully', () => {
+        const initialLength = inMemoryStorage.length;
+
+        processorWithStorage.clearStoredSpans('non-existent-session');
+
+        expect(inMemoryStorage.length).to.equal(initialLength);
+      });
+
+      it('should handle storage errors gracefully', async () => {
+        const diagLogger = new InMemoryDiagLogger();
+        const failingStorage = new FailingStorage();
+
+        const processorWithFailingStorage =
+          new EmbraceSessionBatchedSpanProcessor({
+            exporter: memoryExporter,
+            limitManager,
+            storage: failingStorage,
+            diag: diagLogger,
+          });
+
+        // The clearStoredSpans method should not throw even with a failing storage
+        expect(() => {
+          processorWithFailingStorage.clearStoredSpans('session1');
+        }).to.not.throw();
+
+        await processorWithFailingStorage.shutdown();
+      });
+    });
+
+    describe('expired spans functionality', () => {
+      it('should export and remove expired spans', () => {
+        const pastTime = Date.now() - 2 * 60 * 60 * 1000; // 2 hours ago (expired)
+        inMemoryStorage.setItem(
+          `embrace_pending_expired_${pastTime}`,
+          JSON.stringify([mockSpan, mockNetworkRequestSpan])
+        );
+
+        // Trigger expired spans check manually
+        // TODO is there a better way to do this?
+        processorWithStorage['_checkAndExportExpiredSpans']();
+
+        expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
+        expect(
+          inMemoryStorage.getItem(`embrace_pending_expired_${pastTime}`)
+        ).to.equal(undefined);
+      });
+
+      it('should not export non-expired spans', async () => {
+        const recentTime = Date.now() - 30 * 60 * 1000; // 30 minutes ago (not expired)
+        inMemoryStorage.setItem(
+          `embrace_pending_recent_${recentTime}`,
+          JSON.stringify([mockSpan])
+        );
+
+        processorWithStorage['_checkAndExportExpiredSpans']();
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+        expect(
+          inMemoryStorage.getItem(`embrace_pending_recent_${recentTime}`)
+        ).to.not.equal(null);
+      });
+
+      it('should handle corrupted stored data', () => {
+        const diagLogger = new InMemoryDiagLogger();
+        const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
+          exporter: memoryExporter,
+          limitManager,
+          storage: inMemoryStorage,
+          diag: diagLogger,
+        });
+
+        const pastTime = Date.now() - 2 * 60 * 60 * 1000;
+        inMemoryStorage.setItem(
+          `embrace_pending_corrupted_${pastTime}`,
+          'invalid json'
+        );
+
+        processorWithDiag['_checkAndExportExpiredSpans']();
+
+        expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+        expect(diagLogger.getErrorLogs()[0]).to.include(
+          'Failed to check and export expired spans'
+        );
+        expect(
+          inMemoryStorage.getItem(`embrace_pending_corrupted_${pastTime}`)
+        ).to.equal('invalid json');
+      });
+
+      it('should handle malformed key timestamps', () => {
+        inMemoryStorage.setItem(
+          'embrace_pending_invalid_timestamp',
+          JSON.stringify([mockSpan])
+        );
+
+        processorWithStorage['_checkAndExportExpiredSpans']();
+
+        // Should not crash and should not export
+        expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+      });
+    });
+
+    describe('integration with custom storage', () => {
+      it('should work with custom storage implementation', () => {
+        const customStorage = new InMemoryStorage();
+        const processorWithCustomStorage =
+          new EmbraceSessionBatchedSpanProcessor({
+            exporter: memoryExporter,
+            limitManager,
+            storage: customStorage,
+          });
+
+        processorWithCustomStorage.onEnd(mockSpan);
+        processorWithCustomStorage.storePendingSpans(
+          'test-session',
+          mockSessionSpan
+        );
+
+        expect(customStorage.length).to.equal(1);
+
+        processorWithCustomStorage.clearStoredSpans('test-session');
+        expect(customStorage.length).to.equal(0);
+      });
+    });
+
+    describe('interval management', () => {
+      it('should clean up interval on shutdown', async () => {
+        const processor = new EmbraceSessionBatchedSpanProcessor({
+          exporter: memoryExporter,
+          limitManager,
+          storage: inMemoryStorage,
+        });
+
+        // Verify interval is created
+        expect(processor['_checkExpiredSpansInterval']).to.not.equal(undefined);
+
+        await processor.shutdown();
+
+        expect(processor['_checkExpiredSpansInterval']).to.equal(undefined);
+      });
+    });
   });
 });

@@ -118,15 +118,20 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
   public clearStoredSpans(sessionId: string): void {
     try {
+      const keysToRemove: string[] = [];
       for (let i = 0; i < this._storage.length; i++) {
         const key = this._storage.key(i);
         if (
           key &&
           key.startsWith(`${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_`)
         ) {
-          this._storage.removeItem(key);
+          keysToRemove.push(key);
         }
       }
+
+      keysToRemove.forEach(key => {
+        this._storage.removeItem(key);
+      });
     } catch (error) {
       this.diag.error('Failed to clear stored spans from storage:', error);
     }
@@ -177,6 +182,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _shutdown = () => {
     if (this._checkExpiredSpansInterval) {
       clearInterval(this._checkExpiredSpansInterval);
+      this._checkExpiredSpansInterval = undefined;
     }
     return this._exporter.shutdown();
   };
