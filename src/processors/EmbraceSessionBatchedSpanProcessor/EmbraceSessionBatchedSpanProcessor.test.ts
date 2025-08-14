@@ -412,7 +412,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         ).to.equal(undefined);
       });
 
-      it('should not export non-expired spans', async () => {
+      it('should not export non-expired spans', () => {
         const recentTime = Date.now() - 30 * 60 * 1000; // 30 minutes ago (not expired)
         inMemoryStorage.setItem(
           `embrace_pending_recent_${recentTime}`,
@@ -420,8 +420,6 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         );
 
         processorWithStorage['_checkAndExportExpiredSpans']();
-
-        await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
         expect(
