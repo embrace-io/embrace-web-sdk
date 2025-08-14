@@ -43,6 +43,9 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let limitManager: EmbraceLimitManager;
 
   beforeEach(() => {
+    // Clear localStorage to ensure clean test state
+    localStorage.clear();
+
     memoryExporter = setupTestTraceExporter();
 
     diag = new InMemoryDiagLogger();
@@ -60,6 +63,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       exporter: memoryExporter,
       limitManager,
     });
+  });
+
+  afterEach(async () => {
+    await processor.shutdown();
   });
 
   it('should not export non-session spans immediately', () => {
