@@ -10,7 +10,6 @@ import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 import type { LimitManagerInternal } from '../../managers/index.js';
-import type { Span } from '@opentelemetry/api';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
@@ -104,7 +103,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
   public override storePendingSpans(
     sessionId: string,
-    sessionSpan: Span
+    sessionSpan: ReadableSpan
   ): void {
     try {
       const key = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_${Date.now()}`;
