@@ -26,7 +26,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
     innerTextForElement,
   }: ClicksInstrumentationArgs = {}) {
     super({
-      instrumentationName: 'SpanSessionBrowserActivityInstrumentation',
+      instrumentationName: 'ClicksInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
