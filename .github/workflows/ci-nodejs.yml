@@ -81,7 +81,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -193,7 +193,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -298,7 +298,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -446,7 +446,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -576,7 +576,7 @@ jobs:
       matrix:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -627,7 +627,7 @@ jobs:
             echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -682,7 +682,7 @@ jobs:
             echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -729,7 +729,7 @@ jobs:
       matrix:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -770,7 +770,7 @@ jobs:
       matrix:
         node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
