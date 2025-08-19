@@ -7,11 +7,11 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -19,24 +19,24 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  DEFAULT_LIMITS,
+  EmbraceDynamicConfigManager,
   EmbraceLimitManager,
   EmbraceLogManager,
+  EmbraceSDKFeaturesManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-  EmbraceDynamicConfigManager,
-  DEFAULT_LIMITS,
-  EmbraceSDKFeaturesManager,
 } from '../managers/index.js';
 import {
+  EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
-  EmbraceLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
-  UserSpanProcessor,
-  UserLogRecordProcessor,
   LogRecordScrubProcessor,
   SpanScrubProcessor,
+  UserLogRecordProcessor,
+  UserSpanProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -161,10 +161,28 @@ export const initSDK = (
       ...attributeScrubbers,
     ];
 
+    let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
+    let embraceLogProcessor: BatchLogRecordProcessor | undefined;
+    if (sendingToEmbrace) {
+      embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
+        exporter: new EmbraceTraceExporter({
+          appID,
+          embraceDataURL,
+          userID: enduserPseudoID,
+        }),
+        limitManager,
+      });
+
+      embraceLogProcessor = new BatchLogRecordProcessor(
+        new EmbraceLogExporter({
+          appID,
+          embraceDataURL,
+          userID: enduserPseudoID,
+        })
+      );
+    }
+
     const tracerProvider = setupTraces({
-      sendingToEmbrace,
-      appID,
-      enduserPseudoID,
       resource: resourceWithWebSDKAttributes,
       spanSessionManager,
       userManager,
@@ -172,15 +190,11 @@ export const initSDK = (
       spanProcessors,
       propagator,
       contextManager,
-      limitManager,
       attributeScrubbers: finalAttributeScrubbers,
-      embraceDataURL,
+      embraceSpanProcessor,
     });
 
     const loggerProvider = setupLogs({
-      sendingToEmbrace,
-      appID,
-      enduserPseudoID,
       resource: resourceWithWebSDKAttributes,
       userManager,
       logExporters,
@@ -188,7 +202,7 @@ export const initSDK = (
       spanSessionManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
-      embraceDataURL,
+      embraceLogProcessor,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -197,7 +211,10 @@ export const initSDK = (
     registerInstrumentations({
       instrumentations: [
         ...instrumentations,
-        setupDefaultInstrumentations(defaultInstrumentationConfig),
+        setupDefaultInstrumentations(
+          defaultInstrumentationConfig,
+          embraceSpanProcessor
+        ),
       ],
     });
 
@@ -242,9 +259,6 @@ const setupSession = ({ limitManager }: SetupSessionArgs) => {
 };
 
 const setupTraces = ({
-  sendingToEmbrace,
-  appID,
-  enduserPseudoID,
   resource,
   spanSessionManager,
   userManager,
@@ -252,9 +266,8 @@ const setupTraces = ({
   spanProcessors = [],
   propagator = null,
   contextManager = null,
-  limitManager,
   attributeScrubbers,
-  embraceDataURL,
+  embraceSpanProcessor,
 }: SetupTracesArgs) => {
   const embraceTraceManager = new EmbraceTraceManager();
   trace.setGlobalTraceManager(embraceTraceManager);
@@ -271,17 +284,8 @@ const setupTraces = ({
     finalSpanProcessors.push(new BatchSpanProcessor(exporter));
   });
 
-  if (sendingToEmbrace && appID && enduserPseudoID) {
-    finalSpanProcessors.push(
-      new EmbraceSessionBatchedSpanProcessor({
-        exporter: new EmbraceTraceExporter({
-          appID,
-          embraceDataURL,
-          userID: enduserPseudoID,
-        }),
-        limitManager,
-      })
-    );
+  if (embraceSpanProcessor) {
+    finalSpanProcessors.push(embraceSpanProcessor);
   }
 
   const tracerProvider = new WebTracerProvider({
@@ -308,9 +312,6 @@ const setupTraces = ({
 };
 
 const setupLogs = ({
-  sendingToEmbrace,
-  appID,
-  enduserPseudoID,
   resource,
   userManager,
   logExporters,
@@ -318,7 +319,7 @@ const setupLogs = ({
   spanSessionManager,
   limitManager,
   attributeScrubbers,
-  embraceDataURL,
+  embraceLogProcessor,
 }: SetupLogsArgs) => {
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
@@ -344,16 +345,8 @@ const setupLogs = ({
     finalLogProcessors.push(new BatchLogRecordProcessor(exporter));
   });
 
-  if (sendingToEmbrace && appID && enduserPseudoID) {
-    finalLogProcessors.push(
-      new BatchLogRecordProcessor(
-        new EmbraceLogExporter({
-          appID,
-          embraceDataURL,
-          userID: enduserPseudoID,
-        })
-      )
-    );
+  if (embraceLogProcessor) {
+    finalLogProcessors.push(embraceLogProcessor);
   }
 
   for (const logProcessor of finalLogProcessors) {

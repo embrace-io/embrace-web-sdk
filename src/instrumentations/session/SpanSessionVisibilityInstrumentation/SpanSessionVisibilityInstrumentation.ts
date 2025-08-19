@@ -1,31 +1,38 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
 } from '../../../utils/index.js';
-import type { TimeoutRef } from '../../../utils/index.js';
+import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
+const MAX_PENDING_SPAN_COUNT = 5;
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private _currentVisibilityState: DocumentVisibilityState;
   private _checkVisibilityTimeout: TimeoutRef | null;
   private _interactionSinceLastVisibilityChange: boolean;
   private readonly _avoidEndingLimitedSessions: boolean;
+  private readonly _embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
   private readonly _onInteractionThrottled: () => void;
 
-  public constructor({
-    diag,
-    perf,
-    visibilityWaitTimeMs = 0,
-    limitedSessionMaxDurationMs = 0,
-    backgroundSessions = false,
-    visibilityDoc = window.document,
-  }: SpanSessionVisibilityInstrumentationArgs = {}) {
+  public constructor(
+    {
+      diag,
+      perf,
+      visibilityWaitTimeMs = 0,
+      limitedSessionMaxDurationMs = 0,
+      backgroundSessions = false,
+      visibilityDoc = window.document,
+    }: SpanSessionVisibilityInstrumentationArgs = {},
+    embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor
+  ) {
     super({
       instrumentationName: 'SpanSessionVisibilityInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -38,6 +45,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._checkVisibilityTimeout = null;
     this._interactionSinceLastVisibilityChange = false;
     this._avoidEndingLimitedSessions = limitedSessionMaxDurationMs > 0;
+    this._embraceSpanProcessor = embraceSpanProcessor;
 
     this._checkVisibilityChange = () => {
       if (visibilityWaitTimeMs <= 0) {
@@ -81,14 +89,20 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       );
 
       const currentSessionStartTime = this.sessionManager.getSessionStartTime();
+      const pendingSpansCount =
+        this._embraceSpanProcessor?.getPendingSpansCount() || 0;
 
-      // A limited session is one that is shorter than a specified duration threshold and contains no user interactions
+      // A limited session is one that is:
+      // - shorter than a specified duration threshold
+      // - contains no user interactions
+      // - the amount of pending spans is less than MAX_PENDING_SPAN_COUNT
       const isLimitedSession =
         this._avoidEndingLimitedSessions &&
         currentSessionStartTime !== null &&
         this.perf.millisSinceHRTime(currentSessionStartTime) <
           limitedSessionMaxDurationMs &&
-        !this._interactionSinceLastVisibilityChange;
+        !this._interactionSinceLastVisibilityChange &&
+        pendingSpansCount < MAX_PENDING_SPAN_COUNT;
 
       if (isLimitedSession) {
         this._diag.debug(
@@ -99,6 +113,19 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         this.sessionManager.addBreadcrumb(
           `Tab visibility changed to ${visibilityDoc.visibilityState}`
         );
+
+        const sessionId = this.sessionManager.getSessionId();
+        if (this._embraceSpanProcessor && sessionId) {
+          const sessionSpan =
+            this.sessionManager.endSessionSpanWithoutExporting('state_changed');
+          if (sessionSpan) {
+            // Cast the ended span to ReadableSpan since it has been ended and should be readable
+            this._embraceSpanProcessor.storePendingSpans(
+              sessionId,
+              sessionSpan as unknown as ReadableSpan
+            );
+          }
+        }
       } else {
         this.sessionManager.endSessionSpanInternal('state_changed');
 

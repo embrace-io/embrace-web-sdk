@@ -1,4 +1,4 @@
-import type { HrTime } from '@opentelemetry/api';
+import type { HrTime, Span } from '@opentelemetry/api';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -42,6 +42,12 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     this.getDelegate().endSessionSpanInternal(reason);
+  }
+
+  public endSessionSpanWithoutExporting(
+    reason: ReasonSessionEnded
+  ): Span | null {
+    return this.getDelegate().endSessionSpanWithoutExporting(reason);
   }
 
   public getSessionId(): string | null {

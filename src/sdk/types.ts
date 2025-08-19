@@ -7,6 +7,7 @@ import type {
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { Resource } from '@opentelemetry/resources';
 import type {
+  BatchLogRecordProcessor,
   LogRecordExporter,
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
@@ -249,9 +250,6 @@ export interface SetupSessionArgs {
 }
 
 export interface SetupTracesArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
   resource: Resource;
   spanSessionManager: SpanSessionManager;
   userManager: UserManager;
@@ -259,16 +257,12 @@ export interface SetupTracesArgs {
   spanProcessors: SpanProcessor[];
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
-  limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
-  embraceDataURL?: string;
   dynamicSDKConfig?: DynamicSDKConfig;
+  embraceSpanProcessor?: SpanProcessor;
 }
 
 export interface SetupLogsArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
   resource: Resource;
   userManager: UserManager;
   logExporters?: LogRecordExporter[];
@@ -276,7 +270,7 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
-  embraceDataURL?: string;
+  embraceLogProcessor?: BatchLogRecordProcessor;
 }
 
 type OptionalInstrumentations =

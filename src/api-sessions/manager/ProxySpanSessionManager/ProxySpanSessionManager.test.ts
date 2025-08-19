@@ -22,6 +22,7 @@ describe('ProxySpanSessionManager', () => {
       startSessionSpan: sinon.stub(),
       endSessionSpan: sinon.stub(),
       endSessionSpanInternal: sinon.stub(),
+      endSessionSpanWithoutExporting: sinon.stub(),
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
       removeProperty: sinon.stub(),

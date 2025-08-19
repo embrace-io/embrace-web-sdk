@@ -1,5 +1,9 @@
 import type { HrTime, Span } from '@opentelemetry/api';
-import type { PropertyOptions, SpanSessionManager } from '../index.js';
+import type {
+  PropertyOptions,
+  ReasonSessionEnded,
+  SpanSessionManager,
+} from '../index.js';
 
 export class NoOpSpanSessionManager implements SpanSessionManager {
   public addBreadcrumb(_name: string): void {
@@ -22,8 +26,14 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
     // do nothing.
   }
 
-  public endSessionSpanInternal(): void {
+  public endSessionSpanInternal(_reason: ReasonSessionEnded): void {
     // do nothing.
+  }
+
+  public endSessionSpanWithoutExporting(
+    _reason: ReasonSessionEnded
+  ): Span | null {
+    return null;
   }
 
   public getSessionId = () => null;

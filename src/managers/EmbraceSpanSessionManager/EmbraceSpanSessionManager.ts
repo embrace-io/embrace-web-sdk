@@ -1,22 +1,22 @@
+import type { Attributes, DiagLogger, HrTime, Span } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
-import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
-  ReasonSessionEnded,
   PropertyOptions,
+  ReasonSessionEnded,
   StartSessionOptions,
 } from '../../api-sessions/index.js';
 import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
+  KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
-  KEY_EMB_SDK_STARTUP_DURATION,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
@@ -198,14 +198,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    this._sessionSpan.setAttributes({
-      ...this._getPermanentAttributes(),
-      [KEY_EMB_SESSION_REASON_ENDED]: reason,
-      ...this._activeSessionCounts,
-      ...this._limitManager.getDiagnosticCounts(),
-      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
-    });
-
+    this._sessionSpan.setAttributes(this._endSessionSpanAttributes(reason));
     this._sessionSpan.end();
     this._sessionSpan = null;
     this._activeSessionStartTime = null;
@@ -223,6 +216,46 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     // For the limit manager to add a session ended listener it would need a reference to this
     // session manager which would create a circular dependency
     this._limitManager.reset();
+  }
+
+  private _endSessionSpanAttributes(reason: ReasonSessionEnded): Attributes {
+    return {
+      ...this._getPermanentAttributes(),
+      [KEY_EMB_SESSION_REASON_ENDED]: reason,
+      ...this._activeSessionCounts,
+      ...this._limitManager.getDiagnosticCounts(),
+      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
+    };
+  }
+
+  // endSessionSpanWithoutExporting creates a copy of the current session span with the same attributes
+  // that endSessionSpanInternal would add, but does not affect the original session span which remains active.
+  public endSessionSpanWithoutExporting(
+    reason: ReasonSessionEnded
+  ): Span | null {
+    this._sessionSpan?.end();
+    if (!this._sessionSpan || !this._activeSessionStartTime) {
+      this._diag.debug(
+        'trying to end a session, but there is no session in progress. This is a no-op.'
+      );
+      return null;
+    }
+
+    const tracer = trace.getTracer('embrace-web-sdk-sessions');
+
+    // Create a new span with the same name and start time as the original session span
+    const spanCopy = new EmbraceExtendedSpan(
+      tracer.startSpan('emb-session', {
+        startTime: this._activeSessionStartTime,
+        attributes: {
+          // Copy all current attributes from the original session span, plus the ending attributes
+          ...this._sessionSpan.attributes,
+          ...this._endSessionSpanAttributes(reason),
+        },
+      })
+    );
+    spanCopy.endWithoutExporting();
+    return spanCopy;
   }
 
   public getSessionId(): string | null {
