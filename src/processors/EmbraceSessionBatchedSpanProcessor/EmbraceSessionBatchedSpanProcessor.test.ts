@@ -430,7 +430,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         ).to.not.equal(null);
       });
 
-      it('should handle corrupted stored data', () => {
+      it('should handle corrupted stored data', async () => {
         const diagLogger = new InMemoryDiagLogger();
         const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
           exporter: memoryExporter,
