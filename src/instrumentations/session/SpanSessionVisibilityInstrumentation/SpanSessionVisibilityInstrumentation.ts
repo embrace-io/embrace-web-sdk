@@ -7,7 +7,6 @@ import {
   throttle,
 } from '../../../utils/index.js';
 import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 const MAX_PENDING_SPAN_COUNT = 5;
@@ -119,10 +118,9 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
           const sessionSpan =
             this.sessionManager.endSessionSpanWithoutExporting('state_changed');
           if (sessionSpan) {
-            // Cast the ended span to ReadableSpan since it has been ended and should be readable
             this._embraceSpanProcessor.storePendingSpans(
               sessionId,
-              sessionSpan as unknown as ReadableSpan
+              sessionSpan
             );
           }
         }

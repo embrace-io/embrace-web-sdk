@@ -1,4 +1,4 @@
-import type { Attributes, DiagLogger, HrTime, Span } from '@opentelemetry/api';
+import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
@@ -31,6 +31,7 @@ import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -232,8 +233,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   // that endSessionSpanInternal would add, but does not affect the original session span which remains active.
   public endSessionSpanWithoutExporting(
     reason: ReasonSessionEnded
-  ): Span | null {
-    this._sessionSpan?.end();
+  ): ReadableSpan | null {
     if (!this._sessionSpan || !this._activeSessionStartTime) {
       this._diag.debug(
         'trying to end a session, but there is no session in progress. This is a no-op.'
@@ -255,7 +255,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       })
     );
     spanCopy.endWithoutExporting();
-    return spanCopy;
+    return spanCopy as unknown as ReadableSpan;
   }
 
   public getSessionId(): string | null {

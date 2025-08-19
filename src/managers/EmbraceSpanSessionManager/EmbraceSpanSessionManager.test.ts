@@ -677,60 +677,6 @@ describe('EmbraceSpanSessionManager', () => {
   });
 
   describe('endSessionSpanWithoutExporting', () => {
-    it('should create a copy of the session span without affecting the original', () => {
-      manager.startSessionSpan();
-      manager.addProperty('test-key', 'test-value');
-
-      // Verify original session is active
-      expect(manager.getSessionId()).to.not.equal(null);
-      expect(manager.getSessionSpan()).to.not.equal(null);
-
-      // Create a copy
-      const spanCopy = manager.endSessionSpanWithoutExporting('manual');
-
-      // Verify copy was created
-      expect(spanCopy).to.not.equal(null);
-
-      // Verify original session is still active and unchanged
-      expect(manager.getSessionId()).to.not.equal(null);
-      expect(manager.getSessionSpan()).to.not.equal(null);
-
-      // End the original session
-      manager.endSessionSpan();
-
-      const finishedSpans = memoryExporter.getFinishedSpans();
-      expect(finishedSpans).to.have.lengthOf(2); // Original session + copy
-
-      // Find the copy span and original span
-      const copySpan = finishedSpans.find(
-        span =>
-          span.attributes[KEY_EMB_SESSION_REASON_ENDED] === 'manual' &&
-          span.endTime !== span.startTime // Copy should be ended immediately
-      );
-      const originalSpan = finishedSpans.find(span => span !== copySpan);
-
-      expect(copySpan).to.not.equal(undefined);
-      expect(originalSpan).to.not.equal(undefined);
-
-      // Both spans should have the same attributes from when the copy was made
-      expect(copySpan?.attributes).to.have.property(
-        'emb.properties.test-key',
-        'test-value'
-      );
-      expect(originalSpan?.attributes).to.have.property(
-        'emb.properties.test-key',
-        'test-value'
-      );
-      expect(copySpan?.attributes).to.have.property(
-        KEY_EMB_SESSION_REASON_ENDED,
-        'manual'
-      );
-      expect(originalSpan?.attributes).to.have.property(
-        KEY_EMB_SESSION_REASON_ENDED,
-        'manual'
-      );
-    });
-
     it('should return null when no session is active', () => {
       // No session started
       const spanCopy = manager.endSessionSpanWithoutExporting('manual');
@@ -748,40 +694,49 @@ describe('EmbraceSpanSessionManager', () => {
       manager.recordSDKStartupDuration(250);
 
       // Create copy before ending session
-      const spanCopy = manager.endSessionSpanWithoutExporting('timer');
-      expect(spanCopy).to.not.equal(null);
+      const sessionSpanNotExported =
+        manager.endSessionSpanWithoutExporting('manual');
+      expect(sessionSpanNotExported).to.not.equal(null);
 
-      // End the original session with same reason
+      // Session manager still has the active session
+      expect(manager.getSessionId()).to.not.equal(null);
+      expect(manager.getSessionSpan()).to.not.equal(null);
+
+      // End the original session with different reason
       manager.endSessionSpanInternal('timer');
 
-      const finishedSpans = memoryExporter.getFinishedSpans();
-      expect(finishedSpans).to.have.lengthOf(2);
+      // Session manager now has no active session
+      expect(manager.getSessionId()).to.equal(null);
+      expect(manager.getSessionSpan()).to.equal(null);
 
-      const copySpan = finishedSpans[0]; // Copy was created first
-      const originalSpan = finishedSpans[1];
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(1);
+
+      const sessionSpan = finishedSpans[0];
+      expect(sessionSpan).to.not.equal(undefined);
 
       // Both should have the same key attributes
-      expect(copySpan.attributes).to.have.property(
+      expect(sessionSpanNotExported?.attributes).to.have.property(
+        KEY_EMB_SESSION_REASON_ENDED,
+        'manual'
+      );
+      expect(sessionSpan.attributes).to.have.property(
         KEY_EMB_SESSION_REASON_ENDED,
         'timer'
       );
-      expect(originalSpan.attributes).to.have.property(
-        KEY_EMB_SESSION_REASON_ENDED,
-        'timer'
-      );
-      expect(copySpan.attributes).to.have.property(
+      expect(sessionSpanNotExported?.attributes).to.have.property(
         'emb.properties.session-prop',
         'session-value'
       );
-      expect(originalSpan.attributes).to.have.property(
+      expect(sessionSpan.attributes).to.have.property(
         'emb.properties.session-prop',
         'session-value'
       );
-      expect(copySpan.attributes).to.have.property(
+      expect(sessionSpanNotExported?.attributes).to.have.property(
         'emb.sdk_startup_duration',
         250
       );
-      expect(originalSpan.attributes).to.have.property(
+      expect(sessionSpan.attributes).to.have.property(
         'emb.sdk_startup_duration',
         250
       );
