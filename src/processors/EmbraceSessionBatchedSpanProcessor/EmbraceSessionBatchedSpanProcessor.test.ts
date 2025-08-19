@@ -1,6 +1,7 @@
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import {
   mockNetworkRequestSpan,
   mockSessionSpan,
@@ -43,11 +44,12 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let processor: EmbraceSessionBatchedSpanProcessor;
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
+  let clock: sinon.SinonFakeTimers;
 
   beforeEach(() => {
     // Clear localStorage to ensure clean test state
     localStorage.clear();
-
+    clock = sinon.useFakeTimers();
     memoryExporter = setupTestTraceExporter();
 
     diag = new InMemoryDiagLogger();
@@ -68,6 +70,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   });
 
   afterEach(async () => {
+    clock.restore();
     await processor.shutdown();
   });
 
@@ -396,15 +399,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
     describe('expired spans functionality', () => {
       it('should export and remove expired spans', () => {
-        const pastTime = Date.now() - 2 * 60 * 60 * 1000; // 2 hours ago (expired)
+        const pastTime = clock.now - 2 * 60 * 60 * 1000; // 2 hours ago (expired)
         inMemoryStorage.setItem(
           `embrace_pending_expired_${pastTime}`,
           JSON.stringify([mockSpan, mockNetworkRequestSpan])
         );
 
-        // Trigger expired spans check manually
-        // TODO is there a better way to do this?
-        processorWithStorage['_checkAndExportExpiredSpans']();
+        // Advance time to trigger the interval (which runs every 60 seconds)
+        clock.tick(60 * 1000);
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
         expect(
@@ -413,13 +415,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       });
 
       it('should not export non-expired spans', () => {
-        const recentTime = Date.now() - 30 * 60 * 1000; // 30 minutes ago (not expired)
+        const recentTime = clock.now - 30 * 60 * 1000; // 30 minutes ago (not expired)
         inMemoryStorage.setItem(
           `embrace_pending_recent_${recentTime}`,
           JSON.stringify([mockSpan])
         );
 
-        processorWithStorage['_checkAndExportExpiredSpans']();
+        // Advance time to trigger the interval (which runs every 60 seconds)
+        clock.tick(60 * 1000);
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
         expect(
@@ -436,13 +439,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           diag: diagLogger,
         });
 
-        const pastTime = Date.now() - 2 * 60 * 60 * 1000;
+        const pastTime = clock.now - 2 * 60 * 60 * 1000;
         inMemoryStorage.setItem(
           `embrace_pending_corrupted_${pastTime}`,
           'invalid json'
         );
 
-        processorWithDiag['_checkAndExportExpiredSpans']();
+        // Advance time to trigger the interval (which runs every 60 seconds)
+        clock.tick(60 * 1000);
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
         expect(diagLogger.getErrorLogs()[0]).to.include(
@@ -451,6 +455,8 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(
           inMemoryStorage.getItem(`embrace_pending_corrupted_${pastTime}`)
         ).to.equal('invalid json');
+
+        await processorWithDiag.shutdown();
       });
 
       it('should handle malformed key timestamps', () => {
@@ -459,7 +465,8 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           JSON.stringify([mockSpan])
         );
 
-        processorWithStorage['_checkAndExportExpiredSpans']();
+        // Advance time to trigger the interval (which runs every 60 seconds)
+        clock.tick(60 * 1000);
 
         // Should not crash and should not export
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
