@@ -182,7 +182,6 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _shutdown = () => {
     if (this._checkExpiredSpansInterval) {
       clearInterval(this._checkExpiredSpansInterval);
-      this._checkExpiredSpansInterval = undefined;
     }
     return this._exporter.shutdown();
   };

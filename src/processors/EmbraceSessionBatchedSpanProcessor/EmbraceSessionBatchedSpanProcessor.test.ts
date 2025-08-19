@@ -495,22 +495,5 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(customStorage.length).to.equal(0);
       });
     });
-
-    describe('interval management', () => {
-      it('should clean up interval on shutdown', async () => {
-        const processor = new EmbraceSessionBatchedSpanProcessor({
-          exporter: memoryExporter,
-          limitManager,
-          storage: inMemoryStorage,
-        });
-
-        // Verify interval is created
-        expect(processor['_checkExpiredSpansInterval']).to.not.equal(undefined);
-
-        await processor.shutdown();
-
-        expect(processor['_checkExpiredSpansInterval']).to.equal(undefined);
-      });
-    });
   });
 });
