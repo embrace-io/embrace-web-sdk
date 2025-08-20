@@ -30,7 +30,7 @@ describe('withErrorFallback', () => {
     const consoleErrorStub = sinon.stub(console, 'error');
     const wrappedFn = withErrorFallback(mockFn, 'default', false);
     wrappedFn();
-    void expect(consoleErrorStub).to.have.been.calledOnce;
+    void expect(consoleErrorStub.calledOnce).to.be.true;
     consoleErrorStub.restore();
   });
 
@@ -41,7 +41,7 @@ describe('withErrorFallback', () => {
     const consoleErrorStub = sinon.stub(console, 'error');
     const wrappedFn = withErrorFallback(mockFn, 'default', true);
     wrappedFn();
-    void expect(consoleErrorStub).to.not.have.been.called;
+    void expect(consoleErrorStub.called).to.be.false;
     consoleErrorStub.restore();
   });
 
