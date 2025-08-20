@@ -200,7 +200,8 @@ describe('initSDK', () => {
       },
     });
     void expect(result).not.to.be.false;
-    void expect(testWebVitalListeners.clsStub.calledOnce).to.be.true;
+    // Called twice, one for the actual reports and one for the urlAttribution
+    void expect(testWebVitalListeners.clsStub.calledTwice).to.be.true;
     const { args } = testWebVitalListeners.clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -1294,7 +1295,8 @@ describe('initSDK', () => {
         },
       });
       void expect(result2).not.to.be.false;
-      void expect(testWebVitalListeners.clsStub.calledOnce).to.be.true;
+      // Called twice, one for the actual reports and one for the urlAttribution
+      void expect(testWebVitalListeners.clsStub.calledTwice).to.be.true;
 
       void expect(
         consoleWarnStub.calledWith(

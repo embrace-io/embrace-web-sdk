@@ -120,7 +120,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     trackingLevel = 'core',
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument = window.document,
-    urlAttribution = false,
+    urlAttribution = true,
   }: WebVitalsInstrumentationArgs = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
