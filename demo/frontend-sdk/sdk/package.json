@@ -1,0 +1,19 @@
+{
+  "name": "sdk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && cp dist/sdk.js ../host/public/sdk.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "vite": "7.1.2"
+  },
+  "dependencies": {
+    "@opentelemetry/sdk-logs": "0.203.0",
+    "@opentelemetry/sdk-trace-web": "2.0.1"
+  }
+}
