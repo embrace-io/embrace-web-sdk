@@ -1,10 +1,11 @@
-import {
-  diag,
-  trace
-  
-  
+import { diag, trace } from '@opentelemetry/api';
+import type {
+  Tracer,
+  TracerProvider,
+  Attributes,
+  DiagLogger,
+  HrTime,
 } from '@opentelemetry/api';
-import type {Tracer, TracerProvider, Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   ReasonSessionEnded,
