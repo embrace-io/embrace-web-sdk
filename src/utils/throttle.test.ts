@@ -23,14 +23,14 @@ describe('throttle', () => {
   it('should call the function immediately on first call', () => {
     const throttledFn = throttle(mockFn, 1000);
     throttledFn();
-    void expect(mockFn).to.have.been.calledOnce;
+    void expect(mockFn.calledOnce).to.be.true;
   });
 
   it('should not call the function again within the timeout period', () => {
     const throttledFn = throttle(mockFn, 1000);
     throttledFn();
     throttledFn();
-    void expect(mockFn).to.have.been.calledOnce;
+    void expect(mockFn.calledOnce).to.be.true;
   });
 
   it('should call the function again after timeout period', () => {
@@ -38,13 +38,13 @@ describe('throttle', () => {
     throttledFn();
     clock.tick(1000);
     throttledFn();
-    void expect(mockFn).to.have.been.calledTwice;
+    void expect(mockFn.calledTwice).to.be.true;
   });
 
   it('should pass arguments to the wrapped function', () => {
     const throttledFn = throttle(mockFn, 1000);
     throttledFn('test', 123);
-    expect(mockFn).to.have.been.calledWith('test', 123);
+    void expect(mockFn.calledWith('test', 123)).to.be.true;
   });
 
   it('should use default timeout of 1000ms', () => {
@@ -52,9 +52,9 @@ describe('throttle', () => {
     throttledFn();
     clock.tick(999);
     throttledFn();
-    void expect(mockFn).to.have.been.calledOnce;
+    void expect(mockFn.calledOnce).to.be.true;
     clock.tick(1);
     throttledFn();
-    void expect(mockFn).to.have.been.calledTwice;
+    void expect(mockFn.calledTwice).to.be.true;
   });
 });
