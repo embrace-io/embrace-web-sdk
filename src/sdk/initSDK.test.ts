@@ -1,5 +1,5 @@
 import { diag, DiagLogLevel, trace, context } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { Resource } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
@@ -46,7 +46,7 @@ import {
 } from '../managers/index.js';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
 import { registry } from './registry.js';
-import type { DynamicConfigManager } from './types.js';
+import type { DynamicConfigManager, SDKControl } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -1303,5 +1303,158 @@ describe('initSDK', () => {
         )
       ).to.be.false;
     });
+  });
+});
+
+describe('isolated instances', () => {
+  let spanExporter: InMemorySpanExporter;
+  let logExporter: InMemoryLogRecordExporter;
+
+  before(() => {
+    spanExporter = new InMemorySpanExporter();
+    logExporter = new InMemoryLogRecordExporter();
+  });
+
+  afterEach(() => {
+    spanExporter.reset();
+    logExporter.reset();
+  });
+
+  it('should allow multiple isolated instances', () => {
+    const firstSDKInstance = initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+      registerGlobally: false,
+    });
+
+    const secondSDKInstance = initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+      registerGlobally: false,
+    });
+
+    void expect(firstSDKInstance).not.to.be.false;
+    void expect(secondSDKInstance).not.to.be.false;
+    void expect(firstSDKInstance).to.not.equal(secondSDKInstance);
+  });
+
+  it('should not register any provider globally', async () => {
+    const result = initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+      registerGlobally: false,
+    });
+
+    void expect(result).not.to.be.false;
+
+    const tracer = trace.getTracer('test-tracer');
+    const span = tracer.startSpan('test-span');
+    span.end();
+
+    if (result) {
+      await result.flush();
+    }
+
+    expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+    const logger = logs.getLogger('test-logger');
+    logger.emit({
+      body: 'test log',
+      severityNumber: SeverityNumber.INFO,
+    });
+
+    if (result) {
+      await result.flush();
+    }
+
+    expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
+
+    session.startSessionSpan();
+    session.endSessionSpan();
+
+    if (result) {
+      await result.flush();
+    }
+
+    expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
+  });
+
+  it('should allow each instance to emit its own telemetry from the provided managers', async () => {
+    const firstSDKInstrumentation = new FakeInstrumentation();
+    const firstSDKInstance = initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+      instrumentations: [firstSDKInstrumentation],
+      registerGlobally: false,
+      // Disable as it was creating too many spans making it harder to test
+      defaultInstrumentationConfig: {
+        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+      },
+    });
+
+    const secondSDKInstrumentation = new FakeInstrumentation();
+    const secondSpanExporter = new InMemorySpanExporter();
+    const secondLogExporter = new InMemoryLogRecordExporter();
+    const secondSDKInstance = initSDK({
+      logExporters: [secondLogExporter],
+      spanExporters: [secondSpanExporter],
+      instrumentations: [secondSDKInstrumentation],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+      },
+    });
+
+    void expect(firstSDKInstance).not.to.be.false;
+    void expect(secondSDKInstance).not.to.be.false;
+
+    if (!firstSDKInstance || !secondSDKInstance) {
+      throw new Error('SDK instances should not be false');
+    }
+
+    const checkInstanceTelemetry = async (
+      sdkInstance: SDKControl,
+      logExporter: InMemoryLogRecordExporter,
+      spanExporter: InMemorySpanExporter,
+      instrumentation: FakeInstrumentation
+    ) => {
+      expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
+      expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+      sdkInstance.log.message('some log', 'info');
+      sdkInstance.trace.startSpan('some span').end();
+      sdkInstance.session.startSessionSpan();
+      sdkInstance.session.endSessionSpan();
+      instrumentation.emit();
+
+      await sdkInstance.flush();
+
+      const finishedLogRecords = logExporter.getFinishedLogRecords();
+
+      expect(finishedLogRecords).to.have.lengthOf(2);
+      expect(finishedLogRecords[0].body).to.equal('some log');
+      expect(finishedLogRecords[1].body).to.equal('my log');
+
+      const finishedSpans = spanExporter.getFinishedSpans();
+
+      expect(finishedSpans).to.have.lengthOf(3);
+      expect(finishedSpans[0].name).to.equal('some span');
+      expect(finishedSpans[1].name).to.equal('emb-session');
+      expect(finishedSpans[2].name).to.equal('my span');
+    };
+
+    await checkInstanceTelemetry(
+      firstSDKInstance,
+      logExporter,
+      spanExporter,
+      firstSDKInstrumentation
+    );
+
+    await checkInstanceTelemetry(
+      secondSDKInstance,
+      secondLogExporter,
+      secondSpanExporter,
+      secondSDKInstrumentation
+    );
   });
 });

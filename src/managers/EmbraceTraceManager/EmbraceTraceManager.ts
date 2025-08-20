@@ -1,21 +1,30 @@
-import type { Context } from '@opentelemetry/api';
+import type { Context, Tracer } from '@opentelemetry/api';
 import { context, trace } from '@opentelemetry/api';
 import type {
   ExtendedSpan,
   ExtendedSpanOptions,
   TraceManager,
+  TraceManagerArgs,
 } from '../../api-traces/index.js';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.js';
 
 export class EmbraceTraceManager implements TraceManager {
+  private readonly _tracer: Tracer;
+
+  public constructor({
+    tracerProvider: globalTraceProviderOverride,
+  }: TraceManagerArgs = {}) {
+    const tracerProvider = globalTraceProviderOverride ?? trace;
+
+    this._tracer = tracerProvider.getTracer('embrace-web-sdk-traces');
+  }
+
   public startSpan(
     name: string,
     options: ExtendedSpanOptions = {},
     ctx?: Context
   ): ExtendedSpan {
-    const tracer = trace.getTracer('embrace-web-sdk-traces');
-
     options.attributes = options.attributes ? options.attributes : {};
     options.attributes[KEY_EMB_TYPE] = EMB_TYPES.Perf;
 
@@ -24,7 +33,7 @@ export class EmbraceTraceManager implements TraceManager {
       : ctx;
 
     return new EmbraceExtendedSpan(
-      tracer.startSpan(name, options, activeContext)
+      this._tracer.startSpan(name, options, activeContext)
     );
   }
 

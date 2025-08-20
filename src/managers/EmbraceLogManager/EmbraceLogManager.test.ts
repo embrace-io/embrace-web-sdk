@@ -1,5 +1,9 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import {
+  InMemoryLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
@@ -994,6 +998,28 @@ describe('EmbraceLogManager', () => {
         KEY_EMB_JS_EXCEPTION_STACKTRACE,
         'i am stacktrace passed in by the user'
       );
+    });
+
+    it('should allow overriding the global logger provider', () => {
+      // Global logger provider is set when we call setupTestLogExporter on `before`
+      const secondMemoryExporter = new InMemoryLogRecordExporter();
+      const loggerProvider = new LoggerProvider();
+
+      loggerProvider.addLogRecordProcessor(
+        new SimpleLogRecordProcessor(secondMemoryExporter)
+      );
+
+      const manager = new EmbraceLogManager({
+        perf,
+        spanSessionManager,
+        limitManager,
+        loggerProvider,
+      });
+
+      manager.message('Test message', 'info');
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(0);
+      expect(secondMemoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
     });
   });
 });
