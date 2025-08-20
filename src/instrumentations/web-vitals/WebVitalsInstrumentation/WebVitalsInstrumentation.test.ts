@@ -80,7 +80,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub.calledOnce).to.be.true;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args } = clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -128,7 +128,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub.calledOnce).to.be.true;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args } = clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -245,7 +245,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(lcpStub.calledOnce).to.be.true;
+    void expect(lcpStub.calledTwice).to.be.true;
     const { args } = lcpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -302,7 +302,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(inpStub.calledOnce).to.be.true;
+    void expect(inpStub.calledTwice).to.be.true;
     const { args } = inpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -436,11 +436,11 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub.calledOnce).to.be.true;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args: clsArgs } = clsStub.callsArg(0);
     const clsReportFunc = clsArgs[0][0] as WebVitalOnReport;
 
-    void expect(lcpStub.calledOnce).to.be.true;
+    void expect(lcpStub.calledTwice).to.be.true;
     const { args: lcpArgs } = lcpStub.callsArg(0);
     const lcpReportFunc = lcpArgs[0][0] as WebVitalOnReport;
 
