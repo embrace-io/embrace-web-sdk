@@ -189,6 +189,11 @@ type BaseSDKInitConfig = {
    */
   dynamicSDKConfig?: Partial<DynamicSDKConfig>;
 
+  /**
+   * registerGlobally is used to specify whether the SDK should register itself globally. This is useful when
+   * the SDK is used in multiple applications on the same page, and you want to avoid telemetry from one application
+   * to interfere with another.
+   */
   registerGlobally?: boolean;
 };
 
