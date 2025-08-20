@@ -5,4 +5,5 @@ import type { LimitManagerInternal } from '../../managers/index.js';
 export type EmbraceSessionBatchedSpanProcessorArgs = {
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
+  storage?: Storage;
 } & Pick<EmbraceProcessorArgs, 'diag'>;
