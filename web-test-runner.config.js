@@ -33,7 +33,12 @@ export default {
       },
     }),
   ],
-  browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
-  filterBrowserLogs: log =>
-    removeViteLogging(log) && removeGlobalExceptionTestError(log),
+  browsers: [
+    playwrightLauncher({
+      product: 'chromium',
+      concurrency: 1,
+      launchOptions: { headless: false },
+    }),
+  ],
+  browserLogs: true,
 };

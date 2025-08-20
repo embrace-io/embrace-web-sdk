@@ -38,7 +38,7 @@ describe('ProxyLogManager', () => {
         key1: 'value1',
       },
     });
-    void expect(mockDelegate.message).to.have.been.calledOnce;
+    void expect(mockDelegate.message.calledOnce).to.be.true;
   });
 
   it('should delegate logException to the delegate', () => {
@@ -50,6 +50,6 @@ describe('ProxyLogManager', () => {
       },
       timestamp: Date.now(),
     });
-    void expect(mockDelegate.logException).to.have.been.calledOnce;
+    void expect(mockDelegate.logException.calledOnce).to.be.true;
   });
 });

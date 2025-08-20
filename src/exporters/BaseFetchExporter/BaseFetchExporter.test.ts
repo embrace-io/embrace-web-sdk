@@ -30,13 +30,13 @@ describe('BaseFetchExporter', () => {
 
   it('should call delegate.forceFlush and return a promise', async () => {
     await exporter.forceFlush();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    void expect(delegate.forceFlush).to.have.been.calledOnce;
+     
+    void expect(delegate.forceFlush.calledOnce).to.be.true;
   });
 
   it('should call delegate.shutdown and return a promise', async () => {
     await exporter.shutdown();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    void expect(delegate.shutdown).to.have.been.calledOnce;
+     
+    void expect(delegate.shutdown.calledOnce).to.be.true;
   });
 });
