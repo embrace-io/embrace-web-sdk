@@ -52,7 +52,10 @@ export abstract class EmbraceProcessor implements SpanProcessor {
    * @param sessionId - The session ID to associate with the stored spans.
    * @param sessionSpan - The session span to be included in the stored spans.
    */
-  public abstract storePendingSpans(sessionId: string, sessionSpan: Span): void;
+  public abstract storePendingSpans(
+    sessionId: string,
+    sessionSpan: ReadableSpan
+  ): void;
 
   /**
    * Removes all stored spans for a specific session from storage.
