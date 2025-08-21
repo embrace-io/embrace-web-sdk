@@ -125,6 +125,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
           }
         }
       } else {
+        // If there was a session in progress that we didn't end because we considered it limited, then drop the stored spans in storage:
+        const sessionId = this.sessionManager.getSessionId();
+        if (this._embraceSpanProcessor && sessionId) {
+          this._embraceSpanProcessor.clearStoredSpans(sessionId);
+        }
+
         this.sessionManager.endSessionSpanInternal('state_changed');
 
         if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {

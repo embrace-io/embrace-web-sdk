@@ -1,5 +1,4 @@
 import type { HrTime, Span } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 export interface SpanSessionManager {
   getSessionId: () => string | null;
@@ -21,9 +20,7 @@ export interface SpanSessionManager {
   // todo move this to another class SpanSessionManagerInternal that is only accessible from within our code, but expose the external one without the method to the users.
   endSessionSpanInternal: (reason: ReasonSessionEnded) => void;
 
-  endSessionSpanWithoutExporting: (
-    reason: ReasonSessionEnded
-  ) => ReadableSpan | null;
+  endSessionSpanWithoutExporting: (reason: ReasonSessionEnded) => Span | null;
 
   addSessionStartedListener: (listener: () => void) => () => void;
 

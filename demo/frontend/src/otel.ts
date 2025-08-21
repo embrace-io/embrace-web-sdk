@@ -11,6 +11,11 @@ const setupOTel = () => {
     appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
+    defaultInstrumentationConfig: {
+      'session-visibility': {
+        limitedSessionMaxDurationMs: 3000,
+      },
+    },
     instrumentations: [createReactRouterNavigationInstrumentation()],
   });
 

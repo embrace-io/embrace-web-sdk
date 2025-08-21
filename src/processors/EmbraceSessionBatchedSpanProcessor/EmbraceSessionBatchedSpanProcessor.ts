@@ -10,6 +10,7 @@ import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 import type { LimitManagerInternal } from '../../managers/index.js';
+import type { Span } from '@opentelemetry/api';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
@@ -103,13 +104,19 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
   public override storePendingSpans(
     sessionId: string,
-    sessionSpan: ReadableSpan
+    sessionSpan: Span
   ): void {
     try {
+      // If this session was already stored, clear it first:
+      this.clearStoredSpans(sessionId);
+
       const key = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_${Date.now()}`;
       this._storage.setItem(
         key,
-        JSON.stringify([sessionSpan, ...this._pendingSpans])
+        JSON.stringify([sessionSpan, ...this._pendingSpans], (key, value) =>
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          key.startsWith('_') ? undefined : value
+        )
       );
     } catch (error) {
       this.diag.error('Failed to store spans to storage:', error);

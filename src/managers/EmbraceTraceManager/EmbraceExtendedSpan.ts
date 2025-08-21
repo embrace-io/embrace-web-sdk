@@ -67,8 +67,8 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   }
 
   // endWithoutExporting does everything that _span.end() would do,
-  // except for calling onEnd that would export it.
-  public endWithoutExporting(endTime?: TimeInput): void {
+  // except for calling onEnd that would export it, and returns the ExtendedSpan
+  public endWithoutExporting(endTime?: TimeInput): ExtendedSpan {
     const spanInternals = this._span as unknown as SpanInternals;
     spanInternals._ended = true;
     spanInternals.endTime = endTime
@@ -78,6 +78,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
       spanInternals.startTime,
       spanInternals.endTime
     );
+    return this._span;
   }
 
   public isRecording(): boolean {

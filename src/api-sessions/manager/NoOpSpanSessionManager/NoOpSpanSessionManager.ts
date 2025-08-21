@@ -4,7 +4,6 @@ import type {
   ReasonSessionEnded,
   SpanSessionManager,
 } from '../index.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 export class NoOpSpanSessionManager implements SpanSessionManager {
   public addBreadcrumb(_name: string): void {
@@ -33,7 +32,7 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
 
   public endSessionSpanWithoutExporting(
     _reason: ReasonSessionEnded
-  ): ReadableSpan | null {
+  ): Span | null {
     return null;
   }
 
