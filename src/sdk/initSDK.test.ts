@@ -200,7 +200,8 @@ describe('initSDK', () => {
       },
     });
     void expect(result).not.to.be.false;
-    void expect(testWebVitalListeners.clsStub).to.have.been.calledOnce;
+    // Called twice, one for the actual reports and one for the urlAttribution
+    void expect(testWebVitalListeners.clsStub.calledTwice).to.be.true;
     const { args } = testWebVitalListeners.clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -241,7 +242,7 @@ describe('initSDK', () => {
       },
     });
     void expect(result).not.to.be.false;
-    void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+    void expect(testWebVitalListeners.clsStub.called).to.be.false;
   });
 
   it('should register all global managers', async () => {
@@ -309,9 +310,11 @@ describe('initSDK', () => {
   });
 
   it('should allow setting dynamic config through the SDK', () => {
+    const refreshRemoteConfigStub = sinon.stub();
+    const setConfigStub = sinon.stub();
     const myCustomConfigManager: DynamicConfigManager = {
-      refreshRemoteConfig: sinon.stub(),
-      setConfig: sinon.stub(),
+      refreshRemoteConfig: refreshRemoteConfigStub,
+      setConfig: setConfigStub,
       getConfig: () => ({
         samplingPct: 100,
       }),
@@ -328,11 +331,12 @@ describe('initSDK', () => {
     if (result) {
       result.setDynamicConfig({ samplingPct: 50 });
 
-      void expect(myCustomConfigManager.refreshRemoteConfig).to.have.been
-        .calledOnce;
-      expect(myCustomConfigManager.setConfig).to.have.been.calledOnceWith({
-        samplingPct: 50,
-      });
+      void expect(refreshRemoteConfigStub.calledOnce).to.be.true;
+      void expect(
+        setConfigStub.calledOnceWith({
+          samplingPct: 50,
+        })
+      ).to.be.true;
     }
   });
 
@@ -1170,13 +1174,15 @@ describe('initSDK', () => {
       diagLogger.error('error');
 
       void expect(consoleInfoStub).to.have.callCount(2);
-      void expect(consoleInfoStub).to.have.been.calledWith(
-        'embrace-sdk',
-        'successfully initialized the SDK'
-      );
-      void expect(consoleInfoStub).to.have.been.calledWith('testing', 'info');
-      void expect(consoleWarnStub).to.have.been.calledOnce;
-      void expect(consoleErrorStub).to.have.been.calledOnce;
+      void expect(
+        consoleInfoStub.calledWith(
+          'embrace-sdk',
+          'successfully initialized the SDK'
+        )
+      ).to.be.true;
+      void expect(consoleInfoStub.calledWith('testing', 'info')).to.be.true;
+      void expect(consoleWarnStub.calledOnce).to.be.true;
+      void expect(consoleErrorStub.calledOnce).to.be.true;
     });
 
     it('should allow sending warning level logs to the console', () => {
@@ -1188,9 +1194,9 @@ describe('initSDK', () => {
       diagLogger.warn('warning');
       diagLogger.error('error');
 
-      void expect(consoleInfoStub).not.to.have.been.called;
-      void expect(consoleWarnStub).to.have.been.calledOnce;
-      void expect(consoleErrorStub).to.have.been.calledOnce;
+      void expect(consoleInfoStub.called).to.be.false;
+      void expect(consoleWarnStub.calledOnce).to.be.true;
+      void expect(consoleErrorStub.calledOnce).to.be.true;
     });
 
     it('should default to error level logging', () => {
@@ -1202,9 +1208,9 @@ describe('initSDK', () => {
       diagLogger.warn('warning');
       diagLogger.error('error');
 
-      void expect(consoleInfoStub).not.to.have.been.called;
-      void expect(consoleWarnStub).not.to.have.been.called;
-      void expect(consoleErrorStub).to.have.been.calledOnce;
+      void expect(consoleInfoStub.called).to.be.false;
+      void expect(consoleWarnStub.called).to.be.false;
+      void expect(consoleErrorStub.calledOnce).to.be.true;
     });
   });
 
@@ -1235,7 +1241,7 @@ describe('initSDK', () => {
         },
       });
       void expect(result1).not.to.be.false;
-      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+      void expect(testWebVitalListeners.clsStub.called).to.be.false;
 
       // 2nd invocation does not omit the web vital instrumentation, this should be ignored since only the first
       // invocation initialized the SDK
@@ -1247,12 +1253,14 @@ describe('initSDK', () => {
         },
       });
       void expect(result2).not.to.be.false;
-      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
+      void expect(testWebVitalListeners.clsStub.called).to.be.false;
 
-      void expect(consoleWarnStub).to.have.been.calledWith(
-        'embrace-sdk',
-        'SDK has already been successfully initialized, skipping this invocation of initSDK'
-      );
+      void expect(
+        consoleWarnStub.calledWith(
+          'embrace-sdk',
+          'SDK has already been successfully initialized, skipping this invocation of initSDK'
+        )
+      ).to.be.true;
     });
 
     it('should still initialize the SDK if previous init calls were not successful', () => {
@@ -1269,11 +1277,13 @@ describe('initSDK', () => {
         },
       });
       void expect(result1).to.be.false;
-      void expect(testWebVitalListeners.clsStub).not.to.have.been.called;
-      void expect(consoleWarnStub).not.to.have.been.calledWith(
-        'embrace-sdk',
-        'failed to initialize the SDK: appID should be 5 characters long'
-      );
+      void expect(testWebVitalListeners.clsStub.called).to.be.false;
+      void expect(
+        consoleWarnStub.calledWith(
+          'embrace-sdk',
+          'failed to initialize the SDK: appID should be 5 characters long'
+        )
+      ).to.be.false;
 
       // 2nd invocation does not omit the web vital instrumentation, this should take effect since the first
       // invocation failed to initialize the SDK
@@ -1285,12 +1295,15 @@ describe('initSDK', () => {
         },
       });
       void expect(result2).not.to.be.false;
-      void expect(testWebVitalListeners.clsStub).to.have.been.calledOnce;
+      // Called twice, one for the actual reports and one for the urlAttribution
+      void expect(testWebVitalListeners.clsStub.calledTwice).to.be.true;
 
-      void expect(consoleWarnStub).not.to.have.been.calledWith(
-        'embrace-sdk',
-        'SDK has already been successfully initialized, skipping this invocation of initSDK'
-      );
+      void expect(
+        consoleWarnStub.calledWith(
+          'embrace-sdk',
+          'SDK has already been successfully initialized, skipping this invocation of initSDK'
+        )
+      ).to.be.false;
     });
   });
 });

@@ -80,7 +80,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub).to.have.been.calledOnce;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args } = clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -128,7 +128,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub).to.have.been.calledOnce;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args } = clsStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -181,7 +181,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(fcpStub).not.to.have.been.called;
+    void expect(fcpStub.called).to.be.false;
   });
 
   it('should report FCP metrics when tracking is set to all', () => {
@@ -193,7 +193,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(fcpStub).to.have.been.calledOnce;
+    void expect(fcpStub.calledOnce).to.be.true;
     const { args } = fcpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -245,7 +245,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(lcpStub).to.have.been.calledOnce;
+    void expect(lcpStub.calledTwice).to.be.true;
     const { args } = lcpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -302,7 +302,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(inpStub).to.have.been.calledOnce;
+    void expect(inpStub.calledTwice).to.be.true;
     const { args } = inpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -370,7 +370,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(ttfbStub).not.to.have.been.called;
+    void expect(ttfbStub.called).to.be.false;
   });
 
   it('should report TTFB metrics when tracking is set to all', () => {
@@ -382,7 +382,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(ttfbStub).to.have.been.calledOnce;
+    void expect(ttfbStub.calledOnce).to.be.true;
     const { args } = ttfbStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -436,11 +436,11 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(clsStub).to.have.been.calledOnce;
+    void expect(clsStub.calledTwice).to.be.true;
     const { args: clsArgs } = clsStub.callsArg(0);
     const clsReportFunc = clsArgs[0][0] as WebVitalOnReport;
 
-    void expect(lcpStub).to.have.been.calledOnce;
+    void expect(lcpStub.calledTwice).to.be.true;
     const { args: lcpArgs } = lcpStub.callsArg(0);
     const lcpReportFunc = lcpArgs[0][0] as WebVitalOnReport;
 
@@ -525,7 +525,7 @@ describe('WebVitalsInstrumentation', () => {
       urlAttribution: true,
     });
 
-    void expect(inpStub).to.have.been.callCount(2);
+    void expect(inpStub.callCount).to.equal(2);
     const inpFinalReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
     const inpChangeReportFunc = inpStub.getCall(1).args[0] as WebVitalOnReport;
 
@@ -584,7 +584,7 @@ describe('WebVitalsInstrumentation', () => {
       urlAttribution: true,
     });
 
-    void expect(lcpStub).to.have.been.callCount(2);
+    void expect(lcpStub.callCount).to.equal(2);
     const lcpFinalReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     const lcpChangeReportFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
 
@@ -637,7 +637,7 @@ describe('WebVitalsInstrumentation', () => {
       urlAttribution: true,
     });
 
-    void expect(clsStub).to.have.been.callCount(2);
+    void expect(clsStub.callCount).to.equal(2);
     const clsFinalReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const clsChangeReportFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
 
