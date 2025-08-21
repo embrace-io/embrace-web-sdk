@@ -1,4 +1,7 @@
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type {
+  InMemorySpanExporter,
+  ReadableSpan,
+} from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -694,8 +697,9 @@ describe('EmbraceSpanSessionManager', () => {
       manager.recordSDKStartupDuration(250);
 
       // Create copy before ending session
-      const sessionSpanNotExported =
-        manager.endSessionSpanWithoutExporting('manual');
+      const sessionSpanNotExported = manager.endSessionSpanWithoutExporting(
+        'manual'
+      ) as unknown as ReadableSpan;
       expect(sessionSpanNotExported).to.not.equal(null);
 
       // Session manager still has the active session
@@ -716,7 +720,7 @@ describe('EmbraceSpanSessionManager', () => {
       expect(sessionSpan).to.not.equal(undefined);
 
       // Both should have the same key attributes
-      expect(sessionSpanNotExported?.attributes).to.have.property(
+      expect(sessionSpanNotExported.attributes).to.have.property(
         KEY_EMB_SESSION_REASON_ENDED,
         'manual'
       );
@@ -724,7 +728,7 @@ describe('EmbraceSpanSessionManager', () => {
         KEY_EMB_SESSION_REASON_ENDED,
         'timer'
       );
-      expect(sessionSpanNotExported?.attributes).to.have.property(
+      expect(sessionSpanNotExported.attributes).to.have.property(
         'emb.properties.session-prop',
         'session-value'
       );
@@ -732,7 +736,7 @@ describe('EmbraceSpanSessionManager', () => {
         'emb.properties.session-prop',
         'session-value'
       );
-      expect(sessionSpanNotExported?.attributes).to.have.property(
+      expect(sessionSpanNotExported.attributes).to.have.property(
         'emb.sdk_startup_duration',
         250
       );

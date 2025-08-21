@@ -9,7 +9,9 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
+import { EmbraceExtendedSpan } from '../../managers/index.js';
 import type { LimitManagerInternal } from '../../managers/index.js';
+import { trace } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
@@ -173,8 +175,24 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
         }
 
         const storedData = this._storage.getItem(key);
-        const parsedSpans = JSON.parse(<string>storedData) as ReadableSpan[];
-        this._exportSpans(parsedSpans);
+        if (!storedData) return;
+        const spans: ReadableSpan[] = [];
+        for (const sp of JSON.parse(storedData) as ReadableSpan[]) {
+          const tracer = trace.getTracer('embrace-web-sdk-sessions');
+          const spanCopy = new EmbraceExtendedSpan(
+            tracer.startSpan(sp.name, {
+              kind: sp.kind,
+              attributes: sp.attributes,
+              links: sp.links,
+              startTime: sp.startTime,
+            })
+          );
+          spanCopy.setStatus(sp.status);
+          spans.push(
+            spanCopy.endWithoutExporting(sp.endTime) as unknown as ReadableSpan
+          );
+        }
+        this._exportSpans(spans);
         this._storage.removeItem(key);
       });
     } catch (error) {
