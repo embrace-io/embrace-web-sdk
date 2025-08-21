@@ -187,9 +187,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
             })
           );
           spanCopy.setStatus(sp.status);
-          spans.push(
-            spanCopy.endWithoutExporting(sp.endTime) as unknown as ReadableSpan
-          );
+          spans.push(spanCopy.endWithoutExporting(sp.endTime));
         }
         this._exportSpans(spans);
         this._storage.removeItem(key);

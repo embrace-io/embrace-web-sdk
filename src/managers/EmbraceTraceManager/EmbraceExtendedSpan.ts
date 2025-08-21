@@ -15,6 +15,7 @@ import type {
 } from '../../api-traces/index.js';
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
 import { hrTimeDuration, timeInputToHrTime } from '@opentelemetry/core';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 // Interface to access private fields of the span for endWithoutExporting
 interface SpanInternals {
@@ -67,8 +68,8 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   }
 
   // endWithoutExporting does everything that _span.end() would do,
-  // except for calling onEnd that would export it, and returns the ExtendedSpan
-  public endWithoutExporting(endTime?: TimeInput): ExtendedSpan {
+  // except for calling onEnd that would export it, and returns the span as a ReadableSpan
+  public endWithoutExporting(endTime?: TimeInput): ReadableSpan {
     const spanInternals = this._span as unknown as SpanInternals;
     spanInternals._ended = true;
     spanInternals.endTime = endTime
@@ -78,7 +79,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
       spanInternals.startTime,
       spanInternals.endTime
     );
-    return this._span;
+    return this._span as unknown as ReadableSpan;
   }
 
   public isRecording(): boolean {
