@@ -51,6 +51,7 @@ import type {
   SetupLogsArgs,
   SetupSessionArgs,
   SetupTracesArgs,
+  SetupUserArgs,
 } from './types.js';
 import { registry } from './registry.js';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
@@ -82,18 +83,21 @@ export const initSDK = (
     }),
     dynamicSDKConfigManager: providedDynamicSDKConfigManager,
     dynamicSDKConfig,
+    registerGlobally = true,
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
     const perf = new OTelPerformanceManager();
     const initSDKStart = perf.getNowMillis();
 
-    const existingSDK = registry.registered();
-    if (existingSDK !== null) {
-      diagLogger.warn(
-        'SDK has already been successfully initialized, skipping this invocation of initSDK'
-      );
-      return existingSDK;
+    if (registerGlobally) {
+      const existingSDK = registry.registered();
+      if (existingSDK !== null) {
+        diagLogger.warn(
+          'SDK has already been successfully initialized, skipping this invocation of initSDK'
+        );
+        return existingSDK;
+      }
     }
 
     diag.setLogger(new DiagConsoleLogger(), {
@@ -121,7 +125,7 @@ export const initSDK = (
       );
     }
 
-    const userManager = setupUser();
+    const userManager = setupUser({ registerGlobally });
     const enduserPseudoID = userManager.getEmbraceUserId();
     if (sendingToEmbrace && !enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
@@ -150,9 +154,6 @@ export const initSDK = (
     }
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager = setupSession({
-      limitManager,
-    });
 
     const finalAttributeScrubbers: AttributeScrubber[] = [
       ...(enableDefaultAttributeScrubbing
@@ -161,7 +162,12 @@ export const initSDK = (
       ...attributeScrubbers,
     ];
 
-    const tracerProvider = setupTraces({
+    const spanSessionManager = setupSession({
+      limitManager,
+      registerGlobally,
+    });
+
+    const { tracerProvider, embraceTraceManager } = setupTraces({
       sendingToEmbrace,
       appID,
       enduserPseudoID,
@@ -175,9 +181,12 @@ export const initSDK = (
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
       embraceDataURL,
+      registerGlobally,
     });
 
-    const loggerProvider = setupLogs({
+    spanSessionManager.setTracerProvider(tracerProvider);
+
+    const { loggerProvider, embraceLogManager } = setupLogs({
       sendingToEmbrace,
       appID,
       enduserPseudoID,
@@ -189,17 +198,32 @@ export const initSDK = (
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
       embraceDataURL,
+      registerGlobally,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
     // setup before we enable instrumentations.
-    registerInstrumentations({
-      instrumentations: [
-        ...instrumentations,
-        setupDefaultInstrumentations(defaultInstrumentationConfig),
-      ],
-    });
+    if (!registerGlobally) {
+      registerInstrumentations({
+        tracerProvider,
+        loggerProvider,
+        instrumentations: [
+          setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            logManager: embraceLogManager,
+            spanSessionManager,
+          }),
+          ...instrumentations,
+        ],
+      });
+    } else {
+      registerInstrumentations({
+        instrumentations: [
+          setupDefaultInstrumentations(defaultInstrumentationConfig),
+          ...instrumentations,
+        ],
+      });
+    }
 
     diagLogger.info('successfully initialized the SDK');
 
@@ -211,9 +235,15 @@ export const initSDK = (
         await tracerProvider.forceFlush();
         await loggerProvider.forceFlush();
       },
+      log: embraceLogManager,
+      trace: embraceTraceManager,
+      session: spanSessionManager,
+      user: userManager,
     };
 
-    registry.register(sdkControl);
+    if (registerGlobally) {
+      registry.register(sdkControl);
+    }
 
     spanSessionManager.recordSDKStartupDuration(
       perf.getNowMillis() - initSDKStart
@@ -227,17 +257,25 @@ export const initSDK = (
   }
 };
 
-const setupUser = () => {
+const setupUser = ({ registerGlobally }: SetupUserArgs) => {
   const embraceUserManager = new EmbraceUserManager();
-  user.setGlobalUserManager(embraceUserManager);
+
+  if (registerGlobally) {
+    user.setGlobalUserManager(embraceUserManager);
+  }
+
   return embraceUserManager;
 };
 
-const setupSession = ({ limitManager }: SetupSessionArgs) => {
+const setupSession = ({ limitManager, registerGlobally }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
   });
-  session.setGlobalSessionManager(embraceSpanSessionManager);
+
+  if (registerGlobally) {
+    session.setGlobalSessionManager(embraceSpanSessionManager);
+  }
+
   return embraceSpanSessionManager;
 };
 
@@ -255,10 +293,8 @@ const setupTraces = ({
   limitManager,
   attributeScrubbers,
   embraceDataURL,
+  registerGlobally,
 }: SetupTracesArgs) => {
-  const embraceTraceManager = new EmbraceTraceManager();
-  trace.setGlobalTraceManager(embraceTraceManager);
-
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
@@ -299,12 +335,19 @@ const setupTraces = ({
     },
   });
 
-  tracerProvider.register({
-    contextManager,
-    propagator,
+  const embraceTraceManager = new EmbraceTraceManager({
+    tracerProvider: registerGlobally ? undefined : tracerProvider,
   });
 
-  return tracerProvider;
+  if (registerGlobally) {
+    trace.setGlobalTraceManager(embraceTraceManager);
+    tracerProvider.register({
+      contextManager,
+      propagator,
+    });
+  }
+
+  return { tracerProvider, embraceTraceManager };
 };
 
 const setupLogs = ({
@@ -319,13 +362,8 @@ const setupLogs = ({
   limitManager,
   attributeScrubbers,
   embraceDataURL,
+  registerGlobally,
 }: SetupLogsArgs) => {
-  const embraceLogManager = new EmbraceLogManager({
-    spanSessionManager,
-    limitManager,
-  });
-  log.setGlobalLogManager(embraceLogManager);
-
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new IdentifiableSessionLogRecordProcessor({
@@ -356,8 +394,17 @@ const setupLogs = ({
     resource,
     processors: finalLogProcessors,
   });
+  
+  const embraceLogManager = new EmbraceLogManager({
+    spanSessionManager,
+    limitManager,
+    loggerProvider: registerGlobally ? undefined : loggerProvider,
+  });
 
-  logs.setGlobalLoggerProvider(loggerProvider);
+  if (registerGlobally) {
+    logs.setGlobalLoggerProvider(loggerProvider);
+    log.setGlobalLogManager(embraceLogManager);
+  }
 
-  return loggerProvider;
+  return { loggerProvider, embraceLogManager };
 };

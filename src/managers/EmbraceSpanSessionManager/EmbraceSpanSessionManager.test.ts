@@ -1,4 +1,8 @@
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  WebTracerProvider,
+} from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -674,5 +678,19 @@ describe('EmbraceSpanSessionManager', () => {
     expect(warningLogs).to.deep.equal([
       'Failed to retrieve session number from storage',
     ]);
+  });
+
+  it('should allow setting a different trace provider', () => {
+    const secondMemoryExporter = new InMemorySpanExporter();
+    const tracerProvider = new WebTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(secondMemoryExporter)],
+    });
+
+    manager.setTracerProvider(tracerProvider);
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 });

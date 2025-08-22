@@ -1,0 +1,20 @@
+{
+  "name": "frontend-sdk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "setup": "npm install && bash scripts/setupBundleSymLinks.sh",
+    "build": "npm run build --workspaces",
+    "dev": "cd host && npm run dev",
+    "serve": "cd host && npx serve dist"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "vite": "7.1.2"
+  },
+  "workspaces": [
+    "sdk",
+    "host"
+  ]
+}

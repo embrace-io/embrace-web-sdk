@@ -18,8 +18,8 @@ export abstract class EmbraceInstrumentationBase<
   extends InstrumentationAbstract<ConfigType>
   implements Instrumentation<ConfigType>
 {
-  private readonly _sessionManager: SpanSessionManager;
-  private readonly _logManager: LogManager;
+  private _sessionManager: SpanSessionManager;
+  private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
 
   protected constructor({
@@ -44,7 +44,7 @@ export abstract class EmbraceInstrumentationBase<
     return this._sessionManager;
   }
 
-  /* Returns session provider */
+  /* Returns log manager */
   protected get logManager(): LogManager {
     return this._logManager;
   }
@@ -64,5 +64,13 @@ export abstract class EmbraceInstrumentationBase<
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | void {
     return undefined;
+  }
+
+  public setLogManager(logManager: LogManager): void {
+    this._logManager = logManager;
+  }
+
+  public setSessionManager(sessionManager: SpanSessionManager): void {
+    this._sessionManager = sessionManager;
   }
 }

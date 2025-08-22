@@ -1,5 +1,9 @@
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  WebTracerProvider,
+} from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.js';
@@ -191,5 +195,22 @@ describe('EmbraceTraceManager', () => {
   it('should return undefined if no span is found in the context', () => {
     const span = manager.getSpan(context.active());
     void expect(span).to.be.undefined;
+  });
+
+  it('should allow overriding the global tracer provider', () => {
+    const secondMemoryExporter = new InMemorySpanExporter();
+    const tracerProvider = new WebTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(secondMemoryExporter)],
+    });
+
+    const manager = new EmbraceTraceManager({
+      tracerProvider,
+    });
+
+    const span = manager.startSpan('test-span');
+    span.end();
+
+    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 });
