@@ -3,8 +3,7 @@ import fs from 'node:fs';
 // Validate the input parameters
 
 interface ValidateInputArgs {
-  jsFilePath: string;
-  mapFilePath: string;
+  path: string;
   token: string;
   appID: string;
   host: string;
@@ -12,14 +11,12 @@ interface ValidateInputArgs {
   storeType: string;
   appVersion: string;
   cliVersion: string;
-  templateBundleID: string;
   templateAppVersion: string;
   upload: boolean;
 }
 
 export const validateInput = ({
-  jsFilePath,
-  mapFilePath,
+  path,
   token,
   appID,
   host,
@@ -27,20 +24,16 @@ export const validateInput = ({
   storeType,
   cliVersion,
   appVersion,
-  templateBundleID,
   templateAppVersion,
   upload,
 }: ValidateInputArgs): string | null => {
-  if (!jsFilePath.trim()) {
-    return 'JS file path cannot be empty.';
+  if (!path.trim()) {
+    return 'JS files path cannot be empty.';
   }
   if (appVersion) {
     if (appVersion.length > 20) {
       return 'appVersion cannot be longer than 20 characters.';
     }
-  }
-  if (!mapFilePath.trim()) {
-    return 'Map file path cannot be empty.';
   }
   if (upload && !token.trim()) {
     return 'Token cannot be empty.';
@@ -66,12 +59,6 @@ export const validateInput = ({
   if (!cliVersion.trim()) {
     return 'CLI version cannot be empty.';
   }
-  if (!templateBundleID.trim()) {
-    return 'Template bundle ID cannot be empty.';
-  }
-  if (templateBundleID.length !== 32) {
-    return 'Template bundle ID must be 32 characters long.';
-  }
   if (!templateAppVersion.trim()) {
     return 'Template App version cannot be empty.';
   }
@@ -80,21 +67,12 @@ export const validateInput = ({
   }
 
   try {
-    const jsStats = fs.statSync(jsFilePath);
-    if (!jsStats.isFile() || jsStats.size === 0) {
-      return 'JS file is not a valid file or is empty.';
+    const pathStat = fs.statSync(path);
+    if (!pathStat.isDirectory()) {
+      return 'JS files dir needs to be a valid directory.';
     }
   } catch (_) {
-    return 'JS file not found.';
-  }
-
-  try {
-    const mapStats = fs.statSync(mapFilePath);
-    if (!mapStats.isFile() || mapStats.size === 0) {
-      return 'Map file is not a valid file or is empty.';
-    }
-  } catch (_) {
-    return 'Map file not found.';
+    return 'JS file dir not found.';
   }
 
   return null; // All validations passed

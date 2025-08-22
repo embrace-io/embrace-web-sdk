@@ -9,3 +9,4 @@ export {
   type PerformanceManager,
 } from './PerformanceManager/index.js';
 export { throttle } from './throttle.js';
+export { GLOBAL_CONFIG } from './globalConfig.js';
