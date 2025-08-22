@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "setup": "cd sdk && npm install && cd ../host && npm install && cd .. && bash scripts/setupBundleSymLinks.sh",
-    "build": "cd sdk && npm run build && cd ../host && npm run build",
+    "setup": "npm install && bash scripts/setupBundleSymLinks.sh",
+    "build": "npm run build --workspaces",
     "dev": "cd host && npm run dev",
     "serve": "cd host && npx serve dist"
   },
