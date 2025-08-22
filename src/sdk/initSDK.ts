@@ -394,7 +394,7 @@ const setupLogs = ({
     resource,
     processors: finalLogProcessors,
   });
-  
+
   const embraceLogManager = new EmbraceLogManager({
     spanSessionManager,
     limitManager,
