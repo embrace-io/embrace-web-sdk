@@ -1,22 +1,29 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import {
+  ClicksInstrumentation,
+  EmbraceInstrumentationBase,
   GlobalExceptionInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
-  ClicksInstrumentation,
 } from '../instrumentations/index.js';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import type { DefaultInstrumentationConfig } from './types.js';
-import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
+import type {
+  DefaultInstrumentationConfig,
+  SetupDefaultInstrumentationsArgs,
+} from './types.js';
 
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
-  embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor
+  {
+    logManager,
+    spanSessionManager,
+    embraceSpanProcessor,
+  }: SetupDefaultInstrumentationsArgs = {}
 ): Instrumentation[] => {
   /*
     These instrumentations are core to managing the session lifecycle and so are not optional
@@ -69,6 +76,18 @@ export const setupDefaultInstrumentations = (
         ...config['@opentelemetry/instrumentation-xml-http-request'],
       })
     );
+  }
+
+  for (const instrumentation of instrumentations) {
+    if (instrumentation instanceof EmbraceInstrumentationBase) {
+      if (spanSessionManager) {
+        instrumentation.setSessionManager(spanSessionManager);
+      }
+
+      if (logManager) {
+        instrumentation.setLogManager(logManager);
+      }
+    }
   }
 
   return instrumentations;

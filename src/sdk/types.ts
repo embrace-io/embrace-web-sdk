@@ -31,6 +31,9 @@ import type {
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
 import type { AttributeScrubber } from '../common/index.js';
+import type { LogManager } from '../api-logs/index.js';
+import type { TraceManager } from '../api-traces/index.js';
+import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
 
 export interface DynamicSDKConfig {
   /**
@@ -187,6 +190,13 @@ type BaseSDKInitConfig = {
    * **default**: EmbraceDynamicConfigManager
    */
   dynamicSDKConfig?: Partial<DynamicSDKConfig>;
+
+  /**
+   * registerGlobally is used to specify whether the SDK should register itself globally. This is useful when
+   * the SDK is used in multiple applications on the same page, and you want to avoid telemetry from one application
+   * to interfere with another.
+   */
+  registerGlobally?: boolean;
 };
 
 /*
@@ -243,10 +253,19 @@ export type SDKInitConfig = BaseSDKInitConfig &
 export interface SDKControl {
   flush: () => Promise<void>;
   setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
+  log: LogManager;
+  trace: TraceManager;
+  session: SpanSessionManager;
+  user: UserManager;
+}
+
+export interface SetupUserArgs {
+  registerGlobally?: boolean;
 }
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
+  registerGlobally?: boolean;
 }
 
 export interface SetupTracesArgs {
@@ -259,6 +278,7 @@ export interface SetupTracesArgs {
   contextManager?: ContextManager | null;
   attributeScrubbers: AttributeScrubber[];
   dynamicSDKConfig?: DynamicSDKConfig;
+  registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
 }
 
@@ -270,6 +290,7 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
 }
 
@@ -283,6 +304,12 @@ type OptionalInstrumentations =
 
 interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
+}
+
+export interface SetupDefaultInstrumentationsArgs {
+  logManager?: LogManager;
+  spanSessionManager?: SpanSessionManager;
+  embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
 }
 
 export interface DefaultInstrumentationConfig {

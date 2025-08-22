@@ -1,5 +1,5 @@
 export { trace } from './traceAPI.js';
-export type { TraceManager } from './manager/index.js';
+export type { TraceManager, TraceManagerArgs } from './manager/index.js';
 export { NoOpTraceManager, ProxyTraceManager } from './manager/index.js';
 export type {
   ExtendedSpan,
