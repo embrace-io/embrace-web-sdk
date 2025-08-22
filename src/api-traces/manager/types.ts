@@ -1,5 +1,9 @@
 import type { ExtendedSpan, ExtendedSpanOptions } from '../api/index.js';
-import type { Context } from '@opentelemetry/api';
+import type { Context, TracerProvider } from '@opentelemetry/api';
+
+export interface TraceManagerArgs {
+  tracerProvider?: TracerProvider;
+}
 
 export interface TraceManager {
   startSpan: (

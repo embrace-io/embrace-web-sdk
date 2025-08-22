@@ -30,6 +30,8 @@ import type {
 } from '../managers/index.js';
 import type { UserManager } from '../api-users/index.js';
 import type { AttributeScrubber } from '../common/index.js';
+import type { LogManager } from '../api-logs/index.js';
+import type { TraceManager } from '../api-traces/index.js';
 
 export interface DynamicSDKConfig {
   /**
@@ -186,6 +188,13 @@ type BaseSDKInitConfig = {
    * **default**: EmbraceDynamicConfigManager
    */
   dynamicSDKConfig?: Partial<DynamicSDKConfig>;
+
+  /**
+   * registerGlobally is used to specify whether the SDK should register itself globally. This is useful when
+   * the SDK is used in multiple applications on the same page, and you want to avoid telemetry from one application
+   * to interfere with another.
+   */
+  registerGlobally?: boolean;
 };
 
 /*
@@ -242,10 +251,19 @@ export type SDKInitConfig = BaseSDKInitConfig &
 export interface SDKControl {
   flush: () => Promise<void>;
   setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
+  log: LogManager;
+  trace: TraceManager;
+  session: SpanSessionManager;
+  user: UserManager;
+}
+
+export interface SetupUserArgs {
+  registerGlobally?: boolean;
 }
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
+  registerGlobally?: boolean;
 }
 
 export interface SetupTracesArgs {
@@ -263,6 +281,7 @@ export interface SetupTracesArgs {
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
   dynamicSDKConfig?: DynamicSDKConfig;
+  registerGlobally?: boolean;
 }
 
 export interface SetupLogsArgs {
@@ -277,6 +296,7 @@ export interface SetupLogsArgs {
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   embraceDataURL?: string;
+  registerGlobally?: boolean;
 }
 
 type OptionalInstrumentations =
@@ -289,6 +309,11 @@ type OptionalInstrumentations =
 
 interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
+}
+
+export interface SetupDefaultInstrumentationsArgs {
+  logManager?: LogManager;
+  spanSessionManager?: SpanSessionManager;
 }
 
 export interface DefaultInstrumentationConfig {

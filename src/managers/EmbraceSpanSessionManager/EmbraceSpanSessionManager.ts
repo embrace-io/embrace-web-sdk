@@ -1,5 +1,11 @@
 import { diag, trace } from '@opentelemetry/api';
-import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
+import type {
+  Tracer,
+  TracerProvider,
+  Attributes,
+  DiagLogger,
+  HrTime,
+} from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   ReasonSessionEnded,
@@ -42,6 +48,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
+  private _tracer: Tracer;
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -64,6 +71,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
+    this._tracer = trace.getTracer('embrace-web-sdk-sessions');
   }
 
   // retrieve permanent properties from localStorage
@@ -243,7 +251,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this.endSessionSpanInternal('manual');
     }
 
-    const tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
@@ -265,7 +272,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._sessionSpan = new EmbraceExtendedSpan(
-      tracer.startSpan('emb-session', {
+      this._tracer.startSpan('emb-session', {
         attributes,
       })
     );
@@ -313,5 +320,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   public recordSDKStartupDuration(duration: number) {
     this._sdkStartupDuration = Math.ceil(duration);
+  }
+
+  public setTracerProvider(tracerProvider: TracerProvider) {
+    this._tracer = tracerProvider.getTracer('embrace-web-sdk-sessions');
   }
 }

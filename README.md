@@ -403,6 +403,49 @@ This is necessary to ensure that the SDK is fully loaded before you start using 
 > [!WARNING]
 > The SDK may miss some early telemetry events emitted before the SDK is initialized if you use this method.
 
+### Running multiple instances of the SDK
+
+If you have multiple applications on the same page and want to run multiple instances of the SDK, you can do so by 
+creating an instance of the SDK for each application. Make sure that the flag `registerGlobally` is set to `false` when
+initializing the SDK. 
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+const embraceSDK = sdk.initSDK({
+   appID: "YOUR_EMBRACE_APP_ID",
+   appVersion: "YOUR_APP_VERSION",
+   registerGlobally: false, // Prevents the SDK from registering itself globally
+});
+```
+
+Since the SDK is not registered globally, you will need to use the `embraceSDK` instance to access the SDK methods 
+and properties.
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+const embraceSDK = sdk.initSDK({
+   appID: "YOUR_EMBRACE_APP_ID",
+   appVersion: "YOUR_APP_VERSION",
+   registerGlobally: false, // Prevents the SDK from registering itself globally
+});
+
+// Use this 
+embraceSDK.log.message('This is a log message', 'info'); 
+
+// Instead of
+import { log } from '@embrace-io/web-sdk';
+
+log.message('This is a log message', 'info');
+```
+
+Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
+* Fetch and XHR instrumentations are registered globally, so the last SDK to register will override the previous
+  instance's configuration and only the last instance will be able to capture network requests.
+* Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that 
+  are not caught. 
+
 ## Using without Embrace
 
 If you'd prefer not to send data to Embrace you can simply omit the embrace app id when calling `initSDK`. Note that in

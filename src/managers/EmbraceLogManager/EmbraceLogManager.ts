@@ -40,14 +40,17 @@ export class EmbraceLogManager implements LogManager {
     perf,
     spanSessionManager,
     limitManager,
+    loggerProvider: globalLoggerProviderOverride,
   }: EmbraceLogManagerArgs) {
+    const loggerProvider = globalLoggerProviderOverride ?? logs;
+
     this._diag =
       diagParam ??
       diag.createComponentLogger({
         namespace: 'EmbraceLogManager',
       });
     this._perf = perf ?? new OTelPerformanceManager();
-    this._logger = logs.getLogger('embrace-web-sdk-logs');
+    this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
     this._limitManager = limitManager;
   }
