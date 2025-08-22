@@ -118,7 +118,9 @@ export class EmbraceLogManager implements LogManager {
         ['exception.name']: normalizedError.name,
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
-        [KEY_EMB_WEB_SYMBOL_FILE_IDS]: GLOBAL_CONFIG._EmbraceWebSymbolFileIDs,
+        [KEY_EMB_WEB_SYMBOL_FILE_IDS]: JSON.stringify(
+          GLOBAL_CONFIG._EmbraceWebSymbolFileIDs || {}
+        ),
       },
     });
   }
@@ -193,8 +195,9 @@ export class EmbraceLogManager implements LogManager {
         ...(stacktrace
           ? {
               [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
-              [KEY_EMB_WEB_SYMBOL_FILE_IDS]:
-                GLOBAL_CONFIG._EmbraceWebSymbolFileIDs,
+              [KEY_EMB_WEB_SYMBOL_FILE_IDS]: JSON.stringify(
+                GLOBAL_CONFIG._EmbraceWebSymbolFileIDs || {}
+              ),
             }
           : {}),
       },
