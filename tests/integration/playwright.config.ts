@@ -8,13 +8,13 @@ export default defineConfig({
       command:
         'cd platforms/next-latest && npm run build:es2020 && npm run start',
       url: 'http://localhost:3000',
-      reuseExistingServer: true,
+      reuseExistingServer: false,
     },
     {
       name: 'api',
       command: 'npx tsx server/server.ts',
       url: 'http://localhost:3001/health-check',
-      reuseExistingServer: true,
+      reuseExistingServer: false,
     },
   ],
   testMatch: '**/*.spec.ts',
