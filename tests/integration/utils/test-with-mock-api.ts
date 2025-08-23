@@ -8,7 +8,7 @@ import type { Route, Request } from 'playwright';
 
 import type {
   IKeyValue,
-  IResource,
+  Resource,
 } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
 import type {
   IEvent,
@@ -286,7 +286,7 @@ const expect = testWithMockApi.expect.extend({
       };
     }
   },
-  toMatchResource: (received: IResource, expected: IResource) => {
+  toMatchResource: (received: Resource, expected: Resource) => {
     expect({
       droppedAttributesCount: received.droppedAttributesCount,
     }).toEqual({

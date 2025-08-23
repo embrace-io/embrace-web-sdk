@@ -1003,11 +1003,9 @@ describe('EmbraceLogManager', () => {
     it('should allow overriding the global logger provider', () => {
       // Global logger provider is set when we call setupTestLogExporter on `before`
       const secondMemoryExporter = new InMemoryLogRecordExporter();
-      const loggerProvider = new LoggerProvider();
-
-      loggerProvider.addLogRecordProcessor(
-        new SimpleLogRecordProcessor(secondMemoryExporter)
-      );
+      const loggerProvider = new LoggerProvider({
+        processors: [new SimpleLogRecordProcessor(secondMemoryExporter)],
+      });
 
       const manager = new EmbraceLogManager({
         perf,

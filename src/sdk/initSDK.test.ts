@@ -1,6 +1,6 @@
 import { diag, DiagLogLevel, trace, context } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
-import { Resource } from '@opentelemetry/resources';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
@@ -355,7 +355,7 @@ describe('initSDK', () => {
       const result = initSDK({
         appID: 'abc12',
         appVersion: 'my-app-version',
-        resource: new Resource({ r1: 'my-resource-attr' }),
+        resource: resourceFromAttributes({ r1: 'my-resource-attr' }),
         defaultInstrumentationConfig: {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub

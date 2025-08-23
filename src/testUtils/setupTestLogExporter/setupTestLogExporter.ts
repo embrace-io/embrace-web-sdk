@@ -14,13 +14,12 @@ export const setupTestLogExporter = (
   logProcessors: LogRecordProcessor[] = []
 ) => {
   const memoryExporter = new InMemoryLogRecordExporter();
-  const logProvider = new LoggerProvider();
-  logProcessors.forEach(processor => {
-    logProvider.addLogRecordProcessor(processor);
+  const logProvider = new LoggerProvider({
+    processors: [
+      ...logProcessors,
+      new SimpleLogRecordProcessor(memoryExporter),
+    ],
   });
-  logProvider.addLogRecordProcessor(
-    new SimpleLogRecordProcessor(memoryExporter)
-  );
   logs.setGlobalLoggerProvider(logProvider);
   return memoryExporter;
 };
