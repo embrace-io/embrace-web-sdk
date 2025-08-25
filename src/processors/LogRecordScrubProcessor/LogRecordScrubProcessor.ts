@@ -1,4 +1,4 @@
-import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { LogRecordScrubProcessorArgs } from './types.js';
 import type { AttributeScrubber } from '../../common/index.js';
 
@@ -14,7 +14,7 @@ export class LogRecordScrubProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: LogRecord) {
+  public onEmit(logRecord: SdkLogRecord) {
     this._attributeScrubbers.forEach(scrubber => {
       const value = logRecord.attributes[scrubber.key];
       if (value && typeof value === 'string') {
