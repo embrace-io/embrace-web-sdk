@@ -392,10 +392,6 @@ describe('initSDK', () => {
           { key: 'r1', value: { stringValue: 'my-resource-attr' } },
           { key: 'app_version', value: { stringValue: 'my-app-version' } },
           { key: 'app_framework', value: { intValue: 1 } },
-          {
-            key: 'bundle_id',
-            value: { stringValue: 'EmbIOBundleIDfd6996f1007b363f87a' },
-          },
           { key: 'sdk_version', value: { stringValue: SDK_VERSION } },
           { key: 'sdk_simple_version', value: { intValue: 1 } },
           { key: 'sdk_platform', value: { stringValue: 'web' } },

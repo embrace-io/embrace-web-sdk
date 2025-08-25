@@ -30,7 +30,6 @@ describe('webSdkResource', () => {
     expect(resource.attributes).to.deep.equal({
       app_framework: 1,
       app_version: 'EmbIOAppVersionX.X.X',
-      bundle_id: 'EmbIOBundleIDfd6996f1007b363f87a',
       'emb.app_instance_id': appInstanceId,
       sdk_platform: 'web',
       sdk_simple_version: 1,

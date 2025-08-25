@@ -25,7 +25,7 @@ import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/in
 import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-  KEY_EMB_WEB_SYMBOL_FILE_IDS,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
 } from '../../constants/attributes.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 
@@ -118,8 +118,8 @@ export class EmbraceLogManager implements LogManager {
         ['exception.name']: normalizedError.name,
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
-        [KEY_EMB_WEB_SYMBOL_FILE_IDS]: JSON.stringify(
-          GLOBAL_CONFIG._EmbraceWebSymbolFileIDs || {}
+        [KEY_EMB_JS_FILE_BUNDLE_IDS]: JSON.stringify(
+          GLOBAL_CONFIG._EmbraceFileBundleIDs || {}
         ),
       },
     });
@@ -195,8 +195,8 @@ export class EmbraceLogManager implements LogManager {
         ...(stacktrace
           ? {
               [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
-              [KEY_EMB_WEB_SYMBOL_FILE_IDS]: JSON.stringify(
-                GLOBAL_CONFIG._EmbraceWebSymbolFileIDs || {}
+              [KEY_EMB_JS_FILE_BUNDLE_IDS]: JSON.stringify(
+                GLOBAL_CONFIG._EmbraceFileBundleIDs || {}
               ),
             }
           : {}),
