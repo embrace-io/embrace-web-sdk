@@ -434,6 +434,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       });
 
       it('should handle corrupted stored data', async () => {
+        // Need to shut down the other processors so they don't pick up our stored spans
+        await processor.shutdown();
+        await processorWithStorage.shutdown();
+
         const diagLogger = new InMemoryDiagLogger();
         const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
           exporter: memoryExporter,
@@ -455,9 +459,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(diagLogger.getErrorLogs()[0]).to.include(
           'Failed to process expired spans'
         );
-        expect(
-          inMemoryStorage.getItem(`embrace_pending_corrupted_${pastTime}`)
-        ).to.equal('invalid json');
+        expect(inMemoryStorage.length).to.equal(0);
 
         await processorWithDiag.shutdown();
       });
