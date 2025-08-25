@@ -10,22 +10,17 @@ import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 import type { LimitManagerInternal } from '../../managers/index.js';
-import { EmbraceExtendedSpan } from '../../managers/index.js';
-import { trace } from '@opentelemetry/api';
+import { EmbraceSpanStorage } from '../../utils/index.js';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
-
-const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
-const STORED_SPANS_EXPIRE_TIMEOUT_MS: number = 60 * 60 * 1000; // 1 hour
 
 export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
-  private readonly _storage: Storage;
-  private _checkExpiredSpansInterval?: ReturnType<typeof setInterval>;
+  private readonly _spanStorage: EmbraceSpanStorage;
 
   public constructor({
     exporter,
@@ -40,8 +35,13 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
-    this._storage = storage;
-    this._startExpiredSpansCheck();
+    this._spanStorage = new EmbraceSpanStorage({
+      storage,
+      diag: parentArgs.diag,
+      onExpiredSpansExport: (spans: ReadableSpan[]) => {
+        this._exportSpans(spans);
+      },
+    });
   }
 
   public override forceFlush(): Promise<void> {
@@ -107,94 +107,15 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     sessionId: string,
     sessionSpan: ReadableSpan
   ): void {
-    try {
-      // If this session was already stored, clear it first:
-      this.clearStoredSpans(sessionId);
-
-      const key = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_${Date.now()}`;
-      this._storage.setItem(
-        key,
-        JSON.stringify([sessionSpan, ...this._pendingSpans], (key, value) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-          key.startsWith('_') ? undefined : value
-        )
-      );
-    } catch (error) {
-      this.diag.error('Failed to store spans to storage:', error);
-    }
+    this._spanStorage.storePendingSpans(
+      sessionId,
+      sessionSpan,
+      this._pendingSpans
+    );
   }
 
   public clearStoredSpans(sessionId: string): void {
-    try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < this._storage.length; i++) {
-        const key = this._storage.key(i);
-        if (
-          key &&
-          key.startsWith(`${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_`)
-        ) {
-          keysToRemove.push(key);
-        }
-      }
-
-      keysToRemove.forEach(key => {
-        this._storage.removeItem(key);
-      });
-    } catch (error) {
-      this.diag.error('Failed to clear stored spans from storage:', error);
-    }
-  }
-
-  private _startExpiredSpansCheck(): void {
-    this._checkExpiredSpansInterval = setInterval(() => {
-      this._checkAndExportExpiredSpans();
-    }, 60 * 1000); // Check every minute
-  }
-
-  private _checkAndExportExpiredSpans(): void {
-    try {
-      const keys: string[] = [];
-      for (let i = 0; i < this._storage.length; i++) {
-        const key = this._storage.key(i);
-        if (key && key.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
-          keys.push(key);
-        }
-      }
-      const currentTime = Date.now();
-
-      keys.forEach(key => {
-        const parts = key.split('_');
-        const storedTime = parseInt(parts[parts.length - 1], 10);
-
-        if (
-          isNaN(storedTime) ||
-          currentTime - storedTime <= STORED_SPANS_EXPIRE_TIMEOUT_MS
-        ) {
-          return;
-        }
-
-        const storedData = this._storage.getItem(key);
-        if (!storedData) return;
-        const spans: ReadableSpan[] = [];
-        for (const sp of JSON.parse(storedData) as ReadableSpan[]) {
-          const tracer = trace.getTracer('embrace-web-sdk-sessions');
-          const spanCopy = new EmbraceExtendedSpan(
-            tracer.startSpan(sp.name, {
-              kind: sp.kind,
-              attributes: sp.attributes,
-              links: sp.links,
-              startTime: sp.startTime,
-            })
-          );
-          spanCopy.setStatus(sp.status);
-          spans.push(spanCopy.endWithoutExporting(sp.endTime));
-        }
-        this._exportSpans(spans);
-        this._storage.removeItem(key);
-      });
-    } catch (error) {
-      this.diag.error('Failed to check and export expired spans:', error);
-    }
+    this._spanStorage.clearStoredSpans(sessionId);
   }
 
   public shutdown(): Promise<void> {
@@ -202,9 +123,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   }
 
   private readonly _shutdown = () => {
-    if (this._checkExpiredSpansInterval) {
-      clearInterval(this._checkExpiredSpansInterval);
-    }
+    this._spanStorage.destroy();
     return this._exporter.shutdown();
   };
 }

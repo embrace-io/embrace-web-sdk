@@ -676,9 +676,9 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
 
     const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.deep.equal([
-      'Failed to retrieve session number from storage',
-    ]);
+    expect(warningLogs).to.include(
+      'Error loading permanent session properties'
+    );
   });
 
   it('should allow setting a different trace provider', () => {

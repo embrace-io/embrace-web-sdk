@@ -9,3 +9,7 @@ export {
   type PerformanceManager,
 } from './PerformanceManager/index.js';
 export { throttle } from './throttle.js';
+export {
+  EmbraceSpanStorage,
+  type SpanStorageOptions,
+} from './EmbraceSpanStorage/index.js';

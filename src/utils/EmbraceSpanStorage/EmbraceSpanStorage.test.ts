@@ -1,0 +1,186 @@
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import { EmbraceSpanStorage } from './EmbraceSpanStorage.js';
+import {
+  FailingStorage,
+  InMemoryDiagLogger,
+  InMemoryStorage,
+  mockSpan,
+  setupTestTraceExporter,
+} from '../../testUtils/index.js';
+import type {
+  InMemorySpanExporter,
+  ReadableSpan,
+} from '@opentelemetry/sdk-trace-web';
+
+const { expect } = chai;
+
+describe('EmbraceSpanStorage', () => {
+  let memoryExporter: InMemorySpanExporter;
+  let spanStorage: EmbraceSpanStorage;
+  let storage: InMemoryStorage;
+  let diag: InMemoryDiagLogger;
+  let mockOnExport: sinon.SinonSpy;
+  let clock: sinon.SinonFakeTimers;
+
+  beforeEach(() => {
+    memoryExporter = setupTestTraceExporter();
+    storage = new InMemoryStorage();
+    diag = new InMemoryDiagLogger();
+    mockOnExport = sinon.spy();
+    clock = sinon.useFakeTimers();
+
+    spanStorage = new EmbraceSpanStorage({
+      storage,
+      diag,
+      onExpiredSpansExport: mockOnExport,
+    });
+  });
+
+  afterEach(() => {
+    memoryExporter.reset();
+    spanStorage.destroy();
+    clock.restore();
+  });
+
+  describe('storePendingSpans', () => {
+    it('should store spans with session ID and timestamp', () => {
+      const sessionSpan = mockSpan;
+      const pendingSpans = [mockSpan, mockSpan];
+
+      spanStorage.storePendingSpans('session123', sessionSpan, pendingSpans);
+
+      expect(storage.length).to.equal(1);
+      const key = storage.key(0) as string;
+      expect(key).to.match(/embrace_pending_session123_\d+/);
+
+      const storedData = storage.getItem(key);
+      expect(storedData).to.not.equal(null);
+      const parsedData = JSON.parse(storedData || '') as ReadableSpan[];
+      expect(parsedData).to.have.length(3); // session span + 2 pending spans
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it('should clear existing stored spans for the same session ID', () => {
+      const sessionSpan = mockSpan;
+      const pendingSpans = [mockSpan];
+
+      // Store spans twice with same session ID
+      spanStorage.storePendingSpans('session123', sessionSpan, pendingSpans);
+      spanStorage.storePendingSpans('session123', sessionSpan, pendingSpans);
+
+      expect(storage.length).to.equal(1); // Should only have one entry
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it('should handle storage errors gracefully', () => {
+      const spanStorageWithFailingStorage = new EmbraceSpanStorage({
+        storage: new FailingStorage(),
+        diag,
+      });
+
+      expect(() => {
+        spanStorageWithFailingStorage.storePendingSpans(
+          'session123',
+          mockSpan,
+          []
+        );
+      }).to.not.throw();
+
+      const errorLogs = diag.getErrorLogs();
+      expect(
+        errorLogs.some(log => log.includes('Failed to store spans to storage'))
+      ).to.equal(true);
+      spanStorageWithFailingStorage.destroy();
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+  });
+
+  describe('clearStoredSpans', () => {
+    it('should clear all stored spans for a given session ID', () => {
+      const sessionSpan = mockSpan;
+      const pendingSpans = [mockSpan];
+
+      // Store spans for multiple sessions
+      spanStorage.storePendingSpans('session123', sessionSpan, pendingSpans);
+      spanStorage.storePendingSpans('session456', sessionSpan, pendingSpans);
+
+      expect(storage.length).to.equal(2);
+
+      spanStorage.clearStoredSpans('session123');
+
+      expect(storage.length).to.equal(1);
+      const remainingKey = storage.key(0) as string;
+      expect(remainingKey).to.include('session456');
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it('should handle storage errors gracefully', () => {
+      const spanStorageWithFailingStorage = new EmbraceSpanStorage({
+        storage: new FailingStorage(),
+        diag,
+      });
+
+      expect(() => {
+        spanStorageWithFailingStorage.clearStoredSpans('session123');
+      }).to.not.throw();
+
+      const errorLogs = diag.getErrorLogs();
+      expect(
+        errorLogs.some(log =>
+          log.includes('Failed to clear stored spans from storage')
+        )
+      ).to.equal(true);
+
+      spanStorageWithFailingStorage.destroy();
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+  });
+
+  describe('expired spans check', () => {
+    it('should start expired spans check on construction', () => {
+      expect(clock.countTimers()).to.be.greaterThan(0);
+    });
+
+    it('should handle expired spans check without errors', () => {
+      const sessionSpan = mockSpan;
+      const pendingSpans = [mockSpan];
+
+      spanStorage.storePendingSpans('session123', sessionSpan, pendingSpans);
+      expect(storage.length).to.equal(1);
+
+      expect(mockOnExport.calledOnce).to.equal(false);
+
+      // Advance clock so that the interval runs.
+      clock.tick(61 * 60 * 1000);
+      expect(mockOnExport.calledOnce).to.equal(true);
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it('should handle invalid stored data gracefully', () => {
+      storage.setItem('embrace_pending_session123_12345', 'invalid json');
+
+      expect(() => {
+        spanStorage.checkAndExportExpiredSpans();
+      }).to.not.throw();
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+  });
+
+  describe('destroy', () => {
+    it('should stop expired spans check', () => {
+      const timerCount = clock.countTimers();
+      spanStorage.destroy();
+      expect(clock.countTimers()).to.equal(timerCount - 1);
+
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+  });
+});

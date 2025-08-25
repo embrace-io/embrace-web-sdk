@@ -49,7 +49,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   beforeEach(() => {
     // Clear localStorage to ensure clean test state
     localStorage.clear();
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(1756138004000);
     memoryExporter = setupTestTraceExporter();
 
     diag = new InMemoryDiagLogger();
@@ -323,8 +323,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           mockSessionSpan
         );
 
-        expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+        expect(diagLogger.getErrorLogs()).to.have.lengthOf(2);
         expect(diagLogger.getErrorLogs()[0]).to.include(
+          'Failed to clear stored spans from storage:'
+        );
+        expect(diagLogger.getErrorLogs()[1]).to.include(
           'Failed to store spans to storage'
         );
       });
@@ -450,7 +453,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
         expect(diagLogger.getErrorLogs()[0]).to.include(
-          'Failed to check and export expired spans'
+          'Failed to process expired spans'
         );
         expect(
           inMemoryStorage.getItem(`embrace_pending_corrupted_${pastTime}`)
