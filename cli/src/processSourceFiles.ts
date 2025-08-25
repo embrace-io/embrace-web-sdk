@@ -5,7 +5,7 @@ import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
 const SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOSymbolFileID';
-const SYMBOL_FILE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&(e._EmbraceWebSymbolFileIDs=e._EmbraceWebSymbolFileIDs||{},e._EmbraceWebSymbolFileIDs[n]="${SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
+const SYMBOL_FILE_IDS_CODE_SNIPPET = `!function(){try{var g="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new g.Error).stack;n&&(g._EmbraceWebSymbolFileIDs=g._EmbraceWebSymbolFileIDs||{},g._EmbraceWebSymbolFileIDs[n]="${SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
 
 interface SourceMap {
   version: number;
