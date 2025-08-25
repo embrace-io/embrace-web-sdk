@@ -1,5 +1,5 @@
 import { ExportResultCode } from '@opentelemetry/core';
-import type { IResource } from '@opentelemetry/resources';
+import { emptyResource } from '@opentelemetry/resources';
 import type { ReadableLogRecord } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
@@ -30,7 +30,7 @@ describe('EmbraceLogExporter', () => {
       severityText: 'INFO',
       severityNumber: 1,
       body: 'mock body',
-      resource: { attributes: {} } as IResource, // casting required to avoid having to implement `merge` method
+      resource: emptyResource(),
       instrumentationScope: { name: 'test' },
       attributes: {},
       droppedAttributesCount: 0,

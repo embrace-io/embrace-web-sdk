@@ -1,4 +1,4 @@
-import type { LogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { EmbraceLogRecordProcessorArgs } from './types.js';
 import type { URLDocument } from '../../common/index.js';
@@ -18,7 +18,7 @@ export class EmbraceLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: LogRecord) {
+  public onEmit(logRecord: SdkLogRecord) {
     if (!logRecord.attributes[KEY_EMB_TYPE]) {
       logRecord.setAttribute(KEY_EMB_TYPE, EMB_TYPES.SystemLog);
     }

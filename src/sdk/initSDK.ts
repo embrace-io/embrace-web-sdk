@@ -1,7 +1,7 @@
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { Resource } from '@opentelemetry/resources';
+import { emptyResource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   BatchLogRecordProcessor,
@@ -63,7 +63,7 @@ export const initSDK = (
     appID,
     appVersion,
     templateBundleID,
-    resource = Resource.empty(),
+    resource = emptyResource(),
     spanExporters = [],
     logExporters = [],
     spanProcessors = [],
@@ -362,16 +362,6 @@ const setupLogs = ({
   registerGlobally,
   embraceLogProcessor,
 }: SetupLogsArgs) => {
-  const loggerProvider = new LoggerProvider({
-    resource,
-  });
-
-  const embraceLogManager = new EmbraceLogManager({
-    spanSessionManager,
-    limitManager,
-    loggerProvider: registerGlobally ? undefined : loggerProvider,
-  });
-
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new IdentifiableSessionLogRecordProcessor({
@@ -390,9 +380,16 @@ const setupLogs = ({
     finalLogProcessors.push(embraceLogProcessor);
   }
 
-  for (const logProcessor of finalLogProcessors) {
-    loggerProvider.addLogRecordProcessor(logProcessor);
-  }
+  const loggerProvider = new LoggerProvider({
+    resource,
+    processors: finalLogProcessors,
+  });
+
+  const embraceLogManager = new EmbraceLogManager({
+    spanSessionManager,
+    limitManager,
+    loggerProvider: registerGlobally ? undefined : loggerProvider,
+  });
 
   if (registerGlobally) {
     logs.setGlobalLoggerProvider(loggerProvider);
