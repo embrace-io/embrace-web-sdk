@@ -4,12 +4,15 @@ import type { ExtendedSpan } from './api-traces/index.js';
 import { trace } from './api-traces/index.js';
 import { user } from './api-users/index.js';
 import { getNavigationInstrumentation } from './instrumentations/index.js';
-import type {
-  DynamicConfigManager,
-  DynamicSDKConfig,
-  Span,
-} from './sdk/index.js';
-import * as sdk from './sdk/index.js';
+import type { DynamicConfigManager, DynamicSDKConfig } from './sdk/index.js';
+import type { Span } from '@opentelemetry/api';
+import { DiagLogLevel } from '@opentelemetry/api';
+import { initSDK } from './sdk/index.js';
+
+const sdk = {
+  initSDK,
+  DiagLogLevel,
+};
 
 export { getNavigationInstrumentation, log, sdk, session, trace, user };
 export type { DynamicConfigManager, DynamicSDKConfig, ExtendedSpan, Span };

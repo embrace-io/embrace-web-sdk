@@ -464,15 +464,20 @@ We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum 
 
 ## Troubleshooting
 
+### Upgrading between major versions
+
+Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
+
 ### Compatibility with OTel packages
 
 The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. **Important:** The Embrace Web SDK only supports OpenTelemetry 1.x packages. OpenTelemetry 2.x (and above) is **not supported** and will not work with this SDK at this time.
 
 If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations, you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
 
-| Open Telemetry APIs | Core    | Instrumentations & Contrib |
-|---------------------|---------|----------------------------|
-| 1.9.0               | 1.30.1  | 0.57.2                     |
+| Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
+|-----------------|---------------------|--------|----------------------------|
+| 2.x             | 1.9.x               | 2.0.x  | 0.203.x                    |
+| 1.x             | 1.9.0               | 1.30.1 | 0.57.2                     |
 
 For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
 and [package-lock.json](./package-lock.json) files.
