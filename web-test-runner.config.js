@@ -31,9 +31,30 @@ export default {
         // Will cause errors when it crawls the demo/ and tests/ directories for html files from other app builds
         entries: [],
       },
+      server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: false,
+        hmr: false,
+        watch: null,
+      },
     }),
   ],
-  browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
+  browsers: [
+    playwrightLauncher({
+      product: 'chromium',
+      concurrency: 1,
+      // needed for the docker container in CI
+      launchOptions: {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-web-security',
+        ],
+      },
+    }),
+  ],
   browserLogs: true,
   filterBrowserLogs: removeGlobalExceptionTestError,
 };
