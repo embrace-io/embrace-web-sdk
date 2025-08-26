@@ -361,7 +361,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -471,7 +471,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -501,7 +501,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -555,7 +555,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -607,7 +607,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -653,7 +653,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -703,7 +703,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -743,7 +743,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -792,7 +792,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -834,7 +834,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -909,7 +909,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -987,7 +987,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -1065,7 +1065,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -1390,7 +1390,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+        omit: new Set(['document-load']),
       },
     });
 
@@ -1403,7 +1403,7 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+        omit: new Set(['document-load']),
       },
     });
 

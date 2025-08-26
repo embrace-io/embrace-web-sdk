@@ -1,6 +1,7 @@
-import { DocumentLoadInstrumentation, sdk } from '@embrace-io/web-sdk';
+import { sdk } from '@embrace-io/web-sdk';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import {
   ConsoleSpanExporter,
