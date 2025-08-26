@@ -35,4 +35,5 @@ export default {
   ],
   browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
   browserLogs: true,
+  filterBrowserLogs: removeGlobalExceptionTestError,
 };
