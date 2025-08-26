@@ -5,5 +5,14 @@
   "semi": true,
   "singleQuote": true,
   "tabWidth": 2,
-  "trailingComma": "es5"
+  "trailingComma": "es5",
+  "overrides": [
+    {
+      "files": "*.{yml,yaml}",
+      "options": {
+        "printWidth": 500,
+        "proseWrap": "never"
+      }
+    }
+  ]
 }

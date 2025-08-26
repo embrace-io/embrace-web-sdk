@@ -48,7 +48,7 @@
     "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
     "commitlint": "commitlint",
     "playwright": "playwright",
-    "prepare": "husky"
+    "prepare": "if [ -d .git ]; then husky; fi"
   },
   "files": [
     "build/esm/**/*.js",

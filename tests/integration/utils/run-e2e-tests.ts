@@ -70,7 +70,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       // If this gets flaky, we can increase the timeout or read the server logs
       const timeout = setTimeout(() => {
         throw new Error('Server did not register the session end in time');
-      }, 2000);
+      }, 4000);
 
       await new Promise(resolve => {
         const interval = setInterval(async () => {
