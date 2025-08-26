@@ -57,10 +57,6 @@ jobs:
       - configure
       - environment
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.54.2-noble
-      options: --add-host=host.docker.internal:host-gateway --dns 8.8.8.8
-
     # staging and production run test-multiple-browsers, and development just runs regular test
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
@@ -90,13 +86,55 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
 
       - name: Test with coverage
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        shell: bash
         run: |
           # Disable coverage for releases to speed up tests, since nobody will see coverage results anyway
           if [[ "${{ github.event_name }}/$GITHUB_EVENT_ACTION" == 'release/released' || "$GITHUB_ACTOR" == 'dependabot[bot]' ]]; then
@@ -108,7 +146,6 @@ jobs:
           npm run sdk:test -- $argsCoverage
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
-          CI: true
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -133,7 +170,6 @@ jobs:
       - configure
       - environment
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.54.2-noble
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
@@ -162,9 +198,52 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
 
       - name: Test multiple browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -194,7 +273,6 @@ jobs:
       - configure
       - environment
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.54.2-noble
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -225,9 +303,52 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
 
       # We need the SDK to be built, so we can use it during performance tests
       - name: Build SDK
@@ -266,10 +387,7 @@ jobs:
 
       - name: Post or update PR comment with performance results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
-        shell: bash
         run: |
-          apt-get update
-          apt-get install -y gh jq
           BODY="$(cat performance-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
           COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
@@ -302,10 +420,9 @@ jobs:
     needs:
       - configure
       - environment
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-    runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.54.2-noble
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -334,9 +451,53 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Setup Node.js ${{ matrix.node-version }}
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Get installed Playwright version
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        id: playwright-version
+        run: echo "version=$(npm why --json playwright | jq --raw-output '.[].version' )" >> $GITHUB_OUTPUT
+
+      - name: Restore cached playwright browsers
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          # As a fallback, if the Playwright version has changed, try use the
+          # most recently cached version. There's a good chance that at least one
+          # of the browser binary versions haven't been updated, so Playwright can
+          # skip installing that in the next step.
+          # Note: When falling back to an old cache, `cache-hit` (used below)
+          # will be `false`. This allows us to restore the potentially out of
+          # date cache, but still let Playwright decide if it needs to download
+          # new binaries or not.
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+
+      # If the Playwright browser binaries weren't restored, we tell
+      # playwright to install everything for us.
+      - name: Install Playwright browsers with dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
+        run: npm run playwright -- install --with-deps
+
+      # If the Playwright browser binaries were restored, we tell
+      # playwright to install just system deps.
+      - name: Install Playwright's dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
+        run: npm run playwright -- install-deps
+
 
       # We need the SDK to be built, so we can use it in the sample apps
       - name: Build SDK
@@ -357,8 +518,6 @@ jobs:
         run: |
           npm run sdk:test:integration:build
           npm run sdk:test:integration:e2e
-        env:
-          HOME: /root
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -375,17 +534,14 @@ jobs:
         run: |
           echo '<!-- build-results -->' > build-results.md
           echo "## build results" >> build-results.md
-
+      
           for file in ./tests/integration/build-test-results/*.md; do
             cat "$file" >> build-results.md
           done
 
       - name: Post or update PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
-        shell: bash
         run: |
-          apt-get update
-          apt-get install -y gh jq
           BODY="$(cat build-results.md)"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
           COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- build-results -->"))| .id' comments.json)
@@ -429,7 +585,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - name: Install npm dependencies
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
 
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name == 'push'
@@ -482,7 +639,8 @@ jobs:
 
       - name: Install NPM dependencies
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
 
       - name: Lint
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
@@ -536,7 +694,8 @@ jobs:
 
       - name: Install NPM dependencies
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
 
       - name: TSC
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
@@ -582,7 +741,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install NPM dependencies
-        run: npm ci --strict-peer-deps
+        run: |
+          npm ci --strict-peer-deps
 
       - name: Run 'npm publish'
         env:
@@ -622,7 +782,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install NPM dependencies
-        run: npm ci --strict-peer-deps --include-workspace-root
+        run: |
+          npm ci --include-workspace-root --strict-peer-deps
 
       - name: Run 'npm publish'
         env:
