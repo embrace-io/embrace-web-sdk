@@ -4,6 +4,8 @@ import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
+const DATA_URL = import.meta.env.VITE_DATA_URL;
+const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 
 const setupOTel = () => {
   const result = sdk.initSDK({
@@ -12,6 +14,8 @@ const setupOTel = () => {
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     instrumentations: [createReactRouterNavigationInstrumentation()],
+    embraceDataURL: DATA_URL ?? undefined,
+    embraceConfigURL: CONFIG_URL ?? undefined,
   });
 
   if (result) {

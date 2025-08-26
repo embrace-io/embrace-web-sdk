@@ -22,6 +22,19 @@ import type {
   ResourceFetchCustomAttributeFunction,
 } from './types.js';
 
+import {
+  ATTR_URL_FULL,
+  ATTR_HTTP_USER_AGENT,
+  ATTR_HTTP_RESPONSE_BODY_SIZE,
+  ATTR_HTTP_RESPONSE_SIZE,
+} from '@opentelemetry/semantic-conventions/incubating';
+import {
+  addSpanPerformancePaintEvents,
+  getPerformanceNavigationEntries,
+} from './utils.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+
 type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
   deliveryType?: string;
   entryType?: string;
@@ -29,15 +42,6 @@ type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
   renderBlockingStatus?: string;
   transferSize?: number;
 };
-
-import {
-  ATTR_HTTP_URL,
-  ATTR_HTTP_USER_AGENT,
-} from '@opentelemetry/semantic-conventions/incubating';
-import {
-  addSpanPerformancePaintEvents,
-  getPerformanceNavigationEntries,
-} from './utils.js';
 
 type PerformanceEntries = OtelPerformanceEntries & {
   deliveryType?: string;
@@ -52,8 +56,7 @@ const ATTR_DELIVERY_TYPE = 'delivery_type';
 const ATTR_ENTRY_TYPE = 'entry_type';
 const ATTR_INITIATOR_TYPE = 'initiator_type';
 const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
-const ATTR_RESPONSE_STATUS = 'response_status';
-const ATTR_TRANSFER_SIZE = 'transfer_size';
+const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
@@ -133,8 +136,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
           entries
         );
         if (fetchSpan) {
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          fetchSpan.setAttribute(ATTR_HTTP_URL, location.href);
+          fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(
               fetchSpan,
@@ -154,8 +156,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         }
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      rootSpan.setAttribute(ATTR_HTTP_URL, location.href);
+      rootSpan.setAttribute(KEY_EMB_TYPE, EMB_TYPES.DocumentLoad);
+      rootSpan.setAttribute(ATTR_URL_FULL, location.href);
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       rootSpan.setAttribute(ATTR_HTTP_USER_AGENT, navigator.userAgent);
 
@@ -262,8 +264,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       parentSpan
     );
     if (span) {
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      span.setAttribute(ATTR_HTTP_URL, resource.name);
+      span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
+      span.setAttribute(ATTR_URL_FULL, resource.name);
       addSpanNetworkEvents(
         span,
         resource,
@@ -280,8 +282,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
           resource.renderBlockingStatus
         );
       }
-      span.setAttribute(ATTR_RESPONSE_STATUS, resource.responseStatus);
-      span.setAttribute(ATTR_TRANSFER_SIZE, resource.transferSize);
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_STATUS_CODE,
+        resource.responseStatus
+      );
+      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+      span.setAttribute(ATTR_DECODED_BODY_SIZE, resource.decodedBodySize);
 
       this._addCustomAttributesOnResourceSpan(
         span,
