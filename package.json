@@ -185,5 +185,8 @@
     "demo/webpack-example",
     "tests/performance",
     "tests/integration"
-  ]
+  ],
+  "lint-staged": {
+    "./{src,cli/src}/**/*.{js,mjs,cjs,ts,jsx,tsx}": "npm run sdk:lint:fix"
+  }
 }
