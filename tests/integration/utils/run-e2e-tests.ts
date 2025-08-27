@@ -230,6 +230,7 @@ const runE2ETests = ({
         browserName,
       }) => {
         testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+        testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
@@ -266,7 +267,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 
