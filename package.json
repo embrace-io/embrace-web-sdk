@@ -48,7 +48,7 @@
     "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
     "commitlint": "commitlint",
     "playwright": "playwright",
-    "prepare": "husky"
+    "prepare": "if [ -d .git ]; then husky; fi"
   },
   "files": [
     "build/esm/**/*.js",
@@ -134,24 +134,24 @@
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
-    "@eslint/js": "9.33.0",
+    "@eslint/js": "9.34.0",
     "@remcovaes/web-test-runner-vite-plugin": "1.3.0",
     "@rollup/plugin-commonjs": "28.0.6",
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-swc": "0.4.0",
     "@rollup/plugin-terser": "0.4.4",
-    "@swc/core": "1.13.3",
+    "@swc/core": "1.13.5",
     "@types/chai": "5.2.2",
     "@types/hoist-non-react-statics": "^3.3.6",
     "@types/mocha": "10.0.10",
     "@types/node": "22.15.32",
-    "@types/react": "19.1.10",
+    "@types/react": "19.1.11",
     "@types/sinon": "17.0.4",
     "@types/sinon-chai": "4.0.0",
     "@web/test-runner": "0.20.2",
     "@web/test-runner-playwright": "0.11.1",
-    "chai": "5.2.1",
-    "eslint": "9.33.0",
+    "chai": "6.0.1",
+    "eslint": "9.34.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import": "2.32.0",
@@ -165,10 +165,10 @@
     "prettier": "3.6.2",
     "rimraf": "6.0.1",
     "rollup": "4.46.2",
-    "sinon-chai": "4.0.0",
+    "sinon-chai": "4.0.1",
     "typedoc": "0.28.10",
     "typescript": "5.8.3",
-    "typescript-eslint": "8.39.1"
+    "typescript-eslint": "8.41.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"

@@ -28,11 +28,41 @@ export default {
   plugins: [
     vitePlugin({
       optimizeDeps: {
-        // Will cause errors when it crawls the demo/ and tests/ directories for html files from other app builds
-        entries: [],
+        // Vite dependency optimization can cause flakiness in CI test runs, turn it off except for the specific modules
+        // where we need to convert from cjs to esm
+        noDiscovery: true,
+        include: [
+          'hoist-non-react-statics',
+          'react',
+          '@opentelemetry/otlp-transformer',
+          '@opentelemetry/instrumentation-fetch',
+          '@opentelemetry/instrumentation-document-load',
+        ],
+      },
+      server: {
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: false,
+        hmr: false,
+        watch: null,
       },
     }),
   ],
-  browsers: [playwrightLauncher({ product: 'chromium', concurrency: 1 })],
+  browsers: [
+    playwrightLauncher({
+      product: 'chromium',
+      concurrency: 1,
+      // needed for the docker container in CI
+      launchOptions: {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-web-security',
+        ],
+      },
+    }),
+  ],
   browserLogs: true,
+  filterBrowserLogs: removeGlobalExceptionTestError,
 };
