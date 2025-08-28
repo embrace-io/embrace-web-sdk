@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "tests:integration:build": "npx tsx --test \"tests/build/*.test.ts\" --test-timeout=20000",
+    "tests:integration:build": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000",
     "tests:integration:e2e": "npx playwright test",
     "tests:integration:e2e:update-golden": "UPDATE_GOLDEN=1 npx playwright test"
   },
