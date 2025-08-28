@@ -162,7 +162,9 @@ export const processSourceFiles = async ({
       let debugID = ''; // DebugID has hyphens. E.g. cf3c7caa-072c-4b22-83bc-691d71e49bcd
       const sourceMap = JSON.parse(mapContent) as SourceMap;
 
-      // If the sourcemap already has a debug_id use that, otherwise we generate it:
+      // If the sourcemap already has a debug_id use that, otherwise we generate it.
+      // Given that the debug_id specification (https://github.com/tc39/ecma426/blob/main/proposals/debug-id.md#debug-ids)
+      // uses hyphens, and our bundle_id does not, we need to have the two variables separately.
       if (sourceMap.debugId) {
         bundleID = sourceMap.debugId.replaceAll('-', '');
         debugID = sourceMap.debugId;
