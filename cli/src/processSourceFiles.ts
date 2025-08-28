@@ -4,8 +4,8 @@ import path from 'node:path';
 import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
-const SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
-const SYMBOL_FILE_IDS_CODE_SNIPPET = `!function(){try{var g="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new g.Error).stack;n&&(g._EmbraceFileBundleIDs=g._EmbraceFileBundleIDs||{},g._EmbraceFileBundleIDs[n]="${SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
+const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
+const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var g="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new g.Error).stack;n&&(g._EmbraceFileBundleIDs=g._EmbraceFileBundleIDs||{},g._EmbraceFileBundleIDs[n]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
 
 interface SourceMap {
   version: number;
@@ -56,8 +56,8 @@ const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
   const injectIndex =
     sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex;
-  const snippet = SYMBOL_FILE_IDS_CODE_SNIPPET.replace(
-    SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE,
+  const snippet = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
+    FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
     debugID
   );
   jsLines.splice(injectIndex, 0, snippet);
