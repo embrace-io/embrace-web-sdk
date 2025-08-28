@@ -88,20 +88,20 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       );
 
       const currentSessionStartTime = this.sessionManager.getSessionStartTime();
-      const pendingSpansCount =
-        this._embraceSpanProcessor?.getPendingSpansCount() || 0;
 
       // A limited session is one that is:
       // - shorter than a specified duration threshold
       // - contains no user interactions
-      // - the amount of pending spans is less than MAX_PENDING_SPAN_COUNT
+      // - Embrace is enabled and the amount of pending spans is less than MAX_PENDING_SPAN_COUNT
       const isLimitedSession =
         this._avoidEndingLimitedSessions &&
         currentSessionStartTime !== null &&
         this.perf.millisSinceHRTime(currentSessionStartTime) <
           limitedSessionMaxDurationMs &&
         !this._interactionSinceLastVisibilityChange &&
-        pendingSpansCount < MAX_PENDING_SPAN_COUNT;
+        !!this._embraceSpanProcessor &&
+        this._embraceSpanProcessor.getPendingSpansCount() <
+          MAX_PENDING_SPAN_COUNT;
 
       if (isLimitedSession) {
         this._diag.debug(
@@ -114,7 +114,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         );
 
         const sessionId = this.sessionManager.getSessionId();
-        if (this._embraceSpanProcessor && sessionId) {
+        if (sessionId) {
           const sessionSpan =
             this.sessionManager.endSessionSpanWithoutExporting('state_changed');
           if (sessionSpan) {
