@@ -9,8 +9,8 @@
     "build:clean": "npx rimraf dist .sonda",
     "build:esnext": "webpack --config webpack.config.esnext.mjs --mode production && npm run process-sourcemaps:esnext",
     "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production && npm run process-sourcemaps:es2015",
-    "process-sourcemaps:esnext": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/webpack-5/esnext/bundle.js --no-upload",
-    "process-sourcemaps:es2015": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/webpack-5/es2015/bundle.js --no-upload",
+    "process-sourcemaps:esnext": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/esnext --no-upload",
+    "process-sourcemaps:es2015": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/es2015 --no-upload",
     "embrace-web-cli": "embrace-web-cli"
   },
   "dependencies": {
