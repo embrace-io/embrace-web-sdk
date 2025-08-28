@@ -7,8 +7,10 @@
     "dev": "webpack serve --config webpack.config.esnext.mjs --mode development",
     "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
     "build:clean": "npx rimraf dist .sonda",
-    "build:esnext": "webpack --config webpack.config.esnext.mjs --mode production",
-    "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production"
+    "build:esnext": "webpack --config webpack.config.esnext.mjs --mode production && npm run process-sourcemaps:esnext",
+    "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production && npm run process-sourcemaps:es2015",
+    "process-sourcemaps:esnext": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/webpack-5/esnext/bundle.js --no-upload",
+    "process-sourcemaps:es2015": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/webpack-5/es2015/bundle.js --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
@@ -16,6 +18,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
     "@babel/core": "^7.27.7",
     "@babel/preset-env": "^7.27.2",
     "@babel/preset-react": "^7.27.1",

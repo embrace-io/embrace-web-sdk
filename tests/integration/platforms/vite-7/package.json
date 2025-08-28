@@ -7,8 +7,10 @@
     "dev": "vite --config vite.config.esnext.ts",
     "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
     "build:clean": "npx rimraf dist .sonda",
-    "build:esnext": "vite build --config vite.config.esnext.ts",
-    "build:es2015": "vite build --config vite.config.es2015.ts"
+    "build:esnext": "vite build --config vite.config.esnext.ts && npm run process-sourcemaps",
+    "build:es2015": "vite build --config vite.config.es2015.ts && npm run process-sourcemaps",
+    "embrace-web-cli": "embrace-web-cli",
+    "process-sourcemaps": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/es2015/assets --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
@@ -16,6 +18,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
     "@eslint/js": "^9.29.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
