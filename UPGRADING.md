@@ -7,12 +7,18 @@ See the breaking changes outlined in the [2.0.0 Release notes](https://github.co
 If your app has direct dependencies on OTel JS packages ensure they are updated to the 2.x versions, see
 [the compatibility table](./README.md#compatibility-with-otel-packages) for more info.
 
-### Update references to Span type
+### Moved exports from under `sdk` to the top-level
 
 1.x version:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  logLevel: sdk.DiagLogLevel.INFO,
+});
 
 const myMethod = (span: sdk.Span) => { /* ... */ };
 ```
@@ -20,7 +26,13 @@ const myMethod = (span: sdk.Span) => { /* ... */ };
 2.x version:
 
 ```typescript
-import { Span } from '@embrace-io/web-sdk';
+import { initSDK, DiagLogLevel, Span } from '@embrace-io/web-sdk';
+
+initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  logLevel: DiagLogLevel.INFO,
+});
 
 const myMethod = (span: Span) => { /* ... */ };
 ```
