@@ -3,7 +3,7 @@ import fs from 'node:fs';
 // Validate the input parameters
 
 interface ValidateInputArgs {
-  path: string;
+  buildPath: string;
   token: string;
   appID: string;
   host: string;
@@ -16,7 +16,7 @@ interface ValidateInputArgs {
 }
 
 export const validateInput = ({
-  path,
+  buildPath,
   token,
   appID,
   host,
@@ -27,8 +27,8 @@ export const validateInput = ({
   templateAppVersion,
   upload,
 }: ValidateInputArgs): string | null => {
-  if (!path.trim()) {
-    return 'JS files path cannot be empty.';
+  if (!buildPath.trim()) {
+    return 'buildPath cannot be empty.';
   }
   if (appVersion) {
     if (appVersion.length > 20) {
@@ -67,12 +67,12 @@ export const validateInput = ({
   }
 
   try {
-    const pathStat = fs.statSync(path);
+    const pathStat = fs.statSync(buildPath);
     if (!pathStat.isDirectory()) {
-      return 'JS files dir needs to be a valid directory.';
+      return 'buildPath needs to be a valid directory.';
     }
   } catch (_) {
-    return 'JS file dir not found.';
+    return 'buildPath not found.';
   }
 
   return null; // All validations passed

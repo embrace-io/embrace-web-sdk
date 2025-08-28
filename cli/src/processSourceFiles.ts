@@ -17,7 +17,7 @@ interface SourceMap {
 }
 
 interface ProcessSourceFilesArgs {
-  path: string;
+  buildPath: string;
   token: string;
   appID: string;
   appVersion: string;
@@ -66,7 +66,7 @@ const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
 };
 
 export const processSourceFiles = async ({
-  path: inputPath,
+  buildPath,
   token,
   appID,
   host,
@@ -81,7 +81,7 @@ export const processSourceFiles = async ({
   appVersion,
 }: ProcessSourceFilesArgs): Promise<void> => {
   const validationError = validateInput({
-    path: inputPath,
+    buildPath,
     token,
     appID,
     host,
@@ -98,25 +98,25 @@ export const processSourceFiles = async ({
   }
 
   // Validate that path is a directory
-  const stats = fs.statSync(inputPath);
+  const stats = fs.statSync(buildPath);
   if (!stats.isDirectory()) {
-    console.error(`Path must be a directory: ${inputPath}`);
+    console.error(`Path must be a directory: ${buildPath}`);
     process.exit(1); // Exit with error code
   }
 
   try {
     // Iterate over directory to find .js files with corresponding .js.map files
-    const files = fs.readdirSync(inputPath);
+    const files = fs.readdirSync(buildPath);
     const jsFiles = files.filter(file => file.endsWith('.js'));
 
     console.log(
-      `Found ${jsFiles.length} JavaScript files in directory: ${inputPath}`
+      `Found ${jsFiles.length} JavaScript files in directory: ${buildPath}`
     );
 
     for (const jsFile of jsFiles) {
       const mapFile = jsFile + '.map';
-      const jsFilePath = path.join(inputPath, jsFile);
-      const mapFilePath = path.join(inputPath, mapFile);
+      const jsFilePath = path.join(buildPath, jsFile);
+      const mapFilePath = path.join(buildPath, mapFile);
 
       // Check if corresponding .js.map file exists
       if (!files.includes(mapFile)) {

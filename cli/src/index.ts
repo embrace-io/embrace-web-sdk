@@ -26,8 +26,11 @@ program
   .command('upload')
   .description(CLI_DESCRIPTION)
   .addOption(
-    new Option('-p, --build-path <buildPath>', 'Path to where the built JS files live')
-      .env('EMB_JS_PATH')
+    new Option(
+      '-p, --build-path <buildPath>',
+      'Path to where the built JS files live'
+    )
+      .env('EMB_BUILD_PATH')
       .makeOptionMandatory()
   )
   .addOption(
@@ -129,7 +132,7 @@ program
   )
   .action(async options => {
     const {
-      jsPath,
+      buildPath,
       token,
       appId,
       host,
@@ -144,7 +147,7 @@ program
       encoding,
     } = options; // Destructure the options
     await processSourceFiles({
-      path: jsPath,
+      buildPath,
       token,
       appID: appId, // commander processes it as appId instead of appID, ergo the rename
       host,
