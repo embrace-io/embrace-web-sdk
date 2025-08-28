@@ -24,7 +24,7 @@ import type {
 
 import {
   ATTR_URL_FULL,
-  ATTR_HTTP_USER_AGENT,
+  ATTR_USER_AGENT_ORIGINAL,
   ATTR_HTTP_RESPONSE_BODY_SIZE,
   ATTR_HTTP_RESPONSE_SIZE,
 } from '@opentelemetry/semantic-conventions/incubating';
@@ -158,8 +158,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
       rootSpan.setAttribute(KEY_EMB_TYPE, EMB_TYPES.DocumentLoad);
       rootSpan.setAttribute(ATTR_URL_FULL, location.href);
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      rootSpan.setAttribute(ATTR_HTTP_USER_AGENT, navigator.userAgent);
+      rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
 
       this._addResourcesSpans(rootSpan);
 

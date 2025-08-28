@@ -20,8 +20,6 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { ATTR_HTTP_RESPONSE_CONTENT_LENGTH } from '@opentelemetry/semantic-conventions/incubating';
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
@@ -339,8 +337,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
+          (rootSpan.attributes['http.response_content_length'] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -440,11 +437,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_URL_FULL],
+          spanResource1.attributes['url.full'],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[ATTR_URL_FULL],
+          spanResource2.attributes['url.full'],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -476,7 +473,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_URL_FULL],
+          spanResource1.attributes['url.full'],
           'http://localhost:8090/bundle.js'
         );
 
@@ -532,17 +529,20 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.isOk(
-          (fetchSpan.attributes['http.url'] as string).startsWith(
+          (fetchSpan.attributes['url.full'] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
 
         assert.isOk(
-          (rootSpan.attributes['http.url'] as string).startsWith(
+          (rootSpan.attributes['url.full'] as string).startsWith(
             'http://localhost:8000/?wtr-session-id='
           )
         );
-        assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
+        assert.strictEqual(
+          rootSpan.attributes['user_agent.original'],
+          userAgent
+        );
 
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
@@ -791,8 +791,7 @@ describe('DocumentLoad Instrumentation', () => {
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
         assert.exists(
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
+          resourceSpan.attributes['http.response_content_length'],
           'http.response_content_length attribute should exist'
         );
         done();
