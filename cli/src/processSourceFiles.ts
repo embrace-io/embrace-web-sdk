@@ -114,6 +114,7 @@ export const processSourceFiles = async ({
       `Found ${jsFiles.length} JavaScript files in directory: ${buildPath}`
     );
 
+    let appVersionReplaced = false;
     for (const jsFile of jsFiles) {
       const mapFile = jsFile + '.map';
       const jsFilePath = path.join(buildPath, jsFile);
@@ -148,8 +149,9 @@ export const processSourceFiles = async ({
         );
 
         if (newJsContent === jsContent || newMapContent === mapContent) {
-          console.error(`Template App version not found in ${jsFilePath}`);
-          process.exit(1); // Exit with error code
+          console.debug(`Template App version not found in ${jsFilePath}`);
+        } else {
+          appVersionReplaced = true;
         }
 
         // save the content to the base vars for later processing
@@ -207,6 +209,14 @@ export const processSourceFiles = async ({
         upload,
       });
       console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
+    }
+
+    // If the app version was provided, but it couldn't be replaced in any of the files, exit with error.
+    if (appVersion && !appVersionReplaced) {
+      console.error(
+        `Template App version not found in any of the js files. Exiting.`
+      );
+      process.exit(1); // Exit with error code
     }
   } catch (err) {
     console.error('Error processing files:', err);
