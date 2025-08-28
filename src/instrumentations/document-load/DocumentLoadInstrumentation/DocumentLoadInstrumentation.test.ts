@@ -146,30 +146,6 @@ const entries: PerformanceNavigationTiming = {
   toJSON: () => {},
 };
 
-// const entriesFallback = {
-//   navigationStart: 1571078170305,
-//   unloadEventStart: 0,
-//   unloadEventEnd: 0,
-//   redirectStart: 0,
-//   redirectEnd: 0,
-//   fetchStart: 1571078170305,
-//   domainLookupStart: 1571078170307,
-//   domainLookupEnd: 1571078170308,
-//   connectStart: 1571078170309,
-//   connectEnd: 1571078170310,
-//   secureConnectionStart: 1571078170310,
-//   requestStart: 1571078170310,
-//   responseStart: 1571078170313,
-//   responseEnd: 1571078170330,
-//   domLoading: 1571078170331,
-//   domInteractive: 1571078170392,
-//   domContentLoadedEventStart: 1571078170392,
-//   domContentLoadedEventEnd: 1571078170392,
-//   domComplete: 1571078170393,
-//   loadEventStart: 1571078170393,
-//   loadEventEnd: 1571078170394,
-// };
-
 const paintEntries: PerformanceEntryList = [
   {
     duration: 0,
