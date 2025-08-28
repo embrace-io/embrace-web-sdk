@@ -4,8 +4,9 @@ import path from 'node:path';
 import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
+// The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
 const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
-const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var g="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},n=(new g.Error).stack;n&&(g._EmbraceFileBundleIDs=g._EmbraceFileBundleIDs||{},g._EmbraceFileBundleIDs[n]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
+const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
 
 interface SourceMap {
   version: number;
