@@ -26,7 +26,7 @@ program
   .command('upload')
   .description(CLI_DESCRIPTION)
   .addOption(
-    new Option('-p, --js-path <jsPath>', 'Path to where the JS files live')
+    new Option('-p, --build-path <buildPath>', 'Path to where the built JS files live')
       .env('EMB_JS_PATH')
       .makeOptionMandatory()
   )
