@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "AB88F61CB67B40A18C197F62F8E1C2BB"
+              "stringValue": "A19673403E1D4337835621E47FA16F98"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0.2) Gecko/20100101 Firefox/140.0.2"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152095209000000",
-              "observedTimeUnixNano": "1756152095210000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405821012000000",
+              "observedTimeUnixNano": "1756405821012000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "value@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:408096\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:191111\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:192394\nMf/e/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423962\nAf/i/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:422242\nRf/Rf/i/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423163\nNf@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423274\na@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423479\nDf/</<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423539\nDf/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423418\nMf/t@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:424107\nMc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135279\n247/Vc/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:141342\nMt@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:23218\nVc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:136505\nap@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162598\nop@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162418\nEventListener.handleEvent*Bc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:136075\nzc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135475\n247/Uc/<@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135641\nUc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135586\n247/t.createRoot@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:170356\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:424536\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:424613\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "07B3962B00D64FA8B6CAF237E49E77B6"
+                    "stringValue": "5B984527DD0644D891D5F679CEEF8F37"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "486D671C884545D781C49586EA93FE01"
+                    "stringValue": "5F21DBA2469A4D27A91275E2F0AE1FCB"
                   }
                 },
                 {

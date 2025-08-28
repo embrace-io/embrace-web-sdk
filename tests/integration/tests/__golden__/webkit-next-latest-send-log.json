@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "4A9A06A45EF94838B21352375105AD72"
+              "stringValue": "824BB77A787140A69E934076DA2A6E7B"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152092940000000",
-              "observedTimeUnixNano": "1756152092941000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405819343000000",
+              "observedTimeUnixNano": "1756405819344000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:42200\nmessage@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:2652\nmessage@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:2927\n@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:49405\nt@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:49467\ni8@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135364\n@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:141451\nnz@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:19198\nsn@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136598\ncc@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163600\nci@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163422"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "5738F5BEFD364C8080A8189447814A7F"
+                    "stringValue": "DF3BD5CC6D7A42F0A1915E145B92F240"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "3181461071AC4B5787288261119E0878"
+                    "stringValue": "B762868FC2A947E89B0BC509AA83DE50"
                   }
                 },
                 {

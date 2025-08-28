@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "640AAD94DE5A42748EE8E9D1F1275D9B"
+              "stringValue": "F254B398DC81433683DD5A0D3BB69A00"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152095527000000",
-              "observedTimeUnixNano": "1756152095527000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405821693000000",
+              "observedTimeUnixNano": "1756405821693000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:337691\nmessage@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185497\nmessage@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185881\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346549\nnl@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346029\no@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346234\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346294\nPromise@[native code]\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346184\nIc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:135261\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:141324\nIt@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:23201\nVc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:136487\nof@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:162580\nrf@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:162402"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "40FB0EA1A3A446A79DFA89B3298727C6"
+                    "stringValue": "C146644A508F4421BE26B4AADE96E104"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "6ECC97938FE34E4690C1079C408B4D56"
+                    "stringValue": "F53336CF35E844FDB9F6DF4BC512C7F7"
                   }
                 },
                 {

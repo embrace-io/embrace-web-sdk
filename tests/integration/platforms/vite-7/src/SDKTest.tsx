@@ -11,7 +11,7 @@ const SDKTest = () => {
   };
 
   const handleSendLog = async () => {
-    log.message('This is a test log message', 'info');
+    log.message('This is a test log message', 'warning');
 
     if (sdkControl) {
       await sdkControl.flush();

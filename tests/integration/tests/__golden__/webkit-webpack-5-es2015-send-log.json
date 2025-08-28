@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "0483F180681244AEA8C8C2E064A8CBC2"
+              "stringValue": "26C2E8D1535E42F58AB110F3078BA7D1"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152098112000000",
-              "observedTimeUnixNano": "1756152098113000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405824234000000",
+              "observedTimeUnixNano": "1756405824235000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "value@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:408096\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:191118\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:192401\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423969\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:422246\nNf@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423274\na@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423479\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423539\nPromise@[native code]\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:423429\nMc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135279\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:141342\nMt@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:23219\nVc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:136505\nap@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162598\nop@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162420"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "E55559ACFCBD4E868CB0DF22A2675D9F"
+                    "stringValue": "84CD3F391F9B40E6A9208223AF445598"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "4BB3645E26964EFC87BE43CCF9BAB432"
+                    "stringValue": "0E5067C61E7A42A7AECFE6F553AD58A5"
                   }
                 },
                 {

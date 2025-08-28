@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "02B027AAB53A47D9AA0761EE801610B2"
+              "stringValue": "FB37368FED414C2CAD6CEA3010C5426B"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0.2) Gecko/20100101 Firefox/140.0.2"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152090401000000",
-              "observedTimeUnixNano": "1756152090402000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405816360000000",
+              "observedTimeUnixNano": "1756405816360000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:337691\nmessage@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185490\nmessage@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185874\nil/e<@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346542\nnl@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346029\no@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346234\nrl/</<@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346294\nrl/<@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346173\nil/t@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346642\nIc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:135261\n247/Vc/<@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:141324\nIt@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:23200\nVc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:136487\nof@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:162580\nrf@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:162400\nEventListener.handleEvent*Bc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:136057\njc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:135457\n247/Uc/<@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:135623\nUc@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:135568\n247/t.createRoot@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:170338\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347054\n@http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347132\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "7A016A0FD22346D5B73EBE99F97C1864"
+                    "stringValue": "EAD9A0DB7BEA47A3AF68135CDFEE58FD"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "649B33DA484E460BAD453D65723B5EB8"
+                    "stringValue": "74BC7559668F4803BDCDBE6FC5BF2402"
                   }
                 },
                 {

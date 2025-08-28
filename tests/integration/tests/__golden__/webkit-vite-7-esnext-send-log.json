@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "DB5BA7F819DA4E3688C5AB5CDA1369BA"
+              "stringValue": "74F15042B3244AC28273D975BD562303"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152095526000000",
-              "observedTimeUnixNano": "1756152095527000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405821351000000",
+              "observedTimeUnixNano": "1756405821352000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:179338\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:120994\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:121377\n@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:184871\ni@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:184933\nTg@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:48:117133\n@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:48:122156\nDf@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:48:9042\nMo@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:48:118368\njo@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:26665\nwy@http://localhost:3001/public/vite-7/esnext/assets/index-DCrslNTR.js:49:26487"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "9709BAA704B048609D55575C03F8ACBF"
+                    "stringValue": "74989A7963F24CC785ED69B04F9E242F"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "3BF977C31D3640808979A96D4DE45F48"
+                    "stringValue": "D001F30B8B0542009F6EE1627A656919"
                   }
                 },
                 {

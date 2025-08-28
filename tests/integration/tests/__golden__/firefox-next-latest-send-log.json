@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "722D9072DAD545B0A3205384AA8F6811"
+              "stringValue": "C9729278BD294A9CB4381E39CD4384C0"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0.2) Gecko/20100101 Firefox/140.0.2"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152089951000000",
-              "observedTimeUnixNano": "1756152089952000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756405816052000000",
+              "observedTimeUnixNano": "1756405816053000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:42195\nmessage@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:2645\nmessage@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:2920\nt@http://localhost:3000/_next/static/chunks/app/page-6e3384f26b1ab30a.js:1:49398\ni8@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135364\n9248/sn/<@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:141451\nnz@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:19197\nsn@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136598\ncc@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163600\nci@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163420\nEventListener.handleEvent*se@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136161\ni5@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135560\n9248/i7/<@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135726\ni7@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135671\n9248/n.hydrateRoot@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:172955\n9781/U/<@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:170261\n1426/t.startTransition@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:20183\nU@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:170230\n1666/<@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:22912\nr@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:55002\nu@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:55341\n1666@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:1:22867\nr@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:1:127\ns@http://localhost:3000/_next/static/chunks/main-app-df3a994a2d5757c7.js:1:497\n@http://localhost:3000/_next/static/chunks/main-app-df3a994a2d5757c7.js:1:527\nr.O@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:1:504\nt@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:1:3217\n@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:64\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "B08F69B2D2184AF989ACED4D05917476"
+                    "stringValue": "6E975D4C21D742D0B0DC20883DCDB86F"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "16A650B992F64EA499729ADE95189CD8"
+                    "stringValue": "C4876D37ACA64926BF4CB70548984C82"
                   }
                 },
                 {
