@@ -32,17 +32,17 @@ interface ProcessSourceFilesArgs {
   upload: boolean;
 }
 
+const UUID_WITHOUT_HYPHENS_REGEX = /^[0-9a-fA-F]{32}$/;
+const UUID_PARTS_REGEX =
+  /([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})/;
 const addHyphensToUuid = (uuidStr: string): string => {
   // Ensure the input string is exactly 32 characters long and contains only hexadecimal digits
-  if (!/^[0-9a-fA-F]{32}$/.test(uuidStr)) {
+  if (!UUID_WITHOUT_HYPHENS_REGEX.test(uuidStr)) {
     throw new Error('Invalid UUID string: Must be 32 hexadecimal characters.');
   }
 
   // Use replace with a regex to insert hyphens at the correct positions
-  return uuidStr.replace(
-    /([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})/,
-    '$1-$2-$3-$4-$5'
-  );
+  return uuidStr.replace(UUID_PARTS_REGEX, '$1-$2-$3-$4-$5');
 };
 
 const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
