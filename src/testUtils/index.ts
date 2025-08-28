@@ -22,3 +22,4 @@ export { mockSpan } from './mockEntities/index.js';
 export { InMemoryStorage } from './InMemoryStorage/index.js';
 export { FailingStorage } from './FailingStorage/index.js';
 export { SAMPLED_UUID, NOT_SAMPLED_UUID } from './constants.js';
+export { setupPerformanceObserverTester } from './setupPerformanceObserverTester/index.js';

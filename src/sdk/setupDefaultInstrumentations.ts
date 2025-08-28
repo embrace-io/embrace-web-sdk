@@ -7,19 +7,29 @@ import {
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
   ClicksInstrumentation,
+  NetworkInstrumentation,
   EmbraceInstrumentationBase,
 } from '../instrumentations/index.js';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
   DefaultInstrumentationConfig,
   SetupDefaultInstrumentationsArgs,
 } from './types.js';
+import { diag } from '@opentelemetry/api';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
-  { logManager, spanSessionManager }: SetupDefaultInstrumentationsArgs = {}
+  {
+    diagLogger,
+    logManager,
+    spanSessionManager,
+  }: SetupDefaultInstrumentationsArgs = {
+    diagLogger: diag.createComponentLogger({
+      namespace: 'embrace-sdk',
+    }),
+  }
 ): Instrumentation[] => {
   /*
     These instrumentations are core to managing the session lifecycle and so are not optional
@@ -53,20 +63,35 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
-    instrumentations.push(
-      new FetchInstrumentation({
-        ...config['network'],
-        ...config['@opentelemetry/instrumentation-fetch'],
-      })
+  if (
+    config['@opentelemetry/instrumentation-fetch'] ||
+    config['@opentelemetry/instrumentation-xml-http-request'] ||
+    config.omit?.has('@opentelemetry/instrumentation-fetch') ||
+    config.omit?.has('@opentelemetry/instrumentation-xml-http-request')
+  ) {
+    diagLogger.warn(
+      'configuration for "@opentelemetry/instrumentation-fetch" and "@opentelemetry/instrumentation-xml-http-request" are deprecated, please use "network" instead '
     );
   }
 
-  if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
+  if (
+    !config.omit?.has('@opentelemetry/instrumentation-fetch') &&
+    !config.omit?.has('@opentelemetry/instrumentation-xml-http-request') &&
+    !config.omit?.has('network')
+  ) {
+    instrumentations.push(
+      new NetworkInstrumentation({
+        ...config['network'],
+      })
+    );
+    instrumentations.push(
+      new FetchInstrumentation({
+        ...config['network'],
+      })
+    );
     instrumentations.push(
       new XMLHttpRequestInstrumentation({
         ...config['network'],
-        ...config['@opentelemetry/instrumentation-xml-http-request'],
       })
     );
   }

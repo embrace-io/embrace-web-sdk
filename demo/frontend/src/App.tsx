@@ -136,6 +136,12 @@ const App = () => {
     req.send();
   };
 
+  const handleSendXMLNetworkRequest404 = () => {
+    const req = new XMLHttpRequest();
+    req.open('GET', 'https://example.com/sdk/auto/interception', true);
+    req.send();
+  };
+
   const handleCancelFetchNetworkRequest = () => {
     const controller = new AbortController();
     void fetch(POKEMON_URL, {
@@ -387,6 +393,9 @@ const App = () => {
           </button>
           <button onClick={handleSendXMLNetworkRequest}>
             Send a XML Network Request
+          </button>
+          <button onClick={handleSendXMLNetworkRequest404}>
+            Send a XML Network Request (404)
           </button>
         </div>
 

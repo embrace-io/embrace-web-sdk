@@ -18,6 +18,10 @@ export {
   type ClicksInstrumentationArgs,
 } from './clicks/index.js';
 export {
+  NetworkInstrumentation,
+  type NetworkInstrumentationArgs,
+} from './network/index.js';
+export {
   WebVitalsInstrumentation,
   type WebVitalOnReport,
   type WebVitalsInstrumentationArgs,

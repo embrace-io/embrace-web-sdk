@@ -210,6 +210,7 @@ export const initSDK = (
         loggerProvider,
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            diagLogger,
             logManager: embraceLogManager,
             spanSessionManager,
           }),
@@ -219,7 +220,9 @@ export const initSDK = (
     } else {
       registerInstrumentations({
         instrumentations: [
-          setupDefaultInstrumentations(defaultInstrumentationConfig),
+          setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            diagLogger,
+          }),
           ...instrumentations,
         ],
       });

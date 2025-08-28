@@ -15,6 +15,7 @@ import type { SpanSessionManager } from '../api-sessions/index.js';
 import type {
   ClicksInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
+  NetworkInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
   SpanSessionTimeoutInstrumentationArgs,
@@ -303,15 +304,13 @@ type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'web-vital'
+  | 'network'
   | '@opentelemetry/instrumentation-document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
-interface NetworkInstrumentationArgs {
-  ignoreUrls?: Array<string | RegExp>;
-}
-
 export interface SetupDefaultInstrumentationsArgs {
+  diagLogger: DiagLogger;
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
 }
@@ -325,9 +324,6 @@ export interface DefaultInstrumentationConfig {
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
-
-  // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
-  // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
   network?: NetworkInstrumentationArgs;
 
   /*
@@ -339,10 +335,18 @@ export interface DefaultInstrumentationConfig {
     DocumentLoadInstrumentationConfig,
     'enabled'
   >;
+
+  /*
+   * @deprecated 'network' instead
+   */
   '@opentelemetry/instrumentation-fetch'?: Omit<
     FetchInstrumentationConfig,
     'enabled'
   >;
+
+  /*
+   * @deprecated 'network' instead
+   */
   '@opentelemetry/instrumentation-xml-http-request'?: Omit<
     XMLHttpRequestInstrumentationConfig,
     'enabled'
