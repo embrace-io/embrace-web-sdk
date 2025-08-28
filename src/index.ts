@@ -9,10 +9,13 @@ import type { Span } from '@opentelemetry/api';
 import { DiagLogLevel } from '@opentelemetry/api';
 import { initSDK } from './sdk/index.js';
 
-const sdk = {
+export {
+  getNavigationInstrumentation,
+  log,
   initSDK,
   DiagLogLevel,
+  session,
+  trace,
+  user,
 };
-
-export { getNavigationInstrumentation, log, sdk, session, trace, user };
 export type { DynamicConfigManager, DynamicSDKConfig, ExtendedSpan, Span };

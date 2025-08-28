@@ -1,4 +1,4 @@
-import { sdk, user } from '@embrace-io/web-sdk';
+import { initSDK, user } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
@@ -6,7 +6,7 @@ import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 
 const setupOTel = () => {
-  const result = sdk.initSDK({
+  const result = initSDK({
     appID: SAMPLE_APP_ID,
     appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],

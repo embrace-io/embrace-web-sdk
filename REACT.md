@@ -4,17 +4,17 @@ You can use any of the Embrace Web SDK features in your React application. Howev
 instrumentation to make it easier to instrument some common React libraries and patterns.
 
 > [!TIP]
-> Make sure you call `sdk.initSDK` before your React App is mounted, this will ensure that the SDK is ready to capture traces and logs from the start of your app's lifecycle.
+> Make sure you call `initSDK` before your React App is mounted, this will ensure that the SDK is ready to capture traces and logs from the start of your app's lifecycle.
 
 ## React Router
 
 To instrument React Router, add the React Router navigation instrumentation when you init the Embrace Web SDK.
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 
-sdk.initSDK({
+initSDK({
   // ...Other configs
   instrumentations: [
     createReactRouterNavigationInstrumentation(),

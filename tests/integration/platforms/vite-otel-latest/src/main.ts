@@ -1,4 +1,4 @@
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
@@ -16,10 +16,10 @@ registerInstrumentations({
   instrumentations: [new DocumentLoadInstrumentation()],
 });
 
-sdk.initSDK({
+initSDK({
   appID: '',
   appVersion: 'YOUR_APP_VERSION',
-  logLevel: sdk.DiagLogLevel.INFO,
+  logLevel: DiagLogLevel.INFO,
   spanExporters: [new ConsoleSpanExporter()],
   logExporters: [new ConsoleLogRecordExporter()],
 });

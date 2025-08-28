@@ -1,6 +1,6 @@
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-const result = sdk.initSDK({
+const result = initSDK({
   appID: 'abc12',
   appVersion: 'YOUR_APP_VERSION',
 });

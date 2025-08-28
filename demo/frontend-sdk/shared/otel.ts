@@ -33,9 +33,7 @@ declare global {
     };
 
     EmbraceWebSdk: {
-      sdk: {
-        initSDK: (args: SDKInitArgs) => SDKControl;
-      };
+      initSDK: (args: SDKInitArgs) => SDKControl;
     };
   }
 }
@@ -66,8 +64,8 @@ const addEmbraceSDK = () => {
 
 const initSDK = (appID: string) => {
   window.EmbraceWebSdkOnReady.onReady(() => {
-    const { sdk } = window.EmbraceWebSdk;
-    sdkControl = sdk.initSDK({
+    const { initSDK } = window.EmbraceWebSdk;
+    sdkControl = initSDK({
       appID,
       embraceDataURL: `https://a-${appID}.data.stg.emb-eng.com`,
       embraceConfigURL: `https://a-${appID}.config.stg.emb-eng.com`,
