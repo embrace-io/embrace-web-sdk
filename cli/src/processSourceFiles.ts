@@ -54,14 +54,15 @@ const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
   );
 
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
-  jsLines.splice(
-    sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex,
-    0,
-    SYMBOL_FILE_IDS_CODE_SNIPPET.replace(
-      SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE,
-      debugID
-    )
+  const injectIndex =
+    sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex;
+  const snippet = SYMBOL_FILE_IDS_CODE_SNIPPET.replace(
+    SYMBOL_FILE_ID_CODE_SNIPPET_TEMPLATE,
+    debugID
   );
+  jsLines.splice(injectIndex, 0, snippet);
+  jsLines.splice(injectIndex, 0, '// Injected by Embrace Web CLI:');
+
   return jsLines.join('\n');
 };
 
