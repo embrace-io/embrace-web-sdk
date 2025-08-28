@@ -216,11 +216,11 @@ yarn add -D @embrace-io/web-cli
 You will also require a `Symbol Upload` API token. This can be found in your Embrace dashboard by going
 to [Settings->API](https://dash.embrace.io/settings/organization/api).
 
-Then hook the CLI into your build process and point it to your built bundle and sourcemaps in order to perform the
-upload:
+Then hook the CLI into your build process and point it to your path where the built JS files live in order
+to perform the upload:
 
 ```sh
-npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
 ```
 
 Additionally, if your app version is only known at build-time you can include it in the same command to have it injected
@@ -228,7 +228,7 @@ into the bundle. If you follow this method do not also include appVersion when c
 precedence:
 
 ```sh
-npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
 ```
 
 > [!NOTE]
