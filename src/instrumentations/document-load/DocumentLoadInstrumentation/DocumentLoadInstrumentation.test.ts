@@ -1,15 +1,13 @@
-/* eslint-disable */
-// @ts-nocheck
 /*
  * Adapted from OpenTelemetry document-load instrumentation
  * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  */
 
-import type { HrTime, Attributes } from '@opentelemetry/api';
+import type { Attributes, HrTime } from '@opentelemetry/api';
 import { context, propagation, trace } from '@opentelemetry/api';
 import {
-  W3CTraceContextPropagator,
   TRACE_PARENT_HEADER,
+  W3CTraceContextPropagator,
 } from '@opentelemetry/core';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
@@ -22,13 +20,12 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import { ATTR_HTTP_RESPONSE_CONTENT_LENGTH } from '@opentelemetry/semantic-conventions/incubating';
 import { assert } from 'chai';
+import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../index.js';
-import {
-  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
-  SEMATTRS_HTTP_URL,
-} from '@opentelemetry/semantic-conventions';
 import { EventNames } from './enums/EventNames.js';
 
 const exporter = new InMemorySpanExporter();
@@ -114,7 +111,7 @@ const resourcesNoSecureConnectionStart = [
     serverTiming: [],
   },
 ];
-const entries = {
+const entries: PerformanceNavigationTiming = {
   name: 'http://localhost:8090/',
   entryType: 'navigation',
   startTime: 0,
@@ -147,31 +144,33 @@ const entries = {
   loadEventEnd: 374.0100000286475,
   type: 'reload',
   redirectCount: 0,
-} as any;
+  responseStatus: 200,
+  toJSON: () => {},
+};
 
-const entriesFallback = {
-  navigationStart: 1571078170305,
-  unloadEventStart: 0,
-  unloadEventEnd: 0,
-  redirectStart: 0,
-  redirectEnd: 0,
-  fetchStart: 1571078170305,
-  domainLookupStart: 1571078170307,
-  domainLookupEnd: 1571078170308,
-  connectStart: 1571078170309,
-  connectEnd: 1571078170310,
-  secureConnectionStart: 1571078170310,
-  requestStart: 1571078170310,
-  responseStart: 1571078170313,
-  responseEnd: 1571078170330,
-  domLoading: 1571078170331,
-  domInteractive: 1571078170392,
-  domContentLoadedEventStart: 1571078170392,
-  domContentLoadedEventEnd: 1571078170392,
-  domComplete: 1571078170393,
-  loadEventStart: 1571078170393,
-  loadEventEnd: 1571078170394,
-} as any;
+// const entriesFallback = {
+//   navigationStart: 1571078170305,
+//   unloadEventStart: 0,
+//   unloadEventEnd: 0,
+//   redirectStart: 0,
+//   redirectEnd: 0,
+//   fetchStart: 1571078170305,
+//   domainLookupStart: 1571078170307,
+//   domainLookupEnd: 1571078170308,
+//   connectStart: 1571078170309,
+//   connectEnd: 1571078170310,
+//   secureConnectionStart: 1571078170310,
+//   requestStart: 1571078170310,
+//   responseStart: 1571078170313,
+//   responseEnd: 1571078170330,
+//   domLoading: 1571078170331,
+//   domInteractive: 1571078170392,
+//   domContentLoadedEventStart: 1571078170392,
+//   domContentLoadedEventEnd: 1571078170392,
+//   domComplete: 1571078170393,
+//   loadEventStart: 1571078170393,
+//   loadEventEnd: 1571078170394,
+// };
 
 const paintEntries: PerformanceEntryList = [
   {
@@ -233,7 +232,7 @@ describe('DocumentLoad Instrumentation', () => {
     exporter.reset();
   });
 
-  afterEach(async () => {
+  afterEach(() => {
     sandbox.restore();
     context.disable();
     Object.defineProperty(window.document, 'readyState', {
@@ -257,7 +256,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('when document readyState is complete', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -278,7 +277,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('when document readyState is not complete', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       Object.defineProperty(window.document, 'readyState', {
         writable: true,
@@ -340,9 +339,8 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
-          (rootSpan.attributes[
-            SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH
-          ] as number) > 0
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
+          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -374,7 +372,7 @@ describe('DocumentLoad Instrumentation', () => {
     });
 
     describe('AND window has information about server root span', () => {
-      let spyGetElementsByTagName: any;
+      let spyGetElementsByTagName: SinonStubbedFunction<[string]>;
       beforeEach(() => {
         const element = {
           content: '00-ab42124a3c573678d4d8b21ba52df3bf-d21f7bc17caa5aba-01',
@@ -421,7 +419,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('when resource entries are available', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -442,11 +440,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SEMATTRS_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[SEMATTRS_HTTP_URL],
+          spanResource2.attributes[ATTR_URL_FULL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -459,7 +457,7 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
   describe('when resource entries are available AND secureConnectionStart is 0', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -478,7 +476,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[SEMATTRS_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -491,9 +489,10 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('when navigation entries types are available and property "loadEventEnd" is missing', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       const entriesWithoutLoadEventEnd = Object.assign({}, entries);
+      // @ts-expect-error navigation timing is readonly but this is a stub
       delete entriesWithoutLoadEventEnd.loadEventEnd;
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entriesWithoutLoadEventEnd]);
@@ -555,7 +554,7 @@ describe('DocumentLoad Instrumentation', () => {
         // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
         // (@opentelemetry/sdk-trace-web@1.24.0).
         const expectedRsEventNames =
-          rsEventNames[1] === PTN.UNLOAD_EVENT_START
+          rsEventNames[1] === (PTN.UNLOAD_EVENT_START as string)
             ? [
                 PTN.FETCH_START,
                 PTN.UNLOAD_EVENT_START,
@@ -589,7 +588,7 @@ describe('DocumentLoad Instrumentation', () => {
     beforeEach(() => {
       const navEntriesWithNegativeFetch = Object.assign({}, entries, {
         fetchStart: -1,
-      });
+      }) as PerformanceNavigationTiming;
       sandbox
         .stub(window.performance, 'getEntriesByType')
         .withArgs('navigation')
@@ -608,7 +607,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('add custom attributes to spans', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -696,7 +695,7 @@ describe('DocumentLoad Instrumentation', () => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          documentLoad: span => {
+          documentLoad: _span => {
             throw new Error('test error');
           },
         },
@@ -710,7 +709,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   describe('ignore span events if specified', () => {
-    let spyEntries: any;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -792,7 +791,8 @@ describe('DocumentLoad Instrumentation', () => {
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
         assert.exists(
-          resourceSpan.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH],
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
+          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
           'http.response_content_length attribute should exist'
         );
         done();
