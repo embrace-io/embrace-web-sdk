@@ -162,10 +162,10 @@ const getAttributeValue = (
 ): string | number | boolean | null => {
   if (attr.value.stringValue !== undefined) {
     if (REPLACE_UUID_ATTRIBUTES_LIST.includes(attr.key)) {
-      // Replace all occurrences of UUIDs like "219F25B560B343E08FDD8AE821B3C0AB" with a fixed string
+      // Replace all occurrences of UUIDs with a fixed string to avoid getting unwanted differences
       return attr.value.stringValue!.replace(
-        /[A-F0-9]{32}/g,
-        'FIXED_UUID_FOR_TESTING'
+        /[a-fA-F0-9]{32}/g,
+        '11111111111111111111111111111111'
       );
     }
 
