@@ -9,14 +9,22 @@ import {
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 
+interface DefaultInstrumentationConfig {
+  '@opentelemetry/instrumentation-fetch'?: {
+    omitIfAlreadyPatched?: boolean;
+  };
+}
+
 interface SDKInitArgs {
   appID: string;
+  appVersion: string;
   embraceDataURL: string;
   embraceConfigURL: string;
   logLevel: number;
   registerGlobally?: boolean;
   spanProcessors?: SpanProcessor[];
   logProcessors?: LogRecordProcessor[];
+  defaultInstrumentationConfig?: DefaultInstrumentationConfig;
 }
 
 interface SDKControl {
@@ -62,11 +70,22 @@ const addEmbraceSDK = () => {
   firstScript.parentNode?.insertBefore(script, firstScript);
 };
 
-const initSDK = (appID: string) => {
+const initSDK = (
+  appID: string,
+  appVersion: string,
+  omitNetworkIfAlreadyPatched: boolean
+) => {
   window.EmbraceWebSdkOnReady.onReady(() => {
     const { initSDK } = window.EmbraceWebSdk;
+    console.log(
+      'appVersion: ',
+      appVersion,
+      ', omitNetworkIfAlreadyPatched: ',
+      omitNetworkIfAlreadyPatched
+    );
     sdkControl = initSDK({
       appID,
+      appVersion,
       embraceDataURL: `https://a-${appID}.data.stg.emb-eng.com`,
       embraceConfigURL: `https://a-${appID}.config.stg.emb-eng.com`,
       logLevel: 80,
@@ -75,6 +94,11 @@ const initSDK = (appID: string) => {
       logProcessors: [
         new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
       ],
+      defaultInstrumentationConfig: {
+        '@opentelemetry/instrumentation-fetch': {
+          omitIfAlreadyPatched: omitNetworkIfAlreadyPatched,
+        },
+      },
     });
 
     console.log(`Embrace SDK initialized with appID: ${appID}`, sdkControl);

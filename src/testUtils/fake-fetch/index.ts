@@ -5,26 +5,30 @@ import * as sinon from 'sinon';
 
 const withRequest = (arg: unknown) => arg instanceof window.Request;
 
+let fetchStub: SinonStub | undefined = undefined;
+
 export const getOptions = (callNumber = 0) =>
   ((window.fetch as SinonStub).getCall(callNumber).args[1] || {}) as Parameters<
     typeof window.fetch
   >[1];
 
 export const install = () => {
-  sinon.stub(window, 'fetch');
+  fetchStub = sinon.stub(window, 'fetch');
+  fetchStub.callsFake(() => Promise.resolve(new Response()));
 };
 
 export const restore = () => {
-  (window.fetch as SinonStub).restore();
+  fetchStub?.restore();
 };
 
 export const resetHistory = () => {
-  (window.fetch as SinonStub).resetHistory();
+  fetchStub?.resetHistory();
 };
 
 export const getMethod = (callNumber = 0) => {
-  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
-    .args[0] as Parameters<typeof window.fetch>[0];
+  const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
+    typeof window.fetch
+  >[0];
   if (withRequest(firstArg)) {
     return firstArg.method;
   }
@@ -32,8 +36,9 @@ export const getMethod = (callNumber = 0) => {
 };
 
 export const getBody = (callNumber = 0) => {
-  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
-    .args[0] as Parameters<typeof window.fetch>[0];
+  const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
+    typeof window.fetch
+  >[0];
   if (withRequest(firstArg)) {
     return firstArg.body;
   }
@@ -41,8 +46,9 @@ export const getBody = (callNumber = 0) => {
 };
 
 export const getUrl = (callNumber = 0) => {
-  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
-    .args[0] as Parameters<typeof window.fetch>[0];
+  const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
+    typeof window.fetch
+  >[0];
   if (withRequest(firstArg)) {
     return firstArg.url;
   }
@@ -50,8 +56,9 @@ export const getUrl = (callNumber = 0) => {
 };
 
 export const getRequestHeaders = (callNumber = 0) => {
-  const firstArg = (window.fetch as SinonStub).getCall(callNumber)
-    .args[0] as Parameters<typeof window.fetch>[0];
+  const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
+    typeof window.fetch
+  >[0];
 
   if (withRequest(firstArg)) {
     return firstArg.headers;
@@ -60,9 +67,6 @@ export const getRequestHeaders = (callNumber = 0) => {
 };
 
 export const respondWith = (data: BodyInit | null, options?: ResponseInit) =>
-  (window.fetch as SinonStub).returns(
-    Promise.resolve(new Response(data, options))
-  );
+  fetchStub?.returns(Promise.resolve(new Response(data, options)));
 
-export const wasCalled = (callNumber = 0) =>
-  !!(window.fetch as SinonStub).getCall(callNumber);
+export const wasCalled = (callNumber = 0) => !!fetchStub?.getCall(callNumber);

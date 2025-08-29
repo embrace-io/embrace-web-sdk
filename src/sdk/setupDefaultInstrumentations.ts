@@ -2,6 +2,7 @@ import type { Instrumentation } from '@opentelemetry/instrumentation';
 import {
   ClicksInstrumentation,
   DocumentLoadInstrumentation,
+  EmbraceFetchInstrumentation,
   EmbraceInstrumentationBase,
   GlobalExceptionInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
@@ -10,7 +11,6 @@ import {
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
-import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
   DefaultInstrumentationConfig,
@@ -53,7 +53,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
-      new FetchInstrumentation({
+      new EmbraceFetchInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-fetch'],
       })
