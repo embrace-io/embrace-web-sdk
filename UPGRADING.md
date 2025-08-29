@@ -37,6 +37,20 @@ initSDK({
 const myMethod = (span: Span) => { /* ... */ };
 ```
 
+### CLI now operates on a build folder rather than individual files
+
+1.x version:
+
+```shell
+npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+```
+
+2.x version:
+
+```shell
+npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
+```
+
 ## 0.x to 1.x
 
 See the breaking changes outlined in the [1.0.0 Release notes](https://github.com/embrace-io/embrace-web-sdk/releases/tag/1.0.0).
