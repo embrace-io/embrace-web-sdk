@@ -499,11 +499,11 @@ jobs:
         run: npm run playwright -- install-deps
 
 
-      # We need the SDK to be built, so we can use it in the sample apps
-      - name: Build SDK
+      # We need the SDK and CLI to be built, so we can use them in the sample apps
+      - name: Build SDK and CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:compile
+          npm run compile
 
       # TODO: cache
       - name: Install npm dependencies for platforms
