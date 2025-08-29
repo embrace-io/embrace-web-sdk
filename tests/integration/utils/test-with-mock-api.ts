@@ -55,13 +55,18 @@ type TestWithMockApi = {
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   '@opentelemetry/instrumentation-document-load',
 ];
+
 const IGNORED_ATTRIBUTES_LIST = [
-  'session.id',
-  'log.record.uid',
   'emb.sdk_startup_duration',
-  'emb.app_instance_id',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
+];
+
+const REPLACE_UUID_ATTRIBUTES_LIST = [
+  'session.id',
+  'log.record.uid',
+  'emb.app_instance_id',
+  'emb.js_file_bundle_ids',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
@@ -156,6 +161,14 @@ const getAttributeValue = (
   attr: IKeyValue
 ): string | number | boolean | null => {
   if (attr.value.stringValue !== undefined) {
+    if (REPLACE_UUID_ATTRIBUTES_LIST.includes(attr.key)) {
+      // Replace all occurrences of UUIDs like "219F25B560B343E08FDD8AE821B3C0AB" with a fixed string
+      return attr.value.stringValue!.replace(
+        /[A-F0-9]{32}/g,
+        'FIXED_UUID_FOR_TESTING'
+      );
+    }
+
     return attr.value.stringValue;
   }
 
