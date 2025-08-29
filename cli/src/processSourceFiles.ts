@@ -46,7 +46,7 @@ const addHyphensToUuid = (uuidStr: string): string => {
   return uuidStr.replace(UUID_PARTS_REGEX, '$1-$2-$3-$4-$5');
 };
 
-const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
+const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   const jsLines = sourceFile.split('\n');
   const sourceMapCommentIndex = jsLines.findIndex(
     line =>
@@ -59,7 +59,7 @@ const injectDebugIDToSourceFile = (sourceFile: string, debugID: string) => {
     sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex;
   const snippet = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
     FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
-    debugID
+    bundleID
   );
   jsLines.splice(injectIndex, 0, snippet);
   jsLines.splice(injectIndex, 0, '// Injected by Embrace Web CLI:');
@@ -182,8 +182,8 @@ export const processSourceFiles = async ({
         console.log(`Generated debugID ${debugID} for ${jsFilePath}`);
       }
 
-      // Inject the debugID snippet:
-      jsContent = injectDebugIDToSourceFile(jsContent, debugID);
+      // Inject the file->bundleID map snippet:
+      jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
 
       console.log(
         `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`
