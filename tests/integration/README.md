@@ -98,7 +98,7 @@ These attributes are ignored during the comparison:
 Some instrumentation may also produce a non-deterministic list of spans or logs,
 for these we only compare the amount of spans or logs, not their content:
 
-- document-load
+- DocumentLoadInstrumentation
 
 If your changes to the SDK affect the output of the tests, you will need to
 update the golden files by running
