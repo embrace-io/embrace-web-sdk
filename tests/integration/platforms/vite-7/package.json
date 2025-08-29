@@ -9,9 +9,8 @@
     "build:clean": "npx rimraf dist .sonda",
     "build:esnext": "vite build --config vite.config.esnext.ts && npm run process-sourcemaps:esnext",
     "build:es2015": "vite build --config vite.config.es2015.ts && npm run process-sourcemaps:es2015",
-    "embrace-web-cli": "embrace-web-cli",
-    "process-sourcemaps:esnext": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/esnext/assets --no-upload",
-    "process-sourcemaps:es2015": "npm run embrace-web-cli -- upload -a NOEMB -p ./dist/es2015/assets --no-upload"
+    "process-sourcemaps:esnext": "embrace-web-cli upload -a NOEMB -p ./dist/esnext/assets --no-upload",
+    "process-sourcemaps:es2015": "embrace-web-cli upload -a NOEMB -p ./dist/es2015/assets --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",

@@ -55,7 +55,6 @@ type TestWithMockApi = {
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   '@opentelemetry/instrumentation-document-load',
 ];
-
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
