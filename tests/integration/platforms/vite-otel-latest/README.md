@@ -29,8 +29,8 @@ Compare with the SDK's
 | Package Category | SDK Compatible | Test Uses |
 | ---------------- | -------------- | --------- |
 | OTel APIs        | ^1.9.0         | latest    |
-| Core             | ^1.30          | latest    |
-| Instrumentations | ^0.57.0        | latest    |
+| Core             | ^2.0.1         | latest    |
+| Instrumentations | ^0.203.0       | latest    |
 
 ## 🚨 Known Issues
 
