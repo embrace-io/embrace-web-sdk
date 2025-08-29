@@ -9,8 +9,7 @@
     "build": "npm run build:clean && npm run build:es2020",
     "build:clean": "npx rimraf .next",
     "build:es2020": "next build && npm run process-sourcemaps",
-    "embrace-web-cli": "embrace-web-cli",
-    "process-sourcemaps": "npm run embrace-web-cli -- upload -a NOEMB -p ./.next/static/chunks/app --no-upload"
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks/app --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
