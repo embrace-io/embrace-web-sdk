@@ -52,7 +52,9 @@ type TestWithMockApi = {
 
 // Instrumentation on this list will only compare that the same amount of spans
 // are created, but not their attributes, since there's no way of ordering them properly to match the previous results.
-const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = ['document-load'];
+const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
+  'DocumentLoadInstrumentation',
+];
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
