@@ -45,10 +45,10 @@ export class ProxySpanSessionManager implements SpanSessionManager {
     this.getDelegate().endSessionSpanInternal(reason);
   }
 
-  public endSessionSpanWithoutExporting(
+  public currentSessionAsReadableSpan(
     reason: ReasonSessionEnded
   ): ReadableSpan | null {
-    return this.getDelegate().endSessionSpanWithoutExporting(reason);
+    return this.getDelegate().currentSessionAsReadableSpan(reason);
   }
 
   public getSessionId(): string | null {

@@ -31,7 +31,7 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
     // do nothing.
   }
 
-  public endSessionSpanWithoutExporting(
+  public currentSessionAsReadableSpan(
     _reason: ReasonSessionEnded
   ): ReadableSpan | null {
     return null;

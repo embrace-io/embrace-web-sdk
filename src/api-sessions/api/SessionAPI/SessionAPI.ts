@@ -59,10 +59,10 @@ export class SessionAPI implements SpanSessionManager {
     this.getSpanSessionManager().endSessionSpanInternal(reason);
   }
 
-  public endSessionSpanWithoutExporting(
+  public currentSessionAsReadableSpan(
     reason: ReasonSessionEnded
   ): ReadableSpan | null {
-    return this.getSpanSessionManager().endSessionSpanWithoutExporting(reason);
+    return this.getSpanSessionManager().currentSessionAsReadableSpan(reason);
   }
 
   public getSessionId(): string | null {

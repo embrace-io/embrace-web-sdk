@@ -695,10 +695,10 @@ describe('EmbraceSpanSessionManager', () => {
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 
-  describe('endSessionSpanWithoutExporting', () => {
+  describe('currentSessionAsReadableSpan', () => {
     it('should return null when no session is active', () => {
       // No session started
-      const spanCopy = manager.endSessionSpanWithoutExporting('manual');
+      const spanCopy = manager.currentSessionAsReadableSpan('manual');
       expect(spanCopy).to.equal(null);
 
       const debugLogs = diag.getDebugLogs();
@@ -713,7 +713,7 @@ describe('EmbraceSpanSessionManager', () => {
       manager.recordSDKStartupDuration(250);
 
       // Create copy before ending session
-      const sessionSpanNotExported = manager.endSessionSpanWithoutExporting(
+      const sessionSpanNotExported = manager.currentSessionAsReadableSpan(
         'manual'
       ) as unknown as ReadableSpan;
       expect(sessionSpanNotExported).to.not.equal(null);

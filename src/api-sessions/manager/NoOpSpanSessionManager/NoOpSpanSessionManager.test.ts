@@ -43,9 +43,9 @@ describe('NoOpSpanSessionManager', () => {
     }).to.not.throw();
   });
 
-  it('should return null for endSessionSpanWithoutExporting', () => {
+  it('should return null for currentSessionAsReadableSpan', () => {
     const result =
-      noOpSpanSessionManager.endSessionSpanWithoutExporting('manual');
+      noOpSpanSessionManager.currentSessionAsReadableSpan('manual');
     expect(result).to.equal(null);
   });
 

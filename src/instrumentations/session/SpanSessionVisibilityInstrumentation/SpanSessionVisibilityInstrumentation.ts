@@ -116,7 +116,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         const sessionId = this.sessionManager.getSessionId();
         if (sessionId) {
           const sessionSpan =
-            this.sessionManager.endSessionSpanWithoutExporting('state_changed');
+            this.sessionManager.currentSessionAsReadableSpan('state_changed');
           if (sessionSpan) {
             this._embraceSpanProcessor.storePendingSpans(
               sessionId,

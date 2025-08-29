@@ -238,9 +238,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     };
   }
 
-  // endSessionSpanWithoutExporting creates a copy of the current session span with the same attributes
+  // currentSessionAsReadableSpan creates a copy of the current session span with the same attributes
   // that endSessionSpanInternal would add, but does not affect the original session span which remains active.
-  public endSessionSpanWithoutExporting(
+  public currentSessionAsReadableSpan(
     reason: ReasonSessionEnded
   ): ReadableSpan | null {
     if (!this._sessionSpan || !this._activeSessionStartTime) {
