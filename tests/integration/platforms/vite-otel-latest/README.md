@@ -24,10 +24,10 @@ This test uses the latest versions of:
 Compare with the SDK's [supported versions](../../../README.md#compatibility-with-otel-packages):
 
 | Package Category | SDK Compatible | Test Uses |
-|------------------|----------------|-----------|
-| OTel APIs | ^1.9.0 | latest |
-| Core | ^1.30 | latest |
-| Instrumentations | ^0.57.0 | latest |
+| ---------------- | -------------- | --------- |
+| OTel APIs        | ^1.9.0         | latest    |
+| Core             | ^2.0.1         | latest    |
+| Instrumentations | ^0.203.0       | latest    |
 
 ## 🚨 Known Issues
 
