@@ -4,7 +4,7 @@ import path, { dirname } from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
-import type { Route, Request } from 'playwright';
+import type { Request, Route } from 'playwright';
 
 import type {
   IKeyValue,
@@ -57,15 +57,13 @@ const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
 ];
 
 const IGNORED_ATTRIBUTES_LIST = [
-  'emb.sdk_startup_duration',
-  // CI runs on Linux, devs might use different OS, thus different user agent
-  'user_agent.original',
-];
-
-const REPLACE_UUID_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
+  'emb.sdk_startup_duration',
   'emb.app_instance_id',
+  // CI runs on Linux, devs might use different OS, thus different user agent
+  'user_agent.original',
+  'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
 ];
 
@@ -161,14 +159,6 @@ const getAttributeValue = (
   attr: IKeyValue
 ): string | number | boolean | null => {
   if (attr.value.stringValue !== undefined) {
-    if (REPLACE_UUID_ATTRIBUTES_LIST.includes(attr.key)) {
-      // Replace all occurrences of UUIDs with a fixed string to avoid getting unwanted differences
-      return attr.value.stringValue!.replace(
-        /[a-fA-F0-9]{32}/g,
-        '11111111111111111111111111111111'
-      );
-    }
-
     return attr.value.stringValue;
   }
 
