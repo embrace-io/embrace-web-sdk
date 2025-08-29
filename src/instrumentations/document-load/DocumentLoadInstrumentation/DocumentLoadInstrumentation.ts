@@ -3,12 +3,14 @@
  * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  *
  * We added these new attributes:
+ *
+ * 'decoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/decodedBodySize
  * 'delivery_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
+ * 'encoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/encodedBodySize
  * 'entry_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEntry/entryType
  * 'initiator_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/initiatorType
  * 'render_blocking_status' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
- * 'decoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/decodedBodySize
- *
+ * 'transfer_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/transferSize
  */
 
 import type { Span } from '@opentelemetry/api';
