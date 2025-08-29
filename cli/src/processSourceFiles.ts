@@ -67,6 +67,56 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   return jsLines.join('\n');
 };
 
+const findJSFilesRecursively = (
+  dirPath: string,
+  visitedPaths: Set<string> = new Set()
+): Array<{ jsFilePath: string; mapFilePath: string }> => {
+  const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
+
+  // Get real path to handle symlinks
+  const realPath = fs.realpathSync(dirPath);
+
+  // Check for circular symlinks
+  if (visitedPaths.has(realPath)) {
+    console.warn(`Skipping already visited path: ${dirPath}`);
+    return results;
+  }
+  visitedPaths.add(realPath);
+
+  const files = fs.readdirSync(dirPath);
+  const jsFiles = files.filter(file => file.endsWith('.js'));
+
+  // Process JS files in current directory
+  for (const jsFile of jsFiles) {
+    const mapFile = jsFile + '.map';
+    const jsFilePath = path.join(dirPath, jsFile);
+    const mapFilePath = path.join(dirPath, mapFile);
+
+    // Check if corresponding .js.map file exists
+    if (files.includes(mapFile)) {
+      results.push({ jsFilePath, mapFilePath });
+    } else {
+      console.warn(`Skipping ${jsFile} - corresponding .js.map file not found`);
+    }
+  }
+
+  // Recursively process subdirectories
+  for (const file of files) {
+    const fullPath = path.join(dirPath, file);
+
+    try {
+      const stats = fs.statSync(fullPath);
+      if (stats.isDirectory()) {
+        results.push(...findJSFilesRecursively(fullPath, visitedPaths));
+      }
+    } catch (err) {
+      console.warn(`Error reading ${fullPath}:`, err);
+    }
+  }
+
+  return results;
+};
+
 export const processSourceFiles = async ({
   buildPath,
   token,
@@ -107,29 +157,16 @@ export const processSourceFiles = async ({
   }
 
   try {
-    // Iterate over directory to find .js files with corresponding .js.map files
-    const files = fs.readdirSync(buildPath);
-    const jsFiles = files.filter(file => file.endsWith('.js'));
+    // Recursively find all .js files with corresponding .js.map files
+    const jsFiles = findJSFilesRecursively(buildPath);
 
     console.log(
-      `Found ${jsFiles.length} JavaScript files in directory: ${buildPath}`
+      `Found ${jsFiles.length} JavaScript files in directory tree: ${buildPath}`
     );
 
     let appVersionReplaced = false;
-    for (const jsFile of jsFiles) {
-      const mapFile = jsFile + '.map';
-      const jsFilePath = path.join(buildPath, jsFile);
-      const mapFilePath = path.join(buildPath, mapFile);
-
-      // Check if corresponding .js.map file exists
-      if (!files.includes(mapFile)) {
-        console.warn(
-          `Skipping ${jsFile} - corresponding .js.map file not found`
-        );
-        continue;
-      }
-
-      console.log(`Processing ${jsFile} and ${mapFile}...`);
+    for (const { jsFilePath, mapFilePath } of jsFiles) {
+      console.log(`Processing ${jsFilePath} and ${mapFilePath}...`);
 
       // load files content
       let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
