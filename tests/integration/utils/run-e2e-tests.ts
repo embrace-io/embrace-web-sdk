@@ -73,15 +73,19 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       }, 4000);
 
       await new Promise(resolve => {
-        const interval = setInterval(async () => {
-          const response = await fetch('http://localhost:3001/received-spans');
-          const receivedSpans = (await response.json()) as ReceivedSpans;
+        const interval = setInterval(() => {
+          void (async () => {
+            const response = await fetch(
+              'http://localhost:3001/received-spans'
+            );
+            const receivedSpans = (await response.json()) as ReceivedSpans;
 
-          if (receivedSpans[currentSessionId]) {
-            clearInterval(interval);
-            clearTimeout(timeout);
-            resolve(null);
-          }
+            if (receivedSpans[currentSessionId]) {
+              clearInterval(interval);
+              clearTimeout(timeout);
+              resolve(null);
+            }
+          })();
         }, 200);
       });
     });
