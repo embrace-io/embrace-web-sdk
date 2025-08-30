@@ -1,18 +1,18 @@
-import lighthouse from 'lighthouse';
-import type { Metric, TestPage } from '../types/index.js';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
-import fs from 'node:fs';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
+import lighthouse from 'lighthouse';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { chromium } from 'playwright';
-import path from 'path';
-import os from 'os';
 import { resultsToMarkdownTable } from '../../utils/index.js';
 import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
   TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
 } from '../config/index.js';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
+import type { Metric, TestPage } from '../types/index.js';
 
 type AuditResult = {
   numericValue?: number;
@@ -137,8 +137,8 @@ test.describe('Lighthouse Performance Tests', () => {
   test.afterAll(() => {
     const difference = calculateDifference(results);
     const differenceInMetrics: Record<string, Metric[]> = {
-      ...Object.entries(difference).reduce((acc, [key, metric]) => {
-        return {
+      ...Object.entries(difference).reduce(
+        (acc, [key, metric]) => ({
           ...acc,
           [LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]]:
             [
@@ -153,8 +153,9 @@ test.describe('Lighthouse Performance Tests', () => {
                 unit: '',
               },
             ],
-        };
-      }, {}),
+        }),
+        {}
+      ),
     };
 
     fs.writeFileSync(
