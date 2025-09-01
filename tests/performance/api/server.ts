@@ -1,6 +1,6 @@
-import { createServer } from 'http';
-import { readFile, copyFile } from 'fs';
-import { extname, join } from 'path';
+import { copyFile, readFile } from 'node:fs';
+import { createServer } from 'node:http';
+import { extname, join } from 'node:path';
 
 const PORT = 3000;
 

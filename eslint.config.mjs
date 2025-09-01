@@ -18,12 +18,19 @@ const compat = new FlatCompat({
 /** @type {import('eslint').Linter.Config[]} */
 export default tseslint.config([
   {
-    ignores: ['./**/build', './**/dist', './**/public'],
+    ignores: [
+      './**/build',
+      './**/dist',
+      './**/public',
+      './tests/integration/platforms',
+    ],
   },
   {
     files: [
-      './src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
-      './cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}',
+      './cli/src/**/*.{js,ts,jsx,tsx}',
+      './scripts/**/*.{js,ts,jsx,tsx}',
+      './src/**/*.{js,ts,jsx,tsx}',
+      './tests/**/*.{js,ts,jsx,tsx}',
     ],
     extends: [
       pluginJs.configs.recommended,
@@ -165,13 +172,17 @@ export default tseslint.config([
     },
   },
   {
-    files: ['./src/**/*.test.{js,mjs,cjs,ts,jsx,tsx}'],
+    files: ['./src/**/*.test.{js,ts,jsx,tsx}'],
     rules: {
       'import/no-named-as-default-member': 'off',
     },
   },
   {
-    files: ['./cli/src/**/*.{js,mjs,cjs,ts,jsx,tsx}'],
+    files: [
+      './cli/src/**/*.{js,ts,jsx,tsx}',
+      './scripts/**/*.{js,ts,jsx,tsx}',
+      './tests/**/*.{js,ts,jsx,tsx}',
+    ],
     rules: {
       'import/no-nodejs-modules': 'off',
     },

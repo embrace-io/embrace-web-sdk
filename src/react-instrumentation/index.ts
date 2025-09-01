@@ -1,5 +1,5 @@
-// Exposes all react specific instrumentation in a way that it is easy to tree-shake. Eventually this should be replaced by its own package.
-// That's why this rule don't apply here, and it will get fixed once we move this to its own package
+// Exposes all React-specific instrumentation in a way that is easy to tree-shake. Eventually this should be replaced by its own package.
+// That's why this rule doesn't apply here, and it will get fixed once we move this to its own package
 /* eslint-disable regex/invalid */
 import { withEmbraceRoutingLegacy } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV5/index.js';
 import { withEmbraceRouting } from '../instrumentations/navigation/NavigationInstrumentation/react/reactRouterV6Declarative/index.js';
