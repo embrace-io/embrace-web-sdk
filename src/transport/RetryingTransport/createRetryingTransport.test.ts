@@ -1,9 +1,10 @@
-import * as chai from 'chai';
-import sinonChai from 'sinon-chai';
-import { createRetryingTransport } from './createRetryingTransport.js';
 import type { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
+import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import { MockPerformanceManager } from '../../testUtils/index.js';
+import { createRetryingTransport } from './createRetryingTransport.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -32,16 +33,20 @@ describe('createRetryingTransport', () => {
       expect(sendStub).callCount(attempts + 1);
     }
   };
+  let mockPerformanceManager: MockPerformanceManager;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers({});
+    clock = sinon.useFakeTimers();
+    mockPerformanceManager = new MockPerformanceManager(clock);
     sendStub = sinon.stub();
     stubbedTransport = {
       send: sendStub,
       shutdown: sinon.stub(),
     };
+
     retryingTransport = createRetryingTransport({
       transport: stubbedTransport,
+      perf: mockPerformanceManager,
     });
   });
 
@@ -89,19 +94,34 @@ describe('createRetryingTransport', () => {
     });
   });
 
-  it('should stop retrying early if the deadline is hit', async () => {
+  it('should stop retrying early if the timeout is exceeded', async () => {
     sendStub.resolves({ status: 'retryable' });
     const pendingResult = retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      3000
+      2200 // Set timeout between 2nd and 3rd retry
     );
 
-    await assertBackoffs([1000, 1500, 2250]);
+    // Initial attempt
+    await Promise.resolve();
+    expect(sendStub).callCount(1);
+
+    // First retry after 1000ms (total: 1000ms)
+    clock.tick(1100);
+    await Promise.resolve();
+    expect(sendStub).callCount(2);
+
+    // Second retry after 1500ms (total: 2500ms) - this exceeds our 2200ms timeout
+    // The transport should stop before making this attempt
+    clock.tick(1500);
+    await Promise.resolve();
 
     const result = await pendingResult;
     expect(result).to.deep.equal({
       status: 'retryable',
     });
+
+    // Should only have 2 attempts (initial + 1 retry)
+    expect(sendStub).callCount(2);
   });
 
   it("should use the response's retry time if available", async () => {

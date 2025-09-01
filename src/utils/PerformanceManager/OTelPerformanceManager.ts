@@ -1,15 +1,11 @@
-import {
-  hrTimeToMilliseconds,
-  millisToHrTime,
-  otperformance,
-} from '@opentelemetry/core';
+import { hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core';
 import type { PerformanceClock, PerformanceManager } from './types.js';
 import type { HrTime } from '@opentelemetry/api';
 
 export class OTelPerformanceManager implements PerformanceManager {
   private readonly _clock: PerformanceClock;
 
-  public constructor(clock: PerformanceClock = otperformance) {
+  public constructor(clock: PerformanceClock = window.performance) {
     this._clock = clock;
   }
 

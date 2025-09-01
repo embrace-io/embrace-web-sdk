@@ -1,9 +1,9 @@
-import { diag, DiagLogLevel, trace, context } from '@opentelemetry/api';
+import { context, diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -19,17 +19,17 @@ import { SDK_VERSION } from '../resources/index.js';
 import {
   fakeFetchGetBody,
   fakeFetchGetRequestHeaders,
+  fakeFetchGetUrl,
   fakeFetchInstall,
+  fakeFetchResetHistory,
   fakeFetchRespondWith,
   fakeFetchRestore,
+  fakeFetchWasCalled,
   FakeInstrumentation,
   FakeLogRecordProcessor,
   FakeSpanProcessor,
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
-  fakeFetchResetHistory,
-  fakeFetchWasCalled,
-  fakeFetchGetUrl,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.js';
@@ -346,7 +346,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -452,7 +452,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -482,7 +482,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -534,7 +534,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -580,7 +580,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -630,7 +630,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -670,7 +670,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -719,7 +719,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -761,7 +761,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -836,7 +836,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -914,7 +914,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -992,7 +992,7 @@ describe('initSDK', () => {
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
-            '@opentelemetry/instrumentation-document-load',
+            'document-load',
           ]),
         },
       });
@@ -1317,7 +1317,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+        omit: new Set(['document-load']),
       },
     });
 
@@ -1330,7 +1330,7 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['@opentelemetry/instrumentation-document-load']),
+        omit: new Set(['document-load']),
       },
     });
 
