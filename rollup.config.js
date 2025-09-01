@@ -18,7 +18,7 @@ const isExternal = id =>
 
 const input = {
   index: 'src/index.ts',
-  'react-instrumentation': 'src/react/index.ts',
+  'react-instrumentation': 'src/react-instrumentation/index.ts',
 };
 
 // Suppress irrelevant warnings to keep the build output clean
@@ -54,7 +54,7 @@ const plugins = ({ target }) => [
     swc: {
       sourceMaps: true, // Generate source maps
       jsc: {
-        target, // Set JavaScript target version
+        target, // Set JavaScript output version
       },
     },
   }),
@@ -76,27 +76,12 @@ export default defineConfig([
     onwarn,
   },
 
-  // ESNext Build: No language coercion applied
-  {
-    input,
-    plugins: plugins({ target: 'esnext' }),
-    output: {
-      dir: 'build/esnext',
-      format: 'esm',
-      sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src',
-    },
-    external: isExternal,
-    onwarn,
-  },
-
   // CJS Build: CommonJS modules for older bundlers
   {
     input,
     plugins: plugins({ target: 'es2022' }),
     output: {
-      dir: 'build/src',
+      dir: 'build/cjs',
       format: 'cjs',
       sourcemap: true,
       preserveModules: true,
