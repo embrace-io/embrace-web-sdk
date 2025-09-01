@@ -5,8 +5,8 @@ const TEN_MINUTES = 600000;
 const SHARED_LAUNCH_OPTIONS = {
   concurrency: 1,
   launchOptions: {
-    timeout: TEN_MINUTES
-  }
+    timeout: TEN_MINUTES,
+  },
 };
 export default {
   ...baseConfig,
@@ -19,21 +19,21 @@ export default {
       ...SHARED_LAUNCH_OPTIONS,
       createBrowserContext({ browser }) {
         return browser.newContext({ ...devices['Desktop Chrome'] });
-      }
+      },
     }),
     playwrightLauncher({
       product: 'firefox',
       ...SHARED_LAUNCH_OPTIONS,
       createBrowserContext({ browser }) {
         return browser.newContext({ ...devices['Desktop Firefox'] });
-      }
+      },
     }),
     playwrightLauncher({
       product: 'webkit',
       ...SHARED_LAUNCH_OPTIONS,
       createBrowserContext({ browser }) {
         return browser.newContext({ ...devices['Desktop Safari'] });
-      }
+      },
     }),
     /* Test against mobile browsers */
     playwrightLauncher({
@@ -41,14 +41,14 @@ export default {
       ...SHARED_LAUNCH_OPTIONS,
       createBrowserContext({ browser }) {
         return browser.newContext({ ...devices['Pixel 5'] });
-      }
+      },
     }),
     playwrightLauncher({
       product: 'webkit',
       ...SHARED_LAUNCH_OPTIONS,
       createBrowserContext({ browser }) {
         return browser.newContext({ ...devices['iPhone 12'] });
-      }
+      },
     }),
     /* Test against branded browsers. */
     playwrightLauncher({
@@ -57,9 +57,9 @@ export default {
       createBrowserContext({ browser }) {
         return browser.newContext({
           ...devices['Desktop Chrome'],
-          channel: 'chrome'
+          channel: 'chrome',
         });
-      }
+      },
     }),
     playwrightLauncher({
       product: 'chromium',
@@ -67,9 +67,9 @@ export default {
       createBrowserContext({ browser }) {
         return browser.newContext({
           ...devices['Desktop Edge'],
-          channel: 'msedge'
+          channel: 'msedge',
         });
-      }
-    })
-  ]
+      },
+    }),
+  ],
 };
