@@ -1,6 +1,6 @@
 import * as chai from 'chai';
+import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
-import type {SinonStub} from 'sinon';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
 import {
@@ -21,9 +21,33 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { VisibilityStateDocument } from '../../../common/index.js';
 import type { PerformanceManager } from '../../../utils/index.js';
 import { OTelPerformanceManager } from '../../../utils/index.js';
-import type { EmbraceProcessor } from '../../../processors/index.js';
+import { EmbraceProcessor } from '../../../processors/index.js';
 
 const { expect } = chai;
+
+// Helper function to create mock EmbraceProcessor
+const createMockEmbraceProcessor = (): EmbraceProcessor => {
+  const diagLogger = new InMemoryDiagLogger();
+
+  class MockEmbraceProcessor extends EmbraceProcessor {
+    public forceFlush = sinon.stub().returns(Promise.resolve(undefined));
+    public onEnd = sinon.stub();
+    public onStart = sinon.stub();
+    public getPendingSpansCount = sinon.stub().returns(0);
+    public storePendingSpans = sinon.stub();
+    public clearStoredSpans = sinon.stub();
+    public shutdown = sinon.stub().returns(Promise.resolve(undefined));
+
+    public constructor() {
+      super({
+        diag: diagLogger,
+        processorName: 'MockEmbraceProcessor',
+      });
+    }
+  }
+
+  return new MockEmbraceProcessor();
+};
 
 describe('SpanSessionVisibilityInstrumentation', () => {
   let nowStub: SinonStub;
@@ -244,17 +268,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     };
 
     // Mock implementation of EmbraceProcessor
-    const embraceSpanProcessor: EmbraceProcessor = {
-      diag: new InMemoryDiagLogger(),
-      processorName: 'MockEmbraceProcessor',
-      forceFlush: sinon.stub().returns(Promise.resolve(undefined)),
-      onEnd: sinon.stub(),
-      onStart: sinon.stub(),
-      getPendingSpansCount: sinon.stub().returns(0),
-      storePendingSpans: sinon.stub(),
-      clearStoredSpans: sinon.stub(),
-      shutdown: sinon.stub().returns(Promise.resolve(undefined)),
-    };
+    const embraceSpanProcessor = createMockEmbraceProcessor();
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
       {
@@ -316,17 +330,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     };
 
     // Mock implementation of EmbraceProcessor
-    const embraceSpanProcessor: EmbraceProcessor = {
-      diag: new InMemoryDiagLogger(),
-      processorName: 'MockEmbraceProcessor',
-      forceFlush: sinon.stub().returns(Promise.resolve(undefined)),
-      onEnd: sinon.stub(),
-      onStart: sinon.stub(),
-      getPendingSpansCount: sinon.stub().returns(0),
-      storePendingSpans: sinon.stub(),
-      clearStoredSpans: sinon.stub(),
-      shutdown: sinon.stub().returns(Promise.resolve(undefined)),
-    };
+    const embraceSpanProcessor = createMockEmbraceProcessor();
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
       {
