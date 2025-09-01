@@ -75,7 +75,7 @@ const runPlatformBuildSmokeTest = async (
               platformPath,
               `.sonda/${target}/sonda_0.json`
             );
-            const report = await processSondaReport(sondaReportPath);
+            const report = processSondaReport(sondaReportPath);
 
             assert.ok(
               report.totalGzipSize < TOTAL_GZIP_SIZE_THRESHOLD_IN_KB,
