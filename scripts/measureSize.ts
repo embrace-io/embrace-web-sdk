@@ -1,7 +1,8 @@
-import { readdirSync, statSync, createReadStream } from 'fs';
-import { join } from 'path';
-import { pipeline } from 'stream';
-import { createGzip } from 'zlib';
+import { createReadStream, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { pipeline } from 'node:stream';
+import type { Gzip } from 'node:zlib';
+import { createGzip } from 'node:zlib';
 
 const TARGET_DIRS = [
   { name: 'ESM', path: 'build/esm' },
@@ -31,12 +32,14 @@ const getGzipSize = (file: string): Promise<number> =>
     pipeline(
       createReadStream(file),
       createGzip(),
-      async function* (source) {
+      async function* (source: AsyncIterable<Gzip[]>) {
         for await (const chunk of source) size += chunk.length;
         resolve(size);
         yield size;
       },
-      err => err && reject(err)
+      err => {
+        if (err) reject(err);
+      }
     );
   });
 
@@ -66,9 +69,7 @@ const analyzeFolder = async (name: string, path: string) => {
   }
 };
 
-(async () => {
-  console.log('\n🔎 Measuring output sizes...\n');
-  for (const { name, path } of TARGET_DIRS) {
-    await analyzeFolder(name, path);
-  }
-})();
+console.log('\n🔎 Measuring output sizes...\n');
+for (const { name, path } of TARGET_DIRS) {
+  await analyzeFolder(name, path);
+}
