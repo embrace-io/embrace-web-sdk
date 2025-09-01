@@ -237,7 +237,9 @@ export const initSDK = (
     } else {
       registerInstrumentations({
         instrumentations: [
-          setupDefaultInstrumentations(defaultInstrumentationConfig),
+          setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            embraceSpanProcessor,
+          }),
           ...instrumentations,
         ],
       });
