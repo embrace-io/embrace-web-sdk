@@ -24,3 +24,5 @@ export {
 } from './web-vitals/index.js';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';
 export { getNavigationInstrumentation } from './navigation/index.js';
+export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.js';
+export type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/index.js';

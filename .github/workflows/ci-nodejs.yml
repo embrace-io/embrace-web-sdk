@@ -498,7 +498,6 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: npm run playwright -- install-deps
 
-
       # We need the SDK to be built, so we can use it in the sample apps
       - name: Build SDK
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -534,7 +533,7 @@ jobs:
         run: |
           echo '<!-- build-results -->' > build-results.md
           echo "## build results" >> build-results.md
-      
+
           for file in ./tests/integration/build-test-results/*.md; do
             cat "$file" >> build-results.md
           done
