@@ -4,9 +4,9 @@
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "build/iife/bundle.js",
-  "main": "build/src/index.js",
+  "main": "build/cjs/index.js",
   "module": "build/esm/index.js",
-  "esnext": "build/esnext/index.js",
+  "browser": "build/esm/index.js",
   "types": "build/types/index.d.ts",
   "publishConfig": {
     "access": "public"
@@ -44,48 +44,38 @@
     "sdk:lint:prettier": "prettier --check .",
     "sdk:lint:prettier:fix": "prettier --write .",
     "sdk:lint:eslint": "eslint --max-warnings=0",
-    "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0",
+    "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0 --no-warn-ignored",
     "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
     "commitlint": "commitlint",
     "playwright": "playwright",
     "prepare": "if [ -d .git ]; then husky; fi"
   },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esnext/**/*.js",
-    "build/esnext/**/*.js.map",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/iife/**/*.js",
-    "build/iife/**/*.js.map",
-    "build/types/**/*.d.ts",
-    "build/types/**/*.d.ts.map",
+    "build",
     "LICENSE",
     "*.md"
   ],
   "exports": {
     ".": {
-      "esnext": "./build/esnext/index.js",
-      "module": "./build/esm/index.js",
       "types": "./build/types/index.d.ts",
+      "browser": "./build/esm/index.js",
       "import": "./build/esm/index.js",
-      "require": "./build/src/index.js",
-      "default": "./build/src/index.js"
+      "require": "./build/cjs/index.js",
+      "default": "./build/esm/index.js"
     },
     "./react-instrumentation": {
-      "esnext": "./build/esnext/react-instrumentation.js",
-      "module": "./build/esm/react-instrumentation.js",
-      "types": "./build/types/react/index.d.ts",
+      "types": "./build/types/react-instrumentation/index.d.ts",
+      "browser": "./build/esm/react-instrumentation.js",
       "import": "./build/esm/react-instrumentation.js",
-      "require": "./build/src/react-instrumentation.js",
-      "default": "./build/src/react-instrumentation.js"
-    }
+      "require": "./build/cjs/react-instrumentation.js",
+      "default": "./build/esm/react-instrumentation.js"
+    },
+    "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "react-instrumentation": [
-        "build/types/react/index.d.ts"
+        "build/types/react-instrumentation/index.d.ts"
       ],
       "*": [
         "build/types/index.d.ts"

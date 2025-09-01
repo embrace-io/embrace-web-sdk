@@ -35,7 +35,7 @@ const resultsToMarkdownTable = (data: Record<string, Metric[]>): string => {
 
   // Make sure empty rows are handled correctly
   const bodyRows = rows
-    .map((row) => `| ${headers.map(header => row[header] ?? '').join(' | ')} |\n`)
+    .map(row => `| ${headers.map(header => row[header] ?? '').join(' | ')} |\n`)
     .join('');
 
   return `${headerRow}${separatorRow}${bodyRows}`;

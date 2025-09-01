@@ -6,9 +6,8 @@ import { createGzip } from 'node:zlib';
 
 const TARGET_DIRS = [
   { name: 'ESM', path: 'build/esm' },
-  { name: 'ESNext', path: 'build/esnext' },
-  { name: 'CJS (src)', path: 'build/src' },
-  { name: 'CDN script (iife)', path: 'build/iife' },
+  { name: 'CJS', path: 'build/cjs' },
+  { name: 'CDN bundle', path: 'build/iife' },
 ];
 
 const walkDir = (dir: string, ext = '.js'): string[] => {
@@ -49,7 +48,7 @@ const analyzeFolder = async (name: string, path: string) => {
     let totalRaw = 0;
     let totalGzip = 0;
 
-    console.log(`📂 ${name} — ${files.length} JS files`);
+    console.log(`📂 ${name} — ${files.length} js files`);
 
     for (const file of files) {
       const rawSize = getSize(file);
