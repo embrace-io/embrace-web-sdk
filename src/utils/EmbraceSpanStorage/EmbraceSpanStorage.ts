@@ -113,10 +113,15 @@ export class EmbraceSpanStorage {
         const parts = key.split('_');
         const storedTime = parseInt(parts[parts.length - 1], 10);
 
-        if (
-          isNaN(storedTime) ||
-          currentTime - storedTime <= this._storedSpansExpireTimeoutMS
-        ) {
+        if (isNaN(storedTime)) {
+          this._diag.error(
+            'Found invalid timestamp in stored span:',
+            storedTime
+          );
+          this._storage.removeItem(key);
+        }
+
+        if (currentTime - storedTime <= this._storedSpansExpireTimeoutMS) {
           return;
         }
 
