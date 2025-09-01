@@ -177,6 +177,9 @@ export const initSDK = (
           userID: enduserPseudoID,
         }),
         limitManager,
+        storedSpansExpireTimeoutMS:
+          defaultInstrumentationConfig?.['session-visibility']
+            ?.storedSpansExpireTimeoutMS,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(

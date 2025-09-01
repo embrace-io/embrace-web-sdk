@@ -1,14 +1,14 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import { diag, trace } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import { EmbraceExtendedSpan } from '../../managers/index.js';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
-const STORED_SPANS_EXPIRE_TIMEOUT_MS: number = 60 * 60 * 1000; // 1 hour
 
 export interface SpanStorageOptions {
   storage?: Storage;
   diag?: DiagLogger;
+  storedSpansExpireTimeoutMS?: number;
   onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
 }
 
@@ -16,6 +16,7 @@ export class EmbraceSpanStorage {
   private readonly _storage: Storage;
   private readonly _diag: DiagLogger;
   private readonly _onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
+  private readonly _storedSpansExpireTimeoutMS: number;
   private _checkExpiredSpansInterval?: ReturnType<typeof setInterval>;
 
   public constructor({
@@ -23,11 +24,14 @@ export class EmbraceSpanStorage {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSpanStorage',
     }),
+    storedSpansExpireTimeoutMS = 60 * 60 * 1000, // 1 hour
     onExpiredSpansExport,
   }: SpanStorageOptions = {}) {
     this._storage = storage;
     this._diag = diagParam;
+    this._storedSpansExpireTimeoutMS = storedSpansExpireTimeoutMS;
     this._onExpiredSpansExport = onExpiredSpansExport;
+
     this.startExpiredSpansCheck();
   }
 
@@ -96,15 +100,22 @@ export class EmbraceSpanStorage {
           keys.push(key);
         }
       }
-      const currentTime = Date.now();
 
+      if (keys.length === 0) {
+        return;
+      }
+
+      const currentTime = Date.now();
+      const tracer = new BasicTracerProvider().getTracer(
+        'embrace-web-sdk-sessions'
+      );
       keys.forEach(key => {
         const parts = key.split('_');
         const storedTime = parseInt(parts[parts.length - 1], 10);
 
         if (
           isNaN(storedTime) ||
-          currentTime - storedTime <= STORED_SPANS_EXPIRE_TIMEOUT_MS
+          currentTime - storedTime <= this._storedSpansExpireTimeoutMS
         ) {
           return;
         }
@@ -114,18 +125,16 @@ export class EmbraceSpanStorage {
 
         try {
           const spans: ReadableSpan[] = [];
-          for (const sp of JSON.parse(storedData) as ReadableSpan[]) {
-            const tracer = trace.getTracer('embrace-web-sdk-sessions');
-            const spanCopy = new EmbraceExtendedSpan(
-              tracer.startSpan(sp.name, {
-                kind: sp.kind,
-                attributes: sp.attributes,
-                links: sp.links,
-                startTime: sp.startTime,
-              })
-            );
-            spanCopy.setStatus(sp.status);
-            spans.push(spanCopy.endWithoutExporting(sp.endTime));
+          for (const storedSpan of JSON.parse(storedData) as ReadableSpan[]) {
+            const span = tracer.startSpan(storedSpan.name, {
+              kind: storedSpan.kind,
+              attributes: storedSpan.attributes,
+              links: storedSpan.links,
+              startTime: storedSpan.startTime,
+            });
+            span.setStatus(storedSpan.status);
+            span.end(storedSpan.endTime);
+            spans.push(span as unknown as ReadableSpan);
           }
 
           if (this._onExpiredSpansExport && spans.length > 0) {

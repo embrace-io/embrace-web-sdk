@@ -39,6 +39,7 @@ import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -250,21 +251,23 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return null;
     }
 
-    const tracer = trace.getTracer('embrace-web-sdk-sessions');
-
-    // Create a new span with the same name and start time as the original session span
-    const spanCopy = new EmbraceExtendedSpan(
-      tracer.startSpan('emb-session', {
-        startTime: this._activeSessionStartTime,
-        attributes: {
-          // Copy all current attributes from the original session span, plus the ending attributes
-          ...this._sessionSpan.attributes,
-          ...this._endSessionSpanAttributes(reason),
-          [KEY_EMB_FROM_STORAGE]: true,
-        },
-      })
+    const tracer = new BasicTracerProvider().getTracer(
+      'embrace-web-sdk-sessions'
     );
-    return spanCopy.endWithoutExporting();
+
+    // Create a new span with the same name and start time as the original session span,
+    // but using a new tracer so that it does not get exported.
+    const span = tracer.startSpan('emb-session', {
+      startTime: this._activeSessionStartTime,
+      attributes: {
+        // Copy all current attributes from the original session span, plus the ending attributes
+        ...this._sessionSpan.attributes,
+        ...this._endSessionSpanAttributes(reason),
+        [KEY_EMB_FROM_STORAGE]: true,
+      },
+    });
+    span.end();
+    return span as unknown as ReadableSpan;
   }
 
   public getSessionId(): string | null {

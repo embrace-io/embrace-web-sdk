@@ -26,6 +26,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     exporter,
     limitManager,
     storage = window.localStorage,
+    storedSpansExpireTimeoutMS,
     ...parentArgs
   }: EmbraceSessionBatchedSpanProcessorArgs) {
     super({
@@ -41,6 +42,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
       onExpiredSpansExport: (spans: ReadableSpan[]) => {
         this._exportSpans(spans);
       },
+      storedSpansExpireTimeoutMS,
     });
   }
 

@@ -2,7 +2,6 @@ import type {
   Attributes,
   AttributeValue,
   Exception,
-  HrTime,
   Link,
   Span,
   SpanContext,
@@ -14,16 +13,6 @@ import type {
   ExtendedSpanFailedOptions,
 } from '../../api-traces/index.js';
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.js';
-import { hrTimeDuration, timeInputToHrTime } from '@opentelemetry/core';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-
-// Interface to access private fields of the span for endWithoutExporting
-interface SpanInternals {
-  _ended: boolean;
-  endTime: HrTime;
-  _duration: HrTime;
-  startTime: HrTime;
-}
 
 /**
  * EmbraceSpan for the most part simply delegates to the underlying Span it receives on initialization so
@@ -65,21 +54,6 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
 
   public end(endTime?: TimeInput): void {
     this._span.end(endTime);
-  }
-
-  // endWithoutExporting does everything that _span.end() would do,
-  // except for calling onEnd that would export it, and returns the span as a ReadableSpan
-  public endWithoutExporting(endTime?: TimeInput): ReadableSpan {
-    const spanInternals = this._span as unknown as SpanInternals;
-    spanInternals._ended = true;
-    spanInternals.endTime = endTime
-      ? timeInputToHrTime(endTime)
-      : timeInputToHrTime(Date.now());
-    spanInternals._duration = hrTimeDuration(
-      spanInternals.startTime,
-      spanInternals.endTime
-    );
-    return this._span as unknown as ReadableSpan;
   }
 
   public isRecording(): boolean {
