@@ -1,4 +1,4 @@
-const { sdk } = require('@embrace-io/web-sdk');
+const { initSDK, DiagLogLevel } = require('@embrace-io/web-sdk');
 const { ZoneContextManager } = require('@opentelemetry/context-zone');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const {
@@ -20,10 +20,10 @@ registerInstrumentations({
   instrumentations: [new DocumentLoadInstrumentation()],
 });
 
-sdk.initSDK({
+initSDK({
   appID: '',
   appVersion: 'YOUR_APP_VERSION',
-  logLevel: sdk.DiagLogLevel.INFO,
+  logLevel: DiagLogLevel.INFO,
   spanExporters: [new ConsoleSpanExporter()],
   logExporters: [new ConsoleLogRecordExporter()],
 });

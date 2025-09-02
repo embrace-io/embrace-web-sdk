@@ -63,9 +63,9 @@ the app version of your application. The following should be done as early in yo
 capturing telemetry:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-const result = sdk.initSDK({
+const result = initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
 });
@@ -186,7 +186,7 @@ value when initializing the SDK (assuming that your bundler provides a method fo
 ```typescript
 import * as packageInfo from "../<some-path>/package.json";
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: packageInfo.version,
 });
@@ -242,9 +242,9 @@ The SDK provides several auto-instrumentations out-of-the box, in order to chang
 ones altogether) you can pass a `defaultInstrumentationConfig` object when initializing the SDK:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   defaultInstrumentationConfig: {
@@ -262,9 +262,9 @@ For more advanced customization you can also include additional instrumentations
 `Instrumentation` interface:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   instrumentations: [myCustomInstrumentation],
@@ -282,7 +282,7 @@ appropriate CORS headers in its responses:
 import { OTLPLogExporter }   from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   spanExporters: [
@@ -354,7 +354,7 @@ bundled with your code, instead you will need to make sure to pass in your app v
 the following example:
 
    ```javascript
-   sdk.initSDK({
+   initSDK({
      appVersion: '0.0.1',
      /*...*/
    });
@@ -373,7 +373,7 @@ By deferring the loading of the SDK, any early calls to the SDK need to be wrapp
 
 ```javascript
 window.EmbraceWebSdkOnReady.onReady(() => {
-   window.EmbraceWebSdk.sdk.initSDK({
+   window.EmbraceWebSdk.initSDK({
       appVersion: '0.0.1',
       /*...*/
    });
@@ -392,9 +392,9 @@ creating an instance of the SDK for each application. Make sure that the flag `r
 initializing the SDK. 
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-const embraceSDK = sdk.initSDK({
+const embraceSDK = initSDK({
    appID: "YOUR_EMBRACE_APP_ID",
    appVersion: "YOUR_APP_VERSION",
    registerGlobally: false, // Prevents the SDK from registering itself globally
@@ -405,9 +405,9 @@ Since the SDK is not registered globally, you will need to use the `embraceSDK` 
 and properties.
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-const embraceSDK = sdk.initSDK({
+const embraceSDK = initSDK({
    appID: "YOUR_EMBRACE_APP_ID",
    appVersion: "YOUR_APP_VERSION",
    registerGlobally: false, // Prevents the SDK from registering itself globally
@@ -446,15 +446,20 @@ We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum 
 
 ## Troubleshooting
 
+### Upgrading between major versions
+
+Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
+
 ### Compatibility with OTel packages
 
 The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. **Important:** The Embrace Web SDK only supports OpenTelemetry 1.x packages. OpenTelemetry 2.x (and above) is **not supported** and will not work with this SDK at this time.
 
 If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations, you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
 
-| Open Telemetry APIs | Core    | Instrumentations & Contrib |
-|---------------------|---------|----------------------------|
-| 1.9.0               | 1.30.1  | 0.57.2                     |
+| Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
+|-----------------|---------------------|--------|----------------------------|
+| ^2.0.0          | ^1.9.0              | ~2.0.3 | ~0.203.0                   |
+| ^1.0.0          | ^1.9.0              | 1.30.1 | 0.57.2                     |
 
 For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
 and [package-lock.json](./package-lock.json) files.
@@ -465,12 +470,12 @@ By default, the SDK will only send error level logs to the console. The log leve
 initializing as follows:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  logLevel: sdk.DiagLogLevel.INFO,
+  logLevel: DiagLogLevel.INFO,
 });
 ```
 
@@ -480,13 +485,14 @@ in which case their output will be batched, or wrapped in custom processors to s
 emitted:
 
 ```typescript
+import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  logLevel: sdk.DiagLogLevel.INFO,
+  logLevel: DiagLogLevel.INFO,
 
   // setup as exporters to output with the same batching as when exporting to a collector endpoint
   spanExporters: [new ConsoleSpanExporter()],

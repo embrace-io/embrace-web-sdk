@@ -1,10 +1,10 @@
 'use client';
 
-import { sdk, session } from '@embrace-io/web-sdk';
+import { initSDK, DiagLogLevel, session } from '@embrace-io/web-sdk';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 
-let sdkControl: ReturnType<typeof sdk.initSDK> | null = null;
+let sdkControl: ReturnType<typeof initSDK> | null = null;
 
 declare global {
   interface Window {
@@ -14,12 +14,12 @@ declare global {
 
 if (typeof window !== 'undefined') {
   console.log('sdk initialized');
-  sdkControl = sdk.initSDK({
+  sdkControl = initSDK({
     appID: '11111',
     appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
-    logLevel: sdk.DiagLogLevel.ALL,
+    logLevel: DiagLogLevel.ALL,
     embraceDataURL: 'http://localhost:3001',
     embraceConfigURL: 'http://localhost:3001',
   });
