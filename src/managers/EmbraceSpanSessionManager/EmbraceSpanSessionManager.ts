@@ -52,6 +52,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
   private _tracer: Tracer;
+  private readonly _noopTracer: Tracer;
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -75,6 +76,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._storage = storage;
     this._limitManager = limitManager;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
+    this._noopTracer = new BasicTracerProvider().getTracer(
+      'embrace-web-sdk-sessions'
+    );
   }
 
   // retrieve permanent properties from localStorage
@@ -251,13 +255,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return null;
     }
 
-    const tracer = new BasicTracerProvider().getTracer(
-      'embrace-web-sdk-sessions'
-    );
-
     // Create a new span with the same name and start time as the original session span,
     // but using a new tracer so that it does not get exported.
-    const span = tracer.startSpan('emb-session', {
+    const span = this._noopTracer.startSpan('emb-session', {
       startTime: this._activeSessionStartTime,
       attributes: {
         // Copy all current attributes from the original session span, plus the ending attributes

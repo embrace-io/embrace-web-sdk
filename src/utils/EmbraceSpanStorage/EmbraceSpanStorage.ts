@@ -1,4 +1,4 @@
-import type { DiagLogger } from '@opentelemetry/api';
+import type { DiagLogger, Tracer } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -13,6 +13,7 @@ export interface SpanStorageOptions {
 }
 
 export class EmbraceSpanStorage {
+  private readonly _noopTracer: Tracer;
   private readonly _storage: Storage;
   private readonly _diag: DiagLogger;
   private readonly _onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
@@ -27,6 +28,9 @@ export class EmbraceSpanStorage {
     storedSpansExpireTimeoutMS = 60 * 60 * 1000, // 1 hour
     onExpiredSpansExport,
   }: SpanStorageOptions = {}) {
+    this._noopTracer = new BasicTracerProvider().getTracer(
+      'embrace-web-sdk-sessions'
+    );
     this._storage = storage;
     this._diag = diagParam;
     this._storedSpansExpireTimeoutMS = storedSpansExpireTimeoutMS;
@@ -106,9 +110,6 @@ export class EmbraceSpanStorage {
       }
 
       const currentTime = Date.now();
-      const tracer = new BasicTracerProvider().getTracer(
-        'embrace-web-sdk-sessions'
-      );
       keys.forEach(key => {
         const parts = key.split('_');
         const storedTime = parseInt(parts[parts.length - 1], 10);
@@ -131,7 +132,7 @@ export class EmbraceSpanStorage {
         try {
           const spans: ReadableSpan[] = [];
           for (const storedSpan of JSON.parse(storedData) as ReadableSpan[]) {
-            const span = tracer.startSpan(storedSpan.name, {
+            const span = this._noopTracer.startSpan(storedSpan.name, {
               kind: storedSpan.kind,
               attributes: storedSpan.attributes,
               links: storedSpan.links,
