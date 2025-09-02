@@ -1,5 +1,5 @@
-import { diag } from '@opentelemetry/api';
 import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
@@ -14,8 +14,8 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
-import { OTelPerformanceManager } from '../../utils/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
+import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 import type {
   LogExceptionOptions,
@@ -24,9 +24,17 @@ import type {
 import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
+
+/**
+ * GLOBAL_CONFIG._EmbraceFileBundleIDs is populated on run time when each file is loaded,
+ * based on the contents that were injected by the embrace-web-cli.
+ */
+const getJSFileBundleIDs = () =>
+  JSON.stringify(GLOBAL_CONFIG._EmbraceFileBundleIDs || {});
 
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
@@ -117,6 +125,7 @@ export class EmbraceLogManager implements LogManager {
         ['exception.name']: normalizedError.name,
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
+        [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
       },
     });
   }
@@ -191,6 +200,7 @@ export class EmbraceLogManager implements LogManager {
         ...(stacktrace
           ? {
               [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
+              [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
             }
           : {}),
       },

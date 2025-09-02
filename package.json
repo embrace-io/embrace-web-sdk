@@ -4,10 +4,10 @@
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "build/iife/bundle.js",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
-  "esnext": "build/esnext/index.js",
   "types": "build/types/index.d.ts",
+  "browser": "build/esm/index.js",
+  "module": "build/esm/index.js",
+  "main": "build/cjs/index.cjs",
   "publishConfig": {
     "access": "public"
   },
@@ -19,7 +19,7 @@
     "dev": "npm run sdk:compile:esm:watch & npm run sdk:compile:types:watch & npm run dev --workspace=embrace-web-sdk-react-demo",
     "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
     "sdk:analyze": "npx tsx scripts/measureSize.ts",
-    "sdk:docs": "typedoc --readme none && touch docs/.nojekyll",
+    "sdk:docs": "npx typedoc --readme none && touch docs/.nojekyll",
     "sdk:compile:clean": "npx rimraf build .sonda",
     "sdk:install:clean": "npx rimraf node_modules",
     "sdk:test": "web-test-runner",
@@ -41,51 +41,45 @@
     "sdk:compile:types:watch": "tsc --build tsconfig.types.json --watch",
     "sdk:lint": "npm run sdk:lint:prettier && npm run sdk:lint:eslint",
     "sdk:lint:fix": "npm run sdk:lint:prettier:fix && npm run sdk:lint:eslint:fix",
-    "sdk:lint:prettier": "prettier --check ./src ./cli/src",
-    "sdk:lint:prettier:fix": "prettier --write ./src ./cli/src",
+    "sdk:lint:prettier": "prettier --check .",
+    "sdk:lint:prettier:fix": "prettier --write .",
     "sdk:lint:eslint": "eslint --max-warnings=0",
-    "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0",
+    "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0 --no-warn-ignored",
     "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
     "commitlint": "commitlint",
     "playwright": "playwright",
-    "prepare": "husky"
+    "prepare": "if [ -d .git ]; then husky; fi"
   },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esnext/**/*.js",
-    "build/esnext/**/*.js.map",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/iife/**/*.js",
-    "build/iife/**/*.js.map",
-    "build/types/**/*.d.ts",
-    "build/types/**/*.d.ts.map",
+    "build",
     "LICENSE",
     "*.md"
   ],
   "exports": {
     ".": {
-      "esnext": "./build/esnext/index.js",
-      "module": "./build/esm/index.js",
       "types": "./build/types/index.d.ts",
+      "browser": {
+        "import": "./build/esm/index.js",
+        "require": "./build/cjs/index.cjs"
+      },
       "import": "./build/esm/index.js",
-      "require": "./build/src/index.js",
-      "default": "./build/src/index.js"
+      "require": "./build/cjs/index.cjs"
     },
     "./react-instrumentation": {
-      "esnext": "./build/esnext/react-instrumentation.js",
-      "module": "./build/esm/react-instrumentation.js",
-      "types": "./build/types/react/index.d.ts",
+      "types": "./build/types/react-instrumentation/index.d.ts",
+      "browser": {
+        "import": "./build/esm/react-instrumentation.js",
+        "require": "./build/cjs/react-instrumentation.cjs"
+      },
       "import": "./build/esm/react-instrumentation.js",
-      "require": "./build/src/react-instrumentation.js",
-      "default": "./build/src/react-instrumentation.js"
-    }
+      "require": "./build/cjs/react-instrumentation.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "react-instrumentation": [
-        "build/types/react/index.d.ts"
+        "build/types/react-instrumentation/index.d.ts"
       ],
       "*": [
         "build/types/index.d.ts"
@@ -117,7 +111,6 @@
     "@opentelemetry/api-logs": "0.203.0",
     "@opentelemetry/core": "2.0.1",
     "@opentelemetry/instrumentation": "0.203.0",
-    "@opentelemetry/instrumentation-document-load": "0.48.0",
     "@opentelemetry/instrumentation-fetch": "0.203.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.203.0",
     "@opentelemetry/otlp-exporter-base": "0.203.0",
@@ -134,24 +127,24 @@
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
-    "@eslint/js": "9.33.0",
+    "@eslint/js": "9.34.0",
     "@remcovaes/web-test-runner-vite-plugin": "1.3.0",
     "@rollup/plugin-commonjs": "28.0.6",
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-swc": "0.4.0",
     "@rollup/plugin-terser": "0.4.4",
-    "@swc/core": "1.13.3",
+    "@swc/core": "1.13.5",
     "@types/chai": "5.2.2",
     "@types/hoist-non-react-statics": "^3.3.6",
     "@types/mocha": "10.0.10",
     "@types/node": "22.15.32",
-    "@types/react": "19.1.10",
+    "@types/react": "19.1.11",
     "@types/sinon": "17.0.4",
     "@types/sinon-chai": "4.0.0",
     "@web/test-runner": "0.20.2",
     "@web/test-runner-playwright": "0.11.1",
-    "chai": "5.2.1",
-    "eslint": "9.33.0",
+    "chai": "6.0.1",
+    "eslint": "9.34.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-import": "2.32.0",
@@ -161,14 +154,14 @@
     "globals": "16.3.0",
     "husky": "9.1.7",
     "lint-staged": "16.1.5",
-    "playwright": "1.54.2",
+    "playwright": "1.55.0",
     "prettier": "3.6.2",
     "rimraf": "6.0.1",
-    "rollup": "4.46.2",
-    "sinon-chai": "4.0.0",
-    "typedoc": "0.28.10",
+    "rollup": "4.49.0",
+    "sinon-chai": "4.0.1",
+    "sonda": "0.9.0",
     "typescript": "5.8.3",
-    "typescript-eslint": "8.39.1"
+    "typescript-eslint": "8.41.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
@@ -182,8 +175,10 @@
     "cli",
     "demo/frontend",
     "demo/frontend-cdn",
-    "demo/webpack-example",
     "tests/performance",
     "tests/integration"
-  ]
+  ],
+  "lint-staged": {
+    "./{src,cli/src}/**/*.{js,mjs,cjs,ts,jsx,tsx}": "npm run sdk:lint:fix"
+  }
 }

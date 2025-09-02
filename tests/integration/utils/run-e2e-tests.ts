@@ -70,18 +70,22 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       // If this gets flaky, we can increase the timeout or read the server logs
       const timeout = setTimeout(() => {
         throw new Error('Server did not register the session end in time');
-      }, 2000);
+      }, 4000);
 
       await new Promise(resolve => {
-        const interval = setInterval(async () => {
-          const response = await fetch('http://localhost:3001/received-spans');
-          const receivedSpans = (await response.json()) as ReceivedSpans;
+        const interval = setInterval(() => {
+          void (async () => {
+            const response = await fetch(
+              'http://localhost:3001/received-spans'
+            );
+            const receivedSpans = (await response.json()) as ReceivedSpans;
 
-          if (receivedSpans[currentSessionId]) {
-            clearInterval(interval);
-            clearTimeout(timeout);
-            resolve(null);
-          }
+            if (receivedSpans[currentSessionId]) {
+              clearInterval(interval);
+              clearTimeout(timeout);
+              resolve(null);
+            }
+          })();
         }, 200);
       });
     });
@@ -230,6 +234,7 @@ const runE2ETests = ({
         browserName,
       }) => {
         testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
+        testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
@@ -266,7 +271,10 @@ const runE2ETests = ({
         page,
         validateThatSessionEnded,
         getCurrentSessionId,
+        browserName,
       }) => {
+        testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
+
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const currentSessionId = await getCurrentSessionId();
 

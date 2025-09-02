@@ -4,7 +4,7 @@ import path, { dirname } from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import chalk from 'chalk';
-import type { Route, Request } from 'playwright';
+import type { Request, Route } from 'playwright';
 
 import type {
   IKeyValue,
@@ -53,7 +53,7 @@ type TestWithMockApi = {
 // Instrumentation on this list will only compare that the same amount of spans
 // are created, but not their attributes, since there's no way of ordering them properly to match the previous results.
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
-  '@opentelemetry/instrumentation-document-load',
+  'DocumentLoadInstrumentation',
 ];
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
@@ -62,6 +62,8 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.app_instance_id',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
+  'emb.stacktrace.js',
+  'emb.js_file_bundle_ids',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({

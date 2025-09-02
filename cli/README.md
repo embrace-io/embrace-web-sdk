@@ -22,13 +22,12 @@ To upload sourcemaps to Embrace as part of your build process you will require t
 * Your Embrace App ID
 * Your Embrace `Symbol Upload` API token (found in your Embrace dashbboard in
 [Settings->API](https://dash.embrace.io/settings/organization/api))
-* The path to your built JS bundle
-* The path to your JS sourcemap file
+* The path to where the built JS files live
 
 Note that uploading multiple JS bundles and sourcemaps is not currently supported.
 
 ```sh
-npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "BUILD_PATH"
 ```
 
 ## Setting app version
@@ -39,5 +38,5 @@ described in [Keeping your app version up-to-date](../README.md#including-the-sd
 the same command as above while also providing your app's version:
 
 ```sh
-npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH" --app-version "APP_VERSION"
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "BUILD_PATH" --app-version "APP_VERSION"
 ```

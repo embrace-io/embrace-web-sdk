@@ -10,21 +10,9 @@
             }
           },
           {
-            "key": "telemetry.sdk.language",
-            "value": {
-              "stringValue": "webjs"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
-            "key": "telemetry.sdk.version",
-            "value": {
-              "stringValue": "1.8.2"
             }
           },
           {
@@ -40,13 +28,13 @@
             }
           },
           {
-            "key": "bundle_id",
+            "key": "sdk_version",
             "value": {
-              "stringValue": "EmbIOBundleIDfd6996f1007b363f87a"
+              "stringValue": "1.8.2"
             }
           },
           {
-            "key": "sdk_version",
+            "key": "telemetry.sdk.version",
             "value": {
               "stringValue": "1.8.2"
             }
@@ -64,9 +52,15 @@
             }
           },
           {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "C882BD98B0724679BF324511C2DBC978"
+              "stringValue": "AB196C15702643D3AAB935E9E9319FD1"
             }
           },
           {
@@ -91,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1753282219886000000",
-              "observedTimeUnixNano": "1753282219887000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835269941000000",
+              "observedTimeUnixNano": "1756835269942000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -106,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:47615\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:5407\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:5785\n@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:53106\ne@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:53166\nmy@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:116775\n@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:121775\nAi@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:9042\nHc@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:118009\nVc@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:41:26611\nmd@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:41:26433"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/vite-7/esnext/assets/vendor-BC_1bvTY.js:12:169\\nmodule code@http://localhost:3001/public/vite-7/esnext/assets/vendor-BC_1bvTY.js:12:318\":\"6c987de8b0c44f72846e9a4fd38816d6\",\"@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:44:169\\nmodule code@http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:44:318\":\"b5365915f7464d6584bdba1606f3113c\",\"@http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-Cy9ybL-K.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-Cy9ybL-K.js:4:318\":\"51239b21162a4a03911d383f77146a12\",\"@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:4:318\":\"f7298b2c09b84d3ba46348cd41c98eee\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "1C2073BD227B41B5B464BAF0AAD0124C"
+                    "stringValue": "2BADB3044E084F0988CCC5B1A8F569D4"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "DCD28632836447BA83005F8A6BC9F737"
+                    "stringValue": "7ED285C6B02D4347AE7827CB4730508A"
                   }
                 },
                 {

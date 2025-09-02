@@ -51,7 +51,7 @@ export default merge(baseConfig, {
   ],
   devServer: {
     static: {
-      directory: path.resolve('dist/es2015s'),
+      directory: path.resolve('dist/es2015'),
     },
     port: 3000,
     open: true,

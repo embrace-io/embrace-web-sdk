@@ -1,11 +1,24 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
+// The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
+const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
+const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
+
+interface SourceMap {
+  version: number;
+  file: string;
+  sources: string[];
+  names: string[];
+  mappings: string;
+  debugId: string;
+}
+
 interface ProcessSourceFilesArgs {
-  jsFilePath: string;
-  mapFilePath: string;
+  buildPath: string;
   token: string;
   appID: string;
   appVersion: string;
@@ -14,23 +27,104 @@ interface ProcessSourceFilesArgs {
   storeType: string;
   cliVersion: string;
   templateAppVersion: string;
-  templateBundleID: string;
   fileEncoding: BufferEncoding;
   dryRun: boolean;
   replaceBundleID: boolean;
   upload: boolean;
 }
 
+const UUID_WITHOUT_HYPHENS_REGEX = /^[0-9a-fA-F]{32}$/;
+const UUID_PARTS_REGEX =
+  /([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})/;
+const addHyphensToUuid = (uuidStr: string): string => {
+  // Ensure the input string is exactly 32 characters long and contains only hexadecimal digits
+  if (!UUID_WITHOUT_HYPHENS_REGEX.test(uuidStr)) {
+    throw new Error('Invalid UUID string: Must be 32 hexadecimal characters.');
+  }
+
+  // Use replace with a regex to insert hyphens at the correct positions
+  return uuidStr.replace(UUID_PARTS_REGEX, '$1-$2-$3-$4-$5');
+};
+
+const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
+  const jsLines = sourceFile.split('\n');
+  const sourceMapCommentIndex = jsLines.findIndex(
+    line =>
+      line.startsWith('//# sourceMappingURL=') ||
+      line.startsWith('//@ sourceMappingURL=')
+  );
+
+  // Insert the snippet right before the sourceMapComment, or at the end if not found.
+  const injectIndex =
+    sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex;
+  const snippet = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
+    FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
+    bundleID
+  );
+  jsLines.splice(injectIndex, 0, snippet);
+  jsLines.splice(injectIndex, 0, '// Injected by Embrace Web CLI:');
+
+  return jsLines.join('\n');
+};
+
+const findJSFilesRecursively = (
+  dirPath: string,
+  visitedPaths: Set<string> = new Set()
+): Array<{ jsFilePath: string; mapFilePath: string }> => {
+  const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
+
+  // Get real path to handle symlinks
+  const realPath = fs.realpathSync(dirPath);
+
+  // Check for circular symlinks
+  if (visitedPaths.has(realPath)) {
+    console.warn(`Skipping already visited path: ${dirPath}`);
+    return results;
+  }
+  visitedPaths.add(realPath);
+
+  const files = fs.readdirSync(dirPath);
+  const jsFiles = files.filter(file => file.endsWith('.js'));
+
+  // Process JS files in current directory
+  for (const jsFile of jsFiles) {
+    const mapFile = jsFile + '.map';
+    const jsFilePath = path.join(dirPath, jsFile);
+    const mapFilePath = path.join(dirPath, mapFile);
+
+    // Check if corresponding .js.map file exists
+    if (files.includes(mapFile)) {
+      results.push({ jsFilePath, mapFilePath });
+    } else {
+      console.warn(`Skipping ${jsFile} - corresponding .js.map file not found`);
+    }
+  }
+
+  // Recursively process subdirectories
+  for (const file of files) {
+    const fullPath = path.join(dirPath, file);
+
+    try {
+      const stats = fs.statSync(fullPath);
+      if (stats.isDirectory()) {
+        results.push(...findJSFilesRecursively(fullPath, visitedPaths));
+      }
+    } catch (err) {
+      console.warn(`Error reading ${fullPath}:`, err);
+    }
+  }
+
+  return results;
+};
+
 export const processSourceFiles = async ({
-  jsFilePath,
-  mapFilePath,
+  buildPath,
   token,
   appID,
   host,
   pathForUpload,
   storeType,
   cliVersion,
-  templateBundleID,
   templateAppVersion,
   dryRun,
   replaceBundleID,
@@ -39,8 +133,7 @@ export const processSourceFiles = async ({
   appVersion,
 }: ProcessSourceFilesArgs): Promise<void> => {
   const validationError = validateInput({
-    jsFilePath,
-    mapFilePath,
+    buildPath,
     token,
     appID,
     host,
@@ -48,7 +141,6 @@ export const processSourceFiles = async ({
     storeType,
     cliVersion,
     appVersion,
-    templateBundleID,
     templateAppVersion,
     upload,
   });
@@ -57,79 +149,113 @@ export const processSourceFiles = async ({
     process.exit(1); // Exit with error code
   }
 
+  // Validate that path is a directory
+  const stats = fs.statSync(buildPath);
+  if (!stats.isDirectory()) {
+    console.error(`Path must be a directory: ${buildPath}`);
+    process.exit(1); // Exit with error code
+  }
+
   try {
-    // load files content
-    let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
-    let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
+    // Recursively find all .js files with corresponding .js.map files
+    const jsFiles = findJSFilesRecursively(buildPath);
 
-    let newJsContent: string;
-    let newMapContent: string;
+    console.log(
+      `Found ${jsFiles.length} JavaScript files in directory tree: ${buildPath}`
+    );
 
-    // if an app version is provided, inject it into the source code
-    // note that this is not mandatory, as the app version cam also be provided during sdk initialization.
-    // If neither is provided, the SDK will report the app version as "EmbIOAppVersionX.X.X"
-    if (appVersion) {
-      // for that, generate a 20 chars long appVersion by adding leading spaces to the appVersion
-      // if it is less than 20 chars long
-      const appVersionLength = appVersion.length;
-      if (appVersionLength < 20) {
-        appVersion = appVersion.padStart(20, ' ');
+    let appVersionReplaced = false;
+    for (const { jsFilePath, mapFilePath } of jsFiles) {
+      console.log(`Processing ${jsFilePath} and ${mapFilePath}...`);
+
+      // load files content
+      let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
+      let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
+
+      // if an app version is provided, inject it into the source code
+      if (appVersion) {
+        // generate a 20 chars long appVersion by adding leading spaces to the appVersion
+        const paddedAppVersion =
+          appVersion.length < 20 ? appVersion.padStart(20, ' ') : appVersion;
+        const newJsContent = jsContent.replace(
+          templateAppVersion,
+          paddedAppVersion
+        );
+        const newMapContent = mapContent.replace(
+          templateAppVersion,
+          paddedAppVersion
+        );
+
+        if (newJsContent === jsContent || newMapContent === mapContent) {
+          console.debug(`Template App version not found in ${jsFilePath}`);
+        } else {
+          appVersionReplaced = true;
+        }
+
+        // save the content to the base vars for later processing
+        jsContent = newJsContent;
+        mapContent = newMapContent;
       }
-      newJsContent = jsContent.replace(templateAppVersion, appVersion);
-      newMapContent = mapContent.replace(templateAppVersion, appVersion);
 
-      if (newJsContent === jsContent || newMapContent === mapContent) {
-        console.error('Template App version not found in the source code');
-        process.exit(1); // Exit with error code
+      // Now inject the debug_id:
+      let bundleID = ''; // BundleID does not have hyphens. E.g. cf3c7caa072c4b2283bc691d71e49bcd
+      let debugID = ''; // DebugID has hyphens. E.g. cf3c7caa-072c-4b22-83bc-691d71e49bcd
+      const sourceMap = JSON.parse(mapContent) as SourceMap;
+
+      // If the sourcemap already has a debug_id use that, otherwise we generate it.
+      // Given that the debug_id specification (https://github.com/tc39/ecma426/blob/main/proposals/debug-id.md#debug-ids)
+      // uses hyphens, and our bundle_id does not, we need to have the two variables separately.
+      if (sourceMap.debugId) {
+        bundleID = sourceMap.debugId.replaceAll('-', '');
+        debugID = sourceMap.debugId;
+        console.log(
+          `Using debugID ${debugID} from sourceMap for ${jsFilePath}`
+        );
+      } else {
+        bundleID = crypto.createHash('md5').update(jsContent).digest('hex'); // No hyphens
+        debugID = addHyphensToUuid(bundleID);
+        sourceMap.debugId = debugID;
+        mapContent = JSON.stringify(sourceMap);
+        console.log(`Generated debugID ${debugID} for ${jsFilePath}`);
       }
 
-      // save the content to the base vars for later processing
-      jsContent = newJsContent;
-      mapContent = newMapContent;
+      // Inject the file->bundleID map snippet:
+      jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      console.log(
+        `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`
+      );
+
+      // write the updated source code back to the file
+      if (!dryRun && replaceBundleID) {
+        fs.writeFileSync(jsFilePath, jsContent, fileEncoding);
+        fs.writeFileSync(mapFilePath, mapContent, fileEncoding);
+      }
+
+      // upload the files to the Embrace API
+      await uploadToApi({
+        jsContent,
+        mapContent,
+        bundleID,
+        token,
+        appID,
+        host,
+        pathForUpload,
+        storeType,
+        cliVersion,
+        dryRun,
+        upload,
+      });
+      console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
     }
 
-    // generate 32 chars long hash from the js content using md5
-    const bundleID = crypto.createHash('md5').update(jsContent).digest('hex');
-    console.log(`Generated bundleID ${bundleID}`);
-
-    // replace the injected template bundle ID with the generated bundle ID in the source code
-    newJsContent = jsContent.replace(templateBundleID, bundleID);
-    newMapContent = mapContent.replace(templateBundleID, bundleID);
-
-    if (newJsContent === jsContent || newMapContent === mapContent) {
-      console.error('Template bundle ID not found in the source code');
+    // If the app version was provided, but it couldn't be replaced in any of the files, exit with error.
+    if (appVersion && !appVersionReplaced) {
+      console.error(
+        `Template App version not found in any of the js files. Exiting.`
+      );
       process.exit(1); // Exit with error code
     }
-
-    // save the content to the base vars for later processing
-    jsContent = newJsContent;
-    mapContent = newMapContent;
-    console.log(
-      replaceBundleID && !dryRun
-        ? 'Replacing the template bundle ID with the generated bundle ID'
-        : 'Dry run mode, not replacing the template bundle ID'
-    );
-    // write the updated source code back to the file
-    if (!dryRun && replaceBundleID) {
-      fs.writeFileSync(jsFilePath, jsContent, fileEncoding);
-      fs.writeFileSync(mapFilePath, mapContent, fileEncoding);
-    }
-
-    // upload the files to the Embrace API
-    await uploadToApi({
-      jsContent,
-      mapContent,
-      bundleID,
-      token,
-      appID,
-      host,
-      pathForUpload,
-      storeType,
-      cliVersion,
-      dryRun,
-      upload,
-    });
-    console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
   } catch (err) {
     console.error('Error processing files:', err);
     process.exit(1); // Exit with error code

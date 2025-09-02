@@ -159,7 +159,7 @@ jobs:
 
       # https://github.com/codecov/codecov-action
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@fdcc8476540edceab3de004e990f80d881c6cc00 # v5.5.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -498,12 +498,11 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: npm run playwright -- install-deps
 
-
-      # We need the SDK to be built, so we can use it in the sample apps
-      - name: Build SDK
+      # We need the SDK and CLI to be built, so we can use them in the sample apps
+      - name: Build SDK and CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:compile
+          npm run compile
 
       # TODO: cache
       - name: Install npm dependencies for platforms
@@ -534,7 +533,7 @@ jobs:
         run: |
           echo '<!-- build-results -->' > build-results.md
           echo "## build results" >> build-results.md
-      
+
           for file in ./tests/integration/build-test-results/*.md; do
             cat "$file" >> build-results.md
           done

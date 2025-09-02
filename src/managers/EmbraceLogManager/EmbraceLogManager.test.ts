@@ -21,14 +21,15 @@ import {
   setupTestLogExporter,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import { OTelPerformanceManager } from '../../utils/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
+import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
 import { EmbraceLogManager } from './EmbraceLogManager.js';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
 import {
@@ -196,6 +197,9 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should log an error log with stacktrace', () => {
+    GLOBAL_CONFIG._EmbraceFileBundleIDs = {
+      'Error\n at file1.js:1:169': 'b350cbb4-6d53-4a3a-aa3e-29ebbc39b11c',
+    };
     expect(() => {
       manager.message('this is an error log with stacktrace', 'error', {
         attributes: {
@@ -232,7 +236,11 @@ describe('EmbraceLogManager', () => {
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
     expect(log.attributes).to.have.property(KEY_EMB_JS_EXCEPTION_STACKTRACE);
-    expect(Object.keys(log.attributes)).to.have.lengthOf(2);
+    expect(log.attributes).to.have.property(
+      KEY_EMB_JS_FILE_BUNDLE_IDS,
+      '{"Error\\n at file1.js:1:169":"b350cbb4-6d53-4a3a-aa3e-29ebbc39b11c"}'
+    );
+    expect(Object.keys(log.attributes)).to.have.lengthOf(3);
   });
 
   it('should log an exception with stacktrace', () => {

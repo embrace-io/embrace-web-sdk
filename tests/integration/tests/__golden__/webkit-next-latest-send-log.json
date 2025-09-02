@@ -10,21 +10,9 @@
             }
           },
           {
-            "key": "telemetry.sdk.language",
-            "value": {
-              "stringValue": "webjs"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
-            "key": "telemetry.sdk.version",
-            "value": {
-              "stringValue": "1.8.2"
             }
           },
           {
@@ -40,13 +28,13 @@
             }
           },
           {
-            "key": "bundle_id",
+            "key": "sdk_version",
             "value": {
-              "stringValue": "EmbIOBundleIDfd6996f1007b363f87a"
+              "stringValue": "1.8.2"
             }
           },
           {
-            "key": "sdk_version",
+            "key": "telemetry.sdk.version",
             "value": {
               "stringValue": "1.8.2"
             }
@@ -64,9 +52,15 @@
             }
           },
           {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "C0139816F0CD47C0A1D54302DC84399B"
+              "stringValue": "26D721A20C784EEAB5C3FED53DC97F17"
             }
           },
           {
@@ -91,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1753282219986000000",
-              "observedTimeUnixNano": "1753282219987000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835268811000000",
+              "observedTimeUnixNano": "1756835268812000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -106,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:1:46811\nmessage@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:1:2961\nmessage@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:1:3236\n@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:1:54016\nt@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:1:54078\ni8@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135364\n@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:141451\nnz@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:19198\nsn@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136598\ncc@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163600\nci@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163422"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:3:318\":\"bc1bbbec977848b8a8d74ffef9ab0fa5\",\"@http://localhost:3000/_next/static/chunks/main-app-df3a994a2d5757c7.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/main-app-df3a994a2d5757c7.js:3:318\":\"7376721418c1a243e5515323b575cd60\",\"@http://localhost:3000/_next/static/chunks/4f9414d9-efd5d960f34c0bab.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/4f9414d9-efd5d960f34c0bab.js:3:318\":\"2dd6c8464c8b8b76c834bf9ff093a795\",\"@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/255-c228ac08054e8f15.js:3:318\":\"320f8dea5501aadfa82abe4367aa6ebe\",\"@http://localhost:3000/_next/static/chunks/623-151b36db01efdb13.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/623-151b36db01efdb13.js:3:318\":\"900d8c0792398abcb7c60c54f102e1ba\",\"@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/app/page-f64af79a4a7fbb47.js:3:318\":\"5bfc358ac4ee2097eb202eeac99f7644\",\"@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:3:318\":\"386cfc75819760e1ef3a10ca0c340f52\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "C90FA7B7CAD04CD082EC8DEC0F607D00"
+                    "stringValue": "8B9983C6941449A4B59990BF313ADA85"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "73FDF8F83CE74D059692BE73EF111AAF"
+                    "stringValue": "A314F5153FEE4E5D9727ACC6094D0069"
                   }
                 },
                 {
