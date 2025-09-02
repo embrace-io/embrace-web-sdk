@@ -97,6 +97,45 @@ describe('EmbraceSpanStorage', () => {
 
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     });
+
+    it('should not store spans when max pending spans limit is exceeded', () => {
+      const sessionSpan = mockSpan;
+      const pendingSpans = [mockSpan];
+
+      // Fill storage to exactly the limit (10 items)
+      for (let i = 0; i < 10; i++) {
+        spanStorage.storePendingSpans(`session${i}`, sessionSpan, pendingSpans);
+      }
+
+      expect(storage.length).to.equal(10);
+
+      // Now the next attempt should be rejected because count >= 10
+      spanStorage.storePendingSpans(
+        'sessionOverLimit',
+        sessionSpan,
+        pendingSpans
+      );
+      expect(storage.length).to.equal(10);
+
+      // Should have logged a warning
+      const warnLogs = diag.getWarnLogs();
+      expect(warnLogs).to.have.lengthOf(1);
+      expect(warnLogs[0]).to.equal(
+        'Not storing pending spans as the max number of items was reached'
+      );
+
+      // Should not have the over-limit session stored
+      let foundOverLimitKey = false;
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key && key.includes('sessionOverLimit')) {
+          foundOverLimitKey = true;
+          break;
+        }
+      }
+      void expect(foundOverLimitKey).to.be.false;
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
   });
 
   describe('clearStoredSpans', () => {

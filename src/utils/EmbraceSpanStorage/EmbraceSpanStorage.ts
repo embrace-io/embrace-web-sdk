@@ -4,6 +4,7 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
+const MAX_PENDING_SPANS_ITEMS = 10;
 
 export interface SpanStorageOptions {
   storage?: Storage;
@@ -63,6 +64,13 @@ export class EmbraceSpanStorage {
       // If this session was already stored, clear it first:
       this.clearStoredSpans(sessionId);
 
+      if (this._getPendingSpansKeys().length >= MAX_PENDING_SPANS_ITEMS) {
+        this._diag.warn(
+          'Not storing pending spans as the max number of items was reached'
+        );
+        return;
+      }
+
       const key = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_${Date.now()}`;
       this._storage.setItem(
         key,
@@ -112,14 +120,7 @@ export class EmbraceSpanStorage {
 
   public checkAndExportExpiredSpans(): void {
     try {
-      const keys: string[] = [];
-      for (let i = 0; i < this._storage.length; i++) {
-        const key = this._storage.key(i);
-        if (key && key.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
-          keys.push(key);
-        }
-      }
-
+      const keys = this._getPendingSpansKeys();
       if (keys.length === 0) {
         return;
       }
@@ -171,6 +172,17 @@ export class EmbraceSpanStorage {
     } catch (e) {
       this._diag.error('Failed to check and export expired spans:', e);
     }
+  }
+
+  public _getPendingSpansKeys(): string[] {
+    const keys: string[] = [];
+    for (let i = 0; i < this._storage.length; i++) {
+      const key = this._storage.key(i);
+      if (key && key.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
+        keys.push(key);
+      }
+    }
+    return keys;
   }
 
   public destroy(): void {
