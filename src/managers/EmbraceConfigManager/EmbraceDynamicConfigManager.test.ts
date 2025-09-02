@@ -42,6 +42,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 30,
+      networkSpansForwardingThreshold: 0,
     });
   });
 
@@ -52,6 +53,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
     });
   });
 
@@ -66,6 +68,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 50,
+      networkSpansForwardingThreshold: 0,
     });
   });
 
@@ -91,6 +94,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 75,
+      networkSpansForwardingThreshold: 0,
     });
   });
 
@@ -105,6 +109,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
     });
     expect(diag.getWarnLogs()[0]).to.contain(
       'Failed to parse remote config from storage'
@@ -120,6 +125,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
     });
   });
 
@@ -172,6 +178,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
     });
     expect(diag.getWarnLogs()[0]).to.contain('Failed to refresh remote config');
   });
@@ -212,7 +219,7 @@ describe('EmbraceDynamicConfigManager', () => {
     });
   });
 
-  it('should use the stored etag in the request headers, and update it if changes', async () => {
+  it('should use the stored etag in the request headers, and update if it changes', async () => {
     storage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
@@ -295,6 +302,7 @@ describe('EmbraceDynamicConfigManager', () => {
     ]);
     expect(config).to.deep.equal({
       samplingPct: 75,
+      networkSpansForwardingThreshold: 0,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',

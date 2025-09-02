@@ -15,9 +15,18 @@ import type {
   DynamicSDKConfig,
 } from '../../sdk/index.js';
 
-const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => ({
-  samplingPct: remoteConfig.threshold,
-});
+const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
+  const parsed: DynamicSDKConfig = {
+    samplingPct: remoteConfig.threshold,
+  };
+
+  if (remoteConfig.network_span_forwarding !== undefined) {
+    parsed.networkSpansForwardingThreshold =
+      remoteConfig.network_span_forwarding.pct_enabled;
+  }
+
+  return parsed;
+};
 
 export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   // Set to null if appID is not provided, in that case only rely on local config

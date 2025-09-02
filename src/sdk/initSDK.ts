@@ -57,7 +57,8 @@ import type {
 import { registry } from './registry.js';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
 import type { AttributeScrubber } from '../common/index.js';
-import { OTelPerformanceManager } from '../utils/index.js';
+import { OTelPerformanceManager, nsfConfigValidation } from '../utils/index.js';
+import { EmbraceW3CTraceContextPropagator } from '../propagators/index.js';
 
 export const initSDK = (
   {
@@ -84,6 +85,7 @@ export const initSDK = (
     dynamicSDKConfigManager: providedDynamicSDKConfigManager,
     dynamicSDKConfig,
     registerGlobally = true,
+    blockNetworkSpanForwarding = false,
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
@@ -140,6 +142,7 @@ export const initSDK = (
     const sdkFeaturesManager = new EmbraceSDKFeaturesManager({
       dynamicConfigManager,
       deviceId: enduserPseudoID,
+      blockNetworkSpanForwarding,
     });
 
     if (!sdkFeaturesManager.isSDKEnabled()) {
@@ -147,6 +150,14 @@ export const initSDK = (
 
       return false;
     }
+
+    const nsfValid = nsfConfigValidation({
+      featureManager: sdkFeaturesManager,
+      diag: diagLogger,
+      registerGlobally,
+      defaultInstrumentationConfig,
+      propagator,
+    });
 
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
 
@@ -192,7 +203,9 @@ export const initSDK = (
       userManager,
       spanExporters,
       spanProcessors,
-      propagator,
+      propagator: nsfValid
+        ? new EmbraceW3CTraceContextPropagator()
+        : propagator,
       contextManager,
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
