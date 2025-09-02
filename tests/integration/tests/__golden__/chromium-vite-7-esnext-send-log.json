@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "7806FB7901FA4E309ED8CD789F6242F8"
+              "stringValue": "A03496E2C93A42A597E242724ECF6CCD"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.7258.5 Safari/537.36"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.16 Safari/537.36"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152088508000000",
-              "observedTimeUnixNano": "1756152088508000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835263446500000",
+              "observedTimeUnixNano": "1756835263446000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at j.message (http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:47606)\n    at is.message (http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:5400)\n    at A.message (http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:5778)\n    at e (http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:1:53099)\n    at my (http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:116774)\n    at http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:121773\n    at Ai (http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:9041)\n    at Hc (http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:40:118007)\n    at Vc (http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:41:26609)\n    at md (http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:41:26431)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/vite-7/esnext/assets/vendor-BC_1bvTY.js:12:169\\n    at http://localhost:3001/public/vite-7/esnext/assets/vendor-BC_1bvTY.js:12:318\":\"6c987de8b0c44f72846e9a4fd38816d6\",\"Error\\n    at http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:44:169\\n    at http://localhost:3001/public/vite-7/esnext/assets/react-q-I5tv2e.js:44:318\":\"b5365915f7464d6584bdba1606f3113c\",\"Error\\n    at http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-Cy9ybL-K.js:4:169\\n    at http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-Cy9ybL-K.js:4:318\":\"51239b21162a4a03911d383f77146a12\",\"Error\\n    at http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:4:169\\n    at http://localhost:3001/public/vite-7/esnext/assets/index-BvlKQnP8.js:4:318\":\"f7298b2c09b84d3ba46348cd41c98eee\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "D9F32417E5AE4264B65A2C899B12EA76"
+                    "stringValue": "F0DE6494592F4D8E802FDBC44F00FADF"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "16052D6A73054B82B71D0E8EB0D9FB8F"
+                    "stringValue": "0FD1E00F85464FE893D8A5BD422DB10A"
                   }
                 },
                 {

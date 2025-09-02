@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "A4CEEBD97944454F941F2BA03D54729B"
+              "stringValue": "F6E6DB0FED4F4ADA9F7D14F6FC588DB5"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152098093000000",
-              "observedTimeUnixNano": "1756152098094000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835272448000000",
+              "observedTimeUnixNano": "1756835272449000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:49516\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:6377\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:6755\n@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:55114\n@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:902\nPromise@[native code]\ny@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:729\nmy@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:116875\n@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:121875\nAi@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:9079\nHc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:118109\nVc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:41:26629\nmd@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:41:26451"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/vite-7/es2015/assets/vendor-V0qZFxiN.js:12:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/vendor-V0qZFxiN.js:12:318\":\"3b8351d605f14437ab81af3dd9f7f43b\",\"@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:44:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:44:318\":\"b7ab5edc4d8d435d8f8594424ba3d797\",\"@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-4zY8APhA.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-4zY8APhA.js:4:318\":\"b7ce41c12dea40048bdd371747fa64be\",\"@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:4:318\":\"ccdc928169724ac0ac47dd9b33905b04\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "69F30812835549CE9ED638005F551DED"
+                    "stringValue": "9A9562077AF5413685CF134B93CDBF5D"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "6109772829EE4C088EB48272A16D77E3"
+                    "stringValue": "FE28B00B6870408EAD02D4268DD26336"
                   }
                 },
                 {

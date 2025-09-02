@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "EA156DDB919D41F889EB6ED7D08274B4"
+              "stringValue": "831DF854FC714DF1BD5B8A6A2FBC3588"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.7258.5 Safari/537.36"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.16 Safari/537.36"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152088525900146",
-              "observedTimeUnixNano": "1756152088526000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835263480600098",
+              "observedTimeUnixNano": "1756835263480000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at Zs.message (http://localhost:3001/public/webpack-5/esnext/bundle.js:2:338534)\n    at c.message (http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185490)\n    at d.message (http://localhost:3001/public/webpack-5/esnext/bundle.js:2:185874)\n    at http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347385\n    at Generator.next (<anonymous>)\n    at nl (http://localhost:3001/public/webpack-5/esnext/bundle.js:2:346872)\n    at o (http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347075)\n    at http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347136\n    at new Promise (<anonymous>)\n    at http://localhost:3001/public/webpack-5/esnext/bundle.js:2:347016"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/webpack-5/esnext/bundle.js:4:169\\n    at http://localhost:3001/public/webpack-5/esnext/bundle.js:4:318\":\"25148f08739b1dadeee0dc65e5689cde\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "77CF20D6834548CE9430E0E7E9496234"
+                    "stringValue": "BAD1AF835D29450F8D4D42F29664B7A4"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "755C02148A9C4E6E8E485384EA3442B6"
+                    "stringValue": "8B5D2EE28AA843E094C03B81B64708F9"
                   }
                 },
                 {

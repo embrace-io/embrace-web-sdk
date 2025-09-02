@@ -17,6 +17,28 @@ export default ({ target, outDir, sondaOutput }: CreateConfigArgs) =>
       sourcemap: true,
       target,
       outDir,
+      rollupOptions: {
+        output: {
+          sourcemapDebugIds: true,
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('@opentelemetry')) {
+                return 'opentelemetry';
+              }
+              if (id.includes('react')) {
+                return 'react';
+              }
+              if (id.includes('protobufjs')) {
+                return 'protobufjs';
+              }
+
+              // All other node_modules go into 'vendor'
+              return 'vendor';
+            }
+            return null;
+          },
+        },
+      },
     },
     plugins: [
       react({

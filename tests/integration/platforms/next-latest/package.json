@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "build": "npm run build:clean && npm run build:es2020",
     "build:clean": "npx rimraf .next",
-    "build:es2020": "next build"
+    "build:es2020": "next build && npm run process-sourcemaps",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
@@ -17,6 +18,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
     "@eslint/eslintrc": "^3",
     "@types/node": "^22",
     "@types/react": "^19",

@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "A424C6BBC94240D2B40396330871870D"
+              "stringValue": "11EA5980BED14C5CACB11DB42513F85B"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0.2) Gecko/20100101 Firefox/140.0.2"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0"
             }
           },
           {
@@ -85,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756152094872000000",
-              "observedTimeUnixNano": "1756152094873000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835268612000000",
+              "observedTimeUnixNano": "1756835268612000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -100,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:49507\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:6370\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:6748\nli</gi/e/<@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:55107\ny/<@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:898\ny@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:718\ne@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:55081\nmy@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:116875\n_d/Hc/<@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:121875\nAi@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:9079\nHc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:118109\nVc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:41:26629\nmd@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:41:26449\nEventListener.handleEvent*Sy@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:117670\nUc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:117070\n_d/Rc/<@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:117236\nRc@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:40:117181\n_d/de.createRoot@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:41:33680\nli<@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:55489\nbt/<@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:662\n@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:1:55603\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/vite-7/es2015/assets/vendor-V0qZFxiN.js:12:169\\n@http://localhost:3001/public/vite-7/es2015/assets/vendor-V0qZFxiN.js:12:318\\n\":\"3b8351d605f14437ab81af3dd9f7f43b\",\"@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:44:169\\n@http://localhost:3001/public/vite-7/es2015/assets/react-iL9LzJWm.js:44:318\\n\":\"b7ab5edc4d8d435d8f8594424ba3d797\",\"@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-4zY8APhA.js:4:169\\n@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-4zY8APhA.js:4:318\\n\":\"b7ce41c12dea40048bdd371747fa64be\",\"@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:4:169\\n@http://localhost:3001/public/vite-7/es2015/assets/index-B7woX-QX.js:4:318\\n\":\"ccdc928169724ac0ac47dd9b33905b04\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "7122020FC8DE4F8DA43B3C0637C32773"
+                    "stringValue": "62D795C26D024CB98DF46E945056BF25"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "19CFA7A0337F4D80A634D30D3A09FE65"
+                    "stringValue": "02DD99C41FA74569BE0A2C0991971A66"
                   }
                 },
                 {
