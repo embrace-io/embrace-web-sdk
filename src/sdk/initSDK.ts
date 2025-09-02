@@ -7,11 +7,11 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -19,24 +19,24 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.js';
 import {
+  DEFAULT_LIMITS,
+  EmbraceDynamicConfigManager,
   EmbraceLimitManager,
   EmbraceLogManager,
+  EmbraceSDKFeaturesManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-  EmbraceDynamicConfigManager,
-  DEFAULT_LIMITS,
-  EmbraceSDKFeaturesManager,
 } from '../managers/index.js';
 import {
+  EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
-  EmbraceLogRecordProcessor,
   IdentifiableSessionLogRecordProcessor,
-  UserSpanProcessor,
-  UserLogRecordProcessor,
   LogRecordScrubProcessor,
   SpanScrubProcessor,
+  UserLogRecordProcessor,
+  UserSpanProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -62,7 +62,6 @@ export const initSDK = (
   {
     appID,
     appVersion,
-    templateBundleID,
     resource = emptyResource(),
     spanExporters = [],
     logExporters = [],
@@ -104,15 +103,10 @@ export const initSDK = (
       logLevel,
     });
 
-    if (templateBundleID && templateBundleID.length !== 32) {
-      throw new Error('templateBundleID should be 32 characters long');
-    }
-
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource({
         diagLogger,
         appVersion,
-        templateBundleID,
         pageSessionStorage: window.sessionStorage,
       })
     );

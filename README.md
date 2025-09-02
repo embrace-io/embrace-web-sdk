@@ -216,11 +216,11 @@ yarn add -D @embrace-io/web-cli
 You will also require a `Symbol Upload` API token. This can be found in your Embrace dashboard by going
 to [Settings->API](https://dash.embrace.io/settings/organization/api).
 
-Then hook the CLI into your build process and point it to your built bundle and sourcemaps in order to perform the
-upload:
+Then hook the CLI into your build process and point it to your path where the built JS files live in order
+to perform the upload:
 
 ```sh
-npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
 ```
 
 Additionally, if your app version is only known at build-time you can include it in the same command to have it injected
@@ -228,7 +228,7 @@ into the bundle. If you follow this method do not also include appVersion when c
 precedence:
 
 ```sh
-npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -b "BUNDLE_PATH" -m "SOURCE_MAP_PATH"
+npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
 ```
 
 > [!NOTE]
@@ -323,14 +323,12 @@ We recommend you include our SDK as a regular npm dependency (see [Quick Start](
 the SDK as a code snippet from CDN, you can do so by adding the following script tag to your generated HTML file:
 
 ```html
-
 <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk"></script>
 ```
 
 Note: we recommend you pin specific versions to avoid breaking changes. Like:
 
 ```html
-
 <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X"></script>
 ```
 
@@ -361,22 +359,6 @@ the following example:
      /*...*/
    });
    ```
-
-3) Similarly, for sourcemap uploads our CLI looks for a special placeholder string to replace with the real ID of the
-uploaded bundle files. When our SDK is not bundled with your code you will need to provide this placeholder string when
-initializing the sdk as in the following example:
-
-   ```javascript
-   sdk.initSDK({
-     appVersion: '0.0.1',
-     templateBundleID: 'EmbIOBundleIDfd6996f1007b363f87a',
-     /*...*/
-   });
-   ```
-
-   > NOTE: It is simplest to use this specific string since that is what our CLI tool will look for by default, however any 32
-   > character string would be valid. If you do use another value make sure to specify it using the
-   > `--template-bundle-id` flag when invoking `embrace-web-cli upload`
 
 ### Async Loading
 

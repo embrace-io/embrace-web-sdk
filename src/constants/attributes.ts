@@ -14,6 +14,7 @@ export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
 export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
 export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
   'emb.unhandled_exceptions_count';
+export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_VIEW_NAME = 'view.name';
 
 export enum EMB_TYPES {
