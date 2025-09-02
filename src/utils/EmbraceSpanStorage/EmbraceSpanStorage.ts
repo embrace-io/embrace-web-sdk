@@ -20,8 +20,6 @@ export interface SpanStorageOptions {
 // - Avoid serializing as JSON and instead try to use a customExporter that produces the body as it was going to be
 //   sent over the wire (serialized, compressed, etc), and store that, so that later when it decides to export those,
 //   it's just using that body as a regular fetch call.
-// - Have a safety check that prevents taking the entire localStorage space in case there's a bug (or someone has that
-//   many tabs that causes it to be full anyway). An easy check would be to not store more than X pending keys.
 // - Create a service worker that is responsible for tracking the pending spans and deciding when to actually export them.
 //   That way we would avoid a potential race condition where two different tabs would try to export the same data.
 // - Make this a more comprehensive component so that the EmbraceSessionBatchedSpanProcessor doesn't need to be in the
