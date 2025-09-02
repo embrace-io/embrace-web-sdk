@@ -76,7 +76,7 @@ export default defineConfig([
     onwarn,
   },
 
-  // CJS Build: CommonJS modules for older bundlers
+  // CJS Build: CommonJS modules for Next.js and webpack < 5
   {
     input,
     plugins: plugins({ target: 'es2022' }),
@@ -86,6 +86,8 @@ export default defineConfig([
       sourcemap: true,
       preserveModules: true,
       preserveModulesRoot: 'src',
+      entryFileNames: '[name].cjs',
+      chunkFileNames: '[name]-[hash].cjs',
     },
     external: isExternal,
     onwarn,

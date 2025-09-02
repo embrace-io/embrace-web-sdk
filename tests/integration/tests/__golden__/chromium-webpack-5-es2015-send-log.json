@@ -10,21 +10,9 @@
             }
           },
           {
-            "key": "telemetry.sdk.language",
-            "value": {
-              "stringValue": "webjs"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
-            "key": "telemetry.sdk.version",
-            "value": {
-              "stringValue": "1.8.2"
             }
           },
           {
@@ -40,13 +28,13 @@
             }
           },
           {
-            "key": "bundle_id",
+            "key": "sdk_version",
             "value": {
-              "stringValue": "EmbIOBundleIDfd6996f1007b363f87a"
+              "stringValue": "1.8.2"
             }
           },
           {
-            "key": "sdk_version",
+            "key": "telemetry.sdk.version",
             "value": {
               "stringValue": "1.8.2"
             }
@@ -64,15 +52,21 @@
             }
           },
           {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "752A91C5D0334458A85A5298C1DB1D02"
+              "stringValue": "121CAC0C26734E97910A54CD7AAE12A8"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.7258.5 Safari/537.36"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.16 Safari/537.36"
             }
           },
           {
@@ -91,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1753282213935699951",
-              "observedTimeUnixNano": "1753282213935000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835266530500000",
+              "observedTimeUnixNano": "1756835266530000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -106,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at e.value (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:411343)\n    at e.value (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:191111)\n    at e.value (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:192394)\n    at http://localhost:3001/public/webpack-5/es2015/bundle.js:2:427190\n    at Generator.<anonymous> (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:425470)\n    at Generator.next (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426391)\n    at Bf (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426502)\n    at a (http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426705)\n    at http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426766\n    at new Promise (<anonymous>)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/webpack-5/es2015/bundle.js:4:169\\n    at http://localhost:3001/public/webpack-5/es2015/bundle.js:4:318\":\"71ae5944a2badf07418e58274ace65b8\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "973E2F734E8D4AF48745F34FD22D271C"
+                    "stringValue": "C877FF83DEF440FCA3C01402A564DD97"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "3331D978E13041DA9A9DBCFB11FB4AE8"
+                    "stringValue": "E48C59AB820E40CEB143ED0FCF7C6D1B"
                   }
                 },
                 {

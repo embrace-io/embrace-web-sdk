@@ -125,15 +125,6 @@ type BaseSDKInitConfig = {
   logLevel?: DiagLogLevel;
 
   /**
-   * templateBundleID should only be provided when loading the SDK from CDN through a script tag. It is used to specify a 32
-   * character placeholder string which will then be substituted by our CLI tool when uploading source maps. See
-   * "Including the SDK as a code snippet from CDN" in our README for more details.
-   *
-   * **default**: undefined
-   */
-  templateBundleID?: string;
-
-  /**
    * AttributeScrubber is an interface that allows scrubbing potentially sensitive data before being emitted by the SDK.
    * Each scrubber specifies an attribute key it is concerned with and a function which is supplied with the string from
    * an AttributeValue whenever that key is encountered on a Log or Span. The string returned by the function is then

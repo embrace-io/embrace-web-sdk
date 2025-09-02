@@ -8,7 +8,6 @@ import {
   SOURCE_MAP_UPLOAD_HOST,
   SOURCE_MAP_UPLOAD_PATH,
   TEMPLATE_APP_VERSION,
-  TEMPLATE_BUNDLE_ID,
 } from './constants.js';
 import { processSourceFiles } from './processSourceFiles.js';
 
@@ -27,13 +26,11 @@ program
   .command('upload')
   .description(CLI_DESCRIPTION)
   .addOption(
-    new Option('-b, --bundle <bundle>', 'Path to the JS Bundled file')
-      .env('EMB_JS_BUNDLE_PATH')
-      .makeOptionMandatory()
-  )
-  .addOption(
-    new Option('-m, --map <map>', 'Path to the source map file')
-      .env('EMB_JS_SOURCE_MAP_PATH')
+    new Option(
+      '-p, --build-path <buildPath>',
+      'Path to where the built JS files live'
+    )
+      .env('EMB_BUILD_PATH')
       .makeOptionMandatory()
   )
   .addOption(
@@ -125,16 +122,6 @@ program
   )
   .addOption(
     new Option(
-      '--template-bundle-id [templateBundleID]',
-      'Embrace Template Bundle ID build into the SDK source code for replacement'
-    )
-      .env('EMB_TEMPLATE_BUNDLE_ID')
-      .default(TEMPLATE_BUNDLE_ID)
-      .makeOptionMandatory()
-      .hideHelp()
-  )
-  .addOption(
-    new Option(
       '--template-app-version [templateAppVersion]',
       'Embrace Template App Version build into the SDK source code for replacement'
     )
@@ -145,14 +132,12 @@ program
   )
   .action(async options => {
     const {
-      bundle,
-      map,
+      buildPath,
       token,
       appId,
       host,
       pathForUpload,
       storeType,
-      templateBundleId,
       templateAppVersion,
       cliVersion,
       dryRun,
@@ -162,14 +147,12 @@ program
       encoding,
     } = options; // Destructure the options
     await processSourceFiles({
-      jsFilePath: bundle,
-      mapFilePath: map,
+      buildPath,
       token,
       appID: appId, // commander processes it as appId instead of appID, ergo the rename
       host,
       pathForUpload,
       storeType,
-      templateBundleID: templateBundleId, // commander processes it as templateBundleId instead of templateBundleID, ergo the rename
       templateAppVersion,
       cliVersion,
       fileEncoding: encoding,

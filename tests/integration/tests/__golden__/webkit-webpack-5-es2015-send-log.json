@@ -10,21 +10,9 @@
             }
           },
           {
-            "key": "telemetry.sdk.language",
-            "value": {
-              "stringValue": "webjs"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
-            "key": "telemetry.sdk.version",
-            "value": {
-              "stringValue": "1.8.2"
             }
           },
           {
@@ -40,13 +28,13 @@
             }
           },
           {
-            "key": "bundle_id",
+            "key": "sdk_version",
             "value": {
-              "stringValue": "EmbIOBundleIDfd6996f1007b363f87a"
+              "stringValue": "1.8.2"
             }
           },
           {
-            "key": "sdk_version",
+            "key": "telemetry.sdk.version",
             "value": {
               "stringValue": "1.8.2"
             }
@@ -64,9 +52,15 @@
             }
           },
           {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "78B260BA20F7405F8123E403B35A65E1"
+              "stringValue": "A15CE056C8BE492EB85223D13FA36FC5"
             }
           },
           {
@@ -91,10 +85,10 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1753282223321000000",
-              "observedTimeUnixNano": "1753282223322000000",
-              "severityNumber": 9,
-              "severityText": "INFO",
+              "timeUnixNano": "1756835272974000000",
+              "observedTimeUnixNano": "1756835272974000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
               "body": {
                 "stringValue": "This is a test log message"
               },
@@ -106,15 +100,27 @@
                   }
                 },
                 {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "value@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:411343\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:191118\nvalue@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:192401\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:427197\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:425474\nBf@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426502\na@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426707\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426767\nPromise@[native code]\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:426657\nMc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:135279\n@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:141342\nMt@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:23219\nVc@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:136505\nap@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162598\nop@http://localhost:3001/public/webpack-5/es2015/bundle.js:2:162420"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/webpack-5/es2015/bundle.js:4:169\\nglobal code@http://localhost:3001/public/webpack-5/es2015/bundle.js:4:318\":\"71ae5944a2badf07418e58274ace65b8\"}"
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "F7F83C6661AA4F9CA9725F159842E1BA"
+                    "stringValue": "51ACED1353434A8AAC1A09FEB4265ACD"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "7C065E6CB39E498180873D3908264F45"
+                    "stringValue": "62575715C58A4F00A14C0105A767CD4A"
                   }
                 },
                 {

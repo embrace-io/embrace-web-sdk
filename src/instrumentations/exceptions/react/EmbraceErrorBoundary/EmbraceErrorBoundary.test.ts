@@ -15,6 +15,7 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   EMB_ERROR_INSTRUMENTATIONS,
   KEY_EMB_INSTRUMENTATION,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
 } from '../../../../constants/attributes.js';
 
 const { expect } = chai;
@@ -77,6 +78,7 @@ describe('EmbraceErrorBoundary', () => {
       'exception.stacktrace': error.stack,
       'react.component_stack': errorInfo.componentStack,
       [KEY_EMB_INSTRUMENTATION]: EMB_ERROR_INSTRUMENTATIONS.ReactErrorBoundary,
+      [KEY_EMB_JS_FILE_BUNDLE_IDS]: '{}',
     });
   });
 
