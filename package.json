@@ -4,10 +4,10 @@
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "build/iife/bundle.js",
-  "main": "build/cjs/index.js",
-  "module": "build/esm/index.js",
-  "browser": "build/esm/index.js",
   "types": "build/types/index.d.ts",
+  "browser": "build/esm/index.js",
+  "module": "build/esm/index.js",
+  "main": "build/cjs/index.cjs",
   "publishConfig": {
     "access": "public"
   },
@@ -58,17 +58,21 @@
   "exports": {
     ".": {
       "types": "./build/types/index.d.ts",
-      "browser": "./build/esm/index.js",
+      "browser": {
+        "import": "./build/esm/index.js",
+        "require": "./build/cjs/index.cjs"
+      },
       "import": "./build/esm/index.js",
-      "require": "./build/cjs/index.js",
-      "default": "./build/esm/index.js"
+      "require": "./build/cjs/index.cjs"
     },
     "./react-instrumentation": {
       "types": "./build/types/react-instrumentation/index.d.ts",
-      "browser": "./build/esm/react-instrumentation.js",
+      "browser": {
+        "import": "./build/esm/react-instrumentation.js",
+        "require": "./build/cjs/react-instrumentation.cjs"
+      },
       "import": "./build/esm/react-instrumentation.js",
-      "require": "./build/cjs/react-instrumentation.js",
-      "default": "./build/esm/react-instrumentation.js"
+      "require": "./build/cjs/react-instrumentation.cjs"
     },
     "./package.json": "./package.json"
   },
