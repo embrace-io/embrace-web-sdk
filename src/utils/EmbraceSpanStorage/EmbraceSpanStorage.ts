@@ -12,6 +12,21 @@ export interface SpanStorageOptions {
   onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
 }
 
+// EmbraceSpanStorage is used to keep pending spans that are not meant to be exported (yet) in localStorage,
+// and periodically checks whenever those stored spans are ready to be exported.
+// This functionality has some custom logic to be able to store these spans as JSONs and then recreate them back
+// that could eventually be improved. In particular the things that would need to be improved are:
+// - Avoid serializing as JSON and instead try to use a customExporter that produces the body as it was going to be
+//   sent over the wire (serialized, compressed, etc), and store that, so that later when it decides to export those,
+//   it's just using that body as a regular fetch call.
+// - Have a safety check that prevents taking the entire localStorage space in case there's a bug (or someone has that
+//   many tabs that causes it to be full anyway). An easy check would be to not store more than X pending keys.
+// - Create a service worker that is responsible for tracking the pending spans and deciding when to actually export them.
+//   That way we would avoid a potential race condition where two different tabs would try to export the same data.
+// - Make this a more comprehensive component so that the EmbraceSessionBatchedSpanProcessor doesn't need to be in the
+//   middle of SpanSessionVisibilityInstrumentation and this component. Ideally this component would know when and how
+//   to take snapshots of the current pending spans and the current session span at any moment, so that the visibility
+//   instrumentation doesn't need to be telling that to the batch span processor.
 export class EmbraceSpanStorage {
   private readonly _noopTracer: Tracer;
   private readonly _storage: Storage;
