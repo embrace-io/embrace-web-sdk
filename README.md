@@ -458,7 +458,7 @@ If you wish to customize the SDK behavior by configuring custom resources, expor
 
 | Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
 |-----------------|---------------------|--------|----------------------------|
-| ^2.0.0          | ^1.9.0              | ~2.0.3 | ~0.203.0                   |
+| ^2.0.0          | ^1.9.0              | ~2.0.3 | >=0.203.0 && <=0.299.0     |
 | ^1.0.0          | ^1.9.0              | 1.30.1 | 0.57.2                     |
 
 For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
