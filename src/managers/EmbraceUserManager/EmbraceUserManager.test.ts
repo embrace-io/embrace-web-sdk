@@ -55,7 +55,7 @@ describe('EmbraceUserManager', () => {
     expect(manager.getEmbraceUserId()).to.be.equal(VALID_UUID);
 
     manager.clearEmbraceUserId();
-    void expect(storage.getItem(EMBRACE_USER_ID_STORAGE_KEY)).to.be.undefined;
+    void expect(storage.getItem(EMBRACE_USER_ID_STORAGE_KEY)).to.be.null;
 
     // Since the user was cleared from storage a new ID should be generated for the next manager
     const nextManager = new EmbraceUserManager({ diag, storage });
@@ -117,7 +117,7 @@ describe('EmbraceUserManager', () => {
     );
     expect(manager.getEmbraceUserId()).to.equal(VALID_UUID);
     void expect(storage.getItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED)).to.be
-      .undefined;
+      .null;
   });
 
   it('should get an external user id', () => {
@@ -149,8 +149,8 @@ describe('EmbraceUserManager', () => {
     );
 
     manager.clearUserId();
-    void expect(storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY)).to.be.undefined;
-    void expect(manager.getUserId()).to.be.undefined;
+    void expect(storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY)).to.be.null;
+    void expect(manager.getUserId()).to.be.null;
   });
 
   it('should handle getting an external user id when storage is failing', () => {
