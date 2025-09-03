@@ -21,6 +21,7 @@ import {
 import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
+  EmbraceExperienceManager,
   EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSDKFeaturesManager,
@@ -282,8 +283,10 @@ const setupUser = ({ registerGlobally }: SetupUserArgs) => {
 };
 
 const setupSession = ({ limitManager, registerGlobally }: SetupSessionArgs) => {
+  const experienceManager = new EmbraceExperienceManager({});
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
+    experienceManager,
   });
 
   if (registerGlobally) {

@@ -1,10 +1,13 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { EmbraceExperienceManager } from '../../managers/index.js';
 
 export interface SpanSessionManager {
   getSessionId: () => string | null;
 
   getSessionStartTime: () => HrTime | null;
+
+  getExperienceManager: () => EmbraceExperienceManager | null;
 
   getSessionSpan: () => Span | null;
 

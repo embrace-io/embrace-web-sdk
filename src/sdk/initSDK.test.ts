@@ -427,19 +427,69 @@ describe('initSDK', () => {
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
-      expect(sessionSpan['attributes']).to.deep.equal([
-        { key: 'emb.type', value: { stringValue: 'ux.session' } },
-        { key: 'emb.state', value: { stringValue: 'foreground' } },
-        {
-          key: 'session.id',
-          value: { stringValue: sessionID },
-        },
-        { key: 'emb.cold_start', value: { boolValue: true } },
-        sessionNumber,
-        { key: 'emb.session_start_type', value: { stringValue: 'init' } },
-        { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
-        startupDuration,
+      // Check for required session attributes (order may vary due to experience attributes)
+      const sessionAttrs = sessionSpan['attributes'];
+
+      // Experience attributes
+      const experienceId = sessionAttrs.find(
+        attr => attr.key === 'emb.experience_id'
+      );
+      expect(experienceId?.value.stringValue).to.be.a('string');
+
+      const appInstanceId = sessionAttrs.find(
+        attr => attr.key === 'emb.app_instance_id'
+      );
+      expect(appInstanceId?.value.stringValue).to.be.a('string');
+
+      const tabOpenMethod = sessionAttrs.find(
+        attr => attr.key === 'emb.tab_open_method'
+      );
+      expect(tabOpenMethod?.value.stringValue).to.be.oneOf([
+        'same_origin_link',
+        'external_link',
+        'manual_new_tab',
+        'window_opener',
+        'reload',
+        'back_forward',
+        'unknown',
       ]);
+
+      const referrerType = sessionAttrs.find(
+        attr => attr.key === 'emb.referrer_type'
+      );
+      expect(referrerType?.value.stringValue).to.be.oneOf([
+        'same_origin',
+        'external',
+        'none',
+      ]);
+
+      // Standard session attributes
+      expect(sessionAttrs).to.deep.include({
+        key: 'emb.type',
+        value: { stringValue: 'ux.session' },
+      });
+      expect(sessionAttrs).to.deep.include({
+        key: 'emb.state',
+        value: { stringValue: 'foreground' },
+      });
+      expect(sessionAttrs).to.deep.include({
+        key: 'session.id',
+        value: { stringValue: sessionID },
+      });
+      expect(sessionAttrs).to.deep.include({
+        key: 'emb.cold_start',
+        value: { boolValue: true },
+      });
+      expect(sessionAttrs).to.deep.include(sessionNumber);
+      expect(sessionAttrs).to.deep.include({
+        key: 'emb.session_start_type',
+        value: { stringValue: 'init' },
+      });
+      expect(sessionAttrs).to.deep.include({
+        key: 'emb.session_end_type',
+        value: { stringValue: 'manual' },
+      });
+      expect(sessionAttrs).to.deep.include(startupDuration);
     });
 
     it('should not include unfinished spans ', async () => {

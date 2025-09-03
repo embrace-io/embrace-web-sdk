@@ -16,10 +16,22 @@ import ComponentWithErrorInRender from './ComponentWithErrorInRender';
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
 const logManager = log.getLogManager();
+const experienceManager = session.getExperienceManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [currentExperience, setCurrentExperience] = useState<string | null>(
+    null
+  );
+  const [previousTabId, setPreviousTabId] = useState<string | null>(null);
+  const [currentTabId, setCurrentTabId] = useState<string | null>(null);
+  const [tabOpenMethod, setTabOpenMethod] = useState<string | null>(null);
+  const [referrerType, setReferrerType] = useState<string | null>(null);
+  const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
+  const [referrerPath, setReferrerPath] = useState<string | null>(null);
+  const [referrerDomain, setReferrerDomain] = useState<string | null>(null);
+  const [lastActivityTime, setLastActivityTime] = useState<string | null>(null);
   const [sessionRefresher, setSessionRefresher] = useState<
     number | undefined
   >();
@@ -30,6 +42,59 @@ const App = () => {
     setSessionRefresher(
       window.setInterval(() => {
         setCurrentSession(sessionProvider.getSessionId());
+
+        // Use experience manager directly for basic values
+        if (experienceManager) {
+          setCurrentExperience(experienceManager.getExperienceId());
+          setPreviousTabId(experienceManager.getPreviousTabId());
+          setCurrentTabId(experienceManager.getAppInstanceId());
+          setTabOpenMethod(experienceManager.getTabOpenMethod());
+          setReferrerType(experienceManager.getReferrerType());
+        }
+
+        // Get all experience attributes from session span
+        const sessionSpan = sessionProvider.getSessionSpan();
+        if (sessionSpan && 'attributes' in sessionSpan) {
+          const attributes = (sessionSpan as any).attributes || {};
+
+          // Get experience-related attributes
+          const expId = attributes['emb.experience_id'];
+          const tabId = attributes['emb.app_instance_id'];
+          const prevTabId = attributes['emb.previous_tab_id'];
+          const openMethod = attributes['emb.tab_open_method'];
+          const refType = attributes['emb.referrer_type'];
+          const refPath = attributes['emb.referrer_path'];
+          const refDomain = attributes['emb.referrer_domain'];
+
+          // Update state with span attributes (these override direct manager values)
+          if (expId) setCurrentExperience(expId);
+          if (tabId) setCurrentTabId(tabId);
+          if (prevTabId !== undefined) setPreviousTabId(prevTabId || null);
+          if (openMethod) setTabOpenMethod(openMethod);
+          if (refType) setReferrerType(refType);
+          if (refPath !== undefined) setReferrerPath(refPath || null);
+          if (refDomain !== undefined) setReferrerDomain(refDomain || null);
+
+          // Get last activity timestamp from sessionStorage
+          const storedExperience = sessionStorage.getItem('embrace_experience');
+          if (storedExperience) {
+            try {
+              const experienceData = JSON.parse(storedExperience);
+              if (experienceData.lastActivityAt) {
+                setLastActivityTime(String(experienceData.lastActivityAt));
+              }
+            } catch {
+              // Ignore parse errors
+            }
+          }
+
+          // Reconstruct referrer URL from span attributes
+          if (refType === 'same_origin' && refPath) {
+            setReferrerUrl(window.location.origin + refPath);
+          } else if (refType === 'external' && refDomain) {
+            setReferrerUrl(refDomain);
+          }
+        }
       }, 1000)
     );
     return () => window.clearInterval(sessionRefresher);
@@ -221,7 +286,92 @@ const App = () => {
     return (
       <div className="container">
         <h1>[••] demo</h1>
-        <div>current session: {currentSession}</div>
+
+        <div
+          style={{
+            border: '1px solid #f5f5f5',
+            padding: '12px',
+            marginBottom: '20px',
+            borderRadius: '4px',
+          }}
+        >
+          <h3
+            style={{
+              margin: '0 0 8px 0',
+              fontWeight: 'bold',
+            }}
+          >
+            User Experiences
+          </h3>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: '8px',
+              fontSize: '12px',
+            }}
+          >
+            {/* Column 1: Referrer Info */}
+            <div>
+              <strong title="emb.referrer_type">Referrer Type</strong>
+              <br />
+              {referrerType || 'none'}
+            </div>
+            <div>
+              <strong title="emb.app_instance_id">Current Tab</strong>
+              <br />
+              {currentTabId?.slice(-12) || 'none'}
+            </div>
+            <div>
+              <strong title="emb.experience_id">Experience ID</strong>
+              <br />
+              {currentExperience?.slice(-12) || 'none'}
+            </div>
+
+            <div>
+              <strong title="emb.referrer_path">Referrer Path</strong>
+              <br />
+              {referrerPath || 'n/a'}
+            </div>
+            <div>
+              <strong title="emb.previous_tab_id">Previous Tab</strong>
+              <br />
+              {previousTabId?.slice(-12) || 'none'}
+            </div>
+            <div>
+              <strong title="emb.session_id">Session ID</strong>
+              <br />
+              {currentSession?.slice(-12) || 'none'}
+            </div>
+
+            <div>
+              <strong title="emb.referrer_domain">Referrer Domain</strong>
+              <br />
+              {referrerDomain || 'n/a'}
+            </div>
+            <div>
+              <strong title="emb.tab_open_method">Tab Open Method</strong>
+              <br />
+              {tabOpenMethod || 'none'}
+            </div>
+            <div>
+              <strong title="from last_activity_time in LocalStorage">
+                Last Experience Activity
+              </strong>
+              <br />
+              {lastActivityTime
+                ? new Date(Number(lastActivityTime)).toLocaleTimeString()
+                : 'none'}
+            </div>
+
+            <div style={{ gridColumn: '1 / -1' }}>
+              <strong title="Reconstructed from domain/path">
+                Referrer URL (reconstructed)
+              </strong>{' '}
+              {referrerUrl || 'none'}
+            </div>
+          </div>
+        </div>
 
         {/* Current Session: */}
         <div className={styles.actions}>
@@ -415,11 +565,29 @@ const App = () => {
 
         {/* Navigation: */}
         <div className={styles.actions}>
-          <a href="https://google.com">Navigate to google.com</a>
-          <a href="/">Open demo in same tab</a>
-          <a href="/" target="_blank">
+          <a
+            href="https://google.com"
+            title="External link - creates new experience"
+          >
+            Navigate to google.com
+          </a>
+          <a href="/" title="Navigation in same tab - maintains session">
+            Open demo in same tab
+          </a>
+          <a
+            href="/"
+            target="_blank"
+            title="Opens new tab via link - inherits experience"
+          >
             Open demo in new tab
           </a>
+          <button
+            onClick={() => window.open(location.href, '_blank')}
+            className={styles.button}
+            title="Opens via window.open() - inherits experience"
+          >
+            window.open()
+          </button>
         </div>
 
         <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>

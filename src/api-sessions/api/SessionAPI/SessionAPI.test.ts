@@ -42,6 +42,7 @@ describe('SessionAPI', () => {
       removeProperty: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
+      getExperienceManager: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(sessionManager);
     const result = sessionAPI.getSpanSessionManager();
@@ -65,6 +66,7 @@ describe('SessionAPI', () => {
       removeProperty: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
+      getExperienceManager: sinon.stub(),
     };
     sessionAPI.setGlobalSessionManager(mockSpanSessionManager);
 

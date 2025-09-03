@@ -4,6 +4,7 @@ import type {
   ReasonSessionEnded,
   SpanSessionManager,
   StartSessionOptions,
+  EmbraceExperienceManager,
 } from '../../manager/index.js';
 import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
@@ -67,6 +68,10 @@ export class SessionAPI implements SpanSessionManager {
 
   public getSessionId(): string | null {
     return this.getSpanSessionManager().getSessionId();
+  }
+
+  public getExperienceManager(): EmbraceExperienceManager | null {
+    return this.getSpanSessionManager().getExperienceManager();
   }
 
   public getSessionSpan() {

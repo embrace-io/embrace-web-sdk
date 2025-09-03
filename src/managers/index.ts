@@ -14,3 +14,4 @@ export {
 } from './EmbraceLimitManager/index.js';
 export { EmbraceDynamicConfigManager } from './EmbraceConfigManager/index.js';
 export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.js';
+export { EmbraceExperienceManager } from './EmbraceExperienceManager/index.js';

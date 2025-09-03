@@ -40,6 +40,7 @@ import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { EmbraceExperienceManager } from '../EmbraceExperienceManager/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -58,6 +59,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _experienceManager: EmbraceExperienceManager;
 
   public constructor({
     diag: diagParam,
@@ -65,6 +67,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     visibilityDoc = window.document,
     storage = window.localStorage,
     limitManager,
+    experienceManager = new EmbraceExperienceManager({}),
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -75,6 +78,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
+    this._experienceManager = experienceManager;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
@@ -236,6 +240,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _endSessionSpanAttributes(reason: ReasonSessionEnded): Attributes {
     return {
       ...this._getPermanentAttributes(),
+      ...this._experienceManager.getExperienceAttributes(),
       [KEY_EMB_SESSION_REASON_ENDED]: reason,
       ...this._activeSessionCounts,
       ...this._limitManager.getDiagnosticCounts(),
@@ -274,6 +279,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return this._activeSessionId;
   }
 
+  public getExperienceManager(): EmbraceExperienceManager {
+    return this._experienceManager;
+  }
+
   public getSessionSpan(): ExtendedSpan | null {
     return this._sessionSpan;
   }
@@ -294,6 +303,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     const attributes: Attributes = {
       ...this._getPermanentAttributes(),
+      ...this._experienceManager.getExperienceAttributes(),
       [KEY_EMB_TYPE]: EMB_TYPES.Session,
       [KEY_EMB_STATE]:
         this._visibilityDoc.visibilityState === 'hidden'

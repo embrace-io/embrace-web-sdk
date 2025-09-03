@@ -60,6 +60,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
   'emb.app_instance_id',
+  'emb.experience_id',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
   'emb.stacktrace.js',

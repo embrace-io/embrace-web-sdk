@@ -28,6 +28,7 @@ describe('ProxySpanSessionManager', () => {
       removeProperty: sinon.stub(),
       addSessionStartedListener: sinon.stub(),
       addSessionEndedListener: sinon.stub(),
+      getExperienceManager: sinon.stub(),
     };
   });
 
