@@ -96,9 +96,12 @@ export class EmbraceSpanStorage {
   }
 
   public startExpiredSpansCheck(): void {
-    this._checkExpiredSpansInterval = setInterval(() => {
-      this.checkAndExportExpiredSpans();
-    }, 60 * 1000); // Check every minute
+    this._checkExpiredSpansInterval = setInterval(
+      () => {
+        this.checkAndExportExpiredSpans();
+      },
+      5 * 60 * 1000
+    ); // Check every 5 minutes
   }
 
   public stopExpiredSpansCheck(): void {
