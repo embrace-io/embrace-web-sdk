@@ -32,10 +32,6 @@ jobs:
           node-version: '22.x'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
-      - name: Setup ack
-        run: |
-          sudo apt-get update
-          sudo apt-get install ack
       - name: Update package.json version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -48,23 +44,23 @@ jobs:
           fi
           PREVIOUS_VERSION=$(jq '.version' package.json)
 
-          echo 'Updating package.json version to $version'
+          echo "Updating version from $PREVIOUS_VERSION to $version"
 
-          # update sdk version
+          echo "Updating package.json"
           jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
 
-          # update cli version
+          echo "Updating cli/package.json"
           jq --arg version "$version" '.version = $version' cli/package.json > tmp.json && mv tmp.json cli/package.json
 
-          # update the golden files
+          echo "Updating golden files"
           pushd tests/integration/tests/__golden__
-          ack $PREVIOUS_VERSION -l | xargs -I@ sed -i "" "s/$PREVIOUS_VERSION/\"$version\"/g" @
+          grep -l $PREVIOUS_VERSION * | xargs -I@ sed -i "s/$PREVIOUS_VERSION/\"$version\"/g" @
           popd
 
-          # update package-lock.json
+          echo "Updating package-lock.json"
           npm i
 
-          # update constants files
+          echo "Updating constants files by running sdk:lint:fix"
           npm run sdk:lint:fix
       - name: commit and create PR with the next release
         env:

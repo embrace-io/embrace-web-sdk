@@ -11,11 +11,11 @@ export class InMemoryStorage implements Storage {
   }
 
   public getItem(key: string): string | null {
-    return this._items[key];
+    return this._items[key] ?? null;
   }
 
   public key(index: number): string | null {
-    return Object.keys(this._items)[index];
+    return Object.keys(this._items)[index] ?? null;
   }
 
   public removeItem(key: string): void {

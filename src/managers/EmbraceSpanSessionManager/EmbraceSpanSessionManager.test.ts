@@ -470,7 +470,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.addProperty(propertyKey, value);
 
     const storedValue = storage.getItem(attributeKey);
-    void expect(storedValue).to.be.undefined;
+    void expect(storedValue).to.be.null;
   });
 
   it('should not store permanent properties in localStorage that have been removed', () => {
@@ -489,11 +489,11 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     manager.removeProperty(propertyKey);
     const storedAttribute2 = storage.getItem(attributeKey);
-    void expect(storedAttribute2).to.be.undefined;
+    void expect(storedAttribute2).to.be.null;
     manager.endSessionSpan();
 
     const storedAttribute3 = storage.getItem(attributeKey);
-    void expect(storedAttribute3).to.be.undefined;
+    void expect(storedAttribute3).to.be.null;
   });
 
   it('should not persist session properties after session end', () => {

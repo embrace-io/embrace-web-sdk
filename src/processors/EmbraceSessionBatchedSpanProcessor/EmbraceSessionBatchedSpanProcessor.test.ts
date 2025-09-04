@@ -355,7 +355,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(inMemoryStorage.length).to.equal(2);
         expect(
           inMemoryStorage.getItem('embrace_pending_session1_1000')
-        ).to.equal(undefined);
+        ).to.equal(null);
         expect(
           inMemoryStorage.getItem('embrace_pending_session2_1000')
         ).to.not.equal(null);
@@ -414,7 +414,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
         expect(
           inMemoryStorage.getItem(`embrace_pending_expired_${pastTime}`)
-        ).to.equal(undefined);
+        ).to.equal(null);
       });
 
       it('should not export non-expired spans', () => {
