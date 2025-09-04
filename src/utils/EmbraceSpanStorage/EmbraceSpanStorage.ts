@@ -84,19 +84,11 @@ export class EmbraceSpanStorage {
 
   public clearStoredSpans(sessionId: string): void {
     try {
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < this._storage.length; i++) {
-        const key = this._storage.key(i);
-        if (
-          key &&
-          key.startsWith(`${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_`)
-        ) {
-          keysToRemove.push(key);
+      const prefix = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_`;
+      this._getPendingSpansKeys().forEach(key => {
+        if (key.startsWith(prefix)) {
+          this._storage.removeItem(key);
         }
-      }
-
-      keysToRemove.forEach(key => {
-        this._storage.removeItem(key);
       });
     } catch (error) {
       this._diag.error('Failed to clear stored spans from storage:', error);
