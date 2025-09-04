@@ -4,6 +4,7 @@ import {
   DocumentLoadInstrumentation,
   EmbraceFetchInstrumentation,
   EmbraceInstrumentationBase,
+  EmbraceXHRInstrumentation,
   GlobalExceptionInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
@@ -11,7 +12,6 @@ import {
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.js';
-import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
   DefaultInstrumentationConfig,
   SetupDefaultInstrumentationsArgs,
@@ -62,7 +62,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
     instrumentations.push(
-      new XMLHttpRequestInstrumentation({
+      new EmbraceXHRInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-xml-http-request'],
       })

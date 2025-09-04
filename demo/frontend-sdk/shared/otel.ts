@@ -13,6 +13,9 @@ interface DefaultInstrumentationConfig {
   '@opentelemetry/instrumentation-fetch'?: {
     omitIfAlreadyPatched?: boolean;
   };
+  '@opentelemetry/instrumentation-xml-http-request'?: {
+    omitIfAlreadyPatched?: boolean;
+  };
 }
 
 interface SDKInitArgs {
@@ -96,6 +99,9 @@ const initSDK = (
       ],
       defaultInstrumentationConfig: {
         '@opentelemetry/instrumentation-fetch': {
+          omitIfAlreadyPatched: omitNetworkIfAlreadyPatched,
+        },
+        '@opentelemetry/instrumentation-xml-http-request': {
           omitIfAlreadyPatched: omitNetworkIfAlreadyPatched,
         },
       },

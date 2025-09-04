@@ -30,15 +30,29 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     document.body.appendChild(errorButton);
 
     const fetchButton = document.createElement('button');
-    fetchButton.textContent = 'Make API call from the host app';
+    fetchButton.textContent = 'Make Fetch call from the host app';
     fetchButton.addEventListener('click', () => {
-      console.log('Making API call from the host app');
+      console.log('Making Fetch call from the host app');
       fetch('https://jsonplaceholder.typicode.com/posts/2')
         .then(response => response.json())
         .then(() => {
-          console.log('API call from host app successful');
+          console.log('Fetch call from host app successful');
         });
     });
     document.body.appendChild(fetchButton);
+
+    const xhrButton = document.createElement('button');
+    xhrButton.textContent = 'Make XHR call from the host app';
+    xhrButton.addEventListener('click', () => {
+      console.log('Making XHR call from the host app');
+
+      const req = new XMLHttpRequest();
+      req.open('GET', 'https://jsonplaceholder.typicode.com/posts/2', true);
+      req.addEventListener('load', () => {
+        console.log('XHR call from host app successful');
+      });
+      req.send();
+    });
+    document.body.appendChild(xhrButton);
   });
 });

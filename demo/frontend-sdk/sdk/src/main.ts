@@ -40,5 +40,19 @@ window.EmbraceWebSdkOnReady.onReady(() => {
         });
     });
     document.body.appendChild(fetchButton);
+
+    const xhrButton = document.createElement('button');
+    xhrButton.textContent = 'Make XHR call from the library app';
+    xhrButton.addEventListener('click', () => {
+      console.log('Making XHR call from the library app');
+
+      const req = new XMLHttpRequest();
+      req.open('GET', 'https://jsonplaceholder.typicode.com/posts/2', true);
+      req.addEventListener('load', () => {
+        console.log('XHR call from library app successful');
+      });
+      req.send();
+    });
+    document.body.appendChild(xhrButton);
   });
 });
