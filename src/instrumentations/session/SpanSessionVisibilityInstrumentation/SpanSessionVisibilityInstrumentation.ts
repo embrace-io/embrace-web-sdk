@@ -9,7 +9,6 @@ import {
 import type { EmbraceProcessor } from '../../../processors/index.js';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
-const MAX_PENDING_SPAN_COUNT = 5;
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
   private _currentVisibilityState: DocumentVisibilityState;
@@ -28,6 +27,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       visibilityWaitTimeMs = 0,
       limitedSessionMaxDurationMs = 0,
       backgroundSessions = false,
+      maxPendingSpanCount = 5,
       visibilityDoc = window.document,
     }: SpanSessionVisibilityInstrumentationArgs = {},
     embraceSpanProcessor?: EmbraceProcessor
@@ -100,8 +100,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
           limitedSessionMaxDurationMs &&
         !this._interactionSinceLastVisibilityChange &&
         !!this._embraceSpanProcessor &&
-        this._embraceSpanProcessor.getPendingSpansCount() <
-          MAX_PENDING_SPAN_COUNT;
+        this._embraceSpanProcessor.getPendingSpansCount() < maxPendingSpanCount;
 
       if (isLimitedSession) {
         this._diag.debug(
