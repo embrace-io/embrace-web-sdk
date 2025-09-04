@@ -27,7 +27,7 @@ export interface SpanStorageOptions {
 //   to take snapshots of the current pending spans and the current session span at any moment, so that the visibility
 //   instrumentation doesn't need to be telling that to the batch span processor.
 export class EmbraceSpanStorage {
-  private readonly _noopTracer: Tracer;
+  private readonly _noExportTracer: Tracer;
   private readonly _storage: Storage;
   private readonly _diag: DiagLogger;
   private readonly _onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
@@ -42,7 +42,7 @@ export class EmbraceSpanStorage {
     storedSpansExpireTimeoutMS = 60 * 60 * 1000, // 1 hour
     onExpiredSpansExport,
   }: SpanStorageOptions = {}) {
-    this._noopTracer = new BasicTracerProvider().getTracer(
+    this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
     );
     this._storage = storage;
@@ -146,7 +146,7 @@ export class EmbraceSpanStorage {
         try {
           const spans: ReadableSpan[] = [];
           for (const storedSpan of JSON.parse(storedData) as ReadableSpan[]) {
-            const span = this._noopTracer.startSpan(storedSpan.name, {
+            const span = this._noExportTracer.startSpan(storedSpan.name, {
               kind: storedSpan.kind,
               attributes: storedSpan.attributes,
               links: storedSpan.links,
