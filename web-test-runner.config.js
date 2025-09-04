@@ -1,7 +1,4 @@
-import {
-  removeViteLogging,
-  vitePlugin,
-} from '@remcovaes/web-test-runner-vite-plugin';
+import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
 // These errors are generated on purpose in
@@ -36,7 +33,6 @@ export default {
           'react',
           '@opentelemetry/otlp-transformer',
           '@opentelemetry/instrumentation-fetch',
-          '@opentelemetry/instrumentation-document-load',
         ],
       },
       server: {
