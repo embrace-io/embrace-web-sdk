@@ -79,10 +79,10 @@ export class EmbraceExperienceManager {
     this._sessionStorage = sessionStorage;
     this._appInstanceId = getAppInstanceId(this._sessionStorage, this._diag);
 
-    // Detect tab context (how opened + referrer) in one go
+    // Detect how tab was opened + referrer
     const tabContext = this._detectTabContext();
 
-    // Check for existing experience data (refresh/back button)
+    // Check for existing experience data (reload/refresh/back button)
     const existingData = this._getStoredExperienceData();
 
     if (existingData) {
@@ -224,12 +224,12 @@ export class EmbraceExperienceManager {
     }
   }
 
-  private _findInheritanceByReferrer(): InheritedExperience | null {
-    if (!document.referrer) return null;
+  private _findInheritanceByReferrer(
+    referrer = document.referrer
+  ): InheritedExperience | null {
+    if (!referrer) return null;
 
-    const referrerKey = EmbraceExperienceManager._createReferrerKey(
-      document.referrer
-    );
+    const referrerKey = EmbraceExperienceManager._createReferrerKey(referrer);
     if (!referrerKey) {
       return null;
     }
@@ -309,12 +309,9 @@ export class EmbraceExperienceManager {
     }
   }
 
-  private _storeInheritanceData(): void {
+  private _storeInheritanceData(url = window.location.href): void {
     // Skip storing if this tab came from an external source and can't be a parent
-    const cannotBeParent =
-      this._experienceData.tabOpenMethod === 'external_link';
-
-    if (cannotBeParent) {
+    if (this._experienceData.tabOpenMethod === 'external_link') {
       return;
     }
 
@@ -322,7 +319,7 @@ export class EmbraceExperienceManager {
       experienceId: this._currentExperienceId,
       sourceTabId: this._appInstanceId,
       timestamp: Date.now(),
-      url: window.location.href,
+      url,
     };
     const experienceDataStr = JSON.stringify(experienceData);
 
@@ -334,9 +331,7 @@ export class EmbraceExperienceManager {
       );
 
       // Store with referrer-based key for accurate child matching
-      const referrerKey = EmbraceExperienceManager._createReferrerKey(
-        window.location.href
-      );
+      const referrerKey = EmbraceExperienceManager._createReferrerKey(url);
       if (referrerKey) {
         this._storage.setItem(
           `${INHERITANCE_REFERRER_PREFIX}${referrerKey}`,
@@ -516,8 +511,7 @@ export class EmbraceExperienceManager {
   /**
    * Pre-compute referrer domain/path to avoid repeated URL parsing
    */
-  private _precomputeReferrerInfo(): void {
-    const referrer = document.referrer;
+  private _precomputeReferrerInfo(referrer = document.referrer): void {
     if (!referrer) {
       return;
     }
