@@ -6,4 +6,5 @@ export type EmbraceSessionBatchedSpanProcessorArgs = {
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
   storage?: Storage;
+  storedSpansExpireTimeoutMS?: number;
 } & Pick<EmbraceProcessorArgs, 'diag'>;

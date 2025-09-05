@@ -1,11 +1,12 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
 } from '../../../utils/index.js';
-import type { TimeoutRef } from '../../../utils/index.js';
+import type { EmbraceProcessor } from '../../../processors/index.js';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
@@ -14,18 +15,23 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   private _checkVisibilityTimeout: TimeoutRef | null;
   private _interactionSinceLastVisibilityChange: boolean;
   private readonly _avoidEndingLimitedSessions: boolean;
+  private readonly _embraceSpanProcessor?: EmbraceProcessor;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
   private readonly _onInteractionThrottled: () => void;
 
-  public constructor({
-    diag,
-    perf,
-    visibilityWaitTimeMs = 0,
-    limitedSessionMaxDurationMs = 0,
-    backgroundSessions = false,
-    visibilityDoc = window.document,
-  }: SpanSessionVisibilityInstrumentationArgs = {}) {
+  public constructor(
+    {
+      diag,
+      perf,
+      visibilityWaitTimeMs = 0,
+      limitedSessionMaxDurationMs = 0,
+      backgroundSessions = false,
+      maxPendingSpanCount = 5,
+      visibilityDoc = window.document,
+    }: SpanSessionVisibilityInstrumentationArgs = {},
+    embraceSpanProcessor?: EmbraceProcessor
+  ) {
     super({
       instrumentationName: 'SpanSessionVisibilityInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -38,6 +44,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._checkVisibilityTimeout = null;
     this._interactionSinceLastVisibilityChange = false;
     this._avoidEndingLimitedSessions = limitedSessionMaxDurationMs > 0;
+    this._embraceSpanProcessor = embraceSpanProcessor;
 
     this._checkVisibilityChange = () => {
       if (visibilityWaitTimeMs <= 0) {
@@ -82,13 +89,18 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
       const currentSessionStartTime = this.sessionManager.getSessionStartTime();
 
-      // A limited session is one that is shorter than a specified duration threshold and contains no user interactions
+      // A limited session is one that is:
+      // - shorter than a specified duration threshold
+      // - contains no user interactions
+      // - Embrace is enabled and the amount of pending spans is less than MAX_PENDING_SPAN_COUNT
       const isLimitedSession =
         this._avoidEndingLimitedSessions &&
         currentSessionStartTime !== null &&
         this.perf.millisSinceHRTime(currentSessionStartTime) <
           limitedSessionMaxDurationMs &&
-        !this._interactionSinceLastVisibilityChange;
+        !this._interactionSinceLastVisibilityChange &&
+        !!this._embraceSpanProcessor &&
+        this._embraceSpanProcessor.getPendingSpansCount() < maxPendingSpanCount;
 
       if (isLimitedSession) {
         this._diag.debug(
@@ -99,7 +111,25 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         this.sessionManager.addBreadcrumb(
           `Tab visibility changed to ${visibilityDoc.visibilityState}`
         );
+
+        const sessionId = this.sessionManager.getSessionId();
+        if (sessionId) {
+          const sessionSpan =
+            this.sessionManager.currentSessionAsReadableSpan('state_changed');
+          if (sessionSpan) {
+            this._embraceSpanProcessor.storePendingSpans(
+              sessionId,
+              sessionSpan
+            );
+          }
+        }
       } else {
+        // If there was a session in progress that we didn't end because we considered it limited, then drop the stored spans in storage:
+        const sessionId = this.sessionManager.getSessionId();
+        if (this._embraceSpanProcessor && sessionId) {
+          this._embraceSpanProcessor.clearStoredSpans(sessionId);
+        }
+
         this.sessionManager.endSessionSpanInternal('state_changed');
 
         if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {

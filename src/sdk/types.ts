@@ -7,6 +7,7 @@ import type {
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { Resource } from '@opentelemetry/resources';
 import type {
+  BatchLogRecordProcessor,
   LogRecordExporter,
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
@@ -32,6 +33,7 @@ import type { UserManager } from '../api-users/index.js';
 import type { AttributeScrubber } from '../common/index.js';
 import type { LogManager } from '../api-logs/index.js';
 import type { TraceManager } from '../api-traces/index.js';
+import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
 
 export interface DynamicSDKConfig {
   /**
@@ -258,9 +260,6 @@ export interface SetupSessionArgs {
 }
 
 export interface SetupTracesArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
   resource: Resource;
   spanSessionManager: SpanSessionManager;
   userManager: UserManager;
@@ -268,17 +267,13 @@ export interface SetupTracesArgs {
   spanProcessors: SpanProcessor[];
   propagator?: TextMapPropagator | null;
   contextManager?: ContextManager | null;
-  limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
-  embraceDataURL?: string;
   dynamicSDKConfig?: DynamicSDKConfig;
   registerGlobally?: boolean;
+  embraceSpanProcessor?: SpanProcessor;
 }
 
 export interface SetupLogsArgs {
-  sendingToEmbrace: boolean;
-  appID?: string;
-  enduserPseudoID?: string;
   resource: Resource;
   userManager: UserManager;
   logExporters?: LogRecordExporter[];
@@ -286,8 +281,8 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
-  embraceDataURL?: string;
   registerGlobally?: boolean;
+  embraceLogProcessor?: BatchLogRecordProcessor;
 }
 
 type OptionalInstrumentations =
@@ -305,6 +300,7 @@ interface NetworkInstrumentationArgs {
 export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
+  embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
 }
 
 export interface DefaultInstrumentationConfig {

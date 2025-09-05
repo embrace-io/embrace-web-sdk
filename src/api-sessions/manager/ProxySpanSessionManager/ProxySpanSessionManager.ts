@@ -6,6 +6,7 @@ import type {
   StartSessionOptions,
 } from '../index.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 
@@ -42,6 +43,12 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     this.getDelegate().endSessionSpanInternal(reason);
+  }
+
+  public currentSessionAsReadableSpan(
+    reason: ReasonSessionEnded
+  ): ReadableSpan | null {
+    return this.getDelegate().currentSessionAsReadableSpan(reason);
   }
 
   public getSessionId(): string | null {

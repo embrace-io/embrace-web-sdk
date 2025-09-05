@@ -1,8 +1,12 @@
 import * as chai from 'chai';
-import * as sinon from 'sinon';
+import type { SinonStub } from 'sinon';
+import sinon from 'sinon';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/index.js';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../../testUtils/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -15,11 +19,35 @@ import {
 } from '../../../constants/index.js';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { VisibilityStateDocument } from '../../../common/index.js';
-import { OTelPerformanceManager } from '../../../utils/index.js';
 import type { PerformanceManager } from '../../../utils/index.js';
-import type { SinonStub } from 'sinon';
+import { OTelPerformanceManager } from '../../../utils/index.js';
+import { EmbraceProcessor } from '../../../processors/index.js';
 
 const { expect } = chai;
+
+// Helper function to create mock EmbraceProcessor
+const createMockEmbraceProcessor = (): EmbraceProcessor => {
+  const diagLogger = new InMemoryDiagLogger();
+
+  class MockEmbraceProcessor extends EmbraceProcessor {
+    public forceFlush = sinon.stub().returns(Promise.resolve(undefined));
+    public onEnd = sinon.stub();
+    public onStart = sinon.stub();
+    public getPendingSpansCount = sinon.stub().returns(0);
+    public storePendingSpans = sinon.stub();
+    public clearStoredSpans = sinon.stub();
+    public shutdown = sinon.stub().returns(Promise.resolve(undefined));
+
+    public constructor() {
+      super({
+        diag: diagLogger,
+        processorName: 'MockEmbraceProcessor',
+      });
+    }
+  }
+
+  return new MockEmbraceProcessor();
+};
 
 describe('SpanSessionVisibilityInstrumentation', () => {
   let nowStub: SinonStub;
@@ -239,11 +267,17 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      limitedSessionMaxDurationMs: 1000,
-      visibilityDoc,
-      perf,
-    });
+    // Mock implementation of EmbraceProcessor
+    const embraceSpanProcessor = createMockEmbraceProcessor();
+
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        limitedSessionMaxDurationMs: 1000,
+        visibilityDoc,
+        perf,
+      },
+      embraceSpanProcessor
+    );
 
     spanSessionManager.startSessionSpan();
 
@@ -295,11 +329,17 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      limitedSessionMaxDurationMs: 1000,
-      visibilityDoc,
-      perf,
-    });
+    // Mock implementation of EmbraceProcessor
+    const embraceSpanProcessor = createMockEmbraceProcessor();
+
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        limitedSessionMaxDurationMs: 1000,
+        visibilityDoc,
+        perf,
+      },
+      embraceSpanProcessor
+    );
 
     spanSessionManager.startSessionSpan();
 

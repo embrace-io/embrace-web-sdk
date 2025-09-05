@@ -1,28 +1,29 @@
-import { diag, trace } from '@opentelemetry/api';
 import type {
-  Tracer,
-  TracerProvider,
   Attributes,
   DiagLogger,
   HrTime,
+  Tracer,
+  TracerProvider,
 } from '@opentelemetry/api';
+import { diag, trace } from '@opentelemetry/api';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
-  ReasonSessionEnded,
   PropertyOptions,
+  ReasonSessionEnded,
   StartSessionOptions,
 } from '../../api-sessions/index.js';
 import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
+  KEY_EMB_FROM_STORAGE,
+  KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
-  KEY_EMB_SDK_STARTUP_DURATION,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
@@ -37,6 +38,8 @@ import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -49,6 +52,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
 
   private _tracer: Tracer;
+  private readonly _noExportTracer: Tracer;
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -72,6 +76,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._storage = storage;
     this._limitManager = limitManager;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
+    this._noExportTracer = new BasicTracerProvider().getTracer(
+      'embrace-web-sdk-sessions'
+    );
   }
 
   // retrieve permanent properties from localStorage
@@ -206,14 +213,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    this._sessionSpan.setAttributes({
-      ...this._getPermanentAttributes(),
-      [KEY_EMB_SESSION_REASON_ENDED]: reason,
-      ...this._activeSessionCounts,
-      ...this._limitManager.getDiagnosticCounts(),
-      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
-    });
-
+    this._sessionSpan.setAttributes(this._endSessionSpanAttributes(reason));
     this._sessionSpan.end();
     this._sessionSpan = null;
     this._activeSessionStartTime = null;
@@ -231,6 +231,43 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     // For the limit manager to add a session ended listener it would need a reference to this
     // session manager which would create a circular dependency
     this._limitManager.reset();
+  }
+
+  private _endSessionSpanAttributes(reason: ReasonSessionEnded): Attributes {
+    return {
+      ...this._getPermanentAttributes(),
+      [KEY_EMB_SESSION_REASON_ENDED]: reason,
+      ...this._activeSessionCounts,
+      ...this._limitManager.getDiagnosticCounts(),
+      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
+    };
+  }
+
+  // currentSessionAsReadableSpan creates a copy of the current session span with the same attributes
+  // that endSessionSpanInternal would add, but does not affect the original session span which remains active.
+  public currentSessionAsReadableSpan(
+    reason: ReasonSessionEnded
+  ): ReadableSpan | null {
+    if (!this._sessionSpan || !this._activeSessionStartTime) {
+      this._diag.debug(
+        'trying to end a session, but there is no session in progress. This is a no-op.'
+      );
+      return null;
+    }
+
+    // Create a new span with the same name and start time as the original session span,
+    // but using a new tracer so that it does not get exported.
+    const span = this._noExportTracer.startSpan('emb-session', {
+      startTime: this._activeSessionStartTime,
+      attributes: {
+        // Copy all current attributes from the original session span, plus the ending attributes
+        ...this._sessionSpan.attributes,
+        ...this._endSessionSpanAttributes(reason),
+        [KEY_EMB_FROM_STORAGE]: true,
+      },
+    });
+    span.end();
+    return span as unknown as ReadableSpan;
   }
 
   public getSessionId(): string | null {

@@ -7,6 +7,7 @@ import type {
 } from '../../manager/index.js';
 import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 export class SessionAPI implements SpanSessionManager {
   private static _instance?: SessionAPI;
@@ -56,6 +57,12 @@ export class SessionAPI implements SpanSessionManager {
 
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     this.getSpanSessionManager().endSessionSpanInternal(reason);
+  }
+
+  public currentSessionAsReadableSpan(
+    reason: ReasonSessionEnded
+  ): ReadableSpan | null {
+    return this.getSpanSessionManager().currentSessionAsReadableSpan(reason);
   }
 
   public getSessionId(): string | null {

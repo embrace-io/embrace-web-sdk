@@ -1,6 +1,6 @@
 export class FailingStorage implements Storage {
-  public get length() {
-    return 0;
+  public get length(): number {
+    throw new Error('not implemented');
   }
 
   public clear(): void {

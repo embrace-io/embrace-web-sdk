@@ -39,8 +39,14 @@ describe('NoOpSpanSessionManager', () => {
 
   it('should do nothing for endSessionSpanInternal', () => {
     expect(() => {
-      noOpSpanSessionManager.endSessionSpanInternal();
+      noOpSpanSessionManager.endSessionSpanInternal('manual');
     }).to.not.throw();
+  });
+
+  it('should return null for currentSessionAsReadableSpan', () => {
+    const result =
+      noOpSpanSessionManager.currentSessionAsReadableSpan('manual');
+    expect(result).to.equal(null);
   });
 
   it('should do nothing for addBreadcrumb', () => {

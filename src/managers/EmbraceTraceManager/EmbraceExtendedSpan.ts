@@ -1,8 +1,8 @@
 import type {
-  Exception,
-  Link,
   Attributes,
   AttributeValue,
+  Exception,
+  Link,
   Span,
   SpanContext,
   SpanStatus,

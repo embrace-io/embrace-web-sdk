@@ -49,7 +49,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   beforeEach(() => {
     // Clear localStorage to ensure clean test state
     localStorage.clear();
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers(1756138004000);
     memoryExporter = setupTestTraceExporter();
 
     diag = new InMemoryDiagLogger();
@@ -323,8 +323,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           mockSessionSpan
         );
 
-        expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+        expect(diagLogger.getErrorLogs()).to.have.lengthOf(2);
         expect(diagLogger.getErrorLogs()[0]).to.include(
+          'Failed to clear stored spans from storage:'
+        );
+        expect(diagLogger.getErrorLogs()[1]).to.include(
           'Failed to store spans to storage'
         );
       });
@@ -405,8 +408,8 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           JSON.stringify([mockSpan, mockNetworkRequestSpan])
         );
 
-        // Advance time to trigger the interval (which runs every 60 seconds)
-        clock.tick(60 * 1000);
+        // Advance time to trigger the interval (which runs every 5 mins)
+        clock.tick(5 * 60 * 1000);
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
         expect(
@@ -431,6 +434,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       });
 
       it('should handle corrupted stored data', async () => {
+        // Need to shut down the other processors so they don't pick up our stored spans
+        await processor.shutdown();
+        await processorWithStorage.shutdown();
+
         const diagLogger = new InMemoryDiagLogger();
         const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
           exporter: memoryExporter,
@@ -445,16 +452,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           'invalid json'
         );
 
-        // Advance time to trigger the interval (which runs every 60 seconds)
-        clock.tick(60 * 1000);
+        // Advance time to trigger the interval (which runs every 5 mins)
+        clock.tick(5 * 60 * 1000);
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
         expect(diagLogger.getErrorLogs()[0]).to.include(
-          'Failed to check and export expired spans'
+          'Failed to process expired spans'
         );
-        expect(
-          inMemoryStorage.getItem(`embrace_pending_corrupted_${pastTime}`)
-        ).to.equal('invalid json');
+        expect(inMemoryStorage.length).to.equal(0);
 
         await processorWithDiag.shutdown();
       });
