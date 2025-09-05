@@ -22,6 +22,14 @@ export {
   type WebVitalOnReport,
   type WebVitalsInstrumentationArgs,
 } from './web-vitals/index.js';
+export {
+  EmbraceFetchInstrumentation,
+  type EmbraceFetchInstrumentationArgs,
+} from './fetch/index.js';
+export {
+  EmbraceXHRInstrumentation,
+  type EmbraceXHRInstrumentationArgs,
+} from './xhr/index.js';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';
 export { getNavigationInstrumentation } from './navigation/index.js';
 export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.js';

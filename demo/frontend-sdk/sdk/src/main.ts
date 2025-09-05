@@ -3,7 +3,7 @@ import { addEmbraceSDK, initSDK, sdkControl } from '../../shared/otel';
 addEmbraceSDK();
 
 window.EmbraceWebSdkOnReady.onReady(() => {
-  initSDK('dqrt5');
+  initSDK('dqrt5', 'library-app', true);
 
   window.EmbraceWebSdkOnReady.onReady(() => {
     console.log('Embrace is ready inside the SDK');
@@ -29,11 +29,30 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     });
     document.body.appendChild(errorButton);
 
-    console.log('Making API call from the SDK');
-    fetch('https://jsonplaceholder.typicode.com/posts/1')
-      .then(response => response.json())
-      .then(() => {
-        console.log('API call from SDK successful');
+    const fetchButton = document.createElement('button');
+    fetchButton.textContent = 'Make API call from the library app';
+    fetchButton.addEventListener('click', () => {
+      console.log('Making API call from the library app');
+      fetch('https://jsonplaceholder.typicode.com/posts/2')
+        .then(response => response.json())
+        .then(() => {
+          console.log('API call from library app successful');
+        });
+    });
+    document.body.appendChild(fetchButton);
+
+    const xhrButton = document.createElement('button');
+    xhrButton.textContent = 'Make XHR call from the library app';
+    xhrButton.addEventListener('click', () => {
+      console.log('Making XHR call from the library app');
+
+      const req = new XMLHttpRequest();
+      req.open('GET', 'https://jsonplaceholder.typicode.com/posts/2', true);
+      req.addEventListener('load', () => {
+        console.log('XHR call from library app successful');
       });
+      req.send();
+    });
+    document.body.appendChild(xhrButton);
   });
 });
