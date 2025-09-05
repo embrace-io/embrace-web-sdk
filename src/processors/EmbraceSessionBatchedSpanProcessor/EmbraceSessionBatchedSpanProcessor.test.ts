@@ -408,8 +408,8 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           JSON.stringify([mockSpan, mockNetworkRequestSpan])
         );
 
-        // Advance time to trigger the interval (which runs every 60 seconds)
-        clock.tick(60 * 1000);
+        // Advance time to trigger the interval (which runs every 5 mins)
+        clock.tick(5 * 60 * 1000);
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
         expect(
@@ -452,8 +452,8 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
           'invalid json'
         );
 
-        // Advance time to trigger the interval (which runs every 60 seconds)
-        clock.tick(60 * 1000);
+        // Advance time to trigger the interval (which runs every 5 mins)
+        clock.tick(5 * 60 * 1000);
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
         expect(diagLogger.getErrorLogs()[0]).to.include(

@@ -196,7 +196,7 @@ describe('EmbraceSpanStorage', () => {
       expect(mockOnExport.calledOnce).to.equal(false);
 
       // Advance clock so that the interval runs.
-      clock.tick(61 * 60 * 1000);
+      clock.tick(65 * 60 * 1000);
       expect(mockOnExport.calledOnce).to.equal(true);
 
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
