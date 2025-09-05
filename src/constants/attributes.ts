@@ -8,7 +8,6 @@ export const KEY_EMB_TAB_OPEN_METHOD = 'emb.tab_open_method';
 export const KEY_EMB_REFERRER_TYPE = 'emb.referrer_type';
 export const KEY_EMB_REFERRER_PATH = 'emb.referrer_path';
 export const KEY_EMB_REFERRER_DOMAIN = 'emb.referrer_domain';
-export const KEY_EMB_APP_INSTANCE_START_TIME = 'emb.app_instance_start_time';
 export const KEY_EMB_PREVIOUS_TAB_ID = 'emb.previous_tab_id';
 export const KEY_PREFIX_EMB_PROPERTIES = 'emb.properties.';
 export const KEY_EMB_SESSION_REASON_ENDED = 'emb.session_end_type';
