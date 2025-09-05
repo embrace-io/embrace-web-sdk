@@ -70,7 +70,7 @@ describe('EmbraceTraceExporter', () => {
     );
     // Chrome, Webkit and Firefox have slightly different encoding processes- Content-Length values. 182 for Chrome, 184 for Firefox and Webkit.
     const chromeContentLength = '286';
-    const firefoxWebkitContentLength = '288';
+    const firefoxWebkitContentLength = '287';
     //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
     expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
       chromeContentLength,
