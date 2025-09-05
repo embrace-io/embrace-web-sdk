@@ -430,6 +430,8 @@ describe('initSDK', () => {
       // Check for required session attributes (order may vary due to experience attributes)
       const sessionAttrs = sessionSpan['attributes'];
 
+      expect(sessionAttrs).to.have.lengthOf(12);
+
       // Experience attributes
       const experienceId = sessionAttrs.find(
         attr => attr.key === 'emb.experience_id'
