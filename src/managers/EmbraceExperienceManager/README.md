@@ -2,9 +2,13 @@
 
 ## Overview
 
-The Experience Manager is a core component that assigns and tracks persistent experience IDs across browser tabs. It enables tracking of user journeys across multiple tabs, understanding how tabs are opened, and maintaining context about the user's navigation flow.
+The Experience Manager is an **internal** component that assigns and tracks persistent experience IDs across browser tabs. It enables tracking of user journeys across multiple tabs, understanding how tabs are opened, and maintaining context about the user's navigation flow.
+
+> **Architecture Note**: EmbraceExperienceManager is not exposed in the public API. It is automatically created and managed internally by EmbraceSpanSessionManager. Experience data is accessible through session span attributes.
 
 ## Key Features
+
+**Important**: This is an internal component that is not exposed in the public API. It is automatically managed by EmbraceSpanSessionManager.
 
 ### Experience ID Management
 - **Persistent IDs**: Each tab receives a single, immutable experience ID that persists throughout its lifetime
@@ -48,37 +52,47 @@ The manager automatically detects how each tab was opened:
 
 ## Usage
 
+**Note**: EmbraceExperienceManager is an internal component that is automatically created and managed by EmbraceSpanSessionManager. It is not exposed in the public API.
+
+### Internal Usage (within SDK)
+
 ```typescript
-import { EmbraceExperienceManager } from './EmbraceExperienceManager';
+// Created automatically within EmbraceSpanSessionManager
+private readonly _experienceManager: EmbraceExperienceManager;
 
-// Initialize the manager
-const experienceManager = new EmbraceExperienceManager({
-  diag: customLogger, // Optional: custom diagnostic logger
-  storage: window.localStorage, // Optional: custom storage
-  sessionStorage: window.sessionStorage // Optional: custom session storage
-});
+constructor(args: EmbraceSpanSessionManagerArgs) {
+  // ...
+  this._experienceManager = new EmbraceExperienceManager();
+  // ...
+}
 
-// Get experience attributes for telemetry
-const attributes = experienceManager.getExperienceAttributes();
-// Returns:
-// {
-//   'emb.experience_id': 'uuid-v4',
-//   'emb.app_instance_id': 'tab-unique-id',
-//   'emb.tab_open_method': 'same_origin_link',
-//   'emb.referrer_type': 'same_origin',
-//   'emb.referrer_path': '/previous-page',
-//   'emb.previous_tab_id': 'parent-tab-id' // If inherited
-// }
+// Experience attributes are automatically added to session spans
+const sessionAttributes = {
+  ...this._experienceManager.getExperienceAttributes(),
+  // other session attributes...
+};
+```
 
-// Access individual properties
-const experienceId = experienceManager.getExperienceId();
-const tabId = experienceManager.getAppInstanceId();
-const previousTabId = experienceManager.getPreviousTabId();
-const tabOpenMethod = experienceManager.getTabOpenMethod();
-const referrerType = experienceManager.getReferrerType();
+### Accessing Experience Data (Public API)
 
-// Update activity timestamp (called automatically by getExperienceAttributes)
-experienceManager.updateLastActivity();
+Users can access experience data through the session span attributes:
+
+```typescript
+import { session } from '@embrace-io/web-sdk';
+
+const sessionManager = session.getSpanSessionManager();
+const sessionSpan = sessionManager.getSessionSpan();
+
+// Experience attributes are available on the session span
+const attributes = sessionSpan?.attributes;
+// Includes:
+// - emb.experience_id: Experience ID shared across related tabs
+// - emb.app_instance_id: Unique tab identifier  
+// - emb.tab_open_method: How the tab was opened
+// - emb.referrer_type: Type of referrer (same_origin/external/none)
+// - emb.referrer_path: Path for same-origin referrers
+// - emb.referrer_domain: Domain for external referrers
+// - emb.previous_tab_id: Parent tab ID if inherited
 ```
 
 ## Data Flow
@@ -101,34 +115,36 @@ Enable Inheritance for Child Tabs
 
 ## Storage Format
 
-### Session Storage
+### Session Storage (Key: `embrace_experience`)
 ```json
 {
-  "embrace_experience": {
-    "experienceId": "uuid-v4",
-    "lastActivityAt": 1234567890000,
-    "tabOpenMethod": "same_origin_link",
-    "referrerType": "same_origin",
-    "previousTabId": "parent-tab-id"
-  }
+  "experienceId": "uuid-v4",
+  "lastActivityAt": 1234567890000,
+  "tabOpenMethod": "same_origin_link",
+  "referrerType": "same_origin",
+  "previousTabId": "parent-tab-id"
 }
 ```
 
 ### Local Storage (Inheritance)
+
+#### Tab-specific key: `embrace_inheritance_[tabId]`
 ```json
 {
-  "embrace_inheritance_[tabId]": {
-    "experienceId": "uuid-v4",
-    "sourceTabId": "tab-id",
-    "timestamp": 1234567890000,
-    "url": "https://example.com/page"
-  },
-  "embrace_inheritanceref_[urlHash]": {
-    "experienceId": "uuid-v4",
-    "sourceTabId": "tab-id",
-    "timestamp": 1234567890000,
-    "url": "https://example.com/page"
-  }
+  "experienceId": "uuid-v4",
+  "sourceTabId": "tab-id",
+  "timestamp": 1234567890000,
+  "url": "https://example.com/page"
+}
+```
+
+#### URL-based key: `embrace_inheritanceref_[urlHash]`
+```json
+{
+  "experienceId": "uuid-v4",
+  "sourceTabId": "tab-id",
+  "timestamp": 1234567890000,
+  "url": "https://example.com/page"
 }
 ```
 
@@ -144,11 +160,20 @@ When testing the Experience Manager:
 
 ## Integration with OpenTelemetry
 
-The Experience Manager integrates seamlessly with OpenTelemetry spans by providing attributes that can be attached to session spans. This enables:
+The Experience Manager integrates seamlessly with OpenTelemetry spans by automatically providing attributes to session spans via EmbraceSpanSessionManager. This enables:
 - Tracking user journeys across tabs
 - Understanding navigation patterns
 - Analyzing referrer effectiveness
 - Debugging multi-tab issues
+
+### Attribute Names
+- `emb.experience_id` - Experience ID shared across related tabs
+- `emb.app_instance_id` - Unique identifier for each tab
+- `emb.tab_open_method` - Method used to open the tab
+- `emb.referrer_type` - Type of referrer (same_origin/external/none)
+- `emb.referrer_path` - Path for same-origin navigation
+- `emb.referrer_domain` - Domain for external referrers
+- `emb.previous_tab_id` - ID of parent tab if inherited
 
 ## Browser Compatibility
 
