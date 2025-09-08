@@ -315,6 +315,7 @@ export class EmbraceExperienceManager {
       return;
     }
 
+    // Always use this tab's ID as the source - child tabs should know their direct parent
     const experienceData: InheritanceData = {
       experienceId: this._currentExperienceId,
       sourceTabId: this._appInstanceId,
@@ -331,12 +332,41 @@ export class EmbraceExperienceManager {
       );
 
       // Store with referrer-based key for accurate child matching
+      // Don't overwrite if a different tab already stored data for this URL
       const referrerKey = EmbraceExperienceManager._createReferrerKey(url);
       if (referrerKey) {
-        this._storage.setItem(
-          `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`,
-          experienceDataStr
+        const existingReferrerData = this._storage.getItem(
+          `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`
         );
+
+        // Only store if no existing data, or if we're updating our own data
+        if (!existingReferrerData) {
+          this._storage.setItem(
+            `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`,
+            experienceDataStr
+          );
+        } else {
+          // Check if the existing data is ours (same sourceTabId)
+          try {
+            const existing = JSON.parse(
+              existingReferrerData
+            ) as InheritanceData;
+            if (existing.sourceTabId === this._appInstanceId) {
+              // Update our own data
+              this._storage.setItem(
+                `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`,
+                experienceDataStr
+              );
+            }
+            // Otherwise, don't overwrite another tab's referrer data
+          } catch {
+            // If we can't parse, store anyway
+            this._storage.setItem(
+              `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`,
+              experienceDataStr
+            );
+          }
+        }
       }
     } catch (error) {
       // Check if this is a quota exceeded error
