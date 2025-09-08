@@ -1,7 +1,7 @@
-import { log, session, trace } from '@embrace-io/web-sdk';
+import { ExtendedSpan, log, session, trace } from '@embrace-io/web-sdk';
 import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
-import { Span } from '@opentelemetry/api';
+import { AttributeValue, Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 import {
@@ -19,18 +19,25 @@ const logManager = log.getLogManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
-  const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [currentExperience, setCurrentExperience] = useState<string | null>(
+  const [currentSession, setCurrentSession] = useState<AttributeValue | null>(
     null
   );
-  const [previousTabId, setPreviousTabId] = useState<string | null>(null);
-  const [currentTabId, setCurrentTabId] = useState<string | null>(null);
-  const [tabOpenMethod, setTabOpenMethod] = useState<string | null>(null);
-  const [referrerType, setReferrerType] = useState<string | null>(null);
-  const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
-  const [referrerPath, setReferrerPath] = useState<string | null>(null);
-  const [referrerDomain, setReferrerDomain] = useState<string | null>(null);
-  const [lastActivityTime, setLastActivityTime] = useState<string | null>(null);
+  const [currentExperience, setCurrentExperience] =
+    useState<AttributeValue | null>(null);
+  const [previousTabId, setPreviousTabId] = useState<AttributeValue | null>(
+    null
+  );
+  const [currentTabId, setCurrentTabId] = useState<AttributeValue | null>(null);
+  const [tabOpenMethod, setTabOpenMethod] = useState<AttributeValue | null>(
+    null
+  );
+  const [referrerType, setReferrerType] = useState<AttributeValue | null>(null);
+  const [referrerUrl, setReferrerUrl] = useState<AttributeValue | null>(null);
+  const [referrerPath, setReferrerPath] = useState<AttributeValue | null>(null);
+  const [referrerDomain, setReferrerDomain] = useState<AttributeValue | null>(
+    null
+  );
+  const [lastActivityTime, setLastActivityTime] = useState<number | null>(null);
   const [sessionRefresher, setSessionRefresher] = useState<
     number | undefined
   >();
@@ -43,47 +50,46 @@ const App = () => {
         setCurrentSession(sessionProvider.getSessionId());
 
         // Get all experience attributes from session span
-        const sessionSpan = sessionProvider.getSessionSpan();
-        if (sessionSpan && 'attributes' in sessionSpan) {
-          const attributes = (sessionSpan as any).attributes || {};
+        const attributes = sessionProvider.getSessionSpan()?.attributes;
 
-          // Get experience-related attributes
-          const expId = attributes['emb.experience_id'];
-          const tabId = attributes['emb.app_instance_id'];
-          const prevTabId = attributes['emb.previous_tab_id'];
-          const openMethod = attributes['emb.tab_open_method'];
-          const refType = attributes['emb.referrer_type'];
-          const refPath = attributes['emb.referrer_path'];
-          const refDomain = attributes['emb.referrer_domain'];
+        if (!attributes) return;
 
-          // Update state with span attributes (these override direct manager values)
-          if (expId) setCurrentExperience(expId);
-          if (tabId) setCurrentTabId(tabId);
-          if (prevTabId !== undefined) setPreviousTabId(prevTabId || null);
-          if (openMethod) setTabOpenMethod(openMethod);
-          if (refType) setReferrerType(refType);
-          if (refPath !== undefined) setReferrerPath(refPath || null);
-          if (refDomain !== undefined) setReferrerDomain(refDomain || null);
+        // Get experience-related attributes
+        const expId = attributes['emb.experience_id'];
+        const tabId = attributes['emb.app_instance_id'];
+        const prevTabId = attributes['emb.previous_tab_id'];
+        const openMethod = attributes['emb.tab_open_method'];
+        const refType = attributes['emb.referrer_type'];
+        const refPath = attributes['emb.referrer_path'];
+        const refDomain = attributes['emb.referrer_domain'];
 
-          // Get last activity timestamp from sessionStorage
-          const storedExperience = sessionStorage.getItem('embrace_experience');
-          if (storedExperience) {
-            try {
-              const experienceData = JSON.parse(storedExperience);
-              if (experienceData.lastActivityAt) {
-                setLastActivityTime(String(experienceData.lastActivityAt));
-              }
-            } catch {
-              // Ignore parse errors
+        // Update state with span attributes (these override direct manager values)
+        if (expId) setCurrentExperience(expId);
+        if (tabId) setCurrentTabId(tabId);
+        if (prevTabId !== undefined) setPreviousTabId(prevTabId || null);
+        if (openMethod) setTabOpenMethod(openMethod);
+        if (refType) setReferrerType(refType);
+        if (refPath !== undefined) setReferrerPath(refPath || null);
+        if (refDomain !== undefined) setReferrerDomain(refDomain || null);
+
+        // Get last activity timestamp from sessionStorage
+        const storedExperience = sessionStorage.getItem('embrace_experience');
+        if (storedExperience) {
+          try {
+            const experienceData = JSON.parse(storedExperience);
+            if (experienceData.lastActivityAt) {
+              setLastActivityTime(experienceData.lastActivityAt);
             }
+          } catch {
+            // Ignore parse errors
           }
+        }
 
-          // Reconstruct referrer URL from span attributes
-          if (refType === 'same_origin' && refPath) {
-            setReferrerUrl(window.location.origin + refPath);
-          } else if (refType === 'external' && refDomain) {
-            setReferrerUrl(refDomain);
-          }
+        // Reconstruct referrer URL from span attributes
+        if (refType === 'same_origin' && refPath) {
+          setReferrerUrl(window.location.origin + refPath);
+        } else if (refType === 'external' && refDomain) {
+          setReferrerUrl(refDomain);
         }
       }, 1000)
     );
@@ -310,12 +316,12 @@ const App = () => {
             <div>
               <strong title="emb.app_instance_id">Current Tab</strong>
               <br />
-              {currentTabId?.slice(-12) || 'none'}
+              {(currentTabId as string)?.slice(-12) || 'none'}
             </div>
             <div>
               <strong title="emb.experience_id">Experience ID</strong>
               <br />
-              {currentExperience?.slice(-12) || 'none'}
+              {(currentExperience as string)?.slice(-12) || 'none'}
             </div>
 
             <div>
@@ -326,12 +332,12 @@ const App = () => {
             <div>
               <strong title="emb.previous_tab_id">Previous Tab</strong>
               <br />
-              {previousTabId?.slice(-12) || 'none'}
+              {(previousTabId as string)?.slice(-12) || 'none'}
             </div>
             <div>
               <strong title="emb.session_id">Session ID</strong>
               <br />
-              {currentSession?.slice(-12) || 'none'}
+              {(currentSession as string)?.slice(-12) || 'none'}
             </div>
 
             <div>

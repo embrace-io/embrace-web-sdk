@@ -1,12 +1,13 @@
-import type { HrTime, Span } from '@opentelemetry/api';
+import type { HrTime } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { ExtendedSpan } from '../../index.js';
 
 export interface SpanSessionManager {
   getSessionId: () => string | null;
 
   getSessionStartTime: () => HrTime | null;
 
-  getSessionSpan: () => Span | null;
+  getSessionSpan: () => ExtendedSpan | null;
 
   startSessionSpan: (options?: StartSessionOptions) => void;
 
