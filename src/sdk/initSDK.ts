@@ -7,11 +7,12 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
+  StackContextManager,
   BatchSpanProcessor,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
 import {
@@ -343,7 +344,11 @@ const setupTraces = ({
   if (registerGlobally) {
     trace.setGlobalTraceManager(embraceTraceManager);
     tracerProvider.register({
-      contextManager,
+      // WebTracerProvider.register has different fallback behaviours depending on whether null or undefined is passed,
+      // be more explicit here and always supply a StackContextManager if the config did not specify one. If a user really
+      // wants to turn off context management they can pass a no-op manager explicitly:
+      // https://github.com/open-telemetry/opentelemetry-js/blob/4f0b6285af24b71a9fa022755aaa3b6a63ae5033/packages/opentelemetry-sdk-trace-web/src/WebTracerProvider.ts#L39
+      contextManager: contextManager || new StackContextManager(),
       propagator,
     });
   }
