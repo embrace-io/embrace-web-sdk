@@ -1,6 +1,5 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 import type {
-  EmbraceExperienceManager,
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
@@ -39,10 +38,6 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   }
 
   public getSessionId = () => null;
-
-  public getExperienceManager(): EmbraceExperienceManager | null {
-    return null;
-  }
 
   public getSessionSpan(): Span | null {
     return null;

@@ -16,7 +16,6 @@ import ComponentWithErrorInRender from './ComponentWithErrorInRender';
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
 const logManager = log.getLogManager();
-const experienceManager = session.getExperienceManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
@@ -42,15 +41,6 @@ const App = () => {
     setSessionRefresher(
       window.setInterval(() => {
         setCurrentSession(sessionProvider.getSessionId());
-
-        // Use experience manager directly for basic values
-        if (experienceManager) {
-          setCurrentExperience(experienceManager.getExperienceId());
-          setPreviousTabId(experienceManager.getPreviousTabId());
-          setCurrentTabId(experienceManager.getAppInstanceId());
-          setTabOpenMethod(experienceManager.getTabOpenMethod());
-          setReferrerType(experienceManager.getReferrerType());
-        }
 
         // Get all experience attributes from session span
         const sessionSpan = sessionProvider.getSessionSpan();

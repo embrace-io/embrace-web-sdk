@@ -35,12 +35,11 @@ import type {
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import { EmbraceExtendedSpan } from '../index.js';
+import { EmbraceExperienceManager, EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
-import { EmbraceExperienceManager } from '../EmbraceExperienceManager/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -67,7 +66,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     visibilityDoc = window.document,
     storage = window.localStorage,
     limitManager,
-    experienceManager = new EmbraceExperienceManager({}),
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -78,7 +76,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
-    this._experienceManager = experienceManager;
+    this._experienceManager = new EmbraceExperienceManager();
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
@@ -277,10 +275,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   public getSessionId(): string | null {
     return this._activeSessionId;
-  }
-
-  public getExperienceManager(): EmbraceExperienceManager {
-    return this._experienceManager;
   }
 
   public getSessionSpan(): ExtendedSpan | null {

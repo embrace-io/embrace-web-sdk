@@ -4,7 +4,6 @@ import type {
   ReasonSessionEnded,
   SpanSessionManager,
   StartSessionOptions,
-  EmbraceExperienceManager,
 } from '../index.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
@@ -54,10 +53,6 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   public getSessionId(): string | null {
     return this.getDelegate().getSessionId();
-  }
-
-  public getExperienceManager(): EmbraceExperienceManager | null {
-    return this.getDelegate().getExperienceManager();
   }
 
   public getSessionSpan() {

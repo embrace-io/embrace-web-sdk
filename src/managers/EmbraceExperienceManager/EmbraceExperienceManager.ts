@@ -19,9 +19,9 @@ import type {
 } from './types.js';
 
 // Storage keys
-const TAB_EXPERIENCE_KEY = 'embrace_experience';
+const EXPERIENCE_DATA_KEY = 'embrace_experience';
 const INHERITANCE_KEY_PREFIX = 'embrace_inheritance_';
-const INHERITANCE_REFERRER_PREFIX = 'embrace_inheritanceref_';
+const INHERITANCE_REFERRER_KEY_PREFIX = 'embrace_inheritanceref_';
 
 // Constants
 const INHERITANCE_CLEANUP_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -42,7 +42,7 @@ type InheritedExperience = Pick<
   'experienceId' | 'sourceTabId'
 >;
 
-// Combined tab context detection result
+// Tab context detection result
 interface TabContext {
   tabOpenMethod: TabOpenMethod;
   referrerType: ReferrerType;
@@ -235,7 +235,7 @@ export class EmbraceExperienceManager {
     }
 
     const data = this._getInheritanceData(
-      `${INHERITANCE_REFERRER_PREFIX}${referrerKey}`
+      `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`
     );
 
     if (data) {
@@ -334,7 +334,7 @@ export class EmbraceExperienceManager {
       const referrerKey = EmbraceExperienceManager._createReferrerKey(url);
       if (referrerKey) {
         this._storage.setItem(
-          `${INHERITANCE_REFERRER_PREFIX}${referrerKey}`,
+          `${INHERITANCE_REFERRER_KEY_PREFIX}${referrerKey}`,
           experienceDataStr
         );
       }
@@ -400,7 +400,7 @@ export class EmbraceExperienceManager {
         if (
           !key ||
           (!key.startsWith(INHERITANCE_KEY_PREFIX) &&
-            !key.startsWith(INHERITANCE_REFERRER_PREFIX))
+            !key.startsWith(INHERITANCE_REFERRER_KEY_PREFIX))
         ) {
           continue;
         }
@@ -454,7 +454,7 @@ export class EmbraceExperienceManager {
 
   private _getStoredExperienceData(): ExperienceData | null {
     try {
-      const stored = this._sessionStorage.getItem(TAB_EXPERIENCE_KEY);
+      const stored = this._sessionStorage.getItem(EXPERIENCE_DATA_KEY);
       return stored ? (JSON.parse(stored) as ExperienceData) : null;
     } catch (error) {
       this._diag.warn('Failed to get stored experience data:', error);
@@ -465,7 +465,7 @@ export class EmbraceExperienceManager {
   private _storeExperienceData(): void {
     try {
       this._sessionStorage.setItem(
-        TAB_EXPERIENCE_KEY,
+        EXPERIENCE_DATA_KEY,
         JSON.stringify(this._experienceData)
       );
     } catch (error) {
@@ -478,13 +478,6 @@ export class EmbraceExperienceManager {
    */
   public getExperienceId(): string {
     return this._currentExperienceId;
-  }
-
-  /**
-   * Get the app instance ID (unique per tab)
-   */
-  public getAppInstanceId(): string {
-    return this._appInstanceId;
   }
 
   /**

@@ -674,11 +674,6 @@ describe('EmbraceExperienceManager', () => {
       expect(manager.getExperienceId()).to.have.length.greaterThan(0);
     });
 
-    it('should return app instance ID', () => {
-      expect(manager.getAppInstanceId()).to.be.a('string');
-      expect(manager.getAppInstanceId()).to.have.length.greaterThan(0);
-    });
-
     it('should return tab open method', () => {
       expect(manager.getTabOpenMethod()).to.equal('manual_new_tab');
     });
