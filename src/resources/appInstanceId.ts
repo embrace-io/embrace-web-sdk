@@ -5,7 +5,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 export const getAppInstanceId = (
   pageSessionStorage: Storage,
   diag: DiagLogger
-) => {
+): string => {
   let id = null;
   try {
     id = pageSessionStorage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY);
