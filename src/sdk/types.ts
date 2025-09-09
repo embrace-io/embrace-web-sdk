@@ -16,6 +16,8 @@ import type { SpanSessionManager } from '../api-sessions/index.js';
 import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
+  EmbraceFetchInstrumentationArgs,
+  EmbraceXHRInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
@@ -23,8 +25,6 @@ import type {
   SpanSessionVisibilityInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.js';
-import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
-import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
@@ -324,11 +324,11 @@ export interface DefaultInstrumentationConfig {
     config has enabled=false. Instead, use `omit` to specify which default instrumentations should be turned off.
    */
   '@opentelemetry/instrumentation-fetch'?: Omit<
-    FetchInstrumentationConfig,
+    EmbraceFetchInstrumentationArgs,
     'enabled'
   >;
   '@opentelemetry/instrumentation-xml-http-request'?: Omit<
-    XMLHttpRequestInstrumentationConfig,
+    EmbraceXHRInstrumentationArgs,
     'enabled'
   >;
 }
