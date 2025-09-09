@@ -111,6 +111,7 @@ describe('initSDK', () => {
     trace.disable();
     logs.disable();
     diag.disable();
+    context.disable();
     registry.clear();
   });
 
@@ -323,6 +324,40 @@ describe('initSDK', () => {
         })
       ).to.be.true;
     }
+  });
+
+  it('should setup a default context manager when none is provided', async () => {
+    const result = initSDK({
+      spanExporters: [spanExporter],
+    });
+    void expect(result).not.to.be.false;
+
+    trace.getTracer('test').startActiveSpan('my active span', active => {
+      trace.getTracer('test').startSpan('my child span').end();
+      trace
+        .getSpan(context.active())
+        ?.setAttribute('active-span-attribute', 'foo');
+      active.end();
+    });
+
+    if (result) {
+      await result.flush();
+    }
+
+    const finishedSpans = spanExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    const active = finishedSpans[1];
+    const child = finishedSpans[0];
+
+    expect(active.name).to.be.equal('my active span');
+    expect(active.attributes['active-span-attribute']).to.be.equal('foo');
+    expect(child.name).to.be.equal('my child span');
+    expect(child.parentSpanContext?.traceId).to.be.equal(
+      active.spanContext().traceId
+    );
+    expect(child.parentSpanContext?.spanId).to.be.equal(
+      active.spanContext().spanId
+    );
   });
 
   describe('communication with Embrace', () => {

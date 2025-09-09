@@ -85,7 +85,7 @@ type BaseSDKInitConfig = {
   /**
    * contextManager defines a custom context manager that will be attached to the TracerProvider setup by the SDK
    *
-   * **default**: null
+   * **default**: StackContextManager
    */
   contextManager?: ContextManager | null;
 
