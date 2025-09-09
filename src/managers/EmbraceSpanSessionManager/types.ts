@@ -22,11 +22,17 @@ export type SessionEndedListener = () => void;
 
 // Cross-tab tracking types
 
-// What gets stored in localStorage for discovery by child tabs
-export type StoredTab = {
+// Activity data stored in localStorage for each tab
+export type TabActivity = {
   experienceId: string;
   tabId: string;
-  timestamp: number;
+  lastActivityMs: number;
+  parentTabId?: string;
+};
+
+// All tabs' activity data stored in localStorage
+export type TabActivities = {
+  [tabId: string]: TabActivity;
 };
 
 // This tab's identity (stored in session storage)
