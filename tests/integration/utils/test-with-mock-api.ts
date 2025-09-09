@@ -64,6 +64,9 @@ const IGNORED_ATTRIBUTES_LIST = [
   'user_agent.original',
   'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
+  'emb.tab_id',
+  'emb.parent_tab_id',
+  'emb.experience_id',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
