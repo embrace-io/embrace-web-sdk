@@ -18,12 +18,19 @@ updates:
       interval: 'weekly'
     open-pull-requests-limit: 50
     groups:
+      vite:
+        patterns:
+          - '*vite*'
+      otel:
+        patterns:
+          - '@opentelemetry*'
       eslint:
         patterns:
           - '*eslint*'
       react:
         patterns:
           - 'react*'
+          - '*/react*'
       playwright:
         patterns:
           - '*playwright*'
