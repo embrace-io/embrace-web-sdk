@@ -32,21 +32,20 @@ import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
+  LastTabActivity,
   SessionEndedListener,
   SessionStartedListener,
   SpanSessionManagerInternal,
   Tab,
-  TabActivities,
-  TabActivity,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
 import {
-  EMBRACE_CURRENT_TAB_STORAGE_KEY,
   EMBRACE_SESSION_NUMBER_STORAGE_KEY,
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+  EMBRACE_TAB_STORAGE_KEY,
 } from './constants.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -96,14 +95,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     );
 
     // Initialize cross-tab tracking
-    this._currentTab = this._initTab(); // Creates or retrieves tab IDs from sessionStorage
+    this._currentTab = this._initTab();
     this._setupListeners();
-    this._startCleanupTimer();
-    // Only record activity for this tab if it exists (page reload)
-    // New tabs shouldn't be recorded until they perform an action
-    if (this._currentTab.parentTabId) {
-      this._recordActivity();
-    }
   }
 
   // Collects all permanent session properties from localStorage
@@ -396,9 +389,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _initTab(): Tab {
     // On page reload, preserve the same tab IDs
     try {
-      const stored = this._sessionStorage.getItem(
-        EMBRACE_CURRENT_TAB_STORAGE_KEY
-      );
+      const stored = this._sessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
       if (stored) {
         return JSON.parse(stored) as Tab;
       }
@@ -406,18 +397,18 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.warn('Failed to retrieve current tab data', e);
     }
 
-    // New tab - look for parent that opened it
-    const parentActivity = this._findParentByLastActivity();
+    // Look for potential parent tabs
+    const parentActivity = this._findParentFromLastActivity();
     const currentTab: Tab = {
-      experienceId: parentActivity?.experienceId ?? generateUUID(), // Inherit experience or start new one
-      tabId: getAppInstanceId(this._sessionStorage, this._diag), // Unique ID for this tab
-      parentTabId: parentActivity?.tabId, // Link to parent if found
+      experienceId: parentActivity?.experienceId ?? generateUUID(),
+      parentTabId: parentActivity?.tabId,
+      tabId: getAppInstanceId(this._sessionStorage, this._diag),
     };
 
     // Persist tab data for page reloads
     try {
       this._sessionStorage.setItem(
-        EMBRACE_CURRENT_TAB_STORAGE_KEY,
+        EMBRACE_TAB_STORAGE_KEY,
         JSON.stringify(currentTab)
       );
     } catch (e) {
@@ -427,9 +418,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return currentTab;
   }
 
-  private _findParentByLastActivity(): TabActivity | null {
+  private _findParentFromLastActivity(): LastTabActivity | null {
     // Only look for parent if we have a referrer from the same origin
-    // This indicates we were opened from another tab, not manually
     if (!document.referrer) {
       return null;
     }
@@ -443,151 +433,78 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return null;
     }
 
-    const activities = this._getTabActivities();
-    const now = Date.now();
-    const PARENT_SEARCH_TIMEOUT_MS = 30_000; // 30 seconds to load the next page
-
-    // Find the most recently active tab within the time window
-    let mostRecentActivity: TabActivity | null = null;
-    let mostRecentTime = 0;
-
-    for (const activity of Object.values(activities)) {
-      const age = now - activity.lastActivityMs;
-
-      // Skip tabs that are too old
-      if (age > PARENT_SEARCH_TIMEOUT_MS) {
-        continue;
-      }
-
-      // Track the most recent
-      if (activity.lastActivityMs > mostRecentTime) {
-        mostRecentTime = activity.lastActivityMs;
-        mostRecentActivity = activity;
-      }
+    // Check if there's a recent tab activity that could be the parent
+    const lastActivity = this._getLastTabActivity();
+    if (!lastActivity) {
+      return null;
     }
 
-    return mostRecentActivity;
+    const now = Date.now();
+    const PARENT_SEARCH_TIMEOUT_MS = 20_000; // 20s window for tab navigation
+    const age = now - lastActivity.lastActivityMs;
+
+    // Return activity if it's recent enough to be the parent
+    if (age <= PARENT_SEARCH_TIMEOUT_MS) {
+      return lastActivity;
+    }
+
+    return null;
   }
 
-  // Safely retrieves and parses tab activities from localStorage
-  private _getTabActivities(): TabActivities {
+  // Retrieves the last tab activity from localStorage
+  private _getLastTabActivity(): LastTabActivity | null {
     try {
       const stored = this._storage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY);
       if (!stored) {
-        return {};
+        return null;
       }
 
-      const activities = JSON.parse(stored) as TabActivities;
-      return activities;
+      return JSON.parse(stored) as LastTabActivity;
     } catch (e) {
-      this._diag.warn('Failed to retrieve tab activities', e);
-      return {};
+      this._diag.warn('Failed to retrieve last tab activity', e);
+      return null;
     }
   }
 
-  // Saves tab activities to localStorage
-  private _saveTabActivities(activities: TabActivities): void {
+  // Saves the last tab activity to localStorage
+  private _saveLastTabActivity(activity: LastTabActivity): void {
     try {
       this._storage.setItem(
         EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-        JSON.stringify(activities)
+        JSON.stringify(activity)
       );
     } catch (error) {
-      // Handle quota exceeded error
-      if (error instanceof Error && error.name === 'QuotaExceededError') {
-        this._diag.warn('Storage quota exceeded, clearing old data');
-        this._cleanupOldTabs();
-        // Try once more
-        try {
-          this._storage.setItem(
-            EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-            JSON.stringify(activities)
-          );
-        } catch (retryError) {
-          this._diag.warn(
-            'Failed to store data even after cleanup',
-            retryError
-          );
-        }
-      } else {
-        this._diag.warn('Failed to save tab activities', error);
-      }
+      this._diag.warn('Failed to save last tab activity', error);
     }
   }
 
   // Records activity for this tab
   private _recordActivity(): void {
-    const activities = this._getTabActivities();
-
-    activities[this._currentTab.tabId] = {
+    const activity: LastTabActivity = {
       tabId: this._currentTab.tabId,
       experienceId: this._currentTab.experienceId,
       lastActivityMs: Date.now(),
-      parentTabId: this._currentTab.parentTabId,
     };
 
-    this._saveTabActivities(activities);
-  }
-
-  // Removes stale tab data (>30 minutes old) from localStorage to free up space
-  private _cleanupOldTabs(): void {
-    try {
-      const activities = this._getTabActivities();
-      const now = Date.now();
-      const thirtyMinutesAgo = now - 30 * 60 * 1000; // 30 minutes
-      let hasChanges = false;
-
-      for (const [tabId, activity] of Object.entries(activities)) {
-        if (activity.lastActivityMs < thirtyMinutesAgo) {
-          // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-          delete activities[tabId];
-          hasChanges = true;
-        }
-      }
-
-      if (hasChanges) {
-        this._saveTabActivities(activities);
-      }
-    } catch (e) {
-      this._diag.debug('Failed to clear old tab data', e);
-    }
-  }
-
-  // Starts a timer to periodically clean up stale tabs
-  private _startCleanupTimer(): void {
-    setInterval(
-      () => {
-        this._cleanupOldTabs();
-      },
-      5 * 60 * 1000 // Run cleanup every 5 minutes
-    );
+    this._saveLastTabActivity(activity);
   }
 
   // Sets up event listeners for tracking tab activity
   private _setupListeners(): void {
-    // Track when tab becomes visible - helps ensure activity is recorded
-    // even if click handler is too slow
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this._recordActivity();
-      }
-    });
-
     // Track clicks that might open new tabs
     const handleNewTabClick = (ev: MouseEvent) => {
-      // Check for modifier keys that typically open new tabs/windows
+      // Check for modifier keys that open new tabs/windows
       if (
         ev.button === 1 || // Middle click
         ev.ctrlKey ||
         ev.metaKey || // Cmd/Ctrl + click
         ev.shiftKey // Shift + click (new window)
       ) {
-        // Record activity immediately for any element with modifier keys
         this._recordActivity();
         return;
       }
 
-      // Check for anchor-specific attributes
+      // Check for elements with attributes that open new tabs
       const newTabAnchor = (ev.target as HTMLElement | null)?.closest(
         'a[target="_blank"], form[target="_blank"], a[rel*="noopener"], a[rel*="noreferrer"]'
       );
