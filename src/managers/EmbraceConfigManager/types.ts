@@ -8,7 +8,7 @@ export type RemoteConfigURLParams = {
   deviceId: string;
 };
 
-// Threshold numbers are from 1 to 100
+// Enabled numbers are from 1 to 100
 export type RemoteConfig = {
   threshold: number;
   network_span_forwarding?: {

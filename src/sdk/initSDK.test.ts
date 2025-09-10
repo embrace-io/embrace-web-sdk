@@ -84,7 +84,7 @@ type SpanScope = {
 
 const getLastSessionExportedSpans = async (
   callNumber = 0,
-  scope: SpanScope = { name: 'embrace-web-sdk-sessions' }
+  scope: SpanScope = { name: 'embrace-web-sdk-traces' }
 ) => {
   // Needed to allow the transport to actually send its data off to fetch
   await new Promise(r => setTimeout(r, 1));

@@ -6,6 +6,7 @@ import {
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
 } from '../../testUtils/index.js';
+import * as sinon from 'sinon';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -50,6 +51,21 @@ describe('EmbraceSDKFeaturesManager', () => {
       blockNetworkSpanForwarding: false,
     });
 
+    void expect(manager.isNetworkSpanForwardingEnabled()).to.be.false;
+  });
+
+  it('should return false if the networkSpansForwardingThreshold is not specified at all', () => {
+    manager = new EmbraceSDKFeaturesManager({
+      deviceId: SAMPLED_UUID,
+      dynamicConfigManager: {
+        refreshRemoteConfig: sinon.stub(),
+        setConfig: sinon.stub(),
+        getConfig: () => ({
+          samplingPct: 50,
+        }),
+      },
+      blockNetworkSpanForwarding: false,
+    });
     void expect(manager.isNetworkSpanForwardingEnabled()).to.be.false;
   });
 
