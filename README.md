@@ -514,7 +514,7 @@ Refer to [DATA_EXPORT.md](./DATA_EXPORT.md) for details on how data is exported 
 
 ### How is sensitive data protected
 
-The SDK offers a few options to help protect sensitive data, refer to [these guidelines](https://embrace.io/docs/web/best-practices/security-considerations)
+The SDK offers a few options to help protect sensitive data, refer to [these guidelines](https://embrace.io/docs/web/best-practices/security-considerations/)
 for more information.
 
 ## Support
