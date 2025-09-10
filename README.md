@@ -423,8 +423,10 @@ log.message('This is a log message', 'info');
 ```
 
 Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
-* Fetch and XHR instrumentations are registered globally, so the last SDK to register will override the previous
-  instance's configuration and only the last instance will be able to capture network requests.
+* Fetch and XHR instrumentations are registered globally, so by default the last SDK to register will override the 
+  previous instance's configuration and only the last instance will be able to capture network requests. If you don't 
+  want the last instance to be the one that captures network request you can set `omitIfAlreadyPatched` to true when 
+  configuring the network instrumentations to allow a different instance to control the capturing.
 * Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that 
   are not caught. 
 
@@ -509,6 +511,11 @@ initSDK({
 ### How is data exported from the SDK
 
 Refer to [DATA_EXPORT.md](./DATA_EXPORT.md) for details on how data is exported from the SDK.
+
+### How is sensitive data protected
+
+The SDK offers a few options to help protect sensitive data, refer to [these guidelines](https://embrace.io/docs/web/best-practices/security-considerations/)
+for more information.
 
 ## Support
 
