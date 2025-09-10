@@ -70,6 +70,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _storage: Storage;
   private readonly _sessionStorage: Storage;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _referrer: string;
 
   public constructor({
     diag: diagParam,
@@ -78,6 +79,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     storage = window.localStorage,
     sessionStorage = window.sessionStorage,
     limitManager,
+    referrer = document.referrer,
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -89,6 +91,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._storage = storage;
     this._sessionStorage = sessionStorage;
     this._limitManager = limitManager;
+    this._referrer = referrer;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
@@ -420,12 +423,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   private _findParentFromLastActivity(): LastTabActivity | null {
     // Only look for parent if we have a referrer from the same origin
-    if (!document.referrer) {
+    if (!this._referrer) {
       return null;
     }
 
     try {
-      const referrerUrl = new URL(document.referrer);
+      const referrerUrl = new URL(this._referrer);
       if (referrerUrl.origin !== window.location.origin) {
         return null;
       }

@@ -11,6 +11,7 @@ export interface EmbraceSpanSessionManagerArgs {
   storage?: Storage;
   sessionStorage?: Storage;
   limitManager: LimitManagerInternal;
+  referrer?: string;
 }
 
 export interface SpanSessionManagerInternal extends SpanSessionManager {
