@@ -9,7 +9,9 @@ export interface EmbraceSpanSessionManagerArgs {
   perf?: PerformanceManager;
   visibilityDoc?: VisibilityStateDocument;
   storage?: Storage;
+  sessionStorage?: Storage;
   limitManager: LimitManagerInternal;
+  referrer?: string;
 }
 
 export interface SpanSessionManagerInternal extends SpanSessionManager {
@@ -18,3 +20,19 @@ export interface SpanSessionManagerInternal extends SpanSessionManager {
 
 export type SessionStartedListener = () => void;
 export type SessionEndedListener = () => void;
+
+// Cross-tab tracking types
+
+// Last tab activity stored in localStorage
+export type LastTabActivity = {
+  experienceId: string;
+  tabId: string;
+  lastActivityMs: number;
+};
+
+// Tab identity stored in session storage
+export type Tab = {
+  experienceId: string;
+  tabId: string;
+  parentTabId?: string;
+};

@@ -26,13 +26,45 @@ const App = () => {
   const [navigationType, setNavigationType] =
     useState<RoutingDemoNavigationType | null>(null);
 
+  // Cross-tab tracking data
+  const [experienceId, setExperienceId] = useState<string | null>('');
+  const [tabId, setTabId] = useState<string | null>('');
+  const [parentTabId, setParentTabId] = useState<string | null>(null);
+
   useEffect(() => {
+    const updateCrossTabData = () => {
+      const sessionSpan = sessionProvider.getSessionSpan();
+      if (sessionSpan && 'attributes' in sessionSpan) {
+        const attrs = (sessionSpan as any).attributes;
+        setExperienceId(attrs['emb.experience_id'] || null);
+        setTabId(attrs['emb.tab_id'] || null);
+        setParentTabId(attrs['emb.parent_tab_id'] || null);
+      }
+    };
+
+    // Set initial values
+    setCurrentSession(sessionProvider.getSessionId());
+    updateCrossTabData();
+
+    // Listen for storage events to detect cross-tab changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && e.key.startsWith('emb_')) {
+        updateCrossTabData();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     setSessionRefresher(
       window.setInterval(() => {
         setCurrentSession(sessionProvider.getSessionId());
+        // Update cross-tab data
+        updateCrossTabData();
       }, 1000)
     );
-    return () => window.clearInterval(sessionRefresher);
+    return () => {
+      window.clearInterval(sessionRefresher);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const handleStartSessionSpan = () => {
@@ -222,6 +254,9 @@ const App = () => {
       <div className="container">
         <h1>[••] demo</h1>
         <div>current session: {currentSession}</div>
+        <div>experienceId: {experienceId}</div>
+        <div>tabId: {tabId}</div>
+        <div>parentTabId: {parentTabId || 'none'}</div>
 
         {/* Current Session: */}
         <div className={styles.actions}>
