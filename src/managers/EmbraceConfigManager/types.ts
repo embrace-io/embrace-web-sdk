@@ -8,9 +8,10 @@ export type RemoteConfigURLParams = {
   deviceId: string;
 };
 
-// Enabled numbers are from 1 to 100
+// All numbers from remote config are ranges from 0.0 to 100.0 that represent the % of devices which should be enabled
+// for that particular feature / option
 export type RemoteConfig = {
-  threshold: number;
+  threshold: number; // Main traffic control %, devices that fall outside of this should not emit any telemetry at all
   network_span_forwarding?: {
     pct_enabled: number;
   };

@@ -7,7 +7,7 @@ import { trace, context, defaultTextMapSetter } from '@opentelemetry/api';
 
 const { expect } = chai;
 
-describe('EmbraceNetworkSpanProcessor', () => {
+describe('EmbraceW3CTraceContextPropagator', () => {
   let memoryExporter: InMemorySpanExporter;
 
   before(() => {
