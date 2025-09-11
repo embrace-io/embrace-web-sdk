@@ -1,9 +1,9 @@
 import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
-// These errors are generated on purpose in
-// src/instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.test.ts
-const removeGlobalExceptionTestError = ({ args, type }) => {
+const filterBrowserLogs = ({ args, type }) => {
+  // These errors are generated on purpose in
+  // src/instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.test.ts
   if (
     args.some(
       arg =>
@@ -17,6 +17,8 @@ const removeGlobalExceptionTestError = ({ args, type }) => {
   if (type === 'error' && args.length === 1 && args[0] === undefined) {
     return false;
   }
+
+  return true;
 };
 
 export default {
@@ -60,5 +62,5 @@ export default {
     }),
   ],
   browserLogs: true,
-  filterBrowserLogs: removeGlobalExceptionTestError,
+  filterBrowserLogs,
 };
