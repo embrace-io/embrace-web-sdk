@@ -38,10 +38,6 @@ Tracks parent-child relationships between tabs to understand user navigation flo
    - Intercepts `window.open()` calls
    - Updates activity timestamp in localStorage
 
-4. **Cleanup**
-   - Removes tab data older than 30 minutes
-   - Runs cleanup every 5 minutes via timer
-   - Handles storage quota errors by clearing old data
 
 ### Span Attributes
 
