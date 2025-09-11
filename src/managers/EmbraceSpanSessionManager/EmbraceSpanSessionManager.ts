@@ -24,22 +24,34 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
+  KEY_EMB_TAB_ID,
+  KEY_EMB_PARENT_TAB_ID,
+  KEY_EMB_EXPERIENCE_ID,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
+  LastTabActivity,
   SessionEndedListener,
   SessionStartedListener,
   SpanSessionManagerInternal,
+  Tab,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
 import { EmbraceExtendedSpan } from '../index.js';
 import type { ExtendedSpan } from '../../index.js';
-import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.js';
+import {
+  EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+  EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+  EMBRACE_TAB_STORAGE_KEY,
+} from './constants.js';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { getAppInstanceId } from '../../resources/index.js';
+
+const PARENT_TAB_TIMEOUT_MS = 20_000; // Max age for parent tab detection
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
@@ -50,6 +62,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _sdkStartupDuration: number = 0;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
+  private readonly _currentTab: Tab;
 
   private _tracer: Tracer;
   private readonly _noExportTracer: Tracer;
@@ -57,14 +70,18 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
+  private readonly _sessionStorage: Storage;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _referrer: string;
 
   public constructor({
     diag: diagParam,
     perf,
     visibilityDoc = window.document,
     storage = window.localStorage,
+    sessionStorage = window.sessionStorage,
     limitManager,
+    referrer = document.referrer,
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -74,14 +91,20 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
+    this._sessionStorage = sessionStorage;
     this._limitManager = limitManager;
+    this._referrer = referrer;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
     );
+
+    // Initialize cross-tab tracking
+    this._currentTab = this._initTab();
+    this._setupListeners();
   }
 
-  // retrieve permanent properties from localStorage
+  // Collects all permanent session properties from localStorage
   private _getPermanentAttributes(): Attributes {
     const permanentAttributes = new Map();
     try {
@@ -100,9 +123,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     return Object.fromEntries(permanentAttributes.entries()) as Attributes;
   }
 
-  // Increment and return the session number stored in local storage.
-  // This is not perfect in the sense that there may be a race condition between tabs.
-  // Eventually a lock could be implemented, but for now this solution should work fine.
+  // Increments and returns a global session counter shared across all tabs
+  // Race conditions are possible but acceptable for session numbering
   public _getSessionNumber(): number {
     try {
       const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
@@ -302,7 +324,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [ATTR_SESSION_ID]: this._activeSessionId,
       [KEY_EMB_COLD_START]: this._coldStart,
       [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
+      [KEY_EMB_EXPERIENCE_ID]: this._currentTab.experienceId,
+      [KEY_EMB_TAB_ID]: this._currentTab.tabId,
     };
+
+    if (this._currentTab.parentTabId) {
+      attributes[KEY_EMB_PARENT_TAB_ID] = this._currentTab.parentTabId;
+    }
 
     if (options?.reason) {
       attributes[KEY_EMB_SESSION_REASON_STARTED] = options.reason;
@@ -361,5 +389,137 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   public setTracerProvider(tracerProvider: TracerProvider) {
     this._tracer = tracerProvider.getTracer('embrace-web-sdk-sessions');
+  }
+
+  private _initTab(): Tab {
+    // On page reload, preserve the same tab IDs
+    try {
+      const stored = this._sessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored) as Tab;
+      }
+    } catch (e) {
+      this._diag.warn('Failed to retrieve current tab data', e);
+    }
+
+    // Look for potential parent tabs
+    const parentActivity = this._findParentFromLastActivity();
+    const currentTab: Tab = {
+      experienceId: parentActivity?.experienceId ?? generateUUID(),
+      parentTabId: parentActivity?.tabId,
+      tabId: getAppInstanceId(this._sessionStorage, this._diag),
+    };
+
+    // Persist tab data for page reloads
+    try {
+      this._sessionStorage.setItem(
+        EMBRACE_TAB_STORAGE_KEY,
+        JSON.stringify(currentTab)
+      );
+    } catch (e) {
+      this._diag.warn('Failed to store current tab data', e);
+    }
+
+    return currentTab;
+  }
+
+  private _findParentFromLastActivity(): LastTabActivity | null {
+    // Only look for parent if we have a referrer from the same origin
+    if (!this._referrer) {
+      return null;
+    }
+
+    try {
+      const referrerUrl = new URL(this._referrer);
+      if (referrerUrl.origin !== window.location.origin) {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+
+    // Check if there's a recent tab activity that could be the parent
+    const lastActivity = this._getLastTabActivity();
+    if (!lastActivity) {
+      return null;
+    }
+
+    const now = Date.now();
+    const age = now - lastActivity.lastActivityMs;
+
+    // Return activity if it's recent enough to be the parent
+    if (age <= PARENT_TAB_TIMEOUT_MS) {
+      return lastActivity;
+    }
+
+    return null;
+  }
+
+  // Retrieves the last tab activity from localStorage
+  private _getLastTabActivity(): LastTabActivity | null {
+    try {
+      const stored = this._storage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY);
+      if (!stored) {
+        return null;
+      }
+
+      return JSON.parse(stored) as LastTabActivity;
+    } catch (e) {
+      this._diag.warn('Failed to retrieve last tab activity', e);
+      return null;
+    }
+  }
+
+  // Saves the last tab activity to localStorage
+  private _saveLastTabActivity(activity: LastTabActivity): void {
+    try {
+      this._storage.setItem(
+        EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+        JSON.stringify(activity)
+      );
+    } catch (error) {
+      this._diag.warn('Failed to save last tab activity', error);
+    }
+  }
+
+  // Records activity for this tab
+  private _recordActivity(): void {
+    const activity: LastTabActivity = {
+      tabId: this._currentTab.tabId,
+      experienceId: this._currentTab.experienceId,
+      lastActivityMs: Date.now(),
+    };
+
+    this._saveLastTabActivity(activity);
+  }
+
+  // Sets up event listeners for tracking tab activity
+  private _setupListeners(): void {
+    // Track clicks that might open new tabs
+    const handleNewTabClick = (ev: MouseEvent) => {
+      // Check for modifier keys that open new tabs/windows
+      if (
+        ev.button === 1 || // Middle click
+        ev.ctrlKey ||
+        ev.metaKey || // Cmd/Ctrl + click
+        ev.shiftKey // Shift + click (new window)
+      ) {
+        this._recordActivity();
+        return;
+      }
+
+      // Check for elements with attributes that open new tabs
+      const newTabAnchor = (ev.target as HTMLElement | null)?.closest(
+        'a[target="_blank"], form[target="_blank"], a[rel*="noopener"], a[rel*="noreferrer"]'
+      );
+      if (newTabAnchor) {
+        this._recordActivity();
+      }
+    };
+
+    // Capture phase ensures we record before navigation
+    const options = { capture: true, passive: true };
+    document.addEventListener('auxclick', handleNewTabClick, options);
+    document.addEventListener('click', handleNewTabClick, options);
   }
 }

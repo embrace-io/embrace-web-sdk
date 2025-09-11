@@ -7,17 +7,22 @@ import {
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import type { SinonSandbox } from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_PREFIX_EMB_PROPERTIES,
+  KEY_EMB_TAB_ID,
+  KEY_EMB_PARENT_TAB_ID,
+  KEY_EMB_EXPERIENCE_ID,
 } from '../../constants/attributes.js';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
+  MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
@@ -25,6 +30,11 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.js';
+import {
+  EMBRACE_TAB_STORAGE_KEY,
+  EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+} from './constants.js';
+import type { Tab, LastTabActivity } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -369,9 +379,12 @@ describe('EmbraceSpanSessionManager', () => {
     for (let i = 0; i < 10; i++) {
       const prop = `emb.properties.property${i.toString()}`;
       if (i < 4) {
-        expect(sessionSpan.attributes).to.have.property(prop, i.toString());
+        void expect(sessionSpan.attributes).to.have.property(
+          prop,
+          i.toString()
+        );
       } else {
-        expect(sessionSpan.attributes).not.to.have.property(prop);
+        void expect(sessionSpan.attributes).not.to.have.property(prop);
       }
     }
 
@@ -760,6 +773,348 @@ describe('EmbraceSpanSessionManager', () => {
         'emb.sdk_startup_duration',
         250
       );
+    });
+  });
+
+  describe('Cross-tab tracking', () => {
+    let sandbox: SinonSandbox;
+    let mockStorage: InMemoryStorage;
+    let mockSessionStorage: InMemoryStorage;
+    let visibilityDoc: VisibilityStateDocument;
+    let mockPerf: MockPerformanceManager;
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      clock = sandbox.useFakeTimers();
+      mockStorage = new InMemoryStorage();
+      mockSessionStorage = new InMemoryStorage();
+      mockPerf = new MockPerformanceManager(clock);
+
+      // Create visibility doc for testing
+      visibilityDoc = {
+        visibilityState: 'visible',
+      };
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    describe('Tab initialization', () => {
+      it('should create new tab with unique ID when no existing tab data', () => {
+        // Create manager - initialization happens in constructor
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: '', // No referrer for basic tab creation test
+        });
+
+        // Check that tab data was stored in sessionStorage
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        void expect(storedTab).to.not.be.null;
+
+        const tab = JSON.parse(storedTab ?? '{}') as Tab;
+        void expect(tab).to.have.property('tabId');
+        expect(tab.tabId).to.be.of.length(32);
+        void expect(tab).to.have.property('experienceId');
+        expect(tab.experienceId).to.be.of.length(32);
+        void expect(tab.parentTabId).to.be.undefined;
+      });
+
+      it('should add tab attributes to session span', () => {
+        const existingTab = {
+          tabId: 'test-tab-123',
+          experienceId: 'test-exp-456',
+          parentTabId: 'parent-789',
+        };
+
+        mockSessionStorage.setItem(
+          EMBRACE_TAB_STORAGE_KEY,
+          JSON.stringify(existingTab)
+        );
+
+        const manager = new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: '', // No referrer for attributes test
+        });
+
+        manager.startSessionSpan();
+        manager.endSessionSpan();
+
+        const finishedSpans = memoryExporter.getFinishedSpans();
+        void expect(finishedSpans).to.have.lengthOf(1);
+        const sessionSpan = finishedSpans[0];
+
+        void expect(sessionSpan.attributes).to.have.property(
+          KEY_EMB_TAB_ID,
+          'test-tab-123'
+        );
+        void expect(sessionSpan.attributes).to.have.property(
+          KEY_EMB_EXPERIENCE_ID,
+          'test-exp-456'
+        );
+        void expect(sessionSpan.attributes).to.have.property(
+          KEY_EMB_PARENT_TAB_ID,
+          'parent-789'
+        );
+      });
+    });
+
+    describe('Parent tab detection', () => {
+      it('should detect parent tab when opened from another tab on the same origin', () => {
+        const now = clock.now;
+        const parentActivity: LastTabActivity = {
+          tabId: 'parent-tab-123',
+          experienceId: 'parent-exp-456',
+          lastActivityMs: now - 5000, // 5 seconds ago (within 20s window)
+        };
+
+        mockStorage.setItem(
+          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+          JSON.stringify(parentActivity)
+        );
+
+        // Create manager with same-origin referrer
+        const currentOrigin = window.location.origin;
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: `${currentOrigin}/previous-page`,
+        });
+
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        const tab = JSON.parse(storedTab ?? '{}') as Tab;
+
+        void expect(tab.parentTabId).to.equal('parent-tab-123');
+        void expect(tab.experienceId).to.equal('parent-exp-456');
+      });
+
+      it('should not detect parent when activity is older than 20 seconds', () => {
+        const now = clock.now;
+        const oldActivity: LastTabActivity = {
+          tabId: 'old-tab-123',
+          experienceId: 'old-exp-456',
+          lastActivityMs: now - 25000, // 25 seconds ago (> 20s threshold)
+        };
+
+        mockStorage.setItem(
+          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+          JSON.stringify(oldActivity)
+        );
+
+        // Create manager with same-origin referrer but old activity
+        const currentOrigin = window.location.origin;
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: `${currentOrigin}/previous-page`,
+        });
+
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        const tab = JSON.parse(storedTab ?? '{}') as Tab;
+
+        // Should not link to parent because activity is too old
+        void expect(tab.parentTabId).to.be.undefined;
+        void expect(tab.experienceId).to.not.equal('old-exp-456');
+      });
+
+      it('should not detect parent when referrer is missing', () => {
+        // Even if there's recent activity, without a referrer we can't determine parent
+        const recentActivity: LastTabActivity = {
+          tabId: 'recent-tab-123',
+          experienceId: 'recent-exp-456',
+          lastActivityMs: Date.now() - 1000, // 1 second ago
+        };
+
+        mockStorage.setItem(
+          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+          JSON.stringify(recentActivity)
+        );
+
+        // Create manager with empty referrer
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: '',
+        });
+
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        const tab = JSON.parse(storedTab ?? '{}') as Tab;
+
+        // No parent should be detected without a referrer
+        void expect(tab.parentTabId).to.be.undefined;
+      });
+    });
+
+    describe('Activity tracking', () => {
+      beforeEach(() => {
+        // Create manager with existing tab
+        const existingTab = {
+          tabId: 'test-tab-123',
+          experienceId: 'test-exp-456',
+          parentTabId: 'parent-789',
+        };
+
+        mockSessionStorage.setItem(
+          EMBRACE_TAB_STORAGE_KEY,
+          JSON.stringify(existingTab)
+        );
+
+        // Create manager and record initial activity
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: `${window.location.origin}/previous-page`, // Same origin for activity tracking
+        });
+      });
+
+      it('should track clicks on links with target="_blank"', () => {
+        const anchor = document.createElement('a');
+        anchor.setAttribute('target', '_blank');
+
+        // Mock closest method
+        anchor.closest = sandbox.stub().returns(anchor);
+
+        // Simulate click event
+        const mockEvent = new MouseEvent('click');
+        Object.defineProperty(mockEvent, 'target', { value: anchor });
+        document.dispatchEvent(mockEvent);
+
+        const activity = JSON.parse(
+          mockStorage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY) ?? 'null'
+        ) as LastTabActivity | null;
+        void expect(activity).to.not.be.null;
+        void expect(activity?.tabId).to.equal('test-tab-123');
+      });
+    });
+
+    describe('Referrer detection', () => {
+      it('should not detect parent when referrer is from different origin', () => {
+        // Even with recent activity, cross-origin referrer shouldn't link tabs
+        const recentActivity: LastTabActivity = {
+          tabId: 'recent-tab-123',
+          experienceId: 'recent-exp-456',
+          lastActivityMs: Date.now() - 1000, // 1 second ago
+        };
+
+        mockStorage.setItem(
+          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+          JSON.stringify(recentActivity)
+        );
+
+        // Create manager with cross-origin referrer
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: 'https://different-origin.com/page',
+        });
+
+        // Should not detect parent (different origin)
+        const tabData = JSON.parse(
+          mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY) ?? '{}'
+        ) as Tab;
+
+        void expect(tabData.parentTabId).to.be.undefined;
+      });
+    });
+
+    describe('Error handling', () => {
+      it('should handle storage quota exceeded errors', () => {
+        const quotaError = new DOMException(
+          'Storage quota exceeded',
+          'QuotaExceededError'
+        );
+
+        // Make storage throw quota error once
+        let throwError = true;
+        const setItemStub = sandbox.stub(mockStorage, 'setItem');
+        setItemStub.callsFake(() => {
+          if (throwError) {
+            throwError = false;
+            throw quotaError;
+          }
+        });
+
+        const manager = new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: '', // No referrer for error handling test
+        });
+
+        // Try to record activity (should handle quota error)
+        const privateManager = manager as unknown as {
+          _recordActivity: () => void;
+        };
+        privateManager._recordActivity();
+
+        // Check that warning was logged
+        const warnings = diag.getWarnLogs();
+        void expect(
+          warnings.some((w: string) =>
+            w.includes('Failed to save last tab activity')
+          )
+        ).to.be.true;
+      });
+
+      it('should handle corrupted JSON in storage gracefully', () => {
+        mockStorage.setItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY, 'invalid-json{');
+
+        // Create manager - initialization happens in constructor
+        new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: `${window.location.origin}/previous-page`, // Same origin to trigger JSON parsing
+        });
+
+        // Should not throw and should create new tab
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        void expect(storedTab).to.not.be.null;
+
+        const warnings = diag.getWarnLogs();
+        void expect(
+          warnings.some((w: string) =>
+            w.includes('Failed to retrieve last tab activity')
+          )
+        ).to.be.true;
+      });
     });
   });
 });

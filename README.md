@@ -559,6 +559,29 @@ initSDK({
 });
 ```
 
+### Webpack 4 Configuration
+
+When using webpack 4, you need to add an alias to your webpack configuration to resolve the OpenTelemetry semantic-conventions path correctly:
+
+```javascript
+// webpack.config.js
+const path = require('node:path');
+
+module.exports = {
+  // ... other config
+  resolve: {
+    alias: {
+      '@opentelemetry/semantic-conventions/incubating': path.resolve(
+        __dirname,
+        './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js'
+      ),
+    },
+  },
+};
+```
+
+See the [webpack 4 integration test](./tests/integration/platforms/webpack-4/webpack.config.js) for a complete example.
+
 ## FAQ
 
 ### How is data exported from the SDK
