@@ -29,7 +29,7 @@ Tracks parent-child relationships between tabs to understand user navigation flo
 
 2. **Parent Detection**
    - Checks `document.referrer` for same-origin URLs
-   - Finds the most recently active tab within a 30-second window
+   - Finds the most recently active tab within a short time window
    - Most recent tab becomes the parent
 
 3. **Activity Tracking**
