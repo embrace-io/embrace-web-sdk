@@ -1496,7 +1496,7 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.203.0',
+            version: '0.204.0',
           }
         );
         expect(exportedSpans).to.have.lengthOf(1);
