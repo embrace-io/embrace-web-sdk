@@ -105,6 +105,11 @@ describe('initSDK', () => {
     logExporter = new InMemoryLogRecordExporter();
   });
 
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
   afterEach(() => {
     spanExporter.reset();
     logExporter.reset();
@@ -1082,6 +1087,7 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
       expect(diagLogger.getDebugLogs()).to.be.deep.equal([
+        'No existing app instance ID found in session storage, creating a new one',
         'SDK is disabled, skipping initialization.',
       ]);
 
@@ -1293,6 +1299,11 @@ describe('isolated instances', () => {
     logExporter = new InMemoryLogRecordExporter();
   });
 
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+
   afterEach(() => {
     spanExporter.reset();
     logExporter.reset();
@@ -1325,13 +1336,15 @@ describe('isolated instances', () => {
 
     void expect(result).not.to.be.false;
 
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+
     const tracer = trace.getTracer('test-tracer');
     const span = tracer.startSpan('test-span');
     span.end();
 
-    if (result) {
-      await result.flush();
-    }
+    await result.flush();
 
     expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
 
@@ -1341,18 +1354,14 @@ describe('isolated instances', () => {
       severityNumber: SeverityNumber.INFO,
     });
 
-    if (result) {
-      await result.flush();
-    }
+    await result.flush();
 
     expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
 
     session.startSessionSpan();
     session.endSessionSpan();
 
-    if (result) {
-      await result.flush();
-    }
+    await result.flush();
 
     expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
