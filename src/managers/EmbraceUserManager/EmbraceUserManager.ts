@@ -18,7 +18,7 @@ export class EmbraceUserManager implements UserManagerInternal {
 
   public constructor({
     diag: diagParam,
-    storage = localStorage,
+    storage = window.localStorage,
   }: EmbraceUserManagerArgs = {}) {
     this._diag =
       diagParam ??

@@ -252,11 +252,14 @@ export interface SDKControl {
 
 export interface SetupUserArgs {
   registerGlobally?: boolean;
+  sdkLocalStorage: Storage;
 }
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
   registerGlobally?: boolean;
+  sdkLocalStorage: Storage;
+  sdkSessionStorage: Storage;
 }
 
 export interface SetupTracesArgs {

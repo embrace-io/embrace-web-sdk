@@ -13,4 +13,5 @@ export {
   EmbraceSpanStorage,
   type SpanStorageOptions,
 } from './EmbraceSpanStorage/index.js';
+export { NamespacedStorage } from './NamespacedStorage/index.js';
 export { GLOBAL_CONFIG } from './globalConfig.js';

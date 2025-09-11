@@ -35,7 +35,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'embrace-config-manager',
     }),
-    storage = localStorage,
+    storage = window.localStorage,
     // Allow users to provide a default config
     defaultConfig = {},
     embraceConfigURL,

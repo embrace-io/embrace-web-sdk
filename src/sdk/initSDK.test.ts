@@ -1302,11 +1302,13 @@ describe('isolated instances', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    fakeFetchInstall();
   });
 
   afterEach(() => {
     spanExporter.reset();
     logExporter.reset();
+    fakeFetchRestore();
   });
 
   it('should allow multiple isolated instances', () => {
@@ -1443,5 +1445,139 @@ describe('isolated instances', () => {
       secondSpanExporter,
       secondSDKInstrumentation
     );
+  });
+
+  it('should namespace the storage for each instance based on appID', async () => {
+    fakeFetchRespondWith(
+      JSON.stringify({
+        threshold: 90,
+      })
+    );
+
+    const firstSDKInstance = initSDK({
+      appID: 'app11',
+      appVersion: 'app-version',
+      registerGlobally: false,
+    });
+
+    const secondSDKInstance = initSDK({
+      appID: 'app22',
+      appVersion: 'app-version',
+      registerGlobally: false,
+    });
+
+    void expect(firstSDKInstance).not.to.be.false;
+    void expect(secondSDKInstance).not.to.be.false;
+
+    // Need to give time for the remote config to be fetched
+    await new Promise(r => setTimeout(r, 10));
+
+    // First instance using namespaced storage
+    expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app11_embrace_remote_config')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app11_embrace_app_instance_id')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(true);
+
+    // Second instance using namespaced storage
+    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
+
+    // Nothing using storage without a prefix
+    expect(!!localStorage.getItem('embrace_user_id')).to.equal(false);
+    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(false);
+    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(false);
+    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(false);
+  });
+
+  it('should not namespace the storage if there is no appID provided', async () => {
+    fakeFetchRespondWith(
+      JSON.stringify({
+        threshold: 90,
+      })
+    );
+
+    const firstSDKInstance = initSDK({
+      registerGlobally: false,
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+    });
+
+    const secondSDKInstance = initSDK({
+      appID: 'app22',
+      appVersion: 'app-version',
+      registerGlobally: false,
+    });
+
+    void expect(firstSDKInstance).not.to.be.false;
+    void expect(secondSDKInstance).not.to.be.false;
+
+    // Need to give time for the remote config to be fetched
+    await new Promise(r => setTimeout(r, 10));
+
+    // Second instance using namespaced storage
+    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
+
+    // First instance using storage without a prefix
+    expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
+    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
+    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
+  });
+
+  it('should not namespace the storage when registering globally', async () => {
+    fakeFetchRespondWith(
+      JSON.stringify({
+        threshold: 90,
+      })
+    );
+
+    const firstSDKInstance = initSDK({
+      appID: 'app11',
+      appVersion: 'app-version',
+    });
+
+    const secondSDKInstance = initSDK({
+      appID: 'app22',
+      appVersion: 'app-version',
+      registerGlobally: false,
+    });
+
+    void expect(firstSDKInstance).not.to.be.false;
+    void expect(secondSDKInstance).not.to.be.false;
+
+    // Need to give time for the remote config to be fetched
+    await new Promise(r => setTimeout(r, 10));
+
+    // Second instance using namespaced storage
+    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+      true
+    );
+    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
+
+    // First instance using storage without a prefix
+    expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
+    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
+    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
   });
 });
