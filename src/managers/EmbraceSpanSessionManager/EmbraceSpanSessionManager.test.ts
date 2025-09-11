@@ -783,7 +783,6 @@ describe('EmbraceSpanSessionManager', () => {
     let visibilityDoc: VisibilityStateDocument;
     let mockPerf: MockPerformanceManager;
     let clock: sinon.SinonFakeTimers;
-    let originalReferrer: PropertyDescriptor | undefined;
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
@@ -796,24 +795,10 @@ describe('EmbraceSpanSessionManager', () => {
       visibilityDoc = {
         visibilityState: 'visible',
       };
-
-      // Store original referrer and mock document.referrer with same origin as current window
-      originalReferrer = Object.getOwnPropertyDescriptor(document, 'referrer');
-      const currentOrigin = window.location.origin;
-      Object.defineProperty(document, 'referrer', {
-        value: `${currentOrigin}/previous-page`,
-        writable: true,
-        configurable: true,
-      });
     });
 
     afterEach(() => {
       sandbox.restore();
-
-      // Restore original referrer
-      if (originalReferrer) {
-        Object.defineProperty(document, 'referrer', originalReferrer);
-      }
     });
 
     describe('Tab initialization', () => {
@@ -826,6 +811,7 @@ describe('EmbraceSpanSessionManager', () => {
           limitManager,
           visibilityDoc,
           perf: mockPerf,
+          referrer: '', // No referrer for basic tab creation test
         });
 
         // Check that tab data was stored in sessionStorage
@@ -859,6 +845,7 @@ describe('EmbraceSpanSessionManager', () => {
           limitManager,
           visibilityDoc,
           perf: mockPerf,
+          referrer: '', // No referrer for attributes test
         });
 
         manager.startSessionSpan();
@@ -1003,6 +990,7 @@ describe('EmbraceSpanSessionManager', () => {
           limitManager,
           visibilityDoc,
           perf: mockPerf,
+          referrer: `${window.location.origin}/previous-page`, // Same origin for activity tracking
         });
       });
 
@@ -1084,6 +1072,7 @@ describe('EmbraceSpanSessionManager', () => {
           limitManager,
           visibilityDoc,
           perf: mockPerf,
+          referrer: '', // No referrer for error handling test
         });
 
         // Try to record activity (should handle quota error)
@@ -1112,6 +1101,7 @@ describe('EmbraceSpanSessionManager', () => {
           limitManager,
           visibilityDoc,
           perf: mockPerf,
+          referrer: `${window.location.origin}/previous-page`, // Same origin to trigger JSON parsing
         });
 
         // Should not throw and should create new tab
