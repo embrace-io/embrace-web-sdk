@@ -51,6 +51,8 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { getAppInstanceId } from '../../resources/index.js';
 
+const PARENT_TAB_TIMEOUT_MS = 20_000; // Max age for parent tab detection
+
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
@@ -443,11 +445,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     const now = Date.now();
-    const PARENT_SEARCH_TIMEOUT_MS = 20_000; // 20s window for tab navigation
     const age = now - lastActivity.lastActivityMs;
 
     // Return activity if it's recent enough to be the parent
-    if (age <= PARENT_SEARCH_TIMEOUT_MS) {
+    if (age <= PARENT_TAB_TIMEOUT_MS) {
       return lastActivity;
     }
 
