@@ -19,8 +19,10 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 
 **Format**: `[EMBR-XXX] (type)[(scope)]: imperative-subject`
 - Max 150 chars
-- Types: `feat|fix|refactor|test|chore|docs`
+- Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
 - Example: `[EMBR-123] fix(session): prevent race condition in tab tracking`
+- Do NOT include Claude credits
+- Keep commit description concise
 
 ## Code Style
 
