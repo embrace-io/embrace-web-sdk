@@ -459,6 +459,30 @@ sdk.initSDK({
 });
 ```
 
+Also note that by default trace headers will not be included on outgoing CORS requests, this can be overridden for
+particular URLs by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  defaultInstrumentationConfig: {
+    '@opentelemetry/instrumentation-fetch': {
+      propagateTraceHeaderCorsUrls: [
+        // URL strings or regexes to propagate trace headers for on fetch requests
+      ],
+    },
+    '@opentelemetry/instrumentation-xml-http-request': {
+      propagateTraceHeaderCorsUrls: [
+        // URL strings or regexes to propagate trace headers for on XHR requests
+      ],
+    },
+  },
+});
+```
+
 ## Using without Embrace
 
 If you'd prefer not to send data to Embrace you can simply omit the embrace app id when calling `initSDK`. Note that in
