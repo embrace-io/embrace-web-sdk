@@ -1,6 +1,7 @@
 import { FlatCompat } from '@eslint/eslintrc';
 import pluginJs from '@eslint/js';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +17,7 @@ const compat = new FlatCompat({
 });
 
 /** @type {import('eslint').Linter.Config[]} */
-export default tseslint.config([
+export default defineConfig([
   {
     ignores: [
       './**/build',
