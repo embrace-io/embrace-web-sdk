@@ -18,7 +18,16 @@ updates:
       interval: 'weekly'
     open-pull-requests-limit: 50
     ignore:
-      - dependency-name: '*webpack*'
+      - dependency-name: 'webpack'
+        versions: ['>=5.0.0']
+        directories: ['/tests/integration/platforms/webpack-4']
+      - dependency-name: 'webpack-cli'
+        versions: ['>=5.0.0']
+        directories: ['/tests/integration/platforms/webpack-4']
+      - dependency-name: 'webpack-dev-server'
+        versions: ['>=5.0.0']
+        directories: ['/tests/integration/platforms/webpack-4']
+      - dependency-name: 'html-webpack-plugin'
         versions: ['>=5.0.0']
         directories: ['/tests/integration/platforms/webpack-4']
     groups:
