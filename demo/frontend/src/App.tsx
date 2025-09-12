@@ -253,213 +253,273 @@ const App = () => {
     return (
       <div className="container">
         <h1>[••] demo</h1>
-        <div>current session: {currentSession}</div>
-        <div>experienceId: {experienceId}</div>
-        <div>tabId: {tabId}</div>
-        <div>parentTabId: {parentTabId || 'none'}</div>
-
-        {/* Current Session: */}
-        <div className={styles.actions}>
-          <button
-            onClick={handleStartSessionSpan}
-            disabled={isSessionSpanStarted}
-          >
-            Start Session span
-          </button>
-          <button
-            onClick={handleStartSessionSpan}
-            disabled={!isSessionSpanStarted}
-            title="Force a new Session Span to start"
-          >
-            Override Session span
-          </button>
-          <button
-            onClick={handleEndSessionSpan}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            End Session Span
-          </button>
-        </div>
-
-        {/* Custom Spans: */}
-        <button
-          onClick={handleStartSpan}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Start Span
-        </button>
-        {spans.length > 0 && (
-          <div className={styles.spans}>
-            {spans.map((span, index) => (
-              <div className={styles.span} key={index}>
-                <div>Span {index}</div>
-
-                <button onClick={() => handleEndSpan(span, index)}>
-                  End Span
-                </button>
-              </div>
-            ))}
+        <div className={styles.sessionInfo}>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Session ID:</span>
+            <span className={styles.sessionValue} title={currentSession}>
+              {currentSession ? currentSession.substring(0, 8) : '-'}
+            </span>
           </div>
-        )}
-
-        {/* Embrace Logs: */}
-        <div className={styles.actions}>
-          <button
-            onClick={handleSendEmbraceInfoLog}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Send Embrace Info Log
-          </button>
-          <button
-            onClick={handleSendEmbraceWarnLog}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Send Embrace Warning Log
-          </button>
-          <button
-            onClick={handleSendEmbraceErrorLog}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Send Embrace Error Log
-          </button>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Tab ID:</span>
+            <span className={styles.sessionValue} title={tabId || undefined}>
+              {tabId ? tabId.substring(0, 8) : '-'}
+            </span>
+          </div>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Parent Tab ID:</span>
+            <span
+              className={styles.sessionValue}
+              title={parentTabId || undefined}
+            >
+              {parentTabId ? parentTabId.substring(0, 8) : '-'}
+            </span>
+          </div>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Experience ID:</span>
+            <span
+              className={styles.sessionValue}
+              title={experienceId || undefined}
+            >
+              {experienceId ? experienceId.substring(0, 8) : '-'}
+            </span>
+          </div>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Referrer:</span>
+            <span className={styles.sessionValue}>
+              {document.referrer || 'Direct'}
+            </span>
+          </div>
+          <div className={styles.sessionRow}>
+            <span className={styles.sessionLabel}>Tab Open Method:</span>
+            <span className={styles.sessionValue}>user_click</span>
+          </div>
         </div>
 
-        {/* Properties: */}
-        <div className={styles.actions}>
-          <button
-            onClick={() =>
-              handleAddPermanentSessionProperty(
-                'permanent-key',
-                'permanent-value'
-              )
-            }
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Add Permanent Session Property
-          </button>
+        <fieldset>
+          <legend>Session Control</legend>
+          <div className={styles.actions}>
+            <button
+              onClick={handleStartSessionSpan}
+              disabled={isSessionSpanStarted}
+            >
+              Start Session span
+            </button>
+            <button
+              onClick={handleStartSessionSpan}
+              disabled={!isSessionSpanStarted}
+              title="Force a new Session Span to start"
+            >
+              Override Session span
+            </button>
+            <button
+              onClick={handleEndSessionSpan}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              End Session Span
+            </button>
+          </div>
+        </fieldset>
 
+        <fieldset>
+          <legend>Custom Spans</legend>
           <button
-            onClick={() => handleRemoveSessionProperty('permanent-key')}
+            onClick={handleStartSpan}
             disabled={sessionProvider.getSessionSpan() === null}
           >
-            Remove Permanent Session Property
+            Start Span
           </button>
-        </div>
-        <div className={styles.actions}>
-          <button
-            onClick={() =>
-              handleAddSessionProperty('session-key', 'session-value')
-            }
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Add Session Property
-          </button>
-          <button
-            onClick={() => handleRemoveSessionProperty('session-key')}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Remove Session Property
-          </button>
-        </div>
+          {spans.length > 0 && (
+            <div className={styles.spans}>
+              {spans.map((span, index) => (
+                <div className={styles.span} key={index}>
+                  <div>Span {index}</div>
 
-        {/* Exceptions: */}
-        <div className={styles.actions}>
-          <button
-            onClick={handleRecordException}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Record Exception
-          </button>
-          <button
-            onClick={handleThrowError}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Throw Error
-          </button>
-          <button
-            onClick={handleRejectPromise}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Reject Promise
-          </button>
-        </div>
+                  <button onClick={() => handleEndSpan(span, index)}>
+                    End Span
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </fieldset>
 
-        {/* Weird Exceptions: */}
-        <div className={styles.actions}>
-          <button
-            onClick={handleThrowDOMException}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Throw DOM Exception
-          </button>
-          <button
-            onClick={handleThrowString}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Throw String
-          </button>
-          <button
-            onClick={handleThrowUndefined}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Throw Undefined
-          </button>
-          <button
-            onClick={handleFailedResourceLoad}
-            disabled={sessionProvider.getSessionSpan() === null}
-          >
-            Trigger Failed Resource Load
-          </button>
-        </div>
+        <fieldset>
+          <legend>Embrace Logs</legend>
+          <div className={styles.actions}>
+            <button
+              onClick={handleSendEmbraceInfoLog}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Send Embrace Info Log
+            </button>
+            <button
+              onClick={handleSendEmbraceWarnLog}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Send Embrace Warning Log
+            </button>
+            <button
+              onClick={handleSendEmbraceErrorLog}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Send Embrace Error Log
+            </button>
+          </div>
+        </fieldset>
 
-        {/* Network: */}
-        <div className={styles.actions}>
-          <button onClick={handleSendFetchNetworkRequest}>
-            Send a Fetch Network Request
-          </button>
-          <button onClick={handleSendFetchNetworkRequest404}>
-            Send a Fetch Network Request (404)
-          </button>
-          <button onClick={handleSendXMLNetworkRequest}>
-            Send a XML Network Request
-          </button>
-        </div>
+        <fieldset>
+          <legend>Session Properties</legend>
+          <div className={styles.actions}>
+            <button
+              onClick={() =>
+                handleAddPermanentSessionProperty(
+                  'permanent-key',
+                  'permanent-value'
+                )
+              }
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Add Permanent Session Property
+            </button>
 
-        {/* Cancelled Network: */}
-        <div className={styles.actions}>
-          <button onClick={handleCancelFetchNetworkRequest}>
-            Cancel a Fetch Network Request
-          </button>
-          <button onClick={handleCancelXMLNetworkRequest}>
-            Cancel a XML Network Request
-          </button>
-        </div>
+            <button
+              onClick={() => handleRemoveSessionProperty('permanent-key')}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Remove Permanent Session Property
+            </button>
+          </div>
+          <div className={styles.actions}>
+            <button
+              onClick={() =>
+                handleAddSessionProperty('session-key', 'session-value')
+              }
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Add Session Property
+            </button>
+            <button
+              onClick={() => handleRemoveSessionProperty('session-key')}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Remove Session Property
+            </button>
+          </div>
+        </fieldset>
 
-        {/* React: */}
-        <div className={styles.actions}>
-          <button onClick={() => setNavigationType('declarativeV4V5')}>
-            Enter react-router v4/v5 navigation demo
-          </button>
-          <button onClick={() => setNavigationType('declarativeV6+')}>
-            Enter react-router v6+ declarative navigation demo
-          </button>
-          <button onClick={() => setNavigationType('data')}>
-            Enter react-router v6+ data navigation demo
-          </button>
-        </div>
+        <fieldset>
+          <legend>Exceptions</legend>
+          <div className={styles.actions}>
+            <button
+              onClick={handleRecordException}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Record Exception
+            </button>
+            <button
+              onClick={handleThrowError}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Throw Error
+            </button>
+            <button
+              onClick={handleRejectPromise}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Reject Promise
+            </button>
+          </div>
 
-        {/* Navigation: */}
-        <div className={styles.actions}>
-          <a href="https://google.com">Navigate to google.com</a>
-          <a href="/">Open demo in same tab</a>
-          <a href="/" target="_blank">
-            Open demo in new tab
-          </a>
-        </div>
+          <div className={styles.actions}>
+            <button
+              onClick={handleThrowDOMException}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Throw DOM Exception
+            </button>
+            <button
+              onClick={handleThrowString}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Throw String
+            </button>
+            <button
+              onClick={handleThrowUndefined}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Throw Undefined
+            </button>
+            <button
+              onClick={handleFailedResourceLoad}
+              disabled={sessionProvider.getSessionSpan() === null}
+            >
+              Trigger Failed Resource Load
+            </button>
+          </div>
+        </fieldset>
 
-        <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
-          <ComponentWithErrorInRender />
-        </EmbraceErrorBoundary>
+        <fieldset>
+          <legend>Network Requests</legend>
+          <div className={styles.actions}>
+            <button onClick={handleSendFetchNetworkRequest}>
+              Send a Fetch Network Request
+            </button>
+            <button onClick={handleSendFetchNetworkRequest404}>
+              Send a Fetch Network Request (404)
+            </button>
+            <button onClick={handleSendXMLNetworkRequest}>
+              Send a XML Network Request
+            </button>
+          </div>
+
+          <div className={styles.actions}>
+            <button onClick={handleCancelFetchNetworkRequest}>
+              Cancel a Fetch Network Request
+            </button>
+            <button onClick={handleCancelXMLNetworkRequest}>
+              Cancel a XML Network Request
+            </button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>React Router Demos</legend>
+          <div className={styles.actions}>
+            <button onClick={() => setNavigationType('declarativeV4V5')}>
+              Enter react-router v4/v5 navigation demo
+            </button>
+            <button onClick={() => setNavigationType('declarativeV6+')}>
+              Enter react-router v6+ declarative navigation demo
+            </button>
+            <button onClick={() => setNavigationType('data')}>
+              Enter react-router v6+ data navigation demo
+            </button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Navigation</legend>
+          <div className={styles.actions}>
+            <a href="https://google.com">Navigate to google.com</a>
+            <a href="/">Open demo in same tab</a>
+            <a href="/" target="_blank">
+              Open demo in new tab
+            </a>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>React Error Boundary</legend>
+          <div className={styles.actions}>
+            <button onClick={() => window.location.reload()}>
+              Trigger a render error inside EmbraceErrorBoundary
+            </button>
+          </div>
+          <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+            <ComponentWithErrorInRender />
+          </EmbraceErrorBoundary>
+        </fieldset>
       </div>
     );
   };
