@@ -21,6 +21,10 @@ const filterBrowserLogs = ({ args, type }) => {
   return true;
 };
 
+/**
+ * Web Test Runner configuration
+ * @type {import('@web/test-runner').TestRunnerConfig}
+ */
 export default {
   nodeResolve: true,
   files: ['src/**/*.test.ts'],
@@ -49,7 +53,7 @@ export default {
   browsers: [
     playwrightLauncher({
       product: 'chromium',
-      concurrency: 1,
+      concurrency: 3,
       // needed for the docker container in CI
       launchOptions: {
         args: [
