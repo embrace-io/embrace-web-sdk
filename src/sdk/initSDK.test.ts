@@ -1461,42 +1461,72 @@ describe('isolated instances', () => {
     });
 
     const secondSDKInstance = initSDK({
-      appID: 'app22',
+      appID: 'app2',
       appVersion: 'app-version',
       registerGlobally: false,
     });
 
-    void expect(firstSDKInstance).not.to.be.false;
-    void expect(secondSDKInstance).not.to.be.false;
+    void expect(firstSDKInstance, 'first SDK instance failed to initialize').not
+      .to.be.false;
+    void expect(secondSDKInstance, 'second SDK instance failed to initialize')
+      .not.to.be.false;
 
     // Need to give time for the remote config to be fetched
     await new Promise(r => setTimeout(r, 10));
 
     // First instance using namespaced storage
-    expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
+      true,
+      'first app did not store embrace user id'
+    );
     expect(!!localStorage.getItem('app11_embrace_remote_config')).to.equal(
-      true
+      true,
+      'first app did not store remote config'
     );
     expect(!!sessionStorage.getItem('app11_embrace_app_instance_id')).to.equal(
-      true
+      true,
+      'first app did not store app instance id'
     );
-    expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(true);
+    expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(
+      true,
+      'first app did not store embrace tab'
+    );
 
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
+      true,
+      'second app did not store embrace user id'
+    );
     expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
-      true
+      true,
+      'second app did not store remote config'
     );
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
-      true
+      true,
+      'second app did not store app instance id'
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
+    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(
+      true,
+      'second app did not store embrace tab'
+    );
 
     // Nothing using storage without a prefix
-    expect(!!localStorage.getItem('embrace_user_id')).to.equal(false);
-    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(false);
-    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(false);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(false);
+    expect(!!localStorage.getItem('embrace_user_id')).to.equal(
+      false,
+      'found globally stored Embrace user id'
+    );
+    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(
+      false,
+      'found globally stored remote config'
+    );
+    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(
+      false,
+      'found globally stored app instance id'
+    );
+    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(
+      false,
+      'found globally stored tab'
+    );
   });
 
   it('should not namespace the storage if there is no appID provided', async () => {
