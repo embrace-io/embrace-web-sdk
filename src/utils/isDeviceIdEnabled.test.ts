@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { isDeviceIdSampled } from './isDeviceIdSampled.js';
+import { isDeviceIdEnabled } from './isDeviceIdEnabled.js';
 import { SAMPLED_UUID } from '../testUtils/index.js';
 
 const { expect } = chai;
@@ -47,19 +47,19 @@ const TEST_CASES = [
   },
 ];
 
-describe('isDeviceIdSampled', () => {
+describe('isDeviceIdEnabled', () => {
   it('should return false for pctEnabled <= 0', () => {
-    void expect(isDeviceIdSampled(SAMPLED_UUID, 0)).to.be.false;
-    void expect(isDeviceIdSampled(SAMPLED_UUID, -10)).to.be.false;
+    void expect(isDeviceIdEnabled(SAMPLED_UUID, 0)).to.be.false;
+    void expect(isDeviceIdEnabled(SAMPLED_UUID, -10)).to.be.false;
   });
 
   it('should return false for pctEnabled > 100', () => {
-    void expect(isDeviceIdSampled(SAMPLED_UUID, 101)).to.be.false;
+    void expect(isDeviceIdEnabled(SAMPLED_UUID, 101)).to.be.false;
   });
 
   TEST_CASES.forEach(({ deviceId, pctEnabled, expected }) => {
     it(`should return ${String(expected)} for deviceId: ${deviceId}, pctEnabled: ${pctEnabled.toString()}`, () => {
-      const result = isDeviceIdSampled(deviceId, pctEnabled);
+      const result = isDeviceIdEnabled(deviceId, pctEnabled);
       expect(result).to.equal(expected);
     });
   });

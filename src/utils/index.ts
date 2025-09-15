@@ -2,7 +2,8 @@ export { generateUUID } from './generateUUID.js';
 export { withErrorFallback } from './withErrorFallback.js';
 export { bulkAddEventListener } from './bulkAddEventListener/index.js';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.js';
-export { isDeviceIdSampled } from './isDeviceIdSampled.js';
+export { isDeviceIdEnabled } from './isDeviceIdEnabled.js';
+export { nsfConfigValidation } from './nsfConfigValidation.js';
 export type { TimeoutRef } from './timeout/index.js';
 export {
   OTelPerformanceManager,

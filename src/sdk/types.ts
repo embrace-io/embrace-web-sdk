@@ -42,6 +42,13 @@ export interface DynamicSDKConfig {
    * **default**: 100
    */
   samplingPct: number;
+
+  /**
+   * Pct of users that should have traceparent headers added to their network spans.
+   *
+   * **default**: 0
+   */
+  networkSpansForwardingThreshold?: number;
 }
 
 export interface DynamicConfigManager {
@@ -188,6 +195,15 @@ type BaseSDKInitConfig = {
    * to interfere with another.
    */
   registerGlobally?: boolean;
+
+  /**
+   * Whether the SDK injects a traceparent header on network requests is normally decided through a sample percentage
+   * retrieved from remote configuration. When blockNetworkSpanForwarding is true the SDK never injects these headers
+   * even if set through remote configuration.
+   *
+   * **default**: false
+   */
+  blockNetworkSpanForwarding?: boolean;
 };
 
 /*

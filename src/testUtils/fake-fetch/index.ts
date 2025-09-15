@@ -8,13 +8,15 @@ const withRequest = (arg: unknown) => arg instanceof window.Request;
 let fetchStub: SinonStub | undefined = undefined;
 
 export const getOptions = (callNumber = 0) =>
-  ((window.fetch as SinonStub).getCall(callNumber).args[1] || {}) as Parameters<
+  (fetchStub?.getCall(callNumber).args[1] || {}) as Parameters<
     typeof window.fetch
   >[1];
 
 export const install = () => {
   fetchStub = sinon.stub(window, 'fetch');
   fetchStub.callsFake(() => Promise.resolve(new Response()));
+
+  return fetchStub;
 };
 
 export const restore = () => {

@@ -256,31 +256,25 @@ const App = () => {
         <div className={styles.sessionInfo}>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Session ID:</span>
-            <span className={styles.sessionValue} title={currentSession}>
+            <span className={styles.sessionValue} title={currentSession || ''}>
               {currentSession ? currentSession.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Tab ID:</span>
-            <span className={styles.sessionValue} title={tabId || undefined}>
+            <span className={styles.sessionValue} title={tabId || ''}>
               {tabId ? tabId.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Parent Tab ID:</span>
-            <span
-              className={styles.sessionValue}
-              title={parentTabId || undefined}
-            >
+            <span className={styles.sessionValue} title={parentTabId || ''}>
               {parentTabId ? parentTabId.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Experience ID:</span>
-            <span
-              className={styles.sessionValue}
-              title={experienceId || undefined}
-            >
+            <span className={styles.sessionValue} title={experienceId || ''}>
               {experienceId ? experienceId.substring(0, 8) : '-'}
             </span>
           </div>
@@ -292,7 +286,7 @@ const App = () => {
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Tab Open Method:</span>
-            <span className={styles.sessionValue}>user_click</span>
+            <span className={styles.sessionValue}>-</span>
           </div>
         </div>
 
