@@ -1,8 +1,6 @@
-import commonjs from '@rollup/plugin-commonjs';
-import resolve from '@rollup/plugin-node-resolve';
 import swc from '@rollup/plugin-swc';
 import terser from '@rollup/plugin-terser';
-import { defineConfig } from 'rollup';
+import { defineConfig } from 'rolldown';
 import Sonda from 'sonda/rollup';
 import pkg from './package.json' with { type: 'json' };
 
@@ -21,35 +19,13 @@ const input = {
   'react-instrumentation': 'src/react-instrumentation/index.ts',
 };
 
-// Suppress irrelevant warnings to keep the build output clean
-const onwarn = (warning, warn) => {
-  const ignoredWarnings = [
-    'CIRCULAR_DEPENDENCY', // Circular dependencies are bundled, so no issue
-    'CYCLIC_CROSS_CHUNK_REEXPORT', // Barrel exports are intentional
-    'THIS_IS_UNDEFINED', // 'this' conversion to 'undefined' is preferred
-    'SOURCEMAP_ERROR', // Some node_modules have invalid sourcemaps
-  ];
-
-  if (ignoredWarnings.includes(warning.code)) {
-    return;
-  }
-
-  warn(warning);
-};
-
-// Configure plugins based on the target build environment
 const plugins = ({ target }) => [
   Sonda({
     enabled: false, // Disable Sonda instrumentation for now
-    open: false, // Open Sonda report in browser
+    open: true, // Open Sonda report in browser
     gzip: true, // Show gzip compression estimate
     sources: false, // Include source files in Sonda report - useful for debugging but can be unsafe in private repos
   }),
-  resolve({
-    mainFields: ['esnext', 'browser', 'module', 'main'], // Resolve priority for entry points, prefer esnext
-    extensions: ['.js', '.ts', '.jsx', '.tsx'], // Required because we import .ts files with .js extension
-  }),
-  commonjs(), // Convert CommonJS modules to ES modules
   swc({
     swc: {
       sourceMaps: true, // Generate source maps
@@ -73,7 +49,6 @@ export default defineConfig([
       preserveModulesRoot: 'src',
     },
     external: isExternal,
-    onwarn,
   },
 
   // CJS Build: CommonJS modules for Next.js and webpack < 5
@@ -90,7 +65,6 @@ export default defineConfig([
       chunkFileNames: '[name]-[hash].cjs',
     },
     external: isExternal,
-    onwarn,
   },
 
   // CDN Build: IIFE bundle for direct browser usage
@@ -110,6 +84,5 @@ export default defineConfig([
       footer: 'window.EmbraceWebSdk = EmbraceWebSdk;',
     },
     external: peerDeps,
-    onwarn,
   },
 ]);
