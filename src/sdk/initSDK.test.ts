@@ -1712,8 +1712,9 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance, 'second SDK instance failed to initialize')
       .not.to.be.false;
 
-    // Need to give time for the remote config to be fetched
-    await new Promise(r => setTimeout(r, 10));
+    // Need to give time for the remote config to be fetched and then parsed
+    await new Promise(r => setTimeout(r, 1));
+    await new Promise(r => setTimeout(r, 1));
 
     // First instance using namespaced storage
     expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
@@ -1792,8 +1793,9 @@ describe('isolated instances', () => {
     void expect(firstSDKInstance).not.to.be.false;
     void expect(secondSDKInstance).not.to.be.false;
 
-    // Need to give time for the remote config to be fetched
-    await new Promise(r => setTimeout(r, 10));
+    // Need to give time for the remote config to be fetched and then parsed
+    await new Promise(r => setTimeout(r, 1));
+    await new Promise(r => setTimeout(r, 1));
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
@@ -1832,8 +1834,9 @@ describe('isolated instances', () => {
     void expect(firstSDKInstance).not.to.be.false;
     void expect(secondSDKInstance).not.to.be.false;
 
-    // Need to give time for the remote config to be fetched
-    await new Promise(r => setTimeout(r, 10));
+    // Need to give time for the remote config to be fetched and then parsed
+    await new Promise(r => setTimeout(r, 1));
+    await new Promise(r => setTimeout(r, 1));
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
