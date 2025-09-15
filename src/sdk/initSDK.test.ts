@@ -1702,7 +1702,7 @@ describe('isolated instances', () => {
     });
 
     const secondSDKInstance = initSDK({
-      appID: 'app2',
+      appID: 'app22',
       appVersion: 'app-version',
       registerGlobally: false,
     });
