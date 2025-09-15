@@ -430,6 +430,59 @@ Some instrumentation is still being registered globally and we're actively worki
 * Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that 
   are not caught. 
 
+## Network span forwarding
+
+The SDK can be configured to inject a traceparent header on outgoing network requests. This header includes the
+client-side trace ID associated with that particular network span. On the Embrace backend these network spans can then
+be forwarded to other telemetry providers of your choice. This gives you the ability to view client-side spans alongside
+server-side ones that form part of the same overall trace to provide an end-to-end representation. More details can be
+found on the [Network Span Forwarding documentation page](https://embrace.io/docs/product/network-spans-forwarding/).
+
+The enabling and configuration of this feature is done through our Embrace dashboard so nothing needs to be set in the
+SDK to turn it on, however there are a few SDK-side configurations that could affect the feature to be aware of:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  
+  // Setting this to true blocks the Network Span Forwarding feature regardless of what has been configured server-side
+  blockNetworkSpanForwarding: true,
+  
+  // Setting registerGlobally to false, providing a custom propagator, or omitting every network instrumentations are
+  // all not supported alongside Network Span Forwarding and will cause that feature to turn off
+  registerGlobally: false,
+  propagator: myCustomPropagator,
+  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+});
+```
+
+Also note that by default trace headers will not be included on outgoing CORS requests, this can be overridden for
+particular URLs by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  defaultInstrumentationConfig: {
+    '@opentelemetry/instrumentation-fetch': {
+      propagateTraceHeaderCorsUrls: [
+        // URL strings or regexes to propagate trace headers for on fetch requests
+      ],
+    },
+    '@opentelemetry/instrumentation-xml-http-request': {
+      propagateTraceHeaderCorsUrls: [
+        // URL strings or regexes to propagate trace headers for on XHR requests
+      ],
+    },
+  },
+});
+```
+
 ## Using without Embrace
 
 If you'd prefer not to send data to Embrace you can simply omit the embrace app id when calling `initSDK`. Note that in

@@ -1,9 +1,15 @@
-import { context, diag, DiagLogLevel, trace } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  DiagLogLevel,
+  propagation,
+  trace,
+} from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -46,12 +52,19 @@ import {
 } from '../managers/index.js';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
 import { registry } from './registry.js';
-import type { DynamicConfigManager, SDKControl } from './types.js';
+import type {
+  DynamicConfigManager,
+  SDKControl,
+  SDKInitConfig,
+} from './types.js';
+import { CompositePropagator } from '@opentelemetry/core';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
 type ExportedSpan = ReadableSpan & {
+  spanId: string;
+  traceId: string;
   attributes: {
     key: string;
     value: {
@@ -64,7 +77,15 @@ type ExportedSpan = ReadableSpan & {
   }[];
 };
 
-const getLastSessionExportedSpans = async (callNumber = 0) => {
+type SpanScope = {
+  name: string;
+  version?: string;
+};
+
+const getLastSessionExportedSpans = async (
+  callNumber = 0,
+  scope: SpanScope = { name: 'embrace-web-sdk-traces' }
+) => {
   // Needed to allow the transport to actually send its data off to fetch
   await new Promise(r => setTimeout(r, 1));
 
@@ -88,12 +109,10 @@ const getLastSessionExportedSpans = async (callNumber = 0) => {
   });
   expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
   expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session');
-  const tracesScopeSpan = resourceSpan['scopeSpans'][1];
-  expect(tracesScopeSpan['scope']).to.deep.equal({
-    name: 'embrace-web-sdk-traces',
-  });
+  const otherScopeSpan = resourceSpan['scopeSpans'][1];
+  expect(otherScopeSpan['scope']).to.deep.equal(scope);
 
-  return tracesScopeSpan['spans'] as ExportedSpan[];
+  return otherScopeSpan['spans'] as ExportedSpan[];
 };
 
 describe('initSDK', () => {
@@ -1286,6 +1305,228 @@ describe('initSDK', () => {
           'SDK has already been successfully initialized, skipping this invocation of initSDK'
         )
       ).to.be.false;
+    });
+  });
+
+  describe('Network span forwarding', () => {
+    let clock: sinon.SinonFakeTimers;
+    let fetchStub: SinonStub;
+    let xhrStub: SinonStub;
+
+    beforeEach(() => {
+      fetchStub = fakeFetchInstall();
+      xhrStub = sinon.stub(window.XMLHttpRequest.prototype, 'send');
+      clock = sinon.useFakeTimers();
+    });
+
+    afterEach(() => {
+      fakeFetchRestore();
+      xhrStub.restore();
+      clock.restore();
+      propagation.disable();
+    });
+
+    const BASE_CONFIG: SDKInitConfig = {
+      appID: 'abc12',
+      appVersion: 'my-app-version',
+      defaultInstrumentationConfig: {
+        omit: new Set([
+          // Document load instrumentation generates a bunch of spans in this test environment
+          'document-load',
+        ]),
+      },
+      dynamicSDKConfigManager: {
+        refreshRemoteConfig: sinon.stub(),
+        setConfig: sinon.stub(),
+        getConfig: () => ({
+          samplingPct: 100,
+          networkSpansForwardingThreshold: 100,
+        }),
+      },
+    };
+
+    type NSFTest = {
+      name: string;
+      sdkConfig: SDKInitConfig;
+      networkType: 'fetch' | 'xhr';
+      expectInjection: boolean;
+    };
+
+    const tests: NSFTest[] = [
+      {
+        name: 'should inject the header and add the correct span attribute when enabled using fetch',
+        sdkConfig: BASE_CONFIG,
+        networkType: 'fetch',
+        expectInjection: true,
+      },
+      {
+        name: 'should inject the header and add the correct span attribute when enabled using xhr',
+        sdkConfig: BASE_CONFIG,
+        networkType: 'xhr',
+        expectInjection: true,
+      },
+      {
+        name: 'should not do the injection with fetch when the feature has been blocked through local config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          blockNetworkSpanForwarding: true,
+        },
+        networkType: 'fetch',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with xhr when the feature has been blocked through local config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          blockNetworkSpanForwarding: true,
+        },
+        networkType: 'xhr',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with fetch when the feature is not enabled through dynamic config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          dynamicSDKConfigManager: {
+            refreshRemoteConfig: sinon.stub(),
+            setConfig: sinon.stub(),
+            getConfig: () => ({
+              samplingPct: 100,
+              networkSpansForwardingThreshold: 0,
+            }),
+          },
+        },
+        networkType: 'fetch',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with xhr when the feature is not enabled through dynamic config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          dynamicSDKConfigManager: {
+            refreshRemoteConfig: sinon.stub(),
+            setConfig: sinon.stub(),
+            getConfig: () => ({
+              samplingPct: 100,
+              networkSpansForwardingThreshold: 0,
+            }),
+          },
+        },
+        networkType: 'xhr',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with fetch by default',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          dynamicSDKConfigManager: undefined,
+        },
+        networkType: 'fetch',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with xhr by default',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          dynamicSDKConfigManager: undefined,
+        },
+        networkType: 'xhr',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with fetch when there is an unsupported config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          propagator: new CompositePropagator(),
+        },
+        networkType: 'fetch',
+        expectInjection: false,
+      },
+      {
+        name: 'should not do the injection with xhr when there is an unsupported config',
+        sdkConfig: {
+          ...BASE_CONFIG,
+          propagator: new CompositePropagator(),
+        },
+        networkType: 'xhr',
+        expectInjection: false,
+      },
+    ];
+
+    tests.forEach(test => {
+      it(test.name, async () => {
+        const result = initSDK(test.sdkConfig);
+        void expect(result).not.to.be.false;
+
+        // Wipe any initial calls made from refreshRemoteConfig()
+        fetchStub.resetHistory();
+
+        let injectedTraceparentHeader = '';
+        if (test.networkType === 'fetch') {
+          await fetch('something');
+          clock.tick(1000);
+
+          const headers = (fetchStub.lastCall.args[1] as RequestInit).headers;
+          if (test.expectInjection) {
+            expect(headers).to.have.property('traceparent');
+            injectedTraceparentHeader = (headers as Record<string, string>)[
+              'traceparent'
+            ];
+          } else {
+            expect(headers).not.to.have.property('traceparent');
+          }
+        } else {
+          const req = new XMLHttpRequest();
+          const setHeaderStub = sinon.stub(req, 'setRequestHeader');
+          req.open('GET', 'something', true);
+          req.send();
+          req.dispatchEvent(new ProgressEvent('load'));
+          clock.tick(1000);
+
+          if (test.expectInjection) {
+            expect(setHeaderStub.lastCall.args[0]).to.be.equal('traceparent');
+            injectedTraceparentHeader = setHeaderStub.lastCall.args[1];
+          } else {
+            expect(setHeaderStub.called).to.equal(false);
+          }
+        }
+
+        session.getSpanSessionManager().endSessionSpan();
+
+        // Need to restore the clock here so that the setTimeout in `getLastSessionExportedSpans` works
+        clock.restore();
+        const exportedSpans = await getLastSessionExportedSpans(
+          test.networkType === 'fetch' ? 1 : 0,
+          {
+            name:
+              test.networkType === 'fetch'
+                ? '@opentelemetry/instrumentation-fetch'
+                : '@opentelemetry/instrumentation-xml-http-request',
+            version: '0.204.0',
+          }
+        );
+        expect(exportedSpans).to.have.lengthOf(1);
+        const networkSpan = exportedSpans[0];
+        const expectedTraceparent = `00-${networkSpan.traceId}-${networkSpan.spanId}-01`;
+
+        expect(networkSpan.name).to.be.equal(
+          test.networkType === 'fetch' ? 'HTTP GET' : 'GET'
+        );
+        let foundW3CAttr = false;
+        networkSpan.attributes.forEach(attr => {
+          if (attr.key === 'emb.w3c_traceparent') {
+            foundW3CAttr = true;
+
+            if (test.expectInjection) {
+              expect(attr.value.stringValue).to.equal(expectedTraceparent);
+            }
+          }
+        });
+        expect(foundW3CAttr).to.equal(test.expectInjection);
+        expect(injectedTraceparentHeader).to.equal(
+          test.expectInjection ? expectedTraceparent : ''
+        );
+      });
     });
   });
 });

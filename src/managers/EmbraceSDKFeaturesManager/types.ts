@@ -3,8 +3,10 @@ import type { DynamicConfigManager } from '../../sdk/index.js';
 export interface SDKFeaturesManagerArgs {
   deviceId: string;
   dynamicConfigManager: DynamicConfigManager;
+  blockNetworkSpanForwarding: boolean;
 }
 
 export interface SDKFeaturesManager {
   isSDKEnabled: () => boolean;
+  isNetworkSpanForwardingEnabled: () => boolean;
 }
