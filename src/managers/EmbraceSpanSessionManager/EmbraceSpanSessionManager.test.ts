@@ -15,8 +15,10 @@ import {
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_PREFIX_EMB_PROPERTIES,
   KEY_EMB_TAB_ID,
-  KEY_EMB_PARENT_TAB_ID,
+  KEY_EMB_SOURCE_TAB_ID,
   KEY_EMB_EXPERIENCE_ID,
+  KEY_EMB_NAVIGATION_SOURCE,
+  KEY_EMB_REFERRER_URL,
 } from '../../constants/attributes.js';
 import {
   FailingStorage,
@@ -34,7 +36,7 @@ import {
   EMBRACE_TAB_STORAGE_KEY,
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
 } from './constants.js';
-import type { Tab, LastTabActivity } from './types.js';
+import type { Tab, TabActivity } from './types.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -776,13 +778,14 @@ describe('EmbraceSpanSessionManager', () => {
     });
   });
 
-  describe('Cross-tab tracking', () => {
+  describe('Tab tracking', () => {
     let sandbox: SinonSandbox;
     let mockStorage: InMemoryStorage;
     let mockSessionStorage: InMemoryStorage;
     let visibilityDoc: VisibilityStateDocument;
     let mockPerf: MockPerformanceManager;
     let clock: sinon.SinonFakeTimers;
+    let performanceStub: sinon.SinonStub;
 
     beforeEach(() => {
       sandbox = sinon.createSandbox();
@@ -795,6 +798,10 @@ describe('EmbraceSpanSessionManager', () => {
       visibilityDoc = {
         visibilityState: 'visible',
       };
+
+      // Setup performance API stub for navigation tests
+      performanceStub = sandbox.stub(window.performance, 'getEntriesByType');
+      performanceStub.withArgs('navigation').returns([{ type: 'navigate' }]);
     });
 
     afterEach(() => {
@@ -823,14 +830,14 @@ describe('EmbraceSpanSessionManager', () => {
         expect(tab.tabId).to.be.of.length(32);
         void expect(tab).to.have.property('experienceId');
         expect(tab.experienceId).to.be.of.length(32);
-        void expect(tab.parentTabId).to.be.undefined;
+        void expect(tab.sourceTabId).to.be.undefined;
       });
 
       it('should add tab attributes to session span', () => {
         const existingTab = {
           tabId: 'test-tab-123',
           experienceId: 'test-exp-456',
-          parentTabId: 'parent-789',
+          sourceTabId: 'source-789',
         };
 
         mockSessionStorage.setItem(
@@ -864,24 +871,24 @@ describe('EmbraceSpanSessionManager', () => {
           'test-exp-456'
         );
         void expect(sessionSpan.attributes).to.have.property(
-          KEY_EMB_PARENT_TAB_ID,
-          'parent-789'
+          KEY_EMB_SOURCE_TAB_ID,
+          'source-789'
         );
       });
     });
 
-    describe('Parent tab detection', () => {
-      it('should detect parent tab when opened from another tab on the same origin', () => {
+    describe('Source tab detection timing window', () => {
+      it('should detect source tab when activity is within 20 seconds', () => {
         const now = clock.now;
-        const parentActivity: LastTabActivity = {
-          tabId: 'parent-tab-123',
-          experienceId: 'parent-exp-456',
+        const sourceTabActivity: TabActivity = {
+          tabId: 'source-tab-123',
+          experienceId: 'source-exp-456',
           lastActivityMs: now - 5000, // 5 seconds ago (within 20s window)
         };
 
         mockStorage.setItem(
           EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(parentActivity)
+          JSON.stringify(sourceTabActivity)
         );
 
         // Create manager with same-origin referrer
@@ -899,46 +906,13 @@ describe('EmbraceSpanSessionManager', () => {
         const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
         const tab = JSON.parse(storedTab ?? '{}') as Tab;
 
-        void expect(tab.parentTabId).to.equal('parent-tab-123');
-        void expect(tab.experienceId).to.equal('parent-exp-456');
+        void expect(tab.sourceTabId).to.equal('source-tab-123');
+        void expect(tab.experienceId).to.equal('source-exp-456');
       });
 
-      it('should not detect parent when activity is older than 20 seconds', () => {
-        const now = clock.now;
-        const oldActivity: LastTabActivity = {
-          tabId: 'old-tab-123',
-          experienceId: 'old-exp-456',
-          lastActivityMs: now - 25000, // 25 seconds ago (> 20s threshold)
-        };
-
-        mockStorage.setItem(
-          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(oldActivity)
-        );
-
-        // Create manager with same-origin referrer but old activity
-        const currentOrigin = window.location.origin;
-        new EmbraceSpanSessionManager({
-          diag,
-          storage: mockStorage,
-          sessionStorage: mockSessionStorage,
-          limitManager,
-          visibilityDoc,
-          perf: mockPerf,
-          referrer: `${currentOrigin}/previous-page`,
-        });
-
-        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
-        const tab = JSON.parse(storedTab ?? '{}') as Tab;
-
-        // Should not link to parent because activity is too old
-        void expect(tab.parentTabId).to.be.undefined;
-        void expect(tab.experienceId).to.not.equal('old-exp-456');
-      });
-
-      it('should not detect parent when referrer is missing', () => {
-        // Even if there's recent activity, without a referrer we can't determine parent
-        const recentActivity: LastTabActivity = {
+      it('should NOT detect source when referrer is missing (even with recent activity)', () => {
+        // Even if there's recent activity, without a referrer we can't determine source
+        const recentActivity: TabActivity = {
           tabId: 'recent-tab-123',
           experienceId: 'recent-exp-456',
           lastActivityMs: Date.now() - 1000, // 1 second ago
@@ -963,8 +937,8 @@ describe('EmbraceSpanSessionManager', () => {
         const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
         const tab = JSON.parse(storedTab ?? '{}') as Tab;
 
-        // No parent should be detected without a referrer
-        void expect(tab.parentTabId).to.be.undefined;
+        // No source should be detected without a referrer
+        void expect(tab.sourceTabId).to.be.undefined;
       });
     });
 
@@ -974,7 +948,7 @@ describe('EmbraceSpanSessionManager', () => {
         const existingTab = {
           tabId: 'test-tab-123',
           experienceId: 'test-exp-456',
-          parentTabId: 'parent-789',
+          sourceTabId: 'source-789',
         };
 
         mockSessionStorage.setItem(
@@ -1008,16 +982,16 @@ describe('EmbraceSpanSessionManager', () => {
 
         const activity = JSON.parse(
           mockStorage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY) ?? 'null'
-        ) as LastTabActivity | null;
+        ) as TabActivity | null;
         void expect(activity).to.not.be.null;
         void expect(activity?.tabId).to.equal('test-tab-123');
       });
     });
 
-    describe('Referrer detection', () => {
-      it('should not detect parent when referrer is from different origin', () => {
+    describe('Source tab detection based on referrer', () => {
+      it('should NOT detect source when referrer is from different origin (even with recent activity)', () => {
         // Even with recent activity, cross-origin referrer shouldn't link tabs
-        const recentActivity: LastTabActivity = {
+        const recentActivity: TabActivity = {
           tabId: 'recent-tab-123',
           experienceId: 'recent-exp-456',
           lastActivityMs: Date.now() - 1000, // 1 second ago
@@ -1039,30 +1013,294 @@ describe('EmbraceSpanSessionManager', () => {
           referrer: 'https://different-origin.com/page',
         });
 
-        // Should not detect parent (different origin)
+        // Should not detect source (different origin)
         const tabData = JSON.parse(
           mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY) ?? '{}'
         ) as Tab;
 
-        void expect(tabData.parentTabId).to.be.undefined;
+        void expect(tabData.sourceTabId).to.be.undefined;
+      });
+    });
+
+    describe('Navigation context detection', () => {
+      // Helper to create manager and get session span attributes
+      const createManagerAndGetSessionAttributes = (
+        referrer: string,
+        navType?: string
+      ) => {
+        if (navType) {
+          performanceStub.withArgs('navigation').returns([{ type: navType }]);
+        }
+
+        const manager = new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer,
+        });
+
+        manager.startSessionSpan();
+        manager.endSessionSpan();
+
+        const finishedSpans = memoryExporter.getFinishedSpans();
+        const lastSpan = finishedSpans[finishedSpans.length - 1];
+        return lastSpan.attributes;
+      };
+
+      describe('Navigation source determination priority', () => {
+        it('should prioritize Navigation Timing API type over referrer', () => {
+          // Even with same-origin referrer, reload type should take precedence
+          const attributes = createManagerAndGetSessionAttributes(
+            `${window.location.origin}/page`,
+            'reload'
+          );
+
+          void expect(attributes).to.have.property(
+            KEY_EMB_NAVIGATION_SOURCE,
+            'reload' // Not 'same_origin'
+          );
+        });
+
+        it('should prioritize back_forward over referrer analysis', () => {
+          // Even with external referrer, back_forward type should take precedence
+          const attributes = createManagerAndGetSessionAttributes(
+            'https://external.com/page',
+            'back_forward'
+          );
+
+          void expect(attributes).to.have.property(
+            KEY_EMB_NAVIGATION_SOURCE,
+            'back_forward' // Not 'external'
+          );
+        });
+
+        it('should fall back to referrer analysis when navigation type is "navigate"', () => {
+          // When type is 'navigate', should analyze referrer
+          const sameOriginAttrs = createManagerAndGetSessionAttributes(
+            `${window.location.origin}/page`,
+            'navigate'
+          );
+
+          void expect(sameOriginAttrs).to.have.property(
+            KEY_EMB_NAVIGATION_SOURCE,
+            'same_origin'
+          );
+
+          memoryExporter.reset();
+
+          const externalAttrs = createManagerAndGetSessionAttributes(
+            'https://external.com/page',
+            'navigate'
+          );
+
+          void expect(externalAttrs).to.have.property(
+            KEY_EMB_NAVIGATION_SOURCE,
+            'external'
+          );
+        });
+      });
+
+      it('should detect reload navigation', () => {
+        const attributes = createManagerAndGetSessionAttributes(
+          'https://example.com/previous',
+          'reload'
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'reload'
+        );
+        void expect(attributes).to.have.property(
+          KEY_EMB_REFERRER_URL,
+          'https://example.com/previous'
+        );
+      });
+
+      it('should detect back/forward navigation', () => {
+        const attributes = createManagerAndGetSessionAttributes(
+          'https://example.com/previous',
+          'back_forward'
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'back_forward'
+        );
+      });
+
+      it('should detect same-origin navigation', () => {
+        const currentOrigin = window.location.origin;
+        const attributes = createManagerAndGetSessionAttributes(
+          `${currentOrigin}/previous-page`,
+          'navigate'
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'same_origin'
+        );
+        void expect(attributes).to.have.property(
+          KEY_EMB_REFERRER_URL,
+          `${currentOrigin}/previous-page`
+        );
+      });
+
+      it('should detect external navigation', () => {
+        const attributes = createManagerAndGetSessionAttributes(
+          'https://external-site.com/page',
+          'navigate'
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'external'
+        );
+        void expect(attributes).to.have.property(
+          KEY_EMB_REFERRER_URL,
+          'https://external-site.com/page'
+        );
+      });
+
+      it('should detect direct navigation when no referrer', () => {
+        const attributes = createManagerAndGetSessionAttributes('', 'navigate');
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'direct'
+        );
+        void expect(attributes).to.not.have.property(KEY_EMB_REFERRER_URL);
+      });
+
+      it('should handle invalid referrer URL as direct navigation', () => {
+        const attributes = createManagerAndGetSessionAttributes(
+          'not a valid url with spaces',
+          'navigate'
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'direct'
+        );
+        // Invalid URLs are not stored due to parsing error
+        void expect(attributes).to.not.have.property(KEY_EMB_REFERRER_URL);
+      });
+
+      it('should fallback to referrer check when no navigation entries', () => {
+        performanceStub.withArgs('navigation').returns([]);
+        const currentOrigin = window.location.origin;
+
+        const attributes = createManagerAndGetSessionAttributes(
+          `${currentOrigin}/previous-page`
+        );
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'same_origin'
+        );
+      });
+
+      it('should integrate navigation source with tab tracking', () => {
+        // Set up source tab that was active recently
+        const sourceTab: TabActivity = {
+          experienceId: 'source-exp-123',
+          tabId: 'source-tab-456',
+          lastActivityMs: Date.now(),
+        };
+        mockStorage.setItem(
+          EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+          JSON.stringify(sourceTab)
+        );
+
+        // Create manager with same-origin referrer
+        const currentOrigin = window.location.origin;
+        performanceStub.withArgs('navigation').returns([{ type: 'navigate' }]);
+
+        const manager = new EmbraceSpanSessionManager({
+          diag,
+          storage: mockStorage,
+          sessionStorage: mockSessionStorage,
+          limitManager,
+          visibilityDoc,
+          perf: mockPerf,
+          referrer: `${currentOrigin}/previous-page`,
+        });
+
+        // Check that tab was created with source reference
+        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
+        void expect(storedTab).to.not.be.null;
+        const tab = JSON.parse(storedTab ?? '{}') as Tab;
+        void expect(tab.sourceTabId).to.equal('source-tab-456');
+
+        // Start session and verify attributes
+        manager.startSessionSpan();
+        manager.endSessionSpan();
+
+        const finishedSpans = memoryExporter.getFinishedSpans();
+        const lastSpan = finishedSpans[finishedSpans.length - 1];
+        const attributes = lastSpan.attributes;
+
+        void expect(attributes).to.have.property(
+          KEY_EMB_NAVIGATION_SOURCE,
+          'same_origin'
+        );
+        void expect(attributes).to.have.property(
+          KEY_EMB_SOURCE_TAB_ID,
+          'source-tab-456'
+        );
+      });
+
+      it('should always include navigation source in session spans', () => {
+        // Test multiple scenarios to ensure navigation source is always present
+        const scenarios = [
+          { referrer: '', navType: 'navigate', expected: 'direct' },
+          {
+            referrer: 'https://external.com',
+            navType: 'navigate',
+            expected: 'external',
+          },
+          {
+            referrer: window.location.origin + '/page',
+            navType: 'navigate',
+            expected: 'same_origin',
+          },
+          {
+            referrer: 'https://example.com',
+            navType: 'reload',
+            expected: 'reload',
+          },
+          {
+            referrer: 'https://example.com',
+            navType: 'back_forward',
+            expected: 'back_forward',
+          },
+        ];
+
+        scenarios.forEach(({ referrer, navType, expected }) => {
+          memoryExporter.reset();
+
+          const attributes = createManagerAndGetSessionAttributes(
+            referrer,
+            navType
+          );
+
+          void expect(attributes).to.have.property(KEY_EMB_NAVIGATION_SOURCE);
+          void expect(attributes[KEY_EMB_NAVIGATION_SOURCE]).to.equal(expected);
+        });
       });
     });
 
     describe('Error handling', () => {
       it('should handle storage quota exceeded errors', () => {
-        const quotaError = new DOMException(
-          'Storage quota exceeded',
-          'QuotaExceededError'
-        );
-
         // Make storage throw quota error once
-        let throwError = true;
         const setItemStub = sandbox.stub(mockStorage, 'setItem');
         setItemStub.callsFake(() => {
-          if (throwError) {
-            throwError = false;
-            throw quotaError;
-          }
+          throw new DOMException(
+            'Storage quota exceeded',
+            'QuotaExceededError'
+          );
         });
 
         const manager = new EmbraceSpanSessionManager({
@@ -1076,16 +1314,15 @@ describe('EmbraceSpanSessionManager', () => {
         });
 
         // Try to record activity (should handle quota error)
-        const privateManager = manager as unknown as {
-          _recordActivity: () => void;
-        };
-        privateManager._recordActivity();
+        // @ts-expect-error accessing a private method
+
+        manager._storeCurrentTabAsSource();
 
         // Check that warning was logged
         const warnings = diag.getWarnLogs();
         void expect(
           warnings.some((w: string) =>
-            w.includes('Failed to save last tab activity')
+            w.includes('Failed to save tab activity')
           )
         ).to.be.true;
       });
@@ -1111,7 +1348,7 @@ describe('EmbraceSpanSessionManager', () => {
         const warnings = diag.getWarnLogs();
         void expect(
           warnings.some((w: string) =>
-            w.includes('Failed to retrieve last tab activity')
+            w.includes('Failed to retrieve tab activity')
           )
         ).to.be.true;
       });

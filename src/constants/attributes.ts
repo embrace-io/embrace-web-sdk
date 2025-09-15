@@ -11,7 +11,7 @@ export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
 export const KEY_EMB_TAB_ID = 'emb.tab_id';
-export const KEY_EMB_PARENT_TAB_ID = 'emb.parent_tab_id';
+export const KEY_EMB_SOURCE_TAB_ID = 'emb.source_tab_id';
 export const KEY_EMB_EXPERIENCE_ID = 'emb.experience_id';
 export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
 export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
@@ -21,6 +21,8 @@ export const KEY_EMB_FROM_STORAGE = 'emb.from_storage';
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_VIEW_NAME = 'view.name';
+export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
+export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
 
 export enum EMB_TYPES {
   Session = 'ux.session',
