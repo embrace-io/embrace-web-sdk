@@ -5,8 +5,8 @@ import { extname, join } from 'node:path';
 const PORT = 3000;
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
-const SDK_SOURCE = join(process.cwd(), '../../build/iife/bundle.js');
-const SDK_DESTINATION = join(PUBLIC_DIR, 'bundle.js');
+const SDK_SOURCE = join(process.cwd(), '../../dist/embrace-web-sdk.js');
+const SDK_DESTINATION = join(PUBLIC_DIR, 'embrace-web-sdk.js');
 
 const mimeTypes: Record<string, string> = {
   '.html': 'text/html',

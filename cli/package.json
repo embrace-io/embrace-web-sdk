@@ -12,7 +12,7 @@
   "scripts": {
     "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npx rimraf dist",
-    "compile": "tsc && tsup-node src/index.ts --no-config --format esm --clean",
+    "compile": "tsc && esbuild src/index.ts --bundle --format=esm --platform=node --target=es2022 --outfile=dist/index.js --external:commander",
     "validate": "bash scripts/validate-cli.sh"
   },
   "files": [
@@ -48,8 +48,7 @@
   "devDependencies": {
     "@types/node": "^18.0.0",
     "es-check": "9.3.1",
-    "publint": "0.3.12",
-    "tsup": "8.5.0"
+    "publint": "0.3.12"
   },
   "engines": {
     "node": ">=18.0.0"

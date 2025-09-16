@@ -6,7 +6,7 @@ module.exports = {
   mode: 'production',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: 'embrace-web-sdk.js',
   },
   resolve: {
     alias: {

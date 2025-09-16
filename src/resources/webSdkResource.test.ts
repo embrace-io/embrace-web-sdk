@@ -50,7 +50,7 @@ describe('webSdkResource', () => {
       appVersion: '3.4.2',
     });
 
-    expect(resource.attributes.app_version).to.be.equal('3.4.2');
+    expect(resource.attributes['app_version']).to.be.equal('3.4.2');
   });
 
   it('should restore an app instance id if there is one in storage', () => {
