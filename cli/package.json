@@ -1,41 +1,28 @@
 {
   "name": "@embrace-io/web-cli",
   "bin": {
-    "embrace-web-cli": "build/index.js"
+    "embrace-web-cli": "dist/index.js"
   },
   "version": "2.2.0",
-  "description": "Embrace Web CLI to help setup the Embrace SDK in your web app",
+  "description": "Embrace Web CLI for uploading sourcemaps and versioning bundles",
   "type": "module",
-  "module": "build/index.js",
-  "esnext": "build/index.js",
-  "types": "build/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "clean": "npm run cli:install:clean && npm run cli:compile:clean",
-    "compile": "npm run cli:compile:clean && npm run cli:compile",
-    "prepublishOnly": "npm run cli:compile:clean & npm run cli:compile",
-    "cli:test": "echo \"Error: no test specified\" && exit 1",
-    "cli:tsc": "tsc",
-    "cli:compile": "npm run cli:tsc && chmod +x build/index.js",
-    "cli:lint:fix": "eslint --fix ./src",
-    "cli:compile:clean": "npx rimraf build",
-    "cli:install:clean": "npx rimraf node_modules"
+    "prepublishOnly": "npm run compile && npm run check",
+    "clean": "npx rimraf dist",
+    "compile": "tsc && tsup-node src/index.ts --no-config --format esm --clean",
+    "check": "es-check es2022 dist/index.js --module --allow-hash-bang && publint"
   },
   "files": [
-    "build/**/*.js",
-    "build/**/*.d.ts",
+    "dist",
     "LICENSE",
     "README.md"
   ],
   "bugs": {
     "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
     "email": "support@embrace.io"
-  },
-  "exports": {
-    "import": "./build/index.js",
-    "default": "./build/index.js"
   },
   "homepage": "https://github.com/embrace-io/embrace-web-sdk",
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
@@ -59,19 +46,12 @@
     "commander": "14.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.1",
-    "@eslint/js": "9.35.0",
-    "@types/node": "22.15.32",
-    "eslint": "9.35.0",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-prettier": "5.5.4",
-    "eslint-plugin-require-extensions": "0.1.3",
-    "globals": "16.3.0",
-    "prettier": "3.6.2",
-    "typescript": "5.8.3",
-    "typescript-eslint": "8.43.0"
+    "@types/node": "^18.0.0",
+    "es-check": "9.3.1",
+    "publint": "0.3.12",
+    "tsup": "8.5.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   }
 }
