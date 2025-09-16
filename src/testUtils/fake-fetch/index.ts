@@ -69,6 +69,6 @@ export const getRequestHeaders = (callNumber = 0) => {
 };
 
 export const respondWith = (data: BodyInit | null, options?: ResponseInit) =>
-  fetchStub?.returns(Promise.resolve(new Response(data, options)));
+  fetchStub?.callsFake(() => Promise.resolve(new Response(data, options)));
 
 export const wasCalled = (callNumber = 0) => !!fetchStub?.getCall(callNumber);

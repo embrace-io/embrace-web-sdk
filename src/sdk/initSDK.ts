@@ -57,7 +57,11 @@ import type {
 import { registry } from './registry.js';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
 import type { AttributeScrubber } from '../common/index.js';
-import { OTelPerformanceManager, nsfConfigValidation } from '../utils/index.js';
+import {
+  OTelPerformanceManager,
+  nsfConfigValidation,
+  NamespacedStorage,
+} from '../utils/index.js';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.js';
 
 export const initSDK = (
@@ -106,14 +110,6 @@ export const initSDK = (
       logLevel,
     });
 
-    const resourceWithWebSDKAttributes = resource.merge(
-      getWebSDKResource({
-        diagLogger,
-        appVersion,
-        pageSessionStorage: window.sessionStorage,
-      })
-    );
-
     const sendingToEmbrace = !!appID && isValidAppID(appID);
 
     if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
@@ -122,7 +118,23 @@ export const initSDK = (
       );
     }
 
-    const userManager = setupUser({ registerGlobally });
+    const useNamespace = !registerGlobally && appID;
+    const sdkLocalStorage = useNamespace
+      ? new NamespacedStorage(appID, window.localStorage)
+      : window.localStorage;
+    const sdkSessionStorage = useNamespace
+      ? new NamespacedStorage(appID, window.sessionStorage)
+      : window.sessionStorage;
+
+    const resourceWithWebSDKAttributes = resource.merge(
+      getWebSDKResource({
+        diagLogger,
+        appVersion,
+        pageSessionStorage: sdkSessionStorage,
+      })
+    );
+
+    const userManager = setupUser({ registerGlobally, sdkLocalStorage });
     const enduserPseudoID = userManager.getEmbraceUserId();
     if (sendingToEmbrace && !enduserPseudoID) {
       throw new Error('userID is required when using Embrace exporter');
@@ -136,6 +148,7 @@ export const initSDK = (
         embraceConfigURL,
         defaultConfig: dynamicSDKConfig,
         deviceId: enduserPseudoID,
+        storage: sdkLocalStorage,
       });
     void dynamicConfigManager.refreshRemoteConfig();
 
@@ -171,6 +184,8 @@ export const initSDK = (
     const spanSessionManager = setupSession({
       limitManager,
       registerGlobally,
+      sdkLocalStorage,
+      sdkSessionStorage,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -186,6 +201,7 @@ export const initSDK = (
         storedSpansExpireTimeoutMS:
           defaultInstrumentationConfig?.['session-visibility']
             ?.storedSpansExpireTimeoutMS,
+        storage: sdkLocalStorage,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
@@ -285,8 +301,10 @@ export const initSDK = (
   }
 };
 
-const setupUser = ({ registerGlobally }: SetupUserArgs) => {
-  const embraceUserManager = new EmbraceUserManager();
+const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
+  const embraceUserManager = new EmbraceUserManager({
+    storage: sdkLocalStorage,
+  });
 
   if (registerGlobally) {
     user.setGlobalUserManager(embraceUserManager);
@@ -295,9 +313,16 @@ const setupUser = ({ registerGlobally }: SetupUserArgs) => {
   return embraceUserManager;
 };
 
-const setupSession = ({ limitManager, registerGlobally }: SetupSessionArgs) => {
+const setupSession = ({
+  limitManager,
+  registerGlobally,
+  sdkLocalStorage,
+  sdkSessionStorage,
+}: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
+    storage: sdkLocalStorage,
+    sessionStorage: sdkSessionStorage,
   });
 
   if (registerGlobally) {
