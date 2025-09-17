@@ -11,9 +11,9 @@ updates:
       - '/demo/frontend'
       - '/demo/frontend-cdn'
       - '/demo/webpack-example'
-      - '/tests/performance'
       - '/tests/integration'
-
+      - '/tests/integration/platforms/*'
+      - '/tests/performance'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 50
@@ -34,3 +34,19 @@ updates:
       playwright:
         patterns:
           - '*playwright*'
+  # lock webpack 4 version integration test
+  - package-ecosystem: 'npm'
+    directory: '/tests/integration/platforms/webpack-4'
+    schedule:
+      interval: 'weekly'
+    ignore:
+      - dependency-name: 'webpack'
+        versions: ['>=5.0.0']
+      - dependency-name: 'webpack-*'
+        versions: ['>=5.0.0']
+  # force otel-latest integration test to run on latest version
+  - package-ecosystem: 'npm'
+    directory: '/tests/integration/platforms/vite-otel-latest'
+    schedule:
+      interval: 'weekly'
+    versioning-strategy: 'increase' # Always update to latest versions
