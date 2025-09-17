@@ -461,7 +461,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     // Look for source tab only if navigation is from same origin
     let sourceTabId: string | undefined;
-    let experienceId = generateUUID();
+    let experienceId: string | undefined;
 
     if (navigationSource === 'same_origin') {
       const lastActivity = this._getTabActivity();
@@ -475,6 +475,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         }
       }
     }
+
+    // Only generate new UUID if we didn't inherit one from source tab
+    experienceId ??= generateUUID();
 
     return {
       navigationSource,
