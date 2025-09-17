@@ -34,16 +34,15 @@ updates:
       playwright:
         patterns:
           - '*playwright*'
-  # lock webpack 4 version integration test
+  # lock webpack 4 version integration test - only allow minor and patch updates
   - package-ecosystem: 'npm'
     directory: '/tests/integration/platforms/webpack-4'
     schedule:
       interval: 'weekly'
     ignore:
-      - dependency-name: 'webpack'
-        versions: ['>=5.0.0']
-      - dependency-name: 'webpack-*'
-        versions: ['>=5.0.0']
+      # Block all major version updates for all dependencies
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
   # force otel-latest integration test to run on latest version
   - package-ecosystem: 'npm'
     directory: '/tests/integration/platforms/vite-otel-latest'
