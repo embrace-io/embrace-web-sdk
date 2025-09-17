@@ -509,6 +509,7 @@ describe('initSDK', () => {
         sessionNumber,
         { key: 'emb.experience_id', value: { stringValue: experienceId } },
         { key: 'emb.tab_id', value: { stringValue: tabId } },
+        { key: 'emb.navigation_source', value: { stringValue: 'direct' } },
         { key: 'emb.session_start_type', value: { stringValue: 'init' } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,

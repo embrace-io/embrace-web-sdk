@@ -26,10 +26,12 @@ const App = () => {
   const [navigationType, setNavigationType] =
     useState<RoutingDemoNavigationType | null>(null);
 
-  // Cross-tab tracking data
+  // Tab tracking data
   const [experienceId, setExperienceId] = useState<string | null>('');
   const [tabId, setTabId] = useState<string | null>('');
-  const [parentTabId, setParentTabId] = useState<string | null>(null);
+  const [sourceTabId, setSourceTabId] = useState<string | null>(null);
+  const [navigationSource, setNavigationSource] = useState<string | null>(null);
+  const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const updateCrossTabData = () => {
@@ -38,7 +40,9 @@ const App = () => {
         const attrs = (sessionSpan as any).attributes;
         setExperienceId(attrs['emb.experience_id'] || null);
         setTabId(attrs['emb.tab_id'] || null);
-        setParentTabId(attrs['emb.parent_tab_id'] || null);
+        setSourceTabId(attrs['emb.source_tab_id'] || null);
+        setNavigationSource(attrs['emb.navigation_source'] || null);
+        setReferrerUrl(attrs['emb.referrer_url'] || null);
       }
     };
 
@@ -256,37 +260,51 @@ const App = () => {
         <div className={styles.sessionInfo}>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Session ID:</span>
-            <span className={styles.sessionValue} title={currentSession || ''}>
+            <span
+              className={styles.sessionValue}
+              title={currentSession || undefined}
+            >
               {currentSession ? currentSession.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Tab ID:</span>
-            <span className={styles.sessionValue} title={tabId || ''}>
+            <span className={styles.sessionValue} title={tabId || undefined}>
               {tabId ? tabId.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
-            <span className={styles.sessionLabel}>Parent Tab ID:</span>
-            <span className={styles.sessionValue} title={parentTabId || ''}>
-              {parentTabId ? parentTabId.substring(0, 8) : '-'}
+            <span className={styles.sessionLabel}>Source Tab ID:</span>
+            <span
+              className={styles.sessionValue}
+              title={sourceTabId || undefined}
+            >
+              {sourceTabId ? sourceTabId.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
             <span className={styles.sessionLabel}>Experience ID:</span>
-            <span className={styles.sessionValue} title={experienceId || ''}>
+            <span
+              className={styles.sessionValue}
+              title={experienceId || undefined}
+            >
               {experienceId ? experienceId.substring(0, 8) : '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
-            <span className={styles.sessionLabel}>Referrer:</span>
+            <span className={styles.sessionLabel}>Navigation Source:</span>
             <span className={styles.sessionValue}>
-              {document.referrer || 'Direct'}
+              {navigationSource || '-'}
             </span>
           </div>
           <div className={styles.sessionRow}>
-            <span className={styles.sessionLabel}>Tab Open Method:</span>
-            <span className={styles.sessionValue}>-</span>
+            <span className={styles.sessionLabel}>Referrer URL:</span>
+            <span
+              className={styles.sessionValue}
+              title={referrerUrl || undefined}
+            >
+              {referrerUrl || '-'}
+            </span>
           </div>
         </div>
 
