@@ -64,6 +64,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
   private readonly _tab: Tab;
+  private readonly _navigationSource: NavigationSource;
+  private readonly _referrerInfo: {
+    isValid: boolean;
+    isSameOrigin: boolean;
+    scrubbedUrl?: string;
+  };
 
   private _tracer: Tracer;
   private readonly _noExportTracer: Tracer;
@@ -100,8 +106,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       'embrace-web-sdk-sessions'
     );
 
-    // Initialize tab tracking
-    this._tab = this._initTab();
+    // Process referrer once at initialization
+    this._referrerInfo = this._processReferrer();
+
+    // Initialize tab tracking and navigation source
+    const initResult = this._initTab();
+    this._tab = initResult.tab;
+    this._navigationSource = initResult.navigationSource;
     this._setupNewTabClickListeners();
   }
 
@@ -315,8 +326,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
 
-    const tabContext = this._getTabContext();
-
     const attributes: Attributes = {
       ...this._getPermanentAttributes(),
       [KEY_EMB_TYPE]: EMB_TYPES.Session,
@@ -329,13 +338,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
-      [KEY_EMB_NAVIGATION_SOURCE]: tabContext.navigationSource,
+      [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
     };
 
     // Add scrubbed referrer URL if available
-    const referrerInfo = this._processReferrer();
-    if (referrerInfo.isValid && referrerInfo.scrubbedUrl) {
-      attributes[KEY_EMB_REFERRER_URL] = referrerInfo.scrubbedUrl;
+    if (this._referrerInfo.isValid && this._referrerInfo.scrubbedUrl) {
+      attributes[KEY_EMB_REFERRER_URL] = this._referrerInfo.scrubbedUrl;
     }
 
     if (this._tab.sourceTabId) {
@@ -401,6 +409,30 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._tracer = tracerProvider.getTracer('embrace-web-sdk-sessions');
   }
 
+  private _determineNavigationSource(): NavigationSource {
+    // Check Navigation Timing API first
+    try {
+      const navEntries = window.performance.getEntriesByType('navigation');
+      if (navEntries.length > 0 && navEntries[0]) {
+        const navEntry = navEntries[0];
+        if (navEntry.type === 'reload') {
+          return 'reload';
+        } else if (navEntry.type === 'back_forward') {
+          return 'back_forward';
+        }
+      }
+    } catch (error) {
+      this._diag.warn('Failed to get navigation type', error);
+    }
+
+    // If not reload/back_forward, analyze referrer
+    if (this._referrerInfo.isValid) {
+      return this._referrerInfo.isSameOrigin ? 'same_origin' : 'external';
+    }
+
+    return 'direct';
+  }
+
   private _processReferrer(): {
     isValid: boolean;
     isSameOrigin: boolean;
@@ -424,40 +456,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
   }
 
-  private _getTabContext(): {
-    navigationSource: NavigationSource;
+  private _getTabContext(navigationSource: NavigationSource): {
     sourceTabId?: string;
     experienceId: string;
     tabId: string;
   } {
     // Always use getAppInstanceId to ensure consistent tab ID
     const tabId = getAppInstanceId(this._sessionStorage, this._diag);
-
-    // Determine navigation source using Navigation Timing API
-    let navigationSource: NavigationSource = 'direct';
-    try {
-      const navEntries = window.performance.getEntriesByType('navigation');
-      if (navEntries.length > 0 && navEntries[0]) {
-        const navEntry = navEntries[0];
-        if (navEntry.type === 'reload') {
-          navigationSource = 'reload';
-        } else if (navEntry.type === 'back_forward') {
-          navigationSource = 'back_forward';
-        }
-      }
-    } catch (error) {
-      this._diag.warn('Failed to get navigation type', error);
-    }
-
-    // If not reload/back_forward, analyze referrer
-    if (navigationSource === 'direct') {
-      const referrerInfo = this._processReferrer();
-      if (referrerInfo.isValid) {
-        navigationSource = referrerInfo.isSameOrigin
-          ? 'same_origin'
-          : 'external';
-      }
-    }
 
     // Look for source tab only if navigation is from same origin
     let sourceTabId: string | undefined;
@@ -480,26 +485,31 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     experienceId ??= generateUUID();
 
     return {
-      navigationSource,
       sourceTabId,
       experienceId,
       tabId,
     };
   }
 
-  private _initTab(): Tab {
+  private _initTab(): { tab: Tab; navigationSource: NavigationSource } {
+    // Determine navigation source once at startup
+    const navigationSource = this._determineNavigationSource();
+
     // On page reload, preserve the same tab IDs
     try {
       const stored = this._sessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored) as Tab;
+        return {
+          tab: JSON.parse(stored) as Tab,
+          navigationSource,
+        };
       }
     } catch (e) {
       this._diag.warn('Failed to retrieve tab data', e);
     }
 
-    // Get complete navigation context
-    const tabContext = this._getTabContext();
+    // Get complete navigation context for new tab
+    const tabContext = this._getTabContext(navigationSource);
     const tab: Tab = {
       experienceId: tabContext.experienceId,
       sourceTabId: tabContext.sourceTabId,
@@ -516,7 +526,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.warn('Failed to store tab data', e);
     }
 
-    return tab;
+    return { tab, navigationSource };
   }
 
   private _getTabActivity(): TabActivity | null {
