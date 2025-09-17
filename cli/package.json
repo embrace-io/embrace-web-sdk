@@ -10,10 +10,10 @@
     "access": "public"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile && npm run check",
+    "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npx rimraf dist",
     "compile": "tsc && tsup-node src/index.ts --no-config --format esm --clean",
-    "check": "es-check es2022 dist/index.js --module --allow-hash-bang && publint"
+    "validate": "MAX_CLI_SIZE_KB=15 bash ../scripts/validate-cli.sh"
   },
   "files": [
     "dist",
