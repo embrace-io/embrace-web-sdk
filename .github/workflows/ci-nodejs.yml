@@ -711,7 +711,7 @@ jobs:
         run: |
           rm -f ${{ env.TYPE_CHECK_STATUS_FILE }}
 
-  validate:
+  validate-build:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
@@ -786,7 +786,7 @@ jobs:
       - test-multiple-browsers
       - lint
       - type-check
-      - validate
+      - validate-build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -824,7 +824,7 @@ jobs:
       - test-multiple-browsers
       - lint
       - type-check
-      - validate
+      - validate-build
     runs-on: ubuntu-latest
     defaults:
       run:
