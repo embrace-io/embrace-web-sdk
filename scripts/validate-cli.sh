@@ -94,7 +94,7 @@ fi
 
 # 6. Check ES module syntax
 echo "Checking for ES module compliance..."
-if grep -q "require(" "$CLI_FILE" | grep -v "#!/usr/bin/env node"; then
+if grep -q "require(" "$CLI_FILE"; then
   echo "  ⚠️  Found require() calls in ESM CLI"
 fi
 
