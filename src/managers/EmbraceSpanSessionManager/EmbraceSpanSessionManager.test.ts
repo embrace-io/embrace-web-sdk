@@ -878,12 +878,12 @@ describe('EmbraceSpanSessionManager', () => {
     });
 
     describe('Source tab detection timing window', () => {
-      it('should detect source tab when activity is within 20 seconds', () => {
+      it('should detect source tab when activity is within 10 seconds', () => {
         const now = clock.now;
         const sourceTabActivity: TabActivity = {
           tabId: 'source-tab-123',
           experienceId: 'source-exp-456',
-          lastActivityMs: now - 5000, // 5 seconds ago (within 20s window)
+          lastActivityMs: now - 5000, // 5 seconds ago (within 10s window)
         };
 
         mockStorage.setItem(
