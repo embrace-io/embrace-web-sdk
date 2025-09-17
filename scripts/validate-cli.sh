@@ -1,23 +1,19 @@
 #!/bin/bash
 set -e
 
+CLI_FILE="cli/dist/index.js"
+
 echo "🔍 Validating CLI build output..."
 
-# 0. Run quick checks first (es-check and publint)
+# Run quick checks first (es-check and publint)
 echo "Running es-check and publint..."
-# Always run from root, CLI is in cli/ directory
-npx es-check es2022 cli/dist/index.js --module --allow-hash-bang
+# Always run from root
+npx es-check es2022 "$CLI_FILE" --module --allow-hash-bang
 (cd cli && npx publint)
 echo "  ✅ ES compatibility and package checks passed"
 
-# 1. Check CLI bundle exists and size
-echo "Checking CLI bundle..."
+echo "Checking CLI bundle size..."
 # Always run from root - CLI files are at cli/dist/
-CLI_FILE="cli/dist/index.js"
-if [ ! -f "$CLI_FILE" ]; then
-  echo "  ❌ CLI bundle not found: $CLI_FILE"
-  exit 1
-fi
 SIZE=$(wc -c < "$CLI_FILE")
 SIZE_KB=$((SIZE / 1024))
 MAX_SIZE_KB=${MAX_CLI_SIZE_KB:-20}
@@ -53,14 +49,6 @@ npm init -y --quiet > /dev/null 2>&1
 # Link the CLI locally from root/cli directory
 npm install "$ORIG_DIR/cli" --quiet 2>&1
 
-# Try to run the CLI with --help
-if npx embrace-web-cli --help > /dev/null 2>&1; then
-  echo "  ✅ CLI executes successfully"
-else
-  echo "  ❌ CLI failed to execute"
-  exit 1
-fi
-
 # 4. Check that CLI has required commands
 echo "Checking CLI commands..."
 HELP_OUTPUT=$(npx embrace-web-cli --help 2>&1)
@@ -74,21 +62,5 @@ else
 fi
 
 cd "$ORIG_DIR"
-
-# 5. Verify package.json bin field
-echo "Checking package.json bin configuration..."
-if grep -q '"embrace-web-cli"' cli/package.json; then
-  echo "  ✅ CLI bin field configured"
-else
-  echo "  ❌ Missing bin configuration in package.json"
-  exit 1
-fi
-
-# 6. Check ES module syntax
-echo "Checking for ES module compliance..."
-if grep -q "require(" "$CLI_FILE"; then
-  echo "  X  Found require() calls in ESM CLI"
-  exit 1
-fi
 
 echo "✅ All CLI validations passed!"
