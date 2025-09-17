@@ -91,12 +91,12 @@ const fs = require('fs');
 try {
   const map = JSON.parse(fs.readFileSync('$MAP_FILE', 'utf8'));
   if (!map.sources || map.sources.length === 0) {
-    console.log('  ❌ Sourcemap has no sources');
+    console.error('  ❌ Sourcemap has no sources');
     process.exit(1);
   }
   console.log('  ✅ Sourcemap is valid (' + map.sources.length + ' sources)');
 } catch (e) {
-  console.log('  ❌ Invalid sourcemap JSON:', e.message);
+  console.error('  ❌ Invalid sourcemap JSON:', e.message);
   process.exit(1);
 }
 "
@@ -119,8 +119,6 @@ LOAD_TIME=$((END - START))
 echo "  Load time: ${LOAD_TIME}ms"
 if [ $LOAD_TIME -gt 500 ]; then
   echo "  ⚠️  Warning: Slow load time (${LOAD_TIME}ms)"
-else
-  echo "  ✅ Load time acceptable"
 fi
 
 # 7. Check that all expected files exist
