@@ -69,7 +69,8 @@ HELP_OUTPUT=$(npx embrace-web-cli --help 2>&1)
 if echo "$HELP_OUTPUT" | grep -q "Commands:"; then
   echo "  ✅ CLI has command structure"
 else
-  echo "  ⚠️  No commands found in CLI help"
+  echo "  X  No commands found in CLI help"
+  exit 1
 fi
 
 cd "$ORIG_DIR"
@@ -86,15 +87,8 @@ fi
 # 6. Check ES module syntax
 echo "Checking for ES module compliance..."
 if grep -q "require(" "$CLI_FILE"; then
-  echo "  ⚠️  Found require() calls in ESM CLI"
-fi
-
-# 7. Verify expected files
-echo "Checking expected CLI files..."
-if [ ! -f "$CLI_FILE" ]; then
-  echo "  ❌ Missing CLI executable: $CLI_FILE"
+  echo "  X  Found require() calls in ESM CLI"
   exit 1
 fi
-echo "  ✅ CLI executable present"
 
 echo "✅ All CLI validations passed!"
