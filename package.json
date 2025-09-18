@@ -13,9 +13,10 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepublishOnly": "npm run sdk:compile:clean && npm run sdk:compile",
+    "prepublishOnly": "npm run sdk:compile:clean && npm run sdk:compile && npm run sdk:validate",
     "clean": "npm run clean --workspaces --if-present && npx rimraf .sonda build node_modules",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
+    "validate": "npm run sdk:validate && npm run cli:validate",
     "dev": "npm run sdk:compile:esm:watch & npm run sdk:compile:types:watch & npm run dev --workspace=embrace-web-sdk-react-demo",
     "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
     "sdk:analyze": "npx tsx scripts/measureSize.ts",
@@ -45,6 +46,8 @@
     "sdk:lint:eslint": "eslint --max-warnings=0",
     "sdk:lint:eslint:fix": "eslint --fix --max-warnings=0 --no-warn-ignored",
     "sdk:tsc:check": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
+    "sdk:validate": "bash scripts/validate-build.sh",
+    "cli:validate": "bash scripts/validate-cli.sh",
     "commitlint": "commitlint",
     "playwright": "playwright",
     "prepare": "if [ -d .git ]; then husky; fi"

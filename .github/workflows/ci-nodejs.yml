@@ -711,6 +711,74 @@ jobs:
         run: |
           rm -f ${{ env.TYPE_CHECK_STATUS_FILE }}
 
+  validate-build:
+    needs: configure
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    env:
+      VALIDATE_STATUS_FILE: validate.success.txt
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+    steps:
+      - name: Restore previous validate results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.VALIDATE_STATUS_FILE }}
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
+
+      - name: Check if validate previously succeeded
+        run: |
+          if test -e ${{ env.VALIDATE_STATUS_FILE }}; then
+            echo 'VALIDATE_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'VALIDATE_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v5
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install NPM dependencies
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Build SDK and CLI
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run compile
+
+      - name: Validate SDK build
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:validate
+
+      - name: Validate CLI build
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run cli:validate
+
+      - name: Cache successful validate results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.VALIDATE_STATUS_FILE }}
+
+      - name: Do not cache validate failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.VALIDATE_STATUS_FILE }}
+
   publish-sdk:
     needs:
       - configure
@@ -718,6 +786,7 @@ jobs:
       - test-multiple-browsers
       - lint
       - type-check
+      - validate-build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -755,6 +824,7 @@ jobs:
       - test-multiple-browsers
       - lint
       - type-check
+      - validate-build
     runs-on: ubuntu-latest
     defaults:
       run:
