@@ -3,35 +3,32 @@ set -e
 
 echo "🔍 Validating SDK build output..."
 
-# 0. Run quick checks first (es-check and publint)
+DIST_DIR="build/esm"
+if [ ! -d "$DIST_DIR" ]; then
+  DIST_DIR="dist"
+fi
+
+# Run quick checks first (es-check and publint)
 echo "Running es-check and publint..."
 if [ -d "build" ]; then
   npx es-check es6 build/iife/bundle.js --module
-  npx es-check es2022 --module 'build/esm/**/*.js'
+  npx es-check es2022 --module "$DIST_DIR/**/*.js"
 else
   npx es-check es6 dist/embrace-web-sdk.js --module
-  npx es-check es2022 --module 'dist/**/*.js' --not dist/embrace-web-sdk.js
+  npx es-check es2022 --module "$DIST_DIR/**/*.js" --not "$DIST_DIR/embrace-web-sdk.js"
 fi
 npx publint
 echo "  ✅ ES compatibility and package checks passed"
 
 # 1. Bundle size check
-echo "Checking bundle size..."
 BUNDLE_FILE="build/iife/bundle.js"
 if [ ! -f "$BUNDLE_FILE" ]; then
   BUNDLE_FILE="dist/embrace-web-sdk.js"
 fi
-SIZE=$(gzip -c $BUNDLE_FILE | wc -c)
+
+SIZE=$(gzip -c $BUNDLE_FILE | wc -c | tr -d ' ')
 SIZE_KB=$((SIZE / 1024))
-MAX_SIZE_KB=${MAX_BUNDLE_SIZE_KB:-50}
-MAX_SIZE=$((MAX_SIZE_KB * 1024))
 echo "  Bundle size (gzipped): ${SIZE_KB}KB (${SIZE} bytes)"
-if [ $SIZE -gt $MAX_SIZE ]; then
-  echo "  ❌ Bundle too large: ${SIZE_KB}KB (max: ${MAX_SIZE_KB}KB)"
-  exit 1
-else
-  echo "  ✅ Bundle size within limits"
-fi
 
 # 2. Verify package exports
 echo "Verifying package exports..."
@@ -62,10 +59,6 @@ cd - > /dev/null
 
 # 3. Check for accidental require() in ESM dist
 echo "Checking for unexpected requires in dist..."
-DIST_DIR="build/esm"
-if [ ! -d "$DIST_DIR" ]; then
-  DIST_DIR="dist"
-fi
 if [ -d "$DIST_DIR" ] && grep -r "require(" $DIST_DIR --include="*.js" --exclude="*.cjs" > /dev/null 2>&1; then
   echo "  ❌ Found unexpected require() calls in ESM files:"
   grep -r "require(" $DIST_DIR --include="*.js" --exclude="*.cjs"

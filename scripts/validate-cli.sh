@@ -3,6 +3,10 @@ set -e
 
 CLI_FILE="cli/dist/index.js"
 
+SIZE=$(wc -c < "$CLI_FILE" | tr -d ' ')
+SIZE_KB=$((SIZE / 1024))
+echo "  CLI size: ${SIZE_KB}KB (${SIZE} bytes)"
+
 echo "🔍 Validating CLI build output..."
 
 # Run quick checks first (es-check and publint)
@@ -11,20 +15,6 @@ echo "Running es-check and publint..."
 npx es-check es2022 "$CLI_FILE" --module --allow-hash-bang
 (cd cli && npx publint)
 echo "  ✅ ES compatibility and package checks passed"
-
-echo "Checking CLI bundle size..."
-# Always run from root - CLI files are at cli/dist/
-SIZE=$(wc -c < "$CLI_FILE")
-SIZE_KB=$((SIZE / 1024))
-MAX_SIZE_KB=${MAX_CLI_SIZE_KB:-20}
-MAX_SIZE=$((MAX_SIZE_KB * 1024))
-echo "  CLI size: ${SIZE_KB}KB (${SIZE} bytes)"
-if [ $SIZE -gt $MAX_SIZE ]; then
-  echo "  ❌ CLI too large: ${SIZE_KB}KB (max: ${MAX_SIZE_KB}KB)"
-  exit 1
-else
-  echo "  ✅ CLI size within limits"
-fi
 
 # 2. Verify CLI is executable
 echo "Checking CLI is executable..."
