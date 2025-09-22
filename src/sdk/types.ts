@@ -204,6 +204,15 @@ type BaseSDKInitConfig = {
    * **default**: false
    */
   blockNetworkSpanForwarding?: boolean;
+
+  /**
+   * restrictedProtocols defines a set of protocols where the SDK should not operate. In `initSDK` if the current
+   * `window.location` is on one of these protocols the SDK will stop initialization. Note that when adding protocols
+   * the final ":" should be included as per https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+   *
+   * **default**: new Set(['file:'])
+   */
+  restrictedProtocols?: Set<string>;
 };
 
 /*
