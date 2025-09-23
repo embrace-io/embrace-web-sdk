@@ -10,12 +10,7 @@ updates:
       - '/cli'
       - '/demo/frontend'
       - '/demo/frontend-cdn'
-      - '/demo/webpack-example'
-      - '/tests/integration'
-      - '/tests/integration/platforms/next-latest'
-      - '/tests/integration/platforms/vite-7'
-      - '/tests/integration/platforms/webpack-5'
-      - '/tests/performance'
+      - '/demo/frontend-sdk'
     schedule:
       interval: 'weekly'
     open-pull-requests-limit: 50
@@ -23,7 +18,7 @@ updates:
       vite:
         patterns:
           - '*vite*'
-      otel:
+      opentelemetry:
         patterns:
           - '@opentelemetry*'
       eslint:
@@ -36,18 +31,4 @@ updates:
       playwright:
         patterns:
           - '*playwright*'
-  # lock webpack 4 version integration test - only allow minor and patch updates
-  - package-ecosystem: 'npm'
-    directory: '/tests/integration/platforms/webpack-4'
-    schedule:
-      interval: 'weekly'
-    ignore:
-      # Block all major version updates for all dependencies
-      - dependency-name: '*'
-        update-types: ['version-update:semver-major']
-  # force otel-latest integration test to run on latest version
-  - package-ecosystem: 'npm'
-    directory: '/tests/integration/platforms/vite-otel-latest'
-    schedule:
-      interval: 'weekly'
-    versioning-strategy: 'increase' # Always update to latest versions
+          - '*chrome*'
