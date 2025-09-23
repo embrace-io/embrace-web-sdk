@@ -1078,6 +1078,32 @@ describe('initSDK', () => {
       );
     });
 
+    it('should refresh the remote config using the template app version if one is not provided', () => {
+      fakeFetchRespondWith(
+        JSON.stringify({
+          threshold: 90,
+        })
+      );
+
+      const result = initSDK({
+        appID: 'abc12',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            // This instrumentation does its own patching of Fetch which interferes with our test stub
+            '@opentelemetry/instrumentation-fetch',
+            // Document load instrumentation generates a bunch of spans in this test environment
+            'document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(fakeFetchGetUrl()).to.contain(
+        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=EmbIOAppVersionX.X.X&deviceId='
+      );
+    });
+
     it('should disable the SDK', () => {
       const noOpLogManager = new NoOpLogManager();
       const noOpTraceManager = new NoOpTraceManager();
