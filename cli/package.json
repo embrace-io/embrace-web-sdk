@@ -13,7 +13,7 @@
     "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npx rimraf dist",
     "compile": "tsc && tsup-node src/index.ts --no-config --format esm --clean",
-    "validate": "bash ../scripts/validate-cli.sh"
+    "validate": "bash scripts/validate-cli.sh"
   },
   "files": [
     "dist",
