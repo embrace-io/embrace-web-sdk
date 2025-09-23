@@ -39,7 +39,7 @@
           const script = document.createElement('script');
           script.async = true;
           script.defer = true;
-          script.src = '/bundle.js';
+          script.src = '/embrace-web-sdk.js';
           script.onload = function () {
             window.EmbraceWebSdkOnReady.q.forEach(fn => fn());
             window.EmbraceWebSdkOnReady.q = [];

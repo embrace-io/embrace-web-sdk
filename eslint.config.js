@@ -162,7 +162,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
       parserOptions: {
-        projectService: true,
+        // https://typescript-eslint.io/packages/parser#projectserviceoptions
+        projectService: {
+          allowDefaultProject: ['*.config.*', 'scripts/*', 'tests/utils/*'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

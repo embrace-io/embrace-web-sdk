@@ -7,7 +7,7 @@ export default merge(baseConfig, {
   mode: 'production',
   output: {
     path: path.resolve('dist/es2015'),
-    filename: 'bundle.js',
+    filename: 'embrace-web-sdk.js',
     clean: true,
     environment: {
       arrowFunction: false,

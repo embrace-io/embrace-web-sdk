@@ -35,7 +35,7 @@ trace.setGlobalTracerProvider(provider);
 
 const resources = [
   {
-    name: 'http://localhost:8090/bundle.js',
+    name: 'http://localhost:8090/embrace-web-sdk.js',
     entryType: 'resource',
     startTime: 20.985000010114163,
     duration: 90.94999998342246,
@@ -85,7 +85,7 @@ const resources = [
 ];
 const resourcesNoSecureConnectionStart = [
   {
-    name: 'http://localhost:8090/bundle.js',
+    name: 'http://localhost:8090/embrace-web-sdk.js',
     entryType: 'resource',
     startTime: 20.985000010114163,
     duration: 90.94999998342246,
@@ -414,7 +414,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(
           spanResource1.attributes['url.full'],
-          'http://localhost:8090/bundle.js'
+          'http://localhost:8090/embrace-web-sdk.js'
         );
         assert.strictEqual(
           spanResource2.attributes['url.full'],
@@ -450,7 +450,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(
           spanResource1.attributes['url.full'],
-          'http://localhost:8090/bundle.js'
+          'http://localhost:8090/embrace-web-sdk.js'
         );
 
         ensureNetworkEventsExists(srEvents1, false);

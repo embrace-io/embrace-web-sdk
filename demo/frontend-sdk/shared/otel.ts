@@ -60,7 +60,7 @@ const addEmbraceSDK = () => {
   };
   const script = document.createElement('script');
   script.async = true;
-  script.src = '/bundle.js';
+  script.src = '/embrace-web-sdk.js';
   script.onload = function () {
     // Call onReady immediately if the SDK is already loaded
     window.EmbraceWebSdkOnReady.onReady = function (fn) {

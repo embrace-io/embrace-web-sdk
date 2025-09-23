@@ -205,12 +205,14 @@ describe('initSDK', () => {
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     void expect(finishedSpans[0].name).to.be.equal('my span');
-    void expect(finishedSpans[0].attributes.fake).to.be.equal('my-attr');
+    void expect(finishedSpans[0].attributes['fake']).to.be.equal('my-attr');
 
     const finishedLogRecords = logExporter.getFinishedLogRecords();
     expect(finishedLogRecords).to.have.lengthOf(1);
     void expect(finishedLogRecords[0].body).to.be.equal('my log');
-    void expect(finishedLogRecords[0].attributes.fake).to.be.equal('my-attr');
+    void expect(finishedLogRecords[0].attributes['fake']).to.be.equal(
+      'my-attr'
+    );
   });
 
   it('should allow controlling default instrumentations', async () => {

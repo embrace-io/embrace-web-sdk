@@ -312,8 +312,8 @@ initSDK({
 > [!WARNING]
 > Embrace automatically creates spans for network requests, however because the OTLP export itself makes a network
 > request this can produce a cycle where the export's network request creates a span which is then exported which the
-> creates another span, etc. 
-> 
+> creates another span, etc.
+>
 > To avoid this you can configure the network instrumentation to ignore the URLs to which you are exporting as shown in
 > the above snippet.
 
@@ -387,9 +387,9 @@ This is necessary to ensure that the SDK is fully loaded before you start using 
 
 ### Running multiple instances of the SDK
 
-If you have multiple applications on the same page and want to run multiple instances of the SDK, you can do so by 
+If you have multiple applications on the same page and want to run multiple instances of the SDK, you can do so by
 creating an instance of the SDK for each application. Make sure that the flag `registerGlobally` is set to `false` when
-initializing the SDK. 
+initializing the SDK.
 
 ```typescript
 import { initSDK } from '@embrace-io/web-sdk';
@@ -401,7 +401,7 @@ const embraceSDK = initSDK({
 });
 ```
 
-Since the SDK is not registered globally, you will need to use the `embraceSDK` instance to access the SDK methods 
+Since the SDK is not registered globally, you will need to use the `embraceSDK` instance to access the SDK methods
 and properties.
 
 ```typescript
@@ -413,8 +413,8 @@ const embraceSDK = initSDK({
    registerGlobally: false, // Prevents the SDK from registering itself globally
 });
 
-// Use this 
-embraceSDK.log.message('This is a log message', 'info'); 
+// Use this
+embraceSDK.log.message('This is a log message', 'info');
 
 // Instead of
 import { log } from '@embrace-io/web-sdk';
@@ -423,12 +423,12 @@ log.message('This is a log message', 'info');
 ```
 
 Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
-* Fetch and XHR instrumentations are registered globally, so by default the last SDK to register will override the 
-  previous instance's configuration and only the last instance will be able to capture network requests. If you don't 
-  want the last instance to be the one that captures network request you can set `omitIfAlreadyPatched` to true when 
+* Fetch and XHR instrumentations are registered globally, so by default the last SDK to register will override the
+  previous instance's configuration and only the last instance will be able to capture network requests. If you don't
+  want the last instance to be the one that captures network request you can set `omitIfAlreadyPatched` to true when
   configuring the network instrumentations to allow a different instance to control the capturing.
-* Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that 
-  are not caught. 
+* Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that
+  are not caught.
 
 ## Network span forwarding
 
@@ -447,10 +447,10 @@ import { sdk } from '@embrace-io/web-sdk';
 sdk.initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  
+
   // Setting this to true blocks the Network Span Forwarding feature regardless of what has been configured server-side
   blockNetworkSpanForwarding: true,
-  
+
   // Setting registerGlobally to false, providing a custom propagator, or omitting every network instrumentations are
   // all not supported alongside Network Span Forwarding and will cause that feature to turn off
   registerGlobally: false,
@@ -496,8 +496,6 @@ The SDK is intended to be imported as a module and transpiled by a bundler. We p
 We recommend importing the ESNext version of the SDK if your bundler supports it and letting your build pipeline handle the transpilation. This will ensure that the SDK you import is the smallest possible size.
 
 We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum compatibility with older browsers.
-
-**Note:** we currently provide a CommonJS version of the SDK but it is not recommended for new projects and will be removed in a future release.
 
 ## Troubleshooting
 
