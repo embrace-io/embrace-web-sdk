@@ -39,7 +39,7 @@ import {
   UserLogRecordProcessor,
   UserSpanProcessor,
 } from '../processors/index.js';
-import { getWebSDKResource } from '../resources/index.js';
+import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
@@ -144,7 +144,8 @@ export const initSDK = (
       providedDynamicSDKConfigManager ??
       new EmbraceDynamicConfigManager({
         appID,
-        appVersion,
+        appVersion:
+          appVersion || TEMPLATE_APP_VERSION.trim() || 'no-app-version',
         embraceConfigURL,
         defaultConfig: dynamicSDKConfig,
         deviceId: enduserPseudoID,
