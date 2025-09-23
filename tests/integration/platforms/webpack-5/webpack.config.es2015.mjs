@@ -1,7 +1,7 @@
+import path from 'node:path';
+import Sonda from 'sonda/webpack';
 import { merge } from 'webpack-merge';
 import baseConfig from './webpack.config.base.mjs';
-import path from 'path';
-import Sonda from 'sonda/webpack';
 
 export default merge(baseConfig, {
   mode: 'production',
