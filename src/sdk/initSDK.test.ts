@@ -386,6 +386,35 @@ describe('initSDK', () => {
     );
   });
 
+  it('should not initialize on restricted protocols', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'app12',
+      diagLogger,
+      // we can't easily override window.location.protocol for this test, instead
+      // leverage the fact we know it will run under http:
+      restrictedProtocols: new Set(['http:']),
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: not initializing due to restricted protocol: http:'
+    );
+  });
+
+  it('should not initialize on file protocol by default', () => {
+    const spy = sinon.spy(Set.prototype, 'has').withArgs('http:');
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({ appID: 'app12', diagLogger });
+
+    // ideally we would fake the protocol to be 'file:' but since we can't easily override window.location.protocol then
+    // just verify that the protocol was checked against the right default set
+    expect(spy.getCall(0).thisValue).to.deep.equal(new Set(['file:']));
+    void expect(result).not.to.be.false;
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+  });
+
   describe('communication with Embrace', () => {
     beforeEach(() => {
       fakeFetchInstall();

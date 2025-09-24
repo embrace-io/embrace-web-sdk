@@ -90,6 +90,7 @@ export const initSDK = (
     dynamicSDKConfig,
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
+    restrictedProtocols = new Set(['file:']),
   }: SDKInitConfig = { appID: '' }
 ): SDKControl | false => {
   try {
@@ -115,6 +116,12 @@ export const initSDK = (
     if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
       throw new Error(
         'when the embrace appID is omitted then at least one logExporter or spanExporter must be set'
+      );
+    }
+
+    if (restrictedProtocols.has(window.location.protocol)) {
+      throw new Error(
+        `not initializing due to restricted protocol: ${window.location.protocol}`
       );
     }
 
