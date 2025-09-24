@@ -1,22 +1,9 @@
 {
-  "name": "simple-stress-test",
-  "version": "0.0.1",
+  "name": "tests-performance",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "test": "npx playwright test"
-  },
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@playwright/test": "1.55.0",
-    "@types/chrome-remote-interface": "^0.31.14",
-    "@types/node": "^22",
-    "chrome-launcher": "^1.2.0",
-    "chrome-remote-interface": "^0.33.3",
-    "get-port": "^7.1.0",
-    "lighthouse": "^12.6.1",
-    "playwright": "1.55.0",
-    "typescript": "^5.8.3"
   }
 }

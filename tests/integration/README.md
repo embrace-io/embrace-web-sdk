@@ -243,6 +243,7 @@ The following platforms are currently supported for integration tests:
 
 | Platform                   | Build Tests | End-to-End Tests |
 | -------------------------- | ----------- | ---------------- |
+| Webpack 4 (es2015)         | ✅          | ✅               |
 | Webpack 5 (esnext, es2020) | ✅          | ✅               |
 | Vite 7 (esnext, es2020)    | ✅          | ✅               |
 | Next Latest (es2020)       | ✅          | ✅               |
