@@ -4,6 +4,7 @@
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "./dist/embrace-web-sdk.js",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -57,6 +58,16 @@
     ".": "./dist/index.js",
     "./react-instrumentation": "./dist/react-instrumentation/index.js",
     "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "react-instrumentation": [
+        "./dist/react-instrumentation/index.d.ts"
+      ]
+    }
   },
   "author": "Embrace <support@embrace.io> (https://embrace.io/)",
   "bugs": {
