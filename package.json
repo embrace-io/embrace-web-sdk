@@ -4,7 +4,7 @@
   "description": "Embrace Web SDK",
   "type": "module",
   "jsdelivr": "./dist/embrace-web-sdk.js",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -33,8 +33,8 @@
     "sdk:compile": "npx rimraf dist && npm run sdk:compile:iife && npm run sdk:compile:sdk",
     "sdk:compile:iife": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js && terser dist/embrace-web-sdk.js -c -m --source-map \"content='dist/embrace-web-sdk.js.map',url='embrace-web-sdk.js.map'\" -o dist/embrace-web-sdk.js",
     "sdk:compile:iife:watch": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js --watch",
-    "sdk:compile:sdk": "tsc -p tsconfig.build.json",
-    "sdk:compile:sdk:watch": "tsc --watch -p tsconfig.build.json",
+    "sdk:compile:sdk": "tsdown 'src/**/*.ts' '!src/**/*.test.*' --format cjs,esm --target=es2022 --dts --outDir dist --sourcemap --platform browser --no-splitting --unbundle --no-clean",
+    "sdk:compile:sdk:watch": "npm run sdk:compile:sdk --watch",
     "sdk:lint": "npm run sdk:lint:prettier && npm run sdk:lint:eslint && npm run sdk:tsc:check",
     "sdk:lint:fix": "npm run sdk:lint:prettier:fix && npm run sdk:tsc:check && npm run sdk:lint:eslint:fix",
     "sdk:lint:prettier": "prettier --log-level=warn --check .",
@@ -55,8 +55,14 @@
     "!CLAUDE.md"
   ],
   "exports": {
-    ".": "./dist/index.js",
-    "./react-instrumentation": "./dist/react-instrumentation/index.js",
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react-instrumentation": {
+      "import": "./dist/react-instrumentation/index.js",
+      "require": "./dist/react-instrumentation/index.cjs"
+    },
     "./package.json": "./package.json"
   },
   "typesVersions": {
@@ -150,6 +156,7 @@
     "sinon-chai": "4.0.1",
     "sonda": "0.9.0",
     "terser": "5.44.0",
+    "tsdown": "0.15.4",
     "tsx": "4.20.5",
     "typescript": "5.8.3",
     "typescript-eslint": "8.44.1"

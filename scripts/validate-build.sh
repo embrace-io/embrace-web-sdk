@@ -3,28 +3,23 @@ set -e
 
 echo "🔍 Validating SDK build output..."
 
-DIST_DIR="build/esm"
-if [ ! -d "$DIST_DIR" ]; then
-  DIST_DIR="dist"
-fi
+DIST_DIR="dist"
+BUNDLE_FILE="dist/embrace-web-sdk.js"
 
 # Run quick checks first (es-check and publint)
 echo "Running es-check and publint..."
-if [ -d "build" ]; then
-  npx es-check es6 build/iife/bundle.js --module
-  npx es-check es2022 --module "$DIST_DIR/**/*.js"
-else
-  npx es-check es6 dist/embrace-web-sdk.js --module
-  npx es-check es2022 --module "$DIST_DIR/**/*.js" --not "$DIST_DIR/embrace-web-sdk.js"
-fi
+npx es-check es6 $BUNDLE_FILE --module
+npx es-check es2022 --module "$DIST_DIR/**/*.js" --not $BUNDLE_FILE
+npx es-check es2022 "$DIST_DIR/**/*.cjs"
+
 npx publint
 echo "  ✅ ES compatibility and package checks passed"
 
 # 1. Bundle size check
-BUNDLE_FILE="build/iife/bundle.js"
-if [ ! -f "$BUNDLE_FILE" ]; then
-  BUNDLE_FILE="dist/embrace-web-sdk.js"
-fi
+echo "Checking IIFE CDN bundle size..."
+RAW_SIZE=$(cat $BUNDLE_FILE | wc -c | tr -d ' ')
+RAW_SIZE_KB=$((RAW_SIZE / 1024))
+echo "  Raw size: ${RAW_SIZE_KB}KB (${RAW_SIZE} bytes)"
 
 SIZE=$(gzip -c $BUNDLE_FILE | wc -c | tr -d ' ')
 SIZE_KB=$((SIZE / 1024))
@@ -57,9 +52,9 @@ console.log('  ✅ CommonJS require works');
 
 cd - > /dev/null
 
-# 3. Check for accidental require() in ESM dist
-echo "Checking for unexpected requires in dist..."
-if [ -d "$DIST_DIR" ] && grep -r "require(" $DIST_DIR --include="*.js" --exclude="*.cjs" > /dev/null 2>&1; then
+# 3. Check for accidental require() in ESM files
+echo "Checking for unexpected requires in ESM files..."
+if grep -r "require(" $DIST_DIR --include="*.js" --exclude="*.cjs" > /dev/null 2>&1; then
   echo "  ❌ Found unexpected require() calls in ESM files:"
   grep -r "require(" $DIST_DIR --include="*.js" --exclude="*.cjs"
   exit 1
@@ -67,12 +62,20 @@ else
   echo "  ✅ No unexpected require() calls found"
 fi
 
+# 4. Check for accidental imports in CommonJS files
+echo "Checking for unexpected imports in CommonJS files..."
+if grep -r "import" $DIST_DIR --include="*.cjs" > /dev/null 2>&1; then
+  echo "  ❌ Found unexpected imports in CommonJS files:"
+  grep -r "import" $DIST_DIR --include="*.cjs"
+  exit 1
+else
+  echo "  ✅ No unexpected imports found"
+fi
+
 # 4. Validate sourcemaps
 echo "Validating sourcemaps..."
-MAP_FILE="build/iife/bundle.js.map"
-if [ ! -f "$MAP_FILE" ]; then
-  MAP_FILE="dist/embrace-web-sdk.js.map"
-fi
+MAP_FILE="$DIST_DIR/embrace-web-sdk.js.map"
+
 if [ ! -f "$MAP_FILE" ]; then
   echo "  ❌ Sourcemap not found"
   exit 1
@@ -116,21 +119,14 @@ fi
 
 # 7. Check that all expected files exist
 echo "Checking expected files..."
-if [ -d "build" ]; then
-  EXPECTED_FILES=(
-    "build/iife/bundle.js"
-    "build/iife/bundle.js.map"
-    "build/esm/index.js"
-    "build/types/index.d.ts"
-  )
-else
-  EXPECTED_FILES=(
-    "dist/embrace-web-sdk.js"
-    "dist/embrace-web-sdk.js.map"
-    "dist/index.js"
-    "dist/index.d.ts"
-  )
-fi
+EXPECTED_FILES=(
+  "dist/embrace-web-sdk.js"
+  "dist/embrace-web-sdk.js.map"
+  "dist/index.js"
+  "dist/index.d.ts"
+  "dist/index.cjs"
+  "dist/index.d.cts"
+)
 
 for FILE in "${EXPECTED_FILES[@]}"; do
   if [ ! -f "$FILE" ]; then
