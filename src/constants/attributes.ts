@@ -46,6 +46,7 @@ export enum EMB_NAVIGATION_INSTRUMENTATIONS {
   DeclarativeLegacy = 'react_router_declarative_legacy',
   Declarative = 'react_router_declarative',
   Data = 'react_router_data',
+  Manual = 'manual',
 }
 
 export enum EMB_ERROR_INSTRUMENTATIONS {

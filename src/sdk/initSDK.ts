@@ -15,6 +15,9 @@ import {
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
+import { log } from '../api-logs/index.js';
+import { trace } from '../api-traces/index.js';
+import { page } from '../api-page/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
@@ -28,6 +31,7 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbracePageManager,
 } from '../managers/index.js';
 import {
   EmbraceLogRecordProcessor,
@@ -43,13 +47,12 @@ import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
-import { log } from '../api-logs/index.js';
-import { trace } from '../api-traces/index.js';
 import type {
   DynamicSDKConfig,
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
+  SetupPageArgs,
   SetupSessionArgs,
   SetupTracesArgs,
   SetupUserArgs,
@@ -278,6 +281,8 @@ export const initSDK = (
       });
     }
 
+    const pageManager = setupPage({ registerGlobally });
+
     diagLogger.info('successfully initialized the SDK');
 
     const sdkControl: SDKControl = {
@@ -292,6 +297,7 @@ export const initSDK = (
       trace: embraceTraceManager,
       session: spanSessionManager,
       user: userManager,
+      page: pageManager,
     };
 
     if (registerGlobally) {
@@ -451,4 +457,14 @@ const setupLogs = ({
   }
 
   return { loggerProvider, embraceLogManager };
+};
+
+const setupPage = ({ registerGlobally }: SetupPageArgs) => {
+  const embracePageManager = new EmbracePageManager();
+
+  if (registerGlobally) {
+    page.setGlobalPageManager(embracePageManager);
+  }
+
+  return embracePageManager;
 };

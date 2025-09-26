@@ -1,4 +1,5 @@
 import { log } from './api-logs/index.js';
+import { page } from './api-page/index.js';
 import { session } from './api-sessions/index.js';
 import type { ExtendedSpan } from './api-traces/index.js';
 import { trace } from './api-traces/index.js';
@@ -12,6 +13,7 @@ import { initSDK } from './sdk/index.js';
 export {
   getNavigationInstrumentation,
   log,
+  page,
   initSDK,
   DiagLogLevel,
   session,
