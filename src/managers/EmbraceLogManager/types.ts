@@ -10,4 +10,5 @@ export interface EmbraceLogManagerArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   loggerProvider?: LoggerProvider;
+  storage?: Storage;
 }
