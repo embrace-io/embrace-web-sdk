@@ -40,6 +40,8 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
 
   public getSessionId = () => null;
 
+  public getPreviousSessionId = () => null;
+
   public getSessionSpan(): ExtendedSpan | null {
     return null;
   }

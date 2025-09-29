@@ -14,6 +14,11 @@ describe('NoOpSpanSessionManager', () => {
     void expect(sessionId).to.be.null;
   });
 
+  it('should return null for getPreviousSessionId', () => {
+    const sessionId = noOpSpanSessionManager.getPreviousSessionId();
+    void expect(sessionId).to.be.null;
+  });
+
   it('should return null for getSessionSpan', () => {
     const sessionSpan: Span | null = noOpSpanSessionManager.getSessionSpan();
     void expect(sessionSpan).to.be.null;
