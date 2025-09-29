@@ -107,6 +107,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'my custom error',
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
     });
   });
 
@@ -135,6 +136,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'promise was rejected',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
     });
   });
 
@@ -164,6 +166,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'my custom error',
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
     });
   });
 
@@ -192,6 +195,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'Unhandled Rejected Promise',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
     });
   });
 
@@ -226,6 +230,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'global exception test error message',
       'exception.stacktrace': stackTrace,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
     });
   });
 });

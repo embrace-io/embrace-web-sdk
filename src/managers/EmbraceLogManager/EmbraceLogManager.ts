@@ -12,10 +12,15 @@ import {
   EMB_TYPES,
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
+  KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
-import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
+import {
+  GLOBAL_CONFIG,
+  OTelPerformanceManager,
+  getState,
+} from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 import type {
   LogExceptionOptions,
@@ -28,6 +33,7 @@ import {
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 
 /**
  * GLOBAL_CONFIG._EmbraceFileBundleIDs is populated on run time when each file is loaded,
@@ -42,6 +48,7 @@ export class EmbraceLogManager implements LogManager {
   private readonly _logger: Logger;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _visibilityDoc: VisibilityStateDocument;
 
   public constructor({
     diag: diagParam,
@@ -49,6 +56,7 @@ export class EmbraceLogManager implements LogManager {
     spanSessionManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
+    visibilityDoc = window.document,
   }: EmbraceLogManagerArgs) {
     const loggerProvider = globalLoggerProviderOverride ?? logs;
 
@@ -61,6 +69,7 @@ export class EmbraceLogManager implements LogManager {
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
     this._limitManager = limitManager;
+    this._visibilityDoc = visibilityDoc;
   }
 
   private static _logSeverityToSeverityNumber(
@@ -126,6 +135,7 @@ export class EmbraceLogManager implements LogManager {
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
         [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
+        [KEY_EMB_STATE]: getState(this._visibilityDoc),
       },
     });
   }
@@ -203,6 +213,7 @@ export class EmbraceLogManager implements LogManager {
               [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
             }
           : {}),
+        [KEY_EMB_STATE]: getState(this._visibilityDoc),
       },
     });
   }

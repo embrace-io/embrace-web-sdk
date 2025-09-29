@@ -13,7 +13,6 @@ import type {
   StartSessionOptions,
 } from '../../api-sessions/index.js';
 import {
-  EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
   KEY_EMB_FROM_STORAGE,
@@ -31,7 +30,11 @@ import {
   KEY_EMB_REFERRER_URL,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
-import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
+import {
+  generateUUID,
+  OTelPerformanceManager,
+  getState,
+} from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
   TabActivity,
@@ -329,10 +332,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     const attributes: Attributes = {
       ...this._getPermanentAttributes(),
       [KEY_EMB_TYPE]: EMB_TYPES.Session,
-      [KEY_EMB_STATE]:
-        this._visibilityDoc.visibilityState === 'hidden'
-          ? EMB_STATES.Background
-          : EMB_STATES.Foreground,
+      [KEY_EMB_STATE]: getState(this._visibilityDoc),
       [ATTR_SESSION_ID]: this._activeSessionId,
       [KEY_EMB_COLD_START]: this._coldStart,
       [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
