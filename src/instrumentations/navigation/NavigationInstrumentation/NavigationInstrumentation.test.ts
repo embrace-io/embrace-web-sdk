@@ -101,7 +101,7 @@ describe('NavigationInstrumentation', () => {
   it('should clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
-      path: '/test/:time(hourly|daily|weekly|monthly)',
+      path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
       url: '/test/hourly',
     });
 
@@ -114,10 +114,10 @@ describe('NavigationInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(1);
 
     const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:time');
+    expect(span.name).to.equal('/test/:time/:type');
     expect(span.attributes).to.deep.equal({
       'emb.type': 'ux.view',
-      'view.name': '/test/:time',
+      'view.name': '/test/:time/:type',
     });
   });
 
