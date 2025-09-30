@@ -23,6 +23,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _spanStorage: EmbraceSpanStorage;
 
   public constructor({
+    resource,
     exporter,
     limitManager,
     storage = window.localStorage,
@@ -37,6 +38,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
     this._spanStorage = new EmbraceSpanStorage({
+      resource,
       storage,
       diag: parentArgs.diag,
       onExpiredSpansExport: (spans: ReadableSpan[]) => {

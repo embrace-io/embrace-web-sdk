@@ -200,6 +200,7 @@ export const initSDK = (
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
     if (sendingToEmbrace) {
       embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
+        resource: resourceWithWebSDKAttributes,
         exporter: new EmbraceTraceExporter({
           appID,
           embraceDataURL,
@@ -210,6 +211,7 @@ export const initSDK = (
           defaultInstrumentationConfig?.['session-visibility']
             ?.storedSpansExpireTimeoutMS,
         storage: sdkLocalStorage,
+        diag,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
