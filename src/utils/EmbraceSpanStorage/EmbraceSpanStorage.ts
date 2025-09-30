@@ -39,7 +39,7 @@ export class EmbraceSpanStorage {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSpanStorage',
     }),
-    storedSpansExpireTimeoutMS = 60 * 60 * 1000, // 1 hour
+    storedSpansExpireTimeoutMS = 60_000,
     onExpiredSpansExport,
   }: SpanStorageOptions = {}) {
     this._noExportTracer = new BasicTracerProvider().getTracer(
@@ -77,6 +77,8 @@ export class EmbraceSpanStorage {
           key.startsWith('_') ? undefined : value
         )
       );
+
+      this._diag.debug(`Stored pending span: ${key}`);
     } catch (error) {
       this._diag.error('Failed to store spans to storage:', error);
     }
@@ -96,12 +98,9 @@ export class EmbraceSpanStorage {
   }
 
   public startExpiredSpansCheck(): void {
-    this._checkExpiredSpansInterval = setInterval(
-      () => {
-        this.checkAndExportExpiredSpans();
-      },
-      5 * 60 * 1000
-    ); // Check every 5 minutes
+    this._checkExpiredSpansInterval = setInterval(() => {
+      this.checkAndExportExpiredSpans();
+    }, 20_000); // Check every 5 minutes
   }
 
   public stopExpiredSpansCheck(): void {
@@ -113,8 +112,11 @@ export class EmbraceSpanStorage {
 
   public checkAndExportExpiredSpans(): void {
     try {
+      this._diag.debug('In  checkAndExportExpiredSpans');
+
       const keys = this._getPendingSpansKeys();
       if (keys.length === 0) {
+        this._diag.debug('No pending spans found to export');
         return;
       }
 
@@ -132,11 +134,15 @@ export class EmbraceSpanStorage {
         }
 
         if (currentTime - storedTime <= this._storedSpansExpireTimeoutMS) {
+          this._diag.debug('Time less than expiry timeout, not sending');
           return;
         }
 
         const storedData = this._storage.getItem(key);
-        if (!storedData) return;
+        if (!storedData) {
+          this._diag.debug('No stored data, not sending');
+          return;
+        }
 
         try {
           const spans: ReadableSpan[] = [];

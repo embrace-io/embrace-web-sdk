@@ -149,7 +149,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     };
 
     this._onInteractionThrottled = throttle(() => {
-      this._interactionSinceLastVisibilityChange = true;
+      //this._interactionSinceLastVisibilityChange = true;
     }, 1000);
 
     if (this._config.enabled) {

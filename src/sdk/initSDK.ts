@@ -210,6 +210,7 @@ export const initSDK = (
           defaultInstrumentationConfig?.['session-visibility']
             ?.storedSpansExpireTimeoutMS,
         storage: sdkLocalStorage,
+        diag,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(

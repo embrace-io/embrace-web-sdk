@@ -4,7 +4,11 @@ import './index.css';
 import App from './App.tsx';
 import { setupOTel } from './otel.js';
 
-setupOTel();
+if (window.location.search.includes('noSDK')) {
+  console.log('Not setting up the SDK');
+} else {
+  setupOTel();
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

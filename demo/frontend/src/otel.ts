@@ -1,4 +1,4 @@
-import { initSDK, user } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
@@ -15,9 +15,11 @@ const setupOTel = () => {
     logExporters: [new ConsoleLogRecordExporter()],
     defaultInstrumentationConfig: {
       'session-visibility': {
-        limitedSessionMaxDurationMs: 3000,
+        limitedSessionMaxDurationMs: 30_000,
       },
+      omit: new Set(['click', 'document-load', 'web-vital']),
     },
+    logLevel: DiagLogLevel.DEBUG,
     instrumentations: [createReactRouterNavigationInstrumentation()],
     embraceDataURL: DATA_URL ?? undefined,
     embraceConfigURL: CONFIG_URL ?? undefined,

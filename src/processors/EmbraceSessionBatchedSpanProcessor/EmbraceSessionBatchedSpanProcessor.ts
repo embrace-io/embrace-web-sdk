@@ -40,6 +40,9 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
       storage,
       diag: parentArgs.diag,
       onExpiredSpansExport: (spans: ReadableSpan[]) => {
+        if (parentArgs.diag) {
+          parentArgs.diag.debug('Exporting expired spans from batch processor');
+        }
         this._exportSpans(spans);
       },
       storedSpansExpireTimeoutMS,
