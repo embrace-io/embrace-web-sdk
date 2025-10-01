@@ -2,11 +2,14 @@ import type { DiagLogger, Tracer } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
+import type { SpanSessionManagerInternal } from '../../managers/index.js';
+import { KEY_EMB_MAX_PENDING_SPANS_REACHED } from '../../constants/index.js';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
 const MAX_PENDING_SPANS_ITEMS = 10;
 
 export interface SpanStorageOptions {
+  spanSessionManager: SpanSessionManagerInternal;
   storage?: Storage;
   diag?: DiagLogger;
   storedSpansExpireTimeoutMS?: number;
@@ -32,6 +35,7 @@ export class EmbraceSpanStorage {
   private readonly _diag: DiagLogger;
   private readonly _onExpiredSpansExport?: (spans: ReadableSpan[]) => void;
   private readonly _storedSpansExpireTimeoutMS: number;
+  private readonly _spanSessionManager: SpanSessionManagerInternal;
   private _checkExpiredSpansInterval?: ReturnType<typeof setInterval>;
 
   public constructor({
@@ -41,7 +45,8 @@ export class EmbraceSpanStorage {
     }),
     storedSpansExpireTimeoutMS = 60 * 60 * 1000, // 1 hour
     onExpiredSpansExport,
-  }: SpanStorageOptions = {}) {
+    spanSessionManager,
+  }: SpanStorageOptions) {
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions'
     );
@@ -49,6 +54,7 @@ export class EmbraceSpanStorage {
     this._diag = diagParam;
     this._storedSpansExpireTimeoutMS = storedSpansExpireTimeoutMS;
     this._onExpiredSpansExport = onExpiredSpansExport;
+    this._spanSessionManager = spanSessionManager;
 
     this.startExpiredSpansCheck();
   }
@@ -63,6 +69,9 @@ export class EmbraceSpanStorage {
       this.clearStoredSpans(sessionId);
 
       if (this._getPendingSpansKeys().length >= MAX_PENDING_SPANS_ITEMS) {
+        this._spanSessionManager.incrSessionCountForKey(
+          KEY_EMB_MAX_PENDING_SPANS_REACHED
+        );
         this._diag.warn(
           'Not storing pending spans as the max number of items was reached'
         );

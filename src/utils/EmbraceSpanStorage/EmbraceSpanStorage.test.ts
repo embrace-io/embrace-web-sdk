@@ -12,6 +12,12 @@ import type {
   InMemorySpanExporter,
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-web';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.js';
+import { trace } from '@opentelemetry/api';
 
 const { expect } = chai;
 
@@ -22,6 +28,7 @@ describe('EmbraceSpanStorage', () => {
   let diag: InMemoryDiagLogger;
   let mockOnExport: sinon.SinonSpy;
   let clock: sinon.SinonFakeTimers;
+  let spanSessionManager: EmbraceSpanSessionManager;
 
   beforeEach(() => {
     memoryExporter = setupTestTraceExporter();
@@ -30,17 +37,22 @@ describe('EmbraceSpanStorage', () => {
     mockOnExport = sinon.spy();
     clock = sinon.useFakeTimers();
 
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
+    });
+
     spanStorage = new EmbraceSpanStorage({
       storage,
       diag,
       onExpiredSpansExport: mockOnExport,
+      spanSessionManager,
     });
   });
 
   afterEach(() => {
-    memoryExporter.reset();
     spanStorage.destroy();
     clock.restore();
+    trace.disable();
   });
 
   describe('storePendingSpans', () => {
@@ -79,6 +91,7 @@ describe('EmbraceSpanStorage', () => {
       const spanStorageWithFailingStorage = new EmbraceSpanStorage({
         storage: new FailingStorage(),
         diag,
+        spanSessionManager,
       });
 
       expect(() => {
@@ -99,6 +112,8 @@ describe('EmbraceSpanStorage', () => {
     });
 
     it('should not store spans when max pending spans limit is exceeded', () => {
+      spanSessionManager.startSessionSpan();
+
       const sessionSpan = mockSpan;
       const pendingSpans = [mockSpan];
 
@@ -135,6 +150,15 @@ describe('EmbraceSpanStorage', () => {
       }
       void expect(foundOverLimitKey).to.be.false;
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+
+      // Should record the limit reached on the session span
+      spanSessionManager.endSessionSpan();
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(1);
+      expect(finishedSpans[0].attributes).to.have.property(
+        'emb.max_pending_spans_reached',
+        1
+      );
     });
   });
 
@@ -162,6 +186,7 @@ describe('EmbraceSpanStorage', () => {
       const spanStorageWithFailingStorage = new EmbraceSpanStorage({
         storage: new FailingStorage(),
         diag,
+        spanSessionManager,
       });
 
       expect(() => {
