@@ -18,6 +18,7 @@ import type {
   DocumentLoadInstrumentationConfig,
   EmbraceFetchInstrumentationArgs,
   EmbraceXHRInstrumentationArgs,
+  EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
@@ -321,6 +322,8 @@ type OptionalInstrumentations =
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
+type ExtraInstrumentations = 'empty-root';
+
 interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
 }
@@ -333,6 +336,7 @@ export interface SetupDefaultInstrumentationsArgs {
 
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
+  extra?: Set<ExtraInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;
@@ -341,6 +345,7 @@ export interface DefaultInstrumentationConfig {
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
+  'empty-root'?: EmptyRootInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
   // '@opentelemetry/instrumentation-xml-http-request' to just be specified once

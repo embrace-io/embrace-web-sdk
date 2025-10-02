@@ -7,7 +7,7 @@ const ComponentWithErrorInRender = () => {
 
   return (
     <button onClick={() => setValue(-1)}>
-      Trigger a render error inside EmbraceErrorBoundary
+      Trigger a render error
       {/* @ts-ignore */}
       {value === -1 && someArray[value].some.property}
     </button>

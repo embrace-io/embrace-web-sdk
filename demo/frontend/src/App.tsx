@@ -65,6 +65,7 @@ const App = () => {
         updateCrossTabData();
       }, 1000)
     );
+
     return () => {
       window.clearInterval(sessionRefresher);
       window.removeEventListener('storage', handleStorageChange);
@@ -522,15 +523,19 @@ const App = () => {
         </fieldset>
 
         <fieldset>
-          <legend>React Error Boundary</legend>
-          <div className={styles.actions}>
-            <button onClick={() => window.location.reload()}>
-              Trigger a render error inside EmbraceErrorBoundary
-            </button>
+          <legend>React Render Errors</legend>
+
+          <div>
+            <label>Inside an error boundary:</label>
+            <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+              <ComponentWithErrorInRender />
+            </EmbraceErrorBoundary>
           </div>
-          <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+
+          <div>
+            <label>Outside an error boundary:</label>
             <ComponentWithErrorInRender />
-          </EmbraceErrorBoundary>
+          </div>
         </fieldset>
       </div>
     );
