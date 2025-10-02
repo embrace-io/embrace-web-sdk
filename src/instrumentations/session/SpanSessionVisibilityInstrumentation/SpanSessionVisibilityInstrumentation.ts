@@ -6,7 +6,7 @@ import {
   bulkRemoveEventListener,
   throttle,
 } from '../../../utils/index.js';
-import type { EmbraceProcessor } from '../../../processors/index.js';
+import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
@@ -15,7 +15,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   private _checkVisibilityTimeout: TimeoutRef | null;
   private _interactionSinceLastVisibilityChange: boolean;
   private readonly _avoidEndingLimitedSessions: boolean;
-  private readonly _embraceSpanProcessor?: EmbraceProcessor;
+  private readonly _embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
   private readonly _onInteractionThrottled: () => void;
@@ -30,7 +30,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       maxPendingSpanCount = 5,
       visibilityDoc = window.document,
     }: SpanSessionVisibilityInstrumentationArgs = {},
-    embraceSpanProcessor?: EmbraceProcessor
+    embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor
   ) {
     super({
       instrumentationName: 'SpanSessionVisibilityInstrumentation',

@@ -3,10 +3,7 @@ import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
 import { session } from '../../../api-sessions/index.js';
-import {
-  InMemoryDiagLogger,
-  setupTestTraceExporter,
-} from '../../../testUtils/index.js';
+import { setupTestTraceExporter } from '../../../testUtils/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -21,32 +18,16 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { VisibilityStateDocument } from '../../../common/index.js';
 import type { PerformanceManager } from '../../../utils/index.js';
 import { OTelPerformanceManager } from '../../../utils/index.js';
-import { EmbraceProcessor } from '../../../processors/index.js';
+import { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
 
 const { expect } = chai;
 
 // Helper function to create mock EmbraceProcessor
-const createMockEmbraceProcessor = (): EmbraceProcessor => {
-  const diagLogger = new InMemoryDiagLogger();
+const createMockEmbraceProcessor = (): EmbraceSessionBatchedSpanProcessor => {
+  const stub = sinon.createStubInstance(EmbraceSessionBatchedSpanProcessor);
+  stub.getPendingSpansCount.returns(0);
 
-  class MockEmbraceProcessor extends EmbraceProcessor {
-    public forceFlush = sinon.stub().returns(Promise.resolve(undefined));
-    public onEnd = sinon.stub();
-    public onStart = sinon.stub();
-    public getPendingSpansCount = sinon.stub().returns(0);
-    public storePendingSpans = sinon.stub();
-    public clearStoredSpans = sinon.stub();
-    public shutdown = sinon.stub().returns(Promise.resolve(undefined));
-
-    public constructor() {
-      super({
-        diag: diagLogger,
-        processorName: 'MockEmbraceProcessor',
-      });
-    }
-  }
-
-  return new MockEmbraceProcessor();
+  return stub;
 };
 
 describe('SpanSessionVisibilityInstrumentation', () => {

@@ -1,10 +1,10 @@
 import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
-import type { EmbraceProcessorArgs } from '../EmbraceProcessor/index.js';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.js';
 import type { Resource } from '@opentelemetry/resources';
+import type { DiagLogger } from '@opentelemetry/api';
 
 export type EmbraceSessionBatchedSpanProcessorArgs = {
   resource: Resource;
@@ -13,4 +13,5 @@ export type EmbraceSessionBatchedSpanProcessorArgs = {
   spanSessionManager: SpanSessionManagerInternal;
   storage?: Storage;
   storedSpansExpireTimeoutMS?: number;
-} & Pick<EmbraceProcessorArgs, 'diag'>;
+  diag?: DiagLogger;
+};
