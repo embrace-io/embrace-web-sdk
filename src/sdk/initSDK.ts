@@ -211,7 +211,6 @@ export const initSDK = (
             ?.storedSpansExpireTimeoutMS,
         storage: sdkLocalStorage,
         spanSessionManager,
-        diag: diagLogger,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
