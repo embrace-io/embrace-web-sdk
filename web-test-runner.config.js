@@ -46,7 +46,6 @@ export default {
         port: 5173,
         strictPort: false,
         hmr: false,
-        watch: null,
       },
     }),
   ],
