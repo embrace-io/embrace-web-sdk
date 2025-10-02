@@ -60,13 +60,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "02BADC3334CD400AACDB6773E262093A"
+              "stringValue": "08B006FF22C6402BB81DD0ABA7864659"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.16 Safari/537.36"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.186 Safari/537.36"
             }
           },
           {
@@ -85,8 +85,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756991962906099854",
-              "observedTimeUnixNano": "1756991962906000000",
+              "timeUnixNano": "1759412752744899902",
+              "observedTimeUnixNano": "1759412752745000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -102,25 +102,31 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "Error\n    at q.message (http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:49511)\n    at ps.message (http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:6199)\n    at x.message (http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:6577)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:55111\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:898\n    at new Promise (<anonymous>)\n    at y (http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:718)\n    at e (http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:55084)\n    at my (http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:40:116874)"
+                    "stringValue": "Error\n    at Se.message (http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:14251)\n    at Us.message (http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:2681)\n    at T.message (http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:3098)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:67200\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:946\n    at new Promise (<anonymous>)\n    at A (http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:766)\n    at t (http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:67173)\n    at my (http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:40:116874)"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-CgfZiPcM.js:12:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-CgfZiPcM.js:12:318\":\"c4f69e54dead4f2d848642ebdf4252c4\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:44:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:44:318\":\"75ef6f590dc8449b9d3ed2a543ffc664\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-CAqlSo5L.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-CAqlSo5L.js:4:318\":\"fbee70bee05c45f6bd889b33b081fd8d\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:4:318\":\"91df9e63dd1e40b88c9e2dac0ad845ae\"}"
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-DHxu-4Xp.js:12:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-DHxu-4Xp.js:12:318\":\"adc1c3bb973445cd9aa237af8a3bc6c0\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:44:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:44:318\":\"8a76ce867dad453e989a8096b9ca68e8\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DCtGyYUS.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DCtGyYUS.js:4:318\":\"f667b60c9f3d40e99b4384aba57e9fa5\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:4:318\":\"1728c2e3709b42d0b269851fc43d49d6\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
                   }
                 },
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "135C1894EC4649A6BA9081C545AA838C"
+                    "stringValue": "DF9B8BC14E33495EA38AA1C6B2866184"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "56363926069A485D9F6D63B79913E9AB"
+                    "stringValue": "248206F45F484F82A12A351F5AC376D4"
                   }
                 },
                 {
