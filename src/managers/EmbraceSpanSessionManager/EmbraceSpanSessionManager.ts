@@ -326,7 +326,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
-    const previouslyRecordCounts = this._nextSessionCounts;
+    const previouslyRecordedCounts = this._nextSessionCounts;
     this._nextSessionCounts = {};
 
     const attributes: Attributes = {
@@ -342,7 +342,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
-      ...previouslyRecordCounts,
+      ...previouslyRecordedCounts,
     };
 
     // Add scrubbed referrer URL if available
