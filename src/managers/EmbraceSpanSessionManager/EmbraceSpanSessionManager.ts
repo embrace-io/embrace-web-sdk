@@ -33,7 +33,7 @@ import type { PerformanceManager } from '../../utils/index.js';
 import {
   generateUUID,
   OTelPerformanceManager,
-  getState,
+  getVisibilityState,
 } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
@@ -332,7 +332,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     const attributes: Attributes = {
       ...this._getPermanentAttributes(),
       [KEY_EMB_TYPE]: EMB_TYPES.Session,
-      [KEY_EMB_STATE]: getState(this._visibilityDoc),
+      [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
       [ATTR_SESSION_ID]: this._activeSessionId,
       [KEY_EMB_COLD_START]: this._coldStart,
       [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),

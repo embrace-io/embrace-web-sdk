@@ -19,7 +19,7 @@ import type { PerformanceManager } from '../../utils/index.js';
 import {
   GLOBAL_CONFIG,
   OTelPerformanceManager,
-  getState,
+  getVisibilityState,
 } from '../../utils/index.js';
 import type { EmbraceLogManagerArgs } from './types.js';
 import type {
@@ -135,7 +135,7 @@ export class EmbraceLogManager implements LogManager {
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
         [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
-        [KEY_EMB_STATE]: getState(this._visibilityDoc),
+        [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
       },
     });
   }
@@ -213,7 +213,7 @@ export class EmbraceLogManager implements LogManager {
               [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
             }
           : {}),
-        [KEY_EMB_STATE]: getState(this._visibilityDoc),
+        [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
       },
     });
   }
