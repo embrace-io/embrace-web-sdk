@@ -119,3 +119,36 @@ The release version will be generated based on the content of the pull requests
 merged since the last release. We use
 https://github.com/release-drafter/release-drafter to generate new releases and
 https://commitlint.js.org/ to make sure PRs follow our commit convention
+
+### Unpublishing
+
+If a mistake occurs during the publishing process you can remove a specific version from npm within 72 hours using
+
+```shell
+npm unpublish @embrace-io/<package-name>@<version>
+```
+
+Or through their UI, see [Unpublishing a single version of a package](https://docs.npmjs.com/unpublishing-packages-from-the-registry#unpublishing-a-single-version-of-a-package)
+
+NOTE: We should only take this option in cases where there are security concerns since we want to consider release
+artifacts as immutable.
+
+### Deprecating
+
+If we find a critical issue in an already released version then we should mark that version as deprecated. This can be
+done using:
+
+```shell
+npm deprecate @embrace-io/<package>@<version> "some message explaining deprecation"
+```
+
+Once a patch version has been released we should also purge jsdelivr's cache so that the CDN begins to serve the fixed
+version immediately. That can be done by supplying a list of URLs to purge in their [online tool](https://www.jsdelivr.com/tools/purge).
+
+If for example the deprecated version was `@embrace-io/web-sdk@1.2.3` then we should supply a list for all its version
+aliases, e.g.:
+
+- https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk
+- https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@latest
+- https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@1
+- https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@1.2
