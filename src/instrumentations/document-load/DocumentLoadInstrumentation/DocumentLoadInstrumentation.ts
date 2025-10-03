@@ -2,7 +2,7 @@
  * Adapted from OpenTelemetry document-load instrumentation
  * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  *
- * We added these new attributes:
+ * We extended the OpenTelemetry document-load instrumentation with the following attributes:
  *
  * 'decoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/decodedBodySize
  * 'delivery_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
@@ -45,15 +45,21 @@ import {
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
-type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
-  deliveryType?: string;
-  entryType?: string;
-  initiatorType?: string;
-  renderBlockingStatus?: string;
-  transferSize?: number;
-};
-
-type PerformanceEntries = OtelPerformanceEntries & {
+/**
+ * Extensions to both native PerformanceResourceTiming and OTel's PerformanceEntries.
+ *
+ * Why we need all these fields:
+ * - OTel's PerformanceEntries is a custom type with only numeric timing fields (fetchStart, responseEnd, etc.)
+ *   It's NOT the browser's native PerformanceEntry/PerformanceResourceTiming interface.
+ * - Native PerformanceResourceTiming (in TypeScript's DOM lib) already has: entryType, initiatorType,
+ *   responseStatus, transferSize, decodedBodySize, encodedBodySize
+ * - But OTel's PerformanceEntries is missing ALL of these properties
+ *
+ * This extension type adds:
+ * 1. For PerformanceResourceTiming: deliveryType, renderBlockingStatus (new browser features not in TS lib yet)
+ * 2. For OTel's PerformanceEntries: ALL 6 fields (since OTel's type only has numeric timing properties)
+ */
+type EmbracePerformanceExtensions = {
   deliveryType?: string;
   entryType?: string;
   initiatorType?: string;
@@ -62,14 +68,25 @@ type PerformanceEntries = OtelPerformanceEntries & {
   transferSize?: number;
 };
 
+type EmbracePerformanceResourceTiming = PerformanceResourceTiming &
+  EmbracePerformanceExtensions;
+
+type PerformanceEntries = OtelPerformanceEntries & EmbracePerformanceExtensions;
+
 const ATTR_DELIVERY_TYPE = 'delivery_type';
 const ATTR_ENTRY_TYPE = 'entry_type';
 const ATTR_INITIATOR_TYPE = 'initiator_type';
 const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
 const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
+const ATTR_RESOURCE_FLAGS = 'flags';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
+  private _browserSupport?: {
+    hasResponseStatus: boolean;
+    hasDeliveryType: boolean;
+    hasRenderBlockingStatus: boolean;
+  };
 
   public constructor({
     diag,
@@ -93,8 +110,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     });
 
     this._onDocumentLoaded = () => {
-      // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd
+      // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
+        this._detectBrowserSupport();
         this._collectPerformance();
       }, 0);
     };
@@ -233,9 +251,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Helper function for ending span
+   * Helper function for ending a span
    * @param span
-   * @param performanceName name of performance entry for time end
+   * @param performanceName name of performance entry for end time
    * @param entries
    */
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
@@ -244,7 +262,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     performanceName: string,
     entries: PerformanceEntries
   ) {
-    // span can be undefined when entries are missing the certain performance - the span will not be created
+    // Span can be undefined when entries are missing the required performance timing - no span will be created
     if (span) {
       if (
         hasKey(entries, performanceName) &&
@@ -258,7 +276,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Creates and ends a span with network information about resource added as timed events
+   * Creates and ends a span with network information about a resource added as timed events
    * @param resource
    * @param parentSpan
    */
@@ -272,40 +290,73 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       resource,
       parentSpan
     );
-    if (span) {
-      span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
-      span.setAttribute(ATTR_URL_FULL, resource.name);
-      addSpanNetworkEvents(
-        span,
-        resource,
-        this.getConfig().ignoreNetworkEvents
-      );
-      if (resource.deliveryType) {
-        span.setAttribute(ATTR_DELIVERY_TYPE, resource.deliveryType);
-      }
+    if (!span) {
+      return;
+    }
+
+    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
+    span.setAttribute(ATTR_URL_FULL, resource.name);
+    addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
+
+    // As of Oct 2025, Chromium only
+    if (resource.deliveryType) {
+      span.setAttribute(ATTR_DELIVERY_TYPE, resource.deliveryType);
+    }
+
+    if (resource.entryType) {
       span.setAttribute(ATTR_ENTRY_TYPE, resource.entryType);
+    }
+
+    if (resource.initiatorType) {
       span.setAttribute(ATTR_INITIATOR_TYPE, resource.initiatorType);
-      if (resource.renderBlockingStatus) {
-        span.setAttribute(
-          ATTR_RENDER_BLOCKING_STATUS,
-          resource.renderBlockingStatus
-        );
-      }
+    }
+
+    // As of Oct 2025, Chromium only
+    if (resource.renderBlockingStatus) {
+      span.setAttribute(
+        ATTR_RENDER_BLOCKING_STATUS,
+        resource.renderBlockingStatus
+      );
+    }
+
+    // As of Oct 2025, no Safari support
+    if (resource.responseStatus) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_STATUS_CODE,
         resource.responseStatus
       );
-      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-      span.setAttribute(ATTR_DECODED_BODY_SIZE, resource.decodedBodySize);
-
-      this._addCustomAttributesOnResourceSpan(
-        span,
-        resource,
-        this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
-      );
-      this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
     }
+
+    // Validate size fields exist and aren't negative
+    if (
+      typeof resource.encodedBodySize === 'number' &&
+      resource.encodedBodySize >= 0
+    ) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    }
+
+    if (
+      typeof resource.transferSize === 'number' &&
+      resource.transferSize >= 0
+    ) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    }
+
+    if (
+      typeof resource.decodedBodySize === 'number' &&
+      resource.decodedBodySize >= 0
+    ) {
+      span.setAttribute(ATTR_DECODED_BODY_SIZE, resource.decodedBodySize);
+    }
+
+    this._addResourceQualityFlags(span, resource);
+
+    this._addCustomAttributesOnResourceSpan(
+      span,
+      resource,
+      this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
+    );
+    this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
   }
 
   /**
@@ -338,7 +389,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * executes callback {_onDocumentLoaded} when the page is loaded
+   * Executes callback {_onDocumentLoaded} when the page is loaded
    */
   private _waitForPageLoad() {
     if (window.document.readyState === 'complete') {
@@ -349,7 +400,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * adds custom attributes to root span if configured
+   * Adds custom attributes to root span if configured
    */
   private _addCustomAttributesOnSpan(
     span: Span,
@@ -373,7 +424,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * adds custom attributes to span if configured
+   * Adds custom attributes to resource span if configured
    */
   private _addCustomAttributesOnResourceSpan(
     span: Span,
@@ -396,6 +447,91 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         },
         true
       );
+    }
+  }
+
+  /**
+   * Detects browser support for ResourceTiming properties
+   */
+  private _detectBrowserSupport(): void {
+    if (this._browserSupport) {
+      return;
+    }
+
+    const entries = performance.getEntriesByType('resource');
+    const testEntry = entries.length > 0 ? entries[0] : null;
+
+    this._browserSupport = {
+      hasResponseStatus: testEntry !== null && 'responseStatus' in testEntry,
+      hasDeliveryType: testEntry !== null && 'deliveryType' in testEntry,
+      hasRenderBlockingStatus:
+        testEntry !== null && 'renderBlockingStatus' in testEntry,
+    };
+
+    this._diag.debug('Browser ResourceTiming support detected', {
+      responseStatus: this._browserSupport.hasResponseStatus,
+      deliveryType: this._browserSupport.hasDeliveryType,
+      renderBlockingStatus: this._browserSupport.hasRenderBlockingStatus,
+    });
+  }
+
+  /**
+   * Flags indicate browser limitations or CORS restrictions that prevent full timing visibility
+   */
+  private _addResourceQualityFlags(
+    span: Span,
+    resource: EmbracePerformanceResourceTiming
+  ): void {
+    const resourceQualityFlags: string[] = [];
+
+    // As of Oct 2025, no Safari support
+    if (this._browserSupport && !this._browserSupport.hasResponseStatus) {
+      resourceQualityFlags.push('browser_missing_response_status');
+    }
+
+    // Check for CORS-restricted timing data vs actual failures
+    const transferSize =
+      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
+    const decodedBodySize =
+      typeof resource.decodedBodySize === 'number'
+        ? resource.decodedBodySize
+        : 0;
+    const encodedBodySize =
+      typeof resource.encodedBodySize === 'number'
+        ? resource.encodedBodySize
+        : 0;
+
+    const hasNoSizeData =
+      transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
+
+    if (hasNoSizeData) {
+      // Has timing data but no size - likely cross-origin without Timing-Allow-Origin header
+      const fetchStart =
+        typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+      const responseEnd =
+        typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
+
+      const hasTimingData = fetchStart > 0 && responseEnd > 0;
+
+      if (hasTimingData) {
+        resourceQualityFlags.push('cors_restricted');
+      } else {
+        // No timing or size data - request likely failed or was aborted
+        resourceQualityFlags.push('failed_request');
+      }
+    }
+
+    // 304 Not Modified responses typically show 300 bytes transferSize (HTTP headers only, no body)
+    // This indicates cache revalidation occurred but deliveryType may not reflect it in older browsers
+    const deliveryType =
+      typeof resource.deliveryType === 'string' ? resource.deliveryType : '';
+
+    if (transferSize === 300 && deliveryType !== 'cache') {
+      resourceQualityFlags.push('cache_validated');
+    }
+
+    if (resourceQualityFlags.length > 0) {
+      span.setAttribute(ATTR_RESOURCE_FLAGS, resourceQualityFlags.join(','));
     }
   }
 
