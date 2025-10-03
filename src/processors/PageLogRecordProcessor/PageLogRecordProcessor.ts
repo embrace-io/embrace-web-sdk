@@ -22,12 +22,11 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
 
     if (currentRoute) {
       logRecord.setAttribute(KEY_EMB_SUFRACE_NAME, currentRoute.path);
+      logRecord.setAttribute(
+        KEY_EMB_SUFRACE_ID,
+        this._pageProvider.getCurrentPageId()
+      );
     }
-
-    logRecord.setAttribute(
-      KEY_EMB_SUFRACE_ID,
-      this._pageProvider.getCurrentPageId()
-    );
   }
 
   // no-op

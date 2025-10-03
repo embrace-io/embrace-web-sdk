@@ -53,7 +53,7 @@ describe('PageLogRecordProcessor', () => {
     expect(log.attributes[KEY_EMB_SUFRACE_NAME]).to.equal('/products/:id');
   });
 
-  it('should not attach surface name when route is null', () => {
+  it('should not attach surface name and id when route is null', () => {
     pageProvider.getCurrentRoute = () => null;
 
     logger.emit({
@@ -64,7 +64,7 @@ describe('PageLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    expect(log.attributes[KEY_EMB_SUFRACE_ID]).to.equal('test-page-id');
+    void expect(log.attributes[KEY_EMB_SUFRACE_ID]).to.be.undefined;
     void expect(log.attributes[KEY_EMB_SUFRACE_NAME]).to.be.undefined;
   });
 
