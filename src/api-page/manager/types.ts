@@ -9,4 +9,6 @@ export interface PageManager {
   setCurrentRoute: (route: Route) => void;
 
   getCurrentRoute: () => Route | null;
+
+  getCurrentPageId: () => string;
 }

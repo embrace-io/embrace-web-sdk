@@ -35,4 +35,8 @@ export class PageAPI implements PageManager {
   public getCurrentRoute(): Route | null {
     return this.getPageManager().getCurrentRoute();
   }
+
+  public getCurrentPageId(): string {
+    return this.getPageManager().getCurrentPageId();
+  }
 }

@@ -19,6 +19,7 @@ describe('ProxyPageManager', () => {
     mockDelegate = {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
+      getCurrentPageId: sinon.stub().returns('test-page-id'),
     };
   });
 
@@ -44,5 +45,12 @@ describe('ProxyPageManager', () => {
     const route = proxyPageManager.getCurrentRoute();
     expect(route).to.equal(mockRoute);
     void expect(mockDelegate.getCurrentRoute).to.have.been.calledOnce;
+  });
+
+  it('should delegate getCurrentPageId to the delegate', () => {
+    proxyPageManager.setDelegate(mockDelegate);
+    const pageId = proxyPageManager.getCurrentPageId();
+    expect(pageId).to.equal('test-page-id');
+    void expect(mockDelegate.getCurrentPageId).to.have.been.calledOnce;
   });
 });

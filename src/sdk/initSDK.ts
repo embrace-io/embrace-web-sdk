@@ -42,6 +42,7 @@ import {
   SpanScrubProcessor,
   UserLogRecordProcessor,
   UserSpanProcessor,
+  PageLogRecordProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -224,6 +225,8 @@ export const initSDK = (
       );
     }
 
+    const pageManager = setupPage({ registerGlobally });
+
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
       spanSessionManager,
@@ -252,6 +255,7 @@ export const initSDK = (
       registerGlobally,
       embraceLogProcessor,
       sdkLocalStorage,
+      pageManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -280,8 +284,6 @@ export const initSDK = (
         ],
       });
     }
-
-    const pageManager = setupPage({ registerGlobally });
 
     diagLogger.info('successfully initialized the SDK');
 
@@ -420,6 +422,7 @@ const setupLogs = ({
   registerGlobally,
   embraceLogProcessor,
   sdkLocalStorage,
+  pageManager,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
@@ -429,6 +432,7 @@ const setupLogs = ({
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
     new LogRecordScrubProcessor({ attributeScrubbers }),
+    new PageLogRecordProcessor({ pageProvider: pageManager }),
   ];
 
   logExporters?.forEach(exporter => {

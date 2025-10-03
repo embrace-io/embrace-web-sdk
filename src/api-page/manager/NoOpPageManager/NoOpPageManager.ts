@@ -6,4 +6,8 @@ export class NoOpPageManager implements PageManager {
   public getCurrentRoute(): Route | null {
     return null;
   }
+
+  public getCurrentPageId(): string {
+    return '';
+  }
 }

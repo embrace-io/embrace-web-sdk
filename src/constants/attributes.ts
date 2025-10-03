@@ -24,6 +24,8 @@ export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_VIEW_NAME = 'view.name';
 export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
 export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
+export const KEY_EMB_SUFRACE_NAME = 'app.surface.name';
+export const KEY_EMB_SUFRACE_ID = 'app.surface.id';
 
 export enum EMB_TYPES {
   Session = 'ux.session',

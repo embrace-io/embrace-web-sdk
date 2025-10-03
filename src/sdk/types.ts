@@ -314,6 +314,7 @@ export interface SetupLogsArgs {
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
   sdkLocalStorage: Storage;
+  pageManager: PageManager;
 }
 
 export interface SetupPageArgs {

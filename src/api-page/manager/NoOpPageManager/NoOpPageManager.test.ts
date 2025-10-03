@@ -18,4 +18,9 @@ describe('NoOpPageManager', () => {
       noOpPageManager.setCurrentRoute({ path: '/test', url: '/test' });
     }).to.not.throw();
   });
+
+  it('should return empty string for getCurrentPageId', () => {
+    const pageId = noOpPageManager.getCurrentPageId();
+    expect(pageId).to.equal('');
+  });
 });
