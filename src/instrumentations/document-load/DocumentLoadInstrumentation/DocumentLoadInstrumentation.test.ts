@@ -232,9 +232,16 @@ describe('DocumentLoad Instrumentation', () => {
   describe('when document readyState is complete', () => {
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
+      // Add a minimal resource entry with responseStatus for browser detection
+      const minimalResource = {
+        name: 'http://localhost:8000/',
+        entryType: 'resource',
+        responseStatus: 200,
+      } as PerformanceResourceTiming;
+
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('resource').returns([minimalResource]);
       spyEntries.withArgs('paint').returns([]);
     });
     afterEach(() => {
@@ -244,7 +251,8 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(window.document.readyState, 'complete');
-        assert.strictEqual(spyEntries.callCount, 3);
+        // 4 calls: 1 for browser detection (resource), 3 for performance collection (navigation, resource, paint)
+        assert.strictEqual(spyEntries.callCount, 4);
         done();
       });
     });
@@ -257,9 +265,17 @@ describe('DocumentLoad Instrumentation', () => {
         writable: true,
         value: 'loading',
       });
+
+      // Add a minimal resource entry with responseStatus for browser detection
+      const minimalResource = {
+        name: 'http://localhost:8000/',
+        entryType: 'resource',
+        responseStatus: 200,
+      } as PerformanceResourceTiming;
+
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('resource').returns([minimalResource]);
       spyEntries.withArgs('paint').returns([]);
     });
     afterEach(() => {
@@ -284,7 +300,8 @@ describe('DocumentLoad Instrumentation', () => {
         })
       );
       setTimeout(() => {
-        assert.strictEqual(spyEntries.callCount, 3);
+        // 4 calls: 1 for browser detection + 3 for performance collection
+        assert.strictEqual(spyEntries.callCount, 4);
         done();
       });
     });
@@ -679,6 +696,167 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('resource attributes and quality flags', () => {
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should capture extended PerformanceResourceTiming attributes', done => {
+      const resourcesWithExtendedProps = [
+        {
+          ...resources[0],
+          deliveryType: 'cache',
+          renderBlockingStatus: 'blocking',
+          responseStatus: 200,
+        },
+      ];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesWithExtendedProps);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(resourceSpan.attributes['delivery_type'], 'cache');
+        assert.strictEqual(
+          resourceSpan.attributes['render_blocking_status'],
+          'blocking'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.status_code'],
+          200
+        );
+        assert.strictEqual(resourceSpan.attributes['entry_type'], 'resource');
+        assert.strictEqual(resourceSpan.attributes['initiator_type'], 'script');
+        assert.strictEqual(
+          resourceSpan.attributes['http.response_content_length'],
+          1446396
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.size'],
+          1446645
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['decoded_body_size'],
+          1446396
+        );
+        done();
+      });
+    });
+
+    it('should add cors_restricted flag when resource has timing but no size data', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 111.935,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.include(
+          resourceSpan.attributes['flags'] as string,
+          'cors_restricted'
+        );
+        done();
+      });
+    });
+
+    it('should add failed_request flag when resource has no timing or size data', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 0,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.include(
+          resourceSpan.attributes['flags'] as string,
+          'failed_request'
+        );
+        done();
+      });
+    });
+
+    it('should add cache_validated flag for 304 responses', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([
+          { ...resources[0], transferSize: 300, deliveryType: undefined },
+        ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.include(
+          resourceSpan.attributes['flags'] as string,
+          'cache_validated'
+        );
+        done();
+      });
+    });
+
+    it('should not add cache_validated flag when deliveryType is cache', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([
+          { ...resources[0], transferSize: 300, deliveryType: 'cache' },
+        ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.notInclude(
+          resourceSpan.attributes['flags'] as string,
+          'cache_validated'
+        );
+        done();
+      });
+    });
+
+    it('should not add flags for normal resources', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([{ ...resources[0], responseStatus: 200 }]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(resourceSpan.attributes['flags']);
         done();
       });
     });
