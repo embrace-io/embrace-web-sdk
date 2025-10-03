@@ -321,10 +321,10 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nexSessionSpan = nextSessionFinishedSpans[0];
-    expect(nexSessionSpan.events).to.have.lengthOf(1);
-    expect(nexSessionSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(nexSessionSpan.events[0].attributes).to.have.property(
+    const nextSessionSpan = nextSessionFinishedSpans[0];
+    expect(nextSessionSpan.events).to.have.lengthOf(1);
+    expect(nextSessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(nextSessionSpan.events[0].attributes).to.have.property(
       'message',
       'this is a breadcrumb'
     );
@@ -411,8 +411,8 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nexSessionSpan = nextSessionFinishedSpans[0];
-    expect(nexSessionSpan.attributes).to.have.property(
+    const nextSessionSpan = nextSessionFinishedSpans[0];
+    expect(nextSessionSpan.attributes).to.have.property(
       'emb.properties.my-new-prop',
       'new'
     );

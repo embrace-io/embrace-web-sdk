@@ -184,11 +184,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`
       );
 
-      const nexSessionSpan = finishedSpans[1];
-      expect(nexSessionSpan.attributes).not.to.have.property(
+      const nextSessionSpan = finishedSpans[1];
+      expect(nextSessionSpan.attributes).not.to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`
       );
-      expect(nexSessionSpan.attributes).to.have.property(
+      expect(nextSessionSpan.attributes).to.have.property(
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
         1
       );
