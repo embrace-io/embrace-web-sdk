@@ -522,7 +522,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
 
     // 304 Not Modified responses typically show 300 bytes transferSize (HTTP headers only, no body)
-    // This indicates cache revalidation occurred but deliveryType may not reflect it in older browsers
+    // This indicates cache revalidation occurred:
+    // https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
     const deliveryType =
       typeof resource.deliveryType === 'string' ? resource.deliveryType : '';
 
