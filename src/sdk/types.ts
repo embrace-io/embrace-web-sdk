@@ -311,6 +311,7 @@ export interface SetupLogsArgs {
   attributeScrubbers: AttributeScrubber[];
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
+  sdkLocalStorage: Storage;
 }
 
 type OptionalInstrumentations =

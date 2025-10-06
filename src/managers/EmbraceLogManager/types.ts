@@ -12,4 +12,5 @@ export interface EmbraceLogManagerArgs {
   limitManager: LimitManagerInternal;
   loggerProvider?: LoggerProvider;
   visibilityDoc?: VisibilityStateDocument;
+  storage?: Storage;
 }

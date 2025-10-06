@@ -5,6 +5,7 @@ export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.js';
 export { isDeviceIdEnabled } from './isDeviceIdEnabled.js';
 export { nsfConfigValidation } from './nsfConfigValidation.js';
 export { getVisibilityState } from './getVisibilityState.js';
+export { getIncrementedCount } from './getIncrementedCount.js';
 export type { TimeoutRef } from './timeout/index.js';
 export {
   OTelPerformanceManager,

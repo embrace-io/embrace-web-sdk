@@ -248,6 +248,7 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceLogProcessor,
+      sdkLocalStorage,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -412,6 +413,7 @@ const setupLogs = ({
   attributeScrubbers,
   registerGlobally,
   embraceLogProcessor,
+  sdkLocalStorage,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
@@ -440,6 +442,7 @@ const setupLogs = ({
     spanSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
+    storage: sdkLocalStorage,
   });
 
   if (registerGlobally) {

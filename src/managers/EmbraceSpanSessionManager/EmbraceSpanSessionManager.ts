@@ -15,34 +15,35 @@ import type {
 import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
+  KEY_EMB_EXPERIENCE_ID,
   KEY_EMB_FROM_STORAGE,
+  KEY_EMB_NAVIGATION_SOURCE,
+  KEY_EMB_REFERRER_URL,
   KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
+  KEY_EMB_SOURCE_TAB_ID,
   KEY_EMB_STATE,
+  KEY_EMB_TAB_ID,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
-  KEY_EMB_TAB_ID,
-  KEY_EMB_SOURCE_TAB_ID,
-  KEY_EMB_EXPERIENCE_ID,
-  KEY_EMB_NAVIGATION_SOURCE,
-  KEY_EMB_REFERRER_URL,
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import {
   generateUUID,
-  OTelPerformanceManager,
+  getIncrementedCount,
   getVisibilityState,
+  OTelPerformanceManager,
 } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
-  TabActivity,
+  NavigationSource,
   SessionEndedListener,
   SessionStartedListener,
   SpanSessionManagerInternal,
   Tab,
-  NavigationSource,
+  TabActivity,
 } from './types.js';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
@@ -136,24 +137,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.warn('Error loading permanent session properties', error);
     }
     return Object.fromEntries(permanentAttributes.entries()) as Attributes;
-  }
-
-  // Increments and returns a global session counter shared across all tabs
-  // Race conditions are possible but acceptable for session numbering
-  public _getSessionNumber(): number {
-    try {
-      const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
-      let number = value ? parseInt(value, 10) : 0;
-      number++;
-      this._storage.setItem(
-        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-        number.toString()
-      );
-      return number;
-    } catch (e) {
-      this._diag.warn('Failed to retrieve session number from storage', e);
-      return 1;
-    }
   }
 
   public addBreadcrumb(name: string) {
@@ -335,7 +318,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
       [ATTR_SESSION_ID]: this._activeSessionId,
       [KEY_EMB_COLD_START]: this._coldStart,
-      [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
+      [KEY_EMB_SESSION_NUMBER]: getIncrementedCount(
+        this._storage,
+        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+        this._diag
+      ),
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,

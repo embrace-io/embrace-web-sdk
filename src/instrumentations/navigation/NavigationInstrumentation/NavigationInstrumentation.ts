@@ -10,8 +10,9 @@ import {
 import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
 
 // Regular expression to match path options in the format "(option)"
-// Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)" to "/order/:orderState"
-const PATH_OPTIONS_RE = /\(.*?\)/g;
+// Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)/type:(sale|normal)" to "/order/:orderState/:type"
+// Could be simplified but done this way to prevent: https://javascript.info/regexp-catastrophic-backtracking
+const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;

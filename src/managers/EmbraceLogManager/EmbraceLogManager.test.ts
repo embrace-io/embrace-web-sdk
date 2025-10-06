@@ -17,6 +17,7 @@ import {
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
 import {
+  FailingStorage,
   InMemoryDiagLogger,
   setupTestLogExporter,
   setupTestTraceExporter,
@@ -92,6 +93,7 @@ describe('EmbraceLogManager', () => {
       spanSessionManager,
       limitManager,
     });
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -1072,6 +1074,51 @@ describe('EmbraceLogManager', () => {
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(secondMemoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
+    });
+
+    it('should include exception number when logging an exception', () => {
+      manager.logException(new Error('exception 1'));
+      manager.logException(new Error('exception 2'));
+      manager.logException(new Error('exception 3'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(3);
+
+      expect(finishedLogs[0].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        'emb.exception_number',
+        2
+      );
+      expect(finishedLogs[2].attributes).to.have.property(
+        'emb.exception_number',
+        3
+      );
+    });
+
+    it('should default to exception number 1 when storage is failing', () => {
+      manager = new EmbraceLogManager({
+        perf,
+        spanSessionManager,
+        limitManager,
+        storage: new FailingStorage(),
+      });
+      manager.logException(new Error('exception 1'));
+      manager.logException(new Error('exception 2'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(2);
+
+      expect(finishedLogs[0].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
     });
   });
 });

@@ -9,8 +9,8 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import {
-  EmbraceLimitManager,
   DEFAULT_LIMITS,
+  EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
@@ -73,6 +73,7 @@ describe('GlobalExceptionInstrumentation', () => {
         existingErrorHandler?.call(window, event, source, lineno, colno, error);
       }
     };
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -108,6 +109,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
+      'emb.exception_number': 1,
     });
   });
 
@@ -137,6 +139,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
+      'emb.exception_number': 1,
     });
   });
 
@@ -167,6 +170,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
+      'emb.exception_number': 1,
     });
   });
 
@@ -196,6 +200,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
+      'emb.exception_number': 1,
     });
   });
 
@@ -231,6 +236,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.stacktrace': stackTrace,
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
+      'emb.exception_number': 1,
     });
   });
 });
