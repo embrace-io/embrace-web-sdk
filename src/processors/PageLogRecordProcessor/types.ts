@@ -5,7 +5,7 @@ export interface PageLogRecordProcessorArgs {
 }
 
 export interface PageProvider {
-  getCurrentPageId: () => string;
+  getCurrentPageId: () => string | null;
 
   getCurrentRoute: () => Route | null;
 }

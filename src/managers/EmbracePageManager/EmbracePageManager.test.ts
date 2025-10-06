@@ -16,13 +16,11 @@ describe('EmbracePageManager', () => {
     pageManager = new EmbracePageManager();
   });
 
-  it('should initialize with a valid page ID', () => {
-    const pageId = pageManager.getCurrentPageId();
-    expect(pageId).to.match(UUID_PATTERN);
-  });
-
-  it('should initialize with null current route', () => {
+  it('should initialize with null values', () => {
     const route = pageManager.getCurrentRoute();
+    const pageId = pageManager.getCurrentPageId();
+
+    void expect(pageId).to.be.null;
     void expect(route).to.be.null;
   });
 
@@ -33,8 +31,12 @@ describe('EmbracePageManager', () => {
     };
 
     pageManager.setCurrentRoute(mockRoute);
+
     const route = pageManager.getCurrentRoute();
+    const pageId = pageManager.getCurrentPageId();
+
     expect(route).to.equal(mockRoute);
+    expect(pageId).to.match(UUID_PATTERN);
   });
 
   it('should generate new page ID when route URL changes', () => {

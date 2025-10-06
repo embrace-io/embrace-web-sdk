@@ -7,7 +7,7 @@ export class NoOpPageManager implements PageManager {
     return null;
   }
 
-  public getCurrentPageId(): string {
+  public getCurrentPageId(): string | null {
     return '';
   }
 }

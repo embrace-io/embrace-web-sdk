@@ -6,10 +6,7 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { PageProvider } from './types.js';
 import type { Route } from '../../api-page/index.js';
-import {
-  KEY_EMB_SUFRACE_ID,
-  KEY_EMB_SUFRACE_NAME,
-} from '../../constants/index.js';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
 
 const { expect } = chai;
 
@@ -49,8 +46,8 @@ describe('PageLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    expect(log.attributes[KEY_EMB_SUFRACE_ID]).to.equal('test-page-id');
-    expect(log.attributes[KEY_EMB_SUFRACE_NAME]).to.equal('/products/:id');
+    expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal('test-page-id');
+    expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/products/:id');
   });
 
   it('should not attach surface name and id when route is null', () => {
@@ -64,8 +61,8 @@ describe('PageLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    void expect(log.attributes[KEY_EMB_SUFRACE_ID]).to.be.undefined;
-    void expect(log.attributes[KEY_EMB_SUFRACE_NAME]).to.be.undefined;
+    void expect(log.attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
+    void expect(log.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
   });
 
   it('should make sure forceFlush no-op does not fail', () => {

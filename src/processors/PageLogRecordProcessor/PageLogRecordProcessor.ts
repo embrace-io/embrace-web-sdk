@@ -1,9 +1,6 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import type { PageLogRecordProcessorArgs, PageProvider } from './types.js';
-import {
-  KEY_EMB_SUFRACE_ID,
-  KEY_EMB_SUFRACE_NAME,
-} from '../../constants/index.js';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
 
 export class PageLogRecordProcessor implements LogRecordProcessor {
   private readonly _pageProvider: PageProvider;
@@ -21,9 +18,9 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
     const currentRoute = this._pageProvider.getCurrentRoute();
 
     if (currentRoute) {
-      logRecord.setAttribute(KEY_EMB_SUFRACE_NAME, currentRoute.path);
+      logRecord.setAttribute(KEY_EMB_PAGE_PATH, currentRoute.path);
       logRecord.setAttribute(
-        KEY_EMB_SUFRACE_ID,
+        KEY_EMB_PAGE_ID,
         this._pageProvider.getCurrentPageId()
       );
     }

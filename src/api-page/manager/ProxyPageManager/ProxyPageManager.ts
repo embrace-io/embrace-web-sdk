@@ -22,7 +22,7 @@ export class ProxyPageManager implements PageManager {
     return this.getDelegate().getCurrentRoute();
   }
 
-  public getCurrentPageId(): string {
+  public getCurrentPageId(): string | null {
     return this.getDelegate().getCurrentPageId();
   }
 }

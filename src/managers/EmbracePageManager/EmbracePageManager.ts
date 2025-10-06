@@ -3,14 +3,14 @@ import { generateUUID } from '../../utils/index.js';
 
 export class EmbracePageManager implements PageManager {
   private _currentRoute: Route | null = null;
-  private _currentPageId: string = generateUUID();
+  private _currentPageId: string | null = null;
 
-  public getCurrentPageId = () => this._currentPageId;
+  public getCurrentPageId = (): string | null => this._currentPageId;
 
   public getCurrentRoute = () => this._currentRoute;
 
   public setCurrentRoute = (route: Route) => {
-    if (this._currentRoute && this._currentRoute.url !== route.url) {
+    if (!this._currentRoute || this._currentRoute.url !== route.url) {
       this._currentPageId = generateUUID();
     }
 
