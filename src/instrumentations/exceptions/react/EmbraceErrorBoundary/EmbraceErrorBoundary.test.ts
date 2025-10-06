@@ -81,6 +81,7 @@ describe('EmbraceErrorBoundary', () => {
       'react.component_stack': errorInfo.componentStack,
       [KEY_EMB_INSTRUMENTATION]: EMB_ERROR_INSTRUMENTATIONS.ReactErrorBoundary,
       [KEY_EMB_JS_FILE_BUNDLE_IDS]: '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });

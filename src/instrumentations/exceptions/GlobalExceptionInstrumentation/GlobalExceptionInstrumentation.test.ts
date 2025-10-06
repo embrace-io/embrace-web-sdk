@@ -9,8 +9,8 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import {
-  EmbraceLimitManager,
   DEFAULT_LIMITS,
+  EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
@@ -108,6 +108,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'my custom error',
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });
@@ -137,6 +138,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'promise was rejected',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });
@@ -167,6 +169,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'my custom error',
       'exception.stacktrace': err.stack,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });
@@ -196,6 +199,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'Unhandled Rejected Promise',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });
@@ -231,6 +235,7 @@ describe('GlobalExceptionInstrumentation', () => {
       'exception.message': 'global exception test error message',
       'exception.stacktrace': stackTrace,
       'emb.js_file_bundle_ids': '{}',
+      'emb.state': 'foreground',
       'emb.exception_number': 1,
     });
   });
