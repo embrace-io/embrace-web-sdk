@@ -30,8 +30,12 @@ import {
   KEY_EMB_NAVIGATION_SOURCE,
   KEY_EMB_REFERRER_URL,
 } from '../../constants/index.js';
+import {
+  getIncrementedCount,
+  generateUUID,
+  OTelPerformanceManager,
+} from '../../utils/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
-import { generateUUID, OTelPerformanceManager } from '../../utils/index.js';
 import type {
   EmbraceSpanSessionManagerArgs,
   TabActivity,
@@ -133,24 +137,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.warn('Error loading permanent session properties', error);
     }
     return Object.fromEntries(permanentAttributes.entries()) as Attributes;
-  }
-
-  // Increments and returns a global session counter shared across all tabs
-  // Race conditions are possible but acceptable for session numbering
-  public _getSessionNumber(): number {
-    try {
-      const value = this._storage.getItem(EMBRACE_SESSION_NUMBER_STORAGE_KEY);
-      let number = value ? parseInt(value, 10) : 0;
-      number++;
-      this._storage.setItem(
-        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-        number.toString()
-      );
-      return number;
-    } catch (e) {
-      this._diag.warn('Failed to retrieve session number from storage', e);
-      return 1;
-    }
   }
 
   public addBreadcrumb(name: string) {
@@ -335,7 +321,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
           : EMB_STATES.Foreground,
       [ATTR_SESSION_ID]: this._activeSessionId,
       [KEY_EMB_COLD_START]: this._coldStart,
-      [KEY_EMB_SESSION_NUMBER]: this._getSessionNumber(),
+      [KEY_EMB_SESSION_NUMBER]: getIncrementedCount(
+        this._storage,
+        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+        this._diag
+      ),
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,

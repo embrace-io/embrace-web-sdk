@@ -47,6 +47,8 @@ describe('EmbraceErrorBoundary', () => {
       fallback: () => 'fallback',
       children: 'children',
     });
+
+    localStorage.clear();
   });
 
   it('should catch an error and log an exception', () => {
@@ -79,6 +81,7 @@ describe('EmbraceErrorBoundary', () => {
       'react.component_stack': errorInfo.componentStack,
       [KEY_EMB_INSTRUMENTATION]: EMB_ERROR_INSTRUMENTATIONS.ReactErrorBoundary,
       [KEY_EMB_JS_FILE_BUNDLE_IDS]: '{}',
+      'emb.exception_number': 1,
     });
   });
 
