@@ -118,6 +118,7 @@ const getLastSessionExportedSpans = async (
 describe('initSDK', () => {
   let spanExporter: InMemorySpanExporter;
   let logExporter: InMemoryLogRecordExporter;
+  let fetchStub: SinonStub;
 
   before(() => {
     spanExporter = new InMemorySpanExporter();
@@ -127,6 +128,7 @@ describe('initSDK', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    fetchStub = fakeFetchInstall();
   });
 
   afterEach(() => {
@@ -137,6 +139,7 @@ describe('initSDK', () => {
     diag.disable();
     context.disable();
     registry.clear();
+    fakeFetchRestore();
   });
 
   it('should require an app ID when not setting custom exporters', () => {
@@ -416,14 +419,6 @@ describe('initSDK', () => {
   });
 
   describe('communication with Embrace', () => {
-    beforeEach(() => {
-      fakeFetchInstall();
-    });
-
-    afterEach(() => {
-      fakeFetchRestore();
-    });
-
     it('should include the correct resource attributes', async () => {
       fakeFetchRespondWith('');
 
@@ -1368,17 +1363,14 @@ describe('initSDK', () => {
 
   describe('Network span forwarding', () => {
     let clock: sinon.SinonFakeTimers;
-    let fetchStub: SinonStub;
     let xhrStub: SinonStub;
 
     beforeEach(() => {
-      fetchStub = fakeFetchInstall();
       xhrStub = sinon.stub(window.XMLHttpRequest.prototype, 'send');
       clock = sinon.useFakeTimers();
     });
 
     afterEach(() => {
-      fakeFetchRestore();
       xhrStub.restore();
       clock.restore();
       propagation.disable();
