@@ -1,13 +1,15 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { NavigationInstrumentationArgs, Route } from './types.js';
+import type { NavigationInstrumentationArgs } from './types.js';
 import type { Span } from '@opentelemetry/api';
 import {
+  EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
+  KEY_EMB_INSTRUMENTATION,
   KEY_EMB_TYPE,
   KEY_VIEW_NAME,
-  KEY_EMB_INSTRUMENTATION,
 } from '../../../constants/index.js';
-import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
+import { page } from '../../../api-page/index.js';
+import type { Route } from '../../../api-page/index.js';
 
 // Regular expression to match path options in the format "(option)"
 // Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)/type:(sale|normal)" to "/order/:orderState/:type"
@@ -16,9 +18,9 @@ const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
-  private _currentRoute: Route | null = null;
   private _currentRouteSpan: Span | null = null;
-  private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS | null = null;
+  private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS =
+    EMB_NAVIGATION_INSTRUMENTATIONS.Manual;
   private _removeSessionStartedFn: (() => void) | null = null;
   private _removeSessionEndedFn: (() => void) | null = null;
 
@@ -52,10 +54,10 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    if (route.url !== this._currentRoute?.url) {
+    if (route.url !== page.getCurrentRoute()?.url) {
       this._endRouteSpan();
       this._startRouteSpan(route);
-      this._currentRoute = route;
+      page.setCurrentRoute(route);
     }
   };
 
@@ -63,10 +65,12 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     if (!this._removeSessionStartedFn) {
       this._removeSessionStartedFn =
         this.sessionManager.addSessionStartedListener(() => {
-          if (this._currentRoute && !this._currentRouteSpan) {
+          const currentRoute = page.getCurrentRoute();
+
+          if (currentRoute && !this._currentRouteSpan) {
             this._diag.debug('Session started, starting route span.');
 
-            this._startRouteSpan(this._currentRoute);
+            this._startRouteSpan(currentRoute);
           }
         });
     }
@@ -110,19 +114,19 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       },
     });
 
-    if (this._instrumentationType) {
-      this._currentRouteSpan.setAttribute(
-        KEY_EMB_INSTRUMENTATION,
-        this._instrumentationType
-      );
-    }
+    this._currentRouteSpan.setAttribute(
+      KEY_EMB_INSTRUMENTATION,
+      this._instrumentationType
+    );
 
     return this._currentRouteSpan;
   };
 
   private readonly _endRouteSpan = () => {
-    if (this._currentRouteSpan && this._currentRoute) {
-      this._diag.debug(`Ending route span for url: ${this._currentRoute.url}`);
+    const currentRoute = page.getCurrentRoute();
+
+    if (this._currentRouteSpan && currentRoute) {
+      this._diag.debug(`Ending route span for url: ${currentRoute.url}`);
       this._currentRouteSpan.end();
       this._currentRouteSpan = null;
     }
