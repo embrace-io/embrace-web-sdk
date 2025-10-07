@@ -1,4 +1,4 @@
-export const CLI_VERSION = '2.3.3';
+export const CLI_VERSION = '2.4.0';
 export const CLI_NAME = '@embrace-io/web-cli';
 export const CLI_DESCRIPTION =
   'Embrace Web CLI to help setup the Embrace SDK in your web app';
