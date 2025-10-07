@@ -605,7 +605,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -660,7 +659,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -715,7 +713,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     env:
       VALIDATE_STATUS_FILE: validate.success.txt
     strategy:
