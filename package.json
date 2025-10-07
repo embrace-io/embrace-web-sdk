@@ -35,7 +35,7 @@
     "sdk:compile:iife:watch": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js --watch",
     "sdk:compile:sdk": "tsdown 'src/**/*.ts' '!src/**/*.test.*' --format cjs,esm --target=es2022 --dts --outDir dist --sourcemap --platform browser --no-splitting --unbundle --no-clean",
     "sdk:compile:sdk:watch": "npm run sdk:compile:sdk --watch",
-    "sdk:lint": "npm run sdk:lint:prettier && npm run sdk:lint:eslint && npm run sdk:tsc:check",
+    "sdk:lint": "npm run sdk:lint:prettier && npm run sdk:tsc:check && npm run sdk:lint:eslint",
     "sdk:lint:fix": "npm run sdk:lint:prettier:fix && npm run sdk:tsc:check && npm run sdk:lint:eslint:fix",
     "sdk:lint:prettier": "prettier --log-level=warn --check .",
     "sdk:lint:prettier:fix": "prettier --log-level=warn --write .",
