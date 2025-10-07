@@ -55,6 +55,10 @@ export class ProxySpanSessionManager implements SpanSessionManager {
     return this.getDelegate().getSessionId();
   }
 
+  public getPreviousSessionId(): string | null {
+    return this.getDelegate().getPreviousSessionId();
+  }
+
   public getSessionSpan() {
     return this.getDelegate().getSessionSpan();
   }

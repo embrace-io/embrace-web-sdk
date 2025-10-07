@@ -59,6 +59,7 @@ import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { getAppInstanceId } from '../../resources/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
+  private _previousSessionId: string | null = null;
   private _activeSessionId: string | null = null;
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: ExtendedSpan | null = null;
@@ -237,6 +238,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionSpan.end();
     this._sessionSpan = null;
     this._activeSessionStartTime = null;
+    this._previousSessionId = this._activeSessionId;
     this._activeSessionId = null;
     this._activeSessionCounts = null;
 
@@ -292,6 +294,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   public getSessionId(): string | null {
     return this._activeSessionId;
+  }
+
+  public getPreviousSessionId(): string | null {
+    return this._previousSessionId;
   }
 
   public getSessionSpan(): ExtendedSpan | null {
