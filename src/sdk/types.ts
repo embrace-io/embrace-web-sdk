@@ -301,6 +301,7 @@ export interface SetupTracesArgs {
   dynamicSDKConfig?: DynamicSDKConfig;
   registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
+  pageManager: PageManager;
 }
 
 export interface SetupLogsArgs {

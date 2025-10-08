@@ -43,6 +43,7 @@ import {
   UserLogRecordProcessor,
   UserSpanProcessor,
   PageLogRecordProcessor,
+  PageSpanProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
@@ -241,6 +242,7 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceSpanProcessor,
+      pageManager,
     });
 
     spanSessionManager.setTracerProvider(tracerProvider);
@@ -361,12 +363,14 @@ const setupTraces = ({
   attributeScrubbers,
   registerGlobally,
   embraceSpanProcessor,
+  pageManager,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
+    new PageSpanProcessor({ pageProvider: pageManager }),
     new SpanScrubProcessor({ attributeScrubbers }),
   ];
 
