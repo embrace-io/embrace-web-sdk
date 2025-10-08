@@ -12,6 +12,7 @@ import type {
   InMemorySpanExporter,
   ReadableSpan,
 } from '@opentelemetry/sdk-trace-web';
+import { resourceFromAttributes } from '@opentelemetry/resources';
 
 const { expect } = chai;
 
@@ -31,6 +32,9 @@ describe('EmbraceSpanStorage', () => {
     clock = sinon.useFakeTimers();
 
     spanStorage = new EmbraceSpanStorage({
+      resource: resourceFromAttributes({
+        resourceKey: 'foo',
+      }),
       storage,
       diag,
       onExpiredSpansExport: mockOnExport,
@@ -198,7 +202,18 @@ describe('EmbraceSpanStorage', () => {
       // Advance clock so that the interval runs.
       clock.tick(65 * 60 * 1000);
       expect(mockOnExport.calledOnce).to.equal(true);
+      const exportedSpans = mockOnExport.getCall(0).args[0] as ReadableSpan[];
 
+      expect(exportedSpans).to.have.lengthOf(2);
+      expect(exportedSpans[0]).to.containSubset({
+        name: 'mock span',
+        attributes: {
+          'session.id': '80537B7CA8D748D88A6A9D01DE9EDA8E',
+        },
+        resource: {
+          _rawAttributes: [['resourceKey', 'foo']],
+        },
+      });
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     });
 
