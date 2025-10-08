@@ -101,7 +101,7 @@ describe('createFetchTransport', () => {
     });
     expect(result).to.deep.equal({
       status: 'failure',
-      error: new Error('Fetch request failed'),
+      error: new Error(`500 Fetch request failed`),
     });
   });
 });
