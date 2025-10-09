@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "tests:integration:build": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000",
-    "tests:integration:e2e": "npx playwright test",
-    "tests:integration:e2e:update-golden": "UPDATE_GOLDEN=1 npm run tests:integration:e2e"
+    "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
+    "build": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000",
+    "test": "npm run install-dependencies && npm run build && npx playwright test",
+    "update-golden": "UPDATE_GOLDEN=1 npm run test"
   }
 }

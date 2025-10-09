@@ -20,16 +20,13 @@
     "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
     "sdk:docs": "npx typedoc --readme none && touch docs/.nojekyll",
     "sdk:test": "web-test-runner",
+    "sdk:test:watch": "npm run sdk:test -- --watch",
     "sdk:test:manual": "npm run sdk:test -- --manual",
     "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
     "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
     "sdk:test:performance": "npm run test --prefix tests/performance",
-    "sdk:test:integration": "npm run compile && npm run sdk:test:integration:e2e:install-dependencies && npm run sdk:test:integration:build && npm run sdk:test:integration:e2e",
-    "sdk:test:integration:build": "npm run tests:integration:build --prefix tests/integration",
-    "sdk:test:integration:e2e": "npm run tests:integration:e2e --prefix tests/integration",
-    "sdk:test:integration:e2e:install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
-    "sdk:test:integration:e2e:update-golden": "npm run tests:integration:e2e:update-golden --prefix tests/integration",
-    "sdk:test:watch": "npm run sdk:test -- --watch",
+    "sdk:test:integration": "npm run test --prefix tests/integration",
+    "sdk:test:integration:update-golden": "npm run update-golden --prefix tests/integration",
     "sdk:compile": "npx rimraf dist && npm run sdk:compile:iife && npm run sdk:compile:sdk",
     "sdk:compile:iife": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js && terser dist/embrace-web-sdk.js -c -m --source-map \"content='dist/embrace-web-sdk.js.map',url='embrace-web-sdk.js.map'\" -o dist/embrace-web-sdk.js",
     "sdk:compile:iife:watch": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js --watch",
@@ -175,8 +172,7 @@
     "demo/frontend",
     "demo/frontend-cdn",
     "demo/frontend-sdk",
-    "tests/performance",
-    "tests/integration"
+    "tests/performance"
   ],
   "nano-staged": {
     "*.{ts,tsx,js,jsx,mjs,yml,yaml,html}": "npm run lint"
