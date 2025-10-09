@@ -17,7 +17,7 @@
     "demo:frontend:preview": "vite preview --open"
   },
   "dependencies": {
-    "@embrace-io/web-sdk": "file:../..",
+    "@embrace-io/web-sdk": "*",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/api-logs": "0.205.0",
     "@opentelemetry/sdk-logs": "0.205.0",
@@ -28,7 +28,7 @@
     "react-router-domv6plus": "npm:react-router-dom@^7.6.1"
   },
   "devDependencies": {
-    "@embrace-io/web-cli": "file:../../cli",
+    "@embrace-io/web-cli": "*",
     "@types/react-router-domv4v5": "npm:@types/react-router-dom@^5.3.3"
   }
 }
