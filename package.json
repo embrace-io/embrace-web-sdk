@@ -12,7 +12,7 @@
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run compile && npm run validate",
-    "clean": "npm run clean --workspaces --if-present; npx rimraf {,**/}.sonda {,**/}build {,**/}dist {,**/}node_modules",
+    "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
     "lint": "npm run sdk:lint:fix",
     "validate": "npm run sdk:validate && npm run cli:validate",
