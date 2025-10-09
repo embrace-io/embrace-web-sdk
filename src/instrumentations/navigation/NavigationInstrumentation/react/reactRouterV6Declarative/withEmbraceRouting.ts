@@ -1,5 +1,6 @@
 import type { RoutesFunctionalComponentReturn } from './types.js';
-import React from 'react';
+import type React from 'react';
+import { createElement } from 'react';
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import { getNavigationInstrumentation } from '../../index.js';
 import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
@@ -62,7 +63,7 @@ export const withEmbraceRouting = <P extends object>(
       }
     }
 
-    return React.createElement<P>(WrappedComponent, props);
+    return createElement<P>(WrappedComponent, props);
   };
 
   // Keep wrapped component metadata
