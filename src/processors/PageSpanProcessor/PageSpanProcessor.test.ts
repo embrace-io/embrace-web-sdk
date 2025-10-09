@@ -4,15 +4,15 @@ import { setupTestTraceExporter } from '../../testUtils/index.js';
 import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import { PageSpanProcessor } from './PageSpanProcessor.js';
-import type { PageProvider } from './types.js';
-import type { Route } from '../../api-page/index.js';
+import type { PageManager, Route } from '../../api-page/index.js';
 import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
+import { EmbracePageManager } from '../../managers/index.js';
 
 const { expect } = chai;
 
 describe('PageSpanProcessor', () => {
   let memoryExporter: InMemorySpanExporter;
-  let pageProvider: PageProvider;
+  let pageManager: PageManager;
   let tracer: Tracer;
 
   const mockRoute: Route = {
@@ -21,13 +21,10 @@ describe('PageSpanProcessor', () => {
   };
 
   before(() => {
-    pageProvider = {
-      getCurrentPageId: () => 'test-page-id',
-      getCurrentRoute: () => mockRoute,
-    };
+    pageManager = new EmbracePageManager();
     memoryExporter = setupTestTraceExporter([
       new PageSpanProcessor({
-        pageProvider,
+        pageManager,
       }),
     ]);
     tracer = trace.getTracer('test-tracer');
@@ -38,23 +35,26 @@ describe('PageSpanProcessor', () => {
   });
 
   it('should attach page attributes when span ends', () => {
-    const span = tracer.startSpan('test-span');
+    pageManager.setCurrentRoute(mockRoute);
+
+    const span = tracer.startSpan('test-span-1');
     span.end();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const readableSpan = finishedSpans[0];
 
-    expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.equal('test-page-id');
+    expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.equal(
+      pageManager.getCurrentPageId()
+    );
     expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.equal(
       '/products/:id'
     );
   });
 
   it('should not attach page attributes when route is null', () => {
-    pageProvider.getCurrentRoute = () => null;
-
-    const span = tracer.startSpan('test-span');
+    pageManager.clearCurrentRoute();
+    const span = tracer.startSpan('test-span-2');
     span.end();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -67,7 +67,7 @@ describe('PageSpanProcessor', () => {
 
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new PageSpanProcessor({
-      pageProvider,
+      pageManager: new EmbracePageManager(),
     });
 
     expect(async () => {
@@ -77,7 +77,7 @@ describe('PageSpanProcessor', () => {
 
   it('should make sure shutdown no-op does not fail', () => {
     const processor = new PageSpanProcessor({
-      pageProvider,
+      pageManager: new EmbracePageManager(),
     });
 
     expect(async () => {

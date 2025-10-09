@@ -25,4 +25,8 @@ export class ProxyPageManager implements PageManager {
   public getCurrentPageId(): string | null {
     return this.getDelegate().getCurrentPageId();
   }
+
+  public clearCurrentRoute(): void {
+    this.getDelegate().clearCurrentRoute();
+  }
 }

@@ -1,12 +1,13 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { PageSpanProcessorArgs, PageProvider } from './types.js';
+import type { PageSpanProcessorArgs } from './types.js';
 import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
+import type { PageManager } from '../../api-page/index.js';
 
 export class PageSpanProcessor implements SpanProcessor {
-  private readonly _pageProvider: PageProvider;
+  private readonly _pageManager: PageManager;
 
-  public constructor({ pageProvider }: PageSpanProcessorArgs) {
-    this._pageProvider = pageProvider;
+  public constructor({ pageManager }: PageSpanProcessorArgs) {
+    this._pageManager = pageManager;
   }
 
   public forceFlush(): Promise<void> {
@@ -15,8 +16,8 @@ export class PageSpanProcessor implements SpanProcessor {
 
   // Attach page attributes at span end to capture the page where the span completed
   public onEnd(span: ReadableSpan): void {
-    const currentRoute = this._pageProvider.getCurrentRoute();
-    const currentPageId = this._pageProvider.getCurrentPageId();
+    const currentRoute = this._pageManager.getCurrentRoute();
+    const currentPageId = this._pageManager.getCurrentPageId();
 
     if (currentRoute && currentPageId) {
       span.attributes[KEY_EMB_PAGE_PATH] = currentRoute.path;

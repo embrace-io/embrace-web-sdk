@@ -11,4 +11,6 @@ export interface PageManager {
   getCurrentRoute: () => Route | null;
 
   getCurrentPageId: () => string | null;
+
+  clearCurrentRoute: () => void;
 }

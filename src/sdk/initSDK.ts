@@ -370,7 +370,7 @@ const setupTraces = ({
     createSessionSpanProcessor(spanSessionManager),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
-    new PageSpanProcessor({ pageProvider: pageManager }),
+    new PageSpanProcessor({ pageManager }),
     new SpanScrubProcessor({ attributeScrubbers }),
   ];
 
@@ -437,7 +437,7 @@ const setupLogs = ({
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
     new LogRecordScrubProcessor({ attributeScrubbers }),
-    new PageLogRecordProcessor({ pageProvider: pageManager }),
+    new PageLogRecordProcessor({ pageManager }),
   ];
 
   logExporters?.forEach(exporter => {

@@ -23,4 +23,10 @@ describe('NoOpPageManager', () => {
     const pageId = noOpPageManager.getCurrentPageId();
     expect(pageId).to.equal('');
   });
+
+  it('should do nothing for clearCurrentRoute', () => {
+    void expect(() => {
+      noOpPageManager.clearCurrentRoute();
+    }).to.not.throw();
+  });
 });
