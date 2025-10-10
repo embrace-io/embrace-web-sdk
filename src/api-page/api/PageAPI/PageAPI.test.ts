@@ -37,6 +37,7 @@ describe('PageAPI', () => {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
+      clearCurrentRoute: sinon.stub(),
     };
     pageAPI.setGlobalPageManager(mockPageManager);
     const pageManager = pageAPI.getPageManager();
@@ -51,6 +52,7 @@ describe('PageAPI', () => {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
+      clearCurrentRoute: sinon.stub(),
     };
     pageAPI.setGlobalPageManager(mockPageManager);
 
@@ -66,5 +68,8 @@ describe('PageAPI', () => {
     const pageId = pageAPI.getCurrentPageId();
     expect(pageId).to.equal('test-page-id');
     void expect(mockPageManager.getCurrentPageId).to.have.been.calledOnce;
+
+    pageAPI.clearCurrentRoute();
+    void expect(mockPageManager.clearCurrentRoute).to.have.been.calledOnce;
   });
 });

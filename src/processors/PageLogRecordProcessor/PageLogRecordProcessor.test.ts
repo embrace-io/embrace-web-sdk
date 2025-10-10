@@ -4,15 +4,15 @@ import { setupTestLogExporter } from '../../testUtils/index.js';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
-import type { PageProvider } from './types.js';
-import type { Route } from '../../api-page/index.js';
+import type { PageManager, Route } from '../../api-page/index.js';
 import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
+import { EmbracePageManager } from '../../managers/index.js';
 
 const { expect } = chai;
 
 describe('PageLogRecordProcessor', () => {
   let memoryExporter: InMemoryLogRecordExporter;
-  let pageProvider: PageProvider;
+  let pageManager: PageManager;
   let logger: Logger;
 
   const mockRoute: Route = {
@@ -21,13 +21,10 @@ describe('PageLogRecordProcessor', () => {
   };
 
   before(() => {
-    pageProvider = {
-      getCurrentPageId: () => 'test-page-id',
-      getCurrentRoute: () => mockRoute,
-    };
+    pageManager = new EmbracePageManager();
     memoryExporter = setupTestLogExporter([
       new PageLogRecordProcessor({
-        pageProvider,
+        pageManager,
       }),
     ]);
     logger = logs.getLogger('test-logger');
@@ -38,6 +35,8 @@ describe('PageLogRecordProcessor', () => {
   });
 
   it('should attach route when emitted a log', () => {
+    pageManager.setCurrentRoute(mockRoute);
+
     logger.emit({
       body: 'some log',
     });
@@ -46,12 +45,14 @@ describe('PageLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal('test-page-id');
+    expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal(
+      pageManager.getCurrentPageId()
+    );
     expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/products/:id');
   });
 
   it('should not attach surface name and id when route is null', () => {
-    pageProvider.getCurrentRoute = () => null;
+    pageManager.clearCurrentRoute();
 
     logger.emit({
       body: 'some log',
@@ -67,7 +68,7 @@ describe('PageLogRecordProcessor', () => {
 
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new PageLogRecordProcessor({
-      pageProvider,
+      pageManager: new EmbracePageManager(),
     });
 
     expect(async () => {
@@ -77,7 +78,7 @@ describe('PageLogRecordProcessor', () => {
 
   it('should make sure shutdown no-op does not fail', () => {
     const processor = new PageLogRecordProcessor({
-      pageProvider,
+      pageManager: new EmbracePageManager(),
     });
 
     expect(async () => {

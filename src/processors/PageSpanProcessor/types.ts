@@ -1,5 +1,5 @@
 import type { PageManager } from '../../api-page/index.js';
 
-export interface PageLogRecordProcessorArgs {
+export interface PageSpanProcessorArgs {
   pageManager: PageManager;
 }

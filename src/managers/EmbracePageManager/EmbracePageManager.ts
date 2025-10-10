@@ -16,4 +16,9 @@ export class EmbracePageManager implements PageManager {
 
     this._currentRoute = route;
   };
+
+  public clearCurrentRoute = () => {
+    this._currentRoute = null;
+    this._currentPageId = null;
+  };
 }
