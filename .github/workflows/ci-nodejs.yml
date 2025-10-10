@@ -504,19 +504,12 @@ jobs:
         run: |
           npm run compile
 
-      # TODO: cache
-      - name: Install npm dependencies for platforms
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run sdk:test:integration:e2e:install-dependencies
-
       - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         # Build needs to run first so e2e tests can use the built apps and not build again
         # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
-          npm run sdk:test:integration:build
-          npm run sdk:test:integration:e2e
+          npm run sdk:test:integration
 
       - name: Cache successful test results
         if: ${{ success() }}

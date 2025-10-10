@@ -12,7 +12,7 @@
   "sideEffects": false,
   "scripts": {
     "prepublishOnly": "npm run compile && npm run validate",
-    "clean": "npm run clean --workspaces --if-present; npx rimraf {,**/}.sonda {,**/}build {,**/}dist {,**/}node_modules",
+    "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
     "lint": "npm run sdk:lint:fix",
     "validate": "npm run sdk:validate && npm run cli:validate",
@@ -20,21 +20,18 @@
     "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
     "sdk:docs": "npx typedoc --readme none && touch docs/.nojekyll",
     "sdk:test": "web-test-runner",
+    "sdk:test:watch": "npm run sdk:test -- --watch",
     "sdk:test:manual": "npm run sdk:test -- --manual",
     "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
     "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
     "sdk:test:performance": "npm run test --prefix tests/performance",
-    "sdk:test:integration": "npm run compile && npm run sdk:test:integration:e2e:install-dependencies && npm run sdk:test:integration:build && npm run sdk:test:integration:e2e",
-    "sdk:test:integration:build": "npm run tests:integration:build --prefix tests/integration",
-    "sdk:test:integration:e2e": "npm run tests:integration:e2e --prefix tests/integration",
-    "sdk:test:integration:e2e:install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
-    "sdk:test:integration:e2e:update-golden": "npm run tests:integration:e2e:update-golden --prefix tests/integration",
-    "sdk:test:watch": "npm run sdk:test -- --watch",
+    "sdk:test:integration": "npm run test --prefix tests/integration",
+    "sdk:test:integration:update-golden": "npm run update-golden --prefix tests/integration",
     "sdk:compile": "npx rimraf dist && npm run sdk:compile:iife && npm run sdk:compile:sdk",
     "sdk:compile:iife": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js && terser dist/embrace-web-sdk.js -c -m --source-map \"content='dist/embrace-web-sdk.js.map',url='embrace-web-sdk.js.map'\" -o dist/embrace-web-sdk.js",
     "sdk:compile:iife:watch": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js --watch",
     "sdk:compile:sdk": "tsdown 'src/**/*.ts' '!src/**/*.test.*' --format cjs,esm --target=es2022 --dts --outDir dist --sourcemap --platform browser --no-splitting --unbundle --no-clean",
-    "sdk:compile:sdk:watch": "npm run sdk:compile:sdk --watch",
+    "sdk:compile:sdk:watch": "npm run sdk:compile:sdk -- --watch ./src",
     "sdk:lint": "npm run sdk:lint:prettier && npm run sdk:tsc:check && npm run sdk:lint:eslint",
     "sdk:lint:fix": "npm run sdk:lint:prettier:fix && npm run sdk:tsc:check && npm run sdk:lint:eslint:fix",
     "sdk:lint:prettier": "prettier --log-level=warn --check .",
@@ -152,6 +149,8 @@
     "playwright": "1.56.0",
     "prettier": "3.6.2",
     "publint": "0.3.13",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "rimraf": "6.0.1",
     "sinon-chai": "4.0.1",
     "sonda": "0.9.0",
@@ -159,7 +158,8 @@
     "tsdown": "0.15.6",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.46.0"
+    "typescript-eslint": "8.46.0",
+    "vite": "7.1.9"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
@@ -171,11 +171,8 @@
   },
   "workspaces": [
     "cli",
-    "demo/frontend",
-    "demo/frontend-cdn",
-    "demo/frontend-sdk",
-    "tests/performance",
-    "tests/integration"
+    "demo/*",
+    "tests/performance"
   ],
   "nano-staged": {
     "*.{ts,tsx,js,jsx,mjs,yml,yaml,html}": "npm run lint"
