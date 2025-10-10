@@ -69,8 +69,8 @@ describe('EmbraceTraceExporter', () => {
       mockUserID
     );
     // Chrome, Webkit and Firefox have slightly different encoding processes- Content-Length values. 286 for Chrome, 287 for Firefox and Webkit.
-    const chromeContentLength = '286';
-    const firefoxWebkitContentLength = '287';
+    const chromeContentLength = '294';
+    const firefoxWebkitContentLength = '293';
     //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
     expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
       chromeContentLength,
@@ -119,6 +119,7 @@ describe('EmbraceTraceExporter', () => {
                   },
                   links: [],
                   droppedLinksCount: 0,
+                  flags: 257,
                 },
               ],
             },
