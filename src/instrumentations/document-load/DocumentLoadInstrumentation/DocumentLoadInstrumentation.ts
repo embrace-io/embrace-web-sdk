@@ -3,10 +3,11 @@
  * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  *
  * Additional PerformanceResourceTiming attributes collected:
- * - entry_type, initiator_type, decoded_body_size
+ * - entry_type, initiator_type
+ * - decoded_body_size, http.response.body.size, http.response.size
  * - delivery_type (Chromium only)
  * - render_blocking_status (Chromium only)
- * - status_code (no Safari support)
+ * - http.response.status_code (no Safari support)
  *
  * Custom diagnostic attributes added to identify resource loading issues:
  * - http.response.cors_opaque - CORS-restricted resource (opaque response)
