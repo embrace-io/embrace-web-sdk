@@ -232,16 +232,9 @@ describe('DocumentLoad Instrumentation', () => {
   describe('when document readyState is complete', () => {
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
-      // Add a minimal resource entry with responseStatus for browser detection
-      const minimalResource = {
-        name: 'http://localhost:8000/',
-        entryType: 'resource',
-        responseStatus: 200,
-      } as PerformanceResourceTiming;
-
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([minimalResource]);
+      spyEntries.withArgs('resource').returns([]);
       spyEntries.withArgs('paint').returns([]);
     });
     afterEach(() => {
@@ -251,8 +244,7 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(window.document.readyState, 'complete');
-        // 4 calls: 1 for browser detection (resource), 3 for performance collection (navigation, resource, paint)
-        assert.strictEqual(spyEntries.callCount, 4);
+        assert.strictEqual(spyEntries.callCount, 3);
         done();
       });
     });
@@ -266,16 +258,9 @@ describe('DocumentLoad Instrumentation', () => {
         value: 'loading',
       });
 
-      // Add a minimal resource entry with responseStatus for browser detection
-      const minimalResource = {
-        name: 'http://localhost:8000/',
-        entryType: 'resource',
-        responseStatus: 200,
-      } as PerformanceResourceTiming;
-
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([minimalResource]);
+      spyEntries.withArgs('resource').returns([]);
       spyEntries.withArgs('paint').returns([]);
     });
     afterEach(() => {
@@ -300,8 +285,7 @@ describe('DocumentLoad Instrumentation', () => {
         })
       );
       setTimeout(() => {
-        // 4 calls: 1 for browser detection + 3 for performance collection
-        assert.strictEqual(spyEntries.callCount, 4);
+        assert.strictEqual(spyEntries.callCount, 3);
         done();
       });
     });
@@ -751,7 +735,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should add cors_restricted flag when resource has timing but no size data', done => {
+    it('should add cors_restricted attribute when resource has timing but no size data', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -769,15 +753,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.include(
-          resourceSpan.attributes['flags'] as string,
-          'cors_restricted'
-        );
+        assert.strictEqual(resourceSpan.attributes['cors_restricted'], true);
         done();
       });
     });
 
-    it('should add failed_request flag when resource has no timing or size data', done => {
+    it('should add failed_request attribute when resource has no timing or size data', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -795,15 +776,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.include(
-          resourceSpan.attributes['flags'] as string,
-          'failed_request'
-        );
+        assert.strictEqual(resourceSpan.attributes['failed_request'], true);
         done();
       });
     });
 
-    it('should add cache_validated flag for 304 responses', done => {
+    it('should add cache_validated attribute for 304 responses', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -816,15 +794,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.include(
-          resourceSpan.attributes['flags'] as string,
-          'cache_validated'
-        );
+        assert.strictEqual(resourceSpan.attributes['cache_validated'], true);
         done();
       });
     });
 
-    it('should not add cache_validated flag when deliveryType is cache', done => {
+    it('should not add cache_validated attribute when deliveryType is cache', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -837,15 +812,12 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.notInclude(
-          resourceSpan.attributes['flags'] as string,
-          'cache_validated'
-        );
+        assert.isUndefined(resourceSpan.attributes['cache_validated']);
         done();
       });
     });
 
-    it('should not add flags for normal resources', done => {
+    it('should not add quality attributes for normal resources', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -856,7 +828,9 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.isUndefined(resourceSpan.attributes['flags']);
+        assert.isUndefined(resourceSpan.attributes['cors_restricted']);
+        assert.isUndefined(resourceSpan.attributes['cache_validated']);
+        assert.isUndefined(resourceSpan.attributes['failed_request']);
         done();
       });
     });

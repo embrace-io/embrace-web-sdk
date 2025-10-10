@@ -46,47 +46,41 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 /**
- * Extensions to both native PerformanceResourceTiming and OTel's PerformanceEntries.
+ * Extensions for new PerformanceResourceTiming features not yet in TypeScript's DOM lib.
  *
- * Why we need all these fields:
- * - OTel's PerformanceEntries is a custom type with only numeric timing fields (fetchStart, responseEnd, etc.)
- *   It's NOT the browser's native PerformanceEntry/PerformanceResourceTiming interface.
- * - Native PerformanceResourceTiming (in TypeScript's DOM lib) already has: entryType, initiatorType,
- *   responseStatus, transferSize, decodedBodySize, encodedBodySize
- * - But OTel's PerformanceEntries is missing ALL of these properties
- *
- * This extension type adds:
- * 1. For PerformanceResourceTiming: deliveryType, renderBlockingStatus (new browser features not in TS lib yet)
- * 2. For OTel's PerformanceEntries: ALL 6 fields (since OTel's type only has numeric timing properties)
+ * As of Oct 2025:
+ * - deliveryType: Chromium only
+ * - renderBlockingStatus: Chromium only
+ * - responseStatus: No Safari support (but in TS lib, needs optional for safety)
  */
-type EmbracePerformanceExtensions = {
+type NewResourceTimingFeatures = {
   deliveryType?: string;
-  entryType?: string;
-  initiatorType?: string;
   renderBlockingStatus?: string;
   responseStatus?: number;
+  // OTel's PerformanceEntries type lacks standard props, so we need these too
+  entryType?: string;
+  initiatorType?: string;
   transferSize?: number;
+  encodedBodySize?: number;
+  decodedBodySize?: number;
 };
 
 type EmbracePerformanceResourceTiming = PerformanceResourceTiming &
-  EmbracePerformanceExtensions;
+  NewResourceTimingFeatures;
 
-type PerformanceEntries = OtelPerformanceEntries & EmbracePerformanceExtensions;
+type PerformanceEntries = OtelPerformanceEntries & NewResourceTimingFeatures;
 
 const ATTR_DELIVERY_TYPE = 'delivery_type';
 const ATTR_ENTRY_TYPE = 'entry_type';
 const ATTR_INITIATOR_TYPE = 'initiator_type';
 const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
 const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
-const ATTR_RESOURCE_FLAGS = 'flags';
+const ATTR_CORS_RESTRICTED = 'cors_restricted';
+const ATTR_CACHE_VALIDATED = 'cache_validated';
+const ATTR_FAILED_REQUEST = 'failed_request';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
-  private _browserSupport?: {
-    hasResponseStatus: boolean;
-    hasDeliveryType: boolean;
-    hasRenderBlockingStatus: boolean;
-  };
 
   public constructor({
     diag,
@@ -112,7 +106,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     this._onDocumentLoaded = () => {
       // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
-        this._detectBrowserSupport();
         this._collectPerformance();
       }, 0);
     };
@@ -451,45 +444,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Detects browser support for ResourceTiming properties
+   * Check if resource has no size data (all size fields are 0)
    */
-  private _detectBrowserSupport(): void {
-    if (this._browserSupport) {
-      return;
-    }
-
-    const entries = performance.getEntriesByType('resource');
-    const testEntry = entries.length > 0 ? entries[0] : null;
-
-    this._browserSupport = {
-      hasResponseStatus: testEntry !== null && 'responseStatus' in testEntry,
-      hasDeliveryType: testEntry !== null && 'deliveryType' in testEntry,
-      hasRenderBlockingStatus:
-        testEntry !== null && 'renderBlockingStatus' in testEntry,
-    };
-
-    this._diag.debug('Browser ResourceTiming support detected', {
-      responseStatus: this._browserSupport.hasResponseStatus,
-      deliveryType: this._browserSupport.hasDeliveryType,
-      renderBlockingStatus: this._browserSupport.hasRenderBlockingStatus,
-    });
-  }
-
-  /**
-   * Flags indicate browser limitations or CORS restrictions that prevent full timing visibility
-   */
-  private _addResourceQualityFlags(
-    span: Span,
-    resource: EmbracePerformanceResourceTiming
-  ): void {
-    const resourceQualityFlags: string[] = [];
-
-    // As of Oct 2025, no Safari support
-    if (this._browserSupport && !this._browserSupport.hasResponseStatus) {
-      resourceQualityFlags.push('browser_missing_response_status');
-    }
-
-    // Check for CORS-restricted timing data vs actual failures
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
     const transferSize =
       typeof resource.transferSize === 'number' ? resource.transferSize : 0;
     const decodedBodySize =
@@ -501,38 +459,78 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         ? resource.encodedBodySize
         : 0;
 
-    const hasNoSizeData =
-      transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
+    return transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
+  }
 
-    if (hasNoSizeData) {
-      // Has timing data but no size - likely cross-origin without Timing-Allow-Origin header
-      const fetchStart =
-        typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
-      const responseEnd =
-        typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
+  /**
+   * Check if resource has timing data available
+   */
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+    const responseEnd =
+      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
 
-      const hasTimingData = fetchStart > 0 && responseEnd > 0;
+    return fetchStart > 0 && responseEnd > 0;
+  }
 
-      if (hasTimingData) {
-        resourceQualityFlags.push('cors_restricted');
-      } else {
-        // No timing or size data - request likely failed or was aborted
-        resourceQualityFlags.push('failed_request');
-      }
-    }
+  /**
+   * Detect CORS-restricted resources
+   * Cross-origin resources without Timing-Allow-Origin header have timing data but no size data
+   */
+  private _isCorsRestricted(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    return this._hasNoSizeData(resource) && this._hasTimingData(resource);
+  }
 
-    // 304 Not Modified responses typically show 300 bytes transferSize (HTTP headers only, no body)
-    // This indicates cache revalidation occurred:
-    // https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
+  /**
+   * Detect failed or aborted requests
+   * Failed requests have neither timing nor size data
+   */
+  private _isFailedRequest(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    return this._hasNoSizeData(resource) && !this._hasTimingData(resource);
+  }
+
+  /**
+   * Detect cache validation (304 Not Modified responses)
+   * 304 responses show ~300 bytes transferSize (HTTP headers only)
+   * Need to exclude actual cache hits via deliveryType check
+   * https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
+   */
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _isCacheValidated(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    const transferSize =
+      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
     const deliveryType =
       typeof resource.deliveryType === 'string' ? resource.deliveryType : '';
 
-    if (transferSize === 300 && deliveryType !== 'cache') {
-      resourceQualityFlags.push('cache_validated');
+    // 300 bytes indicates 304 response, but only if not a cache hit
+    return transferSize === 300 && deliveryType !== 'cache';
+  }
+
+  /**
+   * Add quality attributes to indicate CORS restrictions or cache validation
+   */
+  private _addResourceQualityFlags(
+    span: Span,
+    resource: EmbracePerformanceResourceTiming
+  ): void {
+    // Check for CORS-restricted resources vs actual failures
+    if (this._isCorsRestricted(resource)) {
+      span.setAttribute(ATTR_CORS_RESTRICTED, true);
+    } else if (this._isFailedRequest(resource)) {
+      span.setAttribute(ATTR_FAILED_REQUEST, true);
     }
 
-    if (resourceQualityFlags.length > 0) {
-      span.setAttribute(ATTR_RESOURCE_FLAGS, resourceQualityFlags.join(','));
+    // Check for cache validation (304 responses)
+    if (this._isCacheValidated(resource)) {
+      span.setAttribute(ATTR_CACHE_VALIDATED, true);
     }
   }
 
