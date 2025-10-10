@@ -735,7 +735,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should add cors_restricted attribute when resource has timing but no size data', done => {
+    it('should add http.response.cors_opaque attribute when resource has timing but no size data', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -753,12 +753,15 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(resourceSpan.attributes['cors_restricted'], true);
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.cors_opaque'],
+          true
+        );
         done();
       });
     });
 
-    it('should add failed_request attribute when resource has no timing or size data', done => {
+    it('should add http.request.prevented attribute when request never started', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -776,12 +779,41 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(resourceSpan.attributes['failed_request'], true);
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.prevented'],
+          true
+        );
         done();
       });
     });
 
-    it('should add cache_validated attribute for 304 responses', done => {
+    it('should add http.request.incomplete attribute when request started but did not complete', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.incomplete'],
+          true
+        );
+        done();
+      });
+    });
+
+    it('should add http.response.cache_revalidated attribute for 304 responses', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -794,12 +826,15 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(resourceSpan.attributes['cache_validated'], true);
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.cache_revalidated'],
+          true
+        );
         done();
       });
     });
 
-    it('should not add cache_validated attribute when deliveryType is cache', done => {
+    it('should not add http.response.cache_revalidated attribute when deliveryType is cache', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -812,12 +847,14 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.isUndefined(resourceSpan.attributes['cache_validated']);
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cache_revalidated']
+        );
         done();
       });
     });
 
-    it('should not add quality attributes for normal resources', done => {
+    it('should not add diagnostic attributes for normal resources', done => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -828,9 +865,14 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.isUndefined(resourceSpan.attributes['cors_restricted']);
-        assert.isUndefined(resourceSpan.attributes['cache_validated']);
-        assert.isUndefined(resourceSpan.attributes['failed_request']);
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cors_opaque']
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cache_revalidated']
+        );
+        assert.isUndefined(resourceSpan.attributes['http.request.incomplete']);
+        assert.isUndefined(resourceSpan.attributes['http.request.prevented']);
         done();
       });
     });

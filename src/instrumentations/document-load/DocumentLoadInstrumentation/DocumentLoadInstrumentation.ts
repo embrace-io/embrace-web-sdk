@@ -9,15 +9,16 @@
  * - status_code (no Safari support)
  *
  * Custom diagnostic attributes added to identify resource loading issues:
- * - 'cors_restricted' - Cross-origin resource without Timing-Allow-Origin header
- * - 'cache_validated' - 304 Not Modified response indicating cache revalidation
- * - 'failed_request' - Failed or aborted request
+ * - http.response.cors_opaque - CORS-restricted resource (opaque response)
+ * - http.response.cache_revalidated - 304 Not Modified response
+ * - http.request.incomplete - Request started but didn't complete (network error, aborted)
+ * - http.request.prevented - Request never started (blocked by CSP, browser, extension)
  */
 
 import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
-import type { PerformanceEntries as OtelPerformanceEntries } from '@opentelemetry/sdk-trace-web';
+import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   addSpanNetworkEvent,
@@ -47,31 +48,14 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 /**
- * Type extensions for safe access to PerformanceResourceTiming properties.
- *
- * Two categories of extensions:
- * 1. New browser features not yet in TypeScript's DOM lib (as of Oct 2025):
- *    - deliveryType: Chromium only
- *    - renderBlockingStatus: Chromium only
- *
- * 2. PerformanceResourceTiming properties missing from OTel's PerformanceEntries type:
- *    - entryType, initiatorType, transferSize, encodedBodySize, decodedBodySize, responseStatus
+ * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
+ * - deliveryType: Chromium only (experimental) https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
+ * - renderBlockingStatus: Chromium only https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
  */
-type ResourceTimingExtensions = {
-  deliveryType?: string;
-  renderBlockingStatus?: string;
-  responseStatus?: number;
-  entryType?: string;
-  initiatorType?: string;
-  transferSize?: number;
-  encodedBodySize?: number;
-  decodedBodySize?: number;
+type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
+  deliveryType?: 'cache' | '';
+  renderBlockingStatus?: 'blocking' | 'non-blocking';
 };
-
-type EmbracePerformanceResourceTiming = PerformanceResourceTiming &
-  ResourceTimingExtensions;
-
-type PerformanceEntries = OtelPerformanceEntries & ResourceTimingExtensions;
 
 // PerformanceResourceTiming attribute names
 const ATTR_DELIVERY_TYPE = 'delivery_type';
@@ -81,9 +65,10 @@ const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
 const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
 
 // Diagnostic attribute names
-const ATTR_CORS_RESTRICTED = 'cors_restricted'; // Cross-origin resource without TAO header
-const ATTR_CACHE_VALIDATED = 'cache_validated'; // 304 Not Modified response
-const ATTR_FAILED_REQUEST = 'failed_request'; // Failed or aborted request
+const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-restricted resource (opaque response)
+const ATTR_HTTP_RESPONSE_CACHE_REVALIDATED = 'http.response.cache_revalidated'; // 304 Not Modified response
+const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request started but didn't complete
+const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
@@ -479,10 +464,24 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     return this._hasNoSizeData(resource) && this._hasTimingData(resource);
   }
 
-  private _isFailedRequest(
+  private _isFetchIncomplete(
     resource: EmbracePerformanceResourceTiming
   ): boolean {
-    return this._hasNoSizeData(resource) && !this._hasTimingData(resource);
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+    const responseEnd =
+      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
+
+    return this._hasNoSizeData(resource) && fetchStart > 0 && responseEnd === 0;
+  }
+
+  private _isFetchPrevented(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+
+    return this._hasNoSizeData(resource) && fetchStart === 0;
   }
 
   /**
@@ -509,22 +508,25 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * Add diagnostic attributes to identify resource loading issues
    *
    * Diagnostic attributes help identify why resources may have incomplete timing data:
-   * - CORS restrictions (cross-origin without Timing-Allow-Origin header)
-   * - Cache validation (304 Not Modified responses)
-   * - Failed/aborted requests
+   * - CORS restrictions (opaque responses without Timing-Allow-Origin header)
+   * - Cache revalidation (304 Not Modified responses)
+   * - Request incomplete (started but didn't complete - network error, aborted)
+   * - Request prevented (never started - blocked by CSP, browser, extension)
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
     resource: EmbracePerformanceResourceTiming
   ): void {
     if (this._isCorsRestricted(resource)) {
-      span.setAttribute(ATTR_CORS_RESTRICTED, true);
-    } else if (this._isFailedRequest(resource)) {
-      span.setAttribute(ATTR_FAILED_REQUEST, true);
+      span.setAttribute(ATTR_HTTP_RESPONSE_CORS_OPAQUE, true);
+    } else if (this._isFetchIncomplete(resource)) {
+      span.setAttribute(ATTR_HTTP_REQUEST_INCOMPLETE, true);
+    } else if (this._isFetchPrevented(resource)) {
+      span.setAttribute(ATTR_HTTP_REQUEST_PREVENTED, true);
     }
 
     if (this._isCacheValidated(resource)) {
-      span.setAttribute(ATTR_CACHE_VALIDATED, true);
+      span.setAttribute(ATTR_HTTP_RESPONSE_CACHE_REVALIDATED, true);
     }
   }
 
