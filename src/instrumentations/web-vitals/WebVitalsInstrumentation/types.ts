@@ -5,6 +5,7 @@ import type {
 } from 'web-vitals/attribution';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
 import type { URLDocument } from '../../../common/index.js';
+import type { PageManager } from '../../../api-page/index.js';
 
 export type TrackingLevel = 'core' | 'all';
 
@@ -20,4 +21,5 @@ export type WebVitalsInstrumentationArgs = {
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;
   urlAttribution?: boolean;
+  pageManager?: PageManager;
 } & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;

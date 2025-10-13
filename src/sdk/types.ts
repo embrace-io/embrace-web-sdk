@@ -338,6 +338,7 @@ export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
   embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
+  pageManager?: PageManager;
 }
 
 export interface DefaultInstrumentationConfig {
