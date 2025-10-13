@@ -273,6 +273,7 @@ export const initSDK = (
             logManager: embraceLogManager,
             spanSessionManager,
             embraceSpanProcessor,
+            pageManager,
           }),
           ...instrumentations,
         ],
@@ -282,6 +283,7 @@ export const initSDK = (
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
             embraceSpanProcessor,
+            pageManager,
           }),
           ...instrumentations,
         ],
