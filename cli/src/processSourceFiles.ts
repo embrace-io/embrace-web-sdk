@@ -33,6 +33,8 @@ interface ProcessSourceFilesArgs {
   upload: boolean;
 }
 
+const UUID_WITH_HYPHENS_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const UUID_WITHOUT_HYPHENS_REGEX = /^[0-9a-fA-F]{32}$/;
 const UUID_PARTS_REGEX =
   /([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})/;
@@ -206,6 +208,11 @@ export const processSourceFiles = async ({
       // Given that the debug_id specification (https://github.com/tc39/ecma426/blob/main/proposals/debug-id.md#debug-ids)
       // uses hyphens, and our bundle_id does not, we need to have the two variables separately.
       if (sourceMap.debugId) {
+        if (!UUID_WITH_HYPHENS_REGEX.test(sourceMap.debugId)) {
+          throw new Error(
+            `SourceMap file at ${mapFilePath} contains a debugID that is not a valid UUID string: '${sourceMap.debugId}'.\nIf you are generating these debugIDs manually, you should make sure the generated ids are valid UUIDs.\nIf you are using a build tool that generates these ids, we suggest that you disable that, and our cli will generate them automatically.`
+          );
+        }
         bundleID = sourceMap.debugId.replaceAll('-', '');
         debugID = sourceMap.debugId;
         console.log(
