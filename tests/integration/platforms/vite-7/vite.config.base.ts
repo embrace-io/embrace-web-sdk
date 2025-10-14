@@ -19,7 +19,7 @@ export default ({ target, outDir, sondaOutput }: CreateConfigArgs) =>
       outDir,
       rollupOptions: {
         output: {
-          // sourcemapDebugIds had to be disabled because of a known bug in rollup: https://github.com/embrace-io/embrace-web-sdk/pull/896
+          // sourcemapDebugIds had to be disabled because of a known bug in rollup: https://github.com/rollup/rollup/pull/6144
           // that produces invalid UUIDs and therefore our CLI is rejecting them.
           // We should be able to enable this back again once that is merged and released.
           sourcemapDebugIds: false,
