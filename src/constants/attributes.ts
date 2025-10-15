@@ -24,6 +24,8 @@ export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_VIEW_NAME = 'view.name';
 export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
 export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
+export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
+  'emb.max_pending_spans_reached';
 // In the backend we use 'app.surface.name' and 'app.surface.id' for the page name and id
 // to be consistent with mobile where we use 'app.surface.*' for screen names and ids
 export const KEY_EMB_PAGE_PATH = 'app.surface.name';

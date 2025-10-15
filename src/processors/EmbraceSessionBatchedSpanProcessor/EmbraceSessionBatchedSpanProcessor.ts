@@ -9,11 +9,22 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
 import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
-import type { LimitManagerInternal } from '../../managers/index.js';
+import type {
+  LimitManagerInternal,
+  SpanSessionManagerInternal,
+} from '../../managers/index.js';
 import { EmbraceSpanStorage } from '../../utils/index.js';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
+
+type ExportFailureReason = 'concurrent_limit' | 'fetch_error' | 'unknown';
+
+const exportFailureAttributeKey = (
+  reason: ExportFailureReason,
+  session: 'current' | 'previous'
+) =>
+  `emb.${session === 'current' ? 'export_failed' : 'previous_export_failed'}.${reason}`;
 
 export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _shutdownOnce: BindOnceFuture<void>;
@@ -21,11 +32,13 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _spanStorage: EmbraceSpanStorage;
+  private readonly _spanSessionManager: SpanSessionManagerInternal;
 
   public constructor({
     resource,
     exporter,
     limitManager,
+    spanSessionManager,
     storage = window.localStorage,
     storedSpansExpireTimeoutMS,
     ...parentArgs
@@ -37,6 +50,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
+    this._spanSessionManager = spanSessionManager;
     this._spanStorage = new EmbraceSpanStorage({
       resource,
       storage,
@@ -45,6 +59,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
         this._exportSpans(spans);
       },
       storedSpansExpireTimeoutMS,
+      spanSessionManager,
     });
   }
 
@@ -79,9 +94,22 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
       ._export(this._exporter, spans)
       .then((result: ExportResult) => {
         if (result.code === ExportResultCode.FAILED) {
-          this.diag.error(
-            `spans failed to export: ${result.error?.message || 'unknown error'}`
+          const errorMessage = result.error?.message || 'unknown error';
+          let failureReason: ExportFailureReason = 'unknown';
+
+          if (errorMessage === 'Concurrent export limit reached') {
+            failureReason = 'concurrent_limit';
+          } else if (errorMessage === 'Fetch request errored') {
+            failureReason = 'fetch_error';
+          }
+
+          this._spanSessionManager.incrSessionCountForKey(
+            exportFailureAttributeKey(failureReason, 'current')
           );
+          this._spanSessionManager.incrNextSessionCountForKey(
+            exportFailureAttributeKey(failureReason, 'previous')
+          );
+          this.diag.error(`spans failed to export: ${errorMessage}`);
         }
       })
       // Seems like everything related to the export logic does a good job of catching and only ever resolving with
@@ -95,6 +123,12 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
           msg = reason;
         }
 
+        this._spanSessionManager.incrSessionCountForKey(
+          exportFailureAttributeKey('unknown', 'current')
+        );
+        this._spanSessionManager.incrNextSessionCountForKey(
+          exportFailureAttributeKey('unknown', 'previous')
+        );
         this.diag.error(`spans failed to export: ${msg}`);
       });
   }

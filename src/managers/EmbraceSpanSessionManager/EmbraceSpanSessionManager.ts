@@ -64,6 +64,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _activeSessionStartTime: HrTime | null = null;
   private _sessionSpan: ExtendedSpan | null = null;
   private _activeSessionCounts: Record<string, number> | null = null;
+  private _nextSessionCounts: Record<string, number> = {};
   private _coldStart = true; // Whether the session was started from a new page load or not.
   private _sdkStartupDuration = 0;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
@@ -317,6 +318,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._activeSessionId = generateUUID();
     this._activeSessionStartTime = this._perf.getNowHRTime();
     this._activeSessionCounts = {};
+    const previouslyRecordedCounts = this._nextSessionCounts;
+    this._nextSessionCounts = {};
 
     const attributes: Attributes = {
       ...this._getPermanentAttributes(),
@@ -332,6 +335,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
+      ...previouslyRecordedCounts,
     };
 
     // Add scrubbed referrer URL if available
@@ -376,6 +380,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._activeSessionCounts[key] = (this._activeSessionCounts[key] || 0) + 1;
+  }
+
+  public incrNextSessionCountForKey(key: string) {
+    this._nextSessionCounts[key] = (this._nextSessionCounts[key] || 0) + 1;
   }
 
   public addSessionStartedListener(listener: SessionStartedListener) {
