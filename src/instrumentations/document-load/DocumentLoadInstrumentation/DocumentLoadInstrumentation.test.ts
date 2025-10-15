@@ -708,17 +708,26 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(resourceSpan.attributes['delivery_type'], 'cache');
         assert.strictEqual(
-          resourceSpan.attributes['render_blocking_status'],
+          resourceSpan.attributes['http.response.delivery_type'],
+          'cache'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.render_blocking_status'],
           'blocking'
         );
         assert.strictEqual(
           resourceSpan.attributes['http.response.status_code'],
           200
         );
-        assert.strictEqual(resourceSpan.attributes['entry_type'], 'resource');
-        assert.strictEqual(resourceSpan.attributes['initiator_type'], 'script');
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.entry_type'],
+          'resource'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.initiator_type'],
+          'script'
+        );
         assert.strictEqual(
           resourceSpan.attributes['http.response_content_length'],
           1446396
@@ -728,7 +737,7 @@ describe('DocumentLoad Instrumentation', () => {
           1446645
         );
         assert.strictEqual(
-          resourceSpan.attributes['decoded_body_size'],
+          resourceSpan.attributes['http.response.decoded_body_size'],
           1446396
         );
         done();
