@@ -6,6 +6,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [Sonda({ enabled: false })],
   resolve: isDevelopment
     ? {
