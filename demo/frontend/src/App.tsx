@@ -509,8 +509,8 @@ const App = () => {
           <legend>Navigation</legend>
           <div className={styles.actions}>
             <a href="https://google.com">Navigate to google.com</a>
-            <a href="/">Open demo in same tab</a>
-            <a href="/" target="_blank">
+            <a href="./">Open demo in same tab</a>
+            <a href="./" target="_blank">
               Open demo in new tab
             </a>
           </div>

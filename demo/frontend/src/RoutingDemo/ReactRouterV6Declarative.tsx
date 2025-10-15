@@ -12,7 +12,7 @@ const ReactRouterV6Declarative = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign('./');
   };
 
   return (
