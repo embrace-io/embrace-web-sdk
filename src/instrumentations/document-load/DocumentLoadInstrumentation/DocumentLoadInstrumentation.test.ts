@@ -713,7 +713,7 @@ describe('DocumentLoad Instrumentation', () => {
           'cache'
         );
         assert.strictEqual(
-          resourceSpan.attributes['http.response.render_blocking_status'],
+          resourceSpan.attributes['http.request.render_blocking_status'],
           'blocking'
         );
         assert.strictEqual(
@@ -721,11 +721,7 @@ describe('DocumentLoad Instrumentation', () => {
           200
         );
         assert.strictEqual(
-          resourceSpan.attributes['http.response.entry_type'],
-          'resource'
-        );
-        assert.strictEqual(
-          resourceSpan.attributes['http.response.initiator_type'],
+          resourceSpan.attributes['http.request.initiator_type'],
           'script'
         );
         assert.strictEqual(

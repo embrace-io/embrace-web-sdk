@@ -60,11 +60,10 @@ type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
 
 // PerformanceResourceTiming attribute names
 const ATTR_HTTP_RESPONSE_DELIVERY_TYPE = 'http.response.delivery_type';
-const ATTR_HTTP_RESPONSE_ENTRY_TYPE = 'http.response.entry_type';
-const ATTR_HTTP_RESPONSE_INITIATOR_TYPE = 'http.response.initiator_type';
-const ATTR_HTTP_RESPONSE_RENDER_BLOCKING_STATUS =
-  'http.response.render_blocking_status';
 const ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE = 'http.response.decoded_body_size';
+const ATTR_HTTP_REQUEST_INITIATOR_TYPE = 'http.request.initiator_type';
+const ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS =
+  'http.request.render_blocking_status';
 
 // Diagnostic attribute names
 const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-restricted resource (opaque response)
@@ -291,20 +290,16 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       );
     }
 
-    if (resource.entryType) {
-      span.setAttribute(ATTR_HTTP_RESPONSE_ENTRY_TYPE, resource.entryType);
-    }
-
     if (resource.initiatorType) {
       span.setAttribute(
-        ATTR_HTTP_RESPONSE_INITIATOR_TYPE,
+        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
         resource.initiatorType
       );
     }
 
     if (resource.renderBlockingStatus) {
       span.setAttribute(
-        ATTR_HTTP_RESPONSE_RENDER_BLOCKING_STATUS,
+        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
         resource.renderBlockingStatus
       );
     }
