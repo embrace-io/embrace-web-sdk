@@ -15,21 +15,16 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 - Fix lint: `npm run sdk:lint:fix`
 - Check types: `npm run sdk:tsc:check`
 
-## Git Commits
+## Commits & Pull Requests
 
-**Format**: `(type)[(scope)]: imperative-subject`
-- Max 150 chars
+**Title Format**: `(type)[(scope)]: imperative-subject`
+- Max 150 chars, abbreviate when clear (e.g., "semconv")
 - Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
-- Example: `fix(session): prevent race condition in tab tracking`
-- Do NOT include Claude credits
-- Keep commit description concise
+- Examples: `fix(session): prevent race condition in tab tracking`, `chore(document-load): align resource attributes with semconv`
 
-## Pull Requests
+**Commits**: Title only, no body/description
 
-**Title**: Same format as commits, abbreviate when clear (e.g., "semconv")
-- Example: `chore(document-load): align resource attributes with semconv`
-
-**Body**: Exactly 3 sections
+**PRs**: Title + 3-section body
 ```markdown
 ## Why
 [Problem statement + benefit. Explain impact, not restate changes.]
@@ -46,6 +41,7 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 - Use arrows (→) to show before/after transformations
 - Quantify when relevant ("5 attributes", "3 files")
 - No marketing language or superlatives
+- Do NOT include Claude credits
 
 ## Code Style
 
