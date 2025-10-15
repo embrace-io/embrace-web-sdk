@@ -4,8 +4,10 @@ import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.js';
+import type { Resource } from '@opentelemetry/resources';
 
 export type EmbraceSessionBatchedSpanProcessorArgs = {
+  resource: Resource;
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
   spanSessionManager: SpanSessionManagerInternal;

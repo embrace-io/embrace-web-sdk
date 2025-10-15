@@ -17,6 +17,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager = new ProxySpanSessionManager();
     mockDelegate = {
       getSessionId: sinon.stub().returns('mockSessionId'),
+      getPreviousSessionId: sinon.stub().returns('mockPreviousSessionId'),
       getSessionSpan: sinon.stub().returns({} as Span),
       getSessionStartTime: sinon.stub().returns([0, 0] as HrTime),
       startSessionSpan: sinon.stub(),
@@ -46,6 +47,12 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     const sessionId = proxySpanSessionManager.getSessionId();
     expect(sessionId).to.equal('mockSessionId');
+  });
+
+  it('should delegate getPreviousSessionId to the delegate', () => {
+    proxySpanSessionManager.setDelegate(mockDelegate);
+    const sessionId = proxySpanSessionManager.getPreviousSessionId();
+    expect(sessionId).to.equal('mockPreviousSessionId');
   });
 
   it('should delegate getSessionSpan to the delegate', () => {

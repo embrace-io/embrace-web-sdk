@@ -30,13 +30,13 @@
           {
             "key": "sdk_version",
             "value": {
-              "stringValue": "2.3.3"
+              "stringValue": "2.6.0"
             }
           },
           {
             "key": "telemetry.sdk.version",
             "value": {
-              "stringValue": "2.3.3"
+              "stringValue": "2.6.0"
             }
           },
           {
@@ -60,7 +60,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "54677301B15D41358427AB019E682449"
+              "stringValue": "260B8B0368864CDDB8BFA303F5183DBA"
             }
           },
           {
@@ -85,8 +85,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1756991981511000000",
-              "observedTimeUnixNano": "1756991981512000000",
+              "timeUnixNano": "1759412761313000244",
+              "observedTimeUnixNano": "1759412761314000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -102,25 +102,31 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "message@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:49520\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:6206\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:6584\n@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:55118\n@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:902\nPromise@[native code]\ny@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:1:729\nmy@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:40:116875\n@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:40:121875\nAi@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:40:9079\nHc@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:40:118109\nVc@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:41:26629\nmd@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:41:26451"
+                    "stringValue": "message@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:14260\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:2688\nmessage@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:3105\n@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:67207\n@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:950\nPromise@[native code]\nA@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:1:777\nmy@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:40:116875\n@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:40:121875\nAi@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:40:9079\nHc@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:40:118109\nVc@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:41:26629\nmd@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:41:26451"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"@http://localhost:3001/public/vite-7/es2015/assets/vendor-CgfZiPcM.js:12:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/vendor-CgfZiPcM.js:12:318\":\"c4f69e54dead4f2d848642ebdf4252c4\",\"@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:44:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/react-CR5gb_0O.js:44:318\":\"75ef6f590dc8449b9d3ed2a543ffc664\",\"@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-CAqlSo5L.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-CAqlSo5L.js:4:318\":\"fbee70bee05c45f6bd889b33b081fd8d\",\"@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/index-a08d8W6W.js:4:318\":\"91df9e63dd1e40b88c9e2dac0ad845ae\"}"
+                    "stringValue": "{\"@http://localhost:3001/public/vite-7/es2015/assets/vendor-DHxu-4Xp.js:12:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/vendor-DHxu-4Xp.js:12:318\":\"adc1c3bb973445cd9aa237af8a3bc6c0\",\"@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:44:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/react-B4YdOrpM.js:44:318\":\"8a76ce867dad453e989a8096b9ca68e8\",\"@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DCtGyYUS.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DCtGyYUS.js:4:318\":\"f667b60c9f3d40e99b4384aba57e9fa5\",\"@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:4:169\\nmodule code@http://localhost:3001/public/vite-7/es2015/assets/index-kOHlqxRu.js:4:318\":\"1728c2e3709b42d0b269851fc43d49d6\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
                   }
                 },
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "BC5BE0E47BF947618A3BF1A602FC5DB0"
+                    "stringValue": "DAE7FE1BD6B648E8A9229EAC81DF723D"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "3435F3ED8F934B898771EDBFA17C9322"
+                    "stringValue": "93F3D77DD076403799C1A2E0E7908E10"
                   }
                 },
                 {

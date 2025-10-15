@@ -6,9 +6,5 @@ BUNDLE_PATH="$(realpath ../../dist/embrace-web-sdk.js)"
 MAP_PATH="${BUNDLE_PATH}.map"
 
 # Create symlinks in sdk/public
-ln -sf "$BUNDLE_PATH" "sdk/public/embrace-web-sdk.js"
-ln -sf "$MAP_PATH"    "sdk/public/embrace-web-sdk.js.map"
-
-# Create symlinks in host/public
-ln -sf "$BUNDLE_PATH" "host/public/embrace-web-sdk.js"
-ln -sf "$MAP_PATH"    "host/public/embrace-web-sdk.js.map"
+ln -sf "$BUNDLE_PATH" "public/embrace-web-sdk.js"
+ln -sf "$MAP_PATH"    "public/embrace-web-sdk.js.map"

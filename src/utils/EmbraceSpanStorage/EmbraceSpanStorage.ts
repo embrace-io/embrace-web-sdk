@@ -4,12 +4,15 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 import type { SpanSessionManagerInternal } from '../../managers/index.js';
 import { KEY_EMB_MAX_PENDING_SPANS_REACHED } from '../../constants/index.js';
+import { emptyResource } from '@opentelemetry/resources';
+import type { Resource } from '@opentelemetry/resources';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
 const MAX_PENDING_SPANS_ITEMS = 10;
 
 export interface SpanStorageOptions {
   spanSessionManager: SpanSessionManagerInternal;
+  resource?: Resource;
   storage?: Storage;
   diag?: DiagLogger;
   storedSpansExpireTimeoutMS?: number;
@@ -39,6 +42,7 @@ export class EmbraceSpanStorage {
   private _checkExpiredSpansInterval?: ReturnType<typeof setInterval>;
 
   public constructor({
+    resource = emptyResource(),
     storage = window.localStorage,
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSpanStorage',
@@ -47,7 +51,7 @@ export class EmbraceSpanStorage {
     onExpiredSpansExport,
     spanSessionManager,
   }: SpanStorageOptions) {
-    this._noExportTracer = new BasicTracerProvider().getTracer(
+    this._noExportTracer = new BasicTracerProvider({ resource }).getTracer(
       'embrace-web-sdk-sessions'
     );
     this._storage = storage;
@@ -86,6 +90,8 @@ export class EmbraceSpanStorage {
           key.startsWith('_') ? undefined : value
         )
       );
+
+      this._diag.debug(`Stored pending span: ${key}`);
     } catch (error) {
       this._diag.error('Failed to store spans to storage:', error);
     }

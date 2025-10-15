@@ -68,5 +68,3 @@ src/exporters/ → EmbraceTraceExporter, EmbraceLogExporter
 import { InMemoryStorage } from '../../testUtils';
 void expect(sessionId).to.be.null;  // nullable assertions
 ```
-
-Golden files: `npm run sdk:test:integration:e2e:update-golden`

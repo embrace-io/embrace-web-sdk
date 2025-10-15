@@ -7,7 +7,12 @@ import type {
   MetricWithAttribution,
   Metric,
 } from 'web-vitals/attribution';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
+import {
+  EMB_TYPES,
+  KEY_EMB_TYPE,
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../../constants/index.js';
 import {
   ALL_WEB_VITALS,
   CORE_WEB_VITALS,
@@ -21,6 +26,8 @@ import type {
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type { URLDocument } from '../../../common/index.js';
+import { page } from '../../../api-page/index.js';
+import type { PageManager } from '../../../api-page/index.js';
 
 const webVitalAttributionToReport = (
   name: Metric['name'],
@@ -103,6 +110,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
+  private readonly _pageManager: PageManager;
   private readonly _attributedURL: Record<Metric['name'], string | undefined> =
     {
       INP: undefined,
@@ -121,6 +129,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument = window.document,
     urlAttribution = true,
+    pageManager,
   }: WebVitalsInstrumentationArgs = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
@@ -134,6 +143,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._metricsToTrack =
       trackingLevel === 'core' ? [...CORE_WEB_VITALS] : [...ALL_WEB_VITALS];
     this._urlAttribution = urlAttribution;
+    this._pageManager = pageManager ?? page.getPageManager();
 
     if (this._config.enabled) {
       this.enable();
@@ -168,6 +178,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           'emb.web_vital.value': metric.value,
           ...webVitalAttributionToReport(name, metric),
         };
+
+        // Add page attributes if route and page ID exist
+        const currentRoute = this._pageManager.getCurrentRoute();
+        const currentPageId = this._pageManager.getCurrentPageId();
+        if (currentRoute && currentPageId) {
+          attrs[KEY_EMB_PAGE_PATH] = currentRoute.path;
+          attrs[KEY_EMB_PAGE_ID] = currentPageId;
+        }
 
         currentSessionSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,

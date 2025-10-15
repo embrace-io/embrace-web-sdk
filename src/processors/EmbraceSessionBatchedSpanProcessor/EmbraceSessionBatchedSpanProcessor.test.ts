@@ -22,6 +22,7 @@ import {
   EmbraceSpanSessionManager,
 } from '../../managers/index.js';
 import { trace } from '@opentelemetry/api';
+import { emptyResource } from '@opentelemetry/resources';
 
 const { expect } = chai;
 
@@ -74,6 +75,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     });
 
     processor = new EmbraceSessionBatchedSpanProcessor({
+      resource: emptyResource(),
       exporter: memoryExporter,
       limitManager,
       spanSessionManager,
@@ -156,6 +158,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       spanSessionManager.startSessionSpan();
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
+        resource: emptyResource(),
         exporter: new FailingSpanExporter(
           test.errorMessage ? new Error(test.errorMessage) : undefined
         ),
@@ -265,6 +268,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     beforeEach(() => {
       inMemoryStorage = new InMemoryStorage();
       processorWithStorage = new EmbraceSessionBatchedSpanProcessor({
+        resource: emptyResource(),
         exporter: memoryExporter,
         limitManager,
         storage: inMemoryStorage,
@@ -360,6 +364,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const processorWithFailingStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: failingStorage,
@@ -435,6 +440,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const processorWithFailingStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: failingStorage,
@@ -491,6 +497,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const diagLogger = new InMemoryDiagLogger();
         const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
+          resource: emptyResource(),
           exporter: memoryExporter,
           limitManager,
           storage: inMemoryStorage,
@@ -535,6 +542,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         const customStorage = new InMemoryStorage();
         const processorWithCustomStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: customStorage,

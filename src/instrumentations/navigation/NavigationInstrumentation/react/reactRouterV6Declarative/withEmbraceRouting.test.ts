@@ -5,7 +5,7 @@ import { getNavigationInstrumentation } from '../../index.js';
 import { withEmbraceRouting } from './withEmbraceRouting.js';
 import type { RoutesFunctionalComponentReturn } from './types.js';
 import type React from 'react';
-import type { Route } from '../../index.js';
+import type { Route } from '../../../../../api-page/index.js';
 
 chai.use(sinonChai);
 

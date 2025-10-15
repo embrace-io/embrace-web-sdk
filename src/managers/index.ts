@@ -15,3 +15,5 @@ export {
 export { EmbraceDynamicConfigManager } from './EmbraceConfigManager/index.js';
 export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.js';
 export type { SDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.js';
+export { EmbracePageManager } from './EmbracePageManager/index.js';
+export type { EmbracePageManagerArgs } from './EmbracePageManager/types.js';

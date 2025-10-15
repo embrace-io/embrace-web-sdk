@@ -4,6 +4,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+
   - package-ecosystem: 'npm'
     directories:
       - '/'
@@ -13,22 +14,59 @@ updates:
       - '/demo/frontend-sdk'
     schedule:
       interval: 'weekly'
-    open-pull-requests-limit: 50
+    open-pull-requests-limit: 5
+
     groups:
-      vite:
+      # Production dependencies - keep separate and prioritized
+      open-telemetry:
         patterns:
+          - '@opentelemetry/*'
+
+      production-deps:
+        patterns:
+          - 'hoist-non-react-statics'
+          - 'uuid'
+          - 'web-vitals'
+
+      # Build and dev tools - batch together
+      dev-tooling:
+        patterns:
+          - '@swc/*'
+          - 'es-check'
+          - 'esbuild'
+          - 'globals'
+          - 'publint'
+          - 'sonda'
+          - 'terser'
+          - 'tsdown'
+          - 'tsx'
+          - 'typescript'
           - '*vite*'
-      opentelemetry:
+
+      # Type definitions
+      types:
         patterns:
-          - '@opentelemetry*'
-      eslint:
+          - '@types/*'
+
+      # Commit and code quality tools
+      code-quality:
         patterns:
+          - '@commitlint/*'
           - '*eslint*'
+          - '*prettier*'
+
+      # Testing
+      test-tools:
+        patterns:
+          - '*chai*'
+          - '*chrome*'
+          - '*jest*'
+          - '*mocha*'
+          - '*playwright*'
+          - '*sinon*'
+          - '*test-runner*'
+
+      # React ecosystem
       react:
         patterns:
-          - 'react*'
-          - '*/react*'
-      playwright:
-        patterns:
-          - '*playwright*'
-          - '*chrome*'
+          - '*react*'

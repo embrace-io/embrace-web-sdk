@@ -69,6 +69,10 @@ export class SessionAPI implements SpanSessionManager {
     return this.getSpanSessionManager().getSessionId();
   }
 
+  public getPreviousSessionId(): string | null {
+    return this.getSpanSessionManager().getPreviousSessionId();
+  }
+
   public getSessionSpan() {
     return this.getSpanSessionManager().getSessionSpan();
   }
