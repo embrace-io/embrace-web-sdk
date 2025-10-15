@@ -59,11 +59,12 @@ type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
 };
 
 // PerformanceResourceTiming attribute names
-const ATTR_DELIVERY_TYPE = 'delivery_type';
-const ATTR_ENTRY_TYPE = 'entry_type';
-const ATTR_INITIATOR_TYPE = 'initiator_type';
-const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
-const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
+const ATTR_HTTP_RESPONSE_DELIVERY_TYPE = 'http.response.delivery_type';
+const ATTR_HTTP_RESPONSE_ENTRY_TYPE = 'http.response.entry_type';
+const ATTR_HTTP_RESPONSE_INITIATOR_TYPE = 'http.response.initiator_type';
+const ATTR_HTTP_RESPONSE_RENDER_BLOCKING_STATUS =
+  'http.response.render_blocking_status';
+const ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE = 'http.response.decoded_body_size';
 
 // Diagnostic attribute names
 const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-restricted resource (opaque response)
@@ -284,20 +285,26 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
 
     if (resource.deliveryType) {
-      span.setAttribute(ATTR_DELIVERY_TYPE, resource.deliveryType);
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
+        resource.deliveryType
+      );
     }
 
     if (resource.entryType) {
-      span.setAttribute(ATTR_ENTRY_TYPE, resource.entryType);
+      span.setAttribute(ATTR_HTTP_RESPONSE_ENTRY_TYPE, resource.entryType);
     }
 
     if (resource.initiatorType) {
-      span.setAttribute(ATTR_INITIATOR_TYPE, resource.initiatorType);
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_INITIATOR_TYPE,
+        resource.initiatorType
+      );
     }
 
     if (resource.renderBlockingStatus) {
       span.setAttribute(
-        ATTR_RENDER_BLOCKING_STATUS,
+        ATTR_HTTP_RESPONSE_RENDER_BLOCKING_STATUS,
         resource.renderBlockingStatus
       );
     }
@@ -328,7 +335,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       typeof resource.decodedBodySize === 'number' &&
       resource.decodedBodySize >= 0
     ) {
-      span.setAttribute(ATTR_DECODED_BODY_SIZE, resource.decodedBodySize);
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+        resource.decodedBodySize
+      );
     }
 
     this._addResourceDiagnosticAttributes(span, resource);
