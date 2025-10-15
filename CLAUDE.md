@@ -17,12 +17,35 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 
 ## Git Commits
 
-**Format**: `[EMBR-XXX] (type)[(scope)]: imperative-subject`
+**Format**: `(type)[(scope)]: imperative-subject`
 - Max 150 chars
 - Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
-- Example: `[EMBR-123] fix(session): prevent race condition in tab tracking`
+- Example: `fix(session): prevent race condition in tab tracking`
 - Do NOT include Claude credits
 - Keep commit description concise
+
+## Pull Requests
+
+**Title**: Same format as commits, abbreviate when clear (e.g., "semconv")
+- Example: `chore(document-load): align resource attributes with semconv`
+
+**Body**: Exactly 3 sections
+```markdown
+## Why
+[Problem statement + benefit. Explain impact, not restate changes.]
+
+## Changes
+- [Specific changes as bullets. Use → for transformations. Quantify when relevant.]
+
+## Testing
+- [Test approach and verification steps.]
+```
+
+**Rules**:
+- Keep it scannable - short sentences, clear bullets
+- Use arrows (→) to show before/after transformations
+- Quantify when relevant ("5 attributes", "3 files")
+- No marketing language or superlatives
 
 ## Code Style
 
