@@ -518,11 +518,6 @@ const App = () => {
 
         <fieldset>
           <legend>React Error Boundary</legend>
-          <div className={styles.actions}>
-            <button onClick={() => window.location.reload()}>
-              Trigger a render error inside EmbraceErrorBoundary
-            </button>
-          </div>
           <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
             <ComponentWithErrorInRender />
           </EmbraceErrorBoundary>
