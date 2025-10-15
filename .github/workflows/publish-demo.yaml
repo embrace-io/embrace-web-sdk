@@ -1,0 +1,57 @@
+name: Publish Frontend Demo to GitHub Pages
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - 'demo/**'
+      - 'package*.json'
+      - 'src/**'
+      - '.nvmrc'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Build demo
+        run: npm run build --prefix demo/frontend
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "demo/frontend/dist" ] || [ -z "$(ls -A demo/frontend/dist)" ]; then
+            echo "Error: Build output directory is missing or empty"
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload dist folder
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'demo/frontend/dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
