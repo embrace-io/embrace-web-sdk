@@ -15,14 +15,33 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 - Fix lint: `npm run sdk:lint:fix`
 - Check types: `npm run sdk:tsc:check`
 
-## Git Commits
+## Commits & Pull Requests
 
-**Format**: `[EMBR-XXX] (type)[(scope)]: imperative-subject`
-- Max 150 chars
+**Title Format**: `(type)[(scope)]: imperative-subject`
+- Max 150 chars, abbreviate when clear (e.g., "semconv")
 - Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
-- Example: `[EMBR-123] fix(session): prevent race condition in tab tracking`
+- Examples: `fix(session): prevent race condition in tab tracking`, `chore(document-load): align resource attributes with semconv`
+
+**Commits**: Title only, no body/description
+
+**PRs**: Title + 3-section body
+```markdown
+## Why
+[Problem statement + benefit. Explain impact, not restate changes.]
+
+## Changes
+- [Specific changes as bullets. Use → for transformations. Quantify when relevant.]
+
+## Testing
+- [Test approach and verification steps.]
+```
+
+**Rules**:
+- Keep it scannable - short sentences, clear bullets
+- Use arrows (→) to show before/after transformations
+- Quantify when relevant ("5 attributes", "3 files")
+- No marketing language or superlatives
 - Do NOT include Claude credits
-- Keep commit description concise
 
 ## Code Style
 
@@ -36,12 +55,6 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 ```typescript
 _pruneOldEntries()  // not _processData()
 _findParentTab()    // not _handleTabLogic()
-```
-
-**Constants**: Include units
-```typescript
-const PARENT_TAB_WINDOW_MS = 20_000;  // not TIMEOUT = 20000
-const CLEANUP_AFTER_MS = 30 * 60 * 1000;
 ```
 
 ## Architecture
@@ -59,12 +72,3 @@ src/exporters/ → EmbraceTraceExporter, EmbraceLogExporter
 
 - **Storage**: localStorage/sessionStorage are synchronous - minimize use
 - **Errors**: Catch all, log to diag, never throw to user code
-- **Limits**: Handle quotas, prune old data, respect thresholds
-- **Race conditions**: Account for multi-tab timing but keep it simple
-
-## Testing
-
-```typescript
-import { InMemoryStorage } from '../../testUtils';
-void expect(sessionId).to.be.null;  // nullable assertions
-```
