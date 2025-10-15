@@ -805,8 +805,6 @@ jobs:
           npm ci --strict-peer-deps
 
       - name: Run 'npm publish'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
           npm publish --provenance --access public
   publish-cli:
@@ -847,8 +845,6 @@ jobs:
           npm ci --include-workspace-root --strict-peer-deps
 
       - name: Run 'npm publish'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
           npm publish --provenance --access public
 
