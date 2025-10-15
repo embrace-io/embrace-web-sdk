@@ -61,12 +61,6 @@ _pruneOldEntries()  // not _processData()
 _findParentTab()    // not _handleTabLogic()
 ```
 
-**Constants**: Include units
-```typescript
-const PARENT_TAB_WINDOW_MS = 20_000;  // not TIMEOUT = 20000
-const CLEANUP_AFTER_MS = 30 * 60 * 1000;
-```
-
 ## Architecture
 
 ```
@@ -82,12 +76,3 @@ src/exporters/ → EmbraceTraceExporter, EmbraceLogExporter
 
 - **Storage**: localStorage/sessionStorage are synchronous - minimize use
 - **Errors**: Catch all, log to diag, never throw to user code
-- **Limits**: Handle quotas, prune old data, respect thresholds
-- **Race conditions**: Account for multi-tab timing but keep it simple
-
-## Testing
-
-```typescript
-import { InMemoryStorage } from '../../testUtils';
-void expect(sessionId).to.be.null;  // nullable assertions
-```
