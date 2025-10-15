@@ -40,7 +40,7 @@ const ReactRouterV6Data = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign('./');
   };
 
   useEffect(() => {

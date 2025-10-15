@@ -509,8 +509,8 @@ const App = () => {
           <legend>Navigation</legend>
           <div className={styles.actions}>
             <a href="https://google.com">Navigate to google.com</a>
-            <a href="/">Open demo in same tab</a>
-            <a href="/" target="_blank">
+            <a href="./">Open demo in same tab</a>
+            <a href="./" target="_blank">
               Open demo in new tab
             </a>
           </div>
@@ -518,11 +518,6 @@ const App = () => {
 
         <fieldset>
           <legend>React Error Boundary</legend>
-          <div className={styles.actions}>
-            <button onClick={() => window.location.reload()}>
-              Trigger a render error inside EmbraceErrorBoundary
-            </button>
-          </div>
           <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
             <ComponentWithErrorInRender />
           </EmbraceErrorBoundary>

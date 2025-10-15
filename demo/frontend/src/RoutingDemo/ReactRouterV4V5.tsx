@@ -14,7 +14,7 @@ const ReactRouterV4V5 = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign('./');
   };
 
   return (
