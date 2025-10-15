@@ -11,30 +11,41 @@ import { useRoutingDemoContext } from './RoutingDemoContext';
 import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
 import { useEffect } from 'react';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Home />,
-  },
-  {
-    path: '/product/:id',
-    element: <Product />,
-    children: [
-      {
-        path: 'comments',
-        element: <ProductComments />,
-      },
-      {
-        path: 'photos',
-        element: <ProductComments />,
-      },
-    ],
-  },
-  {
-    path: '/about',
-    element: <About />,
-  },
-]);
+// Extract first path segment as basename for GitHub Pages support
+// Local: pathname "/" → basename undefined
+// GH Pages: pathname "/embrace-web-sdk/..." → basename "/embrace-web-sdk"
+const basename =
+  window.location.pathname !== '/'
+    ? '/' + window.location.pathname.split('/')[1]
+    : undefined;
+
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <Home />,
+    },
+    {
+      path: '/product/:id',
+      element: <Product />,
+      children: [
+        {
+          path: 'comments',
+          element: <ProductComments />,
+        },
+        {
+          path: 'photos',
+          element: <ProductComments />,
+        },
+      ],
+    },
+    {
+      path: '/about',
+      element: <About />,
+    },
+  ],
+  { basename }
+);
 
 const ReactRouterV6Data = () => {
   const { setNavigationType } = useRoutingDemoContext();

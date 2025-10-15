@@ -8,7 +8,14 @@ import About from './About';
 
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 
-const history = createBrowserHistory();
+// Extract first path segment as basename for GitHub Pages support
+// Local: pathname "/" → basename undefined
+// GH Pages: pathname "/embrace-web-sdk/..." → basename "/embrace-web-sdk"
+const basename =
+  window.location.pathname !== '/'
+    ? '/' + window.location.pathname.split('/')[1]
+    : undefined;
+const history = createBrowserHistory({ basename });
 
 const ReactRouterV4V5 = () => {
   const { setNavigationType } = useRoutingDemoContext();

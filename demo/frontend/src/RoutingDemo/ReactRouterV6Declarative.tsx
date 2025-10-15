@@ -8,6 +8,14 @@ import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
 
 const EmbraceRoutes = withEmbraceRouting(Routes);
 
+// Extract first path segment as basename for GitHub Pages support
+// Local: pathname "/" → basename undefined
+// GH Pages: pathname "/embrace-web-sdk/..." → basename "/embrace-web-sdk"
+const basename =
+  window.location.pathname !== '/'
+    ? '/' + window.location.pathname.split('/')[1]
+    : undefined;
+
 const ReactRouterV6Declarative = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
@@ -17,7 +25,7 @@ const ReactRouterV6Declarative = () => {
 
   return (
     <div className="container">
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <EmbraceRoutes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<Product />}>
