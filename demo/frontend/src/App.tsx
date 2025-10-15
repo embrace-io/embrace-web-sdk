@@ -33,50 +33,45 @@ const App = () => {
   const [navigationSource, setNavigationSource] = useState<string | null>(null);
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    const updateCrossTabData = () => {
-      const sessionSpan = sessionProvider.getSessionSpan();
-      if (sessionSpan && 'attributes' in sessionSpan) {
-        const attrs = (sessionSpan as any).attributes;
-        setExperienceId(attrs['emb.experience_id'] || null);
-        setTabId(attrs['emb.tab_id'] || null);
-        setSourceTabId(attrs['emb.source_tab_id'] || null);
-        setNavigationSource(attrs['emb.navigation_source'] || null);
-        setReferrerUrl(attrs['emb.referrer_url'] || null);
-      }
-    };
+  const updateCrossTabData = () => {
+    const sessionSpan = sessionProvider.getSessionSpan();
+    if (sessionSpan && 'attributes' in sessionSpan) {
+      const attrs = (sessionSpan as any).attributes;
+      setExperienceId(attrs['emb.experience_id'] || null);
+      setTabId(attrs['emb.tab_id'] || null);
+      setSourceTabId(attrs['emb.source_tab_id'] || null);
+      setNavigationSource(attrs['emb.navigation_source'] || null);
+      setReferrerUrl(attrs['emb.referrer_url'] || null);
+    }
+  };
 
+  useEffect(() => {
     // Set initial values
     setCurrentSession(sessionProvider.getSessionId());
     updateCrossTabData();
 
-    // Listen for storage events to detect cross-tab changes
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key && e.key.startsWith('emb_')) {
-        updateCrossTabData();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
     setSessionRefresher(
       window.setInterval(() => {
         setCurrentSession(sessionProvider.getSessionId());
-        // Update cross-tab data
         updateCrossTabData();
       }, 1000)
     );
+
     return () => {
       window.clearInterval(sessionRefresher);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
+    setCurrentSession(sessionProvider.getSessionId());
+    updateCrossTabData();
   };
 
   const handleEndSessionSpan = () => {
     sessionProvider.endSessionSpan();
+    setCurrentSession(sessionProvider.getSessionId());
+    updateCrossTabData();
   };
 
   const handleStartSpan = () => {
