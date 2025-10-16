@@ -20,7 +20,6 @@ describe('EmptyInstrumentation', () => {
   let instrumentation: EmptyRootInstrumentation;
   let diag: InMemoryDiagLogger;
   let spanSessionManager: SpanSessionManager;
-  let testContainer: HTMLElement;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -34,13 +33,10 @@ describe('EmptyInstrumentation', () => {
     });
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();
-    testContainer = document.createElement('div');
-    document.body.append(testContainer);
   });
 
   afterEach(() => {
     instrumentation.disable();
-    testContainer.remove();
   });
 
   it('should add a span event to the session when the root node becomes empty', async () => {
@@ -49,11 +45,10 @@ describe('EmptyInstrumentation', () => {
     const child2 = document.createElement('div');
 
     rootNode.append(child1, child2);
-    testContainer.append(rootNode);
 
     instrumentation = new EmptyRootInstrumentation({
       diag,
-      bodyDoc: { body: testContainer },
+      rootNode,
       emptyCheckDelay: 10,
     });
 
@@ -97,11 +92,10 @@ describe('EmptyInstrumentation', () => {
     const child2 = document.createElement('div');
 
     rootNode.append(child1, child2);
-    testContainer.append(rootNode);
 
     instrumentation = new EmptyRootInstrumentation({
       diag,
-      bodyDoc: { body: testContainer },
+      rootNode,
       emptyCheckDelay: 10,
     });
 
@@ -127,11 +121,10 @@ describe('EmptyInstrumentation', () => {
     const child2 = document.createElement('div');
 
     rootNode.append(child1, child2);
-    testContainer.append(rootNode);
 
     instrumentation = new EmptyRootInstrumentation({
       diag,
-      bodyDoc: { body: testContainer },
+      rootNode,
       emptyCheckDelay: 10,
     });
 
@@ -152,75 +145,5 @@ describe('EmptyInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.events).to.have.lengthOf(0);
-  });
-
-  it('should do nothing if the root node could not be determined', async () => {
-    const child1 = document.createElement('div');
-    const child2 = document.createElement('div');
-
-    testContainer.append(child1, child2);
-
-    instrumentation = new EmptyRootInstrumentation({
-      diag,
-      bodyDoc: { body: testContainer },
-      emptyCheckDelay: 10,
-    });
-
-    expect(diag.getDebugLogs()).to.deep.equal([
-      'body did not have exactly one child, could not determine root node',
-    ]);
-
-    child1.remove();
-    child2.remove();
-
-    // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
-
-    // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
-
-    // Should not emit the event
-    spanSessionManager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
-  });
-
-  it('should allow the root node to be specified explicitly', async () => {
-    const child1 = document.createElement('div');
-    const child2 = document.createElement('div');
-    const child3 = document.createElement('div');
-
-    child1.append(child3);
-    testContainer.append(child1, child2);
-
-    instrumentation = new EmptyRootInstrumentation({
-      diag,
-      bodyDoc: { body: testContainer },
-      emptyCheckDelay: 10,
-      rootNode: child1,
-    });
-
-    child3.remove();
-
-    // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
-
-    // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
-
-    // Should emit the event
-    spanSessionManager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-
-    const event = sessionSpan.events[0];
-    expect(event.name).to.be.equal('empty-root-node');
-    expect(event.attributes).to.deep.equal({
-      'emb.type': 'empty-root-node',
-    });
   });
 });

@@ -331,8 +331,6 @@ type OptionalInstrumentations =
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
-type ExtraInstrumentations = 'empty-root';
-
 interface NetworkInstrumentationArgs {
   ignoreUrls?: Array<string | RegExp>;
 }
@@ -346,7 +344,6 @@ export interface SetupDefaultInstrumentationsArgs {
 
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
-  extra?: Set<ExtraInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;

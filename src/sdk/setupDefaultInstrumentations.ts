@@ -5,7 +5,6 @@ import {
   EmbraceFetchInstrumentation,
   EmbraceInstrumentationBase,
   EmbraceXHRInstrumentation,
-  EmptyRootInstrumentation,
   GlobalExceptionInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
@@ -78,10 +77,6 @@ export const setupDefaultInstrumentations = (
         ...config['@opentelemetry/instrumentation-xml-http-request'],
       })
     );
-  }
-
-  if (config.extra?.has('empty-root')) {
-    instrumentations.push(new EmptyRootInstrumentation(config['empty-root']));
   }
 
   for (const instrumentation of instrumentations) {

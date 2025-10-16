@@ -13,11 +13,6 @@ export interface PathnameDocument {
   pathname: string;
 }
 
-// Useful for testing so that we can pass in a document-like object and change its body
-export interface BodyDocument {
-  body: HTMLElement;
-}
-
 export interface AttributeScrubber {
   key: string;
   scrub: (value: string) => string;
