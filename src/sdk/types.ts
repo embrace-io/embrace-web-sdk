@@ -18,7 +18,6 @@ import type {
   DocumentLoadInstrumentationConfig,
   EmbraceFetchInstrumentationArgs,
   EmbraceXHRInstrumentationArgs,
-  EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
@@ -352,7 +351,6 @@ export interface DefaultInstrumentationConfig {
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
-  'empty-root'?: EmptyRootInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
   // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
