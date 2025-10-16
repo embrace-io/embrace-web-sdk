@@ -44,17 +44,23 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Set initial values
-    setCurrentSession(sessionProvider.getSessionId());
-    updateCrossTabData();
-
-    const intervalId = window.setInterval(() => {
+    const updateSession = () => {
       setCurrentSession(sessionProvider.getSessionId());
       updateCrossTabData();
-    }, 1000);
+    };
+
+    // Set initial values
+    updateSession();
+
+    // React to session lifecycle events
+    const unsubscribeStart =
+      sessionProvider.addSessionStartedListener(updateSession);
+    const unsubscribeEnd =
+      sessionProvider.addSessionEndedListener(updateSession);
 
     return () => {
-      window.clearInterval(intervalId);
+      unsubscribeStart();
+      unsubscribeEnd();
     };
   }, []);
 
