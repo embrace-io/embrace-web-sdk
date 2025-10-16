@@ -12,9 +12,11 @@ import {
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
+  EmbracePageManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
 import { session } from '../../../api-sessions/index.js';
+import { page } from '../../../api-page/index.js';
 
 const { expect } = chai;
 
@@ -23,6 +25,7 @@ describe('NavigationInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
   let spanSessionManager: EmbraceSpanSessionManager;
+  let pageManager: EmbracePageManager;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -31,10 +34,14 @@ describe('NavigationInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
+
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
     session.setGlobalSessionManager(spanSessionManager);
+
+    pageManager = new EmbracePageManager();
+    page.setGlobalPageManager(pageManager);
   });
 
   it('should start and end route span when the route changes', () => {
@@ -57,6 +64,7 @@ describe('NavigationInstrumentation', () => {
     const span = finishedSpans[0];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
       'view.name': '/test/:id',
     });
@@ -101,7 +109,7 @@ describe('NavigationInstrumentation', () => {
   it('should clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
-      path: '/test/:time(hourly|daily|weekly|monthly)',
+      path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
       url: '/test/hourly',
     });
 
@@ -114,10 +122,11 @@ describe('NavigationInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(1);
 
     const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:time');
+    expect(span.name).to.equal('/test/:time/:type');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
-      'view.name': '/test/:time',
+      'view.name': '/test/:time/:type',
     });
   });
 
@@ -142,6 +151,7 @@ describe('NavigationInstrumentation', () => {
     const span = finishedSpans[0];
     expect(span.name).to.equal('/test/:time(hourly|daily|weekly|monthly)');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
       'view.name': '/test/:time(hourly|daily|weekly|monthly)',
     });
@@ -218,6 +228,7 @@ describe('NavigationInstrumentation', () => {
     const span = finishedSpans[1];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
       'view.name': '/test/:id',
     });
@@ -258,6 +269,7 @@ describe('NavigationInstrumentation', () => {
     let span = finishedSpans[1];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
       'view.name': '/test/:id',
     });
@@ -266,6 +278,7 @@ describe('NavigationInstrumentation', () => {
     span = finishedSpans[3];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
+      'emb.instrumentation': 'manual',
       'emb.type': 'ux.view',
       'view.name': '/test/:id',
     });

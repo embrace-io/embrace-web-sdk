@@ -34,6 +34,7 @@ import type { UserManager } from '../api-users/index.js';
 import type { AttributeScrubber } from '../common/index.js';
 import type { LogManager } from '../api-logs/index.js';
 import type { TraceManager } from '../api-traces/index.js';
+import type { PageManager } from '../api-page/index.js';
 import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
 
 export interface DynamicSDKConfig {
@@ -274,6 +275,7 @@ export interface SDKControl {
   trace: TraceManager;
   session: SpanSessionManager;
   user: UserManager;
+  page: PageManager;
 }
 
 export interface SetupUserArgs {
@@ -300,6 +302,7 @@ export interface SetupTracesArgs {
   dynamicSDKConfig?: DynamicSDKConfig;
   registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
+  pageManager: PageManager;
 }
 
 export interface SetupLogsArgs {
@@ -312,6 +315,12 @@ export interface SetupLogsArgs {
   attributeScrubbers: AttributeScrubber[];
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
+  sdkLocalStorage: Storage;
+  pageManager: PageManager;
+}
+
+export interface SetupPageArgs {
+  registerGlobally?: boolean;
 }
 
 type OptionalInstrumentations =
@@ -332,6 +341,7 @@ export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
   embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
+  pageManager?: PageManager;
 }
 
 export interface DefaultInstrumentationConfig {

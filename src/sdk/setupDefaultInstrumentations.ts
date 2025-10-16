@@ -24,6 +24,7 @@ export const setupDefaultInstrumentations = (
     logManager,
     spanSessionManager,
     embraceSpanProcessor,
+    pageManager,
   }: SetupDefaultInstrumentationsArgs = {}
 ): Instrumentation[] => {
   /*
@@ -50,7 +51,9 @@ export const setupDefaultInstrumentations = (
   }
 
   if (!config.omit?.has('web-vital')) {
-    instrumentations.push(new WebVitalsInstrumentation(config['web-vital']));
+    instrumentations.push(
+      new WebVitalsInstrumentation({ ...config['web-vital'], pageManager })
+    );
   }
 
   if (!config.omit?.has('document-load')) {

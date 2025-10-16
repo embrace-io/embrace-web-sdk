@@ -18,7 +18,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   let spanSessionManager: SpanSessionManager;
   let logger: Logger;
 
-  before(() => {
+  beforeEach(() => {
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
@@ -31,8 +31,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   });
 
   afterEach(() => {
-    spanSessionManager.endSessionSpan();
-    memoryExporter.reset();
+    logs.disable();
   });
 
   it('should attach a log UUID and session ID when available', () => {
@@ -49,6 +48,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
     expect(log.attributes['session.id']).to.be.equal(sessionID);
+    expect(log.attributes).not.to.have.property('session.previous_id');
   });
 
   it('should handle a session ID not being available', () => {
@@ -62,5 +62,43 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
     void expect(log.attributes['session.id']).to.be.undefined;
+    expect(log.attributes).not.to.have.property('session.previous_id');
+  });
+
+  it('should attach a previous session ID when available', () => {
+    spanSessionManager.startSessionSpan();
+    const sessionID = spanSessionManager.getSessionId();
+    spanSessionManager.endSessionSpan();
+
+    logger.emit({
+      body: 'some log',
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
+    expect(log.attributes).not.to.have.property('session.id');
+    expect(log.attributes['session.previous_id']).to.be.equal(sessionID);
+  });
+
+  it('should attach a session ID and a previous session ID when both are available', () => {
+    spanSessionManager.startSessionSpan();
+    const session1ID = spanSessionManager.getSessionId();
+    spanSessionManager.startSessionSpan();
+    const session2ID = spanSessionManager.getSessionId();
+
+    logger.emit({
+      body: 'some log',
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
+    expect(log.attributes['session.id']).to.be.equal(session2ID);
+    expect(log.attributes['session.previous_id']).to.be.equal(session1ID);
   });
 });

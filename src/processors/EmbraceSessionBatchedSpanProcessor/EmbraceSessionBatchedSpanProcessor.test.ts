@@ -16,7 +16,13 @@ import {
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
 import type { ExportResult } from '@opentelemetry/core';
 import { ExportResultCode } from '@opentelemetry/core';
-import { DEFAULT_LIMITS, EmbraceLimitManager } from '../../managers/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.js';
+import { trace } from '@opentelemetry/api';
+import { emptyResource } from '@opentelemetry/resources';
 
 const { expect } = chai;
 
@@ -45,6 +51,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
+  let spanSessionManager: EmbraceSpanSessionManager;
 
   beforeEach(() => {
     // Clear localStorage to ensure clean test state
@@ -63,15 +70,22 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       },
     });
 
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager,
+    });
+
     processor = new EmbraceSessionBatchedSpanProcessor({
+      resource: emptyResource(),
       exporter: memoryExporter,
       limitManager,
+      spanSessionManager,
     });
   });
 
   afterEach(async () => {
     clock.restore();
     await processor.shutdown();
+    trace.disable();
   });
 
   it('should not export non-session spans immediately', () => {
@@ -116,40 +130,77 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 
-  it('should handle the exporter returning a failed result', async () => {
-    const diagLogger = new InMemoryDiagLogger();
-    processor = new EmbraceSessionBatchedSpanProcessor({
-      exporter: new FailingSpanExporter(),
-      diag: diagLogger,
-      limitManager,
+  type ExportFailedTest = {
+    name: string;
+    errorMessage?: string;
+    expectedAttributeSuffix: string;
+  };
+
+  const exportFailedTests: ExportFailedTest[] = [
+    {
+      name: 'should handle the exporter returning an unknown failed result',
+      expectedAttributeSuffix: 'unknown',
+    },
+    {
+      name: 'should handle the exporter hitting the concurrent export limit',
+      errorMessage: 'Concurrent export limit reached',
+      expectedAttributeSuffix: 'concurrent_limit',
+    },
+    {
+      name: 'should handle the exporter encountering a fetch error',
+      errorMessage: 'Fetch request errored',
+      expectedAttributeSuffix: 'fetch_error',
+    },
+  ];
+
+  exportFailedTests.forEach(test => {
+    it(test.name, async () => {
+      spanSessionManager.startSessionSpan();
+      const diagLogger = new InMemoryDiagLogger();
+      processor = new EmbraceSessionBatchedSpanProcessor({
+        resource: emptyResource(),
+        exporter: new FailingSpanExporter(
+          test.errorMessage ? new Error(test.errorMessage) : undefined
+        ),
+        diag: diagLogger,
+        limitManager,
+        spanSessionManager,
+      });
+
+      processor.onEnd(mockSessionSpan);
+
+      await Promise.resolve();
+
+      spanSessionManager.endSessionSpan();
+
+      spanSessionManager.startSessionSpan();
+      spanSessionManager.endSessionSpan();
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      const sessionSpan = finishedSpans[0];
+      expect(sessionSpan.attributes).to.have.property(
+        `emb.export_failed.${test.expectedAttributeSuffix}`,
+        1
+      );
+      expect(sessionSpan.attributes).not.to.have.property(
+        `emb.previous_export_failed.${test.expectedAttributeSuffix}`
+      );
+
+      const nextSessionSpan = finishedSpans[1];
+      expect(nextSessionSpan.attributes).not.to.have.property(
+        `emb.export_failed.${test.expectedAttributeSuffix}`
+      );
+      expect(nextSessionSpan.attributes).to.have.property(
+        `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
+        1
+      );
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.be.equal(
+        `spans failed to export: ${test.errorMessage || 'unknown error'}`
+      );
     });
-
-    processor.onEnd(mockSessionSpan);
-
-    await Promise.resolve();
-
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.be.equal(
-      'spans failed to export: unknown error'
-    );
-  });
-
-  it('should log the exporter error if available', async () => {
-    const diagLogger = new InMemoryDiagLogger();
-    processor = new EmbraceSessionBatchedSpanProcessor({
-      exporter: new FailingSpanExporter(new Error('some failure reason')),
-      diag: diagLogger,
-      limitManager,
-    });
-
-    processor.onEnd(mockSessionSpan);
-
-    await Promise.resolve();
-
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.be.equal(
-      'spans failed to export: some failure reason'
-    );
   });
 
   it('should limit the amount of spans per session', () => {
@@ -217,9 +268,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     beforeEach(() => {
       inMemoryStorage = new InMemoryStorage();
       processorWithStorage = new EmbraceSessionBatchedSpanProcessor({
+        resource: emptyResource(),
         exporter: memoryExporter,
         limitManager,
         storage: inMemoryStorage,
+        spanSessionManager,
       });
     });
 
@@ -311,10 +364,12 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const processorWithFailingStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: failingStorage,
             diag: diagLogger,
+            spanSessionManager,
           });
 
         processorWithFailingStorage.onEnd(mockSpan);
@@ -385,10 +440,12 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const processorWithFailingStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: failingStorage,
             diag: diagLogger,
+            spanSessionManager,
           });
 
         // The clearStoredSpans method should not throw even with a failing storage
@@ -440,10 +497,12 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         const diagLogger = new InMemoryDiagLogger();
         const processorWithDiag = new EmbraceSessionBatchedSpanProcessor({
+          resource: emptyResource(),
           exporter: memoryExporter,
           limitManager,
           storage: inMemoryStorage,
           diag: diagLogger,
+          spanSessionManager,
         });
 
         const pastTime = clock.now - 2 * 60 * 60 * 1000;
@@ -483,9 +542,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         const customStorage = new InMemoryStorage();
         const processorWithCustomStorage =
           new EmbraceSessionBatchedSpanProcessor({
+            resource: emptyResource(),
             exporter: memoryExporter,
             limitManager,
             storage: customStorage,
+            spanSessionManager,
           });
 
         processorWithCustomStorage.onEnd(mockSpan);

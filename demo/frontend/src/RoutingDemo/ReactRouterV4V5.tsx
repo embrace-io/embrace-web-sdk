@@ -8,13 +8,16 @@ import About from './About';
 
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 
-const history = createBrowserHistory();
+// Use BASE_URL from Vite for GitHub Pages support
+const basename =
+  import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL : undefined;
+const history = createBrowserHistory({ basename });
 
 const ReactRouterV4V5 = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   return (

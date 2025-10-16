@@ -9,7 +9,9 @@ export class FetchTransport implements IExporterTransport {
 
   // _compressRequest compresses the data using the gzip algorithm.
   // Embrace Data endpoints require the data to be compressed.
-  private static async _compressRequest(data: Uint8Array): Promise<Uint8Array> {
+  private static async _compressRequest(
+    data: Uint8Array<ArrayBuffer>
+  ): Promise<Uint8Array<ArrayBuffer>> {
     const stream = new CompressionStream('gzip');
     const writer = stream.writable.getWriter();
 
@@ -45,7 +47,7 @@ export class FetchTransport implements IExporterTransport {
   }
 
   public send(
-    data: Uint8Array,
+    data: Uint8Array<ArrayBuffer>,
     timeoutMillis: number
   ): Promise<ExportResponse> {
     return this._asyncSend(data, timeoutMillis);
@@ -56,7 +58,7 @@ export class FetchTransport implements IExporterTransport {
   }
 
   public async _asyncSend(
-    data: Uint8Array,
+    data: Uint8Array<ArrayBuffer>,
     timeoutMillis: number
   ): Promise<ExportResponse> {
     let request = data;
@@ -72,22 +74,47 @@ export class FetchTransport implements IExporterTransport {
       headers['Content-Length'] = request.length.toString();
     }
 
+    // Use AbortSignal.timeout if available, otherwise fallback to AbortController
+    // https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout_static
+    let signal: AbortSignal;
+    let timeoutId;
+
+    if ('timeout' in AbortSignal) {
+      signal = AbortSignal.timeout(timeoutMillis);
+    } else {
+      const controller = new AbortController();
+      signal = controller.signal;
+      timeoutId = setTimeout(() => {
+        controller.abort(new DOMException('TimeoutError', 'TimeoutError'));
+      }, timeoutMillis);
+    }
+
     try {
       const response = await fetch(this._config.url, {
         method: 'POST',
         keepalive: true,
         headers,
         body: request,
-        signal: AbortSignal.timeout(timeoutMillis),
+        signal,
       });
 
       if (response.ok) {
         return { status: 'success' };
       } else {
-        return { status: 'failure', error: new Error('Fetch request failed') };
+        return {
+          status: 'failure',
+          error: new Error(`${response.status} Fetch request failed`),
+        };
       }
-    } catch {
-      return { status: 'failure', error: new Error('Fetch request errored') };
+    } catch (error) {
+      return {
+        status: 'failure',
+        error: error instanceof Error ? error : new Error(String(error)),
+      };
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 }

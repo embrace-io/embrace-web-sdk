@@ -83,25 +83,30 @@ describe('EmbraceSpanSessionManager', () => {
   it('should start a session span', () => {
     void expect(manager.getSessionSpan()).to.be.null;
     void expect(manager.getSessionId()).to.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.be.null;
     manager.startSessionSpan();
     void expect(manager.getSessionSpan()).to.not.be.null;
     void expect(manager.getSessionId()).to.not.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.not.be.null;
   });
 
   it('should end the session span', () => {
     void expect(manager.getSessionSpan()).to.be.null;
     void expect(manager.getSessionId()).to.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.be.null;
     manager.startSessionSpan();
     void expect(manager.getSessionSpan()).to.not.be.null;
     const sessionID = manager.getSessionId();
     void expect(sessionID).to.not.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.not.be.null;
     manager.endSessionSpan();
     void expect(manager.getSessionSpan()).to.be.null;
     void expect(manager.getSessionId()).to.be.null;
+    expect(manager.getPreviousSessionId()).to.equal(sessionID);
     void expect(manager.getSessionStartTime()).to.be.null;
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -116,15 +121,18 @@ describe('EmbraceSpanSessionManager', () => {
   it('should end the current session span when starting a new one', () => {
     void expect(manager.getSessionSpan()).to.be.null;
     void expect(manager.getSessionId()).to.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.be.null;
     manager.startSessionSpan();
     void expect(manager.getSessionSpan()).to.not.be.null;
     const sessionID = manager.getSessionId();
     void expect(sessionID).to.not.be.null;
+    void expect(manager.getPreviousSessionId()).to.be.null;
     void expect(manager.getSessionStartTime()).to.not.be.null;
     manager.startSessionSpan();
     void expect(manager.getSessionSpan()).to.not.be.null;
     void expect(manager.getSessionId()).to.not.be.null;
+    expect(manager.getPreviousSessionId()).to.equal(sessionID);
     void expect(manager.getSessionStartTime()).to.not.be.null;
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -321,10 +329,10 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nexSessionSpan = nextSessionFinishedSpans[0];
-    expect(nexSessionSpan.events).to.have.lengthOf(1);
-    expect(nexSessionSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(nexSessionSpan.events[0].attributes).to.have.property(
+    const nextSessionSpan = nextSessionFinishedSpans[0];
+    expect(nextSessionSpan.events).to.have.lengthOf(1);
+    expect(nextSessionSpan.events[0].name).to.equal('emb-breadcrumb');
+    expect(nextSessionSpan.events[0].attributes).to.have.property(
       'message',
       'this is a breadcrumb'
     );
@@ -411,8 +419,8 @@ describe('EmbraceSpanSessionManager', () => {
     manager.endSessionSpan();
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nexSessionSpan = nextSessionFinishedSpans[0];
-    expect(nexSessionSpan.attributes).to.have.property(
+    const nextSessionSpan = nextSessionFinishedSpans[0];
+    expect(nextSessionSpan.attributes).to.have.property(
       'emb.properties.my-new-prop',
       'new'
     );

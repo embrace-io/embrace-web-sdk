@@ -8,16 +8,20 @@ import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
 
 const EmbraceRoutes = withEmbraceRouting(Routes);
 
+// Use BASE_URL from Vite for GitHub Pages support
+const basename =
+  import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL : undefined;
+
 const ReactRouterV6Declarative = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   return (
     <div className="container">
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <EmbraceRoutes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<Product />}>

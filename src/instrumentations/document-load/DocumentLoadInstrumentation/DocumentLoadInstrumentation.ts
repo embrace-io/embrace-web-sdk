@@ -2,21 +2,24 @@
  * Adapted from OpenTelemetry document-load instrumentation
  * https://github.com/open-telemetry/opentelemetry-js-contrib/tree/cc7eff47e2e7bad7678241b766753d5bd6dbc85f/packages/instrumentation-document-load
  *
- * We added these new attributes:
+ * Additional PerformanceResourceTiming attributes collected:
+ * - entry_type, initiator_type
+ * - decoded_body_size, http.response.body.size, http.response.size
+ * - delivery_type (Chromium only)
+ * - render_blocking_status (Chromium only)
+ * - http.response.status_code (no Safari support)
  *
- * 'decoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/decodedBodySize
- * 'delivery_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
- * 'encoded_body_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/encodedBodySize
- * 'entry_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceEntry/entryType
- * 'initiator_type' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/initiatorType
- * 'render_blocking_status' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
- * 'transfer_size' - https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/transferSize
+ * Custom diagnostic attributes added to identify resource loading issues:
+ * - http.response.cors_opaque - CORS-restricted resource (opaque response)
+ * - http.response.cache_revalidated - 304 Not Modified response
+ * - http.request.incomplete - Request started but didn't complete (network error, aborted)
+ * - http.request.prevented - Request never started (blocked by CSP, browser, extension)
  */
 
 import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
-import type { PerformanceEntries as OtelPerformanceEntries } from '@opentelemetry/sdk-trace-web';
+import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
   addSpanNetworkEvent,
@@ -45,28 +48,28 @@ import {
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
+/**
+ * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
+ * - deliveryType: Chromium only (experimental) https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
+ * - renderBlockingStatus: Chromium only https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
+ */
 type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
-  deliveryType?: string;
-  entryType?: string;
-  initiatorType?: string;
-  renderBlockingStatus?: string;
-  transferSize?: number;
+  deliveryType?: 'cache' | '';
+  renderBlockingStatus?: 'blocking' | 'non-blocking';
 };
 
-type PerformanceEntries = OtelPerformanceEntries & {
-  deliveryType?: string;
-  entryType?: string;
-  initiatorType?: string;
-  renderBlockingStatus?: string;
-  responseStatus?: number;
-  transferSize?: number;
-};
+// PerformanceResourceTiming attribute names
+const ATTR_HTTP_RESPONSE_DELIVERY_TYPE = 'http.response.delivery_type';
+const ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE = 'http.response.decoded_body_size';
+const ATTR_HTTP_REQUEST_INITIATOR_TYPE = 'http.request.initiator_type';
+const ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS =
+  'http.request.render_blocking_status';
 
-const ATTR_DELIVERY_TYPE = 'delivery_type';
-const ATTR_ENTRY_TYPE = 'entry_type';
-const ATTR_INITIATOR_TYPE = 'initiator_type';
-const ATTR_RENDER_BLOCKING_STATUS = 'render_blocking_status';
-const ATTR_DECODED_BODY_SIZE = 'decoded_body_size';
+// Diagnostic attribute names
+const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-restricted resource (opaque response)
+const ATTR_HTTP_RESPONSE_CACHE_REVALIDATED = 'http.response.cache_revalidated'; // 304 Not Modified response
+const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request started but didn't complete
+const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
@@ -93,7 +96,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     });
 
     this._onDocumentLoaded = () => {
-      // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd
+      // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
         this._collectPerformance();
       }, 0);
@@ -233,9 +236,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Helper function for ending span
+   * Helper function for ending a span
    * @param span
-   * @param performanceName name of performance entry for time end
+   * @param performanceName name of performance entry for end time
    * @param entries
    */
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
@@ -244,7 +247,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     performanceName: string,
     entries: PerformanceEntries
   ) {
-    // span can be undefined when entries are missing the certain performance - the span will not be created
+    // Span can be undefined when entries are missing the required performance timing - no span will be created
     if (span) {
       if (
         hasKey(entries, performanceName) &&
@@ -258,7 +261,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Creates and ends a span with network information about resource added as timed events
+   * Creates and ends a span with network information about a resource added as timed events
    * @param resource
    * @param parentSpan
    */
@@ -272,40 +275,75 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       resource,
       parentSpan
     );
-    if (span) {
-      span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
-      span.setAttribute(ATTR_URL_FULL, resource.name);
-      addSpanNetworkEvents(
-        span,
-        resource,
-        this.getConfig().ignoreNetworkEvents
+    if (!span) {
+      return;
+    }
+
+    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
+    span.setAttribute(ATTR_URL_FULL, resource.name);
+    addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
+
+    if (resource.deliveryType) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
+        resource.deliveryType
       );
-      if (resource.deliveryType) {
-        span.setAttribute(ATTR_DELIVERY_TYPE, resource.deliveryType);
-      }
-      span.setAttribute(ATTR_ENTRY_TYPE, resource.entryType);
-      span.setAttribute(ATTR_INITIATOR_TYPE, resource.initiatorType);
-      if (resource.renderBlockingStatus) {
-        span.setAttribute(
-          ATTR_RENDER_BLOCKING_STATUS,
-          resource.renderBlockingStatus
-        );
-      }
+    }
+
+    if (resource.initiatorType) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
+        resource.initiatorType
+      );
+    }
+
+    if (resource.renderBlockingStatus) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
+        resource.renderBlockingStatus
+      );
+    }
+
+    if (resource.responseStatus) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_STATUS_CODE,
         resource.responseStatus
       );
-      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-      span.setAttribute(ATTR_DECODED_BODY_SIZE, resource.decodedBodySize);
-
-      this._addCustomAttributesOnResourceSpan(
-        span,
-        resource,
-        this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
-      );
-      this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
     }
+
+    // Validate size fields exist and aren't negative
+    if (
+      typeof resource.encodedBodySize === 'number' &&
+      resource.encodedBodySize >= 0
+    ) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    }
+
+    if (
+      typeof resource.transferSize === 'number' &&
+      resource.transferSize >= 0
+    ) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    }
+
+    if (
+      typeof resource.decodedBodySize === 'number' &&
+      resource.decodedBodySize >= 0
+    ) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+        resource.decodedBodySize
+      );
+    }
+
+    this._addResourceDiagnosticAttributes(span, resource);
+
+    this._addCustomAttributesOnResourceSpan(
+      span,
+      resource,
+      this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
+    );
+    this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
   }
 
   /**
@@ -338,7 +376,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * executes callback {_onDocumentLoaded} when the page is loaded
+   * Executes callback {_onDocumentLoaded} when the page is loaded
    */
   private _waitForPageLoad() {
     if (window.document.readyState === 'complete') {
@@ -349,7 +387,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * adds custom attributes to root span if configured
+   * Adds custom attributes to span if configured
+   * Used for both documentFetch and documentLoad spans
    */
   private _addCustomAttributesOnSpan(
     span: Span,
@@ -373,7 +412,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * adds custom attributes to span if configured
+   * Adds custom attributes to resource span if configured
    */
   private _addCustomAttributesOnResourceSpan(
     span: Span,
@@ -396,6 +435,104 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         },
         true
       );
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
+    const transferSize =
+      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
+    const decodedBodySize =
+      typeof resource.decodedBodySize === 'number'
+        ? resource.decodedBodySize
+        : 0;
+    const encodedBodySize =
+      typeof resource.encodedBodySize === 'number'
+        ? resource.encodedBodySize
+        : 0;
+
+    return transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+    const responseEnd =
+      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
+
+    return fetchStart > 0 && responseEnd > 0;
+  }
+
+  private _isCorsRestricted(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    return this._hasNoSizeData(resource) && this._hasTimingData(resource);
+  }
+
+  private _isFetchIncomplete(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+    const responseEnd =
+      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
+
+    return this._hasNoSizeData(resource) && fetchStart > 0 && responseEnd === 0;
+  }
+
+  private _isFetchPrevented(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    const fetchStart =
+      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
+
+    return this._hasNoSizeData(resource) && fetchStart === 0;
+  }
+
+  /**
+   * Detect cache validation (304 Not Modified responses)
+   *
+   * 304 responses show transferSize of ~300 bytes (headers only, no body).
+   * Use deliveryType to distinguish from cache hits: 'cache' = no network, otherwise = 304.
+   *
+   * Spec: https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
+   */
+  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
+  private _isCacheValidated(
+    resource: EmbracePerformanceResourceTiming
+  ): boolean {
+    const transferSize =
+      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
+    const deliveryType =
+      typeof resource.deliveryType === 'string' ? resource.deliveryType : '';
+
+    return transferSize === 300 && deliveryType !== 'cache';
+  }
+
+  /**
+   * Add diagnostic attributes to identify resource loading issues
+   *
+   * Diagnostic attributes help identify why resources may have incomplete timing data:
+   * - CORS restrictions (opaque responses without Timing-Allow-Origin header)
+   * - Cache revalidation (304 Not Modified responses)
+   * - Request incomplete (started but didn't complete - network error, aborted)
+   * - Request prevented (never started - blocked by CSP, browser, extension)
+   */
+  private _addResourceDiagnosticAttributes(
+    span: Span,
+    resource: EmbracePerformanceResourceTiming
+  ): void {
+    if (this._isCorsRestricted(resource)) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_CORS_OPAQUE, true);
+    } else if (this._isFetchIncomplete(resource)) {
+      span.setAttribute(ATTR_HTTP_REQUEST_INCOMPLETE, true);
+    } else if (this._isFetchPrevented(resource)) {
+      span.setAttribute(ATTR_HTTP_REQUEST_PREVENTED, true);
+    }
+
+    if (this._isCacheValidated(resource)) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_CACHE_REVALIDATED, true);
     }
   }
 

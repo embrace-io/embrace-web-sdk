@@ -5,6 +5,8 @@ import type { ExtendedSpan } from '../../index.js';
 export interface SpanSessionManager {
   getSessionId: () => string | null;
 
+  getPreviousSessionId: () => string | null;
+
   getSessionStartTime: () => HrTime | null;
 
   getSessionSpan: () => ExtendedSpan | null;

@@ -504,19 +504,12 @@ jobs:
         run: |
           npm run compile
 
-      # TODO: cache
-      - name: Install npm dependencies for platforms
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run sdk:test:integration:e2e:install-dependencies
-
       - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         # Build needs to run first so e2e tests can use the built apps and not build again
         # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
-          npm run sdk:test:integration:build
-          npm run sdk:test:integration:e2e
+          npm run sdk:test:integration
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -596,16 +589,17 @@ jobs:
         run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
 
       - name: Validate PR title with commitlint
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
         if: github.event_name == 'pull_request'
-        run: echo "$PR_TITLE" | npm run commitlint --verbose
+        run: |
+          PR_TITLE=$(gh pr view ${{ github.event.pull_request.number }} --json title -q .title)
+          echo "$PR_TITLE" | npm run commitlint --verbose
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   lint:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -660,7 +654,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -715,7 +708,6 @@ jobs:
     needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'dependabot[bot]' }}
     env:
       VALIDATE_STATUS_FILE: validate.success.txt
     strategy:
@@ -813,8 +805,6 @@ jobs:
           npm ci --strict-peer-deps
 
       - name: Run 'npm publish'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
           npm publish --provenance --access public
   publish-cli:
@@ -855,8 +845,6 @@ jobs:
           npm ci --include-workspace-root --strict-peer-deps
 
       - name: Run 'npm publish'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
         run: |
           npm publish --provenance --access public
 

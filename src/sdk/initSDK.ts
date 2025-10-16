@@ -15,6 +15,9 @@ import {
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import { session } from '../api-sessions/index.js';
 import { user } from '../api-users/index.js';
+import { log } from '../api-logs/index.js';
+import { trace } from '../api-traces/index.js';
+import { page } from '../api-page/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
@@ -28,6 +31,7 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbracePageManager,
 } from '../managers/index.js';
 import {
   EmbraceLogRecordProcessor,
@@ -38,18 +42,19 @@ import {
   SpanScrubProcessor,
   UserLogRecordProcessor,
   UserSpanProcessor,
+  PageLogRecordProcessor,
+  PageSpanProcessor,
 } from '../processors/index.js';
 import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
 import { isValidAppID } from './utils.js';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
-import { log } from '../api-logs/index.js';
-import { trace } from '../api-traces/index.js';
 import type {
   DynamicSDKConfig,
   SDKControl,
   SDKInitConfig,
   SetupLogsArgs,
+  SetupPageArgs,
   SetupSessionArgs,
   SetupTracesArgs,
   SetupUserArgs,
@@ -200,6 +205,7 @@ export const initSDK = (
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
     if (sendingToEmbrace) {
       embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
+        resource: resourceWithWebSDKAttributes,
         exporter: new EmbraceTraceExporter({
           appID,
           embraceDataURL,
@@ -210,6 +216,7 @@ export const initSDK = (
           defaultInstrumentationConfig?.['session-visibility']
             ?.storedSpansExpireTimeoutMS,
         storage: sdkLocalStorage,
+        spanSessionManager,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
@@ -220,6 +227,8 @@ export const initSDK = (
         })
       );
     }
+
+    const pageManager = setupPage({ registerGlobally });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
@@ -234,6 +243,7 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceSpanProcessor,
+      pageManager,
     });
 
     spanSessionManager.setTracerProvider(tracerProvider);
@@ -248,6 +258,8 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceLogProcessor,
+      sdkLocalStorage,
+      pageManager,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -262,6 +274,7 @@ export const initSDK = (
             logManager: embraceLogManager,
             spanSessionManager,
             embraceSpanProcessor,
+            pageManager,
           }),
           ...instrumentations,
         ],
@@ -271,6 +284,7 @@ export const initSDK = (
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
             embraceSpanProcessor,
+            pageManager,
           }),
           ...instrumentations,
         ],
@@ -291,6 +305,7 @@ export const initSDK = (
       trace: embraceTraceManager,
       session: spanSessionManager,
       user: userManager,
+      page: pageManager,
     };
 
     if (registerGlobally) {
@@ -351,12 +366,14 @@ const setupTraces = ({
   attributeScrubbers,
   registerGlobally,
   embraceSpanProcessor,
+  pageManager,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
+    new PageSpanProcessor({ pageManager }),
     new SpanScrubProcessor({ attributeScrubbers }),
   ];
 
@@ -412,6 +429,8 @@ const setupLogs = ({
   attributeScrubbers,
   registerGlobally,
   embraceLogProcessor,
+  sdkLocalStorage,
+  pageManager,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
@@ -421,6 +440,7 @@ const setupLogs = ({
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
     new LogRecordScrubProcessor({ attributeScrubbers }),
+    new PageLogRecordProcessor({ pageManager }),
   ];
 
   logExporters?.forEach(exporter => {
@@ -440,6 +460,7 @@ const setupLogs = ({
     spanSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
+    storage: sdkLocalStorage,
   });
 
   if (registerGlobally) {
@@ -448,4 +469,14 @@ const setupLogs = ({
   }
 
   return { loggerProvider, embraceLogManager };
+};
+
+const setupPage = ({ registerGlobally }: SetupPageArgs) => {
+  const embracePageManager = new EmbracePageManager();
+
+  if (registerGlobally) {
+    page.setGlobalPageManager(embracePageManager);
+  }
+
+  return embracePageManager;
 };

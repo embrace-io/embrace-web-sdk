@@ -86,15 +86,13 @@ Run the integration tests and build all prerequisites with:
 
 ```bash
 npm run sdk:compile
-npm run sdk:test:integration:e2e:install-dependencies
-npm run sdk:test:integration:build
-npm run sdk:test:integration:e2e
+npm run sdk:test:integration
 ```
 
 To update golden files replace the last command with:
 
 ```bash
-npm run sdk:test:integration:e2e:update-golden
+npm run sdk:test:integration:update-golden
 ```
 
 ## Publishing

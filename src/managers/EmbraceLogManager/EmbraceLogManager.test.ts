@@ -17,6 +17,7 @@ import {
   KEY_EMB_TYPE,
 } from '../../constants/index.js';
 import {
+  FailingStorage,
   InMemoryDiagLogger,
   setupTestLogExporter,
   setupTestTraceExporter,
@@ -36,6 +37,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -91,6 +93,7 @@ describe('EmbraceLogManager', () => {
       spanSessionManager,
       limitManager,
     });
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -170,6 +173,7 @@ describe('EmbraceLogManager', () => {
     expect(log.severityText).to.be.equal('WARNING');
     expect(log.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: 'sys.log',
+      'emb.state': 'foreground',
     });
   });
 
@@ -193,6 +197,7 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: 'sys.log',
       attr_key: 'attr value',
+      'emb.state': 'foreground',
     });
   });
 
@@ -240,7 +245,8 @@ describe('EmbraceLogManager', () => {
       KEY_EMB_JS_FILE_BUNDLE_IDS,
       '{"Error\\n at file1.js:1:169":"b350cbb4-6d53-4a3a-aa3e-29ebbc39b11c"}'
     );
-    expect(Object.keys(log.attributes)).to.have.lengthOf(3);
+    expect(log.attributes).to.have.property('emb.state', 'foreground');
+    expect(Object.keys(log.attributes)).to.have.lengthOf(4);
   });
 
   it('should log an exception with stacktrace', () => {
@@ -760,6 +766,48 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  it('should record the state attribute when a log occurs in the foreground', () => {
+    manager.message('info log on a visible page', 'info');
+    manager.logException('error');
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+
+    expect(finishedLogs).to.have.lengthOf(2);
+    expect(finishedLogs[0].attributes).to.have.property(
+      'emb.state',
+      'foreground'
+    );
+    expect(finishedLogs[1].attributes).to.have.property(
+      'emb.state',
+      'foreground'
+    );
+  });
+
+  it('should record the state attribute when a log occurs in the background', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'hidden',
+    };
+    const backgroundManager = new EmbraceLogManager({
+      perf,
+      spanSessionManager,
+      limitManager,
+      visibilityDoc,
+    });
+
+    backgroundManager.message('info log on a visible page', 'info');
+    backgroundManager.logException('error');
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+
+    expect(finishedLogs).to.have.lengthOf(2);
+    expect(finishedLogs[0].attributes).to.have.property(
+      'emb.state',
+      'background'
+    );
+    expect(finishedLogs[1].attributes).to.have.property(
+      'emb.state',
+      'background'
+    );
+  });
+
   describe('log exceptions with non Error types', () => {
     it('should handle strings', () => {
       expect(() => {
@@ -1026,6 +1074,51 @@ describe('EmbraceLogManager', () => {
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(secondMemoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
+    });
+
+    it('should include exception number when logging an exception', () => {
+      manager.logException(new Error('exception 1'));
+      manager.logException(new Error('exception 2'));
+      manager.logException(new Error('exception 3'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(3);
+
+      expect(finishedLogs[0].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        'emb.exception_number',
+        2
+      );
+      expect(finishedLogs[2].attributes).to.have.property(
+        'emb.exception_number',
+        3
+      );
+    });
+
+    it('should default to exception number 1 when storage is failing', () => {
+      manager = new EmbraceLogManager({
+        perf,
+        spanSessionManager,
+        limitManager,
+        storage: new FailingStorage(),
+      });
+      manager.logException(new Error('exception 1'));
+      manager.logException(new Error('exception 2'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(2);
+
+      expect(finishedLogs[0].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        'emb.exception_number',
+        1
+      );
     });
   });
 });

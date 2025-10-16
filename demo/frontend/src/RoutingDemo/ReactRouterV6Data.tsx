@@ -11,36 +11,43 @@ import { useRoutingDemoContext } from './RoutingDemoContext';
 import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
 import { useEffect } from 'react';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Home />,
-  },
-  {
-    path: '/product/:id',
-    element: <Product />,
-    children: [
-      {
-        path: 'comments',
-        element: <ProductComments />,
-      },
-      {
-        path: 'photos',
-        element: <ProductComments />,
-      },
-    ],
-  },
-  {
-    path: '/about',
-    element: <About />,
-  },
-]);
+// Use BASE_URL from Vite for GitHub Pages support
+const basename =
+  import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL : undefined;
+
+const router = createBrowserRouter(
+  [
+    {
+      path: '/',
+      element: <Home />,
+    },
+    {
+      path: '/product/:id',
+      element: <Product />,
+      children: [
+        {
+          path: 'comments',
+          element: <ProductComments />,
+        },
+        {
+          path: 'photos',
+          element: <ProductComments />,
+        },
+      ],
+    },
+    {
+      path: '/about',
+      element: <About />,
+    },
+  ],
+  { basename }
+);
 
 const ReactRouterV6Data = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.href = '/';
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   useEffect(() => {

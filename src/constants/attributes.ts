@@ -2,6 +2,7 @@ export const KEY_EMB_TYPE = 'emb.type';
 export const KEY_EMB_STATE = 'emb.state';
 export const KEY_EMB_COLD_START = 'emb.cold_start';
 export const KEY_EMB_SESSION_NUMBER = 'emb.session_number';
+export const KEY_EMB_EXCEPTION_NUMBER = 'emb.exception_number';
 export const KEY_EMB_SDK_STARTUP_DURATION = 'emb.sdk_startup_duration';
 export const KEY_PREFIX_EMB_PROPERTIES = 'emb.properties.';
 export const KEY_EMB_SESSION_REASON_ENDED = 'emb.session_end_type';
@@ -23,6 +24,12 @@ export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_VIEW_NAME = 'view.name';
 export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
 export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
+export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
+  'emb.max_pending_spans_reached';
+// In the backend we use 'app.surface.name' and 'app.surface.id' for the page name and id
+// to be consistent with mobile where we use 'app.surface.*' for screen names and ids
+export const KEY_EMB_PAGE_PATH = 'app.surface.name';
+export const KEY_EMB_PAGE_ID = 'app.surface.id';
 
 export enum EMB_TYPES {
   Session = 'ux.session',
@@ -45,6 +52,7 @@ export enum EMB_NAVIGATION_INSTRUMENTATIONS {
   DeclarativeLegacy = 'react_router_declarative_legacy',
   Declarative = 'react_router_declarative',
   Data = 'react_router_data',
+  Manual = 'manual',
 }
 
 export enum EMB_ERROR_INSTRUMENTATIONS {

@@ -31,6 +31,7 @@ describe('SessionAPI', () => {
     const sessionManager: SpanSessionManager = {
       // Mock implementation of SpanSessionManager
       getSessionId: sinon.stub().returns('mockSessionId'),
+      getPreviousSessionId: sinon.stub().returns('mockPreviousSessionId'),
       getSessionStartTime: sinon.stub().returns(1234567890),
       getSessionSpan: sinon.stub().returns('mockSpanId'),
       startSessionSpan: sinon.stub(),
@@ -54,6 +55,7 @@ describe('SessionAPI', () => {
   it('should forward calls to the session manager', () => {
     const mockSpanSessionManager: SpanSessionManager = {
       getSessionId: sinon.stub().returns('mockSessionId'),
+      getPreviousSessionId: sinon.stub().returns('mockPreviousSessionId'),
       getSessionSpan: sinon.stub().returns({} as Span),
       getSessionStartTime: sinon.stub().returns([0, 0] as HrTime),
       startSessionSpan: sinon.stub(),
@@ -70,6 +72,10 @@ describe('SessionAPI', () => {
 
     void expect(sessionAPI.getSessionId()).to.not.be.null;
     void expect(mockSpanSessionManager.getSessionId).to.have.been.calledOnce;
+
+    void expect(sessionAPI.getPreviousSessionId()).to.not.be.null;
+    void expect(mockSpanSessionManager.getPreviousSessionId).to.have.been
+      .calledOnce;
 
     void expect(sessionAPI.getSessionSpan()).to.not.be.null;
     void expect(mockSpanSessionManager.getSessionSpan).to.have.been.calledOnce;

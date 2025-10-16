@@ -12,6 +12,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
+  EmbracePageManager,
 } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
@@ -22,6 +23,10 @@ import {
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
 import type { URLDocument } from '../../../common/index.js';
+import {
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../../constants/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -677,5 +682,89 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsEvent.attributes).to.containSubset({
       'url.full': 'https://second.com',
     });
+  });
+
+  it('should attach page attributes when route is set', () => {
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/test/:id',
+      url: '/test/123',
+    });
+
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+      pageManager,
+    });
+
+    void expect(clsStub.calledTwice).to.be.true;
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.attributes).to.containSubset({
+      [KEY_EMB_PAGE_PATH]: '/test/:id',
+      [KEY_EMB_PAGE_ID]: pageManager.getCurrentPageId(),
+    });
+  });
+
+  it('should not attach page attributes when route is not set', () => {
+    const pageManager = new EmbracePageManager();
+
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+      pageManager,
+    });
+
+    void expect(clsStub.calledTwice).to.be.true;
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionSpan.events[0];
+
+    void expect(clsEvent.attributes?.[KEY_EMB_PAGE_PATH]).to.be.undefined;
+    void expect(clsEvent.attributes?.[KEY_EMB_PAGE_ID]).to.be.undefined;
   });
 });

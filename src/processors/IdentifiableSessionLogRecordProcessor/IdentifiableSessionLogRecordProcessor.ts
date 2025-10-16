@@ -2,6 +2,7 @@ import type { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   ATTR_LOG_RECORD_UID,
   ATTR_SESSION_ID,
+  ATTR_SESSION_PREVIOUS_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
 import type { SpanSessionManager } from '../../api-sessions/index.js';
 import { generateUUID } from '../../utils/index.js';
@@ -27,6 +28,8 @@ export class IdentifiableSessionLogRecordProcessor
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
       [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),
+      [ATTR_SESSION_PREVIOUS_ID]:
+        this._spanSessionManager.getPreviousSessionId(),
     });
   }
 

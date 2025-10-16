@@ -257,6 +257,7 @@ describe('DocumentLoad Instrumentation', () => {
         writable: true,
         value: 'loading',
       });
+
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([]);
@@ -679,6 +680,204 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('resource attributes and quality flags', () => {
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should capture extended PerformanceResourceTiming attributes', done => {
+      const resourcesWithExtendedProps = [
+        {
+          ...resources[0],
+          deliveryType: 'cache',
+          renderBlockingStatus: 'blocking',
+          responseStatus: 200,
+        },
+      ];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesWithExtendedProps);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.delivery_type'],
+          'cache'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+          'blocking'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.status_code'],
+          200
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.initiator_type'],
+          'script'
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response_content_length'],
+          1446396
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.size'],
+          1446645
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.decoded_body_size'],
+          1446396
+        );
+        done();
+      });
+    });
+
+    it('should add http.response.cors_opaque attribute when resource has timing but no size data', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 111.935,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.cors_opaque'],
+          true
+        );
+        done();
+      });
+    });
+
+    it('should add http.request.prevented attribute when request never started', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 0,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.prevented'],
+          true
+        );
+        done();
+      });
+    });
+
+    it('should add http.request.incomplete attribute when request started but did not complete', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.incomplete'],
+          true
+        );
+        done();
+      });
+    });
+
+    it('should add http.response.cache_revalidated attribute for 304 responses', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([
+          { ...resources[0], transferSize: 300, deliveryType: undefined },
+        ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.response.cache_revalidated'],
+          true
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.cache_revalidated attribute when deliveryType is cache', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([
+          { ...resources[0], transferSize: 300, deliveryType: 'cache' },
+        ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cache_revalidated']
+        );
+        done();
+      });
+    });
+
+    it('should not add diagnostic attributes for normal resources', done => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([{ ...resources[0], responseStatus: 200 }]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cors_opaque']
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cache_revalidated']
+        );
+        assert.isUndefined(resourceSpan.attributes['http.request.incomplete']);
+        assert.isUndefined(resourceSpan.attributes['http.request.prevented']);
         done();
       });
     });
