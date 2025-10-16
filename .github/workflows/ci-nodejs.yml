@@ -761,6 +761,11 @@ jobs:
         run: |
           npm run cli:validate
 
+      - name: Build Demo
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run build --prefix demo/frontend
+
       - name: Cache successful validate results
         if: ${{ success() }}
         run: |

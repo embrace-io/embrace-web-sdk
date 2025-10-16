@@ -20,9 +20,7 @@ const logManager = log.getLogManager();
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [sessionRefresher, setSessionRefresher] = useState<
-    number | undefined
-  >();
+
   const [navigationType, setNavigationType] =
     useState<RoutingDemoNavigationType | null>(null);
 
@@ -46,19 +44,23 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Set initial values
-    setCurrentSession(sessionProvider.getSessionId());
-    updateCrossTabData();
-
-    const intervalId = window.setInterval(() => {
+    const updateSession = () => {
       setCurrentSession(sessionProvider.getSessionId());
       updateCrossTabData();
-    }, 1000);
+    };
 
-    setSessionRefresher(intervalId);
+    // Set initial values
+    updateSession();
+
+    // React to session lifecycle events
+    const unsubscribeStart =
+      sessionProvider.addSessionStartedListener(updateSession);
+    const unsubscribeEnd =
+      sessionProvider.addSessionEndedListener(updateSession);
 
     return () => {
-      window.clearInterval(intervalId);
+      unsubscribeStart();
+      unsubscribeEnd();
     };
   }, []);
 
