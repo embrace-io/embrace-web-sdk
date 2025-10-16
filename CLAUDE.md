@@ -31,7 +31,7 @@
 **PRs**: Title + 3-section body
 ```markdown
 ## Why
-[Problem statement + benefit. Explain impact, not restate changes.]
+[One sentence problem statement + benefit. Explain impact, not restate changes.]
 
 ## Changes
 - [Specific changes as bullets. Be specific about refactors. Quantify when relevant.]
