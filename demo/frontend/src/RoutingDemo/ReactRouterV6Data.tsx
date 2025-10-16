@@ -11,13 +11,9 @@ import { useRoutingDemoContext } from './RoutingDemoContext';
 import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
 import { useEffect } from 'react';
 
-// Extract first path segment as basename for GitHub Pages support
-// Local: pathname "/" → basename undefined
-// GH Pages: pathname "/embrace-web-sdk/..." → basename "/embrace-web-sdk"
+// Use BASE_URL from Vite for GitHub Pages support
 const basename =
-  window.location.pathname !== '/'
-    ? '/' + window.location.pathname.split('/')[1]
-    : undefined;
+  import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL : undefined;
 
 const router = createBrowserRouter(
   [
@@ -51,7 +47,7 @@ const ReactRouterV6Data = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.assign('./');
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   useEffect(() => {

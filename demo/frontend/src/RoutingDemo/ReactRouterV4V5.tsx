@@ -8,20 +8,16 @@ import About from './About';
 
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 
-// Extract first path segment as basename for GitHub Pages support
-// Local: pathname "/" → basename undefined
-// GH Pages: pathname "/embrace-web-sdk/..." → basename "/embrace-web-sdk"
+// Use BASE_URL from Vite for GitHub Pages support
 const basename =
-  window.location.pathname !== '/'
-    ? '/' + window.location.pathname.split('/')[1]
-    : undefined;
+  import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL : undefined;
 const history = createBrowserHistory({ basename });
 
 const ReactRouterV4V5 = () => {
   const { setNavigationType } = useRoutingDemoContext();
   const handleExitNavigationDemo = () => {
     setNavigationType(null);
-    window.location.assign('./');
+    window.location.assign(import.meta.env.BASE_URL);
   };
 
   return (

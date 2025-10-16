@@ -27,8 +27,8 @@ const App = () => {
     useState<RoutingDemoNavigationType | null>(null);
 
   // Tab tracking data
-  const [experienceId, setExperienceId] = useState<string | null>('');
-  const [tabId, setTabId] = useState<string | null>('');
+  const [experienceId, setExperienceId] = useState<string | null>(null);
+  const [tabId, setTabId] = useState<string | null>(null);
   const [sourceTabId, setSourceTabId] = useState<string | null>(null);
   const [navigationSource, setNavigationSource] = useState<string | null>(null);
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
@@ -50,15 +50,15 @@ const App = () => {
     setCurrentSession(sessionProvider.getSessionId());
     updateCrossTabData();
 
-    setSessionRefresher(
-      window.setInterval(() => {
-        setCurrentSession(sessionProvider.getSessionId());
-        updateCrossTabData();
-      }, 1000)
-    );
+    const intervalId = window.setInterval(() => {
+      setCurrentSession(sessionProvider.getSessionId());
+      updateCrossTabData();
+    }, 1000);
+
+    setSessionRefresher(intervalId);
 
     return () => {
-      window.clearInterval(sessionRefresher);
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -235,8 +235,6 @@ const App = () => {
     });
   };
 
-  const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
-
   const renderContent = () => {
     if (navigationType) {
       switch (navigationType) {
@@ -308,13 +306,13 @@ const App = () => {
           <div className={styles.actions}>
             <button
               onClick={handleStartSessionSpan}
-              disabled={isSessionSpanStarted}
+              disabled={sessionProvider.getSessionSpan() !== null}
             >
               Start Session span
             </button>
             <button
               onClick={handleStartSessionSpan}
-              disabled={!isSessionSpanStarted}
+              disabled={sessionProvider.getSessionSpan() === null}
               title="Force a new Session Span to start"
             >
               Override Session span
