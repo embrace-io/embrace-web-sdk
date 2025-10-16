@@ -1,21 +1,25 @@
-# Embrace Web SDK
-
-OpenTelemetry observability. Telemetry must NEVER break user apps.
+# Embrace Web SDK - OpenTelemetry observability
 
 ## ABSOLUTE RULES
 
 **NEVER**:
-- Use `--no-verify` on commits
+- Break user apps
+- Choose cleverness over clarity and readability
 - Create files when editing existing ones works
 - Use temporal words ("new", "updated", "legacy", "old")
-- Commit .md files without explicit user confirmation
 
 **ALWAYS**:
-- Run before commit: `npm run sdk:lint:fix && npm run compile && npm run sdk:test`
-- Fix lint: `npm run sdk:lint:fix`
-- Check types: `npm run sdk:tsc:check`
+- Review existing code patterns before making new files
+- Errors: Catch all, log with diag, never throw to user code
+- Ask to save complex plans in folder context as (MARKDOWN).MD
+- Run before commit: `npm run sdk:tsc:check && npm run sdk:lint:fix && npm run compile && npm run sdk:test`
 
-## Commits & Pull Requests
+## Commits, Pull Requests, Branches
+
+**Branches**
+- Ask for ticket number and description
+- If ticket: (gituser)/EMBR-(ticketnumber)-(three-word-description)
+- If no ticket: (gituser)/(three-word-description)
 
 **Title Format**: `(type)[(scope)]: imperative-subject`
 - Max 150 chars, abbreviate when clear (e.g., "semconv")
@@ -30,7 +34,7 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 [Problem statement + benefit. Explain impact, not restate changes.]
 
 ## Changes
-- [Specific changes as bullets. Use → for transformations. Quantify when relevant.]
+- [Specific changes as bullets. Be specific about refactors. Quantify when relevant.]
 
 ## Testing
 - [Test approach and verification steps.]
@@ -38,24 +42,10 @@ OpenTelemetry observability. Telemetry must NEVER break user apps.
 
 **Rules**:
 - Keep it scannable - short sentences, clear bullets
-- Use arrows (→) to show before/after transformations
 - Quantify when relevant ("5 attributes", "3 files")
 - No marketing language or superlatives
-- Do NOT include Claude credits
-
-## Code Style
-
-**Comments**: Explain WHY, not what
-```typescript
-// BAD: Check if timestamp > 20000
-// GOOD: 20s window catches legitimate parents while avoiding stale matches
-```
-
-**Method Names**: Describe outcome, not process
-```typescript
-_pruneOldEntries()  // not _processData()
-_findParentTab()    // not _handleTabLogic()
-```
+- Do not credit Claude
+- After commit, if PR exists, update body with details
 
 ## Architecture
 
@@ -68,7 +58,16 @@ src/exporters/ → EmbraceTraceExporter, EmbraceLogExporter
 
 **Key Pattern**: Proxy wraps NoOp until SDK initializes, then delegates to real manager
 
-## Critical Behaviors
+## Code Style
 
-- **Storage**: localStorage/sessionStorage are synchronous - minimize use
-- **Errors**: Catch all, log to diag, never throw to user code
+**Method Names**: Describe outcome, not process
+```typescript
+_flushExpiredEntries()  // not _processData()
+_findSourceTab()    // not _handleTabLogic()
+  ```s
+
+**Comments**: Explain WHY, not what
+```typescript
+// BAD: Check if timestamp > 20000
+// GOOD: 20s window catches legitimate parents while avoiding stale matches
+```
