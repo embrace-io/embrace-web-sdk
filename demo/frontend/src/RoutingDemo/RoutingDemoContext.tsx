@@ -6,10 +6,7 @@ type RoutingDemoContext = {
   setNavigationType: (type: RoutingDemoNavigationType | null) => void;
 };
 
-const RoutingDemoContext = createContext<RoutingDemoContext>({
-  navigationType: null,
-  setNavigationType: () => {},
-});
+const RoutingDemoContext = createContext<RoutingDemoContext | null>(null);
 
 const RoutingDemoContextProvider = RoutingDemoContext.Provider;
 
