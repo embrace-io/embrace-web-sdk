@@ -44,7 +44,7 @@
 - Keep it scannable - short sentences, clear bullets
 - Quantify when relevant ("5 attributes", "3 files")
 - No marketing language or superlatives
-- Do not credit Claude
+- Do NOT include Claude credits
 - After commit, if PR exists, update body with details
 
 ## Architecture
