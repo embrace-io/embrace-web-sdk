@@ -16,15 +16,15 @@
 
 ## Commits, Pull Requests, Branches
 
-**Branches**
-- Ask for ticket number and description
-- If ticket: (gituser)/EMBR-(ticketnumber)-(three-word-description)
-- If no ticket: (gituser)/(three-word-description)
-
 **Title Format**: `(type)[(scope)]: imperative-subject`
 - Max 150 chars, abbreviate when clear (e.g., "semconv")
 - Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
 - Examples: `fix(session): prevent race condition in tab tracking`, `chore(document-load): align resource attributes with semconv`
+
+**Branches**
+- Ask for ticket number and description
+- If ticket: (gituser)/(type)/EMBR-(ticketnumber)-(three-word-description)
+- If no ticket: (gituser)/(type)/((three-word-description)
 
 **Commits**: Title only, no body/description
 
