@@ -20,9 +20,7 @@ const logManager = log.getLogManager();
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [sessionRefresher, setSessionRefresher] = useState<
-    number | undefined
-  >();
+
   const [navigationType, setNavigationType] =
     useState<RoutingDemoNavigationType | null>(null);
 
@@ -54,8 +52,6 @@ const App = () => {
       setCurrentSession(sessionProvider.getSessionId());
       updateCrossTabData();
     }, 1000);
-
-    setSessionRefresher(intervalId);
 
     return () => {
       window.clearInterval(intervalId);
