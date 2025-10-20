@@ -88,7 +88,7 @@ jobs:
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -200,7 +200,7 @@ jobs:
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -305,7 +305,7 @@ jobs:
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -453,7 +453,7 @@ jobs:
 
       - name: Setup Node.js ${{ matrix.node-version }}
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -572,7 +572,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -625,7 +625,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version: ${{ matrix.node-version }}
@@ -679,7 +679,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version: ${{ matrix.node-version }}
@@ -735,7 +735,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version: ${{ matrix.node-version }}
@@ -799,7 +799,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -839,7 +839,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
