@@ -5,10 +5,7 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
-import {
-  EMB_NAVIGATION_INSTRUMENTATIONS,
-  KEY_EMB_INSTRUMENTATION,
-} from '../../../constants/index.js';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -50,6 +47,7 @@ describe('NavigationInstrumentation', () => {
       path: '/test/:id',
       url: '/test/123',
     });
+    const pageId = page.getCurrentPageId();
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
@@ -65,8 +63,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:id',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:id',
+      'app.surface.id': pageId,
     });
 
     expect(diag.getDebugLogs()).to.be.deep.equal([
@@ -86,6 +85,7 @@ describe('NavigationInstrumentation', () => {
       path: '/test/:id',
       url: '/test/123',
     });
+    const pageId = page.getCurrentPageId();
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
@@ -100,9 +100,10 @@ describe('NavigationInstrumentation', () => {
     const span = finishedSpans[0];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
-      'emb.type': 'ux.view',
-      'view.name': '/test/:id',
-      [KEY_EMB_INSTRUMENTATION]: EMB_NAVIGATION_INSTRUMENTATIONS.Data,
+      'emb.instrumentation': EMB_NAVIGATION_INSTRUMENTATIONS.Data,
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:id',
+      'app.surface.id': pageId,
     });
   });
 
@@ -112,6 +113,7 @@ describe('NavigationInstrumentation', () => {
       path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
       url: '/test/hourly',
     });
+    const pageId = page.getCurrentPageId();
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
@@ -125,8 +127,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:time/:type');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:time/:type',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:time/:type',
+      'app.surface.id': pageId,
     });
   });
 
@@ -139,6 +142,7 @@ describe('NavigationInstrumentation', () => {
       path: '/test/:time(hourly|daily|weekly|monthly)',
       url: '/test/hourly',
     });
+    const pageId = page.getCurrentPageId();
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
@@ -152,8 +156,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:time(hourly|daily|weekly|monthly)');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:time(hourly|daily|weekly|monthly)',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:time(hourly|daily|weekly|monthly)',
+      'app.surface.id': pageId,
     });
   });
 
@@ -229,8 +234,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:id',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:id',
+      'app.surface.id': page.getCurrentPageId(),
     });
 
     expect(diag.getDebugLogs()).to.be.deep.equal([
@@ -270,8 +276,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:id',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:id',
+      'app.surface.id': page.getCurrentPageId(),
     });
 
     // Second route span
@@ -279,8 +286,9 @@ describe('NavigationInstrumentation', () => {
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
-      'emb.type': 'ux.view',
-      'view.name': '/test/:id',
+      'emb.type': 'ux.surface',
+      'app.surface.name': '/test/:id',
+      'app.surface.id': page.getCurrentPageId(),
     });
 
     expect(diag.getDebugLogs()).to.be.deep.equal([
