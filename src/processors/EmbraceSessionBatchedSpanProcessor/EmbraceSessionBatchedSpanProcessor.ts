@@ -4,16 +4,21 @@ import {
   ExportResultCode,
   internal,
 } from '@opentelemetry/core';
-import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
+import type {
+  ReadableSpan,
+  SpanExporter,
+  SpanProcessor,
+} from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
-import { EmbraceProcessor } from '../EmbraceProcessor/index.js';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.js';
 import { EmbraceSpanStorage } from '../../utils/index.js';
+import { diag } from '@opentelemetry/api';
+import type { DiagLogger } from '@opentelemetry/api';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
@@ -26,13 +31,14 @@ const exportFailureAttributeKey = (
 ) =>
   `emb.${session === 'current' ? 'export_failed' : 'previous_export_failed'}.${reason}`;
 
-export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
+export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
   private readonly _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _spanStorage: EmbraceSpanStorage;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _diag: DiagLogger;
 
   public constructor({
     resource,
@@ -41,12 +47,11 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     spanSessionManager,
     storage = window.localStorage,
     storedSpansExpireTimeoutMS,
-    ...parentArgs
+    diag: diagParam = diag.createComponentLogger({
+      namespace: 'EmbraceSessionBatchedSpanProcessor',
+    }),
   }: EmbraceSessionBatchedSpanProcessorArgs) {
-    super({
-      ...parentArgs,
-      processorName: 'EmbraceSessionBatchedSpanProcessor',
-    });
+    this._diag = diagParam;
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
@@ -54,7 +59,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     this._spanStorage = new EmbraceSpanStorage({
       resource,
       storage,
-      diag: parentArgs.diag,
+      diag: diagParam,
       onExpiredSpansExport: (spans: ReadableSpan[]) => {
         this._exportSpans(spans);
       },
@@ -63,8 +68,8 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
     });
   }
 
-  public override forceFlush(): Promise<void> {
-    this.diag.debug(
+  public forceFlush(): Promise<void> {
+    this._diag.debug(
       'forceFlush called for EmbraceSessionBatchedSpanProcessor. This is a no op'
     );
     return Promise.resolve(undefined);
@@ -72,18 +77,20 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
 
   public onEnd(span: ReadableSpan): void {
     if (this._shutdownOnce.isCalled) {
-      this.diag.debug('span ended after processor shutdown. Ignoring span.');
+      this._diag.debug('span ended after processor shutdown. Ignoring span.');
       return;
     }
 
     if (!isSessionSpan(span)) {
-      this.diag.debug('non-session span ended. Adding to pending spans queue.');
+      this._diag.debug(
+        'non-session span ended. Adding to pending spans queue.'
+      );
       if (this._limitManager.dropReadableSpan(span)) {
         return;
       }
       this._pendingSpans.push(span);
     } else {
-      this.diag.debug('session span ended. Exporting all pending spans.');
+      this._diag.debug('session span ended. Exporting all pending spans.');
       this._exportSpans([span, ...this._pendingSpans]);
       this._pendingSpans = [];
     }
@@ -109,7 +116,7 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
           this._spanSessionManager.incrNextSessionCountForKey(
             exportFailureAttributeKey(failureReason, 'previous')
           );
-          this.diag.error(`spans failed to export: ${errorMessage}`);
+          this._diag.error(`spans failed to export: ${errorMessage}`);
         }
       })
       // Seems like everything related to the export logic does a good job of catching and only ever resolving with
@@ -129,22 +136,19 @@ export class EmbraceSessionBatchedSpanProcessor extends EmbraceProcessor {
         this._spanSessionManager.incrNextSessionCountForKey(
           exportFailureAttributeKey('unknown', 'previous')
         );
-        this.diag.error(`spans failed to export: ${msg}`);
+        this._diag.error(`spans failed to export: ${msg}`);
       });
   }
 
-  public override onStart(): void {
+  public onStart(): void {
     // do nothing.
   }
 
-  public override getPendingSpansCount(): number {
+  public getPendingSpansCount(): number {
     return this._pendingSpans.length;
   }
 
-  public override storePendingSpans(
-    sessionId: string,
-    sessionSpan: ReadableSpan
-  ): void {
+  public storePendingSpans(sessionId: string, sessionSpan: ReadableSpan): void {
     this._spanStorage.storePendingSpans(
       sessionId,
       sessionSpan,
