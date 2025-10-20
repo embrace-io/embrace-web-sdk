@@ -55,6 +55,39 @@ h1 {
   text-align: center;
 }
 
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0 0 2rem 0;
+  color: #e4e4e7;
+  font-weight: 500;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+h3 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+  margin: 0 0 1rem 0;
+  color: #c7f000;
+  font-weight: 500;
+}
+
+code {
+  font-family: 'SF Mono', Monaco, 'Cascadia Mono', monospace;
+  background: rgba(199, 240, 0, 0.1);
+  color: #c7f000;
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-size: 0.875em;
+}
+
+p {
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  color: #a1a1aa;
+}
+
 button {
   border-radius: 6px;
   border: 1px solid #3f3f46;
@@ -140,4 +173,40 @@ legend {
   background: rgba(199, 240, 0);
   border-radius: 20px;
   border: 1px solid rgba(199, 240, 0, 0.4);
+}
+
+.exit-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  color: #c7f000;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border: 1px solid rgba(199, 240, 0, 0.3);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(9, 9, 11, 0.9);
+  backdrop-filter: blur(8px);
+  transition: all 0.15s ease;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.exit-link:hover {
+  border-color: #c7f000;
+  background: rgba(199, 240, 0, 0.15);
+  transform: translateX(-2px);
+  box-shadow: 0 2px 8px 0 rgba(199, 240, 0, 0.3);
+}
+
+.nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #27272a;
 }

@@ -39,6 +39,8 @@ jobs:
 
       - name: Build demo
         run: npm run build --prefix demo/frontend
+        env:
+          VITE_BASE_URL: /embrace-web-sdk/
 
       - name: Verify build output
         run: |
