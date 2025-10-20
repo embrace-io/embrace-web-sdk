@@ -65,7 +65,7 @@ const ProductComments = () => {
         borderRadius: '6px',
       }}
     >
-      <h3 style={{ color: '#c7f000', margin: '0 0 0.5rem 0' }}>
+      <h3 style={{ color: '#eeff04', margin: '0 0 0.5rem 0' }}>
         Product Comments
       </h3>
       <p>This is a nested route example</p>
