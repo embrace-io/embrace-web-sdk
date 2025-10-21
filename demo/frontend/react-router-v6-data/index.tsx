@@ -10,7 +10,7 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-domv6plus';
-import logo from '../public/logo.png';
+import logo from '../src/logo.png';
 import '../src/index.css';
 import { getBasename } from '../src/utils';
 import { setupOTel } from '../src/otel';

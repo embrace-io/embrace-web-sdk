@@ -10,7 +10,7 @@ import {
   useHistory,
   useParams,
 } from 'react-router-domv4v5';
-import logo from '../public/logo.png';
+import logo from '../src/logo.png';
 import '../src/index.css';
 import { setupOTel } from '../src/otel';
 import { getBasename } from '../src/utils';
