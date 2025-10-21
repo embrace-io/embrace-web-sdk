@@ -1,18 +1,21 @@
-import React, { StrictMode } from 'react';
+/// <reference types="vite/client" />
+import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
+  BrowserRouter,
+  Outlet,
   Route,
   Routes,
-  BrowserRouter,
   useNavigate,
   useParams,
-  Outlet,
 } from 'react-router-domv6plus';
-import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import logo from '../public/logo.png';
 import '../src/index.css';
-import { init, getBasename, exit } from '../src/utils';
+import { setupOTel } from '../src/otel';
+import { getBasename } from '../src/utils';
 
-init();
+setupOTel();
 
 const EmbraceRoutes = withEmbraceRouting(Routes);
 
@@ -118,7 +121,7 @@ const App = () => {
       </a>
       <div className="container">
         <a href={import.meta.env.BASE_URL} className="logo-link">
-          <img src="../logo.png" alt="Embrace" />
+          <img src={logo} alt="Embrace" />
         </a>
         <h1>React Router v6 Declarative</h1>
         <BrowserRouter basename={getBasename('react-router-v6-declarative')}>

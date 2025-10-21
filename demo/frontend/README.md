@@ -6,7 +6,7 @@ capabilities of the Embrace Web SDK and web-cli tools.
 ## ⏩ Quick Start
 
 ```bash
-npm install && npm run demo
+npm ci && npm run demo
 ```
 
 ## What This Demo Includes
@@ -37,7 +37,7 @@ npm install && npm run demo
 
 > 💡 **Note**: The demo will automatically create an empty `.env` file if you
 > don't have one. Add your Embrace App ID to start sending data to the
-> dashboard. Otherwise, the demo will run in browser console mode only.
+> dashboard. Otherwise, the demo will run in browser console-only mode.
 
 ## 🚀 Run the Demo
 

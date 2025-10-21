@@ -5,6 +5,7 @@ import type { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender';
+import logo from '../public/logo.png';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -230,7 +231,7 @@ const App = () => {
   return (
     <div className="container">
       <a href="./" className="logo-link">
-        <img src="./logo.png" alt="Embrace" />
+        <img src={logo} alt="Embrace" />
       </a>
       <div className={styles.sessionInfo}>
         <div className={styles.sessionRow}>

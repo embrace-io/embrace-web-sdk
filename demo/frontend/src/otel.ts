@@ -1,7 +1,7 @@
 import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
+import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
-import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;

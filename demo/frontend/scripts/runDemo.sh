@@ -31,7 +31,7 @@ npm run clean --prefix ../..
 
 # compile sdk and build demo
 npm ci --prefix ../..
-npm run build
+VITE_BASE_URL=/embrace-web-sdk/ npm run build
 
 # add env vars from .env file to the current environment
 export $(grep -v '^#' .env | xargs)
@@ -42,4 +42,4 @@ if [ -n "$VITE_APP_ID" ]; then
     npm run demo:frontend:upload:sourcemaps -- -a $VITE_APP_ID -p ./dist/assets --no-upload
 fi
 
-npm run demo:frontend:preview
+VITE_BASE_URL=/embrace-web-sdk/ npm run demo:frontend:preview

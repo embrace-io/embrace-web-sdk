@@ -1,4 +1,7 @@
-import React, { StrictMode } from 'react';
+/// <reference types="vite/client" />
+import { withEmbraceRoutingLegacy } from '@embrace-io/web-sdk/react-instrumentation';
+import { createBrowserHistory } from 'history';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   Route,
@@ -7,12 +10,12 @@ import {
   useHistory,
   useParams,
 } from 'react-router-domv4v5';
-import { withEmbraceRoutingLegacy } from '@embrace-io/web-sdk/react-instrumentation';
-import { createBrowserHistory } from 'history';
+import logo from '../public/logo.png';
 import '../src/index.css';
-import { init, getBasename, exit } from '../src/utils';
+import { setupOTel } from '../src/otel';
+import { getBasename } from '../src/utils';
 
-init();
+setupOTel();
 
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 const history = createBrowserHistory({
@@ -95,7 +98,7 @@ const App = () => {
       </a>
       <div className="container">
         <a href={import.meta.env.BASE_URL} className="logo-link">
-          <img src="../logo.png" alt="Embrace" />
+          <img src={logo} alt="Embrace" />
         </a>
         <h1>React Router v4/v5</h1>
         <Router history={history}>
