@@ -16,19 +16,20 @@
 
 ## Commits, Pull Requests, Branches
 
-**Title Format**: `(type)[(scope)]: imperative-subject`
+**Title Format**: `EMBR-(ticketnumber) (type)[(scope)]: imperative-subject`
 - Max 150 chars, abbreviate when clear (e.g., "semconv")
 - Types: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
-- Examples: `fix(session): prevent race condition in tab tracking`, `chore(document-load): align resource attributes with semconv`
+- Ticket number is optional, ask for it
+- Examples: `EMBR-1234 fix(session): prevent race condition in tab tracking`, `chore(document-load): align resource attributes with semconv`
 
 **Branches**
 - Ask for ticket number and description
 - If ticket: (gituser)/(type)/EMBR-(ticketnumber)-(three-word-description)
 - If no ticket: (gituser)/(type)/((three-word-description)
 
-**Commits**: Title only, no body/description
+**Commits**: Title only, no body, no ticket number, no Claude credits
 
-**PRs**: Title + 3-section body
+**PRs**: Title + 3-section body (no Claude credits, keep human co-authors)
 ```markdown
 ## Why
 [One sentence problem statement + benefit. Explain impact, not restate changes.]
@@ -40,11 +41,10 @@
 - [Test approach and verification steps.]
 ```
 
-**Rules**:
+**PR Style**:
 - Keep it scannable - short sentences, clear bullets
 - Quantify when relevant ("5 attributes", "3 files")
 - No marketing language or superlatives
-- Do NOT include Claude credits
 - After commit, if PR exists, update body with details
 
 ## Architecture
