@@ -1,10 +1,11 @@
 import { log, session, trace } from '@embrace-io/web-sdk';
 import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
-import { Span } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender';
+import logo from './logo.png';
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -229,7 +230,9 @@ const App = () => {
 
   return (
     <div className="container">
-      <h1>[••] demo</h1>
+      <a href="./" className="logo-link">
+        <img src={logo} alt="Embrace" />
+      </a>
       <div className={styles.sessionInfo}>
         <div className={styles.sessionRow}>
           <span className={styles.sessionLabel}>Session ID:</span>

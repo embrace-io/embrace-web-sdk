@@ -1,18 +1,21 @@
-import React, { StrictMode, useEffect } from 'react';
+/// <reference types="vite/client" />
+import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
+import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   createBrowserRouter,
-  RouterProvider,
   matchRoutes,
+  Outlet,
+  RouterProvider,
   useNavigate,
   useParams,
-  Outlet,
 } from 'react-router-domv6plus';
-import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
+import logo from '../src/logo.png';
 import '../src/index.css';
-import { init, getBasename, exit } from '../src/utils';
+import { getBasename } from '../src/utils';
+import { setupOTel } from '../src/otel';
 
-init();
+setupOTel();
 
 const Home = () => {
   const navigate = useNavigate();
@@ -152,8 +155,10 @@ const App = () => {
         <span>Exit Router Demo</span>
       </a>
       <div className="container">
-        <h1>[••] demo</h1>
-        <h2>React Router v6 Data API</h2>
+        <a href={import.meta.env.BASE_URL} className="logo-link">
+          <img src={logo} alt="Embrace" />
+        </a>
+        <h1>React Router v6 Data API</h1>
         <RouterProvider router={router} />
       </div>
     </>

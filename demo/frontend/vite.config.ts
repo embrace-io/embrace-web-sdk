@@ -8,6 +8,8 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 export default defineConfig({
   base: process.env.VITE_BASE_URL || '/',
   plugins: [Sonda({ enabled: false })],
+  // In development, alias SDK imports to local source files for live editing.
+  // In production, use the installed package from node_modules.
   resolve: isDevelopment
     ? {
         alias: {
@@ -36,20 +38,6 @@ export default defineConfig({
       },
       output: {
         sourcemapDebugIds: true,
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@opentelemetry')) {
-              return 'opentelemetry';
-            }
-            if (id.includes('react')) {
-              return 'react';
-            }
-
-            // All other node_modules go into 'vendor'
-            return 'vendor';
-          }
-          return null;
-        },
       },
     },
   },
