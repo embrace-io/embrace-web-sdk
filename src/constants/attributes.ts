@@ -21,7 +21,6 @@ export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
 export const KEY_EMB_FROM_STORAGE = 'emb.from_storage';
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
-export const KEY_VIEW_NAME = 'view.name';
 export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
 export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
 export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
@@ -33,7 +32,6 @@ export const KEY_EMB_PAGE_ID = 'app.surface.id';
 
 export enum EMB_TYPES {
   Session = 'ux.session',
-  View = 'ux.view',
   Network = 'perf.network_request',
   Perf = 'perf',
   SystemLog = 'sys.log', // SystemLog is a log emb type that tells the Embrace BE to treat this as an Embrace Log to be shown in the dashboard.
@@ -41,6 +39,7 @@ export enum EMB_TYPES {
   WebVital = 'ux.web_vital',
   ResourceFetch = 'ux.resource_fetch',
   DocumentLoad = 'ux.document_load',
+  Surface = 'ux.surface',
 }
 
 export enum EMB_STATES {
