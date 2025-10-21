@@ -94,8 +94,10 @@ const App = () => {
         <span>Exit Router Demo</span>
       </a>
       <div className="container">
-        <h1>[••] demo</h1>
-        <h2>React Router v4/v5</h2>
+        <a href={import.meta.env.BASE_URL} className="logo-link">
+          <img src="../logo.png" alt="Embrace" />
+        </a>
+        <h1>React Router v4/v5</h1>
         <Router history={history}>
           <Switch>
             <EmbraceRoute exact path="/" component={Home} />

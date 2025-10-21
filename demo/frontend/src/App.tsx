@@ -1,7 +1,7 @@
 import { log, session, trace } from '@embrace-io/web-sdk';
 import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
-import { Span } from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import styles from './App.module.css';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender';
@@ -229,7 +229,9 @@ const App = () => {
 
   return (
     <div className="container">
-      <h1>[••] demo</h1>
+      <a href="./" className="logo-link">
+        <img src="./logo.png" alt="Embrace" />
+      </a>
       <div className={styles.sessionInfo}>
         <div className={styles.sessionRow}>
           <span className={styles.sessionLabel}>Session ID:</span>

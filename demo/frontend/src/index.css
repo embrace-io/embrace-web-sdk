@@ -46,7 +46,7 @@ body {
 h1 {
   font-size: 2rem;
   line-height: 1.2;
-  margin: 0 0 2rem 0;
+  margin: 0 0 1rem 0;
   color: #eeff04;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -171,6 +171,25 @@ legend {
   background: #eeff04;
   border-radius: 20px;
   border: 1px solid rgba(238, 255, 4, 0.4);
+}
+
+.logo-link {
+  grid-column: 1 / -1;
+  display: block;
+  border: none;
+  text-decoration: none;
+  margin: 0 auto 2rem;
+  width: fit-content;
+}
+
+.logo-link:hover {
+  border: none;
+  opacity: 0.8;
+}
+
+.logo-link img {
+  display: block;
+  height: 4rem;
 }
 
 .exit-link {

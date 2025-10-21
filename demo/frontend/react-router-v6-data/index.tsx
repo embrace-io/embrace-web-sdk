@@ -152,8 +152,10 @@ const App = () => {
         <span>Exit Router Demo</span>
       </a>
       <div className="container">
-        <h1>[••] demo</h1>
-        <h2>React Router v6 Data API</h2>
+        <a href={import.meta.env.BASE_URL} className="logo-link">
+          <img src="../logo.png" alt="Embrace" />
+        </a>
+        <h1>React Router v6 Data API</h1>
         <RouterProvider router={router} />
       </div>
     </>
