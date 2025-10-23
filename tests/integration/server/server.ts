@@ -114,7 +114,7 @@ const server = createServer((req, res) => {
 
   if (req.url?.includes('public')) {
     const url = new URL(
-      `http://${process.env.HOST ?? 'localhost'}${req.url ?? '/'}`
+      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`
     );
     const filePath = join(__dirname, url.pathname);
 
