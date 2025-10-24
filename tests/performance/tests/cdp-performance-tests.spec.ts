@@ -207,7 +207,7 @@ test.describe('CDP Performance Tests', () => {
               const json = result.toString('utf-8');
 
               fs.writeFileSync(
-                `./test-results/cdp-performance-tests-${new Date().getTime().toString()}-request.json`,
+                `./test-results/cdp-performance-tests-${Date.now().toString()}-request.json`,
                 JSON.stringify(JSON.parse(json), null, 2),
               );
             } catch (e) {

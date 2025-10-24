@@ -90,7 +90,7 @@ const findJSFilesRecursively = (
 
   // Process JS files in current directory
   for (const jsFile of jsFiles) {
-    const mapFile = jsFile + '.map';
+    const mapFile = `${jsFile}.map`;
     const jsFilePath = path.join(dirPath, jsFile);
     const mapFilePath = path.join(dirPath, mapFile);
 

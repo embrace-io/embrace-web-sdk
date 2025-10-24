@@ -7,7 +7,7 @@ const filterBrowserLogs = ({ args, type }) => {
   if (
     args.some(
       (arg) =>
-        typeof arg == 'string' && arg.includes('GlobalExceptionTestErrorName'),
+        typeof arg === 'string' && arg.includes('GlobalExceptionTestErrorName'),
     )
   ) {
     return false;

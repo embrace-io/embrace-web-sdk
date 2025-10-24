@@ -56,7 +56,7 @@ export const withEmbraceRouting = <P extends object>(
       props,
     ) as unknown as RoutesFunctionalComponentReturn;
 
-    if (matchedComponent.props.match && matchedComponent.props.match.route) {
+    if (matchedComponent.props.match?.route) {
       const lastRoute = getLastRoute(matchedComponent, null);
       if (lastRoute) {
         navigationInstrumentation.setCurrentRoute(lastRoute);

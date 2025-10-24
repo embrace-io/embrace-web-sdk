@@ -138,7 +138,7 @@ export class EmbraceSpanStorage {
         const parts = key.split('_');
         const storedTime = parseInt(parts[parts.length - 1], 10);
 
-        if (isNaN(storedTime)) {
+        if (Number.isNaN(storedTime)) {
           this._diag.error(
             'Found invalid timestamp in stored span:',
             storedTime,
@@ -186,7 +186,7 @@ export class EmbraceSpanStorage {
     const keys: string[] = [];
     for (let i = 0; i < this._storage.length; i++) {
       const key = this._storage.key(i);
-      if (key && key.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
+      if (key?.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
         keys.push(key);
       }
     }

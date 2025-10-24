@@ -60,7 +60,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       // When switching to visible, we want to trigger the event immediately
       if (
         visibilityDoc.visibilityState === 'visible' &&
-        this._currentVisibilityState != visibilityDoc.visibilityState
+        this._currentVisibilityState !== visibilityDoc.visibilityState
       ) {
         this._currentVisibilityState = visibilityDoc.visibilityState;
         this._onVisibilityChange();
@@ -71,7 +71,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`,
       );
       this._checkVisibilityTimeout = setTimeout(() => {
-        if (this._currentVisibilityState != visibilityDoc.visibilityState) {
+        if (this._currentVisibilityState !== visibilityDoc.visibilityState) {
           this._currentVisibilityState = visibilityDoc.visibilityState;
           this._onVisibilityChange();
         } else {

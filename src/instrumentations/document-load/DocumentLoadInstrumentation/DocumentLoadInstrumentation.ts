@@ -131,7 +131,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
     const entries = getPerformanceNavigationEntries();
-    const traceparent = (metaElement && metaElement.content) || '';
+    const traceparent = metaElement?.content || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,

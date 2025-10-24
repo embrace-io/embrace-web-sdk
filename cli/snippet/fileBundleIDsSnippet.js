@@ -23,7 +23,7 @@
       globalObj._EmbraceFileBundleIDs[stack] =
         '${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}';
     }
-  } catch (e) {
+  } catch (_e) {
     // Silently ignore errors
   }
 })();

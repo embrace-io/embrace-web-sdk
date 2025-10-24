@@ -1270,7 +1270,7 @@ describe('EmbraceSpanSessionManager', () => {
             expected: 'external',
           },
           {
-            referrer: window.location.origin + '/page',
+            referrer: `${window.location.origin}/page`,
             navType: 'navigate',
             expected: 'same_origin',
           },

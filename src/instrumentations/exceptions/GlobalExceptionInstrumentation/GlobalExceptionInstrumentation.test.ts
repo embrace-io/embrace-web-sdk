@@ -68,7 +68,7 @@ describe('GlobalExceptionInstrumentation', () => {
     ) => {
       if (
         error?.name !== 'GlobalExceptionTestErrorName' &&
-        event != 'global exception test error message'
+        event !== 'global exception test error message'
       ) {
         existingErrorHandler?.call(window, event, source, lineno, colno, error);
       }

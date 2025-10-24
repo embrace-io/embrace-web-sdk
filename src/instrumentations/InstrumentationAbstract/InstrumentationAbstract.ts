@@ -168,7 +168,7 @@ export abstract class InstrumentationAbstract<
     // NOTE: disabling typescript check, as this class was copied from OTel repo.
     // I agree with typescript here, but keeping it disabled for consistency with the base repo
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void;
+    | undefined;
 
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {

@@ -149,7 +149,7 @@ describe('EmbraceSpanStorage', () => {
       let foundOverLimitKey = false;
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
-        if (key && key.includes('sessionOverLimit')) {
+        if (key?.includes('sessionOverLimit')) {
           foundOverLimitKey = true;
           break;
         }

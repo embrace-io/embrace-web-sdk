@@ -67,7 +67,7 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.url == '/received-spans') {
+  if (req.url === '/received-spans') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
 
