@@ -152,8 +152,11 @@ const App = () => {
   );
 };
 
-createRoot(document.getElementById('root') as HTMLElement).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
