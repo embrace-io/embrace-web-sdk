@@ -39,8 +39,8 @@ interface SDKControl {
 declare global {
   interface Window {
     EmbraceWebSdkOnReady: {
-      q: Function[];
-      onReady: (fn: Function) => void;
+      q: Array<() => void>;
+      onReady: (fn: () => void) => void;
     };
 
     EmbraceWebSdk: {
