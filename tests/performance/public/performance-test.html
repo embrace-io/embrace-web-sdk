@@ -41,7 +41,9 @@
           script.defer = true;
           script.src = '/embrace-web-sdk.js';
           script.onload = () => {
-            window.EmbraceWebSdkOnReady.q.forEach(fn => fn());
+            window.EmbraceWebSdkOnReady.q.forEach(fn => {
+              fn();
+            });
             window.EmbraceWebSdkOnReady.q = [];
             // Call onReady immediately if the SDK is already loaded
             window.EmbraceWebSdkOnReady.onReady = (fn) => {

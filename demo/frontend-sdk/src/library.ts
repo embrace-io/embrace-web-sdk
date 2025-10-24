@@ -8,13 +8,13 @@ window.EmbraceWebSdkOnReady.onReady(() => {
   window.EmbraceWebSdkOnReady.onReady(() => {
     console.log('Embrace is ready inside the SDK');
 
-    sdkControl!.log.message(
+    sdkControl?.log.message(
       'Embrace initialized successfully inside the SDK',
       'info',
     );
 
     const onLogClick = () => {
-      sdkControl!.log.message('Button clicked inside the SDK', 'info');
+      sdkControl?.log.message('Button clicked inside the SDK', 'info');
     };
 
     const button = document.createElement('button');
