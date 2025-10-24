@@ -29,9 +29,9 @@ jobs:
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
         with:
-          node-version: '24.10.0'
+          node-version: "24.10.0"
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
       - name: Update package.json version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

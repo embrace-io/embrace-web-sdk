@@ -1,60 +1,60 @@
-name-template: '$RESOLVED_VERSION'
-tag-template: '$RESOLVED_VERSION'
+name-template: "$RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
 
 exclude-labels:
-  - 'release'
+  - "release"
 
 categories:
-  - title: '⚠️ BREAKING CHANGES'
+  - title: "⚠️ BREAKING CHANGES"
     collapse-after: 5
     labels:
-      - 'breaking'
-  - title: '🧰 Maintenance'
+      - "breaking"
+  - title: "🧰 Maintenance"
     collapse-after: 5
     labels:
-      - 'maintenance'
-  - title: '🐛 Bug Fixes'
+      - "maintenance"
+  - title: "🐛 Bug Fixes"
     collapse-after: 5
     labels:
-      - 'fix'
-  - title: '🚀 Features'
+      - "fix"
+  - title: "🚀 Features"
     collapse-after: 5
     labels:
-      - 'feat'
+      - "feat"
 
 version-resolver:
   major:
     labels:
-      - 'semver-major'
+      - "semver-major"
   minor:
     labels:
-      - 'semver-minor'
+      - "semver-minor"
   patch:
     labels:
-      - 'semver-patch'
-      - 'dependencies'
+      - "semver-patch"
+      - "dependencies"
   default: patch
 
 autolabeler:
-  - label: 'maintenance'
+  - label: "maintenance"
     title:
       - '/(EMBR-[0-9]+\s+)?(build|ci|docs|style|refactor|perf|test|chore|deploy).*/'
-  - label: 'fix'
+  - label: "fix"
     title:
       - '/(EMBR-[0-9]+\s+)?(fix|revert).*/'
-  - label: 'feat'
+  - label: "feat"
     title:
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  - label: 'breaking'
+  - label: "breaking"
     title:
       - '/(EMBR-[0-9]+\s+)?(breaking).*/'
-  - label: 'semver-major'
+  - label: "semver-major"
     title: # SAME AS 'breaking'
       - '/(EMBR-[0-9]+\s+)?(breaking).*/'
-  - label: 'semver-minor'
+  - label: "semver-minor"
     title: # SAME AS 'feat'
       - '/(EMBR-[0-9]+\s+)?(feat).*/'
-  - label: 'semver-patch'
+  - label: "semver-patch"
     title: # SAME AS 'fix or maintenance'
       - '/(EMBR-[0-9]+\s+)?(fix|revert|build|ci|docs|style|refactor|perf|test|chore).*/'
 
