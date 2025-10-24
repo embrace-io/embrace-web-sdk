@@ -129,17 +129,17 @@ const getPerformanceSnapshot = async (
 
 const calculateDifference = (results: Results) =>
   Object.entries(results['with-sdk']).reduce<Record<string, Metric[]>>(
-    (acc, [step, value]) => ({
-      ...acc,
-      [step]: Object.entries(value).map(([metricName, metricValue]) => ({
+    (acc, [step, value]) => {
+      acc[step] = Object.entries(value).map(([metricName, metricValue]) => ({
         value:
           metricValue - results.baseline[step][metricName as PerformanceMetric],
         name: METRIC_NAME_TO_HUMAN_READABLE_MAP[
           metricName as PerformanceMetric
         ],
         unit: METRIC_NAME_UNIT_MAP[metricName as PerformanceMetric],
-      })),
-    }),
+      }));
+      return acc;
+    },
     {},
   );
 
@@ -292,15 +292,12 @@ test.describe('CDP Performance Tests', () => {
     };
 
     const total = Object.values(difference).reduce<Record<string, number>>(
-      (acc, metrics) => ({
-        ...acc,
-        ...Object.fromEntries(
-          metrics.map((metric) => [
-            metric.name,
-            (acc[metric.name] ?? 0) + metric.value,
-          ]),
-        ),
-      }),
+      (acc, metrics) => {
+        for (const metric of metrics) {
+          acc[metric.name] = (acc[metric.name] ?? 0) + metric.value;
+        }
+        return acc;
+      },
       {},
     );
     difference['Total'] = Object.entries(total).map(([name, value]) => ({
@@ -328,15 +325,13 @@ test.describe('CDP Performance Tests', () => {
     console.table([
       ...Object.entries(difference).map(([step, metrics]) => ({
         Step: step,
-        ...Object.values(metrics).reduce(
-          (acc, metric) => ({
-            ...acc,
-            [metric.name]: `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(
+        ...Object.values(metrics).reduce((acc, metric) => {
+          acc[metric.name] =
+            `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(
               2,
-            )}${metric.unit}`,
-          }),
-          {},
-        ),
+            )}${metric.unit}`;
+          return acc;
+        }, {}),
       })),
     ]);
   });

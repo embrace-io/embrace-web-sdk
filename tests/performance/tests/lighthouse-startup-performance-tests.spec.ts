@@ -137,25 +137,23 @@ test.describe('Lighthouse Performance Tests', () => {
   test.afterAll(() => {
     const difference = calculateDifference(results);
     const differenceInMetrics: Record<string, Metric[]> = {
-      ...Object.entries(difference).reduce(
-        (acc, [key, metric]) => ({
-          ...acc,
-          [LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]]:
-            [
-              {
-                value: metric.value,
-                name: 'Difference',
-                unit: 'ms',
-              },
-              {
-                value: metric.description,
-                name: 'Description',
-                unit: '',
-              },
-            ],
-        }),
-        {},
-      ),
+      ...Object.entries(difference).reduce((acc, [key, metric]) => {
+        acc[
+          LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]
+        ] = [
+          {
+            value: metric.value,
+            name: 'Difference',
+            unit: 'ms',
+          },
+          {
+            value: metric.description,
+            name: 'Description',
+            unit: '',
+          },
+        ];
+        return acc;
+      }, {}),
     };
 
     fs.writeFileSync(
