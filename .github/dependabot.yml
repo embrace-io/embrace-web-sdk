@@ -1,13 +1,13 @@
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     cooldown:
       default-days: 5
 
-  - package-ecosystem: "npm"
+  - package-ecosystem: npm
     directories:
       - "/"
       - "/cli"
@@ -15,7 +15,7 @@ updates:
       - "/demo/frontend-cdn"
       - "/demo/frontend-sdk"
     schedule:
-      interval: "weekly"
+      interval: weekly
     cooldown:
       default-days: 5
     open-pull-requests-limit: 5

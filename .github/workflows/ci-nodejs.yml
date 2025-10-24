@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -176,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -279,7 +279,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     permissions:
       pull-requests: write
     steps:
@@ -429,7 +429,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -566,7 +566,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -603,7 +603,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous lint results
         uses: actions/cache@v4
@@ -657,7 +657,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous type check results
         uses: actions/cache@v4
@@ -713,7 +713,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - name: Restore previous validate results
         uses: actions/cache@v4
@@ -792,7 +792,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -803,7 +803,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          registry-url: "https://registry.npmjs.org"
+          registry-url: https://registry.npmjs.org
 
       - name: Install NPM dependencies
         run: |
@@ -832,7 +832,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
+        node-version: [needs.configure.outputs.NODE_VERSION]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -843,7 +843,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          registry-url: "https://registry.npmjs.org"
+          registry-url: https://registry.npmjs.org
 
       - name: Install NPM dependencies
         run: |
