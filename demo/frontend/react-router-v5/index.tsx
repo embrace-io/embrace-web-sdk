@@ -30,13 +30,16 @@ const Home = () => {
       <legend>Home Page</legend>
       <div className="nav-buttons">
         <button
+          type="button"
           onClick={() =>
             history.push(`/product/${Math.floor(Math.random() * 100)}`)
           }
         >
           Go to Product Page
         </button>
-        <button onClick={() => history.push('/about')}>Go to About Page</button>
+        <button type="button" onClick={() => history.push('/about')}>
+          Go to About Page
+        </button>
       </div>
       <p>React Router v4/v5 Demo</p>
     </fieldset>
@@ -51,8 +54,12 @@ const Product = () => {
     <fieldset style={{ gridColumn: '1 / -1' }}>
       <legend>Product Page</legend>
       <div className="nav-buttons">
-        <button onClick={() => history.push('/')}>Go to Home Page</button>
-        <button onClick={() => history.push('/about')}>Go to About Page</button>
+        <button type="button" onClick={() => history.push('/')}>
+          Go to Home Page
+        </button>
+        <button type="button" onClick={() => history.push('/about')}>
+          Go to About Page
+        </button>
       </div>
       <p>Product ID: {id}</p>
     </fieldset>
@@ -66,7 +73,9 @@ const About = () => {
     <fieldset style={{ gridColumn: '1 / -1' }}>
       <legend>About Page</legend>
       <div className="nav-buttons">
-        <button onClick={() => history.push('/')}>Go to Home Page</button>
+        <button type="button" onClick={() => history.push('/')}>
+          Go to Home Page
+        </button>
       </div>
       <h3>React Router v4/v5 Instrumentation</h3>
       <p>

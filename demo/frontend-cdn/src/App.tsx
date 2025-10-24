@@ -41,7 +41,7 @@ const App = () => {
       }, 1000),
     );
     return () => window.clearInterval(sessionRefresher);
-  }, [initialized]);
+  }, [sessionRefresher]);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -177,89 +177,100 @@ const App = () => {
   const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
 
   return (
-    <>
-      <div className={styles.container}>
-        Demo
-        <div>current session: {currentSession}</div>
-        <div className={styles.actions}>
-          <button
-            onClick={handleStartSessionSpan}
-            disabled={isSessionSpanStarted}
-          >
-            Start Session span
-          </button>
-          <button
-            onClick={handleStartSessionSpan}
-            disabled={!isSessionSpanStarted}
-          >
-            Override Session span
-          </button>
-          <button onClick={handleEndSessionSpan}>End Session Span</button>
-        </div>
+    <div className={styles.container}>
+      Demo
+      <div>current session: {currentSession}</div>
+      <div className={styles.actions}>
         <button
-          onClick={handleStartSpan}
-          disabled={sessionProvider.getSessionSpan() === null}
+          type="button"
+          onClick={handleStartSessionSpan}
+          disabled={isSessionSpanStarted}
         >
-          Start Span
+          Start Session span
         </button>
         <button
-          onClick={handleSendLog}
-          disabled={sessionProvider.getSessionSpan() === null}
+          type="button"
+          onClick={handleStartSessionSpan}
+          disabled={!isSessionSpanStarted}
         >
-          Send Log
+          Override Session span
         </button>
-        <button
-          onClick={handleSendErrorLog}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Send Error Log
+        <button type="button" onClick={handleEndSessionSpan}>
+          End Session Span
         </button>
-        <button
-          onClick={handleRecordException}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Record Exception
-        </button>
-        <button
-          onClick={handleThrowError}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Throw Error
-        </button>
-        <button
-          onClick={handleRejectPromise}
-          disabled={sessionProvider.getSessionSpan() === null}
-        >
-          Reject Promise
-        </button>
-        <button onClick={handleSendFetchNetworkRequest}>
-          Send a Fetch Network Request
-        </button>
-        <button onClick={handleSendFetchNetworkRequest404}>
-          Send a Fetch Network Request (404)
-        </button>
-        <button disabled={!!counter} onClick={handleCreateCounter}>
-          {counter ? 'counter created' : 'Create Counter'}
-        </button>
-        <button disabled={!counter} onClick={handleIncreaseCounter}>
-          Increase Counter
-        </button>
-        <button onClick={handleSendXMLNetworkRequest}>
-          Send a XML Network Request
-        </button>
-        <div className={styles.spans}>
-          {spans.map((span, index) => (
-            <div className={styles.span} key={index}>
-              <div>Span {index}</div>
-
-              <button onClick={() => handleEndSpan(span, index)}>
-                End Span
-              </button>
-            </div>
-          ))}
-        </div>
       </div>
-    </>
+      <button
+        type="button"
+        onClick={handleStartSpan}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Start Span
+      </button>
+      <button
+        type="button"
+        onClick={handleSendLog}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Send Log
+      </button>
+      <button
+        type="button"
+        onClick={handleSendErrorLog}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Send Error Log
+      </button>
+      <button
+        type="button"
+        onClick={handleRecordException}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Record Exception
+      </button>
+      <button
+        type="button"
+        onClick={handleThrowError}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Throw Error
+      </button>
+      <button
+        type="button"
+        onClick={handleRejectPromise}
+        disabled={sessionProvider.getSessionSpan() === null}
+      >
+        Reject Promise
+      </button>
+      <button type="button" onClick={handleSendFetchNetworkRequest}>
+        Send a Fetch Network Request
+      </button>
+      <button type="button" onClick={handleSendFetchNetworkRequest404}>
+        Send a Fetch Network Request (404)
+      </button>
+      <button type="button" disabled={!!counter} onClick={handleCreateCounter}>
+        {counter ? 'counter created' : 'Create Counter'}
+      </button>
+      <button type="button" disabled={!counter} onClick={handleIncreaseCounter}>
+        Increase Counter
+      </button>
+      <button type="button" onClick={handleSendXMLNetworkRequest}>
+        Send a XML Network Request
+      </button>
+      <div className={styles.spans}>
+        {spans.map((span, index) => (
+          <div
+            className={styles.span}
+            key={`span-${span.spanContext().spanId}`}
+          >
+            <div>Span {index}</div>
+
+            <button type="button" onClick={() => handleEndSpan(span, index)}>
+              End Span
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 

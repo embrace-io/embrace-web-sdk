@@ -27,13 +27,16 @@ const Home = () => {
       <legend>Home Page</legend>
       <div className="nav-buttons">
         <button
+          type="button"
           onClick={() =>
             navigate(`/product/${Math.floor(Math.random() * 100)}`)
           }
         >
           Go to Product Page
         </button>
-        <button onClick={() => navigate('/about')}>Go to About Page</button>
+        <button type="button" onClick={() => navigate('/about')}>
+          Go to About Page
+        </button>
       </div>
       <p>React Router v6 Declarative Demo</p>
     </fieldset>
@@ -48,11 +51,17 @@ const Product = () => {
     <fieldset style={{ gridColumn: '1 / -1' }}>
       <legend>Product Page</legend>
       <div className="nav-buttons">
-        <button onClick={() => navigate('/')}>Go to Home Page</button>
-        <button onClick={() => navigate('/about')}>Go to About Page</button>
+        <button type="button" onClick={() => navigate('/')}>
+          Go to Home Page
+        </button>
+        <button type="button" onClick={() => navigate('/about')}>
+          Go to About Page
+        </button>
       </div>
       <p>Product ID: {id}</p>
-      <button onClick={() => navigate('comments')}>See Comments</button>
+      <button type="button" onClick={() => navigate('comments')}>
+        See Comments
+      </button>
       <Outlet />
     </fieldset>
   );
@@ -75,7 +84,9 @@ const ProductComments = () => {
       </h3>
       <p>This is a nested route example</p>
       <div className="nav-buttons">
-        <button onClick={() => navigate('..')}>Close Comments</button>
+        <button type="button" onClick={() => navigate('..')}>
+          Close Comments
+        </button>
       </div>
     </div>
   );
@@ -88,7 +99,9 @@ const About = () => {
     <fieldset style={{ gridColumn: '1 / -1' }}>
       <legend>About Page</legend>
       <div className="nav-buttons">
-        <button onClick={() => navigate('/')}>Go to Home Page</button>
+        <button type="button" onClick={() => navigate('/')}>
+          Go to Home Page
+        </button>
       </div>
       <h3>React Router v6 Declarative Instrumentation</h3>
       <p>
@@ -139,7 +152,7 @@ const App = () => {
   );
 };
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root') as HTMLElement).render(
   <StrictMode>
     <App />
   </StrictMode>,
