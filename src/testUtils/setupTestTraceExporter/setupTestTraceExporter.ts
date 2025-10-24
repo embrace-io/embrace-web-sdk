@@ -11,7 +11,7 @@ import {
  * It returns an instance of InMemorySpanExporter, hooked into a SimpleSpanProcessor, and a WebTracerProvider.
  * */
 export const setupTestTraceExporter = (
-  spanProcessors: SpanProcessor[] = []
+  spanProcessors: SpanProcessor[] = [],
 ) => {
   const memoryExporter = new InMemorySpanExporter();
   const tracerProvider = new WebTracerProvider({

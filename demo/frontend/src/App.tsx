@@ -361,7 +361,7 @@ const App = () => {
             onClick={() =>
               handleAddPermanentSessionProperty(
                 'permanent-key',
-                'permanent-value'
+                'permanent-value',
               )
             }
             disabled={sessionProvider.getSessionSpan() === null}
@@ -485,7 +485,7 @@ const App = () => {
         <div className={styles.actions}>
           <a href="https://google.com">Navigate to google.com</a>
           <a href="./">Open demo in same tab</a>
-          <a href="./" target="_blank">
+          <a href="./" target="_blank" rel="noopener">
             Open demo in new tab
           </a>
         </div>

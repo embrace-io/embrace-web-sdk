@@ -25,7 +25,7 @@ export const setupDefaultInstrumentations = (
     spanSessionManager,
     embraceSpanProcessor,
     pageManager,
-  }: SetupDefaultInstrumentationsArgs = {}
+  }: SetupDefaultInstrumentationsArgs = {},
 ): Instrumentation[] => {
   /*
     These instrumentations are core to managing the session lifecycle and so are not optional
@@ -34,7 +34,7 @@ export const setupDefaultInstrumentations = (
     new SpanSessionOnLoadInstrumentation(config['session-on-load']),
     new SpanSessionVisibilityInstrumentation(
       config['session-visibility'],
-      embraceSpanProcessor
+      embraceSpanProcessor,
     ),
     new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
     new SpanSessionTimeoutInstrumentation(config['session-timeout']),
@@ -42,7 +42,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('exception')) {
     instrumentations.push(
-      new GlobalExceptionInstrumentation(config['exception'])
+      new GlobalExceptionInstrumentation(config['exception']),
     );
   }
 
@@ -52,13 +52,13 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('web-vital')) {
     instrumentations.push(
-      new WebVitalsInstrumentation({ ...config['web-vital'], pageManager })
+      new WebVitalsInstrumentation({ ...config['web-vital'], pageManager }),
     );
   }
 
   if (!config.omit?.has('document-load')) {
     instrumentations.push(
-      new DocumentLoadInstrumentation(config['document-load'])
+      new DocumentLoadInstrumentation(config['document-load']),
     );
   }
 
@@ -67,7 +67,7 @@ export const setupDefaultInstrumentations = (
       new EmbraceFetchInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-fetch'],
-      })
+      }),
     );
   }
 
@@ -76,13 +76,13 @@ export const setupDefaultInstrumentations = (
       new EmbraceXHRInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-xml-http-request'],
-      })
+      }),
     );
   }
 
   if (config['empty-root']) {
     instrumentations.push(
-      new EmptyRootInstrumentation({ ...config['empty-root'] })
+      new EmptyRootInstrumentation({ ...config['empty-root'] }),
     );
   }
 

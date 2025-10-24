@@ -58,11 +58,11 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
                 element,
                 innerTextForElement
                   ? innerTextForElement(element)
-                  : element.innerText
+                  : element.innerText,
               ),
               'tap.coords': `${event.x.toString()},${event.y.toString()}`,
             },
-            this.perf.epochMillisFromOriginOffset(event.timeStamp)
+            this.perf.epochMillisFromOriginOffset(event.timeStamp),
           );
         }
       } catch (e) {

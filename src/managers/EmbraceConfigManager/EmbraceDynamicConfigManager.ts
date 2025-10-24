@@ -1,19 +1,19 @@
-import type {
-  RemoteConfig,
-  EmbraceDynamicConfigManagerArgs,
-  StoredRemoteConfig,
-} from './types.js';
-import { getConfigURL } from './utils.js';
-import { diag } from '@opentelemetry/api';
 import type { DiagLogger } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
+import type {
+  DynamicConfigManager,
+  DynamicSDKConfig,
+} from '../../sdk/index.js';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
 } from './constants.js';
 import type {
-  DynamicConfigManager,
-  DynamicSDKConfig,
-} from '../../sdk/index.js';
+  EmbraceDynamicConfigManagerArgs,
+  RemoteConfig,
+  StoredRemoteConfig,
+} from './types.js';
+import { getConfigURL } from './utils.js';
 
 const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
   const parsed: DynamicSDKConfig = {
@@ -58,7 +58,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
           // TODO: Replace with actual OS version once we start capturing it
           osVersion: '1',
         },
-        embraceConfigURL
+        embraceConfigURL,
       );
     }
 
@@ -102,7 +102,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
 
     try {
       const remoteConfigResponse = await this._fetchRemoteConfig(
-        this._remoteConfigURL
+        this._remoteConfigURL,
       );
 
       if (!remoteConfigResponse) {
@@ -116,14 +116,14 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
         JSON.stringify({
           config: remoteConfig,
           etag,
-        } as StoredRemoteConfig)
+        } as StoredRemoteConfig),
       );
 
       this._sdkConfig = parseRemoteConfig(remoteConfig);
       this._etag = etag;
     } catch (error: unknown) {
       this._diag.warn(
-        `Failed to refresh remote config: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to refresh remote config: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -131,7 +131,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   private _getRemoteConfigFromStorage(): StoredRemoteConfig | null {
     try {
       const configString = this._storage.getItem(
-        LOCAL_STORAGE_REMOTE_CONFIG_KEY
+        LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       );
 
       if (configString) {
@@ -141,7 +141,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
       return null;
     } catch (error) {
       this._diag.warn(
-        `Failed to parse remote config from storage: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to parse remote config from storage: ${error instanceof Error ? error.message : String(error)}`,
       );
 
       return null;
@@ -149,7 +149,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   }
 
   private async _fetchRemoteConfig(
-    url: string
+    url: string,
   ): Promise<[RemoteConfig, string | null] | null> {
     const response = await fetch(url, {
       headers: this._etag ? { 'If-None-Match': this._etag } : {},
@@ -164,7 +164,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
 
     if (!response.ok) {
       this._diag.warn(
-        `Failed to fetch remote config from ${url}: ${response.statusText}`
+        `Failed to fetch remote config from ${url}: ${response.statusText}`,
       );
 
       return null;

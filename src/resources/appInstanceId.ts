@@ -1,10 +1,10 @@
-import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.js';
-import { generateUUID } from '../utils/index.js';
 import type { DiagLogger } from '@opentelemetry/api';
+import { generateUUID } from '../utils/index.js';
+import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.js';
 
 export const getAppInstanceId = (
   pageSessionStorage: Storage,
-  diag: DiagLogger
+  diag: DiagLogger,
 ): string => {
   let id = null;
   try {
@@ -15,7 +15,7 @@ export const getAppInstanceId = (
 
   if (!id) {
     diag.debug(
-      'No existing app instance ID found in session storage, creating a new one'
+      'No existing app instance ID found in session storage, creating a new one',
     );
     id = generateUUID();
     try {

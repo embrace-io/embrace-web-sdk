@@ -1,6 +1,6 @@
-import type { SDKFeaturesManager, SDKFeaturesManagerArgs } from './types.js';
 import type { DynamicConfigManager } from '../../sdk/index.js';
 import { isDeviceIdEnabled } from '../../utils/index.js';
+import type { SDKFeaturesManager, SDKFeaturesManagerArgs } from './types.js';
 
 export class EmbraceSDKFeaturesManager implements SDKFeaturesManager {
   private readonly _dynamicConfigManager: DynamicConfigManager;
@@ -32,7 +32,7 @@ export class EmbraceSDKFeaturesManager implements SDKFeaturesManager {
 
     return isDeviceIdEnabled(
       this._deviceId,
-      config.networkSpansForwardingThreshold
+      config.networkSpansForwardingThreshold,
     );
   }
 }

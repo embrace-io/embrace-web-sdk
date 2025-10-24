@@ -26,7 +26,7 @@ export class ProxyLogManager implements LogManager {
   public message(
     message: string,
     level: LogSeverity,
-    options?: LogMessageOptions
+    options?: LogMessageOptions,
   ) {
     this.getDelegate().message(message, level, options);
   }

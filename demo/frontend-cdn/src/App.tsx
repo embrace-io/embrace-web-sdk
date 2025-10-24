@@ -1,4 +1,5 @@
-import { Counter, metrics, Span, trace } from '@opentelemetry/api';
+import type { Counter, Span } from '@opentelemetry/api';
+import { metrics, trace } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
@@ -22,9 +23,9 @@ const App = () => {
 
   useEffect(() => {
     if (!initialized) {
-      // @ts-ignore
+      // @ts-expect-error
       window.EmbraceWebSdkOnReady.onReady(() => {
-        // @ts-ignore
+        // @ts-expect-error
         sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
         setInitialized(true);
       });
@@ -37,7 +38,7 @@ const App = () => {
         if (sessionProvider) {
           setCurrentSession(sessionProvider.getSessionId());
         }
-      }, 1000)
+      }, 1000),
     );
     return () => window.clearInterval(sessionRefresher);
   }, [initialized]);

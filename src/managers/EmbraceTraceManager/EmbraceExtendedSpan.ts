@@ -36,7 +36,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   public addEvent(
     name: string,
     attributesOrStartTime?: Attributes | TimeInput,
-    startTime?: TimeInput
+    startTime?: TimeInput,
   ): this {
     this._span.addEvent(name, attributesOrStartTime, startTime);
     return this;
@@ -98,7 +98,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   public fail(
     options: ExtendedSpanFailedOptions = {
       code: 'failure',
-    }
+    },
   ): void {
     if (options.code) {
       this._span.setAttribute(KEY_EMB_ERROR_CODE, options.code.toUpperCase());

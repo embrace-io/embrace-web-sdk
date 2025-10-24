@@ -1,5 +1,5 @@
-import { ProxyUserManager } from '../../manager/index.js';
 import type { UserManager } from '../../manager/index.js';
+import { ProxyUserManager } from '../../manager/index.js';
 import type { UserAPIArgs } from './types.js';
 
 export class UserAPI implements UserManager {

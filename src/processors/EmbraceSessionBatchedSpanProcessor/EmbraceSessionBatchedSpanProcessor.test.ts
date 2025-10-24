@@ -1,28 +1,28 @@
+import { trace } from '@opentelemetry/api';
+import type { ExportResult } from '@opentelemetry/core';
+import { ExportResultCode } from '@opentelemetry/core';
+import { emptyResource } from '@opentelemetry/resources';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  mockNetworkRequestSpan,
-  mockSessionSpan,
-  mockSpan,
-} from '../../testUtils/mockEntities/ReadableSpan.js';
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.js';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
-import type { ExportResult } from '@opentelemetry/core';
-import { ExportResultCode } from '@opentelemetry/core';
 import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../managers/index.js';
-import { trace } from '@opentelemetry/api';
-import { emptyResource } from '@opentelemetry/resources';
+  mockNetworkRequestSpan,
+  mockSessionSpan,
+  mockSpan,
+} from '../../testUtils/mockEntities/ReadableSpan.js';
+import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
 
 const { expect } = chai;
 
@@ -36,7 +36,7 @@ class FailingSpanExporter extends InMemorySpanExporter {
 
   public override export(
     _spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
+    resultCallback: (result: ExportResult) => void,
   ) {
     resultCallback({
       code: ExportResultCode.FAILED,
@@ -153,14 +153,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     },
   ];
 
-  exportFailedTests.forEach(test => {
+  exportFailedTests.forEach((test) => {
     it(test.name, async () => {
       spanSessionManager.startSessionSpan();
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
         resource: emptyResource(),
         exporter: new FailingSpanExporter(
-          test.errorMessage ? new Error(test.errorMessage) : undefined
+          test.errorMessage ? new Error(test.errorMessage) : undefined,
         ),
         diag: diagLogger,
         limitManager,
@@ -181,24 +181,24 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       const sessionSpan = finishedSpans[0];
       expect(sessionSpan.attributes).to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`,
-        1
+        1,
       );
       expect(sessionSpan.attributes).not.to.have.property(
-        `emb.previous_export_failed.${test.expectedAttributeSuffix}`
+        `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
       );
 
       const nextSessionSpan = finishedSpans[1];
       expect(nextSessionSpan.attributes).not.to.have.property(
-        `emb.export_failed.${test.expectedAttributeSuffix}`
+        `emb.export_failed.${test.expectedAttributeSuffix}`,
       );
       expect(nextSessionSpan.attributes).to.have.property(
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
-        1
+        1,
       );
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.be.equal(
-        `spans failed to export: ${test.errorMessage || 'unknown error'}`
+        `spans failed to export: ${test.errorMessage || 'unknown error'}`,
       );
     });
   });
@@ -219,7 +219,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     expect(warningLogs).to.have.lengthOf(8);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing span because the maximum number of 2 has already been reached for this session'
+        'disallowing span because the maximum number of 2 has already been reached for this session',
       );
     }
 
@@ -248,7 +248,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     expect(warningLogs).to.have.lengthOf(7);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing network_request because the maximum number of 3 has already been reached for this session'
+        'disallowing network_request because the maximum number of 3 has already been reached for this session',
       );
     }
 
@@ -313,7 +313,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         expect(inMemoryStorage.length).to.equal(1);
         const key = inMemoryStorage.key(0);
         expect(key).to.match(
-          /^embrace_pending_732C0D87B14849BCAC153B5EB64B672D_\d+$/
+          /^embrace_pending_732C0D87B14849BCAC153B5EB64B672D_\d+$/,
         );
       });
 
@@ -375,15 +375,15 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         processorWithFailingStorage.onEnd(mockSpan);
         processorWithFailingStorage.storePendingSpans(
           'test-session',
-          mockSessionSpan
+          mockSessionSpan,
         );
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(2);
         expect(diagLogger.getErrorLogs()[0]).to.include(
-          'Failed to clear stored spans from storage:'
+          'Failed to clear stored spans from storage:',
         );
         expect(diagLogger.getErrorLogs()[1]).to.include(
-          'Failed to store spans to storage'
+          'Failed to store spans to storage',
         );
       });
     });
@@ -393,11 +393,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         // Pre-populate storage with spans for different sessions
         inMemoryStorage.setItem(
           'embrace_pending_session1_1000',
-          JSON.stringify([mockSpan])
+          JSON.stringify([mockSpan]),
         );
         inMemoryStorage.setItem(
           'embrace_pending_session2_1000',
-          JSON.stringify([mockSpan])
+          JSON.stringify([mockSpan]),
         );
         inMemoryStorage.setItem('other_key', 'other_value');
       });
@@ -409,10 +409,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         expect(inMemoryStorage.length).to.equal(2);
         expect(
-          inMemoryStorage.getItem('embrace_pending_session1_1000')
+          inMemoryStorage.getItem('embrace_pending_session1_1000'),
         ).to.equal(null);
         expect(
-          inMemoryStorage.getItem('embrace_pending_session2_1000')
+          inMemoryStorage.getItem('embrace_pending_session2_1000'),
         ).to.not.equal(null);
         expect(inMemoryStorage.getItem('other_key')).to.not.equal(null);
       });
@@ -421,7 +421,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         processorWithStorage.clearStoredSpans('session1');
 
         expect(
-          inMemoryStorage.getItem('embrace_pending_session2_1000')
+          inMemoryStorage.getItem('embrace_pending_session2_1000'),
         ).to.equal(JSON.stringify([mockSpan]));
         expect(inMemoryStorage.getItem('other_key')).to.equal('other_value');
       });
@@ -462,7 +462,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         const pastTime = clock.now - 2 * 60 * 60 * 1000; // 2 hours ago (expired)
         inMemoryStorage.setItem(
           `embrace_pending_expired_${pastTime}`,
-          JSON.stringify([mockSpan, mockNetworkRequestSpan])
+          JSON.stringify([mockSpan, mockNetworkRequestSpan]),
         );
 
         // Advance time to trigger the interval (which runs every 5 mins)
@@ -470,7 +470,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
         expect(
-          inMemoryStorage.getItem(`embrace_pending_expired_${pastTime}`)
+          inMemoryStorage.getItem(`embrace_pending_expired_${pastTime}`),
         ).to.equal(null);
       });
 
@@ -478,7 +478,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         const recentTime = clock.now - 30 * 60 * 1000; // 30 minutes ago (not expired)
         inMemoryStorage.setItem(
           `embrace_pending_recent_${recentTime}`,
-          JSON.stringify([mockSpan])
+          JSON.stringify([mockSpan]),
         );
 
         // Advance time to trigger the interval (which runs every 60 seconds)
@@ -486,7 +486,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
         expect(
-          inMemoryStorage.getItem(`embrace_pending_recent_${recentTime}`)
+          inMemoryStorage.getItem(`embrace_pending_recent_${recentTime}`),
         ).to.not.equal(null);
       });
 
@@ -508,7 +508,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         const pastTime = clock.now - 2 * 60 * 60 * 1000;
         inMemoryStorage.setItem(
           `embrace_pending_corrupted_${pastTime}`,
-          'invalid json'
+          'invalid json',
         );
 
         // Advance time to trigger the interval (which runs every 5 mins)
@@ -516,7 +516,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
         expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
         expect(diagLogger.getErrorLogs()[0]).to.include(
-          'Failed to process expired spans'
+          'Failed to process expired spans',
         );
         expect(inMemoryStorage.length).to.equal(0);
 
@@ -526,7 +526,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       it('should handle malformed key timestamps', () => {
         inMemoryStorage.setItem(
           'embrace_pending_invalid_timestamp',
-          JSON.stringify([mockSpan])
+          JSON.stringify([mockSpan]),
         );
 
         // Advance time to trigger the interval (which runs every 60 seconds)
@@ -552,7 +552,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         processorWithCustomStorage.onEnd(mockSpan);
         processorWithCustomStorage.storePendingSpans(
           'test-session',
-          mockSessionSpan
+          mockSessionSpan,
         );
 
         expect(customStorage.length).to.equal(1);

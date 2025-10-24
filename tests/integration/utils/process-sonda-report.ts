@@ -1,5 +1,5 @@
-import { dirname, resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Example Embrace file resource
@@ -39,9 +39,7 @@ type SondaReport = {
 };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const EMBRACE_SDK_PATH_REGEX = new RegExp(
-  '^\\.\\./\\.\\./\\.\\./\\.\\./(?!\\.\\.\\.)(.+)$'
-);
+const EMBRACE_SDK_PATH_REGEX = /^\.\.\/\.\.\/\.\.\/\.\.\/(?!\.\.\.)(.+)$/;
 
 /**
  * Processes a Sonda report to calculate the total uncompressed and gzip sizes of resources in kb.

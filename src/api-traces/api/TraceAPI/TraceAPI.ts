@@ -1,11 +1,11 @@
-import { ProxyTraceManager } from '../../manager/index.js';
+import type { Context } from '@opentelemetry/api';
 import type { TraceManager } from '../../manager/index.js';
+import { ProxyTraceManager } from '../../manager/index.js';
 import type {
   ExtendedSpan,
   ExtendedSpanOptions,
   TraceAPIArgs,
 } from './types.js';
-import type { Context } from '@opentelemetry/api';
 
 export class TraceAPI implements TraceManager {
   private static _instance?: TraceAPI;
@@ -36,7 +36,7 @@ export class TraceAPI implements TraceManager {
   public startSpan(
     name: string,
     options?: ExtendedSpanOptions,
-    context?: Context
+    context?: Context,
   ): ExtendedSpan {
     return this.getTraceManager().startSpan(name, options, context);
   }

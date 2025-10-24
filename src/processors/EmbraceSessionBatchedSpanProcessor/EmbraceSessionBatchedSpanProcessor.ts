@@ -1,3 +1,5 @@
+import type { DiagLogger } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { ExportResult } from '@opentelemetry/core';
 import {
   BindOnceFuture,
@@ -11,14 +13,12 @@ import type {
 } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { SessionSpan } from '../../instrumentations/index.js';
-import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.js';
 import { EmbraceSpanStorage } from '../../utils/index.js';
-import { diag } from '@opentelemetry/api';
-import type { DiagLogger } from '@opentelemetry/api';
+import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
@@ -27,7 +27,7 @@ type ExportFailureReason = 'concurrent_limit' | 'fetch_error' | 'unknown';
 
 const exportFailureAttributeKey = (
   reason: ExportFailureReason,
-  session: 'current' | 'previous'
+  session: 'current' | 'previous',
 ) =>
   `emb.${session === 'current' ? 'export_failed' : 'previous_export_failed'}.${reason}`;
 
@@ -70,7 +70,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
 
   public forceFlush(): Promise<void> {
     this._diag.debug(
-      'forceFlush called for EmbraceSessionBatchedSpanProcessor. This is a no op'
+      'forceFlush called for EmbraceSessionBatchedSpanProcessor. This is a no op',
     );
     return Promise.resolve(undefined);
   }
@@ -83,7 +83,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
 
     if (!isSessionSpan(span)) {
       this._diag.debug(
-        'non-session span ended. Adding to pending spans queue.'
+        'non-session span ended. Adding to pending spans queue.',
       );
       if (this._limitManager.dropReadableSpan(span)) {
         return;
@@ -111,10 +111,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
           }
 
           this._spanSessionManager.incrSessionCountForKey(
-            exportFailureAttributeKey(failureReason, 'current')
+            exportFailureAttributeKey(failureReason, 'current'),
           );
           this._spanSessionManager.incrNextSessionCountForKey(
-            exportFailureAttributeKey(failureReason, 'previous')
+            exportFailureAttributeKey(failureReason, 'previous'),
           );
           this._diag.error(`spans failed to export: ${errorMessage}`);
         }
@@ -131,10 +131,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
         }
 
         this._spanSessionManager.incrSessionCountForKey(
-          exportFailureAttributeKey('unknown', 'current')
+          exportFailureAttributeKey('unknown', 'current'),
         );
         this._spanSessionManager.incrNextSessionCountForKey(
-          exportFailureAttributeKey('unknown', 'previous')
+          exportFailureAttributeKey('unknown', 'previous'),
         );
         this._diag.error(`spans failed to export: ${msg}`);
       });
@@ -152,7 +152,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     this._spanStorage.storePendingSpans(
       sessionId,
       sessionSpan,
-      this._pendingSpans
+      this._pendingSpans,
     );
   }
 

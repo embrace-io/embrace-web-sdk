@@ -10,7 +10,7 @@ export class FetchTransport implements IExporterTransport {
   // _compressRequest compresses the data using the gzip algorithm.
   // Embrace Data endpoints require the data to be compressed.
   private static async _compressRequest(
-    data: Uint8Array<ArrayBuffer>
+    data: Uint8Array<ArrayBuffer>,
   ): Promise<Uint8Array<ArrayBuffer>> {
     const stream = new CompressionStream('gzip');
     const writer = stream.writable.getWriter();
@@ -33,7 +33,7 @@ export class FetchTransport implements IExporterTransport {
     }
 
     const compressedData = new Uint8Array(
-      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0)
+      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0),
     );
 
     let offset = 0;
@@ -48,7 +48,7 @@ export class FetchTransport implements IExporterTransport {
 
   public send(
     data: Uint8Array<ArrayBuffer>,
-    timeoutMillis: number
+    timeoutMillis: number,
   ): Promise<ExportResponse> {
     return this._asyncSend(data, timeoutMillis);
   }
@@ -59,7 +59,7 @@ export class FetchTransport implements IExporterTransport {
 
   public async _asyncSend(
     data: Uint8Array<ArrayBuffer>,
-    timeoutMillis: number
+    timeoutMillis: number,
   ): Promise<ExportResponse> {
     let request = data;
     const headers: Record<string, string> = {

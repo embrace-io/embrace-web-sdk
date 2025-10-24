@@ -36,7 +36,7 @@ describe('bulkAddEventListener', () => {
     const events = ['click', 'mouseover'];
     bulkAddEventListener({ target, events, callback });
 
-    events.forEach(event => {
+    events.forEach((event) => {
       target.dispatchEvent(new Event(event));
     });
     expect(callback.callCount).to.equal(2);
@@ -46,7 +46,7 @@ describe('bulkAddEventListener', () => {
     const events = ['resize', 'scroll'];
     bulkAddEventListener({ target: window, events, callback });
 
-    events.forEach(event => {
+    events.forEach((event) => {
       window.dispatchEvent(new Event(event));
       void expect(callback).to.have.been.called;
     });

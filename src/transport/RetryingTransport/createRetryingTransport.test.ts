@@ -58,7 +58,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'success' });
     const result = await retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      1000
+      1000,
     );
 
     expect(result).to.deep.equal({ status: 'success' });
@@ -69,7 +69,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'failure', error: new Error('some failure') });
     const result = await retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      1000
+      1000,
     );
 
     expect(result).to.deep.equal({
@@ -83,7 +83,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'retryable' });
     const pendingResult = retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      30_000
+      30_000,
     );
 
     await assertBackoffs([1000, 1500, 2250, 3375, 5000]);
@@ -98,7 +98,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'retryable' });
     const pendingResult = retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      2200 // Set timeout between 2nd and 3rd retry
+      2200, // Set timeout between 2nd and 3rd retry
     );
 
     // Initial attempt
@@ -128,7 +128,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'retryable', retryInMillis: 400 });
     const pendingResult = retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      3000
+      3000,
     );
 
     await assertBackoffs([400, 400, 400, 400, 400]);
@@ -144,7 +144,7 @@ describe('createRetryingTransport', () => {
     sendStub.resolves({ status: 'retryable' });
     const pendingResult = retryingTransport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      30_000
+      30_000,
     );
 
     await Promise.resolve();

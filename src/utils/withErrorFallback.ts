@@ -8,7 +8,7 @@ export const withErrorFallback =
     fn: (...args: Args) => R,
     defaultValue: R,
     silent = true,
-    diag?: DiagLogger
+    diag?: DiagLogger,
   ) =>
   (...args: Args) => {
     try {

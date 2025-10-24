@@ -75,12 +75,12 @@ describe('getDefaultAttributeScrubbers', () => {
     },
   ];
 
-  tests.forEach(test => {
+  tests.forEach((test) => {
     it(test.name, () => {
       const scrubbers = getDefaultAttributeScrubbers(
-        test.additionalSensitiveQueryTokens
+        test.additionalSensitiveQueryTokens,
       );
-      const scrubber = scrubbers.find(scrubber => scrubber.key === test.key);
+      const scrubber = scrubbers.find((scrubber) => scrubber.key === test.key);
       void expect(scrubber).not.to.be.undefined;
       expect(scrubber?.scrub(test.value)).to.be.equal(test.expected);
     });

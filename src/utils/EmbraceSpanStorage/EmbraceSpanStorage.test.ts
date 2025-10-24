@@ -1,6 +1,16 @@
+import { trace } from '@opentelemetry/api';
+import { resourceFromAttributes } from '@opentelemetry/resources';
+import type {
+  InMemorySpanExporter,
+  ReadableSpan,
+} from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { EmbraceSpanStorage } from './EmbraceSpanStorage.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.js';
 import {
   FailingStorage,
   InMemoryDiagLogger,
@@ -8,17 +18,7 @@ import {
   mockSpan,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import type {
-  InMemorySpanExporter,
-  ReadableSpan,
-} from '@opentelemetry/sdk-trace-web';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../managers/index.js';
-import { trace } from '@opentelemetry/api';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { EmbraceSpanStorage } from './EmbraceSpanStorage.js';
 
 const { expect } = chai;
 
@@ -102,13 +102,15 @@ describe('EmbraceSpanStorage', () => {
         spanStorageWithFailingStorage.storePendingSpans(
           'session123',
           mockSpan,
-          []
+          [],
         );
       }).to.not.throw();
 
       const errorLogs = diag.getErrorLogs();
       expect(
-        errorLogs.some(log => log.includes('Failed to store spans to storage'))
+        errorLogs.some((log) =>
+          log.includes('Failed to store spans to storage'),
+        ),
       ).to.equal(true);
       spanStorageWithFailingStorage.destroy();
 
@@ -132,7 +134,7 @@ describe('EmbraceSpanStorage', () => {
       spanStorage.storePendingSpans(
         'sessionOverLimit',
         sessionSpan,
-        pendingSpans
+        pendingSpans,
       );
       expect(storage.length).to.equal(10);
 
@@ -140,7 +142,7 @@ describe('EmbraceSpanStorage', () => {
       const warnLogs = diag.getWarnLogs();
       expect(warnLogs).to.have.lengthOf(1);
       expect(warnLogs[0]).to.equal(
-        'Not storing pending spans as the max number of items was reached'
+        'Not storing pending spans as the max number of items was reached',
       );
 
       // Should not have the over-limit session stored
@@ -161,7 +163,7 @@ describe('EmbraceSpanStorage', () => {
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.max_pending_spans_reached',
-        1
+        1,
       );
     });
   });
@@ -199,9 +201,9 @@ describe('EmbraceSpanStorage', () => {
 
       const errorLogs = diag.getErrorLogs();
       expect(
-        errorLogs.some(log =>
-          log.includes('Failed to clear stored spans from storage')
-        )
+        errorLogs.some((log) =>
+          log.includes('Failed to clear stored spans from storage'),
+        ),
       ).to.equal(true);
 
       spanStorageWithFailingStorage.destroy();

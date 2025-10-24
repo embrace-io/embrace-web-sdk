@@ -168,7 +168,7 @@ const userAgent =
 
 const ensureNetworkEventsExists = (
   events: TimedEvent[],
-  expectSecureConnectionStart = true
+  expectSecureConnectionStart = true,
 ) => {
   const expectedEventNames = [
     PTN.FETCH_START,
@@ -180,7 +180,7 @@ const ensureNetworkEventsExists = (
     PTN.REQUEST_START,
     PTN.RESPONSE_START,
     PTN.RESPONSE_END,
-  ].filter(n => n);
+  ].filter((n) => n);
   for (let i = 0; i < events.length; i++) {
     assert.strictEqual(events[i].name, expectedEventNames[i]);
   }
@@ -240,7 +240,7 @@ describe('DocumentLoad Instrumentation', () => {
     afterEach(() => {
       spyEntries.restore();
     });
-    it('should start collecting the performance immediately', done => {
+    it('should start collecting the performance immediately', (done) => {
       plugin.enable();
       setTimeout(() => {
         assert.strictEqual(window.document.readyState, 'complete');
@@ -267,7 +267,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should collect performance after document load event', done => {
+    it('should collect performance after document load event', (done) => {
       const spy = sandbox.spy(window, 'addEventListener');
       plugin.enable();
       const args = spy.args[0];
@@ -282,7 +282,7 @@ describe('DocumentLoad Instrumentation', () => {
           cancelable: false,
           composed: true,
           detail: {},
-        })
+        }),
       );
       setTimeout(() => {
         assert.strictEqual(spyEntries.callCount, 3);
@@ -303,7 +303,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should export correct span with events', done => {
+    it('should export correct span with events', (done) => {
       plugin.enable();
 
       setTimeout(() => {
@@ -314,7 +314,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
-          (rootSpan.attributes['http.response_content_length'] as number) > 0
+          (rootSpan.attributes['http.response_content_length'] as number) > 0,
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -322,7 +322,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[9].name, EventNames.FIRST_PAINT);
         assert.strictEqual(
           fsEvents[10].name,
-          EventNames.FIRST_CONTENTFUL_PAINT
+          EventNames.FIRST_CONTENTFUL_PAINT,
         );
 
         assert.strictEqual(fsEvents[0].name, PTN.FETCH_START);
@@ -331,7 +331,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fsEvents[3].name, PTN.DOM_INTERACTIVE);
         assert.strictEqual(
           fsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START
+          PTN.DOM_CONTENT_LOADED_EVENT_START,
         );
         assert.strictEqual(fsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
         assert.strictEqual(fsEvents[6].name, PTN.DOM_COMPLETE);
@@ -360,7 +360,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         spyGetElementsByTagName = sandbox.stub(
           window.document,
-          'getElementsByTagName'
+          'getElementsByTagName',
         );
         spyGetElementsByTagName.withArgs('meta').returns([element]);
       });
@@ -368,7 +368,7 @@ describe('DocumentLoad Instrumentation', () => {
         spyGetElementsByTagName.restore();
       });
 
-      it('should create a root span with server context traceId', done => {
+      it('should create a root span with server context traceId', (done) => {
         plugin.enable();
         setTimeout(() => {
           const rootSpan = exporter.getFinishedSpans()[0];
@@ -378,11 +378,11 @@ describe('DocumentLoad Instrumentation', () => {
 
           assert.strictEqual(
             rootSpan.spanContext().traceId,
-            'ab42124a3c573678d4d8b21ba52df3bf'
+            'ab42124a3c573678d4d8b21ba52df3bf',
           );
           assert.strictEqual(
             fetchSpan.spanContext().traceId,
-            'ab42124a3c573678d4d8b21ba52df3bf'
+            'ab42124a3c573678d4d8b21ba52df3bf',
           );
 
           assert.strictEqual(exporter.getFinishedSpans().length, 2);
@@ -404,7 +404,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should create span for each of the resource', done => {
+    it('should create span for each of the resource', (done) => {
       plugin.enable();
       setTimeout(() => {
         const spanResource1 = exporter.getFinishedSpans()[1];
@@ -415,11 +415,11 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(
           spanResource1.attributes['url.full'],
-          'http://localhost:8090/embrace-web-sdk.js'
+          'http://localhost:8090/embrace-web-sdk.js',
         );
         assert.strictEqual(
           spanResource2.attributes['url.full'],
-          'http://localhost:8090/sockjs-node/info?t=1572620894466'
+          'http://localhost:8090/sockjs-node/info?t=1572620894466',
         );
 
         ensureNetworkEventsExists(srEvents1);
@@ -442,7 +442,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should create span for each of the resource', done => {
+    it('should create span for each of the resource', (done) => {
       plugin.enable();
       setTimeout(() => {
         const spanResource1 = exporter.getFinishedSpans()[1];
@@ -451,7 +451,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(
           spanResource1.attributes['url.full'],
-          'http://localhost:8090/embrace-web-sdk.js'
+          'http://localhost:8090/embrace-web-sdk.js',
         );
 
         ensureNetworkEventsExists(srEvents1, false);
@@ -477,7 +477,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should still export rootSpan and fetchSpan', done => {
+    it('should still export rootSpan and fetchSpan', (done) => {
       plugin.enable();
 
       setTimeout(() => {
@@ -494,7 +494,7 @@ describe('DocumentLoad Instrumentation', () => {
   });
 
   const shouldExportCorrectSpan = () => {
-    it('should export correct span with events', done => {
+    it('should export correct span with events', (done) => {
       plugin.enable();
       setTimeout(() => {
         const fetchSpan = exporter.getFinishedSpans()[0];
@@ -507,24 +507,24 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.isOk(
           (fetchSpan.attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
+            'http://localhost:8000/?wtr-session-id=',
+          ),
         );
 
         assert.isOk(
           (rootSpan.attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
+            'http://localhost:8000/?wtr-session-id=',
+          ),
         );
         assert.strictEqual(
           rootSpan.attributes['user_agent.original'],
-          userAgent
+          userAgent,
         );
 
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
 
-        const rsEventNames = rsEvents.map(e => e.name);
+        const rsEventNames = rsEvents.map((e) => e.name);
         // Allow the unloadEvent{Start,End} events to be missing. Tests that
         // are simulating a fallback to window.performance.timing are using
         // values (entriesFallback) for that result in those network span
@@ -595,11 +595,11 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should add attribute to document load span', done => {
+    it('should add attribute to document load span', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          documentLoad: span => {
+          documentLoad: (span) => {
             span.setAttribute('custom-key', 'custom-val');
           },
         },
@@ -613,11 +613,11 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should add attribute to document fetch span', done => {
+    it('should add attribute to document fetch span', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          documentFetch: span => {
+          documentFetch: (span) => {
             span.setAttribute('custom-key', 'custom-val');
           },
         },
@@ -631,7 +631,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should add attribute to resource fetch spans', done => {
+    it('should add attribute to resource fetch spans', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
@@ -639,7 +639,7 @@ describe('DocumentLoad Instrumentation', () => {
             span.setAttribute('custom-key', 'custom-val');
             span.setAttribute(
               'resource.tcp.duration_ms',
-              resource.connectEnd - resource.connectStart
+              resource.connectEnd - resource.connectStart,
             );
           },
         },
@@ -650,29 +650,29 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan2 = exporter.getFinishedSpans()[2];
         assert.strictEqual(
           resourceSpan1.attributes['custom-key'],
-          'custom-val'
+          'custom-val',
         );
         assert.strictEqual(
           resourceSpan2.attributes['custom-key'],
-          'custom-val'
+          'custom-val',
         );
         assert.strictEqual(
           resourceSpan1.attributes['resource.tcp.duration_ms'],
-          0
+          0,
         );
         assert.strictEqual(
           resourceSpan2.attributes['resource.tcp.duration_ms'],
-          0
+          0,
         );
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
       });
     });
-    it('should still create the spans if the function throws error', done => {
+    it('should still create the spans if the function throws error', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         applyCustomAttributesOnSpan: {
-          documentLoad: _span => {
+          documentLoad: (_span) => {
             throw new Error('test error');
           },
         },
@@ -691,7 +691,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should capture extended PerformanceResourceTiming attributes', done => {
+    it('should capture extended PerformanceResourceTiming attributes', (done) => {
       const resourcesWithExtendedProps = [
         {
           ...resources[0],
@@ -710,37 +710,37 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.strictEqual(
           resourceSpan.attributes['http.response.delivery_type'],
-          'cache'
+          'cache',
         );
         assert.strictEqual(
           resourceSpan.attributes['http.request.render_blocking_status'],
-          'blocking'
+          'blocking',
         );
         assert.strictEqual(
           resourceSpan.attributes['http.response.status_code'],
-          200
+          200,
         );
         assert.strictEqual(
           resourceSpan.attributes['http.request.initiator_type'],
-          'script'
+          'script',
         );
         assert.strictEqual(
           resourceSpan.attributes['http.response_content_length'],
-          1446396
+          1446396,
         );
         assert.strictEqual(
           resourceSpan.attributes['http.response.size'],
-          1446645
+          1446645,
         );
         assert.strictEqual(
           resourceSpan.attributes['http.response.decoded_body_size'],
-          1446396
+          1446396,
         );
         done();
       });
     });
 
-    it('should add http.response.cors_opaque attribute when resource has timing but no size data', done => {
+    it('should add http.response.cors_opaque attribute when resource has timing but no size data', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -760,13 +760,13 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.strictEqual(
           resourceSpan.attributes['http.response.cors_opaque'],
-          true
+          true,
         );
         done();
       });
     });
 
-    it('should add http.request.prevented attribute when request never started', done => {
+    it('should add http.request.prevented attribute when request never started', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -786,13 +786,13 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.strictEqual(
           resourceSpan.attributes['http.request.prevented'],
-          true
+          true,
         );
         done();
       });
     });
 
-    it('should add http.request.incomplete attribute when request started but did not complete', done => {
+    it('should add http.request.incomplete attribute when request started but did not complete', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([
@@ -812,13 +812,13 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.strictEqual(
           resourceSpan.attributes['http.request.incomplete'],
-          true
+          true,
         );
         done();
       });
     });
 
-    it('should add http.response.cache_revalidated attribute for 304 responses', done => {
+    it('should add http.response.cache_revalidated attribute for 304 responses', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -833,13 +833,13 @@ describe('DocumentLoad Instrumentation', () => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.strictEqual(
           resourceSpan.attributes['http.response.cache_revalidated'],
-          true
+          true,
         );
         done();
       });
     });
 
-    it('should not add http.response.cache_revalidated attribute when deliveryType is cache', done => {
+    it('should not add http.response.cache_revalidated attribute when deliveryType is cache', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -853,13 +853,13 @@ describe('DocumentLoad Instrumentation', () => {
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.isUndefined(
-          resourceSpan.attributes['http.response.cache_revalidated']
+          resourceSpan.attributes['http.response.cache_revalidated'],
         );
         done();
       });
     });
 
-    it('should not add diagnostic attributes for normal resources', done => {
+    it('should not add diagnostic attributes for normal resources', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries
@@ -871,10 +871,10 @@ describe('DocumentLoad Instrumentation', () => {
       setTimeout(() => {
         const resourceSpan = exporter.getFinishedSpans()[1];
         assert.isUndefined(
-          resourceSpan.attributes['http.response.cors_opaque']
+          resourceSpan.attributes['http.response.cors_opaque'],
         );
         assert.isUndefined(
-          resourceSpan.attributes['http.response.cache_revalidated']
+          resourceSpan.attributes['http.response.cache_revalidated'],
         );
         assert.isUndefined(resourceSpan.attributes['http.request.incomplete']);
         assert.isUndefined(resourceSpan.attributes['http.request.prevented']);
@@ -896,7 +896,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should ignore network span events if ignoreNetworkEvents is set to true', done => {
+    it('should ignore network span events if ignoreNetworkEvents is set to true', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         ignoreNetworkEvents: true,
@@ -921,15 +921,15 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(loadSpan.name, 'documentLoad');
         assert.deepEqual(
-          lsEvents.map(event => event.name),
-          ['firstPaint', 'firstContentfulPaint']
+          lsEvents.map((event) => event.name),
+          ['firstPaint', 'firstContentfulPaint'],
         );
 
         done();
       });
     });
 
-    it('should ignore performance events if ignorePerformanceEvents is set to true', done => {
+    it('should ignore performance events if ignorePerformanceEvents is set to true', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         ignorePerformancePaintEvents: true,
@@ -944,15 +944,15 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(loadSpan.name, 'documentLoad');
         assert.notInclude(
-          lsEvents.map(event => event.name),
-          ['firstPaint', 'firstContentfulPaint']
+          lsEvents.map((event) => event.name),
+          ['firstPaint', 'firstContentfulPaint'],
         );
 
         done();
       });
     });
 
-    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
+    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', (done) => {
       plugin = new DocumentLoadInstrumentation({
         enabled: false,
         ignoreNetworkEvents: true,
@@ -962,12 +962,12 @@ describe('DocumentLoad Instrumentation', () => {
       setTimeout(() => {
         const spans = exporter.getFinishedSpans();
         const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
+          (s) => s.name === 'resourceFetch',
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
         assert.exists(
           resourceSpan.attributes['http.response_content_length'],
-          'http.response_content_length attribute should exist'
+          'http.response_content_length attribute should exist',
         );
         done();
       });

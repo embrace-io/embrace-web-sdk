@@ -10,7 +10,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
 
     sdkControl!.log.message(
       'Embrace initialized successfully inside the SDK',
-      'info'
+      'info',
     );
 
     const onLogClick = () => {
@@ -34,7 +34,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     fetchButton.addEventListener('click', () => {
       console.log('Making API call from the library app');
       fetch('https://jsonplaceholder.typicode.com/posts/2')
-        .then(response => response.json())
+        .then((response) => response.json())
         .then(() => {
           console.log('API call from library app successful');
         });

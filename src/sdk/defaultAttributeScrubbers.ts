@@ -1,10 +1,10 @@
-import type { AttributeScrubber } from '../common/index.js';
 import {
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_URL_QUERY,
   SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
+import type { AttributeScrubber } from '../common/index.js';
 
 const HOST_CREDENTIALS_REGEX = /\/\/(.+):(.+)@(.+)\//;
 
@@ -39,7 +39,7 @@ const scrubURL = ({
     // scrub credentials passed via URL in form of `https://username:password@www.example.com/`
     scrubbed = scrubbed.replace(
       HOST_CREDENTIALS_REGEX,
-      '//REDACTED:REDACTED@$3/'
+      '//REDACTED:REDACTED@$3/',
     );
   }
 
@@ -52,7 +52,7 @@ const scrubURL = ({
 };
 
 export const getDefaultAttributeScrubbers = (
-  additionalSensitiveQueryTokens?: string[]
+  additionalSensitiveQueryTokens?: string[],
 ): AttributeScrubber[] => {
   const sensitiveQueryTokens = [
     ...DEFAULT_SENSITIVE_TOKENS,
@@ -61,7 +61,7 @@ export const getDefaultAttributeScrubbers = (
 
   const queryParamRegex = new RegExp(
     `(^|&|\\?)(${sensitiveQueryTokens.join('|')})=[^&]+`,
-    'g'
+    'g',
   );
 
   return [

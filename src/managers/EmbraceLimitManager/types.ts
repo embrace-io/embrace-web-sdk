@@ -63,15 +63,15 @@ export interface LimitManagerInternal {
   limitLog: (
     message: string,
     severity: LogSeverity,
-    attributes: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined>,
   ) => LimitedLog | 'dropped';
   limitException: (
     message: string,
-    attributes: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined>,
   ) => LimitedException | 'dropped';
   limitSessionProperty: (
     key: string,
-    value: string
+    value: string,
   ) => LimitedSessionProperty | 'dropped';
   limitBreadcrumb: (name: string) => LimitedBreadcrumb | 'dropped';
   reset: () => void;

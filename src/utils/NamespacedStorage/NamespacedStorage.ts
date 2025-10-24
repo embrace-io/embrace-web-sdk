@@ -24,7 +24,7 @@ export class NamespacedStorage implements Storage {
   }
 
   public clear(): void {
-    this.getNamespacedKeys().forEach(key => {
+    this.getNamespacedKeys().forEach((key) => {
       this._storage.removeItem(`${this._keyPrefix}${key}`);
     });
   }

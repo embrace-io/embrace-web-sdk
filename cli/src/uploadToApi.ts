@@ -28,7 +28,7 @@ export const uploadToApi = async ({
   upload,
 }: UploadToApiArgs): Promise<void> => {
   console.log(
-    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload'
+    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload',
   );
   if (dryRun || !upload) {
     return;
@@ -40,7 +40,7 @@ export const uploadToApi = async ({
       JSON.stringify({
         bundle: jsContent,
         sourcemap: mapContent,
-      })
+      }),
     ),
   ]);
   // prepare the multipart form data for transfer
@@ -63,7 +63,7 @@ export const uploadToApi = async ({
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `API returned ${response.status.toString()}: ${response.statusText} - ${errorText}`
+        `API returned ${response.status.toString()}: ${response.statusText} - ${errorText}`,
       );
     }
 

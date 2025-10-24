@@ -1,6 +1,6 @@
+import type { HrTime } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core';
 import type { PerformanceClock, PerformanceManager } from './types.js';
-import type { HrTime } from '@opentelemetry/api';
 
 export class OTelPerformanceManager implements PerformanceManager {
   private readonly _clock: PerformanceClock;

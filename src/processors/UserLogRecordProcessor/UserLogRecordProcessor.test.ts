@@ -1,14 +1,14 @@
+import type { Logger } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api-logs';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { UserLogRecordProcessor } from './UserLogRecordProcessor.js';
+import type { UserManager } from '../../api-users/index.js';
+import { EmbraceUserManager } from '../../managers/index.js';
 import {
   InMemoryStorage,
   setupTestLogExporter,
 } from '../../testUtils/index.js';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { EmbraceUserManager } from '../../managers/index.js';
-import type { Logger } from '@opentelemetry/api-logs';
-import { logs } from '@opentelemetry/api-logs';
-import type { UserManager } from '../../api-users/index.js';
+import { UserLogRecordProcessor } from './UserLogRecordProcessor.js';
 
 const { expect } = chai;
 

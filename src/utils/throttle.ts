@@ -6,7 +6,7 @@
  * */
 export const throttle = <F extends (...args: Parameters<F>) => ReturnType<F>>(
   func: F,
-  timeout = 1000
+  timeout = 1000,
 ) => {
   let isWaiting = false;
   return (...args: Parameters<F>) => {

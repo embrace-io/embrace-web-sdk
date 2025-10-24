@@ -7,7 +7,7 @@ import { setupOTel } from './otel.js';
 const ASYNC_MODE = import.meta.env.VITE_ASYNC_MODE === 'true';
 
 if (ASYNC_MODE) {
-  // @ts-ignore
+  // @ts-expect-error
   window.EmbraceWebSdkOnReady.onReady(() => {
     setupOTel();
   });
@@ -18,5 +18,5 @@ if (ASYNC_MODE) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );

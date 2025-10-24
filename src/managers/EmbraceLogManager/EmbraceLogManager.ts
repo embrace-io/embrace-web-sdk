@@ -8,6 +8,16 @@ import {
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import type { LogManager, LogSeverity } from '../../api-logs/index.js';
+import type {
+  LogExceptionOptions,
+  LogMessageOptions,
+} from '../../api-logs/manager/index.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
+import {
+  KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.js';
 import {
   EMB_TYPES,
   KEY_EMB_EXCEPTION_HANDLING,
@@ -18,24 +28,14 @@ import {
 } from '../../constants/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import {
+  GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
-  GLOBAL_CONFIG,
   OTelPerformanceManager,
 } from '../../utils/index.js';
-import type { EmbraceLogManagerArgs } from './types.js';
-import type {
-  LogExceptionOptions,
-  LogMessageOptions,
-} from '../../api-logs/manager/index.js';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
-import {
-  KEY_EMB_ERROR_LOG_COUNT,
-  KEY_EMB_JS_FILE_BUNDLE_IDS,
-  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
+import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
+import type { EmbraceLogManagerArgs } from './types.js';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
 /**
@@ -79,7 +79,7 @@ export class EmbraceLogManager implements LogManager {
   }
 
   private static _logSeverityToSeverityNumber(
-    severity: LogSeverity
+    severity: LogSeverity,
   ): SeverityNumber {
     switch (severity) {
       case 'info':
@@ -97,7 +97,7 @@ export class EmbraceLogManager implements LogManager {
       handled = true,
       attributes = {},
       timestamp = this._perf.getNowMillis(),
-    }: LogExceptionOptions = {}
+    }: LogExceptionOptions = {},
   ) {
     if (!error) {
       error = new Error('logException received an undefined error');
@@ -112,7 +112,7 @@ export class EmbraceLogManager implements LogManager {
 
     if (!handled) {
       this._spanSessionManager.incrSessionCountForKey(
-        KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
+        KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
       );
     }
 
@@ -120,7 +120,7 @@ export class EmbraceLogManager implements LogManager {
 
     const limitedException = this._limitManager.limitException(
       normalizedError.message,
-      attributes
+      attributes,
     );
 
     if (limitedException === 'dropped') {
@@ -145,7 +145,7 @@ export class EmbraceLogManager implements LogManager {
         [KEY_EMB_EXCEPTION_NUMBER]: getIncrementedCount(
           this._storage,
           EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY,
-          this._diag
+          this._diag,
         ),
       },
     });
@@ -158,7 +158,7 @@ export class EmbraceLogManager implements LogManager {
       attributes = {},
       includeStacktrace = true,
       stacktrace,
-    }: LogMessageOptions = {}
+    }: LogMessageOptions = {},
   ) {
     if (!message || typeof message !== 'string') {
       this._diag.warn('Message must be a string');
@@ -203,7 +203,7 @@ export class EmbraceLogManager implements LogManager {
     const limitedLog = this._limitManager.limitLog(
       message,
       severity,
-      attributes
+      attributes,
     );
 
     if (limitedLog === 'dropped') {

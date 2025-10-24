@@ -1,7 +1,7 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -57,7 +57,7 @@ describe('EmptyInstrumentation', () => {
     child2.remove();
 
     // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // The instrumentation shouldn't immediately emit the event
     spanSessionManager.endSessionSpan();
@@ -70,7 +70,7 @@ describe('EmptyInstrumentation', () => {
 
     spanSessionManager.startSessionSpan();
 
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
 
     // Should now emit if the node is still empty after the timeout
     spanSessionManager.endSessionSpan();
@@ -102,10 +102,10 @@ describe('EmptyInstrumentation', () => {
     child1.remove();
 
     // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
     spanSessionManager.endSessionSpan();
@@ -132,12 +132,12 @@ describe('EmptyInstrumentation', () => {
     child2.remove();
 
     // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     rootNode.append(child1);
 
     // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
     spanSessionManager.endSessionSpan();
@@ -162,10 +162,10 @@ describe('EmptyInstrumentation', () => {
     rootNode.remove();
 
     // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
     spanSessionManager.endSessionSpan();

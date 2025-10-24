@@ -36,9 +36,9 @@ const getGzipSize = (file: string): Promise<number> =>
         resolve(size);
         yield size;
       },
-      err => {
+      (err) => {
         if (err) reject(err);
-      }
+      },
     );
   });
 
@@ -59,9 +59,7 @@ const analyzeFolder = async (name: string, path: string) => {
     }
 
     console.log(
-      `📊 ${Math.round(totalRaw / 1024)} KB raw / ${Math.round(
-        totalGzip / 1024
-      )} KB gzip\n`
+      `📊 ${Math.round(totalRaw / 1024)} KB raw / ${Math.round(totalGzip / 1024)} KB gzip\n`,
     );
   } catch (err) {
     console.warn(`⚠️  Skipped "${name}" (${path}): ${err}`);

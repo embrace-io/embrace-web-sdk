@@ -19,7 +19,7 @@ describe('bulkRemoveEventListener', () => {
   it('should remove event listeners for all specified events', () => {
     const events = ['click', 'mouseover', 'keydown'];
     // First add the listeners
-    events.forEach(event => {
+    events.forEach((event) => {
       target.addEventListener(event, callback);
     });
 
@@ -27,7 +27,7 @@ describe('bulkRemoveEventListener', () => {
     bulkRemoveEventListener({ target, events, callback });
 
     // Verify they were removed
-    events.forEach(event => {
+    events.forEach((event) => {
       target.dispatchEvent(new Event(event));
       void expect(callback).to.not.have.been.called;
     });
@@ -42,7 +42,7 @@ describe('bulkRemoveEventListener', () => {
   it('should work with window as target', () => {
     const events = ['resize', 'scroll'];
     // First add the listeners
-    events.forEach(event => {
+    events.forEach((event) => {
       window.addEventListener(event, callback);
     });
 
@@ -50,7 +50,7 @@ describe('bulkRemoveEventListener', () => {
     bulkRemoveEventListener({ target: window, events, callback });
 
     // Verify they were removed
-    events.forEach(event => {
+    events.forEach((event) => {
       window.dispatchEvent(new Event(event));
       void expect(callback).to.not.have.been.called;
     });

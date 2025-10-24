@@ -7,14 +7,14 @@ import {
   ATTR_TELEMETRY_SDK_VERSION,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions';
+import { KEY_EMB_APP_INSTANCE_ID } from '../constants/index.js';
+import { getAppInstanceId } from './appInstanceId.js';
 import {
   EMBRACE_SERVICE_NAME,
   NATIVE_FRAMEWORK,
   SDK_VERSION,
   TEMPLATE_APP_VERSION,
 } from './constants/index.js';
-import { KEY_EMB_APP_INSTANCE_ID } from '../constants/index.js';
-import { getAppInstanceId } from './appInstanceId.js';
 import type { GetWebSDKResourceArgs } from './types.js';
 
 export const getWebSDKResource = ({

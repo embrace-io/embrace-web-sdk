@@ -1,12 +1,12 @@
-import * as chai from 'chai';
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
 import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
-import { PageSpanProcessor } from './PageSpanProcessor.js';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import * as chai from 'chai';
 import type { PageManager, Route } from '../../api-page/index.js';
 import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
 import { EmbracePageManager } from '../../managers/index.js';
+import { setupTestTraceExporter } from '../../testUtils/index.js';
+import { PageSpanProcessor } from './PageSpanProcessor.js';
 
 const { expect } = chai;
 
@@ -45,10 +45,10 @@ describe('PageSpanProcessor', () => {
     const readableSpan = finishedSpans[0];
 
     expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.equal(
-      pageManager.getCurrentPageId()
+      pageManager.getCurrentPageId(),
     );
     expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.equal(
-      '/products/:id'
+      '/products/:id',
     );
   });
 

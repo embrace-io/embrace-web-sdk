@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import type { BuildEnvironmentOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import Sonda from 'sonda/vite';
+import type { BuildEnvironmentOptions } from 'vite';
+import { defineConfig } from 'vite';
 
 type CreateConfigArgs = {
   target: BuildEnvironmentOptions['target'];

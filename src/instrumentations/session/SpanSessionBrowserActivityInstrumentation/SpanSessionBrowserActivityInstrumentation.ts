@@ -34,7 +34,7 @@ export class SpanSessionBrowserActivityInstrumentation extends EmbraceInstrument
     this._activityTimeout = null;
     this._onActivityThrottled = throttle(
       this._onActivity,
-      EVENT_THROTTLING_TIME_WINDOW
+      EVENT_THROTTLING_TIME_WINDOW,
     );
     if (this._config.enabled) {
       this.enable();

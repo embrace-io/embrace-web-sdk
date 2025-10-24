@@ -51,9 +51,9 @@ const addHyphensToUuid = (uuidStr: string): string => {
 const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   const jsLines = sourceFile.split('\n');
   const sourceMapCommentIndex = jsLines.findIndex(
-    line =>
+    (line) =>
       line.startsWith('//# sourceMappingURL=') ||
-      line.startsWith('//@ sourceMappingURL=')
+      line.startsWith('//@ sourceMappingURL='),
   );
 
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
@@ -61,7 +61,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
     sourceMapCommentIndex === -1 ? jsLines.length : sourceMapCommentIndex;
   const snippet = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
     FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
-    bundleID
+    bundleID,
   );
   jsLines.splice(injectIndex, 0, snippet);
   jsLines.splice(injectIndex, 0, '// Injected by Embrace Web CLI:');
@@ -71,7 +71,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
 
 const findJSFilesRecursively = (
   dirPath: string,
-  visitedPaths: Set<string> = new Set()
+  visitedPaths: Set<string> = new Set(),
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
   const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
 
@@ -86,7 +86,7 @@ const findJSFilesRecursively = (
   visitedPaths.add(realPath);
 
   const files = fs.readdirSync(dirPath);
-  const jsFiles = files.filter(file => file.endsWith('.js'));
+  const jsFiles = files.filter((file) => file.endsWith('.js'));
 
   // Process JS files in current directory
   for (const jsFile of jsFiles) {
@@ -163,7 +163,7 @@ export const processSourceFiles = async ({
     const jsFiles = findJSFilesRecursively(buildPath);
 
     console.log(
-      `Found ${jsFiles.length} JavaScript files in directory tree: ${buildPath}`
+      `Found ${jsFiles.length} JavaScript files in directory tree: ${buildPath}`,
     );
 
     let appVersionReplaced = false;
@@ -181,11 +181,11 @@ export const processSourceFiles = async ({
           appVersion.length < 20 ? appVersion.padStart(20, ' ') : appVersion;
         const newJsContent = jsContent.replace(
           templateAppVersion,
-          paddedAppVersion
+          paddedAppVersion,
         );
         const newMapContent = mapContent.replace(
           templateAppVersion,
-          paddedAppVersion
+          paddedAppVersion,
         );
 
         if (newJsContent === jsContent || newMapContent === mapContent) {
@@ -210,13 +210,13 @@ export const processSourceFiles = async ({
       if (sourceMap.debugId) {
         if (!UUID_WITH_HYPHENS_REGEX.test(sourceMap.debugId)) {
           throw new Error(
-            `SourceMap file at ${mapFilePath} contains a debugID that is not a valid UUID string: '${sourceMap.debugId}'.\nIf you are generating these debugIDs manually, you should make sure the generated ids are valid UUIDs.\nIf you are using a build tool that generates these ids, we suggest that you disable that, and our cli will generate them automatically.`
+            `SourceMap file at ${mapFilePath} contains a debugID that is not a valid UUID string: '${sourceMap.debugId}'.\nIf you are generating these debugIDs manually, you should make sure the generated ids are valid UUIDs.\nIf you are using a build tool that generates these ids, we suggest that you disable that, and our cli will generate them automatically.`,
           );
         }
         bundleID = sourceMap.debugId.replaceAll('-', '');
         debugID = sourceMap.debugId;
         console.log(
-          `Using debugID ${debugID} from sourceMap for ${jsFilePath}`
+          `Using debugID ${debugID} from sourceMap for ${jsFilePath}`,
         );
       } else {
         bundleID = crypto.createHash('md5').update(jsContent).digest('hex'); // No hyphens
@@ -230,7 +230,7 @@ export const processSourceFiles = async ({
       jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
 
       console.log(
-        `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`
+        `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`,
       );
 
       // write the updated source code back to the file
@@ -259,7 +259,7 @@ export const processSourceFiles = async ({
     // If the app version was provided, but it couldn't be replaced in any of the files, exit with error.
     if (appVersion && !appVersionReplaced) {
       console.error(
-        `Template App version not found in any of the js files. Exiting.`
+        `Template App version not found in any of the js files. Exiting.`,
       );
       process.exit(1); // Exit with error code
     }

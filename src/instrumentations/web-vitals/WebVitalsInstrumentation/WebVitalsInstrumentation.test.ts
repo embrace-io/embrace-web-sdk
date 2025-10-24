@@ -6,13 +6,18 @@ import type {
   CLSMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
+import type { URLDocument } from '../../../common/index.js';
+import {
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../../constants/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
   EmbracePageManager,
+  EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
 import {
   InMemoryDiagLogger,
@@ -22,11 +27,6 @@ import {
 } from '../../../testUtils/index.js';
 import type { WebVitalListeners, WebVitalOnReport } from './types.js';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
-import type { URLDocument } from '../../../common/index.js';
-import {
-  KEY_EMB_PAGE_ID,
-  KEY_EMB_PAGE_PATH,
-} from '../../../constants/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

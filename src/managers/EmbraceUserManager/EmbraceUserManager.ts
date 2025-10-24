@@ -9,7 +9,7 @@ import {
   EMBRACE_USER_STORAGE_KEY_DEPRECATED,
 } from './constants.js';
 import type { EmbraceUserManagerArgs } from './types.js';
-import { isUserId, isUser } from './types.js';
+import { isUser, isUserId } from './types.js';
 
 export class EmbraceUserManager implements UserManagerInternal {
   private readonly _diag: DiagLogger;
@@ -44,7 +44,7 @@ export class EmbraceUserManager implements UserManagerInternal {
     } catch (e) {
       this._diag.warn(
         'Failed to persist user object for storage, keeping it in-memory only',
-        e
+        e,
       );
     }
   }
@@ -65,7 +65,7 @@ export class EmbraceUserManager implements UserManagerInternal {
     // we need to check if the old storage key exists and migrate it.
     try {
       const oldUserStorage = this._storage.getItem(
-        EMBRACE_USER_STORAGE_KEY_DEPRECATED
+        EMBRACE_USER_STORAGE_KEY_DEPRECATED,
       );
 
       if (oldUserStorage) {
@@ -74,12 +74,12 @@ export class EmbraceUserManager implements UserManagerInternal {
           this._diag.debug('Migrating old user data from storage');
           this._storage.setItem(
             EMBRACE_USER_ID_STORAGE_KEY,
-            user[KEY_ENDUSER_PSEUDO_ID]
+            user[KEY_ENDUSER_PSEUDO_ID],
           );
           this._storage.removeItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED);
         } else {
           this._diag.warn(
-            'Invalid user data found in storage, clearing old user data'
+            'Invalid user data found in storage, clearing old user data',
           );
           this._storage.removeItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED);
         }
@@ -94,7 +94,7 @@ export class EmbraceUserManager implements UserManagerInternal {
       const embraceUserId = this._storage.getItem(EMBRACE_USER_ID_STORAGE_KEY);
       if (!embraceUserId) {
         this._diag.debug(
-          'No existing user found in storage, creating a new one'
+          'No existing user found in storage, creating a new one',
         );
       } else if (isUserId(embraceUserId)) {
         this._embraceUserId = embraceUserId;
@@ -105,7 +105,7 @@ export class EmbraceUserManager implements UserManagerInternal {
     } catch (e) {
       this._diag.warn(
         'Failed to get embrace user id from storage, defaulting to a new one',
-        e
+        e,
       );
     }
 

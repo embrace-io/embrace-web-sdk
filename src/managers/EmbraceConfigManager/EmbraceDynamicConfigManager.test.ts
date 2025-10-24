@@ -1,5 +1,4 @@
 import * as chai from 'chai';
-import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.js';
 import {
   fakeFetchGetRequestHeaders,
   fakeFetchGetUrl,
@@ -10,6 +9,7 @@ import {
   InMemoryStorage,
 } from '../../testUtils/index.js';
 import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.js';
+import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.js';
 
 const { expect } = chai;
 
@@ -80,7 +80,7 @@ describe('EmbraceDynamicConfigManager', () => {
         config: {
           threshold: 75,
         },
-      })
+      }),
     );
 
     const configManager = new EmbraceDynamicConfigManager({
@@ -112,7 +112,7 @@ describe('EmbraceDynamicConfigManager', () => {
       networkSpansForwardingThreshold: 0,
     });
     expect(diag.getWarnLogs()[0]).to.contain(
-      'Failed to parse remote config from storage'
+      'Failed to parse remote config from storage',
     );
   });
 
@@ -136,7 +136,7 @@ describe('EmbraceDynamicConfigManager', () => {
       }),
       {
         status: 200,
-      }
+      },
     );
 
     const configManager = new EmbraceDynamicConfigManager({
@@ -155,7 +155,7 @@ describe('EmbraceDynamicConfigManager', () => {
       samplingPct: 80,
     });
     expect(fakeFetchGetUrl()).to.equal(
-      'https://a-test-app.config.emb-api.com/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device'
+      'https://a-test-app.config.emb-api.com/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device',
     );
   });
 
@@ -193,7 +193,7 @@ describe('EmbraceDynamicConfigManager', () => {
         headers: {
           etag: 'test-etag',
         },
-      }
+      },
     );
 
     const configManager = new EmbraceDynamicConfigManager({
@@ -227,7 +227,7 @@ describe('EmbraceDynamicConfigManager', () => {
         config: {
           threshold: 75,
         },
-      })
+      }),
     );
 
     fakeFetchRespondWith(
@@ -239,7 +239,7 @@ describe('EmbraceDynamicConfigManager', () => {
         headers: {
           etag: 'new-etag',
         },
-      }
+      },
     );
 
     const configManager = new EmbraceDynamicConfigManager({
@@ -260,7 +260,7 @@ describe('EmbraceDynamicConfigManager', () => {
       'If-None-Match': 'stored-etag',
     });
     expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
-      JSON.stringify({ config: { threshold: 80 }, etag: 'new-etag' })
+      JSON.stringify({ config: { threshold: 80 }, etag: 'new-etag' }),
     );
   });
 
@@ -272,7 +272,7 @@ describe('EmbraceDynamicConfigManager', () => {
           threshold: 75,
         },
         etag: 'stored-etag',
-      })
+      }),
     );
 
     fakeFetchRespondWith(null, {
@@ -308,7 +308,7 @@ describe('EmbraceDynamicConfigManager', () => {
       'If-None-Match': 'stored-etag',
     });
     expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
-      JSON.stringify({ config: { threshold: 75 }, etag: 'stored-etag' })
+      JSON.stringify({ config: { threshold: 75 }, etag: 'stored-etag' }),
     );
   });
 
@@ -320,7 +320,7 @@ describe('EmbraceDynamicConfigManager', () => {
       }),
       {
         status: 200,
-      }
+      },
     );
 
     const configManager = new EmbraceDynamicConfigManager({
@@ -340,7 +340,7 @@ describe('EmbraceDynamicConfigManager', () => {
       samplingPct: 90,
     });
     expect(fakeFetchGetUrl()).to.equal(
-      `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`
+      `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`,
     );
   });
 });

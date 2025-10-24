@@ -22,56 +22,56 @@ program
   .addOption(
     new Option(
       '-p, --build-path <buildPath>',
-      'Path to where the built JS files live'
+      'Path to where the built JS files live',
     )
       .env('EMB_BUILD_PATH')
-      .makeOptionMandatory()
+      .makeOptionMandatory(),
   )
   .addOption(
     new Option(
       '-t, --token <token>',
-      'API token to authenticate with Embrace'
-    ).env('EMB_SOURCE_UPLOAD_API_TOKEN')
+      'API token to authenticate with Embrace',
+    ).env('EMB_SOURCE_UPLOAD_API_TOKEN'),
   )
   .addOption(
     new Option('-a, --app-id <appID>', 'Application ID')
       .env('EMB_APP_ID')
-      .makeOptionMandatory()
+      .makeOptionMandatory(),
   )
   .addOption(
     new Option(
       '--app-version <appVersion>',
-      'Application Version. Usually the version of the app under package.json -> version'
-    ).env('EMB_APP_VERSION')
+      'Application Version. Usually the version of the app under package.json -> version',
+    ).env('EMB_APP_VERSION'),
   )
   .addOption(
     new Option('--cli-version [cliVersion]', 'Version of this CLI tool')
       .env('EMB_CLI_VERSION')
       .default(CLI_VERSION)
       .makeOptionMandatory()
-      .hideHelp()
+      .hideHelp(),
   )
   .addOption(
     new Option(
       '-d, --dry-run',
-      'Make a dry run without uploading or saving the replacements. This is the same as using --no-upload and --no-replaceBundleID'
-    ).env('EMB_DRY_RUN')
+      'Make a dry run without uploading or saving the replacements. This is the same as using --no-upload and --no-replaceBundleID',
+    ).env('EMB_DRY_RUN'),
   )
   .addOption(
     new Option('--no-upload', 'Turn off uploading source maps to Embrace').env(
-      'EMB_NO_UPLOAD'
-    )
+      'EMB_NO_UPLOAD',
+    ),
   )
   .addOption(
     new Option(
       '--no-replaceBundleID',
-      'Turn off editing the original source bundle and map files to include the bundle ID'
-    ).env('EMB_NO_REPLACE_BUNDLE_ID')
+      'Turn off editing the original source bundle and map files to include the bundle ID',
+    ).env('EMB_NO_REPLACE_BUNDLE_ID'),
   )
   .addOption(
     new Option(
       '-e, --encoding [fileEncoding]',
-      'File encoding for reading and writing the JS and map files'
+      'File encoding for reading and writing the JS and map files',
     )
       .env('EMB_ENCODING')
       .choices([
@@ -88,43 +88,43 @@ program
         'binary',
         'hex',
       ])
-      .default(DEFAULT_FILE_ENCODING)
+      .default(DEFAULT_FILE_ENCODING),
   )
   .addOption(
     new Option('--host [host]', 'Embrace URL host to upload source maps to')
       .env('EMB_SOURCE_MAP_UPLOAD_HOST')
       .default(SOURCE_MAP_UPLOAD_HOST)
       .makeOptionMandatory()
-      .hideHelp()
+      .hideHelp(),
   )
   .addOption(
     new Option(
       '--path-for-upload [pathForUpload]',
-      'Embrace URL path to upload source maps to'
+      'Embrace URL path to upload source maps to',
     )
       .env('EMB_SOURCE_MAP_UPLOAD_PATH')
       .default(SOURCE_MAP_UPLOAD_PATH)
       .makeOptionMandatory()
-      .hideHelp()
+      .hideHelp(),
   )
   .addOption(
     new Option('--store-type [storeType]', 'Embrace store type for the upload')
       .env('EMB_STORE_TYPE')
       .default('sourcemap')
       .makeOptionMandatory()
-      .hideHelp()
+      .hideHelp(),
   )
   .addOption(
     new Option(
       '--template-app-version [templateAppVersion]',
-      'Embrace Template App Version build into the SDK source code for replacement'
+      'Embrace Template App Version build into the SDK source code for replacement',
     )
       .env('EMB_TEMPLATE_APP_VERSION')
       .default(TEMPLATE_APP_VERSION)
       .makeOptionMandatory()
-      .hideHelp()
+      .hideHelp(),
   )
-  .action(async options => {
+  .action(async (options) => {
     const {
       buildPath,
       token,

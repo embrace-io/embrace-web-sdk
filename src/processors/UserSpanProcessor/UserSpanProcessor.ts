@@ -1,7 +1,7 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { UserManager } from '../../api-users/index.js';
 import type { UserSpanProcessorArgs } from './types.js';
-import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 
 /**
  * UserSpanProcessor sets the userId attribute on all spans if the userId is set in the UserManager.

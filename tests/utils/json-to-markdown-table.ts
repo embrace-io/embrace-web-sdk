@@ -22,20 +22,23 @@ const resultsToMarkdownTable = (data: Record<string, Metric[]>): string => {
 
       return rowLength > Object.keys(max).length ? row : max;
     },
-    { section: '' }
+    { section: '' },
   );
 
   const headers = [
     'Section',
-    ...Object.keys(largestRow).filter(key => key !== 'Section'),
+    ...Object.keys(largestRow).filter((key) => key !== 'Section'),
   ];
   // Remove Section title, is just used to group keys of the json object
-  const headerRow = `| ${headers.map(header => (header === 'Section' ? '' : header)).join(' | ')} |\n`;
+  const headerRow = `| ${headers.map((header) => (header === 'Section' ? '' : header)).join(' | ')} |\n`;
   const separatorRow = `| ${headers.map(() => '---').join(' | ')} |\n`;
 
   // Make sure empty rows are handled correctly
   const bodyRows = rows
-    .map(row => `| ${headers.map(header => row[header] ?? '').join(' | ')} |\n`)
+    .map(
+      (row) =>
+        `| ${headers.map((header) => row[header] ?? '').join(' | ')} |\n`,
+    )
     .join('');
 
   return `${headerRow}${separatorRow}${bodyRows}`;

@@ -1,19 +1,19 @@
-import type { Metric, TestPage } from '../types/index.js';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
-import type { CDPSession } from 'playwright';
-import { chromium } from 'playwright';
 import fs from 'node:fs';
-import type { Page } from '@playwright/test';
 import zlib from 'node:zlib';
+import type { Page } from '@playwright/test';
 import { test } from '@playwright/test';
 import getPort from 'get-port';
+import type { CDPSession } from 'playwright';
+import { chromium } from 'playwright';
 import { resultsToMarkdownTable } from '../../utils/index.js';
 import {
-  TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
-  TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
-  TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
   TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
+  TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
+  TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
+  TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
 } from '../config/index.js';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
+import type { Metric, TestPage } from '../types/index.js';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
 type PerformanceSnapshot = Record<PerformanceMetric, number>;
@@ -92,7 +92,7 @@ const waitForPageToBeIdle = async (page: Page) => {
 };
 
 const getPerformanceSnapshot = async (
-  cdpSession: CDPSession
+  cdpSession: CDPSession,
 ): Promise<PerformanceSnapshot> => {
   /**
    * Performance.getMetrics exposes the following metrics
@@ -112,7 +112,7 @@ const getPerformanceSnapshot = async (
    * JSHeapTotalSize : Total JavaScript heap size.
    */
   const raw = await cdpSession.send('Performance.getMetrics');
-  const metrics = Object.fromEntries(raw.metrics.map(m => [m.name, m.value]));
+  const metrics = Object.fromEntries(raw.metrics.map((m) => [m.name, m.value]));
 
   // To capture new metrics, you can add them to the object below
   // Remember to add the new metric to PerformanceMetric and METRIC_HUMAN_READABLE_TO_UNIT_MAP
@@ -140,7 +140,7 @@ const calculateDifference = (results: Results) =>
         unit: METRIC_NAME_UNIT_MAP[metricName as PerformanceMetric],
       })),
     }),
-    {}
+    {},
   );
 
 const STEPS: Step[] = [
@@ -186,7 +186,7 @@ test.describe('CDP Performance Tests', () => {
       const page = await context.newPage();
       const cdpSession = await context.newCDPSession(page);
 
-      await context.route(EMBRACE_API_REGEX, async route => {
+      await context.route(EMBRACE_API_REGEX, async (route) => {
         const buffer = route.request().postDataBuffer();
 
         if (!buffer) {
@@ -208,7 +208,7 @@ test.describe('CDP Performance Tests', () => {
 
               fs.writeFileSync(
                 `./test-results/cdp-performance-tests-${new Date().getTime().toString()}-request.json`,
-                JSON.stringify(JSON.parse(json), null, 2)
+                JSON.stringify(JSON.parse(json), null, 2),
               );
             } catch (e) {
               console.error('Failed to save JSON:', e);
@@ -225,7 +225,7 @@ test.describe('CDP Performance Tests', () => {
       const outputPath = `./test-results/cdp-performance-tests-${testPage.name}-tracing.json`;
 
       const traceEvents: unknown[] = [];
-      cdpSession.on('Tracing.dataCollected', event => {
+      cdpSession.on('Tracing.dataCollected', (event) => {
         traceEvents.push(...event.value);
       });
 
@@ -260,8 +260,8 @@ test.describe('CDP Performance Tests', () => {
       await page.waitForTimeout(1000); // Give it some time to settle
       await cdpSession.send('Tracing.end');
 
-      await new Promise(resolve =>
-        cdpSession.once('Tracing.tracingComplete', resolve)
+      await new Promise((resolve) =>
+        cdpSession.once('Tracing.tracingComplete', resolve),
       );
 
       const traceJson = {
@@ -295,13 +295,13 @@ test.describe('CDP Performance Tests', () => {
       (acc, metrics) => ({
         ...acc,
         ...Object.fromEntries(
-          metrics.map(metric => [
+          metrics.map((metric) => [
             metric.name,
             (acc[metric.name] ?? 0) + metric.value,
-          ])
+          ]),
         ),
       }),
-      {}
+      {},
     );
     difference['Total'] = Object.entries(total).map(([name, value]) => ({
       name,
@@ -311,7 +311,7 @@ test.describe('CDP Performance Tests', () => {
 
     fs.writeFileSync(
       './test-results/cdp-performance-tests.md',
-      resultsToMarkdownTable(difference)
+      resultsToMarkdownTable(difference),
     );
 
     // Check thresholds
@@ -319,7 +319,7 @@ test.describe('CDP Performance Tests', () => {
       test
         .expect(
           metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name],
-          `Threshold exceeded for ${metric.name}: ${metric.value.toString()} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name].toString()} ${metric.unit})`
+          `Threshold exceeded for ${metric.name}: ${metric.value.toString()} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name].toString()} ${metric.unit})`,
         )
         .toBeTruthy();
     }
@@ -332,10 +332,10 @@ test.describe('CDP Performance Tests', () => {
           (acc, metric) => ({
             ...acc,
             [metric.name]: `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(
-              2
+              2,
             )}${metric.unit}`,
           }),
-          {}
+          {},
         ),
       })),
     ]);

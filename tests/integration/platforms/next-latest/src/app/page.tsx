@@ -1,5 +1,5 @@
-import styles from './page.module.css';
 import SDKTest from '@/components/SDKTest';
+import styles from './page.module.css';
 
 export default function Home() {
   return (

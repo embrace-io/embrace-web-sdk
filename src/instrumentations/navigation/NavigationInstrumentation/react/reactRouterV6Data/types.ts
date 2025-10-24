@@ -20,7 +20,7 @@ export type RouterState = {
 
 export type MatchRoutesFunction = (
   routes: Route[],
-  location: Location
+  location: Location,
 ) => Match[] | null;
 
 export interface Router {

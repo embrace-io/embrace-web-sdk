@@ -44,7 +44,7 @@ export abstract class InstrumentationAbstract<
   public constructor(
     public readonly instrumentationName: string,
     public readonly instrumentationVersion: string,
-    config: ConfigType
+    config: ConfigType,
   ) {
     this.setConfig(config);
 
@@ -130,7 +130,7 @@ export abstract class InstrumentationAbstract<
   public setLoggerProvider(loggerProvider: LoggerProvider): void {
     this._logger = loggerProvider.getLogger(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
   }
 
@@ -141,7 +141,7 @@ export abstract class InstrumentationAbstract<
   public setMeterProvider(meterProvider: MeterProvider): void {
     this._meter = meterProvider.getMeter(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
 
     this._updateMetricInstruments();
@@ -154,7 +154,7 @@ export abstract class InstrumentationAbstract<
   public setTracerProvider(tracerProvider: TracerProvider): void {
     this._tracer = tracerProvider.getTracer(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
   }
 
@@ -187,7 +187,7 @@ export abstract class InstrumentationAbstract<
     hookHandler: SpanCustomizationHook<SpanCustomizationInfoType> | undefined,
     triggerName: string,
     span: Span,
-    info: SpanCustomizationInfoType
+    info: SpanCustomizationInfoType,
   ) {
     if (!hookHandler) {
       return;
@@ -199,7 +199,7 @@ export abstract class InstrumentationAbstract<
       this._diag.error(
         `Error running span customization hook due to exception in handler`,
         { triggerName },
-        e
+        e,
       );
     }
   }

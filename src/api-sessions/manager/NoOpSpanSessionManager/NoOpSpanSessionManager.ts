@@ -15,7 +15,7 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   public addProperty(
     _key: string,
     _value: string,
-    _options?: PropertyOptions
+    _options?: PropertyOptions,
   ): void {
     // do nothing.
   }
@@ -33,7 +33,7 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   }
 
   public currentSessionAsReadableSpan(
-    _reason: ReasonSessionEnded
+    _reason: ReasonSessionEnded,
   ): ReadableSpan | null {
     return null;
   }

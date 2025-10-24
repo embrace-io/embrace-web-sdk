@@ -15,7 +15,7 @@ export default defineConfig({
         alias: {
           '@embrace-io/web-sdk/react-instrumentation': resolve(
             __dirname,
-            '../../src/react-instrumentation/index.ts'
+            '../../src/react-instrumentation/index.ts',
           ),
           '@embrace-io/web-sdk': resolve(__dirname, '../../src/index.ts'),
         },
@@ -29,11 +29,11 @@ export default defineConfig({
         'react-router-v5': resolve(__dirname, 'react-router-v5/index.html'),
         'react-router-v6-declarative': resolve(
           __dirname,
-          'react-router-v6-declarative/index.html'
+          'react-router-v6-declarative/index.html',
         ),
         'react-router-v6-data': resolve(
           __dirname,
-          'react-router-v6-data/index.html'
+          'react-router-v6-data/index.html',
         ),
       },
       output: {

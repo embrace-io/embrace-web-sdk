@@ -1,18 +1,23 @@
 import type { Attributes } from '@opentelemetry/api';
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   CLSAttribution,
   CLSMetricWithAttribution,
   INPAttribution,
   LCPAttribution,
-  MetricWithAttribution,
   Metric,
+  MetricWithAttribution,
 } from 'web-vitals/attribution';
+import type { PageManager } from '../../../api-page/index.js';
+import { page } from '../../../api-page/index.js';
+import type { URLDocument } from '../../../common/index.js';
 import {
   EMB_TYPES,
-  KEY_EMB_TYPE,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
+  KEY_EMB_TYPE,
 } from '../../../constants/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import {
   ALL_WEB_VITALS,
   CORE_WEB_VITALS,
@@ -23,11 +28,6 @@ import type {
   WebVitalListeners,
   WebVitalsInstrumentationArgs,
 } from './types.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import type { URLDocument } from '../../../common/index.js';
-import { page } from '../../../api-page/index.js';
-import type { PageManager } from '../../../api-page/index.js';
 
 type AttributedPage = {
   fullURL: string;
@@ -37,7 +37,7 @@ type AttributedPage = {
 
 const webVitalAttributionToReport = (
   name: Metric['name'],
-  metric: MetricWithAttribution
+  metric: MetricWithAttribution,
 ) => {
   const attributes: Attributes = {};
   const toReport: {
@@ -58,7 +58,7 @@ const webVitalAttributionToReport = (
           key: 'largestShiftValue',
           value: attribution.largestShiftValue,
         },
-      ]
+      ],
     );
   } else if (name === 'INP') {
     // https://www.npmjs.com/package/web-vitals#inpattribution
@@ -82,7 +82,7 @@ const webVitalAttributionToReport = (
           value: attribution.totalUnattributedDuration,
         },
         { key: 'loadState', value: attribution.loadState },
-      ]
+      ],
     );
   } else if (name === 'LCP') {
     // https://www.npmjs.com/package/web-vitals#lcpattribution
@@ -98,11 +98,11 @@ const webVitalAttributionToReport = (
           value: attribution.resourceLoadDuration,
         },
         { key: 'elementRenderDelay', value: attribution.elementRenderDelay },
-      ]
+      ],
     );
   }
 
-  toReport.forEach(report => {
+  toReport.forEach((report) => {
     if (report.value !== undefined) {
       attributes[`emb.web_vital.attribution.${report.key}`] = report.value;
     }
@@ -164,8 +164,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public enable(): void {
-    this._metricsToTrack.forEach(name => {
-      this._listeners[name]?.(metric => {
+    this._metricsToTrack.forEach((name) => {
+      this._listeners[name]?.((metric) => {
         const currentSessionSpan = this.sessionManager.getSessionSpan();
 
         if (!currentSessionSpan) {
@@ -198,7 +198,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         currentSessionSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
           attrs,
-          metricTime
+          metricTime,
         );
       });
     });
@@ -213,7 +213,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         },
         {
           reportAllChanges: true,
-        }
+        },
       );
       this._listeners.LCP?.(
         () => {
@@ -221,7 +221,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         },
         {
           reportAllChanges: true,
-        }
+        },
       );
       this._listeners.CLS?.(
         (metric: MetricWithAttribution) => {
@@ -240,7 +240,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         },
         {
           reportAllChanges: true,
-        }
+        },
       );
     }
   }
@@ -248,13 +248,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _getTimeForMetric(metric: MetricWithAttribution): number {
     if (metric.name === 'CLS' && metric.attribution.largestShiftTime) {
       return this.perf.epochMillisFromOriginOffset(
-        metric.attribution.largestShiftTime
+        metric.attribution.largestShiftTime,
       );
     }
 
     if (metric.name === 'INP' && metric.attribution.interactionTime) {
       return this.perf.epochMillisFromOriginOffset(
-        metric.attribution.interactionTime
+        metric.attribution.interactionTime,
       );
     }
 
@@ -277,7 +277,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _getAttributedPageForMetric(
-    metric: MetricWithAttribution
+    metric: MetricWithAttribution,
   ): AttributedPage {
     if (metric.name === 'INP' && this._attributedPage.INP) {
       return this._attributedPage.INP;

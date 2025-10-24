@@ -1,14 +1,14 @@
-import * as chai from 'chai';
+import type { Tracer } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import * as chai from 'chai';
+import type { UserManager } from '../../api-users/index.js';
+import { EmbraceUserManager } from '../../managers/index.js';
 import {
   InMemoryStorage,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import type { Tracer } from '@opentelemetry/api';
-import { trace } from '@opentelemetry/api';
 import { UserSpanProcessor } from './UserSpanProcessor.js';
-import type { UserManager } from '../../api-users/index.js';
-import { EmbraceUserManager } from '../../managers/index.js';
 
 const { expect } = chai;
 

@@ -1,9 +1,8 @@
+export { NoOpSpanSessionManager } from './NoOpSpanSessionManager/index.js';
+export { ProxySpanSessionManager } from './ProxySpanSessionManager/index.js';
 export type {
-  StartSessionOptions,
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
+  StartSessionOptions,
 } from './types.js';
-
-export { NoOpSpanSessionManager } from './NoOpSpanSessionManager/index.js';
-export { ProxySpanSessionManager } from './ProxySpanSessionManager/index.js';

@@ -6,8 +6,8 @@ const filterBrowserLogs = ({ args, type }) => {
   // src/instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.test.ts
   if (
     args.some(
-      arg =>
-        typeof arg == 'string' && arg.includes('GlobalExceptionTestErrorName')
+      (arg) =>
+        typeof arg == 'string' && arg.includes('GlobalExceptionTestErrorName'),
     )
   ) {
     return false;

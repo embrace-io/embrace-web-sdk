@@ -1,6 +1,8 @@
 import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { LogSeverity } from '../../api-logs/index.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type {
   AttributeLimitedType,
   EmbraceLimitManagerArgs,
@@ -15,9 +17,6 @@ import type {
   LogLimitedType,
   MaxLimitedType,
 } from './types.js';
-import type { LogSeverity } from '../../api-logs/index.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 
 const LogSeverityToLimitType: Record<LogSeverity, LogLimitedType> = {
   info: 'info_log',
@@ -63,7 +62,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   private _dropIfMaxReached(type: MaxLimitedType): boolean {
     if (this._currentCount[type] >= this._maxAllowed[type]) {
       this._diag.warn(
-        `disallowing ${type} because the maximum number of ${this._maxAllowed[type].toString()} has already been reached for this session`
+        `disallowing ${type} because the maximum number of ${this._maxAllowed[type].toString()} has already been reached for this session`,
       );
 
       this._incrDiagnosticCount(type, 'drop');
@@ -77,7 +76,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   public truncateString(type: LengthLimitedType, body: string) {
     if (body.length > this._maxLength[type]) {
       this._diag.warn(
-        `truncating ${type} because it is longer than ${this._maxLength[type].toString()} characters: "${body}"`
+        `truncating ${type} because it is longer than ${this._maxLength[type].toString()} characters: "${body}"`,
       );
 
       this._incrDiagnosticCount(type, 'truncate_string');
@@ -91,13 +90,13 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     type: AttributeLimitedType,
     attributes: Record<string, AttributeValue | undefined>,
     keyType: LengthLimitedType,
-    valueType: LengthLimitedType
+    valueType: LengthLimitedType,
   ) {
     const keys = Object.keys(attributes);
 
     if (keys.length > this._maxAttributes[type]) {
       this._diag.warn(
-        `truncating ${type} attributes because there are more than ${this._maxAttributes[type].toString()} set`
+        `truncating ${type} attributes because there are more than ${this._maxAttributes[type].toString()} set`,
       );
       this._incrDiagnosticCount(type, 'truncate_attributes');
     }
@@ -108,7 +107,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       const truncatedKey = this.truncateString(keyType, keys[i]);
       truncatedAttributes[truncatedKey] = this.truncateString(
         valueType,
-        attributes[keys[i]]?.toString() || ''
+        attributes[keys[i]]?.toString() || '',
       );
     }
 
@@ -127,7 +126,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
 
   public limitException(
     message: string,
-    attributes: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined>,
   ): LimitedException | 'dropped' {
     if (this._dropIfMaxReached('exception')) {
       return 'dropped';
@@ -139,7 +138,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
         'exception',
         attributes,
         'exception_attribute_key',
-        'exception_attribute_value'
+        'exception_attribute_value',
       ),
     };
   }
@@ -147,7 +146,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   public limitLog(
     message: string,
     severity: LogSeverity,
-    attributes: Record<string, AttributeValue | undefined>
+    attributes: Record<string, AttributeValue | undefined>,
   ): LimitedLog | 'dropped' {
     const logType = LogSeverityToLimitType[severity];
 
@@ -161,14 +160,14 @@ export class EmbraceLimitManager implements LimitManagerInternal {
         logType,
         attributes,
         'log_attribute_key',
-        'log_attribute_value'
+        'log_attribute_value',
       ),
     };
   }
 
   public limitSessionProperty(
     key: string,
-    value: string
+    value: string,
   ): LimitedSessionProperty | 'dropped' {
     if (this._dropIfMaxReached('session_property')) {
       return 'dropped';

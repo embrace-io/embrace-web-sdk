@@ -1,7 +1,7 @@
-import type { EmbraceFetchInstrumentationArgs } from './types.js';
+import { isWrapped } from '@opentelemetry/instrumentation';
 
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { isWrapped } from '@opentelemetry/instrumentation';
+import type { EmbraceFetchInstrumentationArgs } from './types.js';
 
 export class EmbraceFetchInstrumentation extends FetchInstrumentation {
   private readonly _omitIfAlreadyPatched?: boolean;
@@ -28,7 +28,7 @@ export class EmbraceFetchInstrumentation extends FetchInstrumentation {
     // control the global
     if (this._omitIfAlreadyPatched && isWrapped(fetch)) {
       this._diag.debug(
-        'fetch is already passed and `omitIfAlreadyPatched` is true, skipping enabling this instrumentation'
+        'fetch is already passed and `omitIfAlreadyPatched` is true, skipping enabling this instrumentation',
       );
       return;
     }

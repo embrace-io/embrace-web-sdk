@@ -12,8 +12,8 @@ import {
 } from 'react-router-domv6plus';
 import logo from '../src/logo.png';
 import '../src/index.css';
-import { getBasename } from '../src/utils';
 import { setupOTel } from '../src/otel';
+import { getBasename } from '../src/utils';
 
 setupOTel();
 
@@ -137,7 +137,7 @@ const router = createBrowserRouter(
       element: <About />,
     },
   ],
-  { basename: getBasename('react-router-v6-data') }
+  { basename: getBasename('react-router-v6-data') },
 );
 
 const App = () => {
@@ -168,5 +168,5 @@ const App = () => {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );

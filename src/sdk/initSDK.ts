@@ -1,4 +1,4 @@
-import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
@@ -7,17 +7,19 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
-  StackContextManager,
   BatchSpanProcessor,
+  StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import { session } from '../api-sessions/index.js';
-import { user } from '../api-users/index.js';
+import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.js';
-import { trace } from '../api-traces/index.js';
 import { page } from '../api-page/index.js';
+import { session } from '../api-sessions/index.js';
+import { trace } from '../api-traces/index.js';
+import { user } from '../api-users/index.js';
+import type { AttributeScrubber } from '../common/index.js';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
@@ -27,11 +29,11 @@ import {
   EmbraceDynamicConfigManager,
   EmbraceLimitManager,
   EmbraceLogManager,
+  EmbracePageManager,
   EmbraceSDKFeaturesManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-  EmbracePageManager,
 } from '../managers/index.js';
 import {
   EmbraceLogRecordProcessor,
@@ -39,16 +41,22 @@ import {
   EmbraceSessionBatchedSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
   LogRecordScrubProcessor,
+  PageLogRecordProcessor,
+  PageSpanProcessor,
   SpanScrubProcessor,
   UserLogRecordProcessor,
   UserSpanProcessor,
-  PageLogRecordProcessor,
-  PageSpanProcessor,
 } from '../processors/index.js';
+import { EmbraceW3CTraceContextPropagator } from '../propagators/index.js';
 import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
-import { isValidAppID } from './utils.js';
+import {
+  NamespacedStorage,
+  nsfConfigValidation,
+  OTelPerformanceManager,
+} from '../utils/index.js';
+import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
+import { registry } from './registry.js';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import type {
   DynamicSDKConfig,
   SDKControl,
@@ -59,15 +67,7 @@ import type {
   SetupTracesArgs,
   SetupUserArgs,
 } from './types.js';
-import { registry } from './registry.js';
-import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
-import type { AttributeScrubber } from '../common/index.js';
-import {
-  OTelPerformanceManager,
-  nsfConfigValidation,
-  NamespacedStorage,
-} from '../utils/index.js';
-import { EmbraceW3CTraceContextPropagator } from '../propagators/index.js';
+import { isValidAppID } from './utils.js';
 
 export const initSDK = (
   {
@@ -96,7 +96,7 @@ export const initSDK = (
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
-  }: SDKInitConfig = { appID: '' }
+  }: SDKInitConfig = { appID: '' },
 ): SDKControl | false => {
   try {
     const perf = new OTelPerformanceManager();
@@ -106,7 +106,7 @@ export const initSDK = (
       const existingSDK = registry.registered();
       if (existingSDK !== null) {
         diagLogger.warn(
-          'SDK has already been successfully initialized, skipping this invocation of initSDK'
+          'SDK has already been successfully initialized, skipping this invocation of initSDK',
         );
         return existingSDK;
       }
@@ -120,13 +120,13 @@ export const initSDK = (
 
     if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
       throw new Error(
-        'when the embrace appID is omitted then at least one logExporter or spanExporter must be set'
+        'when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
       );
     }
 
     if (restrictedProtocols.has(window.location.protocol)) {
       throw new Error(
-        `not initializing due to restricted protocol: ${window.location.protocol}`
+        `not initializing due to restricted protocol: ${window.location.protocol}`,
       );
     }
 
@@ -143,7 +143,7 @@ export const initSDK = (
         diagLogger,
         appVersion,
         pageSessionStorage: sdkSessionStorage,
-      })
+      }),
     );
 
     const userManager = setupUser({ registerGlobally, sdkLocalStorage });
@@ -224,7 +224,7 @@ export const initSDK = (
           appID,
           embraceDataURL,
           userID: enduserPseudoID,
-        })
+        }),
       );
     }
 
@@ -313,7 +313,7 @@ export const initSDK = (
     }
 
     spanSessionManager.recordSDKStartupDuration(
-      perf.getNowMillis() - initSDKStart
+      perf.getNowMillis() - initSDKStart,
     );
 
     return sdkControl;
@@ -377,7 +377,7 @@ const setupTraces = ({
     new SpanScrubProcessor({ attributeScrubbers }),
   ];
 
-  spanExporters?.forEach(exporter => {
+  spanExporters?.forEach((exporter) => {
     finalSpanProcessors.push(new BatchSpanProcessor(exporter));
   });
 
@@ -443,7 +443,7 @@ const setupLogs = ({
     new PageLogRecordProcessor({ pageManager }),
   ];
 
-  logExporters?.forEach(exporter => {
+  logExporters?.forEach((exporter) => {
     finalLogProcessors.push(new BatchLogRecordProcessor(exporter));
   });
 

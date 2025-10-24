@@ -1,13 +1,13 @@
+import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import {
+  ConsoleLogRecordExporter,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-  type SpanProcessor,
 } from '@opentelemetry/sdk-trace-web';
-import {
-  ConsoleLogRecordExporter,
-  type LogRecordProcessor,
-  SimpleLogRecordProcessor,
-} from '@opentelemetry/sdk-logs';
 
 interface DefaultInstrumentationConfig {
   '@opentelemetry/instrumentation-fetch'?: {
@@ -54,19 +54,19 @@ let sdkControl: SDKControl | null = null;
 const addEmbraceSDK = () => {
   window.EmbraceWebSdkOnReady = window.EmbraceWebSdkOnReady || {
     q: [],
-    onReady: function (fn) {
+    onReady: (fn) => {
       window.EmbraceWebSdkOnReady.q.push(fn);
     },
   };
   const script = document.createElement('script');
   script.async = true;
   script.src = '/embrace-web-sdk.js';
-  script.onload = function () {
+  script.onload = () => {
     // Call onReady immediately if the SDK is already loaded
-    window.EmbraceWebSdkOnReady.onReady = function (fn) {
+    window.EmbraceWebSdkOnReady.onReady = (fn) => {
       fn();
     };
-    window.EmbraceWebSdkOnReady.q.forEach(fn => fn());
+    window.EmbraceWebSdkOnReady.q.forEach((fn) => fn());
     window.EmbraceWebSdkOnReady.q = [];
   };
   const firstScript = document.getElementsByTagName('script')[0];
@@ -76,7 +76,7 @@ const addEmbraceSDK = () => {
 const initSDK = (
   appID: string,
   appVersion: string,
-  omitNetworkIfAlreadyPatched: boolean
+  omitNetworkIfAlreadyPatched: boolean,
 ) => {
   window.EmbraceWebSdkOnReady.onReady(() => {
     const { initSDK } = window.EmbraceWebSdk;
@@ -84,7 +84,7 @@ const initSDK = (
       'appVersion: ',
       appVersion,
       ', omitNetworkIfAlreadyPatched: ',
-      omitNetworkIfAlreadyPatched
+      omitNetworkIfAlreadyPatched,
     );
     sdkControl = initSDK({
       appID,

@@ -6,13 +6,12 @@
 import type { Span } from '@opentelemetry/api';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
 
-export interface DocumentLoadCustomAttributeFunction {
-  (span: Span): void;
-}
+export type DocumentLoadCustomAttributeFunction = (span: Span) => void;
 
-export interface ResourceFetchCustomAttributeFunction {
-  (span: Span, resource: PerformanceResourceTiming): void;
-}
+export type ResourceFetchCustomAttributeFunction = (
+  span: Span,
+  resource: PerformanceResourceTiming,
+) => void;
 
 export type DocumentLoadInstrumentationConfig = Pick<
   EmbraceInstrumentationBaseArgs,

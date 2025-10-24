@@ -1,5 +1,5 @@
+import { log, session } from '@embrace-io/web-sdk';
 import React from 'react';
-import { session, log } from '@embrace-io/web-sdk';
 import { sdkControl } from './otel';
 
 const SDKTest = () => {

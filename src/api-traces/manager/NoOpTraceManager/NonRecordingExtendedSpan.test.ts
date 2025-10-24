@@ -1,6 +1,6 @@
+import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import * as chai from 'chai';
 import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
-import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 
 const { expect } = chai;
 
@@ -9,7 +9,7 @@ describe('NonRecordingExtendedSpan', () => {
     const nonRecordingSpan = new NonRecordingExtendedSpan();
 
     void expect(nonRecordingSpan.spanContext()).to.be.deep.equal(
-      INVALID_SPAN_CONTEXT
+      INVALID_SPAN_CONTEXT,
     );
     void expect(nonRecordingSpan.isRecording()).to.be.false;
 

@@ -1,18 +1,18 @@
-import * as React from 'react';
 import hoistNonReactStatics from 'hoist-non-react-statics';
+import * as React from 'react';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
+import { getNavigationInstrumentation } from '../../index.js';
 import type {
   RouteComponentProps,
   SwitchedRouteComponentProps,
 } from './types.js';
-import { getNavigationInstrumentation } from '../../index.js';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
 
 export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
-  WrappedComponent: React.ComponentType<P>
+  WrappedComponent: React.ComponentType<P>,
 ) => {
   const navigationInstrumentation = getNavigationInstrumentation();
   navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.DeclarativeLegacy
+    EMB_NAVIGATION_INSTRUMENTATIONS.DeclarativeLegacy,
   );
 
   const RouteWithEmbraceRoutingLegacy: React.FC<P> = (props: P) => {

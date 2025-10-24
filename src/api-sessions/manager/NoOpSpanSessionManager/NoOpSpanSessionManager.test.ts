@@ -64,7 +64,7 @@ describe('NoOpSpanSessionManager', () => {
     expect(() => {
       noOpSpanSessionManager.addProperty(
         'some-custom-key',
-        'some custom value'
+        'some custom value',
       );
     }).to.not.throw();
   });

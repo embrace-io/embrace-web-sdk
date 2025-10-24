@@ -10,7 +10,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
 
     sdkControl!.log.message(
       'Embrace initialized successfully in the host app',
-      'info'
+      'info',
     );
 
     const onLogClick = () => {
@@ -34,7 +34,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     fetchButton.addEventListener('click', () => {
       console.log('Making Fetch call from the host app');
       fetch('https://jsonplaceholder.typicode.com/posts/2')
-        .then(response => response.json())
+        .then((response) => response.json())
         .then(() => {
           console.log('Fetch call from host app successful');
         });
