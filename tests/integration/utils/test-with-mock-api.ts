@@ -33,7 +33,7 @@ const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
 };
 const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
-const REMOTE_CONFIG_REGEX = /^https?:\\/\\/.*\\/v2\\/config\?.*/;
+const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
 
 type EmbraceDataRequest = {
   url: string;
