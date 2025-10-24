@@ -60,8 +60,8 @@ jobs:
           echo "Updating package-lock.json"
           npm i
 
-          echo "Updating constants files by running sdk:lint:fix"
-          npm run sdk:lint:fix
+          echo "Updating constants files by running lint"
+          npm run lint
       - name: commit and create PR with the next release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
