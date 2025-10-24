@@ -61,7 +61,7 @@ jobs:
           npm i
 
           echo "Updating constants files by running lint"
-          npm run lint
+          npm run sdk:lint
       - name: commit and create PR with the next release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
