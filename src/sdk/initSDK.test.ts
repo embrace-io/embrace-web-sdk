@@ -1008,7 +1008,7 @@ describe('initSDK', () => {
         appVersion: 'my-app-version',
         logExporters: [logExporter],
         attributeScrubbers: [
-          { key: 'safe', scrub: (value) => value + ' ALTERED' },
+          { key: 'safe', scrub: (value) => `${value} ALTERED` },
         ],
         additionalQueryParamsToScrub: ['foo'],
         defaultInstrumentationConfig: {
