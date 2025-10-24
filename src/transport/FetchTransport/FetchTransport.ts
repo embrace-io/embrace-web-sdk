@@ -77,7 +77,7 @@ export class FetchTransport implements IExporterTransport {
     // Use AbortSignal.timeout if available, otherwise fallback to AbortController
     // https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/timeout_static
     let signal: AbortSignal;
-    let timeoutId;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     if ('timeout' in AbortSignal) {
       signal = AbortSignal.timeout(timeoutMillis);

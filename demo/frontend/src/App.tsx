@@ -323,7 +323,10 @@ const App = () => {
         {spans.length > 0 && (
           <div className={styles.spans}>
             {spans.map((span, index) => (
-              <div className={styles.span} key={`span-${index}`}>
+              <div
+                className={styles.span}
+                key={`span-${span.spanContext().spanId}`}
+              >
                 <div>Span {index}</div>
 
                 <button

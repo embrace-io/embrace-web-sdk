@@ -11,7 +11,9 @@
   script.async = true;
   script.src = 'https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X';
   script.onload = () => {
-    window.EmbraceWebSdkOnReady.q.forEach((fn) => fn());
+    window.EmbraceWebSdkOnReady.q.forEach((fn) => {
+      fn();
+    });
     window.EmbraceWebSdkOnReady.q = [];
     // Call onReady immediately if the SDK is already loaded
     window.EmbraceWebSdkOnReady.onReady = (fn) => {
