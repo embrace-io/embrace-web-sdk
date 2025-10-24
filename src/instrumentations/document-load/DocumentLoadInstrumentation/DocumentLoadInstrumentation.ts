@@ -106,7 +106,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  protected override init(): void {
+  protected override init() {
     this._diag.debug('Initializing document load instrumentation');
     return undefined;
   }

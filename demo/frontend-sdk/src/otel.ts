@@ -66,7 +66,9 @@ const addEmbraceSDK = () => {
     window.EmbraceWebSdkOnReady.onReady = (fn) => {
       fn();
     };
-    window.EmbraceWebSdkOnReady.q.forEach((fn) => fn());
+    window.EmbraceWebSdkOnReady.q.forEach((fn) => {
+      fn();
+    });
     window.EmbraceWebSdkOnReady.q = [];
   };
   const firstScript = document.getElementsByTagName('script')[0];
