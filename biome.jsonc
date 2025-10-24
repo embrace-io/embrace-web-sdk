@@ -28,6 +28,10 @@
   "linter": {
     "rules": {
       "recommended": true,
+      "complexity": {
+        // https://github.com/biomejs/biome/discussions/7404
+        "useLiteralKeys": "off"
+      },
       "style": {
         "useImportType": {
           "level": "error",
