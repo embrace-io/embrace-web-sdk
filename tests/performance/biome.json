@@ -1,0 +1,18 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": "//",
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUnusedVariables": {
+          "level": "off"
+        }
+      },
+      "suspicious": {
+        "noConsole": {
+          "level": "off"
+        }
+      }
+    }
+  }
+}
