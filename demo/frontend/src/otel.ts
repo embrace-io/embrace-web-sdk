@@ -2,7 +2,6 @@ import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
 import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
-import { EmptyRootInstrumentation } from '@embrace-io/web-sdk';
 
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
@@ -19,13 +18,11 @@ const setupOTel = () => {
       'session-visibility': {
         limitedSessionMaxDurationMs: 3000,
       },
-    },
-    instrumentations: [
-      createReactRouterNavigationInstrumentation(),
-      new EmptyRootInstrumentation({
+      'empty-root': {
         rootNode: document.getElementById('root')!,
-      }),
-    ],
+      },
+    },
+    instrumentations: [createReactRouterNavigationInstrumentation()],
     embraceDataURL: DATA_URL ?? undefined,
     embraceConfigURL: CONFIG_URL ?? undefined,
   });
