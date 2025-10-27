@@ -6,8 +6,10 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: process.env.VITE_BASE_URL || '/',
   plugins: [Sonda({ enabled: false })],
+  // In development, alias SDK imports to local source files for live editing.
+  // In production, use the installed package from node_modules.
   resolve: isDevelopment
     ? {
         alias: {
@@ -22,22 +24,20 @@ export default defineConfig({
   build: {
     sourcemap: true,
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        'react-router-v5': resolve(__dirname, 'react-router-v5/index.html'),
+        'react-router-v6-declarative': resolve(
+          __dirname,
+          'react-router-v6-declarative/index.html'
+        ),
+        'react-router-v6-data': resolve(
+          __dirname,
+          'react-router-v6-data/index.html'
+        ),
+      },
       output: {
         sourcemapDebugIds: true,
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@opentelemetry')) {
-              return 'opentelemetry';
-            }
-            if (id.includes('react')) {
-              return 'react';
-            }
-
-            // All other node_modules go into 'vendor'
-            return 'vendor';
-          }
-          return null;
-        },
       },
     },
   },

@@ -8,7 +8,7 @@ const ComponentWithErrorInRender = () => {
   return (
     <button onClick={() => setValue(-1)}>
       Trigger a render error
-      {/* @ts-ignore */}
+      {/* @ts-expect-error we want to throw an error in this example */}
       {value === -1 && someArray[value].some.property}
     </button>
   );

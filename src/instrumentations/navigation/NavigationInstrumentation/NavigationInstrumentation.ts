@@ -5,8 +5,9 @@ import {
   EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
   KEY_EMB_INSTRUMENTATION,
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-  KEY_VIEW_NAME,
 } from '../../../constants/index.js';
 import { page } from '../../../api-page/index.js';
 import type { Route } from '../../../api-page/index.js';
@@ -54,10 +55,13 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    if (route.url !== page.getCurrentRoute()?.url) {
-      this._endRouteSpan();
-      this._startRouteSpan(route);
+    const currentRoute = page.getCurrentRoute();
+
+    if (route.url !== currentRoute?.url) {
       page.setCurrentRoute(route);
+
+      this._endRouteSpan(currentRoute);
+      this._startRouteSpan(route);
     }
   };
 
@@ -81,7 +85,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
           if (this._currentRouteSpan) {
             this._diag.debug('Session ended, ending route span.');
 
-            this._endRouteSpan();
+            this._endRouteSpan(page.getCurrentRoute());
           }
         }
       );
@@ -109,8 +113,9 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       : route.path;
     this._currentRouteSpan = this.tracer.startSpan(pathName, {
       attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.View,
-        [KEY_VIEW_NAME]: pathName,
+        [KEY_EMB_TYPE]: EMB_TYPES.Surface,
+        [KEY_EMB_PAGE_PATH]: pathName,
+        [KEY_EMB_PAGE_ID]: page.getCurrentPageId() || undefined,
       },
     });
 
@@ -122,11 +127,12 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     return this._currentRouteSpan;
   };
 
-  private readonly _endRouteSpan = () => {
-    const currentRoute = page.getCurrentRoute();
+  private readonly _endRouteSpan = (currentRoute: Route | null) => {
+    if (this._currentRouteSpan) {
+      if (currentRoute) {
+        this._diag.debug(`Ending route span for url: ${currentRoute.url}`);
+      }
 
-    if (this._currentRouteSpan && currentRoute) {
-      this._diag.debug(`Ending route span for url: ${currentRoute.url}`);
       this._currentRouteSpan.end();
       this._currentRouteSpan = null;
     }

@@ -4,9 +4,39 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Embrace Web SDK React Demo</title>
+    <script type="module">
+      // Redirect to correct demo if accessing a router demo path
+      const baseUrl = import.meta.env.BASE_URL;
+      const path = window.location.pathname;
+
+      const getRouterPath = routerName => {
+        return baseUrl !== '/' ? `${baseUrl}${routerName}/` : `/${routerName}/`;
+      };
+
+      if (
+        path.startsWith(getRouterPath('react-router-v5').replace(/\/$/, '')) &&
+        path !== getRouterPath('react-router-v5')
+      ) {
+        window.location.assign(getRouterPath('react-router-v5'));
+      } else if (
+        path.startsWith(
+          getRouterPath('react-router-v6-declarative').replace(/\/$/, '')
+        ) &&
+        path !== getRouterPath('react-router-v6-declarative')
+      ) {
+        window.location.assign(getRouterPath('react-router-v6-declarative'));
+      } else if (
+        path.startsWith(
+          getRouterPath('react-router-v6-data').replace(/\/$/, '')
+        ) &&
+        path !== getRouterPath('react-router-v6-data')
+      ) {
+        window.location.assign(getRouterPath('react-router-v6-data'));
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module" src="./src/index.tsx"></script>
   </body>
 </html>
