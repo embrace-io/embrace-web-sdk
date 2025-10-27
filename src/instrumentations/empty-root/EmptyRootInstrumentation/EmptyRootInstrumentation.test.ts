@@ -49,7 +49,7 @@ describe('EmptyInstrumentation', () => {
     instrumentation = new EmptyRootInstrumentation({
       diag,
       rootNode,
-      emptyCheckDelay: 10,
+      emptyCheckDelayMs: 10,
     });
 
     // Clear out the root node
@@ -96,7 +96,7 @@ describe('EmptyInstrumentation', () => {
     instrumentation = new EmptyRootInstrumentation({
       diag,
       rootNode,
-      emptyCheckDelay: 10,
+      emptyCheckDelayMs: 10,
     });
 
     child1.remove();
@@ -125,7 +125,7 @@ describe('EmptyInstrumentation', () => {
     instrumentation = new EmptyRootInstrumentation({
       diag,
       rootNode,
-      emptyCheckDelay: 10,
+      emptyCheckDelayMs: 10,
     });
 
     child1.remove();

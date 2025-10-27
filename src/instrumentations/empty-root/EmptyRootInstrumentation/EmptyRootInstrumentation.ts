@@ -7,14 +7,14 @@ import type { EmptyRootInstrumentationArgs } from './types.js';
  */
 export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _observer: MutationObserver;
-  private readonly _emptyCheckDelay: number;
+  private readonly _emptyCheckDelayMs: number;
   private readonly _rootNode: Node;
 
   public constructor({
     diag,
     perf,
     rootNode,
-    emptyCheckDelay = 500,
+    emptyCheckDelayMs = 500,
   }: EmptyRootInstrumentationArgs) {
     super({
       instrumentationName: 'EmptyRootInstrumentation',
@@ -25,7 +25,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     });
 
     this._rootNode = rootNode;
-    this._emptyCheckDelay = emptyCheckDelay;
+    this._emptyCheckDelayMs = emptyCheckDelayMs;
 
     this._observer = new MutationObserver(
       (mutationList: MutationRecord[], _observer: MutationObserver) => {
@@ -65,12 +65,12 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     if (removedNodesFromRoot && !addedNodesToRoot) {
       this._diag.debug(
         'root node had child nodes removed without new ones being added, ' +
-          `checking if it's empty in ${this._emptyCheckDelay}ms`
+          `checking if it's empty in ${this._emptyCheckDelayMs}ms`
       );
 
       window.setTimeout(() => {
         this._checkForEmptyRootNode();
-      }, this._emptyCheckDelay);
+      }, this._emptyCheckDelayMs);
     }
   }
 
