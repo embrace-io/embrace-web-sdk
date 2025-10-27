@@ -29,6 +29,12 @@ import type { URLDocument } from '../../../common/index.js';
 import { page } from '../../../api-page/index.js';
 import type { PageManager } from '../../../api-page/index.js';
 
+type AttributedPage = {
+  fullURL: string;
+  path?: string;
+  pageID?: string;
+};
+
 const webVitalAttributionToReport = (
   name: Metric['name'],
   metric: MetricWithAttribution
@@ -111,14 +117,16 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
   private readonly _pageManager: PageManager;
-  private readonly _attributedURL: Record<Metric['name'], string | undefined> =
-    {
-      INP: undefined,
-      LCP: undefined,
-      CLS: undefined,
-      FCP: undefined,
-      TTFB: undefined,
-    };
+  private readonly _attributedPage: Record<
+    Metric['name'],
+    AttributedPage | undefined
+  > = {
+    INP: undefined,
+    LCP: undefined,
+    CLS: undefined,
+    FCP: undefined,
+    TTFB: undefined,
+  };
   private _largestShiftTargetForCLS: string | undefined;
 
   // instrumentation that adds an event to the session span for each web vital report
@@ -167,9 +175,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         // first thing record the time when this cb was invoked
         const metricTime = this._getTimeForMetric(metric);
 
+        const attributedPage = this._getAttributedPageForMetric(metric);
+
         const attrs: Attributes = {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
-          [ATTR_URL_FULL]: this._getAttributedURLForMetric(metric),
+          [ATTR_URL_FULL]: attributedPage.fullURL,
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
           'emb.web_vital.rating': metric.rating,
@@ -180,11 +190,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         };
 
         // Add page attributes if route and page ID exist
-        const currentRoute = this._pageManager.getCurrentRoute();
-        const currentPageId = this._pageManager.getCurrentPageId();
-        if (currentRoute && currentPageId) {
-          attrs[KEY_EMB_PAGE_PATH] = currentRoute.path;
-          attrs[KEY_EMB_PAGE_ID] = currentPageId;
+        if (attributedPage.path && attributedPage.pageID) {
+          attrs[KEY_EMB_PAGE_PATH] = attributedPage.path;
+          attrs[KEY_EMB_PAGE_ID] = attributedPage.pageID;
         }
 
         currentSessionSpan.addEvent(
@@ -198,10 +206,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     if (this._urlAttribution) {
       // When these web vitals make their final report (e.g. when the listeners w/ reportAllChanges=false trigger) the
       // document's URL at that time may not match what it was at the time the scores were last updated. Instead, listen
-      // for updates to the scores and keep track of the URL to attribute for each
+      // for updates to the scores and keep track of the Page information to attribute for each
       this._listeners.INP?.(
         () => {
-          this._attributedURL.INP = this._urlDocument.URL;
+          this._attributedPage.INP = this._currentAttributedPage();
         },
         {
           reportAllChanges: true,
@@ -209,7 +217,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       );
       this._listeners.LCP?.(
         () => {
-          this._attributedURL.LCP = this._urlDocument.URL;
+          this._attributedPage.LCP = this._currentAttributedPage();
         },
         {
           reportAllChanges: true,
@@ -227,7 +235,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ) {
             this._largestShiftTargetForCLS =
               clsMetric.attribution.largestShiftTarget;
-            this._attributedURL.CLS = this._urlDocument.URL;
+            this._attributedPage.CLS = this._currentAttributedPage();
           }
         },
         {
@@ -253,23 +261,40 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     return this.perf.getNowMillis();
   }
 
-  private _getAttributedURLForMetric(metric: MetricWithAttribution): string {
-    if (metric.name === 'INP' && this._attributedURL.INP) {
-      return this._attributedURL.INP;
+  private _currentAttributedPage(): AttributedPage {
+    const attributed: AttributedPage = {
+      fullURL: this._urlDocument.URL,
+    };
+
+    const currentRoute = this._pageManager.getCurrentRoute();
+    const currentPageId = this._pageManager.getCurrentPageId();
+    if (currentRoute && currentPageId) {
+      attributed.path = currentRoute.path;
+      attributed.pageID = currentPageId;
     }
 
-    if (metric.name === 'LCP' && this._attributedURL.LCP) {
-      return this._attributedURL.LCP;
+    return attributed;
+  }
+
+  private _getAttributedPageForMetric(
+    metric: MetricWithAttribution
+  ): AttributedPage {
+    if (metric.name === 'INP' && this._attributedPage.INP) {
+      return this._attributedPage.INP;
+    }
+
+    if (metric.name === 'LCP' && this._attributedPage.LCP) {
+      return this._attributedPage.LCP;
     }
 
     if (
       metric.name === 'CLS' &&
-      this._attributedURL.CLS &&
+      this._attributedPage.CLS &&
       metric.attribution.largestShiftTarget === this._largestShiftTargetForCLS
     ) {
-      return this._attributedURL.CLS;
+      return this._attributedPage.CLS;
     }
 
-    return this._urlDocument.URL;
+    return this._currentAttributedPage();
   }
 }
