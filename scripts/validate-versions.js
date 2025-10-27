@@ -73,13 +73,15 @@ const constantFiles = [
 for (const { file, pattern, replacement } of constantFiles) {
   const filePath = path.join(rootDir, file);
 
-  if (!fs.existsSync(filePath)) {
+  let content;
+  try {
+    content = fs.readFileSync(filePath, 'utf-8');
+  } catch (_e) {
     console.error(`❌ ${file}: file not found`);
     hasErrors = true;
     continue;
   }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
   const match = content.match(pattern);
 
   if (!match) {
