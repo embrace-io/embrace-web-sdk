@@ -42,26 +42,12 @@ jobs:
             echo 'Version is empty. Exiting'
             exit 1
           fi
-          PREVIOUS_VERSION=$(jq '.version' package.json)
 
-          echo "Updating version from $PREVIOUS_VERSION to $version"
-
-          echo "Updating package.json"
-          jq --arg version "$version" '.version = $version' package.json > tmp.json && mv tmp.json package.json
-
-          echo "Updating cli/package.json"
-          jq --arg version "$version" '.version = $version' cli/package.json > tmp.json && mv tmp.json cli/package.json
-
-          echo "Updating golden files"
-          pushd tests/integration/tests/__golden__
-          grep -l $PREVIOUS_VERSION * | xargs -I@ sed -i "s/$PREVIOUS_VERSION/\"$version\"/g" @
-          popd
+          echo "Updating all version references to $version"
+          node scripts/validate-versions.js --set-version "$version"
 
           echo "Updating package-lock.json"
           npm i
-
-          echo "Updating constants files by running lint"
-          npm run sdk:lint
       - name: commit and create PR with the next release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,7 +63,7 @@ jobs:
           # commit the changes
           git config --global user.name 'embrace-ci'
           git config --global user.email 'embrace-ci@users.noreply.github.com'
-          git add package.json package-lock.json cli/package.json demo/frontend/package.json demo/frontend-cdn/package.json src/resources/constants/index.ts cli/src/constants.ts tests/integration/tests/__golden__
+          git add package.json package-lock.json cli/package.json src/resources/constants/index.ts cli/src/constants.ts tests/integration/tests/__golden__
           git commit -m "release: update version to $NEXT_VERSION"
           git push origin "release-$NEXT_VERSION"
           # create a PR with the next version
