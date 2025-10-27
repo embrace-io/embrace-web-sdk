@@ -761,6 +761,11 @@ jobs:
         run: |
           npm run cli:validate
 
+      - name: Validate versions
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:validate:versions
+
       - name: Build Demo
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
