@@ -7,7 +7,12 @@
     "enabled": true
   },
   "files": {
-    "includes": ["**", "!!**/__golden__", "!**/node_modules"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!!**/__golden__",
+      "!!tests/integration/server/public"
+    ]
   },
   "assist": {
     "enabled": true,
@@ -30,7 +35,23 @@
       "recommended": true,
       "complexity": {
         // https://github.com/biomejs/biome/discussions/7404
-        "useLiteralKeys": "off"
+        "useLiteralKeys": "off",
+        "useArrowFunction": "error"
+      },
+      "correctness": {
+        "noNodejsModules": "error"
+        // TBD on whether to use ts or js extensions
+        // "useImportExtensions": "error"
+        // https://github.com/biomejs/biome/issues/7734
+        // "useImportExtensions": {
+        //   "level": "error",
+        //   "options": {
+        //     "forceJsExtensions": true  // Force .js even for .ts files
+        //   }
+        // }
+      },
+      "performance": {
+        "noReExportAll": "error"
       },
       "style": {
         "useImportType": {
@@ -38,7 +59,8 @@
           "options": {
             "style": "separatedType"
           }
-        }
+        },
+        "useNodejsImportProtocol": "error"
       },
       "suspicious": {
         "noConsole": {

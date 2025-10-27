@@ -3,6 +3,9 @@
   "extends": "//",
   "linter": {
     "rules": {
+      "correctness": {
+        "noNodejsModules": "off"
+      },
       "suspicious": {
         "noConsole": {
           "level": "off"
