@@ -55,15 +55,14 @@ export abstract class EmbraceInstrumentationBase<
   }
 
   // no-op
+  // Note: OTel uses `| void` but we use `| undefined` for semantic clarity.
+  // `void` in union types is confusing because it mixes "returns nothing" with "returns data or nothing".
+  // `undefined` better expresses the intent: this method may or may not return a value.
   protected override init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check,to follow the signature from src/instrumentations/InstrumentationAbstract/InstrumentationAbstract.ts
-    // which was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     | undefined {
-    return undefined;
+    return;
   }
 
   public setLogManager(logManager: LogManager): void {
