@@ -522,10 +522,16 @@ describe('WebVitalsInstrumentation', () => {
     const testDocument: URLDocument = {
       URL: 'https://first.com',
     };
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/first/:id',
+      url: '/first/123',
+    });
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
       urlDocument: testDocument,
+      pageManager,
       listeners: mockWebVitalListeners,
       urlAttribution: true,
     });
@@ -559,8 +565,17 @@ describe('WebVitalsInstrumentation', () => {
     inpChangeReportFunc(inpMetric);
     // should be attributed to this URL since that is when the last change to the metric occurred
     testDocument.URL = 'https://second.com';
+    pageManager.setCurrentRoute({
+      path: '/second/:id',
+      url: '/second/123',
+    });
+    const attributedPageID = pageManager.getCurrentPageId();
     inpChangeReportFunc(inpMetric);
     testDocument.URL = 'https://third.com';
+    pageManager.setCurrentRoute({
+      path: '/third/:id',
+      url: '/third/123',
+    });
     inpFinalReportFunc(inpMetric);
 
     spanSessionManager.endSessionSpan();
@@ -574,6 +589,8 @@ describe('WebVitalsInstrumentation', () => {
     expect(inpEvent.name).to.be.equal('emb-web-vitals-report-INP');
     expect(inpEvent.attributes).to.containSubset({
       'url.full': 'https://second.com',
+      'app.surface.name': '/second/:id',
+      'app.surface.id': attributedPageID,
     });
   });
 
@@ -581,9 +598,15 @@ describe('WebVitalsInstrumentation', () => {
     const testDocument: URLDocument = {
       URL: 'https://first.com',
     };
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/first/:id',
+      url: '/first/123',
+    });
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      pageManager,
       urlDocument: testDocument,
       listeners: mockWebVitalListeners,
       urlAttribution: true,
@@ -612,8 +635,17 @@ describe('WebVitalsInstrumentation', () => {
     lcpChangeReportFunc(lcpMetric);
     // should be attributed to this URL since that is when the last change to the metric occurred
     testDocument.URL = 'https://second.com';
+    pageManager.setCurrentRoute({
+      path: '/second/:id',
+      url: '/second/123',
+    });
+    const attributedPageID = pageManager.getCurrentPageId();
     lcpChangeReportFunc(lcpMetric);
     testDocument.URL = 'https://third.com';
+    pageManager.setCurrentRoute({
+      path: '/third/:id',
+      url: '/third/123',
+    });
     lcpFinalReportFunc(lcpMetric);
 
     spanSessionManager.endSessionSpan();
@@ -627,6 +659,8 @@ describe('WebVitalsInstrumentation', () => {
     expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
     expect(lcpEvent.attributes).to.containSubset({
       'url.full': 'https://second.com',
+      'app.surface.name': '/second/:id',
+      'app.surface.id': attributedPageID,
     });
   });
 
@@ -634,9 +668,15 @@ describe('WebVitalsInstrumentation', () => {
     const testDocument: URLDocument = {
       URL: 'https://first.com',
     };
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/first/:id',
+      url: '/first/123',
+    });
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
+      pageManager,
       urlDocument: testDocument,
       listeners: mockWebVitalListeners,
       urlAttribution: true,
@@ -664,9 +704,18 @@ describe('WebVitalsInstrumentation', () => {
     // was changed
     clsMetric.attribution.largestShiftTarget = 'some-target-2';
     testDocument.URL = 'https://second.com';
+    pageManager.setCurrentRoute({
+      path: '/second/:id',
+      url: '/second/123',
+    });
+    const attributedPageID = pageManager.getCurrentPageId();
     clsChangeReportFunc(clsMetric);
     // should NOT be attributed to this URL since the largestShiftTarget didn't change
     testDocument.URL = 'https://third.com';
+    pageManager.setCurrentRoute({
+      path: '/third/:id',
+      url: '/third/123',
+    });
     clsChangeReportFunc(clsMetric);
     clsFinalReportFunc(clsMetric);
 
@@ -681,6 +730,8 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
     expect(clsEvent.attributes).to.containSubset({
       'url.full': 'https://second.com',
+      'app.surface.name': '/second/:id',
+      'app.surface.id': attributedPageID,
     });
   });
 
