@@ -52,11 +52,11 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
 
     for (const mutation of mutationList) {
       if (mutation.target === this._rootNode) {
-        if (mutation.removedNodes.length) {
+        if (mutation.removedNodes.length > 0) {
           removedNodesFromRoot = true;
         }
 
-        if (mutation.addedNodes.length) {
+        if (mutation.addedNodes.length > 0) {
           addedNodesToRoot = true;
         }
       }
@@ -75,7 +75,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   }
 
   protected _checkForEmptyRootNode(): void {
-    if (!this._rootNode.childNodes.length) {
+    if (this._rootNode.childNodes.length === 0) {
       this._diag.debug('root node was found to be empty');
 
       const currentSessionSpan = this.sessionManager.getSessionSpan();

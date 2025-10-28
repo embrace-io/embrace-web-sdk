@@ -146,4 +146,32 @@ describe('EmptyInstrumentation', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
+
+  it('should handle root node being removed after init', async () => {
+    const container = document.createElement('div');
+    const rootNode = document.createElement('div');
+
+    container.append(rootNode);
+
+    instrumentation = new EmptyRootInstrumentation({
+      diag,
+      rootNode,
+      emptyCheckDelayMs: 10,
+    });
+
+    rootNode.remove();
+
+    // Yield so that the mutation observer callbacks can trigger
+    await new Promise(r => setTimeout(r, 1));
+
+    // Wait for the empty check to be performed
+    await new Promise(r => setTimeout(r, 20));
+
+    // Should not emit the event
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(0);
+  });
 });
