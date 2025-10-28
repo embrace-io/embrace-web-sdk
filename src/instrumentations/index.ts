@@ -34,3 +34,5 @@ export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.j
 export { getNavigationInstrumentation } from './navigation/index.js';
 export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.js';
 export type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/index.js';
+export { EmptyRootInstrumentation } from '../instrumentations/empty-root/index.js';
+export type { EmptyRootInstrumentationArgs } from '../instrumentations/empty-root/index.js';

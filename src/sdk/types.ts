@@ -18,6 +18,7 @@ import type {
   DocumentLoadInstrumentationConfig,
   EmbraceFetchInstrumentationArgs,
   EmbraceXHRInstrumentationArgs,
+  EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
@@ -369,6 +370,9 @@ export interface DefaultInstrumentationConfig {
     EmbraceXHRInstrumentationArgs,
     'enabled'
   >;
+
+  // Optional instrumentations that only run if they have been explicitly configured
+  'empty-root'?: EmptyRootInstrumentationArgs;
 }
 
 export interface SDKRegistryManager {

@@ -18,6 +18,9 @@ const setupOTel = () => {
       'session-visibility': {
         limitedSessionMaxDurationMs: 3000,
       },
+      'empty-root': {
+        rootNode: document.getElementById('root')!,
+      },
     },
     instrumentations: [createReactRouterNavigationInstrumentation()],
     embraceDataURL: DATA_URL ?? undefined,

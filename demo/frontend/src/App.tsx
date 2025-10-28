@@ -492,10 +492,19 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>React Error Boundary</legend>
-        <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+        <legend>React Render Errors</legend>
+
+        <div>
+          <label>Inside an error boundary:</label>
+          <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
+            <ComponentWithErrorInRender />
+          </EmbraceErrorBoundary>
+        </div>
+
+        <div>
+          <label>Outside an error boundary:</label>
           <ComponentWithErrorInRender />
-        </EmbraceErrorBoundary>
+        </div>
       </fieldset>
     </div>
   );
