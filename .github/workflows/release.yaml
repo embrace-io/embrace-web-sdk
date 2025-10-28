@@ -44,7 +44,7 @@ jobs:
           fi
 
           echo "Updating all version references to $version"
-          node scripts/validate-versions.js --set-version "$version"
+          node scripts/validate-versions.js --fix --version "$version"
 
           echo "Updating package-lock.json"
           npm i

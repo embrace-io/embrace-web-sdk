@@ -3,9 +3,9 @@
  * Validates and updates version across package.json, constants, and golden files.
  *
  * Usage:
- *   npm run sdk:validate:versions           # Check
- *   npm run sdk:validate:versions:fix       # Fix
- *   node scripts/validate-versions.js --set-version 2.8.0
+ *   node scripts/validate-versions.js              # Lint
+ *   node scripts/validate-versions.js --fix        # Fix
+ *   node scripts/validate-versions.js --fix --version 2.8.0
  */
 
 import fs from 'node:fs';
@@ -17,13 +17,19 @@ const rootDir = path.resolve(
   '..',
 );
 const args = process.argv.slice(2);
-const setIdx = args.indexOf('--set-version');
-const newVersion = setIdx >= 0 ? args[setIdx + 1] : null;
-const shouldFix = args.includes('--fix') || !!newVersion;
+const shouldFix = args.includes('--fix');
+const versionIdx = args.indexOf('--version');
+const newVersion = versionIdx >= 0 ? args[versionIdx + 1] : null;
 
-// Validate --set-version has argument
-if (setIdx >= 0 && !newVersion) {
-  console.error('❌ --set-version requires a version argument');
+// Validate --version requires --fix
+if (newVersion && !shouldFix) {
+  console.error('❌ --version requires --fix flag');
+  process.exit(1);
+}
+
+// Validate --version has argument
+if (versionIdx >= 0 && !newVersion) {
+  console.error('❌ --version requires a version argument');
   process.exit(1);
 }
 
@@ -94,7 +100,7 @@ for (const { file, pattern, replacement } of constantFiles) {
     console.error(`❌ ${file}: ${match[0]} !== ${replacement}`);
     hasErrors = true;
     if (shouldFix)
-      fs.writeFileSync(filePath, content.replace(pattern, replacement));
+      fs.writeFileSync(filePath, content.replaceAll(match[0], replacement));
   }
 }
 
@@ -131,7 +137,10 @@ if (fs.existsSync(goldenDir)) {
       );
       hasErrors = true;
       if (shouldFix) {
-        const updated = content.replace(goldenPattern, `$1${sdkVersion}$3`);
+        let updated = content;
+        for (const oldVersion of wrongVersions) {
+          updated = updated.replaceAll(oldVersion, sdkVersion);
+        }
         fs.writeFileSync(filePath, updated);
       }
     }
