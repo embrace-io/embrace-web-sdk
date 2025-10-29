@@ -2,10 +2,10 @@
 /**
  * Validates and updates version across package.json, constants, and golden files.
  *
- * Usage:
- *   node scripts/validate-versions.js              # Lint
- *   node scripts/validate-versions.js --fix        # Fix
- *   node scripts/validate-versions.js --fix --version 2.8.0
+ * Modes:
+ *   node scripts/validate-versions.js              # Lint: validate all match SDK version
+ *   node scripts/validate-versions.js --fix        # Fix: update all to SDK version
+ *   node scripts/validate-versions.js --fix --version 2.8.0  # Fix: update ALL to 2.8.0
  */
 
 import fs from 'node:fs';
@@ -16,146 +16,199 @@ const rootDir = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
+
+// File groups
+const packageFiles = {
+  sdk: 'package.json',
+  cli: 'cli/package.json',
+};
+
+const constantsFiles = {
+  sdk: 'src/resources/constants/index.ts',
+  cli: 'cli/src/constants.ts',
+};
+
+const goldenDir = path.join(rootDir, 'tests/integration/tests/__golden__');
+const goldenFiles = fs
+  .readdirSync(goldenDir)
+  .filter((f) => f.endsWith('.json'))
+  .map((f) => path.join(goldenDir, f));
+
+// Regex patterns
+const constantsPattern = /(SDK_VERSION|CLI_VERSION) = '([^']+)'/;
+const goldenPattern =
+  /"key":\s*"(?:sdk_version|telemetry\.sdk\.version)"[^}]*"stringValue":\s*"([^"]+)"/g;
+
+// Parse CLI args
 const args = process.argv.slice(2);
 const shouldFix = args.includes('--fix');
 const versionIdx = args.indexOf('--version');
-const newVersion = versionIdx >= 0 ? args[versionIdx + 1] : null;
+const versionFromCli = versionIdx >= 0 ? args[versionIdx + 1] : null;
 
-// Validate --version requires --fix
-if (newVersion && !shouldFix) {
-  console.error('❌ --version requires --fix flag');
-  process.exit(1);
-}
-
-// Validate --version has argument
-if (versionIdx >= 0 && !newVersion) {
+// Validate args
+if (versionIdx >= 0 && !versionFromCli) {
   console.error('❌ --version requires a version argument');
+  console.error(
+    '   Example: node scripts/validate-versions.js --fix --version 2.8.0',
+  );
   process.exit(1);
 }
 
-// Set version in package.json files
-if (newVersion) {
-  for (const file of ['package.json', 'cli/package.json']) {
-    const pkgPath = path.join(rootDir, file);
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-    const oldVersion = pkg.version;
-    pkg.version = newVersion;
-    fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-    console.log(`${file}: ${oldVersion} → ${newVersion}`);
-  }
-}
-
-const sdkVersion = JSON.parse(
-  fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'),
-).version;
-const cliVersion = JSON.parse(
-  fs.readFileSync(path.join(rootDir, 'cli/package.json'), 'utf-8'),
-).version;
-
-let hasErrors = false;
-
-// Check package.json versions match
-if (sdkVersion !== cliVersion) {
+if (versionFromCli && !shouldFix) {
+  console.error('❌ --version requires --fix');
   console.error(
-    `❌ package.json (${sdkVersion}) !== cli/package.json (${cliVersion})`,
+    '   Use: node scripts/validate-versions.js --fix --version 2.8.0',
   );
-  hasErrors = true;
+  process.exit(1);
 }
 
-// Check/fix constants
-const constantFiles = [
-  {
-    file: 'src/resources/constants/index.ts',
-    pattern: /SDK_VERSION = '.*'/,
-    replacement: `SDK_VERSION = '${sdkVersion}'`,
-  },
-  {
-    file: 'cli/src/constants.ts',
-    pattern: /CLI_VERSION = '.*'/,
-    replacement: `CLI_VERSION = '${cliVersion}'`,
-  },
-];
+// Determine target version based on mode
+const sdkPackage = JSON.parse(
+  fs.readFileSync(path.join(rootDir, packageFiles.sdk), 'utf-8'),
+);
+const targetVersion = versionFromCli || sdkPackage.version;
 
-for (const { file, pattern, replacement } of constantFiles) {
+console.log(`Target version: ${targetVersion}`);
+console.log(`Mode: ${shouldFix ? 'FIX' : 'LINT'}\n`);
+
+// Helper: Read and parse package.json
+function getPackageVersion(file) {
   const filePath = path.join(rootDir, file);
-
-  let content;
-  try {
-    content = fs.readFileSync(filePath, 'utf-8');
-  } catch (_e) {
-    console.error(`❌ ${file}: file not found`);
-    hasErrors = true;
-    continue;
-  }
-
-  const match = content.match(pattern);
-
-  if (!match) {
-    console.error(`❌ ${file}: pattern not found`);
-    hasErrors = true;
-    continue;
-  }
-
-  if (match[0] !== replacement) {
-    console.error(`❌ ${file}: ${match[0]} !== ${replacement}`);
-    hasErrors = true;
-    if (shouldFix)
-      fs.writeFileSync(filePath, content.replaceAll(match[0], replacement));
-  }
+  const json = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  return { filePath, version: json.version, json };
 }
 
-// Check/fix golden files
-const goldenDir = path.join(rootDir, 'tests/integration/tests/__golden__');
-if (fs.existsSync(goldenDir)) {
-  const goldenPattern =
-    /("key":\s*"(?:sdk_version|telemetry\.sdk\.version|sdk_simple_version)"[\s\S]*?"stringValue":\s*")(\d+\.\d+\.\d+)(")/g;
+// Helper: Read and extract constant version
+function getConstantVersion(file) {
+  const filePath = path.join(rootDir, file);
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const match = content.match(constantsPattern);
+  return {
+    filePath,
+    version: match ? match[2] : null,
+    content,
+  };
+}
 
-  for (const file of fs
-    .readdirSync(goldenDir)
-    .filter((f) => f.endsWith('.json'))) {
-    const filePath = path.join(goldenDir, file);
-    const content = fs.readFileSync(filePath, 'utf-8');
+// Helper: Extract all versions from golden file
+function getGoldenVersions(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const versions = new Set();
+  const matches = content.matchAll(goldenPattern);
+  for (const match of matches) {
+    versions.add(match[1]);
+  }
+  return { filePath, versions: Array.from(versions), content };
+}
 
-    // Parse JSON to validate it
-    try {
-      JSON.parse(content);
-    } catch (_e) {
-      console.error(`❌ ${file}: invalid JSON`);
-      hasErrors = true;
-      continue;
-    }
+// Collect current state
+const packageVersions = {
+  sdk: getPackageVersion(packageFiles.sdk),
+  cli: getPackageVersion(packageFiles.cli),
+};
 
-    const wrongVersions = new Set(
-      Array.from(content.matchAll(goldenPattern), (m) => m[2]).filter(
-        (v) => v !== sdkVersion,
-      ),
+const constantVersions = {
+  sdk: getConstantVersion(constantsFiles.sdk),
+  cli: getConstantVersion(constantsFiles.cli),
+};
+
+const goldenData = goldenFiles.map(getGoldenVersions);
+
+// LINT MODE: Check all files match target
+if (!shouldFix) {
+  let hasErrors = false;
+
+  // Check CLI package.json
+  if (packageVersions.cli.version !== targetVersion) {
+    console.error(
+      `❌ cli/package.json version is ${packageVersions.cli.version}, expected ${targetVersion}`,
     );
+    hasErrors = true;
+  }
 
-    if (wrongVersions.size > 0) {
+  // Check constants
+  for (const [name, data] of Object.entries(constantVersions)) {
+    if (!data.version) {
       console.error(
-        `❌ ${file}: found ${Array.from(wrongVersions).join(', ')}`,
+        `❌ ${name === 'sdk' ? constantsFiles.sdk : constantsFiles.cli}: VERSION pattern not found`,
       );
       hasErrors = true;
-      if (shouldFix) {
-        let updated = content;
-        for (const oldVersion of wrongVersions) {
-          updated = updated.replaceAll(oldVersion, sdkVersion);
-        }
-        fs.writeFileSync(filePath, updated);
-      }
+    } else if (data.version !== targetVersion) {
+      console.error(
+        `❌ ${name === 'sdk' ? constantsFiles.sdk : constantsFiles.cli}: version is ${data.version}, expected ${targetVersion}`,
+      );
+      hasErrors = true;
     }
   }
-}
 
-if (!hasErrors) {
+  // Check golden files
+  for (const golden of goldenData) {
+    const wrongVersions = golden.versions.filter((v) => v !== targetVersion);
+    if (wrongVersions.length > 0) {
+      console.error(
+        `❌ ${path.basename(golden.filePath)}: contains versions [${wrongVersions.join(', ')}], expected ${targetVersion}`,
+      );
+      hasErrors = true;
+    }
+  }
+
+  if (hasErrors) {
+    console.error('\n❌ Version mismatches found');
+    console.error('   Run with --fix to update all files to SDK version');
+    console.error('   Run with --fix --version X.Y.Z to set a new version');
+    process.exit(1);
+  }
+
   console.log('✅ All versions match');
   process.exit(0);
 }
 
-if (shouldFix) {
-  console.log('✅ Fixed all mismatches');
-  process.exit(0);
+// FIX MODE: Update all files to target version
+console.log('Updating files...\n');
+
+// Update SDK package.json if setting new version
+if (versionFromCli) {
+  const pkg = packageVersions.sdk;
+  pkg.json.version = targetVersion;
+  fs.writeFileSync(pkg.filePath, `${JSON.stringify(pkg.json, null, 2)}\n`);
+  console.log(`✅ Updated ${packageFiles.sdk} to ${targetVersion}`);
 }
 
-console.log('\nRun with --fix to update');
-process.exit(1);
+// Update CLI package.json
+if (packageVersions.cli.version !== targetVersion) {
+  const pkg = packageVersions.cli;
+  pkg.json.version = targetVersion;
+  fs.writeFileSync(pkg.filePath, `${JSON.stringify(pkg.json, null, 2)}\n`);
+  console.log(`✅ Updated ${packageFiles.cli} to ${targetVersion}`);
+}
+
+// Update constants files
+for (const [name, data] of Object.entries(constantVersions)) {
+  const fileName = name === 'sdk' ? constantsFiles.sdk : constantsFiles.cli;
+  if (data.version !== targetVersion) {
+    const updated = data.content.replace(
+      constantsPattern,
+      `$1 = '${targetVersion}'`,
+    );
+    fs.writeFileSync(data.filePath, updated);
+    console.log(`✅ Updated ${fileName} to ${targetVersion}`);
+  }
+}
+
+// Update golden files
+for (const golden of goldenData) {
+  const wrongVersions = golden.versions.filter((v) => v !== targetVersion);
+  if (wrongVersions.length > 0) {
+    let updated = golden.content;
+    for (const oldVersion of wrongVersions) {
+      updated = updated.replaceAll(oldVersion, targetVersion);
+    }
+    fs.writeFileSync(golden.filePath, updated);
+    console.log(
+      `✅ Updated ${path.basename(golden.filePath)} (${wrongVersions.join(', ')} → ${targetVersion})`,
+    );
+  }
+}
+
+console.log(`\n✅ All files updated to version ${targetVersion}`);
+process.exit(0);
