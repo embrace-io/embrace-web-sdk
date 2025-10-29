@@ -180,7 +180,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
     expect(sessionSpan.events[0].attributes).to.have.property(
       'message',
-      'some breadcrumb'
+      'some breadcrumb SHOULD FAIL'
     );
   });
 
