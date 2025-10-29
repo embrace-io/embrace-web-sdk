@@ -82,7 +82,7 @@ describe('EmptyInstrumentation', () => {
     const event = sessionSpan.events[0];
     expect(event.name).to.be.equal('empty-root-node');
     expect(event.attributes).to.deep.equal({
-      'emb.type': 'empty-root-node',
+      'emb.type': 'ux.empty_root_node',
     });
   });
 
@@ -160,6 +160,31 @@ describe('EmptyInstrumentation', () => {
     });
 
     rootNode.remove();
+
+    // Yield so that the mutation observer callbacks can trigger
+    await new Promise(r => setTimeout(r, 1));
+
+    // Wait for the empty check to be performed
+    await new Promise(r => setTimeout(r, 20));
+
+    // Should not emit the event
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(0);
+  });
+
+  it('should handle supplied root node being null', async () => {
+    instrumentation = new EmptyRootInstrumentation({
+      diag,
+      rootNode: null,
+      emptyCheckDelayMs: 10,
+    });
+
+    expect(diag.getWarnLogs()).to.deep.equal([
+      "supplied root node was null, this instrumentation won't be enabled",
+    ]);
 
     // Yield so that the mutation observer callbacks can trigger
     await new Promise(r => setTimeout(r, 1));

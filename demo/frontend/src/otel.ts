@@ -19,7 +19,7 @@ const setupOTel = () => {
         limitedSessionMaxDurationMs: 3000,
       },
       'empty-root': {
-        rootNode: document.getElementById('root')!,
+        rootNode: document.getElementById('root'),
       },
     },
     instrumentations: [createReactRouterNavigationInstrumentation()],

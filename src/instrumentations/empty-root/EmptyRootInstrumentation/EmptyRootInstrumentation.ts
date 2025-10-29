@@ -8,7 +8,7 @@ import type { EmptyRootInstrumentationArgs } from './types.js';
 export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _observer: MutationObserver;
   private readonly _emptyCheckDelayMs: number;
-  private readonly _rootNode: Node;
+  private readonly _rootNode: Node | null;
 
   public constructor({
     diag,
@@ -33,8 +33,12 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
       }
     );
 
-    if (this._config.enabled) {
+    if (this._config.enabled && this._rootNode) {
       this.enable();
+    } else if (!this._rootNode) {
+      this._diag.warn(
+        "supplied root node was null, this instrumentation won't be enabled"
+      );
     }
   }
 
@@ -43,7 +47,9 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public enable(): void {
-    this._observer.observe(this._rootNode, { childList: true });
+    if (this._rootNode) {
+      this._observer.observe(this._rootNode, { childList: true });
+    }
   }
 
   protected _observerCallback(mutationList: MutationRecord[]): void {
@@ -75,13 +81,13 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   }
 
   protected _checkForEmptyRootNode(): void {
-    if (this._rootNode.childNodes.length === 0) {
+    if (this._rootNode?.childNodes.length === 0) {
       this._diag.debug('root node was found to be empty');
 
       const currentSessionSpan = this.sessionManager.getSessionSpan();
       if (currentSessionSpan) {
         currentSessionSpan.addEvent('empty-root-node', {
-          'emb.type': 'empty-root-node',
+          'emb.type': 'ux.empty_root_node',
         });
       } else {
         this._diag.debug('no active session found to emit event on');
