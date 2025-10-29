@@ -37,7 +37,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
       this.enable();
     } else if (!this._rootNode) {
       this._diag.warn(
-        "supplied root node was null, this instrumentation won't be enabled"
+        "supplied root node was null, this instrumentation won't be enabled",
       );
     }
   }

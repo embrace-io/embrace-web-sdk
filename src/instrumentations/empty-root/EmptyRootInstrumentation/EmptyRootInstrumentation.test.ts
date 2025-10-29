@@ -187,10 +187,10 @@ describe('EmptyInstrumentation', () => {
     ]);
 
     // Yield so that the mutation observer callbacks can trigger
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // Wait for the empty check to be performed
-    await new Promise(r => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
     spanSessionManager.endSessionSpan();
