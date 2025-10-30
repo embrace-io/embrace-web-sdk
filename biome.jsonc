@@ -32,13 +32,21 @@
   },
   "linter": {
     "rules": {
-      "recommended": true,
+      "security": {
+        "recommended": true,
+        // too many false positives within test files
+        "noSecrets": "off"
+      },
+      "a11y": {
+        "recommended": true
+      },
       "complexity": {
+        "recommended": true,
         // https://github.com/biomejs/biome/discussions/7404
-        "useLiteralKeys": "off",
-        "useArrowFunction": "error"
+        "useLiteralKeys": "off"
       },
       "correctness": {
+        "recommended": true,
         "noNodejsModules": "error"
         // TBD on whether to use ts or js extensions
         // "useImportExtensions": "error"
@@ -51,18 +59,24 @@
         // }
       },
       "performance": {
+        "recommended": true,
         "noReExportAll": "error"
       },
       "style": {
+        "recommended": true,
         "useImportType": {
           "level": "error",
           "options": {
             "style": "separatedType"
           }
         },
-        "useNodejsImportProtocol": "error"
+        "useNodejsImportProtocol": {
+          "level": "error",
+          "fix": "unsafe"
+        }
       },
       "suspicious": {
+        "recommended": true,
         "noConsole": {
           "level": "error",
           "options": {
