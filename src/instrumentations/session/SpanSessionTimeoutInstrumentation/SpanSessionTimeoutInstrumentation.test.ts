@@ -2,8 +2,8 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
@@ -80,7 +80,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     let sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'timer'
+      'timer',
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
 
@@ -91,7 +91,7 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_STARTED,
-      'timer'
+      'timer',
     );
   });
 
@@ -129,20 +129,20 @@ describe('SpanSessionTimeoutInstrumentation', () => {
     const sessionSpanA = finishedSpans[0];
     expect(sessionSpanA.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'manual'
+      'manual',
     );
     expect(sessionSpanA.attributes).to.have.property(
       ATTR_SESSION_ID,
-      sessionAID
+      sessionAID,
     );
     const sessionSpanB = finishedSpans[1];
     expect(sessionSpanB.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'timer'
+      'timer',
     );
     expect(sessionSpanB.attributes).to.have.property(
       ATTR_SESSION_ID,
-      sessionBID
+      sessionBID,
     );
   });
 

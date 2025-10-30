@@ -1,17 +1,17 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
+import type { SinonStub } from 'sinon';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { setupTestTraceExporter } from '../../../testUtils/index.js';
-import { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.js';
-import { session } from '../../../api-sessions/index.js';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import * as sinon from 'sinon';
-import type { SinonStub } from 'sinon';
+import { setupTestTraceExporter } from '../../../testUtils/index.js';
+import { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -72,13 +72,13 @@ describe('EmbraceXHRInstrumentation', () => {
   it('should re-patch `xhr` by default if a previous instrumentation had patched it already', () => {
     new EmbraceXHRInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('first-instrumentation', true),
     });
 
     new EmbraceXHRInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('second-instrumentation', true),
     });
 
@@ -114,14 +114,14 @@ describe('EmbraceXHRInstrumentation', () => {
   it('should allow not re-patching `xhr` if a previous instrumentation had patched it already', () => {
     new EmbraceXHRInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('first-instrumentation', true),
     });
 
     new EmbraceXHRInstrumentation({
       enabled: true,
       omitIfAlreadyPatched: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('second-instrumentation', true),
     });
 

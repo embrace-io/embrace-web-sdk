@@ -10,7 +10,7 @@ import type { OtlpFetchExporterConfig } from './types.js';
 // the Fetch API to send data to an OTLP receiver.
 export const createOtlpBrowserFetchExportDelegate = <Internal, Response>(
   config: OtlpFetchExporterConfig,
-  serializer: ISerializer<Internal, Response>
+  serializer: ISerializer<Internal, Response>,
 ) =>
   // createOtlpNetworkExportDelegate has an internal queue that handles
   // multiple requests going at the same time.
@@ -19,5 +19,5 @@ export const createOtlpBrowserFetchExportDelegate = <Internal, Response>(
     serializer,
     createRetryingTransport({
       transport: createFetchTransport(config),
-    })
+    }),
   );

@@ -1,4 +1,5 @@
 import type { HrTime } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -6,7 +7,6 @@ import type {
   StartSessionOptions,
 } from '../index.js';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 
@@ -28,7 +28,7 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   public addProperty(
     key: string,
     value: string,
-    options?: PropertyOptions
+    options?: PropertyOptions,
   ): void {
     this.getDelegate().addProperty(key, value, options);
   }
@@ -46,7 +46,7 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   }
 
   public currentSessionAsReadableSpan(
-    reason: ReasonSessionEnded
+    reason: ReasonSessionEnded,
   ): ReadableSpan | null {
     return this.getDelegate().currentSessionAsReadableSpan(reason);
   }

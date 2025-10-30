@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { EmbracePageManager } from './EmbracePageManager.js';
 import type { Route } from '../../api-page/index.js';
+import { EmbracePageManager } from './EmbracePageManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

@@ -1,9 +1,9 @@
-import * as sinon from 'sinon';
-import { ProxyTraceManager } from '../../manager/index.js';
-import type { TraceManager } from '../../manager/index.js';
 import type { Context, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { TraceManager } from '../../manager/index.js';
+import { ProxyTraceManager } from '../../manager/index.js';
 import { TraceAPI } from './TraceAPI.js';
 import type { ExtendedSpan } from './types.js';
 
@@ -52,7 +52,7 @@ describe('TraceAPI', () => {
 
     traceAPI.startSpan('span-name');
     void expect(mockTraceManager.startSpan).to.have.been.calledOnceWith(
-      'span-name'
+      'span-name',
     );
 
     const mockContext = {} as Context;
@@ -61,12 +61,12 @@ describe('TraceAPI', () => {
     traceAPI.setSpan(mockContext, mockSpan);
     void expect(mockTraceManager.setSpan).to.have.been.calledOnceWith(
       mockContext,
-      mockSpan
+      mockSpan,
     );
 
     traceAPI.getSpan(mockContext);
     void expect(mockTraceManager.getSpan).to.have.been.calledOnceWith(
-      mockContext
+      mockContext,
     );
   });
 });

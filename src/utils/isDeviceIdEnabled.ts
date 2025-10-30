@@ -26,7 +26,7 @@ export const isDeviceIdEnabled = (deviceId: string, pctEnabled?: number) => {
 const getNormalizedDeviceId = (deviceId: string): number => {
   const finalChars = deviceId.slice(-DIGITS); // last 6 chars
   const radix = 16;
-  const space = Math.pow(radix, DIGITS) - 1;
+  const space = radix ** DIGITS - 1;
   const value = parseInt(finalChars, radix);
 
   return (value / space) * 100;

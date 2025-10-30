@@ -1,9 +1,9 @@
-import * as chai from 'chai';
-import { StackContextManager } from '@opentelemetry/sdk-trace-web';
+import { context, defaultTextMapSetter, trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import { StackContextManager } from '@opentelemetry/sdk-trace-web';
+import * as chai from 'chai';
 import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { EmbraceW3CTraceContextPropagator } from './EmbraceW3CTraceContextPropagator.js';
-import { trace, context, defaultTextMapSetter } from '@opentelemetry/api';
 
 const { expect } = chai;
 

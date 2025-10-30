@@ -32,7 +32,7 @@ describe('createFetchTransport', () => {
     fakeFetchRespondWith('ok', { status: 200 });
     const result = await transport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      1000
+      1000,
     );
 
     expect(fakeFetchGetUrl()).to.equal('http://example.com');
@@ -40,7 +40,7 @@ describe('createFetchTransport', () => {
     const body = await new Response(fakeFetchGetBody()).text();
     expect(body).to.equal('{"data": "my data"}');
     expect(
-      fakeFetchGetRequestHeaders() as Record<string, string>
+      fakeFetchGetRequestHeaders() as Record<string, string>,
     ).to.deep.equal({
       'Content-Type': 'application/json',
       foo: 'bar',
@@ -58,20 +58,20 @@ describe('createFetchTransport', () => {
     fakeFetchRespondWith('ok', { status: 200 });
     const result = await transport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      1000
+      1000,
     );
 
     expect(fakeFetchGetUrl()).to.equal('http://example.com');
     expect(fakeFetchGetMethod()).to.equal('POST');
     const decompressedStream = new Response(
-      fakeFetchGetBody()
+      fakeFetchGetBody(),
     ).body?.pipeThrough(new DecompressionStream('gzip'));
     const body = await new Response(decompressedStream).text();
     expect(body).to.equal('{"data": "my data"}');
     expect(
       (fakeFetchGetRequestHeaders() as Record<string, string>)[
         'Content-Encoding'
-      ]
+      ],
     ).to.equal('gzip');
     expect(result).to.deep.equal({ status: 'success' });
   });
@@ -86,7 +86,7 @@ describe('createFetchTransport', () => {
     fakeFetchRespondWith('error', { status: 500 });
     const result = await transport.send(
       new TextEncoder().encode('{"data": "my data"}'),
-      1000
+      1000,
     );
 
     expect(fakeFetchGetUrl()).to.equal('http://example.com');
@@ -94,7 +94,7 @@ describe('createFetchTransport', () => {
     const body = await new Response(fakeFetchGetBody()).text();
     expect(body).to.equal('{"data": "my data"}');
     expect(
-      fakeFetchGetRequestHeaders() as Record<string, string>
+      fakeFetchGetRequestHeaders() as Record<string, string>,
     ).to.deep.equal({
       'Content-Type': 'application/json',
       foo: 'bar',

@@ -1,6 +1,6 @@
-import type { SDKControl, SDKRegistryManager } from './types.js';
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
+import type { SDKControl, SDKRegistryManager } from './types.js';
 
 class Registry implements SDKRegistryManager {
   private _sdk: SDKControl | null = null;
@@ -12,7 +12,7 @@ class Registry implements SDKRegistryManager {
     this._diag = diagLogger;
   }
 
-  public register: (sdk: SDKControl) => void = sdk => {
+  public register: (sdk: SDKControl) => void = (sdk) => {
     if (this._sdk !== null) {
       this._diag.warn('previously registered sdk will be overwritten');
     }

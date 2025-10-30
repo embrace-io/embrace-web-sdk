@@ -1,6 +1,6 @@
 'use client';
 
-import { session, log } from '@embrace-io/web-sdk';
+import { log, session } from '@embrace-io/web-sdk';
 import sdkControl from '@/lib/otel';
 
 const SDKTest = () => {

@@ -1,15 +1,17 @@
-import { test as base } from '@playwright/test';
-import zlib from 'node:zlib';
-import path, { dirname } from 'node:path';
 import fs from 'node:fs';
+import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import chalk from 'chalk';
-import type { Request, Route } from 'playwright';
-
+import zlib from 'node:zlib';
 import type {
   IKeyValue,
   Resource,
 } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
+import type {
+  IExportLogsServiceRequest,
+  ILogRecord,
+  IResourceLogs,
+  IScopeLogs,
+} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import type {
   IEvent,
   IExportTraceServiceRequest,
@@ -17,13 +19,10 @@ import type {
   IScopeSpans,
   ISpan,
 } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
-import type {
-  IExportLogsServiceRequest,
-  ILogRecord,
-  IResourceLogs,
-  IScopeLogs,
-} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
+import { test as base } from '@playwright/test';
+import chalk from 'chalk';
 import { diff } from 'jest-diff';
+import type { Request, Route } from 'playwright';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -33,8 +32,8 @@ const shouldUpdateGolden = process.env.UPDATE_GOLDEN === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
 };
-const OTEL_REQUEST_REGEX = new RegExp(`http://localhost:3001/v2/(spans|logs)$`);
-const REMOTE_CONFIG_REGEX = new RegExp('^https?:\\/\\/.*\\/v2\\/config\\?.*');
+const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
+const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
 
 type EmbraceDataRequest = {
   url: string;
@@ -72,13 +71,13 @@ const IGNORED_ATTRIBUTES_LIST = [
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
     async ({ page, requests }, use) => {
-      await use(async url => {
+      await use(async (url) => {
         await Promise.any([
           // Wait for the request to be made or
-          page.waitForResponse(request => request.url().match(url) !== null),
+          page.waitForResponse((request) => request.url().match(url) !== null),
           // Check if the request has already been made
-          new Promise(resolve => {
-            if (requests.length > 0 && requests.find(r => r.url.match(url))) {
+          new Promise((resolve) => {
+            if (requests.length > 0 && requests.find((r) => r.url.match(url))) {
               resolve(undefined);
             }
           }),
@@ -145,7 +144,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
   withRemoteConfig: [
     async ({ page }, use) =>
       use(async (remoteConfig?: Record<string, unknown>) => {
-        await page.route(REMOTE_CONFIG_REGEX, async route => {
+        await page.route(REMOTE_CONFIG_REGEX, async (route) => {
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -158,7 +157,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
 });
 
 const getAttributeValue = (
-  attr: IKeyValue
+  attr: IKeyValue,
 ): string | number | boolean | null => {
   if (attr.value.stringValue !== undefined) {
     return attr.value.stringValue;
@@ -180,7 +179,7 @@ const getAttributeValue = (
 };
 
 const isResourceSpan = (
-  entity: IResourceSpans | IResourceLogs
+  entity: IResourceSpans | IResourceLogs,
 ): entity is IResourceSpans =>
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   (entity as IResourceSpans).scopeSpans !== undefined;
@@ -196,7 +195,7 @@ const expect = testWithMockApi.expect.extend({
   toMatchAttributes: (
     received: IKeyValue[],
     expected: IKeyValue[],
-    { message = '' }: { message?: string } = {}
+    { message = '' }: { message?: string } = {},
   ) => {
     const extraMessage = message ? `${message}\n` : '';
 
@@ -247,7 +246,7 @@ const expect = testWithMockApi.expect.extend({
   toMatchSpanEvents: (
     received: IEvent[],
     expected: IEvent[],
-    { message = '' }: { message?: string } = {}
+    { message = '' }: { message?: string } = {},
   ) => {
     const extraMessage = message ? `${message}\n` : '';
 
@@ -269,14 +268,14 @@ const expect = testWithMockApi.expect.extend({
           expect.objectContaining({
             name: expectedEvent.name,
             droppedAttributesCount: expectedEvent.droppedAttributesCount,
-          })
+          }),
         );
 
         expect(receivedEvent.attributes).toMatchAttributes(
           expectedEvent.attributes,
           {
             message: `${extraMessage}Attributes mismatch for span event ${receivedEvent.name}${INTENDED_CHANGE_MESSAGE}`,
-          }
+          },
         );
       }
 
@@ -365,7 +364,7 @@ const expect = testWithMockApi.expect.extend({
   },
   toMatchOTelEntities: (
     received: IResourceSpans[] | IResourceLogs[] | undefined,
-    expected: IResourceSpans[] | IResourceLogs[] | undefined
+    expected: IResourceSpans[] | IResourceLogs[] | undefined,
   ) => {
     if (!expected && !received) {
       return {
@@ -400,7 +399,7 @@ const expect = testWithMockApi.expect.extend({
         if (receivedResource.resource && expected[resourceIndex].resource) {
           try {
             expect(receivedResource.resource).toMatchResource(
-              expected[resourceIndex].resource
+              expected[resourceIndex].resource,
             );
           } catch (e) {
             return {
@@ -439,7 +438,7 @@ const expect = testWithMockApi.expect.extend({
               // as spans/logs are created in different orders and there's no way of matching them with the previous results
               if (
                 INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON.includes(
-                  receivedScope.scope.name
+                  receivedScope.scope.name,
                 )
               ) {
                 continue;

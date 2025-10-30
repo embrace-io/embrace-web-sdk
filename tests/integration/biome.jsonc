@@ -1,0 +1,19 @@
+{
+  "$schema": "../../node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": "//",
+  "linter": {
+    "rules": {
+      "a11y": {
+        "useButtonType": "off"
+      },
+      "correctness": {
+        "noNodejsModules": "off"
+      },
+      "suspicious": {
+        "noConsole": {
+          "level": "off"
+        }
+      }
+    }
+  }
+}

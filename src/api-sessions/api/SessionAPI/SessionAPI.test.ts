@@ -1,10 +1,10 @@
+import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { ProxySpanSessionManager } from '../../manager/index.js';
-import type { SpanSessionManager } from '../../manager/index.js';
-import { SessionAPI } from './SessionAPI.js';
-import type { HrTime, Span } from '@opentelemetry/api';
 import sinonChai from 'sinon-chai';
+import type { SpanSessionManager } from '../../manager/index.js';
+import { ProxySpanSessionManager } from '../../manager/index.js';
+import { SessionAPI } from './SessionAPI.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -48,7 +48,7 @@ describe('SessionAPI', () => {
     const result = sessionAPI.getSpanSessionManager();
     expect(result).to.be.instanceOf(ProxySpanSessionManager);
     expect((result as ProxySpanSessionManager).getDelegate()).to.equal(
-      sessionManager
+      sessionManager,
     );
   });
 
@@ -98,18 +98,18 @@ describe('SessionAPI', () => {
 
     sessionAPI.endSessionSpanInternal('timer');
     void expect(
-      mockSpanSessionManager.endSessionSpanInternal
+      mockSpanSessionManager.endSessionSpanInternal,
     ).to.have.been.calledOnceWith('timer');
 
     sessionAPI.addBreadcrumb('br-name');
     void expect(
-      mockSpanSessionManager.addBreadcrumb
+      mockSpanSessionManager.addBreadcrumb,
     ).to.have.been.calledOnceWith('br-name');
 
     sessionAPI.addProperty('custom-key', 'custom value');
     void expect(mockSpanSessionManager.addProperty).to.have.been.calledOnceWith(
       'custom-key',
-      'custom value'
+      'custom value',
     );
 
     sessionAPI.addSessionEndedListener(() => {});

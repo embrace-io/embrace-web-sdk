@@ -1,22 +1,22 @@
+import { SeverityNumber } from '@opentelemetry/api-logs';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.js';
+import type React from 'react';
 import type { LogManager } from '../../../../api-logs/index.js';
 import { log } from '../../../../api-logs/index.js';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { setupTestLogExporter } from '../../../../testUtils/index.js';
+import {
+  EMB_ERROR_INSTRUMENTATIONS,
+  KEY_EMB_INSTRUMENTATION,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
+} from '../../../../constants/attributes.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../../managers/index.js';
-import type React from 'react';
-import { SeverityNumber } from '@opentelemetry/api-logs';
-import {
-  EMB_ERROR_INSTRUMENTATIONS,
-  KEY_EMB_INSTRUMENTATION,
-  KEY_EMB_JS_FILE_BUNDLE_IDS,
-} from '../../../../constants/attributes.js';
+import { setupTestLogExporter } from '../../../../testUtils/index.js';
+import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.js';
 
 const { expect } = chai;
 

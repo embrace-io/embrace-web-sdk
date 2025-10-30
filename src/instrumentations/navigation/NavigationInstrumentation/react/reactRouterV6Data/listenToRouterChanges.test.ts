@@ -2,8 +2,8 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { getNavigationInstrumentation } from '../../index.js';
-import type { Router, RouterState } from './types.js';
 import { listenToRouterChanges } from './listenToRouterChanges.js';
+import type { Router, RouterState } from './types.js';
 
 chai.use(sinonChai);
 
@@ -17,11 +17,11 @@ describe('listenToRouterChanges', () => {
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
-      'setCurrentRoute'
+      'setCurrentRoute',
     );
     setInstrumentationTypeStub = sinon.stub(
       navigationInstrumentation,
-      'setInstrumentationType'
+      'setInstrumentationType',
     );
   });
 
@@ -53,7 +53,7 @@ describe('listenToRouterChanges', () => {
 
     void expect(routesMatcherSpy.calledOnce).to.be.true;
     void expect(routesMatcherSpy.firstCall.firstArg).to.deep.equal(
-      mockRouter.routes
+      mockRouter.routes,
     );
     void expect(routesMatcherSpy.firstCall.lastArg).to.deep.equal({
       pathname: '/test/123',
@@ -66,7 +66,7 @@ describe('listenToRouterChanges', () => {
 
     void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
     void expect(setInstrumentationTypeStub.firstCall.firstArg).to.equal(
-      'react_router_data'
+      'react_router_data',
     );
   });
 

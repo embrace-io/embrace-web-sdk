@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import type { UserManager } from '../../manager/index.js';
 import { ProxyUserManager } from '../../manager/index.js';
 import { UserAPI } from './UserAPI.js';
-import sinonChai from 'sinon-chai';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -42,7 +42,7 @@ describe('UserAPI', () => {
     const userManager = userAPI.getUserManager();
     expect(userManager).to.be.instanceOf(ProxyUserManager);
     expect((userManager as ProxyUserManager).getDelegate()).to.equal(
-      mockUserManager
+      mockUserManager,
     );
   });
 

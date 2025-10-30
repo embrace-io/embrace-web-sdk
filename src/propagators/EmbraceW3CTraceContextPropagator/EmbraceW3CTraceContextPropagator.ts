@@ -1,13 +1,13 @@
-import { W3CTraceContextPropagator } from '@opentelemetry/core';
-import { defaultTextMapGetter, trace } from '@opentelemetry/api';
 import type { Context, TextMapSetter } from '@opentelemetry/api';
+import { defaultTextMapGetter, trace } from '@opentelemetry/api';
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { KEY_EMB_W3C_TRACEPARENT } from '../../constants/index.js';
 
 export class EmbraceW3CTraceContextPropagator extends W3CTraceContextPropagator {
   public override inject(
     context: Context,
     carrier: unknown,
-    setter: TextMapSetter
+    setter: TextMapSetter,
   ) {
     super.inject(context, carrier, setter);
 

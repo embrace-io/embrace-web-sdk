@@ -13,7 +13,7 @@ export class NoOpLogManager implements LogManager {
   public message(
     _message: string,
     _level: LogSeverity,
-    _options?: LogMessageOptions
+    _options?: LogMessageOptions,
   ) {
     // no op
   }

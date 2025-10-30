@@ -1,0 +1,89 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "useIgnoreFile": true,
+    "clientKind": "git",
+    "defaultBranch": "main",
+    "enabled": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!!**/__golden__",
+      "!!tests/integration/server/public"
+    ]
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "linter": {
+    "rules": {
+      "security": {
+        "recommended": true,
+        // too many false positives within test files
+        "noSecrets": "off"
+      },
+      "a11y": {
+        "recommended": true
+      },
+      "complexity": {
+        "recommended": true,
+        // https://github.com/biomejs/biome/discussions/7404
+        "useLiteralKeys": "off"
+      },
+      "correctness": {
+        "recommended": true,
+        "noNodejsModules": "error"
+        // TBD on whether to use ts or js extensions
+        // "useImportExtensions": "error"
+        // https://github.com/biomejs/biome/issues/7734
+        // "useImportExtensions": {
+        //   "level": "error",
+        //   "options": {
+        //     "forceJsExtensions": true  // Force .js even for .ts files
+        //   }
+        // }
+      },
+      "performance": {
+        "recommended": true,
+        "noReExportAll": "error"
+      },
+      "style": {
+        "recommended": true,
+        "useImportType": {
+          "level": "error",
+          "options": {
+            "style": "separatedType"
+          }
+        },
+        "useNodejsImportProtocol": {
+          "level": "error",
+          "fix": "unsafe"
+        }
+      },
+      "suspicious": {
+        "recommended": true,
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["error", "warn", "info"]
+          }
+        }
+      }
+    }
+  }
+}

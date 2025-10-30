@@ -1,9 +1,11 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemoryLogRecordExporter,
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
@@ -11,6 +13,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
+import type { VisibilityStateDocument } from '../../common/index.js';
+import {
+  KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.js';
 import {
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
@@ -24,20 +32,12 @@ import {
 } from '../../testUtils/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
-import { EmbraceLogManager } from './EmbraceLogManager.js';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
-import {
-  KEY_EMB_ERROR_LOG_COUNT,
-  KEY_EMB_JS_FILE_BUNDLE_IDS,
-  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
+import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
+import { EmbraceLogManager } from './EmbraceLogManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -114,7 +114,7 @@ describe('EmbraceLogManager', () => {
           attributes: {
             attr_key: 'attr value',
           },
-        }
+        },
       );
     }).to.not.throw();
 
@@ -123,7 +123,7 @@ describe('EmbraceLogManager', () => {
     const log = finishedLogs[0];
 
     expect(log.body).to.equal(
-      'this is an info log without stacktrace and one attribute'
+      'this is an info log without stacktrace and one attribute',
     );
     expect(log.severityNumber).to.be.equal(SeverityNumber.INFO);
     expect(log.severityText).to.be.equal('INFO');
@@ -131,7 +131,7 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property('attr_key', 'attr value');
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
     expect(log.attributes).to.not.have.property(
-      KEY_EMB_JS_EXCEPTION_STACKTRACE
+      KEY_EMB_JS_EXCEPTION_STACKTRACE,
     );
   });
 
@@ -243,7 +243,7 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(KEY_EMB_JS_EXCEPTION_STACKTRACE);
     expect(log.attributes).to.have.property(
       KEY_EMB_JS_FILE_BUNDLE_IDS,
-      '{"Error\\n at file1.js:1:169":"b350cbb4-6d53-4a3a-aa3e-29ebbc39b11c"}'
+      '{"Error\\n at file1.js:1:169":"b350cbb4-6d53-4a3a-aa3e-29ebbc39b11c"}',
     );
     expect(log.attributes).to.have.property('emb.state', 'foreground');
     expect(Object.keys(log.attributes)).to.have.lengthOf(4);
@@ -271,13 +271,13 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
-      'HANDLED'
+      'HANDLED',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
     expect(log.attributes).to.have.property(
       ATTR_EXCEPTION_MESSAGE,
-      'this is an exception'
+      'this is an exception',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
@@ -303,13 +303,13 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
-      'HANDLED'
+      'HANDLED',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
     expect(log.attributes).to.have.property(
       ATTR_EXCEPTION_MESSAGE,
-      'this is an exception'
+      'this is an exception',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
@@ -327,19 +327,19 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNowMillis()
+      perf.getNowMillis(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
-      'HANDLED'
+      'HANDLED',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
     expect(log.attributes).to.have.property(
       ATTR_EXCEPTION_MESSAGE,
-      'this is an exception'
+      'this is an exception',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
@@ -359,13 +359,13 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNowMillis()
+      perf.getNowMillis(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
-      'UNHANDLED'
+      'UNHANDLED',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
@@ -402,7 +402,7 @@ describe('EmbraceLogManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes[KEY_EMB_ERROR_LOG_COUNT]).to.be.equal(2);
     expect(
-      sessionSpan.attributes[KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT]
+      sessionSpan.attributes[KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT],
     ).to.be.equal(3);
   });
 
@@ -421,10 +421,10 @@ describe('EmbraceLogManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).not.to.have.property(
-      KEY_EMB_ERROR_LOG_COUNT
+      KEY_EMB_ERROR_LOG_COUNT,
     );
     expect(sessionSpan.attributes).not.to.have.property(
-      KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT
+      KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
     );
   });
 
@@ -457,17 +457,17 @@ describe('EmbraceLogManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(
-      sessionSpan.attributes['emb.app.applied_limit.warning_log.drop.count']
+      sessionSpan.attributes['emb.app.applied_limit.warning_log.drop.count'],
     ).to.be.equal(6);
     expect(sessionSpan.attributes).not.to.have.property(
-      'emb.app.applied_limit.error_log.drop.count'
+      'emb.app.applied_limit.error_log.drop.count',
     );
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(6);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing warning_log because the maximum number of 4 has already been reached for this session'
+        'disallowing warning_log because the maximum number of 4 has already been reached for this session',
       );
     }
 
@@ -486,14 +486,14 @@ describe('EmbraceLogManager', () => {
     manager.message('this is an info log', 'info');
     manager.message(
       'this is an info log which has a message longer than the allowed maximum length',
-      'info'
+      'info',
     );
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(2);
     expect(finishedLogs[0].body).to.equal('this is an info log');
     expect(finishedLogs[1].body).to.equal(
-      'this is an info log which has a message longer than the allo'
+      'this is an info log which has a message longer than the allo',
     );
 
     spanSessionManager.endSessionSpan();
@@ -503,12 +503,12 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.info_log.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating info_log because it is longer than 60 characters: "this is an info log which has a message longer than the allowed maximum length"'
+      'truncating info_log because it is longer than 60 characters: "this is an info log which has a message longer than the allowed maximum length"',
     );
   });
 
@@ -534,7 +534,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(2);
     expect(finishedLogs[0].body).to.equal('this is an error log');
     expect(finishedLogs[1].body).to.equal(
-      'this is an error log with truncated attributes'
+      'this is an error log with truncated attributes',
     );
 
     expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
@@ -552,12 +552,12 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.error_log.truncate_attributes.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating error_log attributes because there are more than 2 set'
+      'truncating error_log attributes because there are more than 2 set',
     );
   });
 
@@ -575,7 +575,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[0].body).to.equal('this is an error log');
 
     expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
-      'a-very-long-'
+      'a-very-long-',
     );
 
     spanSessionManager.endSessionSpan();
@@ -585,20 +585,20 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.log_attribute_key.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.log_attribute_value.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(2);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating log_attribute_key because it is longer than 10 characters: "a-very-long-log-attribute-key"'
+      'truncating log_attribute_key because it is longer than 10 characters: "a-very-long-log-attribute-key"',
     );
     expect(diag.getWarnLogs()[1]).to.equal(
-      'truncating log_attribute_value because it is longer than 12 characters: "a-very-long-log-attribute-value"'
+      'truncating log_attribute_value because it is longer than 12 characters: "a-very-long-log-attribute-value"',
     );
   });
 
@@ -621,14 +621,14 @@ describe('EmbraceLogManager', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
     expect(
-      sessionSpan.attributes['emb.app.applied_limit.exception.drop.count']
+      sessionSpan.attributes['emb.app.applied_limit.exception.drop.count'],
     ).to.be.equal(7);
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(7);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing exception because the maximum number of 3 has already been reached for this session'
+        'disallowing exception because the maximum number of 3 has already been reached for this session',
       );
     }
 
@@ -646,14 +646,14 @@ describe('EmbraceLogManager', () => {
 
     manager.logException(
       new Error(
-        'this is an exception which has a message longer than the allowed maximum length'
-      )
+        'this is an exception which has a message longer than the allowed maximum length',
+      ),
     );
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
     expect(finishedLogs[0].body).to.equal(
-      'this is an exception which has a message longer th'
+      'this is an exception which has a message longer th',
     );
 
     spanSessionManager.endSessionSpan();
@@ -663,12 +663,12 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating exception because it is longer than 50 characters: "this is an exception which has a message longer than the allowed maximum length"'
+      'truncating exception because it is longer than 50 characters: "this is an exception which has a message longer than the allowed maximum length"',
     );
   });
 
@@ -696,7 +696,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(2);
     expect(finishedLogs[0].body).to.equal('this is an exception');
     expect(finishedLogs[1].body).to.equal(
-      'this is an exception with truncated attributes'
+      'this is an exception with truncated attributes',
     );
 
     expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
@@ -715,12 +715,12 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception.truncate_attributes.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating exception attributes because there are more than 3 set'
+      'truncating exception attributes because there are more than 3 set',
     );
   });
 
@@ -739,7 +739,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[0].body).to.equal('this is an exception');
 
     expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
-      'a-very-long-'
+      'a-very-long-',
     );
 
     spanSessionManager.endSessionSpan();
@@ -749,20 +749,20 @@ describe('EmbraceLogManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception_attribute_key.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception_attribute_value.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(2);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating exception_attribute_key because it is longer than 10 characters: "a-very-long-exception-attribute-key"'
+      'truncating exception_attribute_key because it is longer than 10 characters: "a-very-long-exception-attribute-key"',
     );
     expect(diag.getWarnLogs()[1]).to.equal(
-      'truncating exception_attribute_value because it is longer than 12 characters: "a-very-long-exception-attribute-value"'
+      'truncating exception_attribute_value because it is longer than 12 characters: "a-very-long-exception-attribute-value"',
     );
   });
 
@@ -774,11 +774,11 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(2);
     expect(finishedLogs[0].attributes).to.have.property(
       'emb.state',
-      'foreground'
+      'foreground',
     );
     expect(finishedLogs[1].attributes).to.have.property(
       'emb.state',
-      'foreground'
+      'foreground',
     );
   });
 
@@ -800,11 +800,11 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(2);
     expect(finishedLogs[0].attributes).to.have.property(
       'emb.state',
-      'background'
+      'background',
     );
     expect(finishedLogs[1].attributes).to.have.property(
       'emb.state',
-      'background'
+      'background',
     );
   });
 
@@ -825,13 +825,13 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'String');
       expect(log.attributes).to.have.property('exception.name', 'String');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        'this is a string error'
+        'this is a string error',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -853,7 +853,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'number');
       expect(log.attributes).to.have.property('exception.name', 'number');
@@ -879,7 +879,7 @@ describe('EmbraceLogManager', () => {
       const log = finishedLogs[0];
 
       expect(log.body).to.equal(
-        '{"key1":"value1","key2":"value2","key3":"value3","'
+        '{"key1":"value1","key2":"value2","key3":"value3","',
       );
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
       expect(log.severityText).to.be.equal('ERROR');
@@ -887,13 +887,13 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Object');
       expect(log.attributes).to.have.property('exception.name', 'Object');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        '{"key1":"value1","key2":"value2","key3":"value3","'
+        '{"key1":"value1","key2":"value2","key3":"value3","',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -922,13 +922,13 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Object');
       expect(log.attributes).to.have.property('exception.name', 'Object');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        '[unable to serialize error]'
+        '[unable to serialize error]',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -950,13 +950,13 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
       expect(log.attributes).to.have.property('exception.name', 'Error');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        'logException received an undefined error'
+        'logException received an undefined error',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -979,13 +979,13 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
       expect(log.attributes).to.have.property(
         KEY_EMB_EXCEPTION_HANDLING,
-        'HANDLED'
+        'HANDLED',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
       expect(log.attributes).to.have.property('exception.name', 'Error');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        'logException received an undefined error'
+        'logException received an undefined error',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.not.equal('');
@@ -1010,7 +1010,7 @@ describe('EmbraceLogManager', () => {
 
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
       expect(log.attributes).to.not.have.property(
-        KEY_EMB_JS_EXCEPTION_STACKTRACE
+        KEY_EMB_JS_EXCEPTION_STACKTRACE,
       );
     });
 
@@ -1031,7 +1031,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
       expect(log.attributes).to.have.property(
         KEY_EMB_JS_EXCEPTION_STACKTRACE,
-        'i am stacktrace passed in by the user'
+        'i am stacktrace passed in by the user',
       );
     });
 
@@ -1052,7 +1052,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.log');
       expect(log.attributes).to.have.property(
         KEY_EMB_JS_EXCEPTION_STACKTRACE,
-        'i am stacktrace passed in by the user'
+        'i am stacktrace passed in by the user',
       );
     });
 
@@ -1086,15 +1086,15 @@ describe('EmbraceLogManager', () => {
 
       expect(finishedLogs[0].attributes).to.have.property(
         'emb.exception_number',
-        1
+        1,
       );
       expect(finishedLogs[1].attributes).to.have.property(
         'emb.exception_number',
-        2
+        2,
       );
       expect(finishedLogs[2].attributes).to.have.property(
         'emb.exception_number',
-        3
+        3,
       );
     });
 
@@ -1113,11 +1113,11 @@ describe('EmbraceLogManager', () => {
 
       expect(finishedLogs[0].attributes).to.have.property(
         'emb.exception_number',
-        1
+        1,
       );
       expect(finishedLogs[1].attributes).to.have.property(
         'emb.exception_number',
-        1
+        1,
       );
     });
   });

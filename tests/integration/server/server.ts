@@ -1,13 +1,13 @@
+import { readFile } from 'node:fs';
+import type { IncomingMessage } from 'node:http';
 import { createServer } from 'node:http';
+import { dirname, extname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 // Easier to parse incoming requests with a known type, only used for tests
 // eslint-disable-next-line regex/invalid
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import type { ReceivedSpans } from '../index.js';
-import type { IncomingMessage } from 'node:http';
-import { extname, join, dirname } from 'node:path';
-import { readFile } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -23,12 +23,12 @@ const mimeTypes: Record<string, string> = {
 const receivedSpans: ReceivedSpans = {};
 
 const parseGzip = async (
-  req: IncomingMessage
+  req: IncomingMessage,
 ): Promise<Record<string, unknown>> =>
   new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
 
-    req.on('data', chunk => chunks.push(chunk as Buffer));
+    req.on('data', (chunk) => chunks.push(chunk as Buffer));
     req.on('end', () => {
       const buffer = Buffer.concat(chunks);
       zlib.gunzip(buffer, (err, decoded) => {
@@ -37,7 +37,7 @@ const parseGzip = async (
         } else {
           try {
             resolve(
-              JSON.parse(decoded.toString('utf-8')) as Record<string, unknown>
+              JSON.parse(decoded.toString('utf-8')) as Record<string, unknown>,
             );
           } catch (parseError) {
             reject(parseError as Error);
@@ -67,7 +67,7 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.url == '/received-spans') {
+  if (req.url === '/received-spans') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
 
@@ -86,10 +86,10 @@ const server = createServer((req, res) => {
       .then((request: IExportTraceServiceRequest) => {
         const sessionSpan =
           request.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-            span => span.name === 'emb-session'
+            (span) => span.name === 'emb-session',
           );
         const sessionId = sessionSpan?.attributes.find(
-          attr => attr.key === 'session.id'
+          (attr) => attr.key === 'session.id',
         )?.value.stringValue;
 
         if (!sessionId) {
@@ -114,7 +114,7 @@ const server = createServer((req, res) => {
 
   if (req.url?.includes('public')) {
     const url = new URL(
-      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`
+      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
     );
     const filePath = join(__dirname, url.pathname);
 

@@ -1,4 +1,4 @@
-import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK } from '@embrace-io/web-sdk';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';

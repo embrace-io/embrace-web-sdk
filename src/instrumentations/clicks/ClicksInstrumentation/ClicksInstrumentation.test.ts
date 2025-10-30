@@ -1,7 +1,7 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -165,7 +165,10 @@ describe('ClicksInstrumentation', () => {
     expect(sessionSpan.events).to.have.lengthOf(3);
 
     void expect(
-      sessionSpan.events.map(e => ({ name: e.name, attributes: e.attributes }))
+      sessionSpan.events.map((e) => ({
+        name: e.name,
+        attributes: e.attributes,
+      })),
     ).to.deep.equal([
       {
         name: 'click',
@@ -262,7 +265,7 @@ describe('ClicksInstrumentation', () => {
   it('should allow tracking to be omitted for certain elements', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
-      shouldTrack: element => !element.hasAttribute('data-is-sensitive'),
+      shouldTrack: (element) => !element.hasAttribute('data-is-sensitive'),
     });
     const target1 = document.createElement('div');
     target1.setAttribute('data-is-sensitive', 'true');
@@ -296,7 +299,7 @@ describe('ClicksInstrumentation', () => {
   it('should allow the inner text parsing to be customized for certain elements', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
-      innerTextForElement: element =>
+      innerTextForElement: (element) =>
         element.hasAttribute('data-is-sensitive')
           ? '[REDACTED]'
           : element.innerText,

@@ -32,7 +32,7 @@ interface NetworkSpan extends ReadableSpan {
 const SCHEME_RE = /.+:\/\/.+/;
 
 export const isNetworkSpan = (
-  span: ReadableSpan | NetworkSpan
+  span: ReadableSpan | NetworkSpan,
 ): span is NetworkSpan => {
   if (
     (span.attributes[ATTR_HTTP_REQUEST_METHOD] || // eslint-disable-next-line @typescript-eslint/no-deprecated

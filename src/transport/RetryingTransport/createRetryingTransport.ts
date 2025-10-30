@@ -1,6 +1,6 @@
 import type { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
-import { RetryingTransport } from './RetryingTransport.js';
 import { OTelPerformanceManager } from '../../utils/index.js';
+import { RetryingTransport } from './RetryingTransport.js';
 
 /**
  * Creates an Exporter Transport that retries on 'retryable' response.
@@ -13,5 +13,5 @@ export const createRetryingTransport = (options: {
 }): IExporterTransport =>
   new RetryingTransport(
     options.transport,
-    options.perf ?? new OTelPerformanceManager()
+    options.perf ?? new OTelPerformanceManager(),
   );

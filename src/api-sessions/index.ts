@@ -1,4 +1,3 @@
-export { session } from './sessionAPI.js';
 export type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -9,3 +8,4 @@ export {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
 } from './manager/index.js';
+export { session } from './sessionAPI.js';

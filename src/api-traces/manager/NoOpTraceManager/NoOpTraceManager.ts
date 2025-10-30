@@ -1,13 +1,13 @@
-import type { TraceManager } from '../index.js';
-import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
-import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
 import type { Context } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/api';
+import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
+import type { TraceManager } from '../index.js';
+import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
 
 export class NoOpTraceManager implements TraceManager {
   public startSpan(
     _name: string,
-    _options?: ExtendedSpanOptions
+    _options?: ExtendedSpanOptions,
   ): ExtendedSpan {
     return new NonRecordingExtendedSpan();
   }

@@ -44,7 +44,7 @@ export abstract class InstrumentationAbstract<
   public constructor(
     public readonly instrumentationName: string,
     public readonly instrumentationVersion: string,
-    config: ConfigType
+    config: ConfigType,
   ) {
     this.setConfig(config);
 
@@ -88,9 +88,6 @@ export abstract class InstrumentationAbstract<
    * @returns an array of {@link InstrumentationModuleDefinition}
    */
   public getModuleDefinitions(): InstrumentationModuleDefinition[] {
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // TBH, I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const initResult = this.init() ?? [];
     if (!Array.isArray(initResult)) {
       return [initResult];
@@ -130,7 +127,7 @@ export abstract class InstrumentationAbstract<
   public setLoggerProvider(loggerProvider: LoggerProvider): void {
     this._logger = loggerProvider.getLogger(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
   }
 
@@ -141,7 +138,7 @@ export abstract class InstrumentationAbstract<
   public setMeterProvider(meterProvider: MeterProvider): void {
     this._meter = meterProvider.getMeter(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
 
     this._updateMetricInstruments();
@@ -154,21 +151,22 @@ export abstract class InstrumentationAbstract<
   public setTracerProvider(tracerProvider: TracerProvider): void {
     this._tracer = tracerProvider.getTracer(
       this.instrumentationName,
-      this.instrumentationVersion
+      this.instrumentationVersion,
     );
   }
 
   /**
    * Init method in which plugin should define _modules and patches for
    * methods.
+   *
+   * Note: OTel uses `| void` but we use `| undefined` for semantic clarity.
+   * `void` in union types is confusing because it mixes "returns nothing" with "returns data or nothing".
+   * `undefined` better expresses the intent: this method may or may not return a value.
    */
   protected abstract init():
     | InstrumentationModuleDefinition
     | InstrumentationModuleDefinition[]
-    // NOTE: disabling typescript check, as this class was copied from OTel repo.
-    // I agree with typescript here, but keeping it disabled for consistency with the base repo
-    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-    | void;
+    | undefined;
 
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {
@@ -187,7 +185,7 @@ export abstract class InstrumentationAbstract<
     hookHandler: SpanCustomizationHook<SpanCustomizationInfoType> | undefined,
     triggerName: string,
     span: Span,
-    info: SpanCustomizationInfoType
+    info: SpanCustomizationInfoType,
   ) {
     if (!hookHandler) {
       return;
@@ -199,7 +197,7 @@ export abstract class InstrumentationAbstract<
       this._diag.error(
         `Error running span customization hook due to exception in handler`,
         { triggerName },
-        e
+        e,
       );
     }
   }

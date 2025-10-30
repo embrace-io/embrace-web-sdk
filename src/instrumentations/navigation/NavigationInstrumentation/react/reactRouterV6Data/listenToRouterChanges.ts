@@ -1,7 +1,7 @@
-import type { ListenToRouterChangesArgs, Match } from './types.js';
-import { getNavigationInstrumentation } from '../../index.js';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
 import type { Route } from '../../../../../api-page/index.js';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
+import { getNavigationInstrumentation } from '../../index.js';
+import type { ListenToRouterChangesArgs, Match } from './types.js';
 
 /**
  * getRouteFromMatches goes through all the matches routes to build the full path
@@ -12,10 +12,10 @@ import type { Route } from '../../../../../api-page/index.js';
  */
 const getRouteFromMatches = (
   matches: Match[],
-  currentPathname: string
+  currentPathname: string,
 ): Route | null =>
   matches
-    .filter(m => currentPathname.includes(m.pathname))
+    .filter((m) => currentPathname.includes(m.pathname))
     .reduce<null | Route>((route, match) => {
       if (!match.route.path) {
         return route;
@@ -41,7 +41,7 @@ export const listenToRouterChanges = ({
 }: ListenToRouterChangesArgs) => {
   const navigationInstrumentation = getNavigationInstrumentation();
   navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.Data
+    EMB_NAVIGATION_INSTRUMENTATIONS.Data,
   );
 
   const initialMatches = routesMatcher(router.routes, {
@@ -56,12 +56,12 @@ export const listenToRouterChanges = ({
     navigationInstrumentation.setCurrentRoute(initialRoute);
   }
 
-  return router.subscribe(state => {
+  return router.subscribe((state) => {
     // State has a list of already matched routes
     // https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/router/router.ts#L954
     const currentRoute = getRouteFromMatches(
       state.matches,
-      state.location.pathname
+      state.location.pathname,
     );
 
     if (currentRoute) {

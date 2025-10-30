@@ -62,8 +62,8 @@ describe('EmbraceLogExporter', () => {
     };
 
     const exporter = new EmbraceLogExporter(args);
-    await new Promise<void>(resolve => {
-      exporter.export(mockLogs, result => {
+    await new Promise<void>((resolve) => {
+      exporter.export(mockLogs, (result) => {
         expect(result.code).to.equal(ExportResultCode.SUCCESS);
         resolve();
       });
@@ -71,14 +71,14 @@ describe('EmbraceLogExporter', () => {
     expect(fakeFetchGetMethod()).to.equal('POST');
     const headers = fakeFetchGetRequestHeaders();
     expect((headers as Record<string, string>)['Content-Encoding']).to.equal(
-      'gzip'
+      'gzip',
     );
     expect((headers as Record<string, string>)['Content-Type']).to.equal(
-      'application/json'
+      'application/json',
     );
     expect((headers as Record<string, string>)['X-EM-AID']).to.equal(mockAppID);
     expect((headers as Record<string, string>)['X-EM-DID']).to.equal(
-      mockUserID
+      mockUserID,
     );
     // Chrome, Webkit and Firefox have slightly different encoding processes, generating different Content-Length values.
     const chromeContentLength = '189';
@@ -89,7 +89,7 @@ describe('EmbraceLogExporter', () => {
       firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
-      'https://a-testAppID.data.emb-api.com/v2/logs'
+      'https://a-testAppID.data.emb-api.com/v2/logs',
     );
     const body = fakeFetchGetBody();
     void expect(body).not.to.be.null;
@@ -123,7 +123,7 @@ describe('EmbraceLogExporter', () => {
       ],
     };
     const decompressedStream = new Response(body).body?.pipeThrough(
-      new DecompressionStream('gzip')
+      new DecompressionStream('gzip'),
     );
     // translate from Uint8Array to string
     const text = await new Response(decompressedStream).text();
@@ -143,8 +143,8 @@ describe('EmbraceLogExporter', () => {
 
     const exporter = new EmbraceLogExporter(args);
 
-    await new Promise<void>(resolve => {
-      exporter.export(mockLogs, result => {
+    await new Promise<void>((resolve) => {
+      exporter.export(mockLogs, (result) => {
         expect(result.code).to.equal(ExportResultCode.SUCCESS);
         resolve();
       });

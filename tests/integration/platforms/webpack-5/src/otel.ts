@@ -1,4 +1,4 @@
-import { initSDK, DiagLogLevel, session } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 

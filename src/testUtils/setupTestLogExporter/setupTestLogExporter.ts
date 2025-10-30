@@ -11,7 +11,7 @@ import {
  * It returns an instance of InMemoryLogRecordExporter, hooked into a SimpleLogRecordProcessor, and a LoggerProvider.
  * */
 export const setupTestLogExporter = (
-  logProcessors: LogRecordProcessor[] = []
+  logProcessors: LogRecordProcessor[] = [],
 ) => {
   const memoryExporter = new InMemoryLogRecordExporter();
   const logProvider = new LoggerProvider({

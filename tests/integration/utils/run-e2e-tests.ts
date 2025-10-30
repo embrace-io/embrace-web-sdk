@@ -1,7 +1,7 @@
+import type { ReceivedSpans } from '../index.js';
 import testWithMockApi, {
   expect as extendedMockApiTestExpect,
 } from './test-with-mock-api.js';
-import type { ReceivedSpans } from '../index.js';
 
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionBatchedSpanProcessor non-session span ended';
@@ -10,7 +10,7 @@ type E2ETestFixture = {
   getCurrentSessionId: () => Promise<string>;
   navigateAndWaitUntilReady: (
     url: string,
-    numberOfExpectedSpans: number
+    numberOfExpectedSpans: number,
   ) => Promise<void>;
   validateThatSessionEnded: (sessionId?: string) => Promise<void>;
 };
@@ -20,7 +20,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
     await use(async () => {
       const sessionId = await page.evaluate(
         () => window.EMBRACE_CURRENT_SESSION_ID,
-        {}
+        {},
       );
 
       if (!sessionId) {
@@ -38,7 +38,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       // when a span ends, and it is waiting for a fixed number of auto-instrumented spans to be created on page load
       // Adding more spans or changing the number of spans may require adjusting the test expectations
       // But it's better than waiting a random amount of time for everything to settle
-      page.on('console', msg => {
+      page.on('console', (msg) => {
         if (msg.text().includes(EXPECTED_SPAN_ENDED_TEXT)) {
           autoInstrumentedSpansCount++;
         }
@@ -51,7 +51,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
         throw new Error('Page did not load within 5 seconds');
       }, 5000);
 
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         const interval = setInterval(() => {
           if (autoInstrumentedSpansCount >= numberOfExpectedSpans) {
             clearInterval(interval);
@@ -72,11 +72,11 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
         throw new Error('Server did not register the session end in time');
       }, 4000);
 
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         const interval = setInterval(() => {
           void (async () => {
             const response = await fetch(
-              'http://localhost:3001/received-spans'
+              'http://localhost:3001/received-spans',
             );
             const receivedSpans = (await response.json()) as ReceivedSpans;
 
@@ -110,7 +110,7 @@ const runE2ETests = ({
       'it should load the home page without errors',
       async ({ navigateAndWaitUntilReady }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-      }
+      },
     );
 
     testE2E(
@@ -122,7 +122,7 @@ const runE2ETests = ({
           .expect(
             page.getByRole('button', {
               name: 'End Session',
-            })
+            }),
           )
           .toBeVisible();
         await testE2E
@@ -132,10 +132,10 @@ const runE2ETests = ({
           .expect(
             page.getByRole('button', {
               name: 'Navigate to Another Page',
-            })
+            }),
           )
           .toBeVisible();
-      }
+      },
     );
 
     testE2E(
@@ -155,15 +155,15 @@ const runE2ETests = ({
         if (requests.length === 0) {
           // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
           // yet populated
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
         testE2E.expect(requests).toHaveLength(1);
 
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-session.json`
+          `${browserName}-${codifiedName}-session.json`,
         );
-      }
+      },
     );
 
     testE2E(
@@ -183,9 +183,9 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(1);
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-send-log.json`
+          `${browserName}-${codifiedName}-send-log.json`,
         );
-      }
+      },
     );
 
     testE2E(
@@ -193,7 +193,7 @@ const runE2ETests = ({
       async ({ page, waitForRemoteConfigRequest, withRemoteConfig }) => {
         await withRemoteConfig();
         await Promise.all([page.goto(url), waitForRemoteConfigRequest()]);
-      }
+      },
     );
 
     testE2E(
@@ -218,10 +218,10 @@ const runE2ETests = ({
         // After reload, the session id should not be set as it is sampled out
         currentSessionId = await page.evaluate(
           () => window.EMBRACE_CURRENT_SESSION_ID,
-          {}
+          {},
         );
         testE2E.expect(currentSessionId).toBeNull();
-      }
+      },
     );
 
     testE2E(
@@ -242,7 +242,7 @@ const runE2ETests = ({
         await page.close();
 
         await validateThatSessionEnded(currentSessionId);
-      }
+      },
     );
 
     testE2E(
@@ -261,7 +261,7 @@ const runE2ETests = ({
         });
 
         await validateThatSessionEnded();
-      }
+      },
     );
 
     testE2E(
@@ -281,7 +281,7 @@ const runE2ETests = ({
         await page.reload();
 
         await validateThatSessionEnded(currentSessionId);
-      }
+      },
     );
 
     testE2E(
@@ -304,7 +304,7 @@ const runE2ETests = ({
         await button.click();
 
         await validateThatSessionEnded(currentSessionId);
-      }
+      },
     );
 
     testE2E(
@@ -327,7 +327,7 @@ const runE2ETests = ({
         await page.goto('about:blank');
 
         await validateThatSessionEnded(currentSessionId);
-      }
+      },
     );
 
     testE2E.skip(
@@ -338,7 +338,7 @@ const runE2ETests = ({
         // You can run this test manually by closing the browser after navigating to the page.
         // browser.close() kills the browser instance immediately, without triggering the session end.
         // await browser.close();
-      }
+      },
     );
   });
 };

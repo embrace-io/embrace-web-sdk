@@ -1,8 +1,8 @@
-import { expect } from 'chai';
-import { NoOpTraceManager } from './NoOpTraceManager.js';
-import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
 import type { Context } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/api';
+import { expect } from 'chai';
+import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
+import { NoOpTraceManager } from './NoOpTraceManager.js';
 
 describe('NoOpTraceManager', () => {
   let noOpTraceManager: NoOpTraceManager;
@@ -19,7 +19,7 @@ describe('NoOpTraceManager', () => {
   it('should return ROOT_CONTEXT for setSpan', () => {
     const context = noOpTraceManager.setSpan(
       {} as Context,
-      new NonRecordingExtendedSpan()
+      new NonRecordingExtendedSpan(),
     );
     void expect(context).to.deep.equal(ROOT_CONTEXT);
   });

@@ -1,4 +1,4 @@
 export {
-  NavigationInstrumentation,
   getNavigationInstrumentation,
+  NavigationInstrumentation,
 } from './NavigationInstrumentation/index.js';

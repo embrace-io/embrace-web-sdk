@@ -1,6 +1,6 @@
 export type {
-  VisibilityStateDocument,
-  URLDocument,
-  PathnameDocument,
   AttributeScrubber,
+  PathnameDocument,
+  URLDocument,
+  VisibilityStateDocument,
 } from './types.js';

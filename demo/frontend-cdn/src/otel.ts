@@ -10,7 +10,7 @@ import {
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 
 const setupOTel = () => {
-  // @ts-ignore
+  // @ts-expect-error
   window.EmbraceWebSdk.initSDK({
     appID: SAMPLE_APP_ID,
     appVersion: '0.0.1',

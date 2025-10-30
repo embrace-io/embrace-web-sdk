@@ -1,9 +1,9 @@
-import { test } from '@playwright/test';
-import getPort from 'get-port';
-import lighthouse from 'lighthouse';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { test } from '@playwright/test';
+import getPort from 'get-port';
+import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
 import { resultsToMarkdownTable } from '../../utils/index.js';
 import {
@@ -58,14 +58,14 @@ const mapResultToMetric = (result: AuditResult): LighthouseMetric => ({
 });
 
 const calculateDifference = (
-  results: Partial<Record<TestPage, LighthouseResult>>
+  results: Partial<Record<TestPage, LighthouseResult>>,
 ) => {
   const baseline = results.baseline;
   const withSdk = results['with-sdk'];
 
   if (!baseline || !withSdk) {
     throw new Error(
-      'Both baseline and with-sdk results are required for comparison.'
+      'Both baseline and with-sdk results are required for comparison.',
     );
   }
 
@@ -97,7 +97,7 @@ test.describe('Lighthouse Performance Tests', () => {
         args: [`--remote-debugging-port=${port.toString()}`],
       });
 
-      await context.route(EMBRACE_API_REGEX, route => {
+      await context.route(EMBRACE_API_REGEX, (route) => {
         console.log('faked request');
 
         void route.fulfill({ status: 200, body: '0' });
@@ -121,7 +121,7 @@ test.describe('Lighthouse Performance Tests', () => {
 
       fs.writeFileSync(
         `${outputPath}.json`,
-        JSON.stringify(result.lhr, null, 2)
+        JSON.stringify(result.lhr, null, 2),
       );
       fs.writeFileSync(`${outputPath}.html`, result.report[1]);
 
@@ -137,30 +137,28 @@ test.describe('Lighthouse Performance Tests', () => {
   test.afterAll(() => {
     const difference = calculateDifference(results);
     const differenceInMetrics: Record<string, Metric[]> = {
-      ...Object.entries(difference).reduce(
-        (acc, [key, metric]) => ({
-          ...acc,
-          [LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]]:
-            [
-              {
-                value: metric.value,
-                name: 'Difference',
-                unit: 'ms',
-              },
-              {
-                value: metric.description,
-                name: 'Description',
-                unit: '',
-              },
-            ],
-        }),
-        {}
-      ),
+      ...Object.entries(difference).reduce((acc, [key, metric]) => {
+        acc[
+          LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[key as keyof LighthouseResult]
+        ] = [
+          {
+            value: metric.value,
+            name: 'Difference',
+            unit: 'ms',
+          },
+          {
+            value: metric.description,
+            name: 'Description',
+            unit: '',
+          },
+        ];
+        return acc;
+      }, {}),
     };
 
     fs.writeFileSync(
       './test-results/lighthouse-startup-performance-tests.md',
-      resultsToMarkdownTable(differenceInMetrics)
+      resultsToMarkdownTable(differenceInMetrics),
     );
 
     // Check thresholds
@@ -173,17 +171,17 @@ test.describe('Lighthouse Performance Tests', () => {
       test
         .expect(
           metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name],
-          `Threshold exceeded for ${name}: ${metric.value} ms (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name]} ms)`
+          `Threshold exceeded for ${name}: ${metric.value} ms (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name]} ms)`,
         )
         .toBeTruthy();
     }
 
     // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(
-      Object.values(difference).map(metric => ({
+      Object.values(difference).map((metric) => ({
         Value: `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(2)}ms`,
         Description: metric.description,
-      }))
+      })),
     );
   });
 });

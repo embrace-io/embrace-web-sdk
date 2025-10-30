@@ -1,10 +1,10 @@
-import type { GlobalExceptionInstrumentationArgs } from './types.js';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+import type { GlobalExceptionInstrumentationArgs } from './types.js';
 
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (
-    event: PromiseRejectionEvent
+    event: PromiseRejectionEvent,
   ) => void;
 
   public constructor({ diag, perf }: GlobalExceptionInstrumentationArgs = {}) {
@@ -29,7 +29,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
         error = new Error(
           typeof event.reason === 'string'
             ? event.reason
-            : 'Unhandled Rejected Promise'
+            : 'Unhandled Rejected Promise',
         );
         error.stack = '';
       }
@@ -49,7 +49,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     window.removeEventListener('error', this._onErrorHandler);
     window.removeEventListener(
       'unhandledrejection',
-      this._onUnhandledRejectionHandler
+      this._onUnhandledRejectionHandler,
     );
   }
 
@@ -57,7 +57,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     window.addEventListener('error', this._onErrorHandler);
     window.addEventListener(
       'unhandledrejection',
-      this._onUnhandledRejectionHandler
+      this._onUnhandledRejectionHandler,
     );
   }
 }

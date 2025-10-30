@@ -2,7 +2,7 @@ import { log, session, trace } from '@embrace-io/web-sdk';
 import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
 import type { Span } from '@opentelemetry/api';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender';
 import logo from './logo.png';
@@ -22,17 +22,18 @@ const App = () => {
   const [navigationSource, setNavigationSource] = useState<string | null>(null);
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
-  const updateCrossTabData = () => {
+  const updateCrossTabData = useCallback(() => {
     const sessionSpan = sessionProvider.getSessionSpan();
     if (sessionSpan && 'attributes' in sessionSpan) {
-      const attrs = (sessionSpan as any).attributes;
-      setExperienceId(attrs['emb.experience_id'] || null);
-      setTabId(attrs['emb.tab_id'] || null);
-      setSourceTabId(attrs['emb.source_tab_id'] || null);
-      setNavigationSource(attrs['emb.navigation_source'] || null);
-      setReferrerUrl(attrs['emb.referrer_url'] || null);
+      const attrs = (sessionSpan as { attributes: Record<string, unknown> })
+        .attributes;
+      setExperienceId((attrs['emb.experience_id'] as string) || null);
+      setTabId((attrs['emb.tab_id'] as string) || null);
+      setSourceTabId((attrs['emb.source_tab_id'] as string) || null);
+      setNavigationSource((attrs['emb.navigation_source'] as string) || null);
+      setReferrerUrl((attrs['emb.referrer_url'] as string) || null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const updateSession = () => {
@@ -53,7 +54,7 @@ const App = () => {
       unsubscribeStart();
       unsubscribeEnd();
     };
-  }, []);
+  }, [updateCrossTabData]);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -190,7 +191,7 @@ const App = () => {
   };
 
   const handleFailedResourceLoad = () => {
-    var img = document.createElement('img');
+    const img = document.createElement('img');
     img.src = '/something/that/doesnotexist.png';
     document.body.appendChild(img);
   };
@@ -286,12 +287,14 @@ const App = () => {
         <legend>Session Control</legend>
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={handleStartSessionSpan}
             disabled={sessionProvider.getSessionSpan() !== null}
           >
             Start Session span
           </button>
           <button
+            type="button"
             onClick={handleStartSessionSpan}
             disabled={sessionProvider.getSessionSpan() === null}
             title="Force a new Session Span to start"
@@ -299,6 +302,7 @@ const App = () => {
             Override Session span
           </button>
           <button
+            type="button"
             onClick={handleEndSessionSpan}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -310,6 +314,7 @@ const App = () => {
       <fieldset>
         <legend>Custom Spans</legend>
         <button
+          type="button"
           onClick={handleStartSpan}
           disabled={sessionProvider.getSessionSpan() === null}
         >
@@ -318,10 +323,16 @@ const App = () => {
         {spans.length > 0 && (
           <div className={styles.spans}>
             {spans.map((span, index) => (
-              <div className={styles.span} key={index}>
+              <div
+                className={styles.span}
+                key={`span-${span.spanContext().spanId}`}
+              >
                 <div>Span {index}</div>
 
-                <button onClick={() => handleEndSpan(span, index)}>
+                <button
+                  type="button"
+                  onClick={() => handleEndSpan(span, index)}
+                >
                   End Span
                 </button>
               </div>
@@ -334,18 +345,21 @@ const App = () => {
         <legend>Embrace Logs</legend>
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={handleSendEmbraceInfoLog}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Send Embrace Info Log
           </button>
           <button
+            type="button"
             onClick={handleSendEmbraceWarnLog}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Send Embrace Warning Log
           </button>
           <button
+            type="button"
             onClick={handleSendEmbraceErrorLog}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -358,10 +372,11 @@ const App = () => {
         <legend>Session Properties</legend>
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={() =>
               handleAddPermanentSessionProperty(
                 'permanent-key',
-                'permanent-value'
+                'permanent-value',
               )
             }
             disabled={sessionProvider.getSessionSpan() === null}
@@ -370,6 +385,7 @@ const App = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => handleRemoveSessionProperty('permanent-key')}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -378,6 +394,7 @@ const App = () => {
         </div>
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={() =>
               handleAddSessionProperty('session-key', 'session-value')
             }
@@ -386,6 +403,7 @@ const App = () => {
             Add Session Property
           </button>
           <button
+            type="button"
             onClick={() => handleRemoveSessionProperty('session-key')}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -398,18 +416,21 @@ const App = () => {
         <legend>Exceptions</legend>
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={handleRecordException}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Record Exception
           </button>
           <button
+            type="button"
             onClick={handleThrowError}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Throw Error
           </button>
           <button
+            type="button"
             onClick={handleRejectPromise}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -419,24 +440,28 @@ const App = () => {
 
         <div className={styles.actions}>
           <button
+            type="button"
             onClick={handleThrowDOMException}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Throw DOM Exception
           </button>
           <button
+            type="button"
             onClick={handleThrowString}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Throw String
           </button>
           <button
+            type="button"
             onClick={handleThrowUndefined}
             disabled={sessionProvider.getSessionSpan() === null}
           >
             Throw Undefined
           </button>
           <button
+            type="button"
             onClick={handleFailedResourceLoad}
             disabled={sessionProvider.getSessionSpan() === null}
           >
@@ -448,22 +473,22 @@ const App = () => {
       <fieldset>
         <legend>Network Requests</legend>
         <div className={styles.actions}>
-          <button onClick={handleSendFetchNetworkRequest}>
+          <button type="button" onClick={handleSendFetchNetworkRequest}>
             Send a Fetch Network Request
           </button>
-          <button onClick={handleSendFetchNetworkRequest404}>
+          <button type="button" onClick={handleSendFetchNetworkRequest404}>
             Send a Fetch Network Request (404)
           </button>
-          <button onClick={handleSendXMLNetworkRequest}>
+          <button type="button" onClick={handleSendXMLNetworkRequest}>
             Send a XML Network Request
           </button>
         </div>
 
         <div className={styles.actions}>
-          <button onClick={handleCancelFetchNetworkRequest}>
+          <button type="button" onClick={handleCancelFetchNetworkRequest}>
             Cancel a Fetch Network Request
           </button>
-          <button onClick={handleCancelXMLNetworkRequest}>
+          <button type="button" onClick={handleCancelXMLNetworkRequest}>
             Cancel a XML Network Request
           </button>
         </div>
@@ -485,7 +510,7 @@ const App = () => {
         <div className={styles.actions}>
           <a href="https://google.com">Navigate to google.com</a>
           <a href="./">Open demo in same tab</a>
-          <a href="./" target="_blank">
+          <a href="./" target="_blank" rel="noopener">
             Open demo in new tab
           </a>
         </div>
@@ -493,16 +518,14 @@ const App = () => {
 
       <fieldset>
         <legend>React Render Errors</legend>
-
         <div>
-          <label>Inside an error boundary:</label>
+          <p>Inside an error boundary:</p>
           <EmbraceErrorBoundary fallback={() => 'This is the fallback'}>
             <ComponentWithErrorInRender />
           </EmbraceErrorBoundary>
         </div>
-
         <div>
-          <label>Outside an error boundary:</label>
+          <p>Outside an error boundary:</p>
           <ComponentWithErrorInRender />
         </div>
       </fieldset>

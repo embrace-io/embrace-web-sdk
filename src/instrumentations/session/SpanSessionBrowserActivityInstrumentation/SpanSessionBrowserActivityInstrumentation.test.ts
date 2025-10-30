@@ -2,8 +2,8 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { session } from '../../../api-sessions/index.js';
 import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
@@ -55,7 +55,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
   });
 
   describe('should start a new session when activity is detected', () => {
-    WINDOW_USER_EVENTS.forEach(event => {
+    WINDOW_USER_EVENTS.forEach((event) => {
       it(`on ${event}`, () => {
         void expect(spanSessionManager.getSessionSpan()).to.be.null;
         instrumentation = new SpanSessionBrowserActivityInstrumentation({
@@ -73,7 +73,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
         const sessionSpan = finishedSpans[0];
         expect(sessionSpan.attributes).to.have.property(
           KEY_EMB_SESSION_REASON_STARTED,
-          'activity'
+          'activity',
         );
       });
     });
@@ -101,7 +101,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'inactivity'
+      'inactivity',
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -135,7 +135,7 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'inactivity'
+      'inactivity',
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });

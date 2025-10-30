@@ -1,12 +1,12 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
 import type { TimeoutRef } from '../../../utils/index.js';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
 } from '../../../utils/index.js';
-import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
@@ -30,7 +30,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       maxPendingSpanCount = 5,
       visibilityDoc = window.document,
     }: SpanSessionVisibilityInstrumentationArgs = {},
-    embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor
+    embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor,
   ) {
     super({
       instrumentationName: 'SpanSessionVisibilityInstrumentation',
@@ -60,7 +60,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       // When switching to visible, we want to trigger the event immediately
       if (
         visibilityDoc.visibilityState === 'visible' &&
-        this._currentVisibilityState != visibilityDoc.visibilityState
+        this._currentVisibilityState !== visibilityDoc.visibilityState
       ) {
         this._currentVisibilityState = visibilityDoc.visibilityState;
         this._onVisibilityChange();
@@ -68,15 +68,15 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       }
 
       this._diag.debug(
-        `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`
+        `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`,
       );
       this._checkVisibilityTimeout = setTimeout(() => {
-        if (this._currentVisibilityState != visibilityDoc.visibilityState) {
+        if (this._currentVisibilityState !== visibilityDoc.visibilityState) {
           this._currentVisibilityState = visibilityDoc.visibilityState;
           this._onVisibilityChange();
         } else {
           this._diag.debug(
-            `Visibility was not changed after timeout happened: ${visibilityDoc.visibilityState}`
+            `Visibility was not changed after timeout happened: ${visibilityDoc.visibilityState}`,
           );
         }
       }, visibilityWaitTimeMs);
@@ -84,7 +84,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
     this._onVisibilityChange = () => {
       this._diag.debug(
-        `Visibility change detected: ${visibilityDoc.visibilityState}`
+        `Visibility change detected: ${visibilityDoc.visibilityState}`,
       );
 
       const currentSessionStartTime = this.sessionManager.getSessionStartTime();
@@ -104,12 +104,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
       if (isLimitedSession) {
         this._diag.debug(
-          'Not ending the session since it is considered limited'
+          'Not ending the session since it is considered limited',
         );
         // If this session still meets the definition of a limited session don't yet end it but instead just record
         // the visibility change as a breadcrumb
         this.sessionManager.addBreadcrumb(
-          `Tab visibility changed to ${visibilityDoc.visibilityState}`
+          `Tab visibility changed to ${visibilityDoc.visibilityState}`,
         );
 
         const sessionId = this.sessionManager.getSessionId();
@@ -119,7 +119,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
           if (sessionSpan) {
             this._embraceSpanProcessor.storePendingSpans(
               sessionId,
-              sessionSpan
+              sessionSpan,
             );
           }
         }
@@ -134,12 +134,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
         if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
           this._diag.debug(
-            'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled'
+            'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled',
           );
           this.sessionManager.startSessionSpan({ reason: 'hidden' });
         } else if (visibilityDoc.visibilityState === 'visible') {
           this._diag.debug(
-            'Starting a session since document visibility switched to visible'
+            'Starting a session since document visibility switched to visible',
           );
           this.sessionManager.startSessionSpan({ reason: 'visible' });
         }

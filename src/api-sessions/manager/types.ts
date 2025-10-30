@@ -25,7 +25,7 @@ export interface SpanSessionManager {
   endSessionSpanInternal: (reason: ReasonSessionEnded) => void;
 
   currentSessionAsReadableSpan: (
-    reason: ReasonSessionEnded
+    reason: ReasonSessionEnded,
   ) => ReadableSpan | null;
 
   addSessionStartedListener: (listener: () => void) => () => void;

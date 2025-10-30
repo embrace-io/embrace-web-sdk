@@ -6,8 +6,9 @@ export class InMemoryStorage implements Storage {
   }
 
   public clear(): void {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    Object.keys(this._items).forEach(key => delete this._items[key]);
+    Object.keys(this._items).forEach((key) => {
+      delete this._items[key];
+    });
   }
 
   public getItem(key: string): string | null {

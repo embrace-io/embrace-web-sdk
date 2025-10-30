@@ -1,6 +1,6 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { NavigationInstrumentationArgs } from './types.js';
 import type { Span } from '@opentelemetry/api';
+import type { Route } from '../../../api-page/index.js';
+import { page } from '../../../api-page/index.js';
 import {
   EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
@@ -9,8 +9,8 @@ import {
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
 } from '../../../constants/index.js';
-import { page } from '../../../api-page/index.js';
-import type { Route } from '../../../api-page/index.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+import type { NavigationInstrumentationArgs } from './types.js';
 
 // Regular expression to match path options in the format "(option)"
 // Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)/type:(sale|normal)" to "/order/:orderState/:type"
@@ -45,7 +45,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public setInstrumentationType = (
-    instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS
+    instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS,
   ) => {
     this._instrumentationType = instrumentationType;
   };
@@ -87,7 +87,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
             this._endRouteSpan(page.getCurrentRoute());
           }
-        }
+        },
       );
     }
   };
@@ -121,7 +121,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     this._currentRouteSpan.setAttribute(
       KEY_EMB_INSTRUMENTATION,
-      this._instrumentationType
+      this._instrumentationType,
     );
 
     return this._currentRouteSpan;
@@ -140,7 +140,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
   public enable = () => {
     this._diag.debug(
-      'NavigationInstrumentation enabled, listening for navigation events.'
+      'NavigationInstrumentation enabled, listening for navigation events.',
     );
   };
 
@@ -150,7 +150,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       enabled: false,
     });
     this._diag.debug(
-      'NavigationInstrumentation disabled, stopped listening for navigation events.'
+      'NavigationInstrumentation disabled, stopped listening for navigation events.',
     );
   };
 }

@@ -1,6 +1,6 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { SpanScrubProcessorArgs } from './types.js';
 import type { AttributeScrubber } from '../../common/index.js';
+import type { SpanScrubProcessorArgs } from './types.js';
 
 export class SpanScrubProcessor implements SpanProcessor {
   private readonly _attributeScrubbers: AttributeScrubber[];
@@ -15,7 +15,7 @@ export class SpanScrubProcessor implements SpanProcessor {
 
   // TODO `onEnd` is not supposed to modify the span. There is a new experimental onEnding api that allows modifying
   public onEnd(span: ReadableSpan): void {
-    this._attributeScrubbers.forEach(scrubber => {
+    this._attributeScrubbers.forEach((scrubber) => {
       const value = span.attributes[scrubber.key];
       if (value && typeof value === 'string') {
         span.attributes[scrubber.key] = scrubber.scrub(value);
