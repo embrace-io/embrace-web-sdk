@@ -73,7 +73,6 @@ export const getDefaultAttributeScrubbers = (
     },
     {
       // Adding to catch the deprecated attribute that was replaced by ATTR_URL_FULL
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       key: SEMATTRS_HTTP_URL,
       scrub: (value: string) =>
         scrubURL({ value, queryParamRegex, scrubPath: true, scrubQuery: true }),

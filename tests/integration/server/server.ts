@@ -5,7 +5,6 @@ import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 // Easier to parse incoming requests with a known type, only used for tests
-// eslint-disable-next-line regex/invalid
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import type { ReceivedSpans } from '../index.js';
 

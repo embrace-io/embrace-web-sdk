@@ -103,8 +103,6 @@ export class EmbraceLogManager implements LogManager {
       error = new Error('logException received an undefined error');
     }
 
-    // real user input may be null but TS doesn't know that
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (attributes == null || typeof attributes !== 'object') {
       this._diag.warn('attributes must be a non-null object', attributes);
       attributes = {};

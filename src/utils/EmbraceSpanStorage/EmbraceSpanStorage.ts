@@ -86,7 +86,6 @@ export class EmbraceSpanStorage {
       this._storage.setItem(
         key,
         JSON.stringify([sessionSpan, ...pendingSpans], (key, value) =>
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           key.startsWith('_') ? undefined : value,
         ),
       );

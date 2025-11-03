@@ -40,15 +40,14 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
         that we're getting from @opentelemetry/auto-instrumentations-web are using these, once we update we'll remove
         this fallback and only support a single version of the semantic convention
        */
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
       span.attributes[ATTR_URL_FULL] ??= span.attributes[SEMATTRS_HTTP_URL];
-      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
         span.attributes[SEMATTRS_HTTP_STATUS_CODE];
-      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??=
         span.attributes[SEMATTRS_HTTP_METHOD];
-      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??=
         span.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH];
-      span.attributes[ATTR_HTTP_REQUEST_BODY_SIZE] ??= // eslint-disable-next-line @typescript-eslint/no-deprecated
+      span.attributes[ATTR_HTTP_REQUEST_BODY_SIZE] ??=
         span.attributes[SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH];
     }
   }

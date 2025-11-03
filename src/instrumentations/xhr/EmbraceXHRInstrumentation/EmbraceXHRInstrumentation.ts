@@ -27,9 +27,7 @@ export class EmbraceXHRInstrumentation extends XMLHttpRequestInstrumentation {
     // control the global
     if (
       this._omitIfAlreadyPatched &&
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       (isWrapped(XMLHttpRequest.prototype.open) ||
-        // eslint-disable-next-line @typescript-eslint/unbound-method
         isWrapped(XMLHttpRequest.prototype.send))
     ) {
       this._diag.debug(
