@@ -1,4 +1,6 @@
+import { CompositePropagator } from '@opentelemetry/core';
 import * as chai from 'chai';
+import { EmbraceSDKFeaturesManager } from '../managers/index.js';
 import {
   InMemoryDiagLogger,
   NOT_SAMPLED_UUID,
@@ -6,8 +8,6 @@ import {
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../testUtils/index.js';
 import { nsfConfigValidation } from './nsfConfigValidation.js';
-import { EmbraceSDKFeaturesManager } from '../managers/index.js';
-import { CompositePropagator } from '@opentelemetry/core';
 
 const { expect } = chai;
 
@@ -30,7 +30,7 @@ describe('nsfConfigValidation', () => {
         diag,
         featureManager,
         registerGlobally: true,
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs().length).to.equal(0);
   });
@@ -47,7 +47,7 @@ describe('nsfConfigValidation', () => {
         diag,
         featureManager,
         registerGlobally: true,
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs().length).to.equal(0);
   });
@@ -64,7 +64,7 @@ describe('nsfConfigValidation', () => {
         diag,
         featureManager,
         registerGlobally: true,
-      })
+      }),
     ).to.equal(true);
     expect(diag.getWarnLogs().length).to.equal(0);
   });
@@ -81,7 +81,7 @@ describe('nsfConfigValidation', () => {
         diag,
         featureManager,
         registerGlobally: false,
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs()).to.deep.equal([
       'Network span forwarding cannot be used when `registerGlobally` is set to false. Turning off network span forwarding.',
@@ -101,7 +101,7 @@ describe('nsfConfigValidation', () => {
         featureManager,
         propagator: new CompositePropagator(),
         registerGlobally: true,
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs()).to.deep.equal([
       'Network span forwarding cannot be used alongside a custom `propagator`. Turning off network span forwarding.',
@@ -126,7 +126,7 @@ describe('nsfConfigValidation', () => {
             '@opentelemetry/instrumentation-fetch',
           ]),
         },
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs()).to.deep.equal([
       "Network span forwarding cannot be used when both '@opentelemetry/instrumentation-xml-http-request' and '@opentelemetry/instrumentation-fetch' are omitted. Turning off network span forwarding.",
@@ -148,7 +148,7 @@ describe('nsfConfigValidation', () => {
         defaultInstrumentationConfig: {
           omit: new Set(['@opentelemetry/instrumentation-xml-http-request']),
         },
-      })
+      }),
     ).to.equal(true);
     expect(diag.getWarnLogs()).to.deep.equal([]);
   });
@@ -166,7 +166,7 @@ describe('nsfConfigValidation', () => {
         featureManager,
         propagator: new CompositePropagator(),
         registerGlobally: false,
-      })
+      }),
     ).to.equal(false);
     expect(diag.getWarnLogs()).to.deep.equal([
       'Network span forwarding cannot be used when `registerGlobally` is set to false. Turning off network span forwarding.',

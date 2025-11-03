@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 const ASYNC_MODE = process.env.VITE_ASYNC_MODE === 'true';
 const SYNC_BUNDLE = `<script src="/embrace-web-sdk.js"></script>`;
@@ -15,7 +15,7 @@ const htmlPlugin = () => {
     transformIndexHtml(html: string) {
       return html.replace(
         /<!-- async_sync_placeholder -->/,
-        ASYNC_MODE ? ASYNC_BUNDLE : SYNC_BUNDLE
+        ASYNC_MODE ? ASYNC_BUNDLE : SYNC_BUNDLE,
       );
     },
   };

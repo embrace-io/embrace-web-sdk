@@ -29,10 +29,10 @@
       if (usesSDK) {
         setWorkingState();
         // Snippet from cdn/asyncSnippet.js
-        (function () {
+        (() => {
           window.EmbraceWebSdkOnReady = window.EmbraceWebSdkOnReady || {
             q: [],
-            onReady: function (fn) {
+            onReady: (fn) => {
               window.EmbraceWebSdkOnReady.q.push(fn);
             },
           };
@@ -40,11 +40,13 @@
           script.async = true;
           script.defer = true;
           script.src = '/embrace-web-sdk.js';
-          script.onload = function () {
-            window.EmbraceWebSdkOnReady.q.forEach(fn => fn());
+          script.onload = () => {
+            window.EmbraceWebSdkOnReady.q.forEach(fn => {
+              fn();
+            });
             window.EmbraceWebSdkOnReady.q = [];
             // Call onReady immediately if the SDK is already loaded
-            window.EmbraceWebSdkOnReady.onReady = function (fn) {
+            window.EmbraceWebSdkOnReady.onReady = (fn) => {
               fn();
             };
           };
@@ -68,7 +70,7 @@
         });
       } else {
         window.EmbraceWebSdkOnReady = {
-          onReady: function (fn) {
+          onReady: (fn) => {
             fn();
           },
         };
@@ -87,14 +89,14 @@
           return;
         }
 
-        runOnReady(function () {
+        runOnReady(() => {
           window.EmbraceWebSdk.session.endSessionSpan();
           client.flush();
         });
       }
 
       function runNTimes(fn, n, waitTime) {
-        return async function () {
+        return async () => {
           setWorkingState();
 
           for (let i = 0; i < n; i++) {
@@ -121,10 +123,10 @@
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('GET', SERVER_URL, true);
-          xhr.onload = function () {
+          xhr.onload = () => {
             resolve();
           };
-          xhr.onerror = function () {
+          xhr.onerror = () => {
             reject(new Error('Network error'));
           };
           xhr.send();
@@ -187,7 +189,7 @@
       const button = document.createElement('button');
       button.textContent = `Button ${i}`;
       button.id = `button-${i}`;
-      button.onclick = function () {
+      button.onclick = () => {
         if (usesSDK) {
           window.EmbraceWebSdk.log.message('Test Message', 'info');
         }

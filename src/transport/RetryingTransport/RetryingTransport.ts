@@ -38,12 +38,12 @@ const getJitter = () => Math.random() * (2 * JITTER) - JITTER;
 export class RetryingTransport implements IExporterTransport {
   public constructor(
     private readonly _transport: IExporterTransport,
-    private readonly _perf: PerformanceManager = new OTelPerformanceManager()
+    private readonly _perf: PerformanceManager = new OTelPerformanceManager(),
   ) {}
 
   public async send(
     data: Uint8Array,
-    timeoutMillis: number
+    timeoutMillis: number,
   ): Promise<ExportResponse> {
     const deadline = this._perf.getNowMillis() + timeoutMillis;
     let result = await this._transport.send(data, timeoutMillis);
@@ -56,7 +56,7 @@ export class RetryingTransport implements IExporterTransport {
       // use maximum of computed backoff and 0 to avoid negative timeouts
       const backoff = Math.max(
         Math.min(nextBackoff, MAX_BACKOFF) + getJitter(),
-        0
+        0,
       );
       nextBackoff = nextBackoff * BACKOFF_MULTIPLIER;
       const retryInMillis = result.retryInMillis ?? backoff;
@@ -80,7 +80,7 @@ export class RetryingTransport implements IExporterTransport {
   private _retry(
     data: Uint8Array,
     timeoutMillis: number,
-    inMillis: number
+    inMillis: number,
   ): Promise<ExportResponse> {
     return new Promise((resolve, reject) => {
       setTimeout(() => {

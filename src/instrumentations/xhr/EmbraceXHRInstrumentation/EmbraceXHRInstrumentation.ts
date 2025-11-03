@@ -1,7 +1,6 @@
-import type { EmbraceXHRInstrumentationArgs } from './types.js';
-
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import type { EmbraceXHRInstrumentationArgs } from './types.js';
 
 export class EmbraceXHRInstrumentation extends XMLHttpRequestInstrumentation {
   private readonly _omitIfAlreadyPatched?: boolean;
@@ -34,7 +33,7 @@ export class EmbraceXHRInstrumentation extends XMLHttpRequestInstrumentation {
         isWrapped(XMLHttpRequest.prototype.send))
     ) {
       this._diag.debug(
-        'XMLHttpRequest is already passed and `omitIfAlreadyPatched` is true, skipping enabling this instrumentation'
+        'XMLHttpRequest is already passed and `omitIfAlreadyPatched` is true, skipping enabling this instrumentation',
       );
       return;
     }

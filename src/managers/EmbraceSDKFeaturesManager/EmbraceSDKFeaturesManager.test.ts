@@ -1,12 +1,12 @@
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.js';
 import {
-  TEST_DYNAMIC_CONFIG_MANAGER,
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../testUtils/index.js';
-import * as sinon from 'sinon';
+import { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;

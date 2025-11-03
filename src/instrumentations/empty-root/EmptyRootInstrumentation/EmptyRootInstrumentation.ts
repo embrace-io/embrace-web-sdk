@@ -30,14 +30,14 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     this._observer = new MutationObserver(
       (mutationList: MutationRecord[], _observer: MutationObserver) => {
         this._observerCallback(mutationList);
-      }
+      },
     );
 
     if (this._config.enabled && this._rootNode) {
       this.enable();
     } else if (!this._rootNode) {
       this._diag.warn(
-        "supplied root node was null, this instrumentation won't be enabled"
+        "supplied root node was null, this instrumentation won't be enabled",
       );
     }
   }
@@ -71,7 +71,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     if (removedNodesFromRoot && !addedNodesToRoot) {
       this._diag.debug(
         'root node had child nodes removed without new ones being added, ' +
-          `checking if it's empty in ${this._emptyCheckDelayMs}ms`
+          `checking if it's empty in ${this._emptyCheckDelayMs}ms`,
       );
 
       window.setTimeout(() => {

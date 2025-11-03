@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.js';
+import sinonChai from 'sinon-chai';
 import { getNavigationInstrumentation } from '../../index.js';
 import type { RouteComponentProps } from './types.js';
-import sinonChai from 'sinon-chai';
+import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -17,11 +17,11 @@ describe('withEmbraceRoutingLegacy', () => {
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
-      'setCurrentRoute'
+      'setCurrentRoute',
     );
     setInstrumentationTypeStub = sinon.stub(
       navigationInstrumentation,
-      'setInstrumentationType'
+      'setInstrumentationType',
     );
   });
 
@@ -44,12 +44,12 @@ describe('withEmbraceRoutingLegacy', () => {
 
     void expect(setCurrentRouteStub.calledOnce).to.be.true;
     void expect(setCurrentRouteStub).to.have.been.calledOnceWith(
-      props.computedMatch
+      props.computedMatch,
     );
 
     void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
     void expect(setInstrumentationTypeStub.firstCall.args[0]).to.equal(
-      'react_router_declarative_legacy'
+      'react_router_declarative_legacy',
     );
   });
 
@@ -73,7 +73,7 @@ describe('withEmbraceRoutingLegacy', () => {
   it('should preserve the display name of the wrapped component', () => {
     const OTelRoute = withEmbraceRoutingLegacy(MockRouteComponent);
     void expect(OTelRoute.displayName).to.equal(
-      `withEmbraceRoutingLegacy(MockRouteComponent)`
+      `withEmbraceRoutingLegacy(MockRouteComponent)`,
     );
   });
 });

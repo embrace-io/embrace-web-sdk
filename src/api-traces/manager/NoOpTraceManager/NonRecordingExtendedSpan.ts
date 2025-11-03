@@ -1,10 +1,10 @@
 import type {
-  SpanContext,
-  TimeInput,
-  Link,
-  SpanStatus,
-  Exception,
   Attributes,
+  Exception,
+  Link,
+  SpanContext,
+  SpanStatus,
+  TimeInput,
 } from '@opentelemetry/api';
 import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import type {
@@ -61,7 +61,7 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
   public addEvent(
     _name: string,
     _attributesOrStartTime?: Attributes | TimeInput,
-    _startTime?: TimeInput
+    _startTime?: TimeInput,
   ): this {
     return this;
   }

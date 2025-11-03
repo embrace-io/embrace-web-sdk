@@ -19,14 +19,22 @@
 import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
-import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import {
   addSpanNetworkEvent,
   addSpanNetworkEvents,
   hasKey,
   PerformanceTimingNames,
 } from '@opentelemetry/sdk-trace-web';
+import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_HTTP_RESPONSE_BODY_SIZE,
+  ATTR_HTTP_RESPONSE_SIZE,
+  ATTR_URL_FULL,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions/incubating';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import { AttributeNames } from './enums/AttributeNames.js';
 import type {
@@ -34,19 +42,10 @@ import type {
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
 } from './types.js';
-
-import {
-  ATTR_URL_FULL,
-  ATTR_USER_AGENT_ORIGINAL,
-  ATTR_HTTP_RESPONSE_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_SIZE,
-} from '@opentelemetry/semantic-conventions/incubating';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
 } from './utils.js';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
-import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 /**
  * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
@@ -107,7 +106,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  protected override init(): void {
+  protected override init() {
     this._diag.debug('Initializing document load instrumentation');
     return undefined;
   }
@@ -119,7 +118,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _addResourcesSpans(rootSpan: Span): void {
     const resources: EmbracePerformanceResourceTiming[] =
       performance.getEntriesByType('resource');
-    resources.forEach(resource => {
+    resources.forEach((resource) => {
       this._initResourceSpan(resource, rootSpan);
     });
   }
@@ -129,15 +128,15 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   private _collectPerformance(): void {
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
-      e => e.getAttribute('name') === TRACE_PARENT_HEADER
+      (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
     const entries = getPerformanceNavigationEntries();
-    const traceparent = (metaElement && metaElement.content) || '';
+    const traceparent = metaElement?.content || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,
         PerformanceTimingNames.FETCH_START,
-        entries
+        entries,
       );
       if (!rootSpan) {
         return;
@@ -146,7 +145,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         const fetchSpan = this._startSpan(
           AttributeNames.DOCUMENT_FETCH,
           PerformanceTimingNames.FETCH_START,
-          entries
+          entries,
         );
         if (fetchSpan) {
           fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
@@ -154,16 +153,16 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
             addSpanNetworkEvents(
               fetchSpan,
               entries,
-              this.getConfig().ignoreNetworkEvents
+              this.getConfig().ignoreNetworkEvents,
             );
             this._addCustomAttributesOnSpan(
               fetchSpan,
-              this.getConfig().applyCustomAttributesOnSpan?.documentFetch
+              this.getConfig().applyCustomAttributesOnSpan?.documentFetch,
             );
             this._endSpan(
               fetchSpan,
               PerformanceTimingNames.RESPONSE_END,
-              entries
+              entries,
             );
           });
         }
@@ -179,47 +178,47 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.FETCH_START,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.UNLOAD_EVENT_START,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.UNLOAD_EVENT_END,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.DOM_INTERACTIVE,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.DOM_CONTENT_LOADED_EVENT_START,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.DOM_CONTENT_LOADED_EVENT_END,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.DOM_COMPLETE,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.LOAD_EVENT_START,
-          entries
+          entries,
         );
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.LOAD_EVENT_END,
-          entries
+          entries,
         );
       }
 
@@ -229,7 +228,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
       this._addCustomAttributesOnSpan(
         rootSpan,
-        this.getConfig().applyCustomAttributesOnSpan?.documentLoad
+        this.getConfig().applyCustomAttributesOnSpan?.documentLoad,
       );
       this._endSpan(rootSpan, PerformanceTimingNames.LOAD_EVENT_END, entries);
     });
@@ -245,7 +244,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _endSpan(
     span: Span | undefined,
     performanceName: string,
-    entries: PerformanceEntries
+    entries: PerformanceEntries,
   ) {
     // Span can be undefined when entries are missing the required performance timing - no span will be created
     if (span) {
@@ -267,13 +266,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   private _initResourceSpan(
     resource: EmbracePerformanceResourceTiming,
-    parentSpan: Span
+    parentSpan: Span,
   ) {
     const span = this._startSpan(
       AttributeNames.RESOURCE_FETCH,
       PerformanceTimingNames.FETCH_START,
       resource,
-      parentSpan
+      parentSpan,
     );
     if (!span) {
       return;
@@ -286,28 +285,28 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     if (resource.deliveryType) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
-        resource.deliveryType
+        resource.deliveryType,
       );
     }
 
     if (resource.initiatorType) {
       span.setAttribute(
         ATTR_HTTP_REQUEST_INITIATOR_TYPE,
-        resource.initiatorType
+        resource.initiatorType,
       );
     }
 
     if (resource.renderBlockingStatus) {
       span.setAttribute(
         ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
-        resource.renderBlockingStatus
+        resource.renderBlockingStatus,
       );
     }
 
     if (resource.responseStatus) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_STATUS_CODE,
-        resource.responseStatus
+        resource.responseStatus,
       );
     }
 
@@ -332,7 +331,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     ) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-        resource.decodedBodySize
+        resource.decodedBodySize,
       );
     }
 
@@ -341,7 +340,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     this._addCustomAttributesOnResourceSpan(
       span,
       resource,
-      this.getConfig().applyCustomAttributesOnSpan?.resourceFetch
+      this.getConfig().applyCustomAttributesOnSpan?.resourceFetch,
     );
     this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
   }
@@ -357,7 +356,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     spanName: string,
     performanceName: string,
     entries: PerformanceEntries,
-    parentSpan?: Span
+    parentSpan?: Span,
   ): Span | undefined {
     if (
       hasKey(entries, performanceName) &&
@@ -368,7 +367,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         {
           startTime: entries[performanceName],
         },
-        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
+        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined,
       );
       return span;
     }
@@ -392,21 +391,23 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   private _addCustomAttributesOnSpan(
     span: Span,
-    applyCustomAttributesOnSpan: DocumentLoadCustomAttributeFunction | undefined
+    applyCustomAttributesOnSpan:
+      | DocumentLoadCustomAttributeFunction
+      | undefined,
   ) {
     if (applyCustomAttributesOnSpan) {
       safeExecuteInTheMiddle(
         () => {
           applyCustomAttributesOnSpan(span);
         },
-        error => {
+        (error) => {
           if (!error) {
             return;
           }
 
           this._diag.error('addCustomAttributesOnSpan', error);
         },
-        true
+        true,
       );
     }
   }
@@ -419,21 +420,21 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     resource: EmbracePerformanceResourceTiming,
     applyCustomAttributesOnSpan:
       | ResourceFetchCustomAttributeFunction
-      | undefined
+      | undefined,
   ) {
     if (applyCustomAttributesOnSpan) {
       safeExecuteInTheMiddle(
         () => {
           applyCustomAttributesOnSpan(span, resource);
         },
-        error => {
+        (error) => {
           if (!error) {
             return;
           }
 
           this._diag.error('addCustomAttributesOnResourceSpan', error);
         },
-        true
+        true,
       );
     }
   }
@@ -465,13 +466,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   private _isCorsRestricted(
-    resource: EmbracePerformanceResourceTiming
+    resource: EmbracePerformanceResourceTiming,
   ): boolean {
     return this._hasNoSizeData(resource) && this._hasTimingData(resource);
   }
 
   private _isFetchIncomplete(
-    resource: EmbracePerformanceResourceTiming
+    resource: EmbracePerformanceResourceTiming,
   ): boolean {
     const fetchStart =
       typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
@@ -482,7 +483,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   private _isFetchPrevented(
-    resource: EmbracePerformanceResourceTiming
+    resource: EmbracePerformanceResourceTiming,
   ): boolean {
     const fetchStart =
       typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
@@ -500,7 +501,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private _isCacheValidated(
-    resource: EmbracePerformanceResourceTiming
+    resource: EmbracePerformanceResourceTiming,
   ): boolean {
     const transferSize =
       typeof resource.transferSize === 'number' ? resource.transferSize : 0;
@@ -521,7 +522,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
-    resource: EmbracePerformanceResourceTiming
+    resource: EmbracePerformanceResourceTiming,
   ): void {
     if (this._isCorsRestricted(resource)) {
       span.setAttribute(ATTR_HTTP_RESPONSE_CORS_OPAQUE, true);

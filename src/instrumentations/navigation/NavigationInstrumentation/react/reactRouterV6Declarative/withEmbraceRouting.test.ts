@@ -1,11 +1,11 @@
 import * as chai from 'chai';
+import type React from 'react';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { getNavigationInstrumentation } from '../../index.js';
-import { withEmbraceRouting } from './withEmbraceRouting.js';
-import type { RoutesFunctionalComponentReturn } from './types.js';
-import type React from 'react';
 import type { Route } from '../../../../../api-page/index.js';
+import { getNavigationInstrumentation } from '../../index.js';
+import type { RoutesFunctionalComponentReturn } from './types.js';
+import { withEmbraceRouting } from './withEmbraceRouting.js';
 
 chai.use(sinonChai);
 
@@ -19,11 +19,11 @@ describe('withEmbraceRouting', () => {
   before(() => {
     setCurrentRouteStub = sinon.stub(
       navigationInstrumentation,
-      'setCurrentRoute'
+      'setCurrentRoute',
     );
     setInstrumentationTypeStub = sinon.stub(
       navigationInstrumentation,
-      'setInstrumentationType'
+      'setInstrumentationType',
     );
   });
 
@@ -45,7 +45,7 @@ describe('withEmbraceRouting', () => {
     });
 
     const OTelRoute = withEmbraceRouting(
-      MockRouteComponent as unknown as React.FunctionComponent
+      MockRouteComponent as unknown as React.FunctionComponent,
     );
 
     void OTelRoute({});
@@ -58,7 +58,7 @@ describe('withEmbraceRouting', () => {
 
     void expect(setInstrumentationTypeStub.calledOnce).to.be.true;
     void expect(setInstrumentationTypeStub.firstCall.args[0]).to.equal(
-      'react_router_declarative'
+      'react_router_declarative',
     );
   });
 
@@ -102,7 +102,7 @@ describe('withEmbraceRouting', () => {
     });
 
     const OTelRoute = withEmbraceRouting(
-      MockRouteComponent as unknown as React.FunctionComponent
+      MockRouteComponent as unknown as React.FunctionComponent,
     );
 
     void OTelRoute({});
@@ -120,7 +120,7 @@ describe('withEmbraceRouting', () => {
     });
 
     const OTelRoute = withEmbraceRouting(
-      MockRouteComponent as unknown as React.FunctionComponent
+      MockRouteComponent as unknown as React.FunctionComponent,
     );
 
     void OTelRoute({});
@@ -139,7 +139,7 @@ describe('withEmbraceRouting', () => {
     });
 
     const OTelRoute = withEmbraceRouting(
-      MockRouteComponent as unknown as React.FunctionComponent
+      MockRouteComponent as unknown as React.FunctionComponent,
     );
 
     void OTelRoute({});
@@ -153,11 +153,11 @@ describe('withEmbraceRouting', () => {
     });
 
     const OTelRoute = withEmbraceRouting(
-      MockRouteComponent as unknown as React.FunctionComponent
+      MockRouteComponent as unknown as React.FunctionComponent,
     );
 
     void expect(OTelRoute.displayName).to.equal(
-      `withEmbraceRouting(MockRouteComponent)`
+      `withEmbraceRouting(MockRouteComponent)`,
     );
   });
 });

@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 
 const withRequest = (arg: unknown) => arg instanceof window.Request;
 
-let fetchStub: SinonStub | undefined = undefined;
+let fetchStub: SinonStub | undefined;
 
 export const getOptions = (callNumber = 0) =>
   (fetchStub?.getCall(callNumber).args[1] || {}) as Parameters<

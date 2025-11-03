@@ -8,13 +8,13 @@ window.EmbraceWebSdkOnReady.onReady(() => {
   window.EmbraceWebSdkOnReady.onReady(() => {
     console.log('Embrace is ready inside the SDK');
 
-    sdkControl!.log.message(
+    sdkControl?.log.message(
       'Embrace initialized successfully inside the SDK',
-      'info'
+      'info',
     );
 
     const onLogClick = () => {
-      sdkControl!.log.message('Button clicked inside the SDK', 'info');
+      sdkControl?.log.message('Button clicked inside the SDK', 'info');
     };
 
     const button = document.createElement('button');
@@ -34,7 +34,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     fetchButton.addEventListener('click', () => {
       console.log('Making API call from the library app');
       fetch('https://jsonplaceholder.typicode.com/posts/2')
-        .then(response => response.json())
+        .then((response) => response.json())
         .then(() => {
           console.log('API call from library app successful');
         });

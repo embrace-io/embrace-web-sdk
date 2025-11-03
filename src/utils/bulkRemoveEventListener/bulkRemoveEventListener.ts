@@ -17,7 +17,7 @@ export const bulkRemoveEventListener = ({
   events,
   callback,
 }: BulkRemoveEventListenerArgs) => {
-  events.forEach(event => {
+  events.forEach((event) => {
     target.removeEventListener(event, callback);
   });
 };

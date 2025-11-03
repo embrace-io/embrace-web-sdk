@@ -1,8 +1,8 @@
 'use client';
 
-import { initSDK, DiagLogLevel, session } from '@embrace-io/web-sdk';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
+import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
 
 let sdkControl: ReturnType<typeof initSDK> | null = null;
 

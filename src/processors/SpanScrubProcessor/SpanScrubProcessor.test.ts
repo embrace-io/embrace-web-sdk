@@ -1,8 +1,8 @@
-import * as chai from 'chai';
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
 import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import * as chai from 'chai';
+import { setupTestTraceExporter } from '../../testUtils/index.js';
 import { SpanScrubProcessor } from './SpanScrubProcessor.js';
 
 const { expect } = chai;

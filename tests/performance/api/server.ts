@@ -44,7 +44,7 @@ const server = createServer((req, res) => {
   }
 
   const url = new URL(
-    `http://${process.env.HOST ?? 'localhost'}${req.url ?? '/'}`
+    `http://${process.env.HOST ?? 'localhost'}${req.url ?? '/'}`,
   );
 
   const filePath = join(PUBLIC_DIR, url.pathname);
@@ -65,7 +65,7 @@ const server = createServer((req, res) => {
 });
 
 // Copy the SDK file to the public directory
-copyFile(SDK_SOURCE, SDK_DESTINATION, err => {
+copyFile(SDK_SOURCE, SDK_DESTINATION, (err) => {
   if (err) {
     console.error('Failed to copy SDK file:', err);
   } else {

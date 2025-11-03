@@ -15,8 +15,8 @@ export class OTLPFetchTraceExporter
           ...config,
           compression: 'gzip',
         },
-        JsonTraceSerializer
-      )
+        JsonTraceSerializer,
+      ),
     );
   }
 }

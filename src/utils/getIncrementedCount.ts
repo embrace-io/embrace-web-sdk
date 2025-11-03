@@ -5,7 +5,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 export const getIncrementedCount = (
   storage: Storage,
   key: string,
-  diag: DiagLogger
+  diag: DiagLogger,
 ) => {
   try {
     const value = storage.getItem(key);

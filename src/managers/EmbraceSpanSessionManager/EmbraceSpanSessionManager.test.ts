@@ -6,19 +6,19 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
-import * as sinon from 'sinon';
 import type { SinonSandbox } from 'sinon';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
-  KEY_EMB_SESSION_REASON_ENDED,
-  KEY_EMB_SESSION_REASON_STARTED,
-  KEY_PREFIX_EMB_PROPERTIES,
-  KEY_EMB_TAB_ID,
-  KEY_EMB_SOURCE_TAB_ID,
   KEY_EMB_EXPERIENCE_ID,
   KEY_EMB_NAVIGATION_SOURCE,
   KEY_EMB_REFERRER_URL,
+  KEY_EMB_SESSION_REASON_ENDED,
+  KEY_EMB_SESSION_REASON_STARTED,
+  KEY_EMB_SOURCE_TAB_ID,
+  KEY_EMB_TAB_ID,
+  KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.js';
 import {
   FailingStorage,
@@ -27,15 +27,15 @@ import {
   MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../testUtils/index.js';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.js';
 import {
-  EMBRACE_TAB_STORAGE_KEY,
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+  EMBRACE_TAB_STORAGE_KEY,
 } from './constants.js';
+import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
 import type { Tab, TabActivity } from './types.js';
 
 chai.use(sinonChai);
@@ -113,7 +113,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'manual'
+      'manual',
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -139,7 +139,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_ENDED,
-      'manual'
+      'manual',
     );
     expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
   });
@@ -150,7 +150,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(finishedSpans).to.have.lengthOf(0);
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to end a session, but there is no session in progress. This is a no-op.'
+      'trying to end a session, but there is no session in progress. This is a no-op.',
     );
   });
 
@@ -159,7 +159,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.',
     );
   });
 
@@ -180,7 +180,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
     expect(sessionSpan.events[0].attributes).to.have.property(
       'message',
-      'some breadcrumb SHOULD FAIL'
+      'some breadcrumb SHOULD FAIL',
     );
   });
 
@@ -189,7 +189,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+      'trying to add properties to a session, but there is no session in progress. This is a no-op.',
     );
   });
 
@@ -206,15 +206,15 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(sessionSpan.attributes).to.have.property(
       'emb.properties.custom-property-1',
-      'custom value1'
+      'custom value1',
     );
     expect(sessionSpan.attributes).to.have.property(
       'emb.properties.custom-property-2',
-      'custom value2'
+      'custom value2',
     );
     expect(sessionSpan.attributes).to.have.property(
       'emb.session_end_type',
-      'manual'
+      'manual',
     );
     expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
   });
@@ -306,19 +306,19 @@ describe('EmbraceSpanSessionManager', () => {
       expect(sessionSpan.events[i].name).to.equal('emb-breadcrumb');
       expect(sessionSpan.events[i].attributes).to.have.property(
         'message',
-        'this is a breadcrumb'
+        'this is a breadcrumb',
       );
     }
 
     expect(
-      sessionSpan.attributes['emb.app.applied_limit.breadcrumb.drop.count']
+      sessionSpan.attributes['emb.app.applied_limit.breadcrumb.drop.count'],
     ).to.be.equal(7);
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(7);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing breadcrumb because the maximum number of 3 has already been reached for this session'
+        'disallowing breadcrumb because the maximum number of 3 has already been reached for this session',
       );
     }
 
@@ -334,7 +334,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(nextSessionSpan.events[0].name).to.equal('emb-breadcrumb');
     expect(nextSessionSpan.events[0].attributes).to.have.property(
       'message',
-      'this is a breadcrumb'
+      'this is a breadcrumb',
     );
   });
 
@@ -343,7 +343,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     manager.addBreadcrumb('this is a breadcrumb');
     manager.addBreadcrumb(
-      'this is a breadcrumb which has a name longer than the allowed maximum length'
+      'this is a breadcrumb which has a name longer than the allowed maximum length',
     );
 
     manager.endSessionSpan();
@@ -354,23 +354,23 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
     expect(sessionSpan.events[0].attributes).to.have.property(
       'message',
-      'this is a breadcrumb'
+      'this is a breadcrumb',
     );
     expect(sessionSpan.events[1].name).to.equal('emb-breadcrumb');
     expect(sessionSpan.events[1].attributes).to.have.property(
       'message',
-      'this is a breadcrumb which has a name longer than '
+      'this is a breadcrumb which has a name longer than ',
     );
 
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.breadcrumb.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating breadcrumb because it is longer than 50 characters: "this is a breadcrumb which has a name longer than the allowed maximum length"'
+      'truncating breadcrumb because it is longer than 50 characters: "this is a breadcrumb which has a name longer than the allowed maximum length"',
     );
   });
 
@@ -391,7 +391,7 @@ describe('EmbraceSpanSessionManager', () => {
       if (i < 4) {
         void expect(sessionSpan.attributes).to.have.property(
           prop,
-          i.toString()
+          i.toString(),
         );
       } else {
         void expect(sessionSpan.attributes).not.to.have.property(prop);
@@ -401,14 +401,14 @@ describe('EmbraceSpanSessionManager', () => {
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.session_property.drop.count'
-      ]
+      ],
     ).to.be.equal(6);
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(6);
     for (let i = 0; i < warningLogs.length; i++) {
       expect(warningLogs[i]).to.equal(
-        'disallowing session_property because the maximum number of 4 has already been reached for this session'
+        'disallowing session_property because the maximum number of 4 has already been reached for this session',
       );
     }
 
@@ -422,7 +422,7 @@ describe('EmbraceSpanSessionManager', () => {
     const nextSessionSpan = nextSessionFinishedSpans[0];
     expect(nextSessionSpan.attributes).to.have.property(
       'emb.properties.my-new-prop',
-      'new'
+      'new',
     );
   });
 
@@ -432,7 +432,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.addProperty('key1', '1');
     manager.addProperty(
       'session-property-with-long-key',
-      'session property long value with extra information'
+      'session property long value with extra information',
     );
 
     manager.endSessionSpan();
@@ -442,27 +442,27 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(sessionSpan.attributes).to.have.property(
       'emb.properties.session-property-wit',
-      'session property long value with extra i'
+      'session property long value with extra i',
     );
 
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.session_property_key.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.session_property_value.truncate_string.count'
-      ]
+      ],
     ).to.be.equal(1);
 
     expect(diag.getWarnLogs()).to.have.lengthOf(2);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating session_property_key because it is longer than 20 characters: "session-property-with-long-key"'
+      'truncating session_property_key because it is longer than 20 characters: "session-property-with-long-key"',
     );
     expect(diag.getWarnLogs()[1]).to.equal(
-      'truncating session_property_value because it is longer than 40 characters: "session property long value with extra information"'
+      'truncating session_property_value because it is longer than 40 characters: "session property long value with extra information"',
     );
   });
 
@@ -531,7 +531,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       attributeKey,
-      value
+      value,
     );
   });
 
@@ -553,11 +553,11 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       sessionOnlyAttributeKey,
-      sessionOnlyValue
+      sessionOnlyValue,
     );
     expect(manager.getSessionSpan()?.attributes).to.have.property(
       permanentAttributeKey,
-      permanentValue
+      permanentValue,
     );
   });
 
@@ -579,7 +579,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       attributeKey,
-      value
+      value,
     );
   });
 
@@ -599,11 +599,11 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     expect(manager.getSessionSpan()?.attributes).to.have.property(
       attributeKey,
-      value
+      value,
     );
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       longAttributeKey,
-      value
+      value,
     );
     manager.removeProperty(propertyKey);
     manager.endSessionSpan();
@@ -611,11 +611,11 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionSpan();
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       attributeKey,
-      value
+      value,
     );
     expect(manager.getSessionSpan()?.attributes).to.not.have.property(
       longAttributeKey,
-      value
+      value,
     );
   });
 
@@ -630,7 +630,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
     expect(sessionSpan.attributes).not.to.have.property(
-      'emb.session_start_type'
+      'emb.session_start_type',
     );
     memoryExporter.reset();
 
@@ -679,7 +679,7 @@ describe('EmbraceSpanSessionManager', () => {
     const sessionSpan = finishedSpans[0];
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_STARTED,
-      'start reason'
+      'start reason',
     );
   });
 
@@ -700,7 +700,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.include(
-      'Error loading permanent session properties'
+      'Error loading permanent session properties',
     );
   });
 
@@ -726,7 +726,7 @@ describe('EmbraceSpanSessionManager', () => {
 
       const debugLogs = diag.getDebugLogs();
       expect(debugLogs).to.include(
-        'trying to end a session, but there is no session in progress. This is a no-op.'
+        'trying to end a session, but there is no session in progress. This is a no-op.',
       );
     });
 
@@ -737,7 +737,7 @@ describe('EmbraceSpanSessionManager', () => {
 
       // Create copy before ending session
       const sessionSpanNotExported = manager.currentSessionAsReadableSpan(
-        'manual'
+        'manual',
       ) as unknown as ReadableSpan;
       expect(sessionSpanNotExported).to.not.equal(null);
 
@@ -761,27 +761,27 @@ describe('EmbraceSpanSessionManager', () => {
       // Both should have the same key attributes
       expect(sessionSpanNotExported.attributes).to.have.property(
         KEY_EMB_SESSION_REASON_ENDED,
-        'manual'
+        'manual',
       );
       expect(sessionSpan.attributes).to.have.property(
         KEY_EMB_SESSION_REASON_ENDED,
-        'timer'
+        'timer',
       );
       expect(sessionSpanNotExported.attributes).to.have.property(
         'emb.properties.session-prop',
-        'session-value'
+        'session-value',
       );
       expect(sessionSpan.attributes).to.have.property(
         'emb.properties.session-prop',
-        'session-value'
+        'session-value',
       );
       expect(sessionSpanNotExported.attributes).to.have.property(
         'emb.sdk_startup_duration',
-        250
+        250,
       );
       expect(sessionSpan.attributes).to.have.property(
         'emb.sdk_startup_duration',
-        250
+        250,
       );
     });
   });
@@ -850,7 +850,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         mockSessionStorage.setItem(
           EMBRACE_TAB_STORAGE_KEY,
-          JSON.stringify(existingTab)
+          JSON.stringify(existingTab),
         );
 
         const manager = new EmbraceSpanSessionManager({
@@ -872,15 +872,15 @@ describe('EmbraceSpanSessionManager', () => {
 
         void expect(sessionSpan.attributes).to.have.property(
           KEY_EMB_TAB_ID,
-          'test-tab-123'
+          'test-tab-123',
         );
         void expect(sessionSpan.attributes).to.have.property(
           KEY_EMB_EXPERIENCE_ID,
-          'test-exp-456'
+          'test-exp-456',
         );
         void expect(sessionSpan.attributes).to.have.property(
           KEY_EMB_SOURCE_TAB_ID,
-          'source-789'
+          'source-789',
         );
       });
     });
@@ -896,7 +896,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         mockStorage.setItem(
           EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(sourceTabActivity)
+          JSON.stringify(sourceTabActivity),
         );
 
         // Create manager with same-origin referrer
@@ -928,7 +928,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         mockStorage.setItem(
           EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(recentActivity)
+          JSON.stringify(recentActivity),
         );
 
         // Create manager with empty referrer
@@ -961,7 +961,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         mockSessionStorage.setItem(
           EMBRACE_TAB_STORAGE_KEY,
-          JSON.stringify(existingTab)
+          JSON.stringify(existingTab),
         );
 
         // Create manager and record initial activity
@@ -989,7 +989,7 @@ describe('EmbraceSpanSessionManager', () => {
         document.dispatchEvent(mockEvent);
 
         const activity = JSON.parse(
-          mockStorage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY) ?? 'null'
+          mockStorage.getItem(EMBRACE_TAB_ACTIVITY_STORAGE_KEY) ?? 'null',
         ) as TabActivity | null;
         void expect(activity).to.not.be.null;
         void expect(activity?.tabId).to.equal('test-tab-123');
@@ -1007,7 +1007,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         mockStorage.setItem(
           EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(recentActivity)
+          JSON.stringify(recentActivity),
         );
 
         // Create manager with cross-origin referrer
@@ -1023,7 +1023,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         // Should not detect source (different origin)
         const tabData = JSON.parse(
-          mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY) ?? '{}'
+          mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY) ?? '{}',
         ) as Tab;
 
         void expect(tabData.sourceTabId).to.be.undefined;
@@ -1034,7 +1034,7 @@ describe('EmbraceSpanSessionManager', () => {
       // Helper to create manager and get session span attributes
       const createManagerAndGetSessionAttributes = (
         referrer: string,
-        navType?: string
+        navType?: string,
       ) => {
         if (navType) {
           performanceStub.withArgs('navigation').returns([{ type: navType }]);
@@ -1063,12 +1063,12 @@ describe('EmbraceSpanSessionManager', () => {
           // Even with same-origin referrer, reload type should take precedence
           const attributes = createManagerAndGetSessionAttributes(
             `${window.location.origin}/page`,
-            'reload'
+            'reload',
           );
 
           void expect(attributes).to.have.property(
             KEY_EMB_NAVIGATION_SOURCE,
-            'reload' // Not 'same_origin'
+            'reload', // Not 'same_origin'
           );
         });
 
@@ -1076,12 +1076,12 @@ describe('EmbraceSpanSessionManager', () => {
           // Even with external referrer, back_forward type should take precedence
           const attributes = createManagerAndGetSessionAttributes(
             'https://external.com/page',
-            'back_forward'
+            'back_forward',
           );
 
           void expect(attributes).to.have.property(
             KEY_EMB_NAVIGATION_SOURCE,
-            'back_forward' // Not 'external'
+            'back_forward', // Not 'external'
           );
         });
 
@@ -1089,24 +1089,24 @@ describe('EmbraceSpanSessionManager', () => {
           // When type is 'navigate', should analyze referrer
           const sameOriginAttrs = createManagerAndGetSessionAttributes(
             `${window.location.origin}/page`,
-            'navigate'
+            'navigate',
           );
 
           void expect(sameOriginAttrs).to.have.property(
             KEY_EMB_NAVIGATION_SOURCE,
-            'same_origin'
+            'same_origin',
           );
 
           memoryExporter.reset();
 
           const externalAttrs = createManagerAndGetSessionAttributes(
             'https://external.com/page',
-            'navigate'
+            'navigate',
           );
 
           void expect(externalAttrs).to.have.property(
             KEY_EMB_NAVIGATION_SOURCE,
-            'external'
+            'external',
           );
         });
       });
@@ -1114,28 +1114,28 @@ describe('EmbraceSpanSessionManager', () => {
       it('should detect reload navigation', () => {
         const attributes = createManagerAndGetSessionAttributes(
           'https://example.com/previous',
-          'reload'
+          'reload',
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'reload'
+          'reload',
         );
         void expect(attributes).to.have.property(
           KEY_EMB_REFERRER_URL,
-          'https://example.com/previous'
+          'https://example.com/previous',
         );
       });
 
       it('should detect back/forward navigation', () => {
         const attributes = createManagerAndGetSessionAttributes(
           'https://example.com/previous',
-          'back_forward'
+          'back_forward',
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'back_forward'
+          'back_forward',
         );
       });
 
@@ -1143,32 +1143,32 @@ describe('EmbraceSpanSessionManager', () => {
         const currentOrigin = window.location.origin;
         const attributes = createManagerAndGetSessionAttributes(
           `${currentOrigin}/previous-page`,
-          'navigate'
+          'navigate',
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'same_origin'
+          'same_origin',
         );
         void expect(attributes).to.have.property(
           KEY_EMB_REFERRER_URL,
-          `${currentOrigin}/previous-page`
+          `${currentOrigin}/previous-page`,
         );
       });
 
       it('should detect external navigation', () => {
         const attributes = createManagerAndGetSessionAttributes(
           'https://external-site.com/page',
-          'navigate'
+          'navigate',
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'external'
+          'external',
         );
         void expect(attributes).to.have.property(
           KEY_EMB_REFERRER_URL,
-          'https://external-site.com/page'
+          'https://external-site.com/page',
         );
       });
 
@@ -1177,7 +1177,7 @@ describe('EmbraceSpanSessionManager', () => {
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'direct'
+          'direct',
         );
         void expect(attributes).to.not.have.property(KEY_EMB_REFERRER_URL);
       });
@@ -1185,12 +1185,12 @@ describe('EmbraceSpanSessionManager', () => {
       it('should handle invalid referrer URL as direct navigation', () => {
         const attributes = createManagerAndGetSessionAttributes(
           'not a valid url with spaces',
-          'navigate'
+          'navigate',
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'direct'
+          'direct',
         );
         // Invalid URLs are not stored due to parsing error
         void expect(attributes).to.not.have.property(KEY_EMB_REFERRER_URL);
@@ -1201,12 +1201,12 @@ describe('EmbraceSpanSessionManager', () => {
         const currentOrigin = window.location.origin;
 
         const attributes = createManagerAndGetSessionAttributes(
-          `${currentOrigin}/previous-page`
+          `${currentOrigin}/previous-page`,
         );
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'same_origin'
+          'same_origin',
         );
       });
 
@@ -1219,7 +1219,7 @@ describe('EmbraceSpanSessionManager', () => {
         };
         mockStorage.setItem(
           EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-          JSON.stringify(sourceTab)
+          JSON.stringify(sourceTab),
         );
 
         // Create manager with same-origin referrer
@@ -1252,11 +1252,11 @@ describe('EmbraceSpanSessionManager', () => {
 
         void expect(attributes).to.have.property(
           KEY_EMB_NAVIGATION_SOURCE,
-          'same_origin'
+          'same_origin',
         );
         void expect(attributes).to.have.property(
           KEY_EMB_SOURCE_TAB_ID,
-          'source-tab-456'
+          'source-tab-456',
         );
       });
 
@@ -1270,7 +1270,7 @@ describe('EmbraceSpanSessionManager', () => {
             expected: 'external',
           },
           {
-            referrer: window.location.origin + '/page',
+            referrer: `${window.location.origin}/page`,
             navType: 'navigate',
             expected: 'same_origin',
           },
@@ -1291,7 +1291,7 @@ describe('EmbraceSpanSessionManager', () => {
 
           const attributes = createManagerAndGetSessionAttributes(
             referrer,
-            navType
+            navType,
           );
 
           void expect(attributes).to.have.property(KEY_EMB_NAVIGATION_SOURCE);
@@ -1307,7 +1307,7 @@ describe('EmbraceSpanSessionManager', () => {
         setItemStub.callsFake(() => {
           throw new DOMException(
             'Storage quota exceeded',
-            'QuotaExceededError'
+            'QuotaExceededError',
           );
         });
 
@@ -1330,8 +1330,8 @@ describe('EmbraceSpanSessionManager', () => {
         const warnings = diag.getWarnLogs();
         void expect(
           warnings.some((w: string) =>
-            w.includes('Failed to save tab activity')
-          )
+            w.includes('Failed to save tab activity'),
+          ),
         ).to.be.true;
       });
 
@@ -1356,8 +1356,8 @@ describe('EmbraceSpanSessionManager', () => {
         const warnings = diag.getWarnLogs();
         void expect(
           warnings.some((w: string) =>
-            w.includes('Failed to retrieve tab activity')
-          )
+            w.includes('Failed to retrieve tab activity'),
+          ),
         ).to.be.true;
       });
     });

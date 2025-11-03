@@ -11,7 +11,7 @@ export class NamespacedStorage implements Storage {
     const keys = [];
     for (let i = 0; i < this._storage.length; i++) {
       const key = this._storage.key(i);
-      if (key && key.startsWith(this._keyPrefix)) {
+      if (key?.startsWith(this._keyPrefix)) {
         keys.push(key.substring(this._keyPrefix.length));
       }
     }
@@ -24,7 +24,7 @@ export class NamespacedStorage implements Storage {
   }
 
   public clear(): void {
-    this.getNamespacedKeys().forEach(key => {
+    this.getNamespacedKeys().forEach((key) => {
       this._storage.removeItem(`${this._keyPrefix}${key}`);
     });
   }

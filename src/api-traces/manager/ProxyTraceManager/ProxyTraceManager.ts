@@ -1,7 +1,7 @@
+import type { Context } from '@opentelemetry/api';
+import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
 import type { TraceManager } from '../index.js';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
-import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.js';
-import type { Context } from '@opentelemetry/api';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
 
@@ -19,7 +19,7 @@ export class ProxyTraceManager implements TraceManager {
   public startSpan(
     name: string,
     options?: ExtendedSpanOptions,
-    context?: Context
+    context?: Context,
   ): ExtendedSpan {
     return this.getDelegate().startSpan(name, options, context);
   }

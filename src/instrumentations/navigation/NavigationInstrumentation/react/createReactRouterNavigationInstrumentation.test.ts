@@ -1,6 +1,6 @@
 import * as chai from 'chai';
-import { createReactRouterNavigationInstrumentation } from './createReactRouterNavigationInstrumentation.js';
 import { NavigationInstrumentation } from '../../index.js';
+import { createReactRouterNavigationInstrumentation } from './createReactRouterNavigationInstrumentation.js';
 
 describe('createReactRouterNavigationInstrumentation', () => {
   it('should return a navigation instrumentation instance', () => {

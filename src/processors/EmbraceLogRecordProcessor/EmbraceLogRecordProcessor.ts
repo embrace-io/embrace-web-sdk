@@ -1,8 +1,8 @@
-import type { SdkLogRecord, LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
+import type { URLDocument } from '../../common/index.js';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
 import type { EmbraceLogRecordProcessorArgs } from './types.js';
-import type { URLDocument } from '../../common/index.js';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 
 export class EmbraceLogRecordProcessor implements LogRecordProcessor {
   private readonly _urlDocument: URLDocument;

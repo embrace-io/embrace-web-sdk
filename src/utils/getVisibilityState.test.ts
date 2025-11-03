@@ -1,6 +1,6 @@
 import * as chai from 'chai';
-import { getVisibilityState } from './getVisibilityState.js';
 import type { VisibilityStateDocument } from '../common/index.js';
+import { getVisibilityState } from './getVisibilityState.js';
 
 const { expect } = chai;
 
@@ -9,7 +9,7 @@ describe('getVisibilityState', () => {
     expect(
       getVisibilityState({
         visibilityState: 'visible',
-      })
+      }),
     ).to.equal('foreground');
   });
 
@@ -17,13 +17,13 @@ describe('getVisibilityState', () => {
     expect(
       getVisibilityState({
         visibilityState: 'hidden',
-      })
+      }),
     ).to.equal('background');
   });
 
   it('should report foreground when document visibility cannot be determined', () => {
     expect(getVisibilityState({} as VisibilityStateDocument)).to.equal(
-      'foreground'
+      'foreground',
     );
   });
 });

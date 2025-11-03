@@ -1,10 +1,10 @@
-import * as chai from 'chai';
-import { EmbraceLogRecordProcessor } from './EmbraceLogRecordProcessor.js';
-import { setupTestLogExporter } from '../../testUtils/index.js';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import * as chai from 'chai';
 import type { URLDocument } from '../../common/index.js';
+import { setupTestLogExporter } from '../../testUtils/index.js';
+import { EmbraceLogRecordProcessor } from './EmbraceLogRecordProcessor.js';
 
 const { expect } = chai;
 const urlDocument: URLDocument = {

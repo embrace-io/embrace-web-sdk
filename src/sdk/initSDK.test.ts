@@ -1,28 +1,45 @@
 import {
   context,
-  diag,
   DiagLogLevel,
+  diag,
   propagation,
   trace,
 } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { CompositePropagator } from '@opentelemetry/core';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
+import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.js';
 import {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
   session,
 } from '../api-sessions/index.js';
+import {
+  trace as embtrace,
+  NoOpTraceManager,
+  ProxyTraceManager,
+} from '../api-traces/index.js';
+import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
 import type { WebVitalOnReport } from '../instrumentations/index.js';
+import {
+  EmbraceLogManager,
+  EmbraceSpanSessionManager,
+  EmbraceTraceManager,
+  EmbraceUserManager,
+} from '../managers/index.js';
 import { SDK_VERSION } from '../resources/index.js';
 import {
+  FakeInstrumentation,
+  FakeLogRecordProcessor,
+  FakeSpanProcessor,
   fakeFetchGetBody,
   fakeFetchGetRequestHeaders,
   fakeFetchGetUrl,
@@ -31,33 +48,16 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore,
   fakeFetchWasCalled,
-  FakeInstrumentation,
-  FakeLogRecordProcessor,
-  FakeSpanProcessor,
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
 } from '../testUtils/index.js';
 import { initSDK } from './initSDK.js';
-import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.js';
-import {
-  NoOpTraceManager,
-  ProxyTraceManager,
-  trace as embtrace,
-} from '../api-traces/index.js';
-import {
-  EmbraceLogManager,
-  EmbraceSpanSessionManager,
-  EmbraceTraceManager,
-  EmbraceUserManager,
-} from '../managers/index.js';
-import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
 import { registry } from './registry.js';
 import type {
   DynamicConfigManager,
   SDKControl,
   SDKInitConfig,
 } from './types.js';
-import { CompositePropagator } from '@opentelemetry/core';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -84,15 +84,15 @@ type SpanScope = {
 
 const getLastSessionExportedSpans = async (
   callNumber = 0,
-  scope: SpanScope = { name: 'embrace-web-sdk-traces' }
+  scope: SpanScope = { name: 'embrace-web-sdk-traces' },
 ) => {
   // Needed to allow the transport to actually send its data off to fetch
-  await new Promise(r => setTimeout(r, 1));
+  await new Promise((r) => setTimeout(r, 1));
 
   const body = fakeFetchGetBody(callNumber);
   void expect(body).not.to.be.null;
   const decompressedStream = new Response(body).body?.pipeThrough(
-    new DecompressionStream('gzip')
+    new DecompressionStream('gzip'),
   );
   // translate from Uint8Array to string
   const text = await new Response(decompressedStream).text();
@@ -150,7 +150,7 @@ describe('initSDK', () => {
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set'
+      'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
     );
   });
 
@@ -161,7 +161,7 @@ describe('initSDK', () => {
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appID should be 5 characters long'
+      'failed to initialize the SDK: appID should be 5 characters long',
     );
   });
 
@@ -214,7 +214,7 @@ describe('initSDK', () => {
     expect(finishedLogRecords).to.have.lengthOf(1);
     void expect(finishedLogRecords[0].body).to.be.equal('my log');
     void expect(finishedLogRecords[0].attributes['fake']).to.be.equal(
-      'my-attr'
+      'my-attr',
     );
   });
 
@@ -285,24 +285,26 @@ describe('initSDK', () => {
 
     expect(log.getLogManager()).to.be.instanceOf(ProxyLogManager);
     expect(
-      (log.getLogManager() as ProxyLogManager).getDelegate()
+      (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
 
     expect(session.getSpanSessionManager()).to.be.instanceOf(
-      ProxySpanSessionManager
+      ProxySpanSessionManager,
     );
     expect(
-      (session.getSpanSessionManager() as ProxySpanSessionManager).getDelegate()
+      (
+        session.getSpanSessionManager() as ProxySpanSessionManager
+      ).getDelegate(),
     ).to.be.instanceOf(EmbraceSpanSessionManager);
 
     expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
     expect(
-      (embtrace.getTraceManager() as ProxyTraceManager).getDelegate()
+      (embtrace.getTraceManager() as ProxyTraceManager).getDelegate(),
     ).to.be.instanceOf(EmbraceTraceManager);
 
     expect(user.getUserManager()).to.be.instanceOf(ProxyUserManager);
     expect(
-      (user.getUserManager() as ProxyUserManager).getDelegate()
+      (user.getUserManager() as ProxyUserManager).getDelegate(),
     ).to.be.instanceOf(EmbraceUserManager);
 
     embtrace.startSpan('my performance span').end();
@@ -350,7 +352,7 @@ describe('initSDK', () => {
       void expect(
         setConfigStub.calledOnceWith({
           samplingPct: 50,
-        })
+        }),
       ).to.be.true;
     }
   });
@@ -361,7 +363,7 @@ describe('initSDK', () => {
     });
     void expect(result).not.to.be.false;
 
-    trace.getTracer('test').startActiveSpan('my active span', active => {
+    trace.getTracer('test').startActiveSpan('my active span', (active) => {
       trace.getTracer('test').startSpan('my child span').end();
       trace
         .getSpan(context.active())
@@ -382,10 +384,10 @@ describe('initSDK', () => {
     expect(active.attributes['active-span-attribute']).to.be.equal('foo');
     expect(child.name).to.be.equal('my child span');
     expect(child.parentSpanContext?.traceId).to.be.equal(
-      active.spanContext().traceId
+      active.spanContext().traceId,
     );
     expect(child.parentSpanContext?.spanId).to.be.equal(
-      active.spanContext().spanId
+      active.spanContext().spanId,
     );
   });
 
@@ -402,7 +404,7 @@ describe('initSDK', () => {
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: not initializing due to restricted protocol: http:'
+      'failed to initialize the SDK: not initializing due to restricted protocol: http:',
     );
   });
 
@@ -438,13 +440,13 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const sessionID = session.getSessionId();
       session.endSessionSpan();
 
       // Needed to allow the transport to actually send its data off to fetch
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const headers = fakeFetchGetRequestHeaders(1);
       expect((headers as Record<string, string>)['X-EM-AID']).to.equal('abc12');
@@ -453,7 +455,7 @@ describe('initSDK', () => {
 
       void expect(body).not.to.be.null;
       const decompressedStream = new Response(body).body?.pipeThrough(
-        new DecompressionStream('gzip')
+        new DecompressionStream('gzip'),
       );
       // translate from Uint8Array to string
       const text = await new Response(decompressedStream).text();
@@ -499,27 +501,27 @@ describe('initSDK', () => {
       expect(sessionSpan['name']).to.be.equal('emb-session');
 
       const sessionNumber = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.session_number'
+        (attr) => attr.key === 'emb.session_number',
       );
       void expect(sessionNumber?.value.intValue).not.to.be.undefined;
       expect(sessionNumber?.value.intValue).to.be.greaterThan(0);
       expect(sessionNumber?.value.intValue).to.be.lessThan(20);
 
       const startupDuration = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.sdk_startup_duration'
+        (attr) => attr.key === 'emb.sdk_startup_duration',
       );
       void expect(startupDuration?.value.intValue).not.to.be.undefined;
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
       const experienceId = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.experience_id'
+        (attr) => attr.key === 'emb.experience_id',
       )?.value.stringValue;
       void expect(experienceId).to.be.a('string');
       void expect(experienceId).to.have.lengthOf(32);
 
       const tabId = sessionSpan['attributes'].find(
-        attr => attr.key === 'emb.tab_id'
+        (attr) => attr.key === 'emb.tab_id',
       )?.value.stringValue;
       void expect(tabId).to.be.a('string');
       void expect(tabId).to.have.lengthOf(32);
@@ -559,7 +561,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       embtrace.startSpan('my performance span').end();
       // shouldn't get exported
@@ -589,7 +591,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       // Capped at 1000 spans per session
       for (let i = 0; i < 1100; i++) {
@@ -619,7 +621,7 @@ describe('initSDK', () => {
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
       for (let i = 0; i < nextSessionExportedSpans.length; i++) {
         expect(nextSessionExportedSpans[i]['name']).to.equal(
-          `my-next-session-span-${i.toString()}`
+          `my-next-session-span-${i.toString()}`,
         );
       }
     });
@@ -641,7 +643,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
 
@@ -665,7 +667,7 @@ describe('initSDK', () => {
         // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
-          `span-event-${expected.toString()}`
+          `span-event-${expected.toString()}`,
         );
       }
     });
@@ -687,7 +689,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
 
@@ -712,7 +714,7 @@ describe('initSDK', () => {
         // the 2 internal attributes added by our API
         const expected = i - 2;
         expect(exportedAttributes[i].key).to.equal(
-          `span-attribute-${expected.toString()}`
+          `span-attribute-${expected.toString()}`,
         );
         expect(exportedAttributes[i].value).to.deep.equal({
           stringValue: expected.toString(),
@@ -737,7 +739,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
 
@@ -756,7 +758,7 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[2].key).to.equal('large-attribute');
       expect(exportedSpans[0].attributes[2].value.stringValue).to.have.lengthOf(
-        1024
+        1024,
       );
     });
 
@@ -777,7 +779,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
 
@@ -801,7 +803,7 @@ describe('initSDK', () => {
         // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
-          `span-event-${expected.toString()}`
+          `span-event-${expected.toString()}`,
         );
       }
     });
@@ -826,7 +828,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       const span = embtrace.startSpan('my-span');
       const spanEventAttributes: Record<string, string> = {};
@@ -868,7 +870,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       embtrace
         .startSpan('my-span', {
@@ -914,13 +916,13 @@ describe('initSDK', () => {
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
       expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
-        'https://REDACTED:REDACTED@www.example.com/some/other/path'
+        'https://REDACTED:REDACTED@www.example.com/some/other/path',
       );
       expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
-        'foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED'
+        'foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
       );
       expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
-        'some other attr'
+        'some other attr',
       );
     });
 
@@ -943,7 +945,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       embtrace
         .startSpan('my-span', {
@@ -989,13 +991,13 @@ describe('initSDK', () => {
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
       expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
-        'https://username:password@www.example.com/some/other/path'
+        'https://username:password@www.example.com/some/other/path',
       );
       expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
-        'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey'
+        'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
       );
       expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
-        'some other attr'
+        'some other attr',
       );
     });
 
@@ -1006,7 +1008,7 @@ describe('initSDK', () => {
         appVersion: 'my-app-version',
         logExporters: [logExporter],
         attributeScrubbers: [
-          { key: 'safe', scrub: value => value + ' ALTERED' },
+          { key: 'safe', scrub: (value) => `${value} ALTERED` },
         ],
         additionalQueryParamsToScrub: ['foo'],
         defaultInstrumentationConfig: {
@@ -1021,7 +1023,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       // Needed to allow the browser detector resources to be grabbed
-      await new Promise(r => setTimeout(r, 1));
+      await new Promise((r) => setTimeout(r, 1));
 
       embtrace
         .startSpan('my-span', {
@@ -1067,13 +1069,13 @@ describe('initSDK', () => {
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
       expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
-        'https://REDACTED:REDACTED@www.example.com/some/other/path'
+        'https://REDACTED:REDACTED@www.example.com/some/other/path',
       );
       expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
-        'foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED'
+        'foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
       );
       expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
-        'some other attr ALTERED'
+        'some other attr ALTERED',
       );
     });
 
@@ -1081,7 +1083,7 @@ describe('initSDK', () => {
       fakeFetchRespondWith(
         JSON.stringify({
           threshold: 90,
-        })
+        }),
       );
 
       const result = initSDK({
@@ -1100,7 +1102,7 @@ describe('initSDK', () => {
 
       void expect(fakeFetchWasCalled()).to.be.true;
       expect(fakeFetchGetUrl()).to.contain(
-        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=my-app-version&deviceId='
+        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=my-app-version&deviceId=',
       );
     });
 
@@ -1108,7 +1110,7 @@ describe('initSDK', () => {
       fakeFetchRespondWith(
         JSON.stringify({
           threshold: 90,
-        })
+        }),
       );
 
       const result = initSDK({
@@ -1126,7 +1128,7 @@ describe('initSDK', () => {
 
       void expect(fakeFetchWasCalled()).to.be.true;
       expect(fakeFetchGetUrl()).to.contain(
-        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=EmbIOAppVersionX.X.X&deviceId='
+        'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=EmbIOAppVersionX.X.X&deviceId=',
       );
     });
 
@@ -1231,8 +1233,8 @@ describe('initSDK', () => {
       void expect(
         consoleInfoStub.calledWith(
           'embrace-sdk',
-          'successfully initialized the SDK'
-        )
+          'successfully initialized the SDK',
+        ),
       ).to.be.true;
       void expect(consoleInfoStub.calledWith('testing', 'info')).to.be.true;
       void expect(consoleWarnStub.calledOnce).to.be.true;
@@ -1312,8 +1314,8 @@ describe('initSDK', () => {
       void expect(
         consoleWarnStub.calledWith(
           'embrace-sdk',
-          'SDK has already been successfully initialized, skipping this invocation of initSDK'
-        )
+          'SDK has already been successfully initialized, skipping this invocation of initSDK',
+        ),
       ).to.be.true;
     });
 
@@ -1335,8 +1337,8 @@ describe('initSDK', () => {
       void expect(
         consoleWarnStub.calledWith(
           'embrace-sdk',
-          'failed to initialize the SDK: appID should be 5 characters long'
-        )
+          'failed to initialize the SDK: appID should be 5 characters long',
+        ),
       ).to.be.false;
 
       // 2nd invocation does not omit the web vital instrumentation, this should take effect since the first
@@ -1355,8 +1357,8 @@ describe('initSDK', () => {
       void expect(
         consoleWarnStub.calledWith(
           'embrace-sdk',
-          'SDK has already been successfully initialized, skipping this invocation of initSDK'
-        )
+          'SDK has already been successfully initialized, skipping this invocation of initSDK',
+        ),
       ).to.be.false;
     });
   });
@@ -1503,7 +1505,7 @@ describe('initSDK', () => {
       },
     ];
 
-    tests.forEach(test => {
+    tests.forEach((test) => {
       it(test.name, async () => {
         const result = initSDK(test.sdkConfig);
         void expect(result).not.to.be.false;
@@ -1552,18 +1554,18 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.206.0',
-          }
+            version: '0.207.0',
+          },
         );
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
         const expectedTraceparent = `00-${networkSpan.traceId}-${networkSpan.spanId}-01`;
 
         expect(networkSpan.name).to.be.equal(
-          test.networkType === 'fetch' ? 'HTTP GET' : 'GET'
+          test.networkType === 'fetch' ? 'HTTP GET' : 'GET',
         );
         let foundW3CAttr = false;
-        networkSpan.attributes.forEach(attr => {
+        networkSpan.attributes.forEach((attr) => {
           if (attr.key === 'emb.w3c_traceparent') {
             foundW3CAttr = true;
 
@@ -1574,7 +1576,7 @@ describe('initSDK', () => {
         });
         expect(foundW3CAttr).to.equal(test.expectInjection);
         expect(injectedTraceparentHeader).to.equal(
-          test.expectInjection ? expectedTraceparent : ''
+          test.expectInjection ? expectedTraceparent : '',
         );
       });
     });
@@ -1696,7 +1698,7 @@ describe('isolated instances', () => {
       sdkInstance: SDKControl,
       logExporter: InMemoryLogRecordExporter,
       spanExporter: InMemorySpanExporter,
-      instrumentation: FakeInstrumentation
+      instrumentation: FakeInstrumentation,
     ) => {
       expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
@@ -1727,14 +1729,14 @@ describe('isolated instances', () => {
       firstSDKInstance,
       logExporter,
       spanExporter,
-      firstSDKInstrumentation
+      firstSDKInstrumentation,
     );
 
     await checkInstanceTelemetry(
       secondSDKInstance,
       secondLogExporter,
       secondSpanExporter,
-      secondSDKInstrumentation
+      secondSDKInstrumentation,
     );
   });
 
@@ -1742,7 +1744,7 @@ describe('isolated instances', () => {
     fakeFetchRespondWith(
       JSON.stringify({
         threshold: 90,
-      })
+      }),
     );
 
     const firstSDKInstance = initSDK({
@@ -1763,61 +1765,61 @@ describe('isolated instances', () => {
       .not.to.be.false;
 
     // Need to give time for the remote config to be fetched and then parsed
-    await new Promise(r => setTimeout(r, 1));
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // First instance using namespaced storage
     expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
       true,
-      'first app did not store embrace user id'
+      'first app did not store embrace user id',
     );
     expect(!!localStorage.getItem('app11_embrace_remote_config')).to.equal(
       true,
-      'first app did not store remote config'
+      'first app did not store remote config',
     );
     expect(!!sessionStorage.getItem('app11_embrace_app_instance_id')).to.equal(
       true,
-      'first app did not store app instance id'
+      'first app did not store app instance id',
     );
     expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(
       true,
-      'first app did not store embrace tab'
+      'first app did not store embrace tab',
     );
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
       true,
-      'second app did not store embrace user id'
+      'second app did not store embrace user id',
     );
     expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
       true,
-      'second app did not store remote config'
+      'second app did not store remote config',
     );
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
       true,
-      'second app did not store app instance id'
+      'second app did not store app instance id',
     );
     expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(
       true,
-      'second app did not store embrace tab'
+      'second app did not store embrace tab',
     );
 
     // Nothing using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(
       false,
-      'found globally stored Embrace user id'
+      'found globally stored Embrace user id',
     );
     expect(!!localStorage.getItem('embrace_remote_config')).to.equal(
       false,
-      'found globally stored remote config'
+      'found globally stored remote config',
     );
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(
       false,
-      'found globally stored app instance id'
+      'found globally stored app instance id',
     );
     expect(!!sessionStorage.getItem('embrace_tab')).to.equal(
       false,
-      'found globally stored tab'
+      'found globally stored tab',
     );
   });
 
@@ -1825,7 +1827,7 @@ describe('isolated instances', () => {
     fakeFetchRespondWith(
       JSON.stringify({
         threshold: 90,
-      })
+      }),
     );
 
     const firstSDKInstance = initSDK({
@@ -1844,16 +1846,16 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance).not.to.be.false;
 
     // Need to give time for the remote config to be fetched and then parsed
-    await new Promise(r => setTimeout(r, 1));
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
     expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
-      true
+      true,
     );
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
-      true
+      true,
     );
     expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
 
@@ -1867,7 +1869,7 @@ describe('isolated instances', () => {
     fakeFetchRespondWith(
       JSON.stringify({
         threshold: 90,
-      })
+      }),
     );
 
     const firstSDKInstance = initSDK({
@@ -1885,16 +1887,16 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance).not.to.be.false;
 
     // Need to give time for the remote config to be fetched and then parsed
-    await new Promise(r => setTimeout(r, 1));
-    await new Promise(r => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
+    await new Promise((r) => setTimeout(r, 1));
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
     expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
-      true
+      true,
     );
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
-      true
+      true,
     );
     expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
 

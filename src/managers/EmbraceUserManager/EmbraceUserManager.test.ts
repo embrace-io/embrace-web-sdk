@@ -1,9 +1,10 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
 import {
+  FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-  FailingStorage,
 } from '../../testUtils/index.js';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
@@ -11,7 +12,6 @@ import {
   EMBRACE_USER_STORAGE_KEY_DEPRECATED,
 } from './constants.js';
 import { EmbraceUserManager } from './EmbraceUserManager.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -36,7 +36,7 @@ describe('EmbraceUserManager', () => {
     const manager = new EmbraceUserManager({ diag, storage });
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'No existing user found in storage, creating a new one'
+      'No existing user found in storage, creating a new one',
     );
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
   });
@@ -69,7 +69,7 @@ describe('EmbraceUserManager', () => {
     const manager = new EmbraceUserManager({ diag, storage });
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'Invalid embrace user id, generating a new one'
+      'Invalid embrace user id, generating a new one',
     );
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
   });
@@ -107,13 +107,13 @@ describe('EmbraceUserManager', () => {
   it('should migrate old local storage key', () => {
     storage.setItem(
       EMBRACE_USER_STORAGE_KEY_DEPRECATED,
-      JSON.stringify({ [KEY_ENDUSER_PSEUDO_ID]: VALID_UUID })
+      JSON.stringify({ [KEY_ENDUSER_PSEUDO_ID]: VALID_UUID }),
     );
 
     const manager = new EmbraceUserManager({ diag, storage });
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
     expect(diag.getDebugLogs()[0]).to.equal(
-      'Migrating old user data from storage'
+      'Migrating old user data from storage',
     );
     expect(manager.getEmbraceUserId()).to.equal(VALID_UUID);
     void expect(storage.getItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED)).to.be
@@ -134,7 +134,7 @@ describe('EmbraceUserManager', () => {
 
     manager.setUserId(externalUserId);
     expect(storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY)).to.equal(
-      externalUserId
+      externalUserId,
     );
     expect(manager.getUserId()).to.equal(externalUserId);
   });
@@ -145,7 +145,7 @@ describe('EmbraceUserManager', () => {
 
     manager.setUserId(externalUserId);
     expect(storage.getItem(EMBRACE_EXTERNAL_USER_ID_KEY)).to.equal(
-      externalUserId
+      externalUserId,
     );
 
     manager.clearUserId();

@@ -6,12 +6,15 @@ import type {
   TracerProvider,
 } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
   StartSessionOptions,
 } from '../../api-sessions/index.js';
+import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
@@ -29,6 +32,8 @@ import {
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.js';
+import type { ExtendedSpan } from '../../index.js';
+import { getAppInstanceId } from '../../resources/index.js';
 import type { PerformanceManager } from '../../utils/index.js';
 import {
   generateUUID,
@@ -36,6 +41,13 @@ import {
   getVisibilityState,
   OTelPerformanceManager,
 } from '../../utils/index.js';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
+import { EmbraceExtendedSpan } from '../index.js';
+import {
+  EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+  EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
+  EMBRACE_TAB_STORAGE_KEY,
+} from './constants.js';
 import type {
   EmbraceSpanSessionManagerArgs,
   NavigationSource,
@@ -45,18 +57,6 @@ import type {
   Tab,
   TabActivity,
 } from './types.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import { EmbraceExtendedSpan } from '../index.js';
-import type { ExtendedSpan } from '../../index.js';
-import {
-  EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-  EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-  EMBRACE_TAB_STORAGE_KEY,
-} from './constants.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
-import { getAppInstanceId } from '../../resources/index.js';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _previousSessionId: string | null = null;
@@ -109,7 +109,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._referrer = referrer;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
-      'embrace-web-sdk-sessions'
+      'embrace-web-sdk-sessions',
     );
 
     // Process referrer once at initialization
@@ -144,7 +144,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public addBreadcrumb(name: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.'
+        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.',
       );
       return;
     }
@@ -160,25 +160,25 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       {
         message: limitedBreadcrumb.name,
       },
-      this._perf.getNowMillis()
+      this._perf.getNowMillis(),
     );
   }
 
   public addProperty(
     propertyKey: string,
     value: string,
-    options?: PropertyOptions
+    options?: PropertyOptions,
   ) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to add properties to a session, but there is no session in progress. This is a no-op.'
+        'trying to add properties to a session, but there is no session in progress. This is a no-op.',
       );
       return;
     }
 
     const limitedSessionProperty = this._limitManager.limitSessionProperty(
       propertyKey,
-      value
+      value,
     );
 
     if (limitedSessionProperty === 'dropped') {
@@ -200,7 +200,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public removeProperty(propertyKey: string) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to remove a session property, but there is no session in progress. This is a no-op.'
+        'trying to remove a session property, but there is no session in progress. This is a no-op.',
       );
       return;
     }
@@ -230,7 +230,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
     if (!this._sessionSpan) {
       this._diag.debug(
-        'trying to end a session, but there is no session in progress. This is a no-op.'
+        'trying to end a session, but there is no session in progress. This is a no-op.',
       );
       return;
     }
@@ -269,11 +269,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   // currentSessionAsReadableSpan creates a copy of the current session span with the same attributes
   // that endSessionSpanInternal would add, but does not affect the original session span which remains active.
   public currentSessionAsReadableSpan(
-    reason: ReasonSessionEnded
+    reason: ReasonSessionEnded,
   ): ReadableSpan | null {
     if (!this._sessionSpan || !this._activeSessionStartTime) {
       this._diag.debug(
-        'trying to end a session, but there is no session in progress. This is a no-op.'
+        'trying to end a session, but there is no session in progress. This is a no-op.',
       );
       return null;
     }
@@ -330,7 +330,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       [KEY_EMB_SESSION_NUMBER]: getIncrementedCount(
         this._storage,
         EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-        this._diag
+        this._diag,
       ),
       [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
@@ -354,7 +354,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionSpan = new EmbraceExtendedSpan(
       this._tracer.startSpan('emb-session', {
         attributes,
-      })
+      }),
     );
 
     this._coldStart = false;
@@ -365,7 +365,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       } catch (error) {
         this._diag.warn(
           'Error while executing session started listener',
-          error
+          error,
         );
       }
     }
@@ -374,7 +374,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public incrSessionCountForKey(key: string) {
     if (!this._sessionSpan || !this._activeSessionCounts) {
       this._diag.debug(
-        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.'
+        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.',
       );
       return;
     }
@@ -521,7 +521,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     try {
       this._sessionStorage.setItem(
         EMBRACE_TAB_STORAGE_KEY,
-        JSON.stringify(tab)
+        JSON.stringify(tab),
       );
     } catch (e) {
       this._diag.warn('Failed to store tab data', e);
@@ -548,7 +548,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     try {
       this._storage.setItem(
         EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
-        JSON.stringify(activity)
+        JSON.stringify(activity),
       );
     } catch (error) {
       this._diag.warn('Failed to save tab activity', error);
@@ -580,7 +580,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
       // Check for elements with attributes that open new tabs
       const newTabAnchor = (ev.target as HTMLElement | null)?.closest(
-        'a[target="_blank"], form[target="_blank"], a[rel*="noopener"], a[rel*="noreferrer"]'
+        'a[target="_blank"], form[target="_blank"], a[rel*="noopener"], a[rel*="noreferrer"]',
       );
       if (newTabAnchor) {
         this._storeCurrentTabAsSource();

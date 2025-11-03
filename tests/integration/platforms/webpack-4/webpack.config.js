@@ -12,7 +12,7 @@ module.exports = {
     alias: {
       '@opentelemetry/semantic-conventions/incubating': path.resolve(
         __dirname,
-        './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js'
+        './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js',
       ),
       uuid: path.resolve(__dirname, './node_modules/uuid/dist/index.js'),
     },

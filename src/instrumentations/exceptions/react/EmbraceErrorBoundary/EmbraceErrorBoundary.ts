@@ -1,5 +1,5 @@
-import * as React from 'react';
 import type { PropsWithChildren } from 'react';
+import * as React from 'react';
 import type { LogManager } from '../../../../api-logs/index.js';
 import { log } from '../../../../api-logs/index.js';
 import {

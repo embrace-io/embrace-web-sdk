@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: '24.10.0'
+  NODE_VERSION: "24.10.0"
   LINT_STATUS_FILE: lint.success.txt
   TYPE_CHECK_STATUS_FILE: type_check.success.txt
   TEST_STATUS_FILE: test.success.txt
@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -108,8 +108,8 @@ jobs:
         uses: actions/cache@v4
         id: playwright-cache
         with:
-          path: '~/.cache/ms-playwright'
-          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -176,7 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -220,8 +220,8 @@ jobs:
         uses: actions/cache@v4
         id: playwright-cache
         with:
-          path: '~/.cache/ms-playwright'
-          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -279,7 +279,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     permissions:
       pull-requests: write
     steps:
@@ -325,8 +325,8 @@ jobs:
         uses: actions/cache@v4
         id: playwright-cache
         with:
-          path: '~/.cache/ms-playwright'
-          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -407,7 +407,7 @@ jobs:
 
       - name: Update artifact with performance results
         if: ${{ success() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: performance-results
           path: |
@@ -429,7 +429,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -473,8 +473,8 @@ jobs:
         uses: actions/cache@v4
         id: playwright-cache
         with:
-          path: '~/.cache/ms-playwright'
-          key: '${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}'
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -553,7 +553,7 @@ jobs:
 
       - name: Update artifact with build results
         if: ${{ needs.environment.outputs.name == 'development' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           include-hidden-files: true
           name: build-results
@@ -566,7 +566,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -603,7 +603,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous lint results
         uses: actions/cache@v4
@@ -657,7 +657,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous type check results
         uses: actions/cache@v4
@@ -713,7 +713,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous validate results
         uses: actions/cache@v4
@@ -761,6 +761,11 @@ jobs:
         run: |
           npm run cli:validate
 
+      - name: Validate versions
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run sdk:validate:versions
+
       - name: Build Demo
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
@@ -792,7 +797,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -803,7 +808,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: https://registry.npmjs.org
 
       - name: Install NPM dependencies
         run: |
@@ -832,7 +837,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: ['${{ needs.configure.outputs.NODE_VERSION }}']
+        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -843,7 +848,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: https://registry.npmjs.org
 
       - name: Install NPM dependencies
         run: |
@@ -859,7 +864,7 @@ jobs:
     if: ${{ needs.environment.outputs.name == 'production' }}
     needs: [publish-sdk, publish-cli]
     steps:
-      - name: 'Send to #mission-web Slack channel/workflow'
+      - name: "Send to #mission-web Slack channel/workflow"
         continue-on-error: true
         uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:

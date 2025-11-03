@@ -2,7 +2,7 @@ const MAX_INNER_TEXT = 30;
 
 export const getHTMLElementFriendlyName = (
   element: HTMLElement,
-  innerText: string
+  innerText: string,
 ) => {
   const nodeName = element.nodeName.toLowerCase();
   const truncatedInnerText = innerText.substring(0, MAX_INNER_TEXT);

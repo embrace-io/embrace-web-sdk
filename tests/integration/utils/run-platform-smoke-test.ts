@@ -1,13 +1,13 @@
-import test from 'node:test';
-import { processSondaReport } from './index.js';
 import assert from 'node:assert';
-import { dirname, resolve } from 'node:path';
-import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.js';
-import fs from 'node:fs';
-import { resultsToMarkdownTable } from '../../utils/index.js';
-import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
+import fs from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { resultsToMarkdownTable } from '../../utils/index.js';
+import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.js';
+import { processSondaReport } from './index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
@@ -45,7 +45,7 @@ const runPlatformBuildSmokeTest = async (
     includePlatformSizeTest = true,
     copyOutputToServer = true,
     platformName = platformPath,
-  }: RunPlatformBuildSmokeTestOptions
+  }: RunPlatformBuildSmokeTestOptions,
 ) => {
   await test.describe(`${platformName} Platform Tests`, async () => {
     const results: Record<
@@ -73,13 +73,13 @@ const runPlatformBuildSmokeTest = async (
           if (includePlatformSizeTest) {
             const sondaReportPath = resolve(
               platformPath,
-              `.sonda/${target}/sonda_0.json`
+              `.sonda/${target}/sonda_0.json`,
             );
             const report = processSondaReport(sondaReportPath);
 
             assert.ok(
               report.totalGzipSize < TOTAL_GZIP_SIZE_THRESHOLD_IN_KB,
-              `Gzip size of ${report.totalGzipSize.toFixed(2)} KB for ${target} exceeds threshold of ${TOTAL_GZIP_SIZE_THRESHOLD_IN_KB.toFixed(2)} KB`
+              `Gzip size of ${report.totalGzipSize.toFixed(2)} KB for ${target} exceeds threshold of ${TOTAL_GZIP_SIZE_THRESHOLD_IN_KB.toFixed(2)} KB`,
             );
 
             results[target] = report;
@@ -92,7 +92,7 @@ const runPlatformBuildSmokeTest = async (
             const publicOutputPath = resolve(
               buildOutputPath,
               serverPath,
-              platformName
+              platformName,
             );
 
             fs.mkdirSync(publicOutputPath, { recursive: true });
@@ -144,7 +144,7 @@ const runPlatformBuildSmokeTest = async (
 
       fs.writeFileSync(
         `./build-test-results/${platformName}-tests.md`,
-        `### ${platformName} Platform Tests \n\n${resultsToMarkdownTable(tabledResults)}`
+        `### ${platformName} Platform Tests \n\n${resultsToMarkdownTable(tabledResults)}`,
       );
     });
   });

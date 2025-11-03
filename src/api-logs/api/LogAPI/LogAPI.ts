@@ -1,10 +1,10 @@
-import { ProxyLogManager } from '../../manager/index.js';
 import type {
   LogExceptionOptions,
   LogManager,
   LogMessageOptions,
   LogSeverity,
 } from '../../manager/index.js';
+import { ProxyLogManager } from '../../manager/index.js';
 import type { LogAPIArgs } from './types.js';
 
 export class LogAPI implements LogManager {
@@ -40,7 +40,7 @@ export class LogAPI implements LogManager {
   public message(
     message: string,
     level: LogSeverity,
-    options?: LogMessageOptions
+    options?: LogMessageOptions,
   ) {
     this.getLogManager().message(message, level, options);
   }

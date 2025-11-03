@@ -1,7 +1,7 @@
 import js from '@eslint/js';
+import { globalIgnores } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import { globalIgnores } from 'eslint/config';
 
 export default tseslint.config([
   globalIgnores(['dist']),

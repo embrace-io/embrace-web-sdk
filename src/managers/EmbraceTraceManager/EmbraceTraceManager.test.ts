@@ -1,3 +1,4 @@
+import { context } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
@@ -8,9 +9,8 @@ import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.js';
 import { setupTestTraceExporter } from '../../testUtils/index.js';
-import { EmbraceTraceManager } from './EmbraceTraceManager.js';
-import { context } from '@opentelemetry/api';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.js';
+import { EmbraceTraceManager } from './EmbraceTraceManager.js';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -45,7 +45,7 @@ describe('EmbraceTraceManager', () => {
     expect(perfSpan.name).to.equal('perf-span');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
     expect(hrTimeToMilliseconds(perfSpan.endTime)).to.be.greaterThanOrEqual(
-      hrTimeToMilliseconds(perfSpan.startTime)
+      hrTimeToMilliseconds(perfSpan.startTime),
     );
   });
 
@@ -77,7 +77,7 @@ describe('EmbraceTraceManager', () => {
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
     expect(perfSpan.attributes).to.have.property(
       KEY_EMB_ERROR_CODE,
-      'USER_ABANDON'
+      'USER_ABANDON',
     );
     expect(hrTimeToMilliseconds(perfSpan.endTime)).to.be.equal(1741651200000);
   });
@@ -101,7 +101,7 @@ describe('EmbraceTraceManager', () => {
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
-      finishedParentSpan.spanContext().spanId
+      finishedParentSpan.spanContext().spanId,
     );
     void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
@@ -125,7 +125,7 @@ describe('EmbraceTraceManager', () => {
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
-      finishedParentSpan.spanContext().spanId
+      finishedParentSpan.spanContext().spanId,
     );
     void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
@@ -144,7 +144,7 @@ describe('EmbraceTraceManager', () => {
       {
         parentSpan,
       },
-      parentContext
+      parentContext,
     );
     void expect(childSpan).to.not.be.null;
 
@@ -158,7 +158,7 @@ describe('EmbraceTraceManager', () => {
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
-      finishedParentSpan.spanContext().spanId
+      finishedParentSpan.spanContext().spanId,
     );
     void expect(finishedParentSpan.parentSpanContext?.spanId).to.be.undefined;
   });
@@ -173,7 +173,7 @@ describe('EmbraceTraceManager', () => {
     const retrievedSpan = manager.getSpan(newContext);
     void expect(retrievedSpan).to.not.be.null;
     void expect(retrievedSpan?.spanContext().spanId).to.equal(
-      span.spanContext().spanId
+      span.spanContext().spanId,
     );
   });
 
@@ -188,7 +188,7 @@ describe('EmbraceTraceManager', () => {
     void expect(retrievedSpan).to.not.be.undefined;
     void expect(retrievedSpan).to.be.instanceOf(EmbraceExtendedSpan);
     void expect(retrievedSpan?.spanContext().spanId).to.equal(
-      span.spanContext().spanId
+      span.spanContext().spanId,
     );
   });
 

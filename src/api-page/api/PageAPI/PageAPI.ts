@@ -1,5 +1,5 @@
-import { ProxyPageManager } from '../../manager/index.js';
 import type { PageManager, Route } from '../../manager/index.js';
+import { ProxyPageManager } from '../../manager/index.js';
 import type { PageAPIArgs } from './types.js';
 
 export class PageAPI implements PageManager {

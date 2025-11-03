@@ -23,7 +23,7 @@ export class EmbraceTraceManager implements TraceManager {
   public startSpan(
     name: string,
     options: ExtendedSpanOptions = {},
-    ctx?: Context
+    ctx?: Context,
   ): ExtendedSpan {
     options.attributes = options.attributes ? options.attributes : {};
     options.attributes[KEY_EMB_TYPE] = EMB_TYPES.Perf;
@@ -33,7 +33,7 @@ export class EmbraceTraceManager implements TraceManager {
       : ctx;
 
     return new EmbraceExtendedSpan(
-      this._tracer.startSpan(name, options, activeContext)
+      this._tracer.startSpan(name, options, activeContext),
     );
   }
 

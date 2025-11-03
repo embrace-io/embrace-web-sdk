@@ -17,7 +17,7 @@ export const bulkAddEventListener = ({
   events,
   callback,
 }: BulkAddEventListenerArgs) => {
-  events.forEach(event => {
+  events.forEach((event) => {
     target.addEventListener(event, callback);
   });
 };

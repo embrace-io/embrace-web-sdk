@@ -8,13 +8,13 @@ window.EmbraceWebSdkOnReady.onReady(() => {
   window.EmbraceWebSdkOnReady.onReady(() => {
     console.log('Embrace is ready in the host app');
 
-    sdkControl!.log.message(
+    sdkControl?.log.message(
       'Embrace initialized successfully in the host app',
-      'info'
+      'info',
     );
 
     const onLogClick = () => {
-      sdkControl!.log.message('Button clicked in the host app', 'info');
+      sdkControl?.log.message('Button clicked in the host app', 'info');
     };
 
     const button = document.createElement('button');
@@ -34,7 +34,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     fetchButton.addEventListener('click', () => {
       console.log('Making Fetch call from the host app');
       fetch('https://jsonplaceholder.typicode.com/posts/2')
-        .then(response => response.json())
+        .then((response) => response.json())
         .then(() => {
           console.log('Fetch call from host app successful');
         });

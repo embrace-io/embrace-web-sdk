@@ -72,7 +72,7 @@ describe('webSdkResource', () => {
     const appInstanceId = resource.attributes['emb.app_instance_id'];
     void expect(appInstanceId).to.have.lengthOf(32);
     expect(storage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY)).to.equal(
-      appInstanceId
+      appInstanceId,
     );
   });
 

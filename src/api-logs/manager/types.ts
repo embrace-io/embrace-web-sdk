@@ -16,7 +16,7 @@ export interface LogManager {
   message: (
     message: string,
     level: LogSeverity,
-    options?: LogMessageOptions
+    options?: LogMessageOptions,
   ) => void;
 
   logException: (error: unknown, options?: LogExceptionOptions) => void;

@@ -12,7 +12,7 @@
 - Review existing code patterns before making new files
 - Errors: Catch all, log with diag, never throw to user code
 - Ask to save complex plans in folder context as (MARKDOWN).MD
-- Run before commit: `npm run sdk:tsc:check && npm run sdk:lint:fix && npm run compile && npm run sdk:test`
+- Run before commit: `npm run lint && npm run compile && npm run sdk:test`
 
 ## Commits, Pull Requests, Branches
 

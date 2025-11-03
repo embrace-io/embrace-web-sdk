@@ -92,7 +92,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.endSessionSpanInternal(reason);
     expect(mockDelegate.endSessionSpanInternal).to.have.been.calledOnceWith(
-      reason
+      reason,
     );
   });
   it('should delegate endSessionSpanInternal to the delegate with inactivity reason', () => {
@@ -100,7 +100,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.endSessionSpanInternal(reason);
     expect(mockDelegate.endSessionSpanInternal).to.have.been.calledOnceWith(
-      reason
+      reason,
     );
   });
 
@@ -108,7 +108,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.addBreadcrumb('some breadcrumb');
     expect(mockDelegate.addBreadcrumb).to.have.been.calledOnceWith(
-      'some breadcrumb'
+      'some breadcrumb',
     );
   });
 
@@ -117,7 +117,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.addProperty('some-custom-key', 'some custom value');
     expect(mockDelegate.addProperty).to.have.been.calledOnceWith(
       'some-custom-key',
-      'some custom value'
+      'some custom value',
     );
   });
 
@@ -125,7 +125,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.removeProperty('some-custom-key');
     expect(mockDelegate.removeProperty).to.have.been.calledOnceWith(
-      'some-custom-key'
+      'some-custom-key',
     );
   });
 
@@ -134,7 +134,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.addSessionStartedListener(listener);
     expect(mockDelegate.addSessionStartedListener).to.have.been.calledOnceWith(
-      listener
+      listener,
     );
   });
 
@@ -143,7 +143,7 @@ describe('ProxySpanSessionManager', () => {
     proxySpanSessionManager.setDelegate(mockDelegate);
     proxySpanSessionManager.addSessionEndedListener(listener);
     expect(mockDelegate.addSessionEndedListener).to.have.been.calledOnceWith(
-      listener
+      listener,
     );
   });
 });

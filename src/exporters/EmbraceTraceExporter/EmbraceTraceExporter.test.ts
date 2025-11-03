@@ -50,8 +50,8 @@ describe('EmbraceTraceExporter', () => {
     };
 
     const exporter = new EmbraceTraceExporter(args);
-    await new Promise<void>(resolve => {
-      exporter.export(mockSpans, result => {
+    await new Promise<void>((resolve) => {
+      exporter.export(mockSpans, (result) => {
         expect(result.code).to.equal(ExportResultCode.SUCCESS);
         resolve();
       });
@@ -59,14 +59,14 @@ describe('EmbraceTraceExporter', () => {
     expect(fakeFetchGetMethod()).to.equal('POST');
     const headers = fakeFetchGetRequestHeaders();
     expect((headers as Record<string, string>)['Content-Encoding']).to.equal(
-      'gzip'
+      'gzip',
     );
     expect((headers as Record<string, string>)['Content-Type']).to.equal(
-      'application/json'
+      'application/json',
     );
     expect((headers as Record<string, string>)['X-EM-AID']).to.equal(mockAppID);
     expect((headers as Record<string, string>)['X-EM-DID']).to.equal(
-      mockUserID
+      mockUserID,
     );
     // Chrome, Webkit and Firefox have slightly different encoding processes- Content-Length values. 286 for Chrome, 287 for Firefox and Webkit.
     const chromeContentLength = '294';
@@ -77,7 +77,7 @@ describe('EmbraceTraceExporter', () => {
       firefoxWebkitContentLength,
     ]);
     expect(fakeFetchGetUrl()).to.equal(
-      'https://a-testAppID.data.emb-api.com/v2/spans'
+      'https://a-testAppID.data.emb-api.com/v2/spans',
     );
     // assert that the decompressed and decoded body is the expected one
     const body = fakeFetchGetBody();
@@ -128,7 +128,7 @@ describe('EmbraceTraceExporter', () => {
       ],
     };
     const decompressedStream = new Response(body).body?.pipeThrough(
-      new DecompressionStream('gzip')
+      new DecompressionStream('gzip'),
     );
     // translate from Uint8Array to string
     const text = await new Response(decompressedStream).text();
@@ -148,8 +148,8 @@ describe('EmbraceTraceExporter', () => {
 
     const exporter = new EmbraceTraceExporter(args);
 
-    await new Promise<void>(resolve => {
-      exporter.export(mockSpans, result => {
+    await new Promise<void>((resolve) => {
+      exporter.export(mockSpans, (result) => {
         expect(result.code).to.equal(ExportResultCode.SUCCESS);
         resolve();
       });

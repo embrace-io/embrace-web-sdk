@@ -1,15 +1,15 @@
-import type { RoutesFunctionalComponentReturn } from './types.js';
+import hoistNonReactStatics from 'hoist-non-react-statics';
 import type React from 'react';
 import { createElement } from 'react';
-import hoistNonReactStatics from 'hoist-non-react-statics';
-import { getNavigationInstrumentation } from '../../index.js';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
 import type { Route } from '../../../../../api-page/index.js';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
+import { getNavigationInstrumentation } from '../../index.js';
+import type { RoutesFunctionalComponentReturn } from './types.js';
 
 // Routes can be nested, we need to traverse the routeContext to find the last route
 const getLastRoute = (
   matchedComponent: RoutesFunctionalComponentReturn,
-  lastRoute: Route | null
+  lastRoute: Route | null,
 ): Route | null => {
   if (!matchedComponent.props.match || !matchedComponent.props.match.route) {
     return null;
@@ -33,11 +33,11 @@ const getLastRoute = (
 };
 
 export const withEmbraceRouting = <P extends object>(
-  WrappedComponent: React.FunctionComponent<P>
+  WrappedComponent: React.FunctionComponent<P>,
 ) => {
   const navigationInstrumentation = getNavigationInstrumentation();
   navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.Declarative
+    EMB_NAVIGATION_INSTRUMENTATIONS.Declarative,
   );
 
   const RoutesWithEmbraceRouting: React.FC<P> = (props: P) => {
@@ -53,10 +53,10 @@ export const withEmbraceRouting = <P extends object>(
      * See: https://github.com/remix-run/react-router/blob/main/packages/react-router/lib/hooks.tsx#L553
      */
     const matchedComponent = WrappedComponent(
-      props
+      props,
     ) as unknown as RoutesFunctionalComponentReturn;
 
-    if (matchedComponent.props.match && matchedComponent.props.match.route) {
+    if (matchedComponent.props.match?.route) {
       const lastRoute = getLastRoute(matchedComponent, null);
       if (lastRoute) {
         navigationInstrumentation.setCurrentRoute(lastRoute);

@@ -1,20 +1,20 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import type { SpanSessionManager } from '../../../api-sessions/index.js';
+import { session } from '../../../api-sessions/index.js';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.js';
 import {
   fakeFetchInstall,
   fakeFetchRestore,
   setupTestTraceExporter,
 } from '../../../testUtils/index.js';
 import { EmbraceFetchInstrumentation } from './EmbraceFetchInstrumentation.js';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
-import { session } from '../../../api-sessions/index.js';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import * as sinon from 'sinon';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -71,13 +71,13 @@ describe('EmbraceFetchInstrumentation', () => {
   it('should re-patch `fetch` by default if a previous instrumentation had patched it already', async () => {
     new EmbraceFetchInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('first-instrumentation', true),
     });
 
     new EmbraceFetchInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('second-instrumentation', true),
     });
 
@@ -110,14 +110,14 @@ describe('EmbraceFetchInstrumentation', () => {
   it('should allow not re-patching `fetch` if a previous instrumentation had patched it already', async () => {
     new EmbraceFetchInstrumentation({
       enabled: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('first-instrumentation', true),
     });
 
     new EmbraceFetchInstrumentation({
       enabled: true,
       omitIfAlreadyPatched: true,
-      applyCustomAttributesOnSpan: span =>
+      applyCustomAttributesOnSpan: (span) =>
         span.setAttribute('second-instrumentation', true),
     });
 

@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { ProxyPageManager } from '../../index.js';
 import type { PageManager, Route } from '../../index.js';
+import { ProxyPageManager } from '../../index.js';
 import { PageAPI } from './PageAPI.js';
 
 chai.use(sinonChai);
@@ -43,7 +43,7 @@ describe('PageAPI', () => {
     const pageManager = pageAPI.getPageManager();
     expect(pageManager).to.be.instanceOf(ProxyPageManager);
     expect((pageManager as ProxyPageManager).getDelegate()).to.equal(
-      mockPageManager
+      mockPageManager,
     );
   });
 
@@ -58,7 +58,7 @@ describe('PageAPI', () => {
 
     pageAPI.setCurrentRoute(mockRoute);
     expect(mockPageManager.setCurrentRoute).to.have.been.calledOnceWith(
-      mockRoute
+      mockRoute,
     );
 
     const route = pageAPI.getCurrentRoute();

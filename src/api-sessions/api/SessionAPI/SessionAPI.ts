@@ -1,4 +1,5 @@
 import type { HrTime } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -7,7 +8,6 @@ import type {
 } from '../../manager/index.js';
 import { ProxySpanSessionManager } from '../../manager/index.js';
 import type { SessionAPIArgs } from './types.js';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 
 export class SessionAPI implements SpanSessionManager {
   private static _instance?: SessionAPI;
@@ -42,7 +42,7 @@ export class SessionAPI implements SpanSessionManager {
   public addProperty(
     key: string,
     value: string,
-    options?: PropertyOptions
+    options?: PropertyOptions,
   ): void {
     this.getSpanSessionManager().addProperty(key, value, options);
   }
@@ -60,7 +60,7 @@ export class SessionAPI implements SpanSessionManager {
   }
 
   public currentSessionAsReadableSpan(
-    reason: ReasonSessionEnded
+    reason: ReasonSessionEnded,
   ): ReadableSpan | null {
     return this.getSpanSessionManager().currentSessionAsReadableSpan(reason);
   }

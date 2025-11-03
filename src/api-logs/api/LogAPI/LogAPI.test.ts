@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { ProxyLogManager } from '../../manager/index.js';
 import type { LogManager } from '../../manager/index.js';
+import { ProxyLogManager } from '../../manager/index.js';
 import { LogAPI } from './LogAPI.js';
 
 chai.use(sinonChai);
@@ -52,7 +52,7 @@ describe('LogAPI', () => {
       'info',
       {
         attributes: { key: 'value' },
-      }
+      },
     );
 
     const ts = Date.now();

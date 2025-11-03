@@ -1,11 +1,11 @@
 import type { DiagLogger, Tracer } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
+import type { Resource } from '@opentelemetry/resources';
+import { emptyResource } from '@opentelemetry/resources';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
-import type { SpanSessionManagerInternal } from '../../managers/index.js';
 import { KEY_EMB_MAX_PENDING_SPANS_REACHED } from '../../constants/index.js';
-import { emptyResource } from '@opentelemetry/resources';
-import type { Resource } from '@opentelemetry/resources';
+import type { SpanSessionManagerInternal } from '../../managers/index.js';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
 const MAX_PENDING_SPANS_ITEMS = 10;
@@ -52,7 +52,7 @@ export class EmbraceSpanStorage {
     spanSessionManager,
   }: SpanStorageOptions) {
     this._noExportTracer = new BasicTracerProvider({ resource }).getTracer(
-      'embrace-web-sdk-sessions'
+      'embrace-web-sdk-sessions',
     );
     this._storage = storage;
     this._diag = diagParam;
@@ -66,7 +66,7 @@ export class EmbraceSpanStorage {
   public storePendingSpans(
     sessionId: string,
     sessionSpan: ReadableSpan,
-    pendingSpans: ReadableSpan[]
+    pendingSpans: ReadableSpan[],
   ): void {
     try {
       // If this session was already stored, clear it first:
@@ -74,10 +74,10 @@ export class EmbraceSpanStorage {
 
       if (this._getPendingSpansKeys().length >= MAX_PENDING_SPANS_ITEMS) {
         this._spanSessionManager.incrSessionCountForKey(
-          KEY_EMB_MAX_PENDING_SPANS_REACHED
+          KEY_EMB_MAX_PENDING_SPANS_REACHED,
         );
         this._diag.warn(
-          'Not storing pending spans as the max number of items was reached'
+          'Not storing pending spans as the max number of items was reached',
         );
         return;
       }
@@ -87,8 +87,8 @@ export class EmbraceSpanStorage {
         key,
         JSON.stringify([sessionSpan, ...pendingSpans], (key, value) =>
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-          key.startsWith('_') ? undefined : value
-        )
+          key.startsWith('_') ? undefined : value,
+        ),
       );
 
       this._diag.debug(`Stored pending span: ${key}`);
@@ -100,7 +100,7 @@ export class EmbraceSpanStorage {
   public clearStoredSpans(sessionId: string): void {
     try {
       const prefix = `${PENDING_SPANS_STORAGE_KEY_PREFIX}${sessionId}_`;
-      this._getPendingSpansKeys().forEach(key => {
+      this._getPendingSpansKeys().forEach((key) => {
         if (key.startsWith(prefix)) {
           this._storage.removeItem(key);
         }
@@ -115,7 +115,7 @@ export class EmbraceSpanStorage {
       () => {
         this.checkAndExportExpiredSpans();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     ); // Check every 5 minutes
   }
 
@@ -134,14 +134,14 @@ export class EmbraceSpanStorage {
       }
 
       const currentTime = Date.now();
-      keys.forEach(key => {
+      keys.forEach((key) => {
         const parts = key.split('_');
         const storedTime = parseInt(parts[parts.length - 1], 10);
 
-        if (isNaN(storedTime)) {
+        if (Number.isNaN(storedTime)) {
           this._diag.error(
             'Found invalid timestamp in stored span:',
-            storedTime
+            storedTime,
           );
           this._storage.removeItem(key);
         }
@@ -186,7 +186,7 @@ export class EmbraceSpanStorage {
     const keys: string[] = [];
     for (let i = 0; i < this._storage.length; i++) {
       const key = this._storage.key(i);
-      if (key && key.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
+      if (key?.startsWith(PENDING_SPANS_STORAGE_KEY_PREFIX)) {
         keys.push(key);
       }
     }
