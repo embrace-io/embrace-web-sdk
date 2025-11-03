@@ -235,14 +235,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    this._sessionSpan.setAttributes(this._endSessionSpanAttributes(reason));
-    this._sessionSpan.end();
-    this._sessionSpan = null;
-    this._activeSessionStartTime = null;
-    this._previousSessionId = this._activeSessionId;
-    this._activeSessionId = null;
-    this._activeSessionCounts = null;
-
     for (const listener of this._sessionEndedListeners) {
       try {
         listener();
@@ -250,6 +242,14 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         this._diag.warn('Error while executing session ended listener', error);
       }
     }
+
+    this._sessionSpan.setAttributes(this._endSessionSpanAttributes(reason));
+    this._sessionSpan.end();
+    this._sessionSpan = null;
+    this._activeSessionStartTime = null;
+    this._previousSessionId = this._activeSessionId;
+    this._activeSessionId = null;
+    this._activeSessionCounts = null;
 
     // For the limit manager to add a session ended listener it would need a reference to this
     // session manager which would create a circular dependency

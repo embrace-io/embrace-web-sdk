@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 // Easier to parse incoming requests with a known type, only used for tests
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
-import type { ReceivedSpans } from '../index.js';
+import type { ReceivedSpans } from '../tests/integration/types.js';
+import { logInfo, logReceivedSessionSpan } from './utils.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -98,7 +99,10 @@ const server = createServer((req, res) => {
         }
 
         receivedSpans[sessionId] = true;
-        console.log('Stored a new session ID:', sessionId);
+
+        if (request.resourceSpans && sessionSpan) {
+          logReceivedSessionSpan(request.resourceSpans, sessionSpan, sessionId);
+        }
 
         res.writeHead(200);
         res.end('OK');
@@ -134,5 +138,5 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT.toString()}`);
+  logInfo(`Server is running on http://localhost:${PORT.toString()}`);
 });

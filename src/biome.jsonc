@@ -1,0 +1,19 @@
+{
+  "$schema": "../node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": "//",
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noNodejsModules": "error"
+      },
+      "suspicious": {
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["error", "warn", "info"]
+          }
+        }
+      }
+    }
+  }
+}

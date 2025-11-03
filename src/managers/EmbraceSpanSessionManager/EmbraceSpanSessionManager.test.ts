@@ -271,22 +271,28 @@ describe('EmbraceSpanSessionManager', () => {
   });
 
   it('should call the session ended listener when ending a session', () => {
-    const listener = sinon.stub();
+    let listenerSessionId: string | null = null;
+
+    const listener = () => {
+      listenerSessionId = manager.getSessionId();
+    };
     const manager = new EmbraceSpanSessionManager({ limitManager });
     const removeListener = manager.addSessionEndedListener(listener);
 
-    void expect(listener.calledOnce).to.be.false;
+    void expect(listenerSessionId).to.be.null;
 
     manager.startSessionSpan();
+    let currentSessionId = manager.getSessionId();
     manager.endSessionSpan();
 
-    void expect(listener.calledOnce).to.be.true;
+    void expect(listenerSessionId).to.be.eq(currentSessionId);
 
     removeListener();
     manager.startSessionSpan();
+    currentSessionId = manager.getSessionId();
     manager.endSessionSpan();
 
-    void expect(listener.calledOnce).to.be.true;
+    void expect(listenerSessionId).not.to.be.eq(currentSessionId);
   });
 
   it('should limit the amount of breadcrumbs per session', () => {
