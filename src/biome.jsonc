@@ -8,7 +8,10 @@
       },
       "suspicious": {
         "noConsole": {
-          "level": "off"
+          "level": "error",
+          "options": {
+            "allow": ["error", "warn", "info"]
+          }
         }
       }
     }
