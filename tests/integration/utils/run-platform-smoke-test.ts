@@ -88,7 +88,7 @@ const runPlatformBuildSmokeTest = async (
           if (copyOutputToServer) {
             // Copy the build output to server/public directory
             const buildOutputPath = resolve(platformPath, 'dist');
-            const serverPath = resolve(__dirname, '../server/public');
+            const serverPath = resolve(__dirname, '../../../server/public');
             const publicOutputPath = resolve(
               buildOutputPath,
               serverPath,

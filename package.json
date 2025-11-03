@@ -39,6 +39,7 @@
     "sdk:validate:versions": "node scripts/validate-versions.js",
     "sdk:validate:versions:fix": "node scripts/validate-versions.js --fix",
     "cli:validate": "npm run validate --prefix cli",
+    "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
     "playwright": "playwright",
     "prepare": "if [ -d .git ]; then husky; fi"
