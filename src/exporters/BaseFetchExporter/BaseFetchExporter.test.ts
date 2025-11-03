@@ -24,19 +24,16 @@ describe('BaseFetchExporter', () => {
     const items: unknown[] = [];
     const resultCallback = sinon.stub();
     exporter.export(items, resultCallback);
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(delegate.export).to.have.been.calledOnceWith(items, resultCallback);
   });
 
   it('should call delegate.forceFlush and return a promise', async () => {
     await exporter.forceFlush();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     void expect(delegate.forceFlush).to.have.been.calledOnce;
   });
 
   it('should call delegate.shutdown and return a promise', async () => {
     await exporter.shutdown();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     void expect(delegate.shutdown).to.have.been.calledOnce;
   });
 });

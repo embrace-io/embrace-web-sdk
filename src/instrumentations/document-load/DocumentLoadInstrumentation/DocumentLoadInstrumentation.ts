@@ -240,7 +240,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * @param performanceName name of performance entry for end time
    * @param entries
    */
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private _endSpan(
     span: Span | undefined,
     performanceName: string,
@@ -439,7 +438,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
     const transferSize =
       typeof resource.transferSize === 'number' ? resource.transferSize : 0;
@@ -455,7 +453,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     return transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
   }
 
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
     const fetchStart =
       typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
@@ -499,7 +496,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    *
    * Spec: https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
    */
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   private _isCacheValidated(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {

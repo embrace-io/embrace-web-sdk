@@ -181,14 +181,12 @@ const getAttributeValue = (
 const isResourceSpan = (
   entity: IResourceSpans | IResourceLogs,
 ): entity is IResourceSpans =>
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   (entity as IResourceSpans).scopeSpans !== undefined;
 
 const isScopeSpan = (entity: IScopeSpans | IScopeLogs): entity is IScopeSpans =>
   (entity as IScopeSpans).spans !== undefined;
 
 const isSpan = (entity: ISpan | ILogRecord): entity is ISpan =>
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   (entity as ISpan).spanId !== undefined;
 
 const expect = testWithMockApi.expect.extend({

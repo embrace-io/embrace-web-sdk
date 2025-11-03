@@ -168,7 +168,6 @@ export abstract class InstrumentationAbstract<
     | InstrumentationModuleDefinition[]
     | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/class-methods-use-this
   protected _updateMetricInstruments(): void {
     return;
   }
