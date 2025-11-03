@@ -230,7 +230,7 @@ describe('NavigationInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(2);
 
     // First span is the session span
-    const span = finishedSpans[1];
+    const span = finishedSpans[0];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
@@ -272,7 +272,7 @@ describe('NavigationInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(4);
 
     // First route span
-    let span = finishedSpans[1];
+    let span = finishedSpans[0];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
@@ -282,7 +282,7 @@ describe('NavigationInstrumentation', () => {
     });
 
     // Second route span
-    span = finishedSpans[3];
+    span = finishedSpans[2];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
       'emb.instrumentation': 'manual',
