@@ -46,8 +46,7 @@
         "useLiteralKeys": "off"
       },
       "correctness": {
-        "recommended": true,
-        "noNodejsModules": "error"
+        "recommended": true
         // TBD on whether to use ts or js extensions
         // "useImportExtensions": "error"
         // https://github.com/biomejs/biome/issues/7734
@@ -76,13 +75,7 @@
         }
       },
       "suspicious": {
-        "recommended": true,
-        "noConsole": {
-          "level": "error",
-          "options": {
-            "allow": ["error", "warn", "info"]
-          }
-        }
+        "recommended": true
       }
     }
   }

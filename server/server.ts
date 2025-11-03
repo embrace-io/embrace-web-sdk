@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/correctness/noNodejsModules: this actually runs on node-js */
 import { readFile } from 'node:fs';
 import type { IncomingMessage } from 'node:http';
 import { createServer } from 'node:http';

@@ -1,7 +1,3 @@
-// Easier to parse incoming requests with a known type, only used for tests
-/** biome-ignore-all lint/suspicious/noConsole: We want to log session information here to debug what's coming from the SDK */
-// eslint-disable-next-line regex/invalid
-
 import type { IKeyValue } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types';
 import type {
   IResourceSpans,
