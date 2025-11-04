@@ -11,8 +11,9 @@
 **ALWAYS**:
 - Review existing code patterns before making new files
 - Errors: Catch all, log with diag, never throw to user code
-- Ask to save complex plans in folder context as (MARKDOWN).MD
-- Run before commit: `npm run lint && npm run compile && npm run sdk:test`
+- Ask to save complex plans in folder context as (TOPIC).MD
+- After commit, if PR exists, update body with new details
+- Run before commit: `npm run lint && npm run compile`
 
 ## Commits, Pull Requests, Branches
 
@@ -31,10 +32,10 @@
 
 **PRs**: Title + 3-section body (no Claude credits, keep human co-authors)
 ```markdown
-## Why
+## What problem is this solving?
 [One sentence problem statement + benefit. Explain impact, not restate changes.]
 
-## Changes
+## Short description of changes
 - [Specific changes as bullets. Be specific about refactors. Quantify when relevant.]
 
 ## Testing
@@ -45,7 +46,6 @@
 - Keep it scannable - short sentences, clear bullets
 - Quantify when relevant ("5 attributes", "3 files")
 - No marketing language or superlatives
-- After commit, if PR exists, update body with details
 
 ## Architecture
 
@@ -64,9 +64,9 @@ src/exporters/ → EmbraceTraceExporter, EmbraceLogExporter
 ```typescript
 _flushExpiredEntries()  // not _processData()
 _findSourceTab()    // not _handleTabLogic()
-  ```s
+```
 
-**Comments**: Explain WHY, not what
+**Code Comments**: Explain WHY, not what
 ```typescript
 // BAD: Check if timestamp > 20000
 // GOOD: 20s window catches legitimate parents while avoiding stale matches
