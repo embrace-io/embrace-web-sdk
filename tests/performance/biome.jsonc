@@ -4,13 +4,8 @@
   "linter": {
     "rules": {
       "correctness": {
-        "noNodejsModules": "off",
+        // functions defined in html are not detected as used
         "noUnusedVariables": {
-          "level": "off"
-        }
-      },
-      "suspicious": {
-        "noConsole": {
           "level": "off"
         }
       }
