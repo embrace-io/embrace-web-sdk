@@ -14,6 +14,7 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import zlib from 'node:zlib';
 import bcd from '@mdn/browser-compat-data' with { type: 'json' };
 import * as acorn from 'acorn';
 import * as walk from 'acorn-walk';
@@ -578,12 +579,7 @@ function checkBundleSize() {
   }
 
   const rawSize = fs.statSync(bundleFile).size;
-  const gzipSize = parseInt(
-    execSync(`gzip -c ${bundleFile} | wc -c`, { encoding: 'utf-8' })
-      .trim()
-      .replace(/\s/g, ''),
-    10,
-  );
+  const gzipSize = zlib.gzipSync(fs.readFileSync(bundleFile)).length;
 
   const gzipSizeKB = gzipSize / 1024;
 
