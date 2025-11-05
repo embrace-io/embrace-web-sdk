@@ -10,7 +10,7 @@
  * 5. Module integrity (ESM/CJS separation)
  */
 
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -83,32 +83,43 @@ function checkSyntaxCompliance() {
     {
       name: 'IIFE bundle',
       modules: false,
-      pattern: `"${bundleFile}"`,
+      pattern: bundleFile,
       esVersion: 'es6',
     },
     {
       name: 'ESM modules',
       modules: true,
-      pattern: `"${DIST_DIR}/**/*.js"`,
+      pattern: `${DIST_DIR}/**/*.js`,
       exclude: `${bundleFile}*`,
       esVersion: 'es2022',
     },
     {
       name: 'CJS modules',
       modules: true,
-      pattern: `"${DIST_DIR}/**/*.cjs"`,
+      pattern: `${DIST_DIR}/**/*.cjs`,
       esVersion: 'es2022',
     },
   ];
 
   const failures = checks.filter((check) => {
     try {
-      const excludeFlag = check.exclude ? `--not ${check.exclude}` : '';
-      const moduleFlag = check.modules ? '--module' : '';
-      execSync(
-        `npx es-check ${check.esVersion} ${check.pattern} ${excludeFlag} ${moduleFlag}`,
-        { stdio: 'pipe', encoding: 'utf-8' },
-      );
+      // Build args array to avoid shell injection
+      const args = ['es-check', check.esVersion, check.pattern];
+
+      if (check.exclude) {
+        args.push('--not', check.exclude);
+      }
+      if (check.modules) {
+        args.push('--module');
+      }
+
+      const result = spawnSync('npx', args, {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      });
+
+      if (result.status !== 0) throw new Error(result.stderr || result.stdout);
+
       log(`  ✓ ${check.name}`, COLORS.green);
       return false;
     } catch (error) {
@@ -573,27 +584,29 @@ function checkBundleSize() {
 
   const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
 
-  if (!fs.existsSync(bundleFile)) {
-    log('✗ Bundle not found', COLORS.red);
+  try {
+    // Read file once for both size calculations
+    const content = fs.readFileSync(bundleFile);
+    const rawSize = content.length;
+    const gzipSize = zlib.gzipSync(content).length;
+
+    const gzipSizeKB = gzipSize / 1024;
+
+    log(`  Raw size: ${(rawSize / 1024).toFixed(2)} KB`, COLORS.dim);
+    log(`  Gzipped: ${gzipSizeKB.toFixed(2)} KB`, COLORS.green);
+
+    if (gzipSizeKB > MAX_BUNDLE_SIZE_KB) {
+      log(
+        `  ⚠ Bundle is large (${gzipSizeKB.toFixed(2)} KB gzipped)`,
+        COLORS.yellow + COLORS.bold,
+      );
+    }
+
+    return true;
+  } catch (error) {
+    log(`✗ Bundle not found or unreadable: ${error.message}`, COLORS.red);
     return false;
   }
-
-  const rawSize = fs.statSync(bundleFile).size;
-  const gzipSize = zlib.gzipSync(fs.readFileSync(bundleFile)).length;
-
-  const gzipSizeKB = gzipSize / 1024;
-
-  log(`  Raw size: ${(rawSize / 1024).toFixed(2)} KB`, COLORS.dim);
-  log(`  Gzipped: ${gzipSizeKB.toFixed(2)} KB`, COLORS.green);
-
-  if (gzipSizeKB > MAX_BUNDLE_SIZE_KB) {
-    log(
-      `  ⚠ Bundle is large (${gzipSizeKB.toFixed(2)} KB gzipped)`,
-      COLORS.yellow + COLORS.bold,
-    );
-  }
-
-  return true;
 }
 
 // Validates ESM/CJS don't mix syntax (require() in .js or import in .cjs causes runtime errors)
@@ -603,27 +616,47 @@ function validateModuleSystemSeparation() {
   const checks = [
     {
       name: 'require() in ESM files',
-      cmd: `grep -r "require(" ${DIST_DIR} --include="*.js" --exclude="*.cjs"`,
-      expectFail: true,
+      pattern: 'require(',
+      include: '*.js',
+      exclude: '*.cjs',
     },
     {
       name: 'import in CJS files',
-      cmd: `grep -r "import" ${DIST_DIR} --include="*.cjs"`,
-      expectFail: true,
+      pattern: 'import',
+      include: '*.cjs',
     },
   ];
 
   for (const check of checks) {
     try {
-      const output = execSync(check.cmd, { stdio: 'pipe', encoding: 'utf-8' });
-      // Command succeeded - found matches
-      log(`  ✗ Found ${check.name}`, COLORS.red);
-      if (output) {
-        log(`    ${output.trim().slice(0, 200)}`, COLORS.dim);
+      // Build args array to avoid shell injection
+      const args = [
+        '-r',
+        check.pattern,
+        DIST_DIR,
+        `--include=${check.include}`,
+      ];
+      if (check.exclude) {
+        args.push(`--exclude=${check.exclude}`);
       }
-      return false;
+
+      const result = spawnSync('grep', args, {
+        encoding: 'utf-8',
+        stdio: 'pipe',
+      });
+
+      if (result.status === 0) {
+        // Command succeeded - found matches
+        log(`  ✗ Found ${check.name}`, COLORS.red);
+        if (result.stdout) {
+          log(`    ${result.stdout.trim().slice(0, 200)}`, COLORS.dim);
+        }
+        return false;
+      }
+      // Command failed - no matches found (expected)
+      log(`  ✓ No ${check.name}`, COLORS.green);
     } catch {
-      // Command failed - no matches found (expected for expectFail checks)
+      // Command failed - no matches found (expected)
       log(`  ✓ No ${check.name}`, COLORS.green);
     }
   }
