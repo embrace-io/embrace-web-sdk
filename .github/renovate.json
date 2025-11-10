@@ -26,14 +26,16 @@
     {
       "description": "Build tools - auto-merge patches only",
       "matchPackageNames": [
-        "@swc/core",
         "@biomejs/biome",
         "esbuild",
-        "tsdown",
+        "globals",
+        "rimraf",
+        "sonda",
         "terser",
-        "vite",
+        "tsdown",
         "tsx",
-        "typescript"
+        "typescript",
+        "vite"
       ],
       "groupName": "build-tools",
       "automerge": true,
