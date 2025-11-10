@@ -35,7 +35,7 @@
         "tsx",
         "typescript"
       ],
-      "groupName": "build-tooling",
+      "groupName": "build-tools",
       "automerge": true,
       "automergeType": "pr",
       "matchUpdateTypes": ["minor", "patch"]
@@ -49,7 +49,10 @@
         "playwright",
         "test-runner"
       ],
-      "groupName": "test-tools"
+      "groupName": "test-tools",
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
     },
     {
       "description": "GitHub Actions - auto-merge minor/patch",
