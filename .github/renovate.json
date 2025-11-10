@@ -65,6 +65,16 @@
       "description": "npm - pinned to 11.6.0 due to Node.js bug",
       "matchPackageNames": ["npm"],
       "enabled": false
+    },
+    {
+      "description": "Node.js - pinned due to Node.js bug",
+      "matchPackageNames": ["node"],
+      "enabled": false
+    },
+    {
+      "description": "@types/node - pinned due to Node.js bug",
+      "matchPackageNames": ["@types/node"],
+      "enabled": false
     }
   ]
 }
