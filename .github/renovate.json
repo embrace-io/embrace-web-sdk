@@ -1,0 +1,62 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 3am on Monday"],
+  "prConcurrentLimit": 5,
+  "dependencyDashboard": true,
+  "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "OpenTelemetry packages - group and wait for stability",
+      "matchPackagePatterns": ["^@opentelemetry/"],
+      "groupName": "OpenTelemetry",
+      "stabilityDays": 3
+    },
+    {
+      "description": "Production dependencies - manual review required",
+      "matchDepTypes": ["dependencies"],
+      "excludePackagePatterns": ["^@opentelemetry/"],
+      "groupName": "production-deps",
+      "stabilityDays": 3
+    },
+    {
+      "description": "Build tools - auto-merge patches only",
+      "matchPackageNames": [
+        "@swc/core",
+        "@biomejs/biome",
+        "esbuild",
+        "tsdown",
+        "terser",
+        "vite",
+        "tsx",
+        "typescript"
+      ],
+      "groupName": "build-tooling",
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Testing tools - manual review",
+      "matchPackagePatterns": [
+        "chai",
+        "mocha",
+        "sinon",
+        "playwright",
+        "test-runner"
+      ],
+      "groupName": "test-tools"
+    },
+    {
+      "description": "GitHub Actions - auto-merge minor/patch",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    }
+  ]
+}
