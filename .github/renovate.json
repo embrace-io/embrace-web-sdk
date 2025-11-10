@@ -75,6 +75,12 @@
       "description": "@types/node - pinned due to Node.js bug",
       "matchPackageNames": ["@types/node"],
       "enabled": false
+    },
+    {
+      "description": "react-router-dom - prevent major updates",
+      "matchPackagePatterns": ["^react-router-dom"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
     }
   ]
 }
