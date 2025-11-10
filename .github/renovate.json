@@ -60,6 +60,11 @@
       "automerge": true,
       "automergeType": "pr",
       "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "npm - pinned to 11.6.0 due to Node.js bug",
+      "matchPackageNames": ["npm"],
+      "enabled": false
     }
   ]
 }
