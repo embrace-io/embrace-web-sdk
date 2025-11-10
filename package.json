@@ -42,8 +42,7 @@
     "cli:validate": "npm run validate --prefix cli",
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
-    "playwright": "playwright",
-    "prepare": "if [ -d .git ]; then husky; fi"
+    "playwright": "playwright"
   },
   "files": [
     "dist",
@@ -137,8 +136,8 @@
     "esbuild": "0.25.12",
     "get-port": "7.1.0",
     "globals": "16.4.0",
-    "husky": "9.1.7",
     "jest-diff": "30.2.0",
+    "lefthook": "^2.0.2",
     "lighthouse": "13.0.1",
     "playwright": "1.56.1",
     "publint": "0.3.15",
@@ -167,7 +166,7 @@
     "tests/performance"
   ],
   "engines": {
-    "node": ">=20",
-    "npm": "11.6.1"
+    "node": "24.9.0",
+    "npm": "11.6.0"
   }
 }

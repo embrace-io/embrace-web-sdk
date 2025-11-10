@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    lint:
+      run: npm run sdk:lint:fix -- --diagnostic-level=error
+      stage_fixed: true
+    typecheck:
+      run: npm run sdk:tsc:check
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no -- commitlint --edit {1}
