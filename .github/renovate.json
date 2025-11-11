@@ -24,7 +24,7 @@
       "stabilityDays": 3
     },
     {
-      "description": "Build tools - auto-merge patches only",
+      "description": "Build tools - auto-merge minor and patch",
       "matchPackageNames": [
         "@biomejs/biome",
         "esbuild",
@@ -43,7 +43,7 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      "description": "Testing tools - manual review",
+      "description": "Testing tools - auto-merge minor and patch",
       "matchPackagePatterns": [
         "chai",
         "mocha",
@@ -64,7 +64,7 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      "description": "npm - pinned to 11.6.0 due to Node.js bug",
+      "description": "npm, node, @types/node - pinned due to Node.js bug",
       "matchPackageNames": ["npm", "node", "@types/node"],
       "enabled": false
     },
