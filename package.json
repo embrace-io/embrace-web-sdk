@@ -42,8 +42,7 @@
     "cli:validate": "npm run validate --prefix cli",
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
-    "playwright": "playwright",
-    "prepare": "if [ -d .git ]; then husky; fi"
+    "playwright": "playwright"
   },
   "files": [
     "dist",
@@ -111,13 +110,13 @@
     "web-vitals": "5.1.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.2",
+    "@biomejs/biome": "2.3.3",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
     "@mdn/browser-compat-data": "^7.1.18",
     "@playwright/test": "1.56.1",
     "@remcovaes/web-test-runner-vite-plugin": "1.4.0",
-    "@swc/core": "1.13.21",
+    "@swc/core": "1.15.0",
     "@types/chai": "5.2.3",
     "@types/chrome-remote-interface": "0.31.14",
     "@types/hoist-non-react-statics": "3.3.7",
@@ -136,22 +135,22 @@
     "es-check": "9.4.4",
     "esbuild": "0.25.12",
     "get-port": "7.1.0",
-    "globals": "16.4.0",
-    "husky": "9.1.7",
+    "globals": "16.5.0",
     "jest-diff": "30.2.0",
+    "lefthook": "^2.0.2",
     "lighthouse": "13.0.1",
     "playwright": "1.56.1",
     "publint": "0.3.15",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "rimraf": "6.0.1",
+    "rimraf": "6.1.0",
     "sinon-chai": "4.0.1",
-    "sonda": "0.9.0",
-    "terser": "5.44.0",
-    "tsdown": "0.15.10",
+    "sonda": "0.10.0",
+    "terser": "5.44.1",
+    "tsdown": "0.16.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "vite": "7.1.12"
+    "vite": "7.2.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
@@ -167,7 +166,7 @@
     "tests/performance"
   ],
   "engines": {
-    "node": ">=20",
-    "npm": "11.6.1"
+    "node": "24.9.0",
+    "npm": "11.6.0"
   }
 }

@@ -11,7 +11,6 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: "24.10.0"
   LINT_STATUS_FILE: lint.success.txt
   TYPE_CHECK_STATUS_FILE: type_check.success.txt
   TEST_STATUS_FILE: test.success.txt
@@ -42,29 +41,14 @@ jobs:
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
-  configure:
-    runs-on: ubuntu-latest
-    outputs:
-      NODE_VERSION: ${{ steps.node_version.outputs.NODE_VERSION }}
-    steps:
-      - name: Pick NodeJS version
-        id: node_version
-        run: |
-          echo 'NODE_VERSION=${{ env.NODE_VERSION }}' >> $GITHUB_OUTPUT
-
   test:
     needs:
-      - configure
       - environment
     runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -86,11 +70,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install npm dependencies
@@ -109,7 +93,7 @@ jobs:
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
+          key: "${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -119,7 +103,7 @@ jobs:
           # date cache, but still let Playwright decide if it needs to download
           # new binaries or not.
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+            ${{ runner.os }}-playwright-
 
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
@@ -167,16 +151,11 @@ jobs:
 
   test-multiple-browsers:
     needs:
-      - configure
       - environment
     runs-on: ubuntu-latest
     # staging and production run test-multiple-browsers, and development just runs regular test
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -198,11 +177,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install npm dependencies
@@ -221,7 +200,7 @@ jobs:
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
+          key: "${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -231,7 +210,7 @@ jobs:
           # date cache, but still let Playwright decide if it needs to download
           # new binaries or not.
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+            ${{ runner.os }}-playwright-
 
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
@@ -270,16 +249,11 @@ jobs:
       MAIN_THREAD_TIME_THRESHOLD_IN_MS: ${{ vars.MAIN_THREAD_TIME_THRESHOLD_IN_MS }}
       SCRIPT_EVAL_THRESHOLD_IN_MS: ${{ vars.SCRIPT_EVAL_THRESHOLD_IN_MS }}
     needs:
-      - configure
       - environment
     runs-on: ubuntu-latest
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     permissions:
       pull-requests: write
     steps:
@@ -303,11 +277,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install npm dependencies
@@ -326,7 +300,7 @@ jobs:
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
+          key: "${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -336,7 +310,7 @@ jobs:
           # date cache, but still let Playwright decide if it needs to download
           # new binaries or not.
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+            ${{ runner.os }}-playwright-
 
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
@@ -418,7 +392,6 @@ jobs:
 
   test-integration:
     needs:
-      - configure
       - environment
     runs-on: ubuntu-latest
     permissions:
@@ -426,10 +399,6 @@ jobs:
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous test results
         uses: actions/cache@v4
@@ -451,11 +420,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install npm dependencies
@@ -474,7 +443,7 @@ jobs:
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-${{ matrix.node-version }}-playwright-${{ steps.playwright-version.outputs.version }}"
+          key: "${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}"
           # As a fallback, if the Playwright version has changed, try use the
           # most recently cached version. There's a good chance that at least one
           # of the browser binary versions haven't been updated, so Playwright can
@@ -484,7 +453,7 @@ jobs:
           # date cache, but still let Playwright decide if it needs to download
           # new binaries or not.
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.node-version }}-playwright-
+            ${{ runner.os }}-playwright-
 
       # If the Playwright browser binaries weren't restored, we tell
       # playwright to install everything for us.
@@ -560,13 +529,8 @@ jobs:
           path: tests/integration/platforms/*/.sonda/**/*.html
 
   commitlint:
-    needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -574,7 +538,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
       - name: Install npm dependencies
         run: |
@@ -597,13 +561,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   lint:
-    needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous lint results
         uses: actions/cache@v4
@@ -628,7 +587,8 @@ jobs:
       - uses: actions/setup-node@v6
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
+          cache: npm
 
       - name: Install NPM dependencies
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
@@ -651,13 +611,8 @@ jobs:
           rm -f ${{ env.LINT_STATUS_FILE }}
 
   type-check:
-    needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous type check results
         uses: actions/cache@v4
@@ -682,7 +637,8 @@ jobs:
       - uses: actions/setup-node@v6
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
+          cache: npm
 
       - name: Install NPM dependencies
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
@@ -705,15 +661,10 @@ jobs:
           rm -f ${{ env.TYPE_CHECK_STATUS_FILE }}
 
   validate-build:
-    needs: configure
     timeout-minutes: 5
     runs-on: ubuntu-latest
     env:
       VALIDATE_STATUS_FILE: validate.success.txt
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - name: Restore previous validate results
         uses: actions/cache@v4
@@ -738,7 +689,7 @@ jobs:
       - uses: actions/setup-node@v6
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install NPM dependencies
@@ -783,7 +734,6 @@ jobs:
 
   publish-sdk:
     needs:
-      - configure
       - environment
       - test-multiple-browsers
       - lint
@@ -794,19 +744,15 @@ jobs:
       id-token: write
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
           registry-url: https://registry.npmjs.org
 
@@ -819,7 +765,6 @@ jobs:
           npm publish --provenance --access public
   publish-cli:
     needs:
-      - configure
       - environment
       - test-multiple-browsers
       - lint
@@ -834,19 +779,15 @@ jobs:
       id-token: write
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ["${{ needs.configure.outputs.NODE_VERSION }}"]
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
           registry-url: https://registry.npmjs.org
 
