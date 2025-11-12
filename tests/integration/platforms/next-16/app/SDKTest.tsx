@@ -25,10 +25,26 @@ const SDKTest = () => {
   };
 
   return (
-    <section>
-      <button onClick={handleEndSession}>End Session</button>
-      <button onClick={handleSendLog}>Send Log</button>
-      <button onClick={handleNavigateToAnotherPage}>
+    <section className="flex flex-col gap-4 p-8">
+      <button
+        type="button"
+        onClick={handleEndSession}
+        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-colors duration-200"
+      >
+        End Session
+      </button>
+      <button
+        type="button"
+        onClick={handleSendLog}
+        className="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-colors duration-200"
+      >
+        Send Log
+      </button>
+      <button
+        type="button"
+        onClick={handleNavigateToAnotherPage}
+        className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-colors duration-200"
+      >
         Navigate to Another Page
       </button>
     </section>
