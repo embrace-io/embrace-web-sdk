@@ -69,7 +69,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   return jsLines.join('\n');
 };
 
-const extractSourceMapUrl = (jsContent: string): string | null => {
+export const extractSourceMapUrl = (jsContent: string): string | null => {
   const lines = jsContent.split('\n');
   const sourceMapCommentIndex = lines.findIndex(
     (line) =>
@@ -86,7 +86,7 @@ const extractSourceMapUrl = (jsContent: string): string | null => {
   return match ? match[1].trim() : null;
 };
 
-const findJSFilesRecursively = (
+export const findJSFilesRecursively = (
   dirPath: string,
   visitedPaths: Set<string> = new Set(),
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
