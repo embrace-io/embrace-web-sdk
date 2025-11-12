@@ -1,14 +1,11 @@
-import * as assert from 'node:assert';
-import * as fs from 'node:fs';
-import * as os from 'node:os';
-import * as path from 'node:path';
+import assert from 'node:assert';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 // Import the function we're testing
-import {
-  extractSourceMapUrl,
-  findJSFilesRecursively,
-} from './processSourceFiles.js';
+import { findJSFilesRecursively } from './processSourceFiles.js';
 
 describe('processSourceFiles - Security Tests', () => {
   let testDir: string;

@@ -69,7 +69,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   return jsLines.join('\n');
 };
 
-export const extractSourceMapUrl = (jsContent: string): string | null => {
+const extractSourceMapUrl = (jsContent: string): string | null => {
   const lines = jsContent.split('\n');
   const sourceMapCommentIndex = lines.findIndex(
     (line) =>
