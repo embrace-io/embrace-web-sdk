@@ -69,13 +69,30 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   return jsLines.join('\n');
 };
 
+const extractSourceMapUrl = (jsContent: string): string | null => {
+  const lines = jsContent.split('\n');
+  const sourceMapCommentIndex = lines.findIndex(
+    (line) =>
+      line.startsWith('//# sourceMappingURL=') ||
+      line.startsWith('//@ sourceMappingURL='),
+  );
+
+  if (sourceMapCommentIndex === -1) {
+    return null;
+  }
+
+  const line = lines[sourceMapCommentIndex];
+  const match = line.match(/sourceMappingURL=(.+)$/);
+  return match ? match[1].trim() : null;
+};
+
 const findJSFilesRecursively = (
   dirPath: string,
   visitedPaths: Set<string> = new Set(),
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
   const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
 
-  // Get real path to handle symlinks
+  // Get real path to handle symlinks and normalize to absolute path
   const realPath = fs.realpathSync(dirPath);
 
   // Check for circular symlinks
@@ -85,26 +102,54 @@ const findJSFilesRecursively = (
   }
   visitedPaths.add(realPath);
 
-  const files = fs.readdirSync(dirPath);
+  const files = fs.readdirSync(realPath);
   const jsFiles = files.filter((file) => file.endsWith('.js'));
 
   // Process JS files in current directory
   for (const jsFile of jsFiles) {
-    const mapFile = `${jsFile}.map`;
-    const jsFilePath = path.join(dirPath, jsFile);
-    const mapFilePath = path.join(dirPath, mapFile);
+    const jsFilePath = path.join(realPath, jsFile);
 
-    // Check if corresponding .js.map file exists
-    if (files.includes(mapFile)) {
+    // Read the JS file to extract the sourceMappingURL
+    try {
+      const jsContent = fs.readFileSync(jsFilePath, 'utf-8');
+      const sourceMapUrl = extractSourceMapUrl(jsContent);
+
+      if (!sourceMapUrl) {
+        console.warn(`Skipping ${jsFile} - no sourceMappingURL comment found`);
+        continue;
+      }
+
+      // Handle relative paths in sourceMappingURL
+      const mapFilePath = path.resolve(realPath, sourceMapUrl);
+
+      // Check if the referenced source map file exists
+      if (!fs.existsSync(mapFilePath)) {
+        console.warn(
+          `Skipping ${jsFile} - source map file not found at ${mapFilePath}`,
+        );
+        continue;
+      }
+
+      // Security: Validate that the resolved path is within the current directory
+      // This prevents path traversal attacks from malicious sourceMappingURL values
+      const mapFileRealPath = fs.realpathSync(mapFilePath);
+      const mapFileDir = path.dirname(mapFileRealPath);
+      if (mapFileDir !== realPath) {
+        console.warn(
+          `Skipping ${jsFile} - source map path '${sourceMapUrl}' resolves outside the current directory`,
+        );
+        continue;
+      }
+
       results.push({ jsFilePath, mapFilePath });
-    } else {
-      console.warn(`Skipping ${jsFile} - corresponding .js.map file not found`);
+    } catch (err) {
+      console.warn(`Error reading ${jsFile}:`, err);
     }
   }
 
   // Recursively process subdirectories
   for (const file of files) {
-    const fullPath = path.join(dirPath, file);
+    const fullPath = path.join(realPath, file);
 
     try {
       const stats = fs.statSync(fullPath);
