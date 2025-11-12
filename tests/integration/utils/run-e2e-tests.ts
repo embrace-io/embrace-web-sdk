@@ -330,6 +330,37 @@ const runE2ETests = ({
       },
     );
 
+    testE2E(
+      'it should handle instrumenting a fetch that responds with 204 and a body',
+      async ({
+        page,
+        waitForOTelRequest,
+        withSimulatedResponse,
+        navigateAndWaitUntilReady,
+        requests,
+        browserName,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await withSimulatedResponse({
+          body: 'something',
+          status: 204,
+        });
+
+        await page
+          .getByRole('button', {
+            name: 'Make Fetch Request',
+          })
+          .click();
+        await page.getByRole('button', { name: 'Send Log' }).click();
+        await waitForOTelRequest();
+
+        testE2E.expect(requests).toHaveLength(1);
+        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          `${browserName}-${codifiedName}-handle-204-with-body.json`,
+        );
+      },
+    );
+
     testE2E.skip(
       '[REQUIRES MANUAL TESTING] it should end the session and send it to the API if the browser closes',
       async () => {

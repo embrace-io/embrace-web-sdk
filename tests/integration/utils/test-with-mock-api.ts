@@ -34,11 +34,17 @@ const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
 };
 const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
 const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
+const SIMULATED_REQUEST_REGEX = /simulated/;
 
 type EmbraceDataRequest = {
   url: string;
   headers: Record<string, string>;
   data: Record<string, unknown>;
+};
+
+type SimulatedResponse = {
+  body: string;
+  status: number;
 };
 
 type TestWithMockApi = {
@@ -47,6 +53,7 @@ type TestWithMockApi = {
   waitForOTelRequest: () => Promise<void>;
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
+  withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -150,6 +157,15 @@ const testWithMockApi = base.extend<TestWithMockApi>({
             contentType: 'application/json',
             body: JSON.stringify(remoteConfig || DEFAULT_REMOTE_CONFIG),
           });
+        });
+      }),
+    { scope: 'test' },
+  ],
+  withSimulatedResponse: [
+    async ({ page }, use) =>
+      use(async (simulatedResponse: SimulatedResponse) => {
+        await page.route(SIMULATED_REQUEST_REGEX, async (route) => {
+          await route.fulfill(simulatedResponse);
         });
       }),
     { scope: 'test' },

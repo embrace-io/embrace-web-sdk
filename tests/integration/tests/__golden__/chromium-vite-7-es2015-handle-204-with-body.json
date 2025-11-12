@@ -1,0 +1,146 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "DC34B9FF4CC2486F917A17DBD724206F"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1762983355133699951",
+              "observedTimeUnixNano": "1762983355133000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at ye.message (http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:21158)\n    at Ys.message (http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:2704)\n    at v.message (http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:3121)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:74490\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:958\n    at new Promise (<anonymous>)\n    at P (http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:778)\n    at t (http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:1:74463)\n    at Dv (http://localhost:3001/public/vite-7/es2015/assets/react-CUDmY1xk.js:8:127161)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-DvVoReaQ.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/vendor-DvVoReaQ.js:4:318\":\"4771c5f84ef249ff8b89846ca92d7542\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-CUDmY1xk.js:12:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/react-CUDmY1xk.js:12:318\":\"2d6eddc7339d4b45af88a8cf6660ebff\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DYFYsjCk.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/opentelemetry-DYFYsjCk.js:4:318\":\"9ec16d188a374e01b2ae96bbd52f2302\",\"Error\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:4:169\\n    at http://localhost:3001/public/vite-7/es2015/assets/index-BOUtVv_3.js:4:318\":\"0146b4affcbe4ef48a90ff2ab7a6efbe\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "90A609B4BF274F45860F6BADC44AC5DE"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "86764D317046443F98373929400F39DD"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/vite-7/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

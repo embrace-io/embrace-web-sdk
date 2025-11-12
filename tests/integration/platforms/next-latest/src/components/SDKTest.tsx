@@ -24,6 +24,12 @@ const SDKTest = () => {
     window.location.href = 'about:blank';
   };
 
+  const handleMakeFetchRequest = () => {
+    void fetch('/simulated', {
+      method: 'GET',
+    });
+  };
+
   return (
     <section>
       <button onClick={handleEndSession}>End Session</button>
@@ -31,6 +37,7 @@ const SDKTest = () => {
       <button onClick={handleNavigateToAnotherPage}>
         Navigate to Another Page
       </button>
+      <button onClick={handleMakeFetchRequest}>Make Fetch Request</button>
     </section>
   );
 };
