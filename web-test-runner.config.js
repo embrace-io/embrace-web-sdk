@@ -27,20 +27,9 @@ const filterBrowserLogs = ({ args, type }) => {
  */
 export default {
   nodeResolve: true,
-  files: ['src/**/*.test.ts'],
+  files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   plugins: [
     vitePlugin({
-      optimizeDeps: {
-        // Vite dependency optimization can cause flakiness in CI test runs, turn it off except for the specific modules
-        // where we need to convert from cjs to esm
-        noDiscovery: true,
-        include: [
-          'hoist-non-react-statics',
-          'react',
-          '@opentelemetry/otlp-transformer',
-          '@opentelemetry/instrumentation-fetch',
-        ],
-      },
       server: {
         host: '0.0.0.0',
         port: 5173,

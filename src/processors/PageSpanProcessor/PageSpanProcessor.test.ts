@@ -65,6 +65,30 @@ describe('PageSpanProcessor', () => {
     void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
   });
 
+  it('should not change page attributes to surface spans', () => {
+    pageManager.setCurrentRoute(mockRoute);
+
+    const span = tracer.startSpan('surface-span', {
+      attributes: {
+        'emb.type': 'ux.surface',
+        [KEY_EMB_PAGE_ID]: 'some-other-page-id',
+        [KEY_EMB_PAGE_PATH]: '/some/other/path',
+      },
+    });
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const readableSpan = finishedSpans[0];
+
+    void expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.be.equal(
+      'some-other-page-id',
+    );
+    void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.equal(
+      '/some/other/path',
+    );
+  });
+
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new PageSpanProcessor({
       pageManager: new EmbracePageManager(),
