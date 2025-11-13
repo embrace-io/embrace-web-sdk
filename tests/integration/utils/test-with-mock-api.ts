@@ -73,6 +73,11 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.tab_id',
   'emb.parent_tab_id',
   'emb.experience_id',
+  'emb.web_vital.attribution.elementRenderDelay',
+  'emb.web_vital.attribution.timeToFirstByte',
+  'emb.web_vital.delta',
+  'emb.web_vital.id',
+  'emb.web_vital.value',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({

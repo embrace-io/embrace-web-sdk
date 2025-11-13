@@ -1,0 +1,544 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "1EE63E40D6B64B16BA719E324B6F45D5"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-sessions"
+          },
+          "spans": [
+            {
+              "traceId": "06976374d789287f9fcb68fb63c28ea5",
+              "spanId": "89bf0dc9f21cadb3",
+              "name": "emb-session",
+              "kind": 1,
+              "startTimeUnixNano": "1762984857429000000",
+              "endTimeUnixNano": "1762984857939000000",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.session"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "32133FE34101406E9E7FB7204332F1A7"
+                  }
+                },
+                {
+                  "key": "emb.cold_start",
+                  "value": {
+                    "boolValue": true
+                  }
+                },
+                {
+                  "key": "emb.session_number",
+                  "value": {
+                    "intValue": 1
+                  }
+                },
+                {
+                  "key": "emb.experience_id",
+                  "value": {
+                    "stringValue": "D54DA47D71E6428D92BD174EA88B7837"
+                  }
+                },
+                {
+                  "key": "emb.tab_id",
+                  "value": {
+                    "stringValue": "1EE63E40D6B64B16BA719E324B6F45D5"
+                  }
+                },
+                {
+                  "key": "emb.navigation_source",
+                  "value": {
+                    "stringValue": "direct"
+                  }
+                },
+                {
+                  "key": "emb.session_start_type",
+                  "value": {
+                    "stringValue": "init"
+                  }
+                },
+                {
+                  "key": "emb.session_end_type",
+                  "value": {
+                    "stringValue": "manual"
+                  }
+                },
+                {
+                  "key": "emb.sdk_startup_duration",
+                  "value": {
+                    "intValue": 13
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [
+                {
+                  "attributes": [
+                    {
+                      "key": "emb.type",
+                      "value": {
+                        "stringValue": "ux.tap"
+                      }
+                    },
+                    {
+                      "key": "view.name",
+                      "value": {
+                        "stringValue": "<button>Make Fetch Request</button>"
+                      }
+                    },
+                    {
+                      "key": "tap.coords",
+                      "value": {
+                        "stringValue": "364,89"
+                      }
+                    }
+                  ],
+                  "name": "click",
+                  "timeUnixNano": "2547332736280000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [
+                    {
+                      "key": "emb.type",
+                      "value": {
+                        "stringValue": "ux.tap"
+                      }
+                    },
+                    {
+                      "key": "view.name",
+                      "value": {
+                        "stringValue": "<button>Send Log</button>"
+                      }
+                    },
+                    {
+                      "key": "tap.coords",
+                      "value": {
+                        "stringValue": "120,89"
+                      }
+                    }
+                  ],
+                  "name": "click",
+                  "timeUnixNano": "2547332736431000000",
+                  "droppedAttributesCount": 0
+                }
+              ],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "DocumentLoadInstrumentation",
+            "version": "1.0.0"
+          },
+          "spans": [
+            {
+              "traceId": "c862322f0caea835a599ebec7ea258b9",
+              "spanId": "57e17d7b20f79eac",
+              "parentSpanId": "20e4b97814a15aed",
+              "name": "documentFetch",
+              "kind": 1,
+              "startTimeUnixNano": "1762984857398000000",
+              "endTimeUnixNano": "1762984857400000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "32133FE34101406E9E7FB7204332F1A7"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/webpack-5/esnext/index.html"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": 208
+                  }
+                },
+                {
+                  "key": "http.response_content_length_uncompressed",
+                  "value": {
+                    "intValue": 199
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [
+                {
+                  "attributes": [],
+                  "name": "fetchStart",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domainLookupStart",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domainLookupEnd",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "connectStart",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "secureConnectionStart",
+                  "timeUnixNano": "1762984857395000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "connectEnd",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "requestStart",
+                  "timeUnixNano": "1762984857399000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "responseStart",
+                  "timeUnixNano": "1762984857400000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "responseEnd",
+                  "timeUnixNano": "1762984857400000000",
+                  "droppedAttributesCount": 0
+                }
+              ],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            },
+            {
+              "traceId": "c862322f0caea835a599ebec7ea258b9",
+              "spanId": "26101438e23d7129",
+              "parentSpanId": "20e4b97814a15aed",
+              "name": "resourceFetch",
+              "kind": 1,
+              "startTimeUnixNano": "1762984857402000000",
+              "endTimeUnixNano": "1762984857404000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "32133FE34101406E9E7FB7204332F1A7"
+                  }
+                },
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.resource_fetch"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js"
+                  }
+                },
+                {
+                  "key": "http.response_content_length",
+                  "value": {
+                    "intValue": 395046
+                  }
+                },
+                {
+                  "key": "http.response_content_length_uncompressed",
+                  "value": {
+                    "intValue": 395034
+                  }
+                },
+                {
+                  "key": "http.request.initiator_type",
+                  "value": {
+                    "stringValue": "script"
+                  }
+                },
+                {
+                  "key": "http.response.body.size",
+                  "value": {
+                    "intValue": 395046
+                  }
+                },
+                {
+                  "key": "http.response.size",
+                  "value": {
+                    "intValue": 395346
+                  }
+                },
+                {
+                  "key": "http.response.decoded_body_size",
+                  "value": {
+                    "intValue": 395034
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [
+                {
+                  "attributes": [],
+                  "name": "fetchStart",
+                  "timeUnixNano": "1762984857402000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domainLookupStart",
+                  "timeUnixNano": "1762984857402000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domainLookupEnd",
+                  "timeUnixNano": "1762984857402000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "connectStart",
+                  "timeUnixNano": "1762984857402000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "connectEnd",
+                  "timeUnixNano": "1762984857402000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "requestStart",
+                  "timeUnixNano": "1762984857403000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "responseStart",
+                  "timeUnixNano": "1762984857404000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "responseEnd",
+                  "timeUnixNano": "1762984857404000000",
+                  "droppedAttributesCount": 0
+                }
+              ],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            },
+            {
+              "traceId": "c862322f0caea835a599ebec7ea258b9",
+              "spanId": "20e4b97814a15aed",
+              "name": "documentLoad",
+              "kind": 1,
+              "startTimeUnixNano": "1762984857398000000",
+              "endTimeUnixNano": "1762984857433000000",
+              "attributes": [
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "32133FE34101406E9E7FB7204332F1A7"
+                  }
+                },
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.document_load"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/webpack-5/esnext/index.html"
+                  }
+                },
+                {
+                  "key": "user_agent.original",
+                  "value": {
+                    "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [
+                {
+                  "attributes": [],
+                  "name": "fetchStart",
+                  "timeUnixNano": "1762984857398000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domInteractive",
+                  "timeUnixNano": "1762984857403000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domContentLoadedEventStart",
+                  "timeUnixNano": "1762984857433000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domContentLoadedEventEnd",
+                  "timeUnixNano": "1762984857433000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "domComplete",
+                  "timeUnixNano": "1762984857433000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "loadEventStart",
+                  "timeUnixNano": "1762984857433000000",
+                  "droppedAttributesCount": 0
+                },
+                {
+                  "attributes": [],
+                  "name": "loadEventEnd",
+                  "timeUnixNano": "1762984857433000000",
+                  "droppedAttributesCount": 0
+                }
+              ],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

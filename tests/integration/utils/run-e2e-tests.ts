@@ -355,8 +355,25 @@ const runE2ETests = ({
         await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
+        // The request should contain just a single log from clicking 'Send Log' and not any exception generated
+        // from the fetch request
         extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-handle-204-with-body.json`,
+          `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
+        );
+
+        await page.getByRole('button', { name: 'End Session' }).click();
+        await waitForOTelRequest();
+
+        if (requests.length === 1) {
+          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
+          // yet populated
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        testE2E.expect(requests).toHaveLength(2);
+        // Should contain a span capturing the fetch request
+        extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
+          `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
         );
       },
     );
