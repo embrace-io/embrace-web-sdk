@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import { flushSync } from 'react-dom';
-import type { PageManager } from '../../../../../api-page';
-import { UUID_PATTERN } from '../../../../../testUtils/constants';
-import { waitFor } from '../../../../../testUtils/react/reactTestUtils';
+import type { PageManager } from '../../api-page';
+import { UUID_PATTERN } from '../constants';
+import { waitFor } from './reactTestUtils';
 
 const { expect } = chai;
 

@@ -18,8 +18,12 @@ import {
 import { PageSpanProcessor } from '../../../../../processors';
 import { setupTestTraceExporter } from '../../../../../testUtils';
 import { render } from '../../../../../testUtils/react/reactTestUtils';
-import { runReactRouterTest } from '../testUtils/sharedTests';
-import { About, Home, Product } from '../testUtils/testComponents';
+import { runReactRouterTest } from '../../../../../testUtils/react/sharedTests';
+import {
+  About,
+  Home,
+  Product,
+} from '../../../../../testUtils/react/testComponents';
 import { withEmbraceRouting } from './withEmbraceRouting';
 
 const { expect } = chai;
