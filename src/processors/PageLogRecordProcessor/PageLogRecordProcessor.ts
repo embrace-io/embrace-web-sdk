@@ -16,6 +16,14 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
   }
 
   public onEmit(logRecord: SdkLogRecord): void {
+    if (
+      logRecord.attributes[KEY_EMB_PAGE_PATH] ||
+      logRecord.attributes[KEY_EMB_PAGE_ID]
+    ) {
+      // If the log already has page attributes, do not override them
+      return;
+    }
+
     const currentRoute = this._pageManager.getCurrentRoute();
 
     if (currentRoute) {

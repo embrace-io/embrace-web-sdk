@@ -65,12 +65,11 @@ describe('PageSpanProcessor', () => {
     void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
   });
 
-  it('should not change page attributes to surface spans', () => {
+  it('should not override page attributes', () => {
     pageManager.setCurrentRoute(mockRoute);
 
-    const span = tracer.startSpan('surface-span', {
+    const span = tracer.startSpan('span-with-properties', {
       attributes: {
-        'emb.type': 'ux.surface',
         [KEY_EMB_PAGE_ID]: 'some-other-page-id',
         [KEY_EMB_PAGE_PATH]: '/some/other/path',
       },

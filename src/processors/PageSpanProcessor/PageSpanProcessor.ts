@@ -1,11 +1,6 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { PageManager } from '../../api-page/index.js';
-import {
-  EMB_TYPES,
-  KEY_EMB_PAGE_ID,
-  KEY_EMB_PAGE_PATH,
-  KEY_EMB_TYPE,
-} from '../../constants/index.js';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
 import type { PageSpanProcessorArgs } from './types.js';
 
 export class PageSpanProcessor implements SpanProcessor {
@@ -21,8 +16,11 @@ export class PageSpanProcessor implements SpanProcessor {
 
   // Attach page attributes at span end to capture the page where the span completed
   public onEnd(span: ReadableSpan): void {
-    if (span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Surface) {
-      // Don't override page attributes for surface spans
+    if (
+      span.attributes[KEY_EMB_PAGE_PATH] ||
+      span.attributes[KEY_EMB_PAGE_ID]
+    ) {
+      // If the span already has page attributes, do not override them
       return;
     }
 
