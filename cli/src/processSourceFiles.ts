@@ -77,11 +77,14 @@ const extractSourceMapUrl = (jsContent: string): string | null => {
 export const findJSFilesRecursively = (
   dirPath: string,
   visitedPaths: Set<string> = new Set(),
+  rootPath?: string,
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
   const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
 
   // Get real path to handle symlinks and normalize to absolute path
   const realPath = fs.realpathSync(dirPath);
+  // Track the original root directory for security checks
+  const searchRoot = rootPath ?? realPath;
 
   // Check for circular symlinks
   if (visitedPaths.has(realPath)) {
@@ -130,18 +133,25 @@ export const findJSFilesRecursively = (
         continue;
       }
 
-      // Security: Validate that the resolved path is within the current directory
+      // Security: Validate that the resolved path is within the search root directory
       // This prevents path traversal attacks from malicious sourceMappingURL values
       const mapFileRealPath = fs.realpathSync(mapFilePath);
-      const mapFileDir = path.dirname(mapFileRealPath);
-      if (mapFileDir !== realPath) {
+      if (
+        !mapFileRealPath.startsWith(searchRoot + path.sep) &&
+        mapFileRealPath !== searchRoot
+      ) {
         throw new Error(
-          `Security error: Source map '${sourceMapUrl}' in ${jsFile} resolves outside the current directory (${mapFileRealPath}). This is not allowed to prevent path traversal attacks.`,
+          `Security error: Source map '${sourceMapUrl}' in ${jsFile} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
         );
       }
 
       results.push({ jsFilePath, mapFilePath });
     } catch (err) {
+      // Rethrow security errors - these should fail the entire process
+      if (err instanceof Error && err.message.startsWith('Security error:')) {
+        throw err;
+      }
+      // For other errors, just warn and continue
       console.warn(`Error reading ${jsFile}:`, err);
     }
   }
@@ -153,7 +163,9 @@ export const findJSFilesRecursively = (
     try {
       const stats = fs.statSync(fullPath);
       if (stats.isDirectory()) {
-        results.push(...findJSFilesRecursively(fullPath, visitedPaths));
+        results.push(
+          ...findJSFilesRecursively(fullPath, visitedPaths, searchRoot),
+        );
       }
     } catch (err) {
       console.warn(`Error reading ${fullPath}:`, err);
