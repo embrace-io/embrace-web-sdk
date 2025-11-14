@@ -44,7 +44,7 @@ const EMBRACE_SDK_PATH_REGEX = /^\.\.\/\.\.\/\.\.\/\.\.\/(?!\.\.\.)(.+)$/;
 /**
  * Processes a Sonda report to calculate the total uncompressed and gzip sizes of resources in kb.
  */
-const processSondaReport = (sondaReportPath: string) => {
+export const processSondaReport = (sondaReportPath: string) => {
   const reportPath = resolve(__dirname, sondaReportPath);
   const raw = readFileSync(reportPath, 'utf-8');
   const sondaReport: SondaReport = JSON.parse(raw) as SondaReport;
@@ -70,5 +70,3 @@ const processSondaReport = (sondaReportPath: string) => {
     totalGzipSize: totalGzipSize / 1024, // Convert to KB
   };
 };
-
-export default processSondaReport;
