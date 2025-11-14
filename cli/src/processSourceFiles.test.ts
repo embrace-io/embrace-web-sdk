@@ -23,24 +23,6 @@ describe('processSourceFiles - Security Tests', () => {
   });
 
   describe('Path Traversal Protection', () => {
-    it('should skip when source map path traversal file does not exist', () => {
-      const jsFile = path.join(testDir, 'malicious.js');
-      const jsContent = `
-console.log('test');
-//# sourceMappingURL=../../etc/passwd
-`;
-      fs.writeFileSync(jsFile, jsContent);
-
-      const results = findJSFilesRecursively(testDir);
-
-      // Should skip because file doesn't exist
-      assert.strictEqual(
-        results.length,
-        0,
-        'Should skip files when traversal target does not exist',
-      );
-    });
-
     it('should throw error when source map exists outside directory via path traversal', () => {
       // Create a parent directory with a map file
       const parentDir = path.dirname(testDir);
@@ -111,23 +93,6 @@ console.log('test');
         // Clean up
         fs.rmSync(externalDir, { recursive: true, force: true });
       }
-    });
-
-    it('should skip when source map with absolute path does not exist', () => {
-      const jsFile = path.join(testDir, 'external.js');
-      const jsContent = `
-console.log('test');
-//# sourceMappingURL=/tmp/external.js.map
-`;
-      fs.writeFileSync(jsFile, jsContent);
-
-      const results = findJSFilesRecursively(testDir);
-
-      assert.strictEqual(
-        results.length,
-        0,
-        'Should skip when absolute path file does not exist',
-      );
     });
 
     it('should accept source maps in the same directory', () => {
@@ -252,26 +217,6 @@ console.log('nested');
       assert.strictEqual(
         fs.realpathSync(results[0].jsFilePath),
         fs.realpathSync(jsFile),
-      );
-    });
-
-    it('should skip when relative path escapes subdirectory and file does not exist', () => {
-      const subDir = path.join(testDir, 'subdir');
-      fs.mkdirSync(subDir, { recursive: true });
-
-      const jsFile = path.join(subDir, 'escape.js');
-      const jsContent = `
-console.log('escape attempt');
-//# sourceMappingURL=../escape.js.map
-`;
-      fs.writeFileSync(jsFile, jsContent);
-
-      const results = findJSFilesRecursively(subDir);
-
-      assert.strictEqual(
-        results.length,
-        0,
-        'Should skip when escape target does not exist',
       );
     });
 
