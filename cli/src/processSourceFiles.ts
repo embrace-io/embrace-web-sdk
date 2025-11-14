@@ -135,10 +135,9 @@ export const findJSFilesRecursively = (
       const mapFileRealPath = fs.realpathSync(mapFilePath);
       const mapFileDir = path.dirname(mapFileRealPath);
       if (mapFileDir !== realPath) {
-        console.warn(
-          `Skipping ${jsFile} - source map path '${sourceMapUrl}' resolves outside the current directory`,
+        throw new Error(
+          `Security error: Source map '${sourceMapUrl}' in ${jsFile} resolves outside the current directory (${mapFileRealPath}). This is not allowed to prevent path traversal attacks.`,
         );
-        continue;
       }
 
       results.push({ jsFilePath, mapFilePath });
