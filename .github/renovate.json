@@ -1,0 +1,78 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 3am on Monday"],
+  "prConcurrentLimit": 5,
+  "dependencyDashboard": true,
+  "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 3am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "OpenTelemetry packages - group and wait for stability",
+      "matchPackagePatterns": ["^@opentelemetry/"],
+      "groupName": "OpenTelemetry",
+      "stabilityDays": 3
+    },
+    {
+      "description": "Production dependencies - manual review required",
+      "matchDepTypes": ["dependencies"],
+      "excludePackagePatterns": ["^@opentelemetry/"],
+      "groupName": "production-deps",
+      "stabilityDays": 3
+    },
+    {
+      "description": "Build tools - auto-merge minor and patch",
+      "matchPackageNames": [
+        "@biomejs/biome",
+        "esbuild",
+        "globals",
+        "rimraf",
+        "sonda",
+        "terser",
+        "tsdown",
+        "tsx",
+        "typescript",
+        "vite"
+      ],
+      "groupName": "build-tools",
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Testing tools - auto-merge minor and patch",
+      "matchPackagePatterns": [
+        "chai",
+        "mocha",
+        "sinon",
+        "playwright",
+        "test-runner"
+      ],
+      "groupName": "test-tools",
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "GitHub Actions - auto-merge minor/patch",
+      "matchManagers": ["github-actions"],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "npm, node, @types/node - pinned due to Node.js bug",
+      "matchPackageNames": ["npm", "node", "@types/node"],
+      "enabled": false
+    },
+    {
+      "description": "react-router-dom - prevent major updates",
+      "matchPackagePatterns": ["^react-router-dom"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
