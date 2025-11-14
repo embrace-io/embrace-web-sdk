@@ -37,9 +37,9 @@ function startServerPlugin(): Plugin {
         detached: true,
       });
 
-      console.log('Debug collector started at http://localhost:3000');
+      console.log('Debug collector started at http://localhost:3001');
       console.log('To send telemetry to the debug collector, set:');
-      console.log('  VITE_DATA_URL=http://localhost:3000');
+      console.log('  VITE_DATA_URL=http://localhost:3001');
       console.log('in your .env file or environment variables.');
 
       // Handle cleanup when Vite closes

@@ -23,8 +23,10 @@ const SDKTest = () => {
   };
 
   const handleMakeFetchRequest = () => {
-    void fetch('/simulated', {
+    fetch('/simulated', {
       method: 'GET',
+    }).then(() => {
+      console.log('fetch completed');
     });
   };
 

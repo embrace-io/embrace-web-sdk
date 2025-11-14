@@ -8,6 +8,7 @@ const EXPECTED_SPAN_ENDED_TEXT =
 
 type E2ETestFixture = {
   getCurrentSessionId: () => Promise<string>;
+  waitUntilSpanLogged: () => Promise<void>;
   navigateAndWaitUntilReady: (
     url: string,
     numberOfExpectedSpans: number,
@@ -30,6 +31,33 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       return sessionId;
     });
   },
+
+  waitUntilSpanLogged: async ({ page }, use) => {
+    await use(async () => {
+      let spanLogged = false;
+      page.on('console', (msg) => {
+        if (msg.text().includes(EXPECTED_SPAN_ENDED_TEXT)) {
+          spanLogged = true;
+        }
+      });
+
+      // Set a 5 seconds timeout for the span to be logged
+      const timeout = setTimeout(() => {
+        throw new Error('Span was not logged within 5 seconds');
+      }, 5000);
+
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (spanLogged) {
+            clearInterval(interval);
+            clearTimeout(timeout);
+            resolve(null);
+          }
+        }, 100);
+      });
+    });
+  },
+
   navigateAndWaitUntilReady: async ({ page }, use) => {
     await use(async (url: string, numberOfExpectedSpans: number) => {
       let autoInstrumentedSpansCount = 0;
@@ -337,6 +365,7 @@ const runE2ETests = ({
         waitForOTelRequest,
         withSimulatedResponse,
         navigateAndWaitUntilReady,
+        waitUntilSpanLogged,
         requests,
         browserName,
       }) => {
@@ -345,12 +374,15 @@ const runE2ETests = ({
           body: 'something',
           status: 204,
         });
-
         await page
           .getByRole('button', {
             name: 'Make Fetch Request',
           })
           .click();
+
+        // Wait for the network span to be logged for the fetch request
+        await waitUntilSpanLogged();
+
         await page.getByRole('button', { name: 'Send Log' }).click();
         await waitForOTelRequest();
 
