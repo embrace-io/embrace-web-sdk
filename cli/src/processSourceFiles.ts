@@ -261,7 +261,7 @@ export const processSourceFiles = async ({
         );
 
         if (newJsContent === jsContent && newMapContent === mapContent) {
-          console.debug(`Template App version not found in ${jsFilePath}`);
+          console.warn(`Template App version not found in ${jsFilePath}`);
         } else {
           appVersionReplaced = true;
         }
