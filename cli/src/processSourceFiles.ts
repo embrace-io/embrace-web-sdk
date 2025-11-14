@@ -50,10 +50,8 @@ const addHyphensToUuid = (uuidStr: string): string => {
 
 const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   const jsLines = sourceFile.split('\n');
-  const sourceMapCommentIndex = jsLines.findIndex(
-    (line) =>
-      line.startsWith('//# sourceMappingURL=') ||
-      line.startsWith('//@ sourceMappingURL='),
+  const sourceMapCommentIndex = jsLines.findIndex((line) =>
+    line.startsWith('//# sourceMappingURL='),
   );
 
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
@@ -70,8 +68,9 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
 };
 
 const extractSourceMapUrl = (jsContent: string): string | null => {
-  const match = jsContent.match(/^\/\/[@#] sourceMappingURL=(.+)$/m);
-  return match ? match[1].trim() : null;
+  const match = jsContent.match(/^\/\/# sourceMappingURL=(.+)$/m);
+  const url = match?.[1]?.trim();
+  return url || null;
 };
 
 export const findJSFilesRecursively = (

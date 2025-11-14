@@ -162,28 +162,6 @@ console.log('test');
         'Should handle empty sourceMappingURL',
       );
     });
-
-    it('should support @sourceMappingURL syntax', () => {
-      const jsFile = path.join(testDir, 'legacy-syntax.js');
-      const mapFile = path.join(testDir, 'legacy-syntax.js.map');
-      const jsContent = `
-console.log('test');
-//@ sourceMappingURL=legacy-syntax.js.map
-`;
-      const mapContent = JSON.stringify({
-        version: 3,
-        sources: ['legacy-syntax.ts'],
-        names: [],
-        mappings: '',
-      });
-
-      fs.writeFileSync(jsFile, jsContent);
-      fs.writeFileSync(mapFile, mapContent);
-
-      const results = findJSFilesRecursively(testDir);
-
-      assert.strictEqual(results.length, 1, 'Should support legacy @ syntax');
-    });
   });
 
   describe('Subdirectory Handling', () => {
