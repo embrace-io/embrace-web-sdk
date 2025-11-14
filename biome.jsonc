@@ -76,6 +76,10 @@
       },
       "suspicious": {
         "recommended": true
+      },
+      "nursery": {
+        // experimental rule but working well
+        "noImportCycles": "error"
       }
     }
   }
