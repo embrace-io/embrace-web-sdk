@@ -100,11 +100,23 @@ export const findJSFilesRecursively = (
     // Read the JS file to extract the sourceMappingURL
     try {
       const jsContent = fs.readFileSync(jsFilePath, 'utf-8');
-      const sourceMapUrl = extractSourceMapUrl(jsContent);
+      let sourceMapUrl = extractSourceMapUrl(jsContent);
 
+      // Fallback to .js.map if no sourceMappingURL comment found
       if (!sourceMapUrl) {
-        console.warn(`Skipping ${jsFile} - no sourceMappingURL comment found`);
-        continue;
+        const fallbackMapPath = `${jsFile}.map`;
+        const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
+        if (fs.existsSync(fallbackMapFilePath)) {
+          sourceMapUrl = fallbackMapPath;
+          console.log(
+            `Using fallback source map ${fallbackMapPath} for ${jsFile}`,
+          );
+        } else {
+          console.warn(
+            `Skipping ${jsFile} - no sourceMappingURL comment found and no ${fallbackMapPath} file exists`,
+          );
+          continue;
+        }
       }
 
       // Handle relative paths in sourceMappingURL
