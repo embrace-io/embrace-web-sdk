@@ -58,7 +58,7 @@ const addHyphensToUuid = (uuidStr: string): string => {
 const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   const jsLines = sourceFile.split('\n');
   const sourceMapCommentIndex = jsLines.findIndex((line) =>
-    line.startsWith('//# sourceMappingURL='),
+    line.trim().startsWith('//# sourceMappingURL='),
   );
 
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
