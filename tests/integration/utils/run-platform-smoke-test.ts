@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { resultsToMarkdownTable } from '../../utils/index.js';
 import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.js';
-import { processSondaReport } from './index.js';
+import { processSondaReport } from './process-sonda-report.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
