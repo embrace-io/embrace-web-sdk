@@ -80,6 +80,42 @@ const extractSourceMapUrl = (jsContent: string): string | null => {
   return url || null;
 };
 
+const findSourceMapForJsFile = (
+  jsFileName: string,
+  jsContent: string,
+  realPath: string,
+): string | null => {
+  const sourceMapUrl = extractSourceMapUrl(jsContent);
+  if (sourceMapUrl) return sourceMapUrl;
+
+  // Fallback to .js.map
+  const fallbackMapPath = `${jsFileName}.map`;
+  const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
+
+  if (fs.existsSync(fallbackMapFilePath)) {
+    console.log(
+      `Using fallback source map ${fallbackMapPath} for ${jsFileName}`,
+    );
+    return fallbackMapPath;
+  }
+
+  return null;
+};
+
+const validateMapSecurity = (
+  mapFilePath: string,
+  searchRoot: string,
+  sourceMapUrl: string,
+  jsFileName: string,
+): void => {
+  const mapFileRealPath = fs.realpathSync(mapFilePath);
+  if (!mapFileRealPath.startsWith(searchRoot + path.sep)) {
+    throw new MapSecurityError(
+      `Source map '${sourceMapUrl}' in ${jsFileName} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
+    );
+  }
+};
+
 export const findJSFilesRecursively = (
   dirPath: string,
   visitedPaths: Set<string> = new Set(),
@@ -103,53 +139,32 @@ export const findJSFilesRecursively = (
   const jsFiles = files.filter((file) => file.endsWith('.js'));
 
   // Process JS files in current directory
-  for (const jsFile of jsFiles) {
-    const jsFilePath = path.join(realPath, jsFile);
+  for (const jsFileName of jsFiles) {
+    const jsFilePath = path.join(realPath, jsFileName);
 
-    // Read the JS file to extract the sourceMappingURL
     try {
       const jsContent = fs.readFileSync(jsFilePath, 'utf-8');
-      let sourceMapUrl = extractSourceMapUrl(jsContent);
+      const sourceMapUrl = findSourceMapForJsFile(
+        jsFileName,
+        jsContent,
+        realPath,
+      );
 
-      // Fallback to .js.map if no sourceMappingURL comment found
       if (!sourceMapUrl) {
-        const fallbackMapPath = `${jsFile}.map`;
-        const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
-        if (fs.existsSync(fallbackMapFilePath)) {
-          sourceMapUrl = fallbackMapPath;
-          console.log(
-            `Using fallback source map ${fallbackMapPath} for ${jsFile}`,
-          );
-        } else {
-          console.warn(
-            `Skipping ${jsFile} - no sourceMappingURL comment found and no ${fallbackMapPath} file exists`,
-          );
-          continue;
-        }
+        console.warn(`Skipping ${jsFileName} - no source map found`);
+        continue;
       }
 
-      // Handle relative paths in sourceMappingURL
       const mapFilePath = path.resolve(realPath, sourceMapUrl);
 
-      // Check if the referenced source map file exists
       if (!fs.existsSync(mapFilePath)) {
         console.warn(
-          `Skipping ${jsFile} - source map file not found at ${mapFilePath}`,
+          `Skipping ${jsFileName} - source map file not found at ${mapFilePath}`,
         );
         continue;
       }
 
-      // Security: Validate that the resolved path is within the search root directory
-      // This prevents path traversal attacks from malicious sourceMappingURL values
-      const mapFileRealPath = fs.realpathSync(mapFilePath);
-      if (
-        !mapFileRealPath.startsWith(searchRoot + path.sep) &&
-        mapFileRealPath !== searchRoot
-      ) {
-        throw new MapSecurityError(
-          `Source map '${sourceMapUrl}' in ${jsFile} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
-        );
-      }
+      validateMapSecurity(mapFilePath, searchRoot, sourceMapUrl, jsFileName);
 
       results.push({ jsFilePath, mapFilePath });
     } catch (err) {
@@ -158,7 +173,7 @@ export const findJSFilesRecursively = (
         throw err;
       }
       // For other errors, just warn and continue
-      console.warn(`Error reading ${jsFile}:`, err);
+      console.warn(`Error reading ${jsFileName}:`, err);
     }
   }
 
