@@ -78,6 +78,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.web_vital.delta',
   'emb.web_vital.id',
   'emb.web_vital.value',
+  'tap.coords',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
