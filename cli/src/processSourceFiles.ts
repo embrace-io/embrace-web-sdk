@@ -265,7 +265,7 @@ export const processSourceFiles = async ({
           paddedAppVersion,
         );
 
-        if (newJsContent === jsContent || newMapContent === mapContent) {
+        if (newJsContent === jsContent && newMapContent === mapContent) {
           console.debug(`Template App version not found in ${jsFilePath}`);
         } else {
           appVersionReplaced = true;
