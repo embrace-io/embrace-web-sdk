@@ -109,7 +109,12 @@ const validateMapSecurity = (
   jsFileName: string,
 ): void => {
   const mapFileRealPath = fs.realpathSync(mapFilePath);
-  if (!mapFileRealPath.startsWith(searchRoot + path.sep)) {
+  const relativePath = path.relative(searchRoot, mapFileRealPath);
+
+  // Check if the relative path escapes the search root
+  // - Starts with '..' means it goes up and out of the root
+  // - Being absolute means it's on a different drive/root (Windows)
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
     throw new MapSecurityError(
       `Source map '${sourceMapUrl}' in ${jsFileName} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
     );
