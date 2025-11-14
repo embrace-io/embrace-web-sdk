@@ -16,6 +16,14 @@ export class PageSpanProcessor implements SpanProcessor {
 
   // Attach page attributes at span end to capture the page where the span completed
   public onEnd(span: ReadableSpan): void {
+    if (
+      span.attributes[KEY_EMB_PAGE_PATH] ||
+      span.attributes[KEY_EMB_PAGE_ID]
+    ) {
+      // If the span already has page attributes, do not override them
+      return;
+    }
+
     const currentRoute = this._pageManager.getCurrentRoute();
     const currentPageId = this._pageManager.getCurrentPageId();
 

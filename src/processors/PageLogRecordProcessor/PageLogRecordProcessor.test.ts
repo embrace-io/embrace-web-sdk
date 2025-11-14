@@ -51,6 +51,25 @@ describe('PageLogRecordProcessor', () => {
     expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/products/:id');
   });
 
+  it('should not override page attributes', () => {
+    pageManager.setCurrentRoute(mockRoute);
+
+    logger.emit({
+      body: 'some log',
+      attributes: {
+        [KEY_EMB_PAGE_ID]: 'custom-page-id',
+        [KEY_EMB_PAGE_PATH]: '/custom/path',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal('custom-page-id');
+    expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/custom/path');
+  });
+
   it('should not attach surface name and id when route is null', () => {
     pageManager.clearCurrentRoute();
 

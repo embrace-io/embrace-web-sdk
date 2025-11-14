@@ -27,7 +27,7 @@ const filterBrowserLogs = ({ args, type }) => {
  */
 export default {
   nodeResolve: true,
-  files: ['src/**/*.test.ts'],
+  files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   plugins: [
     vitePlugin({
       optimizeDeps: {
@@ -37,6 +37,14 @@ export default {
         include: [
           'hoist-non-react-statics',
           'react',
+          'cookie',
+          'set-cookie-parser',
+          'react-dom/client',
+          'react-dom',
+          'react/jsx-dev-runtime',
+          'prop-types',
+          'react-is',
+          'path-to-regexp',
           '@opentelemetry/otlp-transformer',
           '@opentelemetry/instrumentation-fetch',
         ],
