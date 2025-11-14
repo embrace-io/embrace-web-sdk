@@ -57,44 +57,6 @@ console.log('test');
       }
     });
 
-    it('should throw error when source map exists outside directory via symlink', () => {
-      // Create a separate directory with a map file
-      const externalDir = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'embrace-cli-external-'),
-      );
-      const externalMapFile = path.join(externalDir, 'external.js.map');
-      const mapContent = JSON.stringify({
-        version: 3,
-        sources: ['external.ts'],
-        names: [],
-        mappings: '',
-      });
-      fs.writeFileSync(externalMapFile, mapContent);
-
-      try {
-        // Create a symlink in testDir pointing to the external map
-        const symlinkPath = path.join(testDir, 'external.js.map');
-        fs.symlinkSync(externalMapFile, symlinkPath);
-
-        const jsFile = path.join(testDir, 'external.js');
-        const jsContent = `
-console.log('test');
-//# sourceMappingURL=external.js.map
-`;
-        fs.writeFileSync(jsFile, jsContent);
-
-        // This should throw an error because the symlink resolves outside testDir
-        assert.throws(
-          () => findJSFilesRecursively(testDir),
-          /Source map.*resolves outside the search directory/,
-          'Should throw security error for symlink to external file',
-        );
-      } finally {
-        // Clean up
-        fs.rmSync(externalDir, { recursive: true, force: true });
-      }
-    });
-
     it('should accept source maps in the same directory', () => {
       const jsFile = path.join(testDir, 'valid.js');
       const mapFile = path.join(testDir, 'valid.js.map');

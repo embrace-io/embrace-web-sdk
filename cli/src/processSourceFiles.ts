@@ -118,7 +118,6 @@ const validateMapSecurity = (
 
 export const findJSFilesRecursively = (
   dirPath: string,
-  visitedPaths: Set<string> = new Set(),
   rootPath?: string,
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
   const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
@@ -127,13 +126,6 @@ export const findJSFilesRecursively = (
   const realPath = fs.realpathSync(dirPath);
   // Track the original root directory for security checks
   const searchRoot = rootPath ?? realPath;
-
-  // Check for circular symlinks
-  if (visitedPaths.has(realPath)) {
-    console.warn(`Skipping already visited path: ${dirPath}`);
-    return results;
-  }
-  visitedPaths.add(realPath);
 
   const files = fs.readdirSync(realPath);
   const jsFiles = files.filter((file) => file.endsWith('.js'));
@@ -184,9 +176,7 @@ export const findJSFilesRecursively = (
     try {
       const stats = fs.statSync(fullPath);
       if (stats.isDirectory()) {
-        results.push(
-          ...findJSFilesRecursively(fullPath, visitedPaths, searchRoot),
-        );
+        results.push(...findJSFilesRecursively(fullPath, searchRoot));
       }
     } catch (err) {
       console.warn(`Error reading ${fullPath}:`, err);
