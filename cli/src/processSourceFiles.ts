@@ -70,19 +70,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
 };
 
 const extractSourceMapUrl = (jsContent: string): string | null => {
-  const lines = jsContent.split('\n');
-  const sourceMapCommentIndex = lines.findIndex(
-    (line) =>
-      line.startsWith('//# sourceMappingURL=') ||
-      line.startsWith('//@ sourceMappingURL='),
-  );
-
-  if (sourceMapCommentIndex === -1) {
-    return null;
-  }
-
-  const line = lines[sourceMapCommentIndex];
-  const match = line.match(/sourceMappingURL=(.+)$/);
+  const match = jsContent.match(/\/\/[@#] sourceMappingURL=(.+)$/m);
   return match ? match[1].trim() : null;
 };
 
