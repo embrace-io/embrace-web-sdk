@@ -46,7 +46,7 @@ console.log('test');
         // This should throw an error
         assert.throws(
           () => findJSFilesRecursively(testDir),
-          /Security error.*resolves outside the search directory/,
+          /Source map.*resolves outside the search directory/,
           'Should throw security error for path traversal',
         );
       } finally {
@@ -86,7 +86,7 @@ console.log('test');
         // This should throw an error because the symlink resolves outside testDir
         assert.throws(
           () => findJSFilesRecursively(testDir),
-          /Security error.*resolves outside the search directory/,
+          /Source map.*resolves outside the search directory/,
           'Should throw security error for symlink to external file',
         );
       } finally {
@@ -221,7 +221,7 @@ console.log('escape attempt');
 
       assert.throws(
         () => findJSFilesRecursively(subDir),
-        /Security error.*resolves outside the search directory/,
+        /Source map.*resolves outside the search directory/,
         'Should throw security error when escaping subdirectory',
       );
     });
@@ -391,7 +391,7 @@ console.log('nested with relative path');
 
         assert.throws(
           () => findJSFilesRecursively(testDir),
-          /Security error/,
+          /Source map.*resolves outside/,
           'Should throw on security violation even with valid files present',
         );
       } finally {

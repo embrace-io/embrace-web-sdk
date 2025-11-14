@@ -4,6 +4,13 @@ import path from 'node:path';
 import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
+class MapSecurityError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MapSecurityError';
+  }
+}
+
 // The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
 const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
 const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
@@ -139,15 +146,15 @@ export const findJSFilesRecursively = (
         !mapFileRealPath.startsWith(searchRoot + path.sep) &&
         mapFileRealPath !== searchRoot
       ) {
-        throw new Error(
-          `Security error: Source map '${sourceMapUrl}' in ${jsFile} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
+        throw new MapSecurityError(
+          `Source map '${sourceMapUrl}' in ${jsFile} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
         );
       }
 
       results.push({ jsFilePath, mapFilePath });
     } catch (err) {
       // Rethrow security errors - these should fail the entire process
-      if (err instanceof Error && err.message.startsWith('Security error:')) {
+      if (err instanceof MapSecurityError) {
         throw err;
       }
       // For other errors, just warn and continue
