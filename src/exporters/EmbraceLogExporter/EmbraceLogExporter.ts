@@ -1,7 +1,5 @@
-import {
-  DEFAULT_EMBRACE_EXPORTER_CONFIG,
-  getEmbraceHeaders,
-} from '../index.js';
+import { DEFAULT_EMBRACE_EXPORTER_CONFIG } from '../constants.js';
+import { getEmbraceHeaders } from '../utils.js';
 import { OTLPFetchLogExporter } from './OTLPFetchLogExporter.js';
 import type { EmbraceLogExporterArgs } from './types.js';
 import { getLogEndpoint } from './utils.js';

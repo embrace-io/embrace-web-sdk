@@ -42,7 +42,7 @@ import {
   OTelPerformanceManager,
 } from '../../utils/index.js';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import { EmbraceExtendedSpan } from '../index.js';
+import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.js';
 import {
   EMBRACE_SESSION_NUMBER_STORAGE_KEY,
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
