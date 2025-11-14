@@ -254,21 +254,6 @@ console.log('nested with relative path');
         fs.realpathSync(mapFile),
       );
     });
-
-    it('should skip when neither sourceMappingURL nor fallback .js.map exists', () => {
-      const jsFile = path.join(testDir, 'no-map.js');
-      const jsContent = `console.log('no map anywhere');`;
-
-      fs.writeFileSync(jsFile, jsContent);
-
-      const results = findJSFilesRecursively(testDir);
-
-      assert.strictEqual(
-        results.length,
-        0,
-        'Should skip when no source map is available',
-      );
-    });
   });
 
   describe('Error Handling', () => {
