@@ -11,6 +11,7 @@
   },
   "sideEffects": false,
   "scripts": {
+    "prepare": "lefthook install -f",
     "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
