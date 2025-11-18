@@ -8,6 +8,7 @@ const EXPECTED_SPAN_ENDED_TEXT =
 
 type E2ETestFixture = {
   getCurrentSessionId: () => Promise<string>;
+  waitUntilSpanLogged: () => Promise<void>;
   navigateAndWaitUntilReady: (
     url: string,
     numberOfExpectedSpans: number,
@@ -30,6 +31,33 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       return sessionId;
     });
   },
+
+  waitUntilSpanLogged: async ({ page }, use) => {
+    await use(async () => {
+      let spanLogged = false;
+      page.on('console', (msg) => {
+        if (msg.text().includes(EXPECTED_SPAN_ENDED_TEXT)) {
+          spanLogged = true;
+        }
+      });
+
+      // Set a 5 seconds timeout for the span to be logged
+      const timeout = setTimeout(() => {
+        throw new Error('Span was not logged within 5 seconds');
+      }, 5000);
+
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (spanLogged) {
+            clearInterval(interval);
+            clearTimeout(timeout);
+            resolve(null);
+          }
+        }, 100);
+      });
+    });
+  },
+
   navigateAndWaitUntilReady: async ({ page }, use) => {
     await use(async (url: string, numberOfExpectedSpans: number) => {
       let autoInstrumentedSpansCount = 0;
@@ -327,6 +355,58 @@ const runE2ETests = ({
         await page.goto('about:blank');
 
         await validateThatSessionEnded(currentSessionId);
+      },
+    );
+
+    testE2E(
+      'it should handle instrumenting a fetch that responds with 204 and a body',
+      async ({
+        page,
+        waitForOTelRequest,
+        withSimulatedResponse,
+        navigateAndWaitUntilReady,
+        waitUntilSpanLogged,
+        requests,
+        browserName,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await withSimulatedResponse({
+          body: 'something',
+          status: 204,
+        });
+        await page
+          .getByRole('button', {
+            name: 'Make Fetch Request',
+          })
+          .click();
+
+        // Wait for the network span to be logged for the fetch request
+        await waitUntilSpanLogged();
+
+        await page.getByRole('button', { name: 'Send Log' }).click();
+        await waitForOTelRequest();
+
+        testE2E.expect(requests).toHaveLength(1);
+        // The request should contain just a single log from clicking 'Send Log' and not any exception generated
+        // from the fetch request
+        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
+        );
+
+        await page.getByRole('button', { name: 'End Session' }).click();
+        await waitForOTelRequest();
+
+        if (requests.length === 1) {
+          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
+          // yet populated
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        testE2E.expect(requests).toHaveLength(2);
+        // Should contain a span capturing the fetch request
+        extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
+          `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
+        );
       },
     );
 

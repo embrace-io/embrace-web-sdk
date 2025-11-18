@@ -1,0 +1,146 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "2B0F641A47EE4612A3899CA61FF15ED5"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1763079457568000000",
+              "observedTimeUnixNano": "1763079457569000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:1:15225\nmessage@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:1:3384\nmessage@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:1:3667\n@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:1:70280\nt@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:1:70342\ni8@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135364\n@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:141451\nnz@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:19198\nsn@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136598\ncc@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163600\nci@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163422"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3000/_next/static/chunks/main-app-68085cce05454581.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/main-app-68085cce05454581.js:3:318\":\"18b1997c9d37e1d1a2c8f60013036a82\",\"@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/webpack-59e5afc62c17815f.js:3:318\":\"bc1bbbec977848b8a8d74ffef9ab0fa5\",\"@http://localhost:3000/_next/static/chunks/4f9414d9-10f0cea5f8b7d11d.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/4f9414d9-10f0cea5f8b7d11d.js:3:318\":\"ecc0cfea7e89a0b7fe3581249bdf7179\",\"@http://localhost:3000/_next/static/chunks/255-8c25d183c5209834.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/255-8c25d183c5209834.js:3:318\":\"037ea7ebf8ec61809070c555861e38bb\",\"@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/app/page-25b529855c624ffc.js:3:318\":\"d13f51d71f019e1d7dd00b15418faeb4\",\"@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:3:318\":\"386cfc75819760e1ef3a10ca0c340f52\",\"@http://localhost:3000/_next/static/chunks/221-824ee679ce886422.js:3:169\\nglobal code@http://localhost:3000/_next/static/chunks/221-824ee679ce886422.js:3:318\":\"7baa12521562da21074f17bac577e91e\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "5EDB247C70DD4F2B9A56B1CAFCBEF9EF"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "79FAB47C967E46C3B1AED8A58C4CE32E"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3000/"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

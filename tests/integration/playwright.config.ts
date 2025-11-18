@@ -14,7 +14,7 @@ export default defineConfig({
       name: 'api',
       command: 'npx tsx ../../server/server.ts',
       url: 'http://localhost:3001/health-check',
-      reuseExistingServer: false,
+      reuseExistingServer: true,
     },
   ],
   testMatch: '**/*.spec.ts',

@@ -1,0 +1,146 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "3498513C2A4A4C32856C512D5F8926C1"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:142.0.1) Gecko/20100101 Firefox/142.0.1"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1763079450117000000",
+              "observedTimeUnixNano": "1763079450117000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:1:19298\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:1:1681\nmessage@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:1:2092\nt@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:1:70556\nDv@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:127059\nJh/Qc/<@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:132067\nqi@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:15122\nQc@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:128293\nIc@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:9:28603\nYh@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:9:28423\nEventListener.handleEvent*Uv@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:127854\nGc@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:127254\nJh/Xc/<@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:127420\nXc@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:8:127365\nJh/ge.createRoot@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:9:36465\n@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:1:71095\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/vite-7/esnext/assets/vendor-D87mx9-w.js:4:169\\n@http://localhost:3001/public/vite-7/esnext/assets/vendor-D87mx9-w.js:4:318\\n\":\"0555bb5fa9c3481f901bf8d38333927a\",\"@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:12:169\\n@http://localhost:3001/public/vite-7/esnext/assets/react-DLjuQhPd.js:12:318\\n\":\"1e9f02d097404188a09329e83cb9899a\",\"@http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-eX2z64FJ.js:4:169\\n@http://localhost:3001/public/vite-7/esnext/assets/opentelemetry-eX2z64FJ.js:4:318\\n\":\"6b799925b3f04eb9acdd641ac5549701\",\"@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:4:169\\n@http://localhost:3001/public/vite-7/esnext/assets/index-Bac6V8au.js:4:318\\n\":\"537e9079d7774ca6871badc27a65dc51\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "F66DB76BE0B3433A9501A73EA766612C"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "7F5E101B66FC4CCFA4926EC433656584"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/vite-7/esnext/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

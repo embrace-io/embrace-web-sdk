@@ -1,0 +1,146 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "1D5F6267FE2948CF82E3269C0730E536"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1763079458401000000",
+              "observedTimeUnixNano": "1763079458402000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:223843\nmessage@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:194949\nmessage@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:195791\n@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:393860\nru@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:393391\no@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:393596\n@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:393656\nPromise@[native code]\n@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:393546\nKc@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:140422\n@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:146493\nFt@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:23521\ntd@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:141648\nEf@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:168980\nSf@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:2:168802"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:4:169\\nglobal code@http://localhost:3001/public/webpack-5/esnext/embrace-web-sdk.js:4:318\":\"c649934411fa93023778b107d549b227\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "C80489FE20DC49149A6F4D776030885D"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "3BD5E7338675459CA9F31AC201925063"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/webpack-5/esnext/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

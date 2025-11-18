@@ -5,6 +5,11 @@ import type {
 } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import pc from 'picocolors';
 
+const attributeValueFromSpan = (span: ISpan, key: string) => {
+  const attr = span.attributes.find((attr) => attr.key === key);
+  return attr && getAttributeValue(attr);
+};
+
 const getAttributeValue = (
   attr: IKeyValue,
 ): string | number | boolean | null => {
@@ -28,12 +33,7 @@ const getAttributeValue = (
 };
 
 const getEmbType = (span: ISpan): string | null => {
-  const embTypeAttr = span.attributes.find((attr) => attr.key === 'emb.type');
-  if (!embTypeAttr) {
-    return null;
-  }
-
-  const value = getAttributeValue(embTypeAttr);
+  const value = attributeValueFromSpan(span, 'emb.type');
   return typeof value === 'string' ? value : null;
 };
 
@@ -81,17 +81,19 @@ const logReceivedSessionSpan = (
   sessionSpan: ISpan,
   sessionId: string,
 ) => {
-  const endSessionReason = sessionSpan.attributes.find(
-    (attr) => attr.key === 'emb.session_end_type',
+  const endSessionReason = attributeValueFromSpan(
+    sessionSpan,
+    'emb.session_end_type',
   );
 
   logInfo(
-    `Session received ${sessionId}. End reason: ${endSessionReason ? getAttributeValue(endSessionReason) : 'unknown'}`,
+    `Session received ${sessionId}. End reason: ${endSessionReason || 'unknown'}`,
   );
 
   const groupedSpans = groupSpansByType(resourceSpans);
 
   logReceivedSurfaceSpans(groupedSpans['ux.surface'] || []);
+  logReceivedNetworkSpans(groupedSpans['perf.network_request'] || []);
   logBreadcrumbs(sessionSpan);
 };
 
@@ -103,12 +105,29 @@ const logReceivedSurfaceSpans = (surfaceSpans: ISpan[]) => {
 
   logInfo(`Surface spans received:`);
   surfaceSpans.forEach((span, index) => {
-    const nameAttr = span.attributes.find(
-      (attr) => attr.key === 'app.surface.name',
-    );
-    const message = nameAttr ? getAttributeValue(nameAttr) : 'unknown';
+    const message =
+      attributeValueFromSpan(span, 'app.surface.name') || 'unknown';
 
     logInfo(`  ${index + 1}. ${message}`);
+  });
+};
+
+const logReceivedNetworkSpans = (networkSpans: ISpan[]) => {
+  if (networkSpans.length === 0) {
+    logInfo('No network spans received');
+    return;
+  }
+
+  logInfo(`Network spans received:`);
+  networkSpans.forEach((span, index) => {
+    const method = attributeValueFromSpan(span, 'http.request.method');
+    const url = attributeValueFromSpan(span, 'url.full');
+    const statusCode = attributeValueFromSpan(
+      span,
+      'http.response.status_code',
+    );
+
+    logInfo(`  ${index + 1}. ${method} ${url} -> ${statusCode}`);
   });
 };
 

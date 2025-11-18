@@ -1,0 +1,146 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.8.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "3A53AF6FC7654AB99173B01CC7E741FE"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.37 Safari/537.36"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1763079247507800049",
+              "observedTimeUnixNano": "1763079247508000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at e.value (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:244969)\n    at e.value (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:199530)\n    at e.value (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:200978)\n    at http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:481691\n    at Generator.<anonymous> (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:480029)\n    at Generator.next (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:480872)\n    at Hp (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:481054)\n    at a (http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:481257)\n    at http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:2:481318\n    at new Promise (<anonymous>)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:4:169\\n    at http://localhost:3001/public/webpack-5/es2015/embrace-web-sdk.js:4:318\":\"55d07b36aca4eba7244baa7230554d25\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "FE463B428E0B477B82165FE4E4B1CA50"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "F5DD702CE1984785BC776BD9B5B430B2"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/public/webpack-5/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
