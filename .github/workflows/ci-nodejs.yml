@@ -822,7 +822,6 @@ jobs:
     needs:
       - environment
       - test-multiple-browsers
-      - test-cli
       - lint
       - type-check
       - validate-build
