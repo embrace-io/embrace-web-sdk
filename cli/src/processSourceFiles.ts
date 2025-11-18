@@ -4,6 +4,13 @@ import path from 'node:path';
 import { uploadToApi } from './uploadToApi.js';
 import { validateInput } from './validateInput.js';
 
+class MapSecurityError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MapSecurityError';
+  }
+}
+
 // The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
 const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
 const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
@@ -50,10 +57,8 @@ const addHyphensToUuid = (uuidStr: string): string => {
 
 const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   const jsLines = sourceFile.split('\n');
-  const sourceMapCommentIndex = jsLines.findIndex(
-    (line) =>
-      line.startsWith('//# sourceMappingURL=') ||
-      line.startsWith('//@ sourceMappingURL='),
+  const sourceMapCommentIndex = jsLines.findIndex((line) =>
+    line.trim().startsWith('//# sourceMappingURL='),
   );
 
   // Insert the snippet right before the sourceMapComment, or at the end if not found.
@@ -69,47 +74,114 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
   return jsLines.join('\n');
 };
 
-const findJSFilesRecursively = (
+const extractSourceMapUrl = (jsContent: string): string | null => {
+  const match = jsContent.match(/^\/\/# sourceMappingURL=(.+)$/m);
+  const url = match?.[1]?.trim();
+  return url || null;
+};
+
+const findSourceMapForJsFile = (
+  jsFileName: string,
+  jsContent: string,
+  realPath: string,
+): string | null => {
+  const sourceMapUrl = extractSourceMapUrl(jsContent);
+  if (sourceMapUrl) return sourceMapUrl;
+
+  // Fallback to .js.map
+  const fallbackMapPath = `${jsFileName}.map`;
+  const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
+
+  if (fs.existsSync(fallbackMapFilePath)) {
+    console.log(
+      `Using fallback source map ${fallbackMapPath} for ${jsFileName}`,
+    );
+    return fallbackMapPath;
+  }
+
+  return null;
+};
+
+const validateMapSecurity = (
+  mapFilePath: string,
+  searchRoot: string,
+  sourceMapUrl: string,
+  jsFileName: string,
+): void => {
+  const mapFileRealPath = fs.realpathSync(mapFilePath);
+  const relativePath = path.relative(searchRoot, mapFileRealPath);
+
+  // Check if the relative path escapes the search root
+  // - Starts with '..' means it goes up and out of the root
+  // - Being absolute means it's on a different drive/root (Windows)
+  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+    throw new MapSecurityError(
+      `Source map '${sourceMapUrl}' in ${jsFileName} resolves outside the search directory (${mapFileRealPath} is not within ${searchRoot}). This is not allowed to prevent path traversal attacks.`,
+    );
+  }
+};
+
+export const findJSFilesRecursively = (
   dirPath: string,
-  visitedPaths: Set<string> = new Set(),
+  rootPath?: string,
 ): Array<{ jsFilePath: string; mapFilePath: string }> => {
   const results: Array<{ jsFilePath: string; mapFilePath: string }> = [];
 
-  // Get real path to handle symlinks
+  // Get real path to handle symlinks and normalize to absolute path
   const realPath = fs.realpathSync(dirPath);
+  // Track the original root directory for security checks
+  const searchRoot = rootPath ?? realPath;
 
-  // Check for circular symlinks
-  if (visitedPaths.has(realPath)) {
-    console.warn(`Skipping already visited path: ${dirPath}`);
-    return results;
-  }
-  visitedPaths.add(realPath);
-
-  const files = fs.readdirSync(dirPath);
+  const files = fs.readdirSync(realPath);
   const jsFiles = files.filter((file) => file.endsWith('.js'));
 
   // Process JS files in current directory
-  for (const jsFile of jsFiles) {
-    const mapFile = `${jsFile}.map`;
-    const jsFilePath = path.join(dirPath, jsFile);
-    const mapFilePath = path.join(dirPath, mapFile);
+  for (const jsFileName of jsFiles) {
+    const jsFilePath = path.join(realPath, jsFileName);
 
-    // Check if corresponding .js.map file exists
-    if (files.includes(mapFile)) {
+    try {
+      const jsContent = fs.readFileSync(jsFilePath, 'utf-8');
+      const sourceMapUrl = findSourceMapForJsFile(
+        jsFileName,
+        jsContent,
+        realPath,
+      );
+
+      if (!sourceMapUrl) {
+        console.warn(`Skipping ${jsFileName} - no source map found`);
+        continue;
+      }
+
+      const mapFilePath = path.resolve(realPath, sourceMapUrl);
+
+      if (!fs.existsSync(mapFilePath)) {
+        console.warn(
+          `Skipping ${jsFileName} - source map file not found at ${mapFilePath}`,
+        );
+        continue;
+      }
+
+      validateMapSecurity(mapFilePath, searchRoot, sourceMapUrl, jsFileName);
+
       results.push({ jsFilePath, mapFilePath });
-    } else {
-      console.warn(`Skipping ${jsFile} - corresponding .js.map file not found`);
+    } catch (err) {
+      // Rethrow security errors - these should fail the entire process
+      if (err instanceof MapSecurityError) {
+        throw err;
+      }
+      // For other errors, just warn and continue
+      console.warn(`Error reading ${jsFileName}:`, err);
     }
   }
 
   // Recursively process subdirectories
   for (const file of files) {
-    const fullPath = path.join(dirPath, file);
+    const fullPath = path.join(realPath, file);
 
     try {
       const stats = fs.statSync(fullPath);
       if (stats.isDirectory()) {
-        results.push(...findJSFilesRecursively(fullPath, visitedPaths));
+        results.push(...findJSFilesRecursively(fullPath, searchRoot));
       }
     } catch (err) {
       console.warn(`Error reading ${fullPath}:`, err);
@@ -188,8 +260,8 @@ export const processSourceFiles = async ({
           paddedAppVersion,
         );
 
-        if (newJsContent === jsContent || newMapContent === mapContent) {
-          console.debug(`Template App version not found in ${jsFilePath}`);
+        if (newJsContent === jsContent && newMapContent === mapContent) {
+          console.warn(`Template App version not found in ${jsFilePath}`);
         } else {
           appVersionReplaced = true;
         }

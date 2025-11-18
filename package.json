@@ -15,6 +15,7 @@
     "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
+    "test": "npm run sdk:test && npm run cli:test",
     "lint": "npm run sdk:tsc:check && npm run sdk:lint:fix",
     "validate": "npm run sdk:validate && npm run cli:validate",
     "dev": "npm run dev --workspace=embrace-web-sdk-react-demo",
@@ -41,6 +42,7 @@
     "sdk:validate:versions:fix": "node scripts/validate-versions.js --fix",
     "sdk:validate:baseline": "node scripts/validate-sdk.js",
     "cli:validate": "npm run validate --prefix cli",
+    "cli:test": "npm run test --prefix cli",
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
     "playwright": "playwright"
