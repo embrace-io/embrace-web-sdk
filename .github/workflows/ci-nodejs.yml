@@ -821,7 +821,8 @@ jobs:
   report-release-slack:
     runs-on: ubuntu-latest
     if: ${{ needs.environment.outputs.name == 'production' }}
-    needs: [publish-sdk, publish-cli]
+    needs:
+      - publish
     steps:
       - name: "Send to #mission-web Slack channel/workflow"
         continue-on-error: true
