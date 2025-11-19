@@ -46,6 +46,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._checkVisibilityTimeout = null;
     this._interactionSinceLastVisibilityChange = false;
     this._avoidEndingLimitedSessions =
+      limitedSessionMaxDurationMs > 0 &&
       featureManager.isEmptySessionAvoidanceEnabled();
     this._embraceSpanProcessor = embraceSpanProcessor;
 

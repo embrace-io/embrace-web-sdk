@@ -32,7 +32,7 @@ const createMockEmbraceProcessor = (): EmbraceSessionBatchedSpanProcessor => {
 
 // Helper function to create mock SDKFeaturesManager
 const createMockSDKFeaturesManager = (
-  isEmptySessionAvoidanceEnabled = false,
+  isEmptySessionAvoidanceEnabled: boolean,
 ) => ({
   isSDKEnabled: () => true,
   isNetworkSpanForwardingEnabled: () => true,
@@ -72,7 +72,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should initialize', () => {
     instrumentation = new SpanSessionVisibilityInstrumentation(
       {},
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(false),
     );
     expect(instrumentation).to.be.instanceOf(
       SpanSessionVisibilityInstrumentation,
@@ -87,7 +87,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       {
         visibilityDoc,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(false),
     );
 
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
@@ -116,7 +116,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       {
         visibilityDoc,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(false),
     );
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
@@ -145,7 +145,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityWaitTimeMs: 1,
         visibilityDoc,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(true),
     );
 
     spanSessionManager.startSessionSpan();
@@ -177,7 +177,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityDoc,
         backgroundSessions: true,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(false),
     );
 
     spanSessionManager.startSessionSpan();
@@ -208,7 +208,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityDoc,
         backgroundSessions: true,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(true),
     );
 
     spanSessionManager.startSessionSpan();
@@ -250,7 +250,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityWaitTimeMs: 1000,
         visibilityDoc,
       },
-      createMockSDKFeaturesManager(),
+      createMockSDKFeaturesManager(true),
     );
 
     spanSessionManager.startSessionSpan();
