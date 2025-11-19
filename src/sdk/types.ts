@@ -32,7 +32,7 @@ import type {
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.js';
 import type {
-  LimitManagerInternal,
+  LimitManagerInternal, SDKFeaturesManager,
   SpanSessionManagerInternal,
 } from '../managers/index.js';
 import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
@@ -51,6 +51,14 @@ export interface DynamicSDKConfig {
    * **default**: 0
    */
   networkSpansForwardingThreshold?: number;
+
+
+  /**
+   * Pct of users that should have the "empty session avoidance" feature enabled.
+   *
+   * **default**: 0
+   */
+  emptySessionAvoidanceEnabledPct?: number;
 }
 
 export interface DynamicConfigManager {
@@ -266,7 +274,7 @@ export type SDKInitConfig = BaseSDKInitConfig &
     | EmbraceExportSDKInitConfig
     | LogExportSDKInitConfig
     | SpanExportSDKInitConfig
-  );
+    );
 
 export interface SDKControl {
   flush: () => Promise<void>;
@@ -336,6 +344,7 @@ interface NetworkInstrumentationArgs {
 }
 
 export interface SetupDefaultInstrumentationsArgs {
+  featureManager: SDKFeaturesManager,
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
   embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;

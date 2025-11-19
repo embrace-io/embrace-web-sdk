@@ -23,7 +23,11 @@ export const isDeviceIdEnabled = (deviceId: string, pctEnabled?: number) => {
   return pctEnabled >= normalizedDeviceId;
 };
 
-const getNormalizedDeviceId = (deviceId: string): number => {
+export const getNormalizedDeviceId = (deviceId: string): number => {
+  if (deviceId.length < DIGITS) {
+    return 0;
+  }
+
   const finalChars = deviceId.slice(-DIGITS); // last 6 chars
   const radix = 16;
   const space = radix ** DIGITS - 1;

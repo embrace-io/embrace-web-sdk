@@ -271,6 +271,7 @@ export const initSDK = (
         loggerProvider,
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            featureManager: sdkFeaturesManager,
             logManager: embraceLogManager,
             spanSessionManager,
             embraceSpanProcessor,
@@ -283,6 +284,7 @@ export const initSDK = (
       registerInstrumentations({
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
+            featureManager: sdkFeaturesManager,
             embraceSpanProcessor,
             pageManager,
           }),

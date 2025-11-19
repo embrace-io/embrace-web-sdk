@@ -15,6 +15,7 @@ export type RemoteConfig = {
   network_span_forwarding?: {
     pct_enabled: number;
   };
+  empty_session_avoidance_enabled_pct?: number;
 };
 
 export type StoredRemoteConfig = {

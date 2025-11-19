@@ -21,11 +21,12 @@ import type {
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
   {
+    featureManager,
     logManager,
     spanSessionManager,
     embraceSpanProcessor,
     pageManager,
-  }: SetupDefaultInstrumentationsArgs = {},
+  }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
   /*
     These instrumentations are core to managing the session lifecycle and so are not optional
@@ -34,6 +35,7 @@ export const setupDefaultInstrumentations = (
     new SpanSessionOnLoadInstrumentation(config['session-on-load']),
     new SpanSessionVisibilityInstrumentation(
       config['session-visibility'],
+      featureManager,
       embraceSpanProcessor,
     ),
     new SpanSessionBrowserActivityInstrumentation(config['session-activity']),

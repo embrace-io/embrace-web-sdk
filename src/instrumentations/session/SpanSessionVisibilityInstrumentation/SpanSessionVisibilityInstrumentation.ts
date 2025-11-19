@@ -7,6 +7,7 @@ import {
 } from '../../../utils/index.js';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+import type { SDKFeaturesManager } from '../../../managers';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 
@@ -25,11 +26,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       diag,
       perf,
       visibilityWaitTimeMs = 0,
-      limitedSessionMaxDurationMs = 0,
+      limitedSessionMaxDurationMs = 5000,
       backgroundSessions = false,
       maxPendingSpanCount = 5,
       visibilityDoc = window.document,
     }: SpanSessionVisibilityInstrumentationArgs = {},
+    featureManager: SDKFeaturesManager,
     embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor,
   ) {
     super({
@@ -43,7 +45,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._currentVisibilityState = visibilityDoc.visibilityState;
     this._checkVisibilityTimeout = null;
     this._interactionSinceLastVisibilityChange = false;
-    this._avoidEndingLimitedSessions = limitedSessionMaxDurationMs > 0;
+    this._avoidEndingLimitedSessions = featureManager.isEmptySessionAvoidanceEnabled();
     this._embraceSpanProcessor = embraceSpanProcessor;
 
     this._checkVisibilityChange = () => {
@@ -96,8 +98,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       const isLimitedSession =
         this._avoidEndingLimitedSessions &&
         currentSessionStartTime !== null &&
-        this.perf.millisSinceHRTime(currentSessionStartTime) <
-          limitedSessionMaxDurationMs &&
+        this.perf.millisSinceHRTime(currentSessionStartTime) < limitedSessionMaxDurationMs &&
         !this._interactionSinceLastVisibilityChange &&
         !!this._embraceSpanProcessor &&
         this._embraceSpanProcessor.getPendingSpansCount() < maxPendingSpanCount;
