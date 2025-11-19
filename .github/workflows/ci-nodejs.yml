@@ -41,11 +41,11 @@ jobs:
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
-  test:
+  test-sdk:
     needs:
       - environment
     runs-on: ubuntu-latest
-    # staging and production run test-multiple-browsers, and development just runs regular test
+    # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 5
@@ -149,11 +149,64 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: embrace-io/embrace-web-sdk
 
-  test-multiple-browsers:
+  test-cli:
     needs:
       - environment
     runs-on: ubuntu-latest
-    # staging and production run test-multiple-browsers, and development just runs regular test
+    timeout-minutes: 5
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v5
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Test CLI
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run test --prefix cli
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
+
+  test-sdk-multiple-browsers:
+    needs:
+      - environment
+    runs-on: ubuntu-latest
+    # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
     steps:
@@ -224,7 +277,7 @@ jobs:
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
         run: npm run playwright -- install-deps
 
-      - name: Test multiple browsers
+      - name: Test SDK multiple browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm run sdk:test:multiBrowsers
@@ -389,61 +442,6 @@ jobs:
             ./tests/performance/test-results/cdp-performance-tests-with-sdk-tracing.json
             ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
             ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
-
-  test-cli:
-    needs:
-      - environment
-    runs-on: ubuntu-latest
-    # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
-    if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
-    timeout-minutes: 5
-    steps:
-      - name: Restore previous test results
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.TEST_STATUS_FILE }}
-          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
-
-      - name: Check if test previously succeeded
-        run: |
-          if test -e ${{ env.TEST_STATUS_FILE }}; then
-            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
-          else
-            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
-          fi
-
-      - uses: actions/checkout@v5
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install npm dependencies
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm ci --strict-peer-deps
-
-      - name: Test CLI
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run cli:test
-
-      - name: Cache successful test results
-        if: ${{ success() }}
-        run: |
-          touch ${{ env.TEST_STATUS_FILE }}
-
-      - name: Do not cache test failures
-        if: ${{ failure() || cancelled() }}
-        run: |
-          rm -f ${{ env.TEST_STATUS_FILE }}
 
   test-integration:
     needs:
@@ -757,20 +755,10 @@ jobs:
         run: |
           npm run compile
 
-      - name: Validate SDK build
+      - name: Validate SDK and CLI
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:validate
-
-      - name: Validate CLI build
-        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run cli:validate
-
-      - name: Validate versions
-        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run sdk:validate:versions
+          npm run validate
 
       - name: Build Demo
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
@@ -787,10 +775,11 @@ jobs:
         run: |
           rm -f ${{ env.VALIDATE_STATUS_FILE }}
 
-  publish-sdk:
+  publish:
     needs:
       - environment
-      - test-multiple-browsers
+      - test-sdk-multiple-browsers
+      - test-cli
       - lint
       - type-check
       - validate-build
@@ -815,43 +804,17 @@ jobs:
         run: |
           npm ci --strict-peer-deps
 
-      - name: Run 'npm publish'
+      - name: Build SDK and CLI
+        run: |
+          npm run compile
+
+      - name: Publish SDK
         run: |
           npm publish --provenance --access public
-  publish-cli:
-    needs:
-      - environment
-      - test-multiple-browsers
-      - lint
-      - type-check
-      - validate-build
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-        working-directory: ./cli
-    permissions:
-      id-token: write
-    timeout-minutes: 10
-    if: ${{ needs.environment.outputs.name == 'production' }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          registry-url: https://registry.npmjs.org
-
-      - name: Install NPM dependencies
+      - name: Publish CLI
         run: |
-          npm ci --include-workspace-root --strict-peer-deps
-
-      - name: Run 'npm publish'
-        run: |
+          cd cli
           npm publish --provenance --access public
 
   # not used yet, there are no "production" releases
