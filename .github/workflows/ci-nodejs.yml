@@ -149,59 +149,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: embrace-io/embrace-web-sdk
 
-  test-cli:
-    needs:
-      - environment
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Restore previous test results
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.TEST_STATUS_FILE }}
-          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
-
-      - name: Check if test previously succeeded
-        run: |
-          if test -e ${{ env.TEST_STATUS_FILE }}; then
-            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
-          else
-            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
-          fi
-
-      - uses: actions/checkout@v5
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install npm dependencies
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm ci --strict-peer-deps
-
-      - name: Test CLI
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run test --prefix cli
-
-      - name: Cache successful test results
-        if: ${{ success() }}
-        run: |
-          touch ${{ env.TEST_STATUS_FILE }}
-
-      - name: Do not cache test failures
-        if: ${{ failure() || cancelled() }}
-        run: |
-          rm -f ${{ env.TEST_STATUS_FILE }}
-
   test-sdk-multiple-browsers:
     needs:
       - environment
@@ -442,6 +389,59 @@ jobs:
             ./tests/performance/test-results/cdp-performance-tests-with-sdk-tracing.json
             ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
             ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
+
+  test-cli:
+    needs:
+      - environment
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restore previous test results
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.TEST_STATUS_FILE }}
+          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
+
+      - name: Check if test previously succeeded
+        run: |
+          if test -e ${{ env.TEST_STATUS_FILE }}; then
+            echo 'TEST_PREVIOUSLY_PASSED=true' >> $GITHUB_ENV
+          else
+            echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v5
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install npm dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm ci --strict-peer-deps
+
+      - name: Test CLI
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run test --prefix cli
+
+      - name: Cache successful test results
+        if: ${{ success() }}
+        run: |
+          touch ${{ env.TEST_STATUS_FILE }}
+
+      - name: Do not cache test failures
+        if: ${{ failure() || cancelled() }}
+        run: |
+          rm -f ${{ env.TEST_STATUS_FILE }}
 
   test-integration:
     needs:
