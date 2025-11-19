@@ -26,7 +26,8 @@ const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
   }
 
   if (remoteConfig.empty_session_avoidance_enabled_pct !== undefined) {
-    parsed.emptySessionAvoidanceEnabledPct = remoteConfig.empty_session_avoidance_enabled_pct;
+    parsed.emptySessionAvoidanceEnabledPct =
+      remoteConfig.empty_session_avoidance_enabled_pct;
   }
 
   return parsed;

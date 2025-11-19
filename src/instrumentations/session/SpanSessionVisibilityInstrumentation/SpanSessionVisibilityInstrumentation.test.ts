@@ -30,6 +30,15 @@ const createMockEmbraceProcessor = (): EmbraceSessionBatchedSpanProcessor => {
   return stub;
 };
 
+// Helper function to create mock SDKFeaturesManager
+const createMockSDKFeaturesManager = (
+  isEmptySessionAvoidanceEnabled = false,
+) => ({
+  isSDKEnabled: () => true,
+  isNetworkSpanForwardingEnabled: () => true,
+  isEmptySessionAvoidanceEnabled: () => isEmptySessionAvoidanceEnabled,
+});
+
 describe('SpanSessionVisibilityInstrumentation', () => {
   let nowStub: SinonStub;
   let memoryExporter: InMemorySpanExporter;
@@ -61,7 +70,10 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   });
 
   it('should initialize', () => {
-    instrumentation = new SpanSessionVisibilityInstrumentation();
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {},
+      createMockSDKFeaturesManager(),
+    );
     expect(instrumentation).to.be.instanceOf(
       SpanSessionVisibilityInstrumentation,
     );
@@ -71,9 +83,12 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
     };
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityDoc,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityDoc,
+      },
+      createMockSDKFeaturesManager(),
+    );
 
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
 
@@ -97,9 +112,12 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'hidden',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityDoc,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityDoc,
+      },
+      createMockSDKFeaturesManager(),
+    );
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
 
@@ -122,10 +140,13 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityWaitTimeMs: 1,
-      visibilityDoc,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityWaitTimeMs: 1,
+        visibilityDoc,
+      },
+      createMockSDKFeaturesManager(),
+    );
 
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
@@ -151,10 +172,13 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityDoc,
-      backgroundSessions: true,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityDoc,
+        backgroundSessions: true,
+      },
+      createMockSDKFeaturesManager(),
+    );
 
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
@@ -178,11 +202,14 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityWaitTimeMs: 1,
-      visibilityDoc,
-      backgroundSessions: true,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityWaitTimeMs: 1,
+        visibilityDoc,
+        backgroundSessions: true,
+      },
+      createMockSDKFeaturesManager(),
+    );
 
     spanSessionManager.startSessionSpan();
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
@@ -218,10 +245,13 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       visibilityState: 'visible',
     };
 
-    instrumentation = new SpanSessionVisibilityInstrumentation({
-      visibilityWaitTimeMs: 1000,
-      visibilityDoc,
-    });
+    instrumentation = new SpanSessionVisibilityInstrumentation(
+      {
+        visibilityWaitTimeMs: 1000,
+        visibilityDoc,
+      },
+      createMockSDKFeaturesManager(),
+    );
 
     spanSessionManager.startSessionSpan();
     const sessionSpan = spanSessionManager.getSessionSpan();
@@ -257,6 +287,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityDoc,
         perf,
       },
+      createMockSDKFeaturesManager(true),
       embraceSpanProcessor,
     );
 
@@ -319,6 +350,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
         visibilityDoc,
         perf,
       },
+      createMockSDKFeaturesManager(true),
       embraceSpanProcessor,
     );
 

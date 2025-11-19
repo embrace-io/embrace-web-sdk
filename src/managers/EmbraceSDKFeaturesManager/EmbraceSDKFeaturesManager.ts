@@ -8,10 +8,10 @@ export class EmbraceSDKFeaturesManager implements SDKFeaturesManager {
   private readonly _blockNetworkSpanForwarding: boolean;
 
   public constructor({
-                       dynamicConfigManager,
-                       deviceId,
-                       blockNetworkSpanForwarding,
-                     }: SDKFeaturesManagerArgs) {
+    dynamicConfigManager,
+    deviceId,
+    blockNetworkSpanForwarding,
+  }: SDKFeaturesManagerArgs) {
     this._dynamicConfigManager = dynamicConfigManager;
     this._deviceId = deviceId;
     this._blockNetworkSpanForwarding = blockNetworkSpanForwarding;
