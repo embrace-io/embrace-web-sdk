@@ -90,7 +90,7 @@ describe('isDeviceIdEnabled', () => {
 
 describe('getNormalizedDeviceId', () => {
   TEST_CASES.forEach(({ deviceId, expectedNormalizedValue }) => {
-    it(`should return ${String(expectedNormalizedValue)} for deviceId: ${deviceId}`, () => {
+    it(`should return ${expectedNormalizedValue} for deviceId: ${deviceId}`, () => {
       const result = getNormalizedDeviceId(deviceId);
       expect(result).to.equal(expectedNormalizedValue);
     });
