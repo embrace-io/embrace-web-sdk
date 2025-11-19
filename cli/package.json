@@ -10,7 +10,6 @@
     "access": "public"
   },
   "scripts": {
-    "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npx rimraf dist",
     "compile": "tsc && esbuild src/index.ts --bundle --format=esm --platform=node --target=es2022 --outfile=dist/index.js --external:commander",
     "test": "tsx --test src/**/*.test.ts",

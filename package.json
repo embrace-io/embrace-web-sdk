@@ -12,7 +12,6 @@
   "sideEffects": false,
   "scripts": {
     "prepare": "lefthook install -f",
-    "prepublishOnly": "npm run compile && npm run validate",
     "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
     "test": "npm run sdk:test && npm run cli:test",
@@ -170,7 +169,6 @@
     "tests/performance"
   ],
   "engines": {
-    "node": "24.9.0",
-    "npm": "11.6.0"
+    "node": "^20.19.0 || >=22.12.0"
   }
 }
