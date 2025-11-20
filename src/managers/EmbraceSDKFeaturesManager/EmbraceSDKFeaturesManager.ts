@@ -35,4 +35,13 @@ export class EmbraceSDKFeaturesManager implements SDKFeaturesManager {
       config.networkSpansForwardingThreshold,
     );
   }
+
+  public isEmptySessionAvoidanceEnabled(): boolean {
+    const config = this._dynamicConfigManager.getConfig();
+
+    return isDeviceIdEnabled(
+      this._deviceId,
+      config.emptySessionAvoidanceEnabledPct,
+    );
+  }
 }

@@ -9,4 +9,5 @@ export interface SDKFeaturesManagerArgs {
 export interface SDKFeaturesManager {
   isSDKEnabled: () => boolean;
   isNetworkSpanForwardingEnabled: () => boolean;
+  isEmptySessionAvoidanceEnabled: () => boolean;
 }

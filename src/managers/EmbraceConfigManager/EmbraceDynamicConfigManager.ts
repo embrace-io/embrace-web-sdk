@@ -25,6 +25,11 @@ const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
       remoteConfig.network_span_forwarding.pct_enabled;
   }
 
+  if (remoteConfig.empty_session_avoidance_enabled_pct !== undefined) {
+    parsed.emptySessionAvoidanceEnabledPct =
+      remoteConfig.empty_session_avoidance_enabled_pct;
+  }
+
   return parsed;
 };
 
