@@ -19,24 +19,14 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       this.logManager.logException(event.error || event.message, {
         handled: false,
         timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
+        handler: 'global_exception',
       });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
-      let error: Error;
-      if (event.reason && event.reason instanceof Error) {
-        error = event.reason;
-      } else {
-        error = new Error(
-          typeof event.reason === 'string'
-            ? event.reason
-            : 'Unhandled Rejected Promise',
-        );
-        error.stack = '';
-      }
-
-      this.logManager.logException(error, {
+      this.logManager.logException(event.reason, {
         handled: false,
         timestamp: this.perf.epochMillisFromOriginOffset(event.timeStamp),
+        handler: 'promise_rejection',
       });
     };
 

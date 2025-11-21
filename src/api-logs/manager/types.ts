@@ -10,6 +10,7 @@ export type LogExceptionOptions = {
   handled?: boolean;
   attributes?: Record<string, AttributeValue | undefined>;
   timestamp?: number;
+  handler?: ExceptionHandlerType;
 };
 
 export interface LogManager {
@@ -23,3 +24,8 @@ export interface LogManager {
 }
 
 export type LogSeverity = 'info' | 'warning' | 'error';
+
+export type ExceptionHandlerType =
+  | 'global_exception'
+  | 'promise_rejection'
+  | 'manual';
