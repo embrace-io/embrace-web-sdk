@@ -249,8 +249,19 @@ export class EmbraceLogManager implements LogManager {
       };
     }
 
+    let message = '';
+    if (typeof error === 'object') {
+      try {
+        message = JSON.stringify(error);
+      } catch {
+        message = String(error).trim();
+      }
+    } else {
+      message = String(error).trim();
+    }
+
     return {
-      message: String(error).trim(),
+      message,
       type: constructorName,
       name: constructorName,
       stack: '',
