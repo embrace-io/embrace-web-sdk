@@ -102,7 +102,7 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('my custom error');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled_error',
       'exception.type': 'GlobalExceptionTestError',
       'exception.name': 'GlobalExceptionTestErrorName',
@@ -133,7 +133,7 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('promise was rejected');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled_rejection',
       'exception.type': 'String',
       'exception.name': 'String',
@@ -165,7 +165,7 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('my custom error');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled_rejection',
       'exception.type': 'GlobalExceptionTestError',
       'exception.name': 'GlobalExceptionTestErrorName',
@@ -196,7 +196,7 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('1234');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled_rejection',
       'exception.type': 'Number',
       'exception.name': 'Number',
@@ -228,7 +228,7 @@ describe('GlobalExceptionInstrumentation', () => {
     );
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled_error',
       'exception.type': 'String',
       'exception.name': 'String',

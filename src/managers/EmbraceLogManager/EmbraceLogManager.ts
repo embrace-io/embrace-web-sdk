@@ -16,7 +16,7 @@ import type { ExceptionHandlerType } from '../../api-logs/manager/types';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
-  KEY_EMB_EXCEPTION_CAUSED_BY,
+  KEY_EMB_EXCEPTION_CAUSE,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
@@ -136,7 +136,7 @@ export class EmbraceLogManager implements LogManager {
           handled,
           handler,
         ),
-        [KEY_EMB_EXCEPTION_CAUSED_BY]: normalizedError.causedBy,
+        [KEY_EMB_EXCEPTION_CAUSE]: normalizedError.cause,
         [ATTR_EXCEPTION_TYPE]: normalizedError.type,
         ['exception.name']: normalizedError.name,
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
@@ -235,7 +235,7 @@ export class EmbraceLogManager implements LogManager {
     type: string;
     name: string;
     stack: string; // 'stack' not 'stacktrace' here to match the standard Error.stack property name
-    causedBy: string;
+    cause: string;
   } {
     const constructorName = EmbraceLogManager._getConstructorName(error);
 
@@ -245,7 +245,7 @@ export class EmbraceLogManager implements LogManager {
         type: constructorName,
         name: error.name || '',
         stack: error.stack || '',
-        causedBy: error.cause ? 'present' : '',
+        cause: error.cause ? 'present' : '',
       };
     }
 
@@ -254,7 +254,7 @@ export class EmbraceLogManager implements LogManager {
       type: constructorName,
       name: constructorName,
       stack: '',
-      causedBy: '',
+      cause: '',
     };
   }
 

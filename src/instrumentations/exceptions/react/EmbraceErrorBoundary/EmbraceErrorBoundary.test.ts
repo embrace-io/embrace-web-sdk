@@ -73,7 +73,7 @@ describe('EmbraceErrorBoundary', () => {
     void expect(exceptionLog.body).to.be.equal('Some error, at some component');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.exception_handling': 'unhandled',
       'exception.type': 'Error',
       'exception.name': 'Error',

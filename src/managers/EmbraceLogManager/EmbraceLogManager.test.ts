@@ -275,7 +275,7 @@ describe('EmbraceLogManager', () => {
       'exception.name': 'Error',
       'exception.message': 'this is an exception',
       'exception.stacktrace': log.attributes['exception.stacktrace'],
-      'emb.exception_caused_by': '',
+      'emb.exception_cause': '',
       'emb.state': 'foreground',
     });
   });
@@ -837,7 +837,7 @@ describe('EmbraceLogManager', () => {
       'exception.name': 'Error',
       'exception.message': 'this is an exception',
       'exception.stacktrace': log.attributes['exception.stacktrace'],
-      'emb.exception_caused_by': 'present',
+      'emb.exception_cause': 'present',
       'emb.state': 'foreground',
     });
   });
