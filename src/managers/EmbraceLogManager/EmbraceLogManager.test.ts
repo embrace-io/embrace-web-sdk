@@ -42,6 +42,13 @@ import { EmbraceLogManager } from './EmbraceLogManager.js';
 chai.use(sinonChai);
 const { expect } = chai;
 
+class MyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MyErrorName';
+  }
+}
+
 describe('EmbraceLogManager', () => {
   let manager: EmbraceLogManager;
   let memoryExporter: InMemoryLogRecordExporter;
@@ -307,6 +314,33 @@ describe('EmbraceLogManager', () => {
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
     expect(log.attributes).to.have.property('exception.name', 'Error');
+    expect(log.attributes).to.have.property(
+      ATTR_EXCEPTION_MESSAGE,
+      'this is an exception',
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
+  });
+
+  it('should log an exception from a custom Error class', () => {
+    expect(() => {
+      manager.logException(new MyError('this is an exception'));
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.body).to.equal('this is an exception');
+    expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
+    expect(log.severityText).to.be.equal('ERROR');
+
+    expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
+    expect(log.attributes).to.have.property(
+      KEY_EMB_EXCEPTION_HANDLING,
+      'HANDLED',
+    );
+    expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'MyError');
+    expect(log.attributes).to.have.property('exception.name', 'MyErrorName');
     expect(log.attributes).to.have.property(
       ATTR_EXCEPTION_MESSAGE,
       'this is an exception',
@@ -878,7 +912,9 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs).to.have.lengthOf(1);
       const log = finishedLogs[0];
 
-      expect(log.body).to.equal('[object Object]');
+      expect(log.body).to.equal(
+        '{"key1":"value1","key2":"value2","key3":"value3","',
+      );
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
       expect(log.severityText).to.be.equal('ERROR');
 
@@ -891,7 +927,7 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property('exception.name', 'Object');
       expect(log.attributes).to.have.property(
         ATTR_EXCEPTION_MESSAGE,
-        '[object Object]',
+        '{"key1":"value1","key2":"value2","key3":"value3","',
       );
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.equal('');
