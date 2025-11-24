@@ -335,7 +335,7 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
     expect(log.attributes).to.have.property(
       KEY_EMB_EXCEPTION_HANDLING,
-      'HANDLED',
+      'handled',
     );
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'MyError');
     expect(log.attributes).to.have.property('exception.name', 'MyErrorName');
