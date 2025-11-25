@@ -135,7 +135,7 @@ log.message('Loading not finished in time.', 'error', {
 
 The SDK automatically captures unhandled exceptions.
 
-If there is a need to a log a handled exception, this can be done manually by calling the logException method:
+If there is a need to log a handled exception, this can be done manually by calling the logException method:
 
 ```typescript
 import { log } from '@embrace-io/web-sdk';
@@ -311,7 +311,7 @@ initSDK({
 
 > [!WARNING]
 > Embrace automatically creates spans for network requests, however because the OTLP export itself makes a network
-> request this can produce a cycle where the export's network request creates a span which is then exported which the
+> request this can produce a cycle where the export's network request creates a span which is then exported which then
 > creates another span, etc.
 >
 > To avoid this you can configure the network instrumentation to ignore the URLs to which you are exporting as shown in
@@ -332,7 +332,7 @@ Note: we recommend you pin specific versions to avoid breaking changes. Like:
 <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X"></script>
 ```
 
-Replacing `X.X.X` with the version of the SDK you wish to include. Check available version
+Replacing `X.X.X` with the version of the SDK you wish to include. Check available versions
 on [npm](https://www.npmjs.com/package/@embrace-io/web-sdk).
 
 We recommend you add this script tag to the `<head>` of your HTML file, so that it loads before your app code. This will
