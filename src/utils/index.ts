@@ -15,6 +15,6 @@ export {
   OTelPerformanceManager,
   type PerformanceManager,
 } from './PerformanceManager/index.js';
+export { SafeCaller } from './SafeCaller/index.js';
 export { throttle } from './throttle.js';
 export type { TimeoutRef } from './timeout/index.js';
-export { withErrorFallback } from './withErrorFallback.js';

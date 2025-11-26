@@ -1,5 +1,7 @@
 import type { HrTime } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import { SafeCaller } from '../../../utils';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -11,10 +13,16 @@ import type { SessionAPIArgs } from './types.js';
 
 export class SessionAPI implements SpanSessionManager {
   private static _instance?: SessionAPI;
+  private readonly _safe: SafeCaller;
   private readonly _proxySpanSessionManager;
 
   private constructor({ proxySpanSessionManager }: SessionAPIArgs) {
     this._proxySpanSessionManager = proxySpanSessionManager;
+    this._safe = new SafeCaller(
+      diag.createComponentLogger({
+        namespace: 'SessionAPI',
+      }),
+    );
   }
 
   public static getInstance(): SessionAPI {
@@ -36,7 +44,7 @@ export class SessionAPI implements SpanSessionManager {
   }
 
   public addBreadcrumb(name: string): void {
-    this.getSpanSessionManager().addBreadcrumb(name);
+    this._safe.invoke(() => this.getSpanSessionManager().addBreadcrumb(name));
   }
 
   public addProperty(
@@ -44,52 +52,79 @@ export class SessionAPI implements SpanSessionManager {
     value: string,
     options?: PropertyOptions,
   ): void {
-    this.getSpanSessionManager().addProperty(key, value, options);
+    this._safe.invoke(() =>
+      this.getSpanSessionManager().addProperty(key, value, options),
+    );
   }
 
   public removeProperty(key: string): void {
-    this.getSpanSessionManager().removeProperty(key);
+    this._safe.invoke(() => this.getSpanSessionManager().removeProperty(key));
   }
 
   public endSessionSpan() {
-    this.getSpanSessionManager().endSessionSpan();
+    this._safe.invoke(() => this.getSpanSessionManager().endSessionSpan());
   }
 
   public endSessionSpanInternal(reason: ReasonSessionEnded) {
-    this.getSpanSessionManager().endSessionSpanInternal(reason);
+    this._safe.invoke(() =>
+      this.getSpanSessionManager().endSessionSpanInternal(reason),
+    );
   }
 
   public currentSessionAsReadableSpan(
     reason: ReasonSessionEnded,
   ): ReadableSpan | null {
-    return this.getSpanSessionManager().currentSessionAsReadableSpan(reason);
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().currentSessionAsReadableSpan(reason),
+      null,
+    );
   }
 
   public getSessionId(): string | null {
-    return this.getSpanSessionManager().getSessionId();
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().getSessionId(),
+      null,
+    );
   }
 
   public getPreviousSessionId(): string | null {
-    return this.getSpanSessionManager().getPreviousSessionId();
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().getPreviousSessionId(),
+      null,
+    );
   }
 
   public getSessionSpan() {
-    return this.getSpanSessionManager().getSessionSpan();
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().getSessionSpan(),
+      null,
+    );
   }
 
   public getSessionStartTime(): HrTime | null {
-    return this.getSpanSessionManager().getSessionStartTime();
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().getSessionStartTime(),
+      null,
+    );
   }
 
   public startSessionSpan(options?: StartSessionOptions) {
-    this.getSpanSessionManager().startSessionSpan(options);
+    this._safe.invoke(() =>
+      this.getSpanSessionManager().startSessionSpan(options),
+    );
   }
 
   public addSessionStartedListener(listener: () => void): () => void {
-    return this.getSpanSessionManager().addSessionStartedListener(listener);
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().addSessionStartedListener(listener),
+      () => undefined,
+    );
   }
 
   public addSessionEndedListener(listener: () => void): () => void {
-    return this.getSpanSessionManager().addSessionEndedListener(listener);
+    return this._safe.invokeWithReturn(
+      () => this.getSpanSessionManager().addSessionEndedListener(listener),
+      () => undefined,
+    );
   }
 }
