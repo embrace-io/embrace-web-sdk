@@ -1,5 +1,6 @@
 export { bulkAddEventListener } from './bulkAddEventListener/index.js';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.js';
+export { createSafeProxy } from './createSafeProxy/index.js';
 export {
   EmbraceSpanStorage,
   type SpanStorageOptions,

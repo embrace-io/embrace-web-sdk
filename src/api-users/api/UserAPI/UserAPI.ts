@@ -1,46 +1,52 @@
+import { diag } from '@opentelemetry/api';
+import { createSafeProxy } from '../../../utils/index.js';
 import type { UserManager } from '../../manager/index.js';
-import { ProxyUserManager } from '../../manager/index.js';
-import type { UserAPIArgs } from './types.js';
+import { NoOpUserManager, ProxyUserManager } from '../../manager/index.js';
 
-export class UserAPI implements UserManager {
-  private static _instance?: UserAPI;
-  private readonly _proxyUserManager;
+/**
+ * Public interface for UserAPI including SDK-internal methods.
+ */
+export interface UserAPIInstance extends UserManager {
+  /** @internal SDK use only */
+  setGlobalUserManager(userManager: UserManager): void;
+  /** @internal SDK use only */
+  getUserManager(): UserManager;
+}
 
-  private constructor({ proxyUserManager }: UserAPIArgs) {
-    this._proxyUserManager = proxyUserManager;
-  }
+const NOOP_USER_MANAGER = new NoOpUserManager();
+const INTERNAL_METHODS = new Set(['setDelegate', 'getDelegate']);
 
-  public static getInstance(): UserAPI {
+export class UserAPI {
+  private static _instance?: UserAPIInstance;
+
+  public static getInstance(): UserAPIInstance {
     if (!UserAPI._instance) {
-      UserAPI._instance = new UserAPI({
-        proxyUserManager: new ProxyUserManager(),
-      });
+      const proxyManager = new ProxyUserManager();
+
+      const safeManager = createSafeProxy(
+        proxyManager,
+        NOOP_USER_MANAGER,
+        diag.createComponentLogger({ namespace: 'UserAPI' }),
+        INTERNAL_METHODS,
+      );
+
+      UserAPI._instance = Object.assign(safeManager, {
+        setGlobalUserManager(userManager: UserManager): void {
+          proxyManager.setDelegate(userManager);
+        },
+        getUserManager(): UserManager {
+          return proxyManager;
+        },
+      }) as UserAPIInstance;
     }
 
     return UserAPI._instance;
   }
 
-  public getUserManager(): UserManager {
-    return this._proxyUserManager;
-  }
-
-  public setGlobalUserManager(userManager: UserManager): void {
-    this._proxyUserManager.setDelegate(userManager);
-  }
-
-  public getEmbraceUserId(): string {
-    return this.getUserManager().getEmbraceUserId();
-  }
-
-  public getUserId(): string | null {
-    return this.getUserManager().getUserId();
-  }
-
-  public setUserId(userId: string): void {
-    this.getUserManager().setUserId(userId);
-  }
-
-  public clearUserId(): void {
-    this.getUserManager().clearUserId();
+  public static resetInstance(): void {
+    UserAPI._instance = undefined;
   }
 }
+
+// Re-export types for backward compatibility
+export type { UserManager };

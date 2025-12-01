@@ -1,51 +1,54 @@
 import type { Context } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
+import { createSafeProxy } from '../../../utils/index.js';
 import type { TraceManager } from '../../manager/index.js';
-import { ProxyTraceManager } from '../../manager/index.js';
-import type {
-  ExtendedSpan,
-  ExtendedSpanOptions,
-  TraceAPIArgs,
-} from './types.js';
+import { NoOpTraceManager, ProxyTraceManager } from '../../manager/index.js';
+import type { ExtendedSpan, ExtendedSpanOptions } from './types.js';
 
-export class TraceAPI implements TraceManager {
-  private static _instance?: TraceAPI;
-  private readonly _proxyTraceManager;
+/**
+ * Public interface for TraceAPI including SDK-internal methods.
+ */
+export interface TraceAPIInstance extends TraceManager {
+  /** @internal SDK use only */
+  setGlobalTraceManager(traceManager: TraceManager): void;
+  /** @internal SDK use only */
+  getTraceManager(): TraceManager;
+}
 
-  private constructor({ proxyTraceManager }: TraceAPIArgs) {
-    this._proxyTraceManager = proxyTraceManager;
-  }
+const NOOP_TRACE_MANAGER = new NoOpTraceManager();
+const INTERNAL_METHODS = new Set(['setDelegate', 'getDelegate']);
 
-  public static getInstance(): TraceAPI {
+export class TraceAPI {
+  private static _instance?: TraceAPIInstance;
+
+  public static getInstance(): TraceAPIInstance {
     if (!TraceAPI._instance) {
-      TraceAPI._instance = new TraceAPI({
-        proxyTraceManager: new ProxyTraceManager(),
-      });
+      const proxyManager = new ProxyTraceManager();
+
+      const safeManager = createSafeProxy(
+        proxyManager,
+        NOOP_TRACE_MANAGER,
+        diag.createComponentLogger({ namespace: 'TraceAPI' }),
+        INTERNAL_METHODS,
+      );
+
+      TraceAPI._instance = Object.assign(safeManager, {
+        setGlobalTraceManager(traceManager: TraceManager): void {
+          proxyManager.setDelegate(traceManager);
+        },
+        getTraceManager(): TraceManager {
+          return proxyManager;
+        },
+      }) as TraceAPIInstance;
     }
 
     return TraceAPI._instance;
   }
 
-  public getTraceManager: () => TraceManager = () => {
-    return this._proxyTraceManager;
-  };
-
-  public setGlobalTraceManager(traceManager: TraceManager): void {
-    this._proxyTraceManager.setDelegate(traceManager);
-  }
-
-  public startSpan(
-    name: string,
-    options?: ExtendedSpanOptions,
-    context?: Context,
-  ): ExtendedSpan {
-    return this.getTraceManager().startSpan(name, options, context);
-  }
-
-  public setSpan(context: Context, span: ExtendedSpan): Context {
-    return this.getTraceManager().setSpan(context, span);
-  }
-
-  public getSpan(context: Context): ExtendedSpan | undefined {
-    return this.getTraceManager().getSpan(context);
+  public static resetInstance(): void {
+    TraceAPI._instance = undefined;
   }
 }
+
+// Re-export types for backward compatibility
+export type { Context, ExtendedSpan, ExtendedSpanOptions, TraceManager };
