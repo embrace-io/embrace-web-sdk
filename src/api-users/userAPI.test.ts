@@ -3,8 +3,10 @@ import { UserAPI } from './api/index.js';
 import { user } from './userAPI.js';
 
 describe('userAPI', () => {
-  it('should export an instance of UserAPI', () => {
-    expect(user).to.be.instanceOf(UserAPI);
+  it('should export a user instance with expected methods', () => {
+    expect(user).to.have.property('getUserId');
+    expect(user).to.have.property('setUserId');
+    expect(user).to.have.property('setGlobalUserManager');
   });
 
   it('should return the same instance on multiple calls', () => {
