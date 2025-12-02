@@ -1,9 +1,7 @@
-import type { Context } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import { createSafeProxy } from '../../../utils/index.js';
 import type { TraceManager } from '../../manager/index.js';
 import { NoOpTraceManager, ProxyTraceManager } from '../../manager/index.js';
-import type { ExtendedSpan, ExtendedSpanOptions } from './types.js';
 
 /**
  * Public interface for TraceAPI including SDK-internal methods.
@@ -49,6 +47,3 @@ export class TraceAPI {
     TraceAPI._instance = undefined;
   }
 }
-
-// Re-export types for backward compatibility
-export type { Context, ExtendedSpan, ExtendedSpanOptions, TraceManager };

@@ -1,13 +1,6 @@
-import type { HrTime } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { createSafeProxy } from '../../../utils/index.js';
-import type {
-  PropertyOptions,
-  ReasonSessionEnded,
-  SpanSessionManager,
-  StartSessionOptions,
-} from '../../manager/index.js';
+import type { SpanSessionManager } from '../../manager/index.js';
 import {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
@@ -59,13 +52,3 @@ export class SessionAPI {
     SessionAPI._instance = undefined;
   }
 }
-
-// Re-export types for backward compatibility
-export type {
-  HrTime,
-  PropertyOptions,
-  ReadableSpan,
-  ReasonSessionEnded,
-  SpanSessionManager,
-  StartSessionOptions,
-};

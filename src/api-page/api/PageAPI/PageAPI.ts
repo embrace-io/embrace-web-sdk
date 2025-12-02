@@ -1,6 +1,6 @@
 import { diag } from '@opentelemetry/api';
 import { createSafeProxy } from '../../../utils/index.js';
-import type { PageManager, Route } from '../../manager/index.js';
+import type { PageManager } from '../../manager/index.js';
 import { NoOpPageManager, ProxyPageManager } from '../../manager/index.js';
 
 /**
@@ -47,6 +47,3 @@ export class PageAPI {
     PageAPI._instance = undefined;
   }
 }
-
-// Re-export types for backward compatibility
-export type { PageManager, Route };

@@ -1,11 +1,6 @@
 import { diag } from '@opentelemetry/api';
 import { createSafeProxy } from '../../../utils/index.js';
-import type {
-  LogExceptionOptions,
-  LogManager,
-  LogMessageOptions,
-  LogSeverity,
-} from '../../manager/index.js';
+import type { LogManager } from '../../manager/index.js';
 import { NoOpLogManager, ProxyLogManager } from '../../manager/index.js';
 
 /**
@@ -52,6 +47,3 @@ export class LogAPI {
     LogAPI._instance = undefined;
   }
 }
-
-// Re-export types for backward compatibility
-export type { LogExceptionOptions, LogManager, LogMessageOptions, LogSeverity };

@@ -47,6 +47,3 @@ export class UserAPI {
     UserAPI._instance = undefined;
   }
 }
-
-// Re-export types for backward compatibility
-export type { UserManager };
