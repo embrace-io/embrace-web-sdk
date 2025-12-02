@@ -166,6 +166,11 @@ export class EmbraceLogManager implements LogManager {
       return;
     }
 
+    if (!['info', 'warning', 'error'].includes(severity)) {
+      this._diag.warn('Severity must be info, warning, or error');
+      return;
+    }
+
     if (severity === 'error') {
       this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
     }
