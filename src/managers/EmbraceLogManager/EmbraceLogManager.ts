@@ -138,7 +138,7 @@ export class EmbraceLogManager implements LogManager {
         ),
         [KEY_EMB_EXCEPTION_CAUSE]: normalizedError.cause,
         [ATTR_EXCEPTION_TYPE]: normalizedError.type,
-        ['exception.name']: normalizedError.name,
+        ['exception.name']: normalizedError.name, // not in OTel semconv, no constant available
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
         [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
