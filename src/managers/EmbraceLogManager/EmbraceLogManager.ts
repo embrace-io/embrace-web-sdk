@@ -161,8 +161,8 @@ export class EmbraceLogManager implements LogManager {
       stacktrace,
     }: LogMessageOptions = {},
   ) {
-    if (!message || typeof message !== 'string') {
-      this._diag.warn('Message must be a string');
+    if (typeof message !== 'string' || !message.trim()) {
+      this._diag.warn('Message must be a non-empty string');
       return;
     }
 
