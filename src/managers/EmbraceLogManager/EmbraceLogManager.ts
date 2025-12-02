@@ -102,8 +102,8 @@ export class EmbraceLogManager implements LogManager {
       handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
-    if (attributes == null || typeof attributes !== 'object') {
-      this._diag.warn('attributes must be a non-null object', attributes);
+    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
+      this._diag.warn('attributes must be a plain object', attributes);
       attributes = {};
     }
 
