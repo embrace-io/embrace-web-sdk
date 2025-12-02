@@ -439,28 +439,14 @@ server-side ones that form part of the same overall trace to provide an end-to-e
 found on the [Network Span Forwarding documentation page](https://embrace.io/docs/product/network-spans-forwarding/).
 
 The enabling and configuration of this feature is done through our Embrace dashboard so nothing needs to be set in the
-SDK to turn it on, however there are a few SDK-side configurations that could affect the feature to be aware of:
+SDK to turn it on, however there are a few SDK-side configurations that prevent the feature to be aware of:
 
-```typescript
-import { sdk } from '@embrace-io/web-sdk';
+### Enabling for specific CORS requests
 
-sdk.initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
-
-  // Setting this to true blocks the Network Span Forwarding feature regardless of what has been configured server-side
-  blockNetworkSpanForwarding: true,
-
-  // Setting registerGlobally to false, providing a custom propagator, or omitting every network instrumentations are
-  // all not supported alongside Network Span Forwarding and will cause that feature to turn off
-  registerGlobally: false,
-  propagator: myCustomPropagator,
-  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
-});
-```
-
-Also note that by default trace headers will not be included on outgoing CORS requests, this can be overridden for
-particular URLs by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
+By default, the `traceparent` header will not be included on outgoing CORS requests. This is because the server being
+hit may not be configured to allow additional headers for CORS requests (see [Access-Control-Allow-Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers)).
+You can specify particular URLs that you wish to forward CORS requests for and for which you know are allowed to accept
+the additional header by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
@@ -471,15 +457,55 @@ sdk.initSDK({
   defaultInstrumentationConfig: {
     '@opentelemetry/instrumentation-fetch': {
       propagateTraceHeaderCorsUrls: [
-        // URL strings or regexes to propagate trace headers for on fetch requests
+        /example\.com/, // propagates for any CORS requests with URLs that match the regex
+        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
       ],
     },
     '@opentelemetry/instrumentation-xml-http-request': {
       propagateTraceHeaderCorsUrls: [
-        // URL strings or regexes to propagate trace headers for on XHR requests
+        /example\.com/, // propagates for any CORS requests with URLs that match the regex
+        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
       ],
     },
   },
+});
+```
+
+### Conflicting configuration
+
+Particular configurations of the SDK are incompatible with Network Span Forwarding and will cause the feature to be
+turned off if set:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+
+  // The following are not supported alongside Network Span Forwarding and will cause that feature to turn off:
+  // 1. Setting registerGlobally to false
+  registerGlobally: false,
+  // 2. Providing a custom propagator
+  propagator: myCustomPropagator,
+  // 3. Omitting both network instrumentations
+  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+});
+```
+
+### Blocking client-side
+
+A `blockNetworkSpanForwarding` configuration flag is available to block the Network Span Forwarding feature regardless
+of what has been configured server-side:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+
+  blockNetworkSpanForwarding: true,
 });
 ```
 
