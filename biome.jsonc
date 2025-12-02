@@ -49,7 +49,9 @@
       "complexity": {
         "recommended": true,
         // https://github.com/biomejs/biome/discussions/7404
-        "useLiteralKeys": "off"
+        "useLiteralKeys": "off",
+        // API classes use static-only pattern to match OTel conventions
+        "noStaticOnlyClass": "off"
       },
       "correctness": {
         "recommended": true
