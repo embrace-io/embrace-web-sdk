@@ -323,13 +323,13 @@ We recommend you include our SDK as a regular npm dependency (see [Quick Start](
 the SDK as a code snippet from CDN, you can do so by adding the following script tag to your generated HTML file:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk"></script>
+<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk" crossorigin="anonymous"></script>
 ```
 
 Note: we recommend you pin specific versions to avoid breaking changes. Like:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X"></script>
+<script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X" crossorigin="anonymous"></script>
 ```
 
 Replacing `X.X.X` with the version of the SDK you wish to include. Check available versions
@@ -367,7 +367,7 @@ following snippet to your HTML file. Remember to replace `X.X.X` with the versio
 
 ```html
 <script>
-   !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
+   !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.crossOrigin="anonymous",e.src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
 </script>
 ```
 
