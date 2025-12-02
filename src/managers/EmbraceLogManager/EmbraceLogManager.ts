@@ -99,10 +99,6 @@ export class EmbraceLogManager implements LogManager {
       timestamp = this._perf.getNowMillis(),
     }: LogExceptionOptions = {},
   ) {
-    if (!error) {
-      error = new Error('logException received an undefined error');
-    }
-
     if (attributes == null || typeof attributes !== 'object') {
       this._diag.warn('attributes must be a non-null object', attributes);
       attributes = {};
@@ -233,48 +229,48 @@ export class EmbraceLogManager implements LogManager {
     name: string;
     stack: string; // 'stack' not 'stacktrace' here to match the standard Error.stack property name
   } {
+    const constructorName = EmbraceLogManager._getConstructorName(error);
+
     if (error instanceof Error) {
       return {
-        message: typeof error.message === 'string' ? error.message.trim() : '',
-        type: error.constructor.name,
-        name: error.name,
+        message: String(error.message || '').trim(),
+        type: constructorName,
+        name: error.name || '',
         stack: error.stack || '',
       };
     }
 
-    // For non-Error types, generate a new stack trace
-    const userCallStack = new Error().stack || '';
-
-    if (typeof error === 'string') {
-      return {
-        message: error.trim(),
-        type: 'String',
-        name: 'String',
-        stack: userCallStack,
-      };
-    }
-
-    if (error && typeof error === 'object') {
-      let message = '';
+    let message = '';
+    if (typeof error === 'object') {
       try {
         message = JSON.stringify(error);
       } catch {
-        message = '[unable to serialize error]';
+        message = String(error).trim();
       }
-
-      return {
-        message,
-        type: error.constructor.name,
-        name: error.constructor.name,
-        stack: userCallStack,
-      };
+    } else {
+      message = String(error).trim();
     }
 
     return {
-      message: String(error).trim(),
-      type: typeof error,
-      name: typeof error,
-      stack: userCallStack,
+      message,
+      type: constructorName,
+      name: constructorName,
+      stack: '',
     };
+  }
+
+  /**
+   * Safely extracts constructor name from an object.
+   * Handles edge cases like Object.create(null) or missing constructor.
+   */
+  private static _getConstructorName(obj: unknown): string {
+    try {
+      if (obj?.constructor?.name) {
+        return obj.constructor.name;
+      }
+    } catch {
+      // Accessing constructor can throw in some edge cases
+    }
+    return typeof obj;
   }
 }
