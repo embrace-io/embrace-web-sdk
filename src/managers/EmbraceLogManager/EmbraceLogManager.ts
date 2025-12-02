@@ -12,9 +12,11 @@ import type {
   LogExceptionOptions,
   LogMessageOptions,
 } from '../../api-logs/manager/index.js';
+import type { ExceptionHandlerType } from '../../api-logs/manager/types';
 import type { VisibilityStateDocument } from '../../common/index.js';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_EXCEPTION_CAUSE,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
 } from '../../constants/attributes.js';
@@ -97,6 +99,7 @@ export class EmbraceLogManager implements LogManager {
       handled = true,
       attributes = {},
       timestamp = this._perf.getNowMillis(),
+      handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
     if (attributes == null || typeof attributes !== 'object') {
@@ -129,7 +132,11 @@ export class EmbraceLogManager implements LogManager {
       attributes: {
         ...limitedException.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
-        [KEY_EMB_EXCEPTION_HANDLING]: handled ? 'HANDLED' : 'UNHANDLED',
+        [KEY_EMB_EXCEPTION_HANDLING]: EmbraceLogManager._exceptionHandlingType(
+          handled,
+          handler,
+        ),
+        [KEY_EMB_EXCEPTION_CAUSE]: normalizedError.cause,
         [ATTR_EXCEPTION_TYPE]: normalizedError.type,
         ['exception.name']: normalizedError.name,
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
@@ -228,6 +235,7 @@ export class EmbraceLogManager implements LogManager {
     type: string;
     name: string;
     stack: string; // 'stack' not 'stacktrace' here to match the standard Error.stack property name
+    cause: string;
   } {
     const constructorName = EmbraceLogManager._getConstructorName(error);
 
@@ -237,6 +245,7 @@ export class EmbraceLogManager implements LogManager {
         type: constructorName,
         name: error.name || '',
         stack: error.stack || '',
+        cause: error.cause ? 'present' : '',
       };
     }
 
@@ -256,6 +265,7 @@ export class EmbraceLogManager implements LogManager {
       type: constructorName,
       name: constructorName,
       stack: '',
+      cause: '',
     };
   }
 
@@ -272,5 +282,24 @@ export class EmbraceLogManager implements LogManager {
       // Accessing constructor can throw in some edge cases
     }
     return typeof obj;
+  }
+
+  private static _exceptionHandlingType(
+    handled: boolean,
+    handler: ExceptionHandlerType,
+  ): string {
+    if (handled) {
+      return 'handled';
+    }
+
+    if (handler === 'global_exception') {
+      return 'unhandled_error';
+    }
+
+    if (handler === 'promise_rejection') {
+      return 'unhandled_rejection';
+    }
+
+    return 'unhandled';
   }
 }

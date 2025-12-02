@@ -102,7 +102,8 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('my custom error');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_handling': 'UNHANDLED',
+      'emb.exception_cause': '',
+      'emb.exception_handling': 'unhandled_error',
       'exception.type': 'GlobalExceptionTestError',
       'exception.name': 'GlobalExceptionTestErrorName',
       'exception.message': 'my custom error',
@@ -132,9 +133,10 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('promise was rejected');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_handling': 'UNHANDLED',
-      'exception.type': 'Error',
-      'exception.name': 'Error',
+      'emb.exception_cause': '',
+      'emb.exception_handling': 'unhandled_rejection',
+      'exception.type': 'String',
+      'exception.name': 'String',
       'exception.message': 'promise was rejected',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
@@ -163,7 +165,8 @@ describe('GlobalExceptionInstrumentation', () => {
     void expect(exceptionLog.body).to.be.equal('my custom error');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_handling': 'UNHANDLED',
+      'emb.exception_cause': '',
+      'emb.exception_handling': 'unhandled_rejection',
       'exception.type': 'GlobalExceptionTestError',
       'exception.name': 'GlobalExceptionTestErrorName',
       'exception.message': 'my custom error',
@@ -190,13 +193,14 @@ describe('GlobalExceptionInstrumentation', () => {
     );
     void expect(exceptionLog.severityNumber).to.be.equal(SeverityNumber.ERROR);
     void expect(exceptionLog.severityText).to.be.equal('ERROR');
-    void expect(exceptionLog.body).to.be.equal('Unhandled Rejected Promise');
+    void expect(exceptionLog.body).to.be.equal('1234');
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_handling': 'UNHANDLED',
-      'exception.type': 'Error',
-      'exception.name': 'Error',
-      'exception.message': 'Unhandled Rejected Promise',
+      'emb.exception_cause': '',
+      'emb.exception_handling': 'unhandled_rejection',
+      'exception.type': 'Number',
+      'exception.name': 'Number',
+      'exception.message': '1234',
       'exception.stacktrace': '',
       'emb.js_file_bundle_ids': '{}',
       'emb.state': 'foreground',
@@ -224,7 +228,8 @@ describe('GlobalExceptionInstrumentation', () => {
     );
     void expect(exceptionLog.attributes).to.deep.equal({
       'emb.type': 'sys.exception',
-      'emb.exception_handling': 'UNHANDLED',
+      'emb.exception_cause': '',
+      'emb.exception_handling': 'unhandled_error',
       'exception.type': 'String',
       'exception.name': 'String',
       'exception.message': 'global exception test error message',
