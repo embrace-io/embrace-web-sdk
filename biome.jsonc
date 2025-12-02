@@ -30,6 +30,12 @@
       "quoteStyle": "single"
     }
   },
+  "css": {
+    "parser": {
+      // webpack integration tests use tailwind
+      "tailwindDirectives": true
+    }
+  },
   "linter": {
     "rules": {
       "security": {

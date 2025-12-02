@@ -73,6 +73,11 @@
       "matchPackagePatterns": ["^react-router-dom"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "Peer dependencies - do not update",
+      "matchDepTypes": ["peerDependencies"],
+      "enabled": false
     }
   ]
 }

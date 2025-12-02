@@ -135,7 +135,7 @@ log.message('Loading not finished in time.', 'error', {
 
 The SDK automatically captures unhandled exceptions.
 
-If there is a need to a log a handled exception, this can be done manually by calling the logException method:
+If there is a need to log a handled exception, this can be done manually by calling the logException method:
 
 ```typescript
 import { log } from '@embrace-io/web-sdk';
@@ -311,7 +311,7 @@ initSDK({
 
 > [!WARNING]
 > Embrace automatically creates spans for network requests, however because the OTLP export itself makes a network
-> request this can produce a cycle where the export's network request creates a span which is then exported which the
+> request this can produce a cycle where the export's network request creates a span which is then exported which then
 > creates another span, etc.
 >
 > To avoid this you can configure the network instrumentation to ignore the URLs to which you are exporting as shown in
@@ -332,7 +332,7 @@ Note: we recommend you pin specific versions to avoid breaking changes. Like:
 <script src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X"></script>
 ```
 
-Replacing `X.X.X` with the version of the SDK you wish to include. Check available version
+Replacing `X.X.X` with the version of the SDK you wish to include. Check available versions
 on [npm](https://www.npmjs.com/package/@embrace-io/web-sdk).
 
 We recommend you add this script tag to the `<head>` of your HTML file, so that it loads before your app code. This will
@@ -439,28 +439,14 @@ server-side ones that form part of the same overall trace to provide an end-to-e
 found on the [Network Span Forwarding documentation page](https://embrace.io/docs/product/network-spans-forwarding/).
 
 The enabling and configuration of this feature is done through our Embrace dashboard so nothing needs to be set in the
-SDK to turn it on, however there are a few SDK-side configurations that could affect the feature to be aware of:
+SDK to turn it on, however there are a few SDK-side configurations that prevent the feature to be aware of:
 
-```typescript
-import { sdk } from '@embrace-io/web-sdk';
+### Enabling for specific CORS requests
 
-sdk.initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
-
-  // Setting this to true blocks the Network Span Forwarding feature regardless of what has been configured server-side
-  blockNetworkSpanForwarding: true,
-
-  // Setting registerGlobally to false, providing a custom propagator, or omitting every network instrumentations are
-  // all not supported alongside Network Span Forwarding and will cause that feature to turn off
-  registerGlobally: false,
-  propagator: myCustomPropagator,
-  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
-});
-```
-
-Also note that by default trace headers will not be included on outgoing CORS requests, this can be overridden for
-particular URLs by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
+By default, the `traceparent` header will not be included on outgoing CORS requests. This is because the server being
+hit may not be configured to allow additional headers for CORS requests (see [Access-Control-Allow-Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Access-Control-Allow-Headers)).
+You can specify particular URLs that you wish to forward CORS requests for and for which you know are allowed to accept
+the additional header by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
 
 ```typescript
 import { sdk } from '@embrace-io/web-sdk';
@@ -471,15 +457,55 @@ sdk.initSDK({
   defaultInstrumentationConfig: {
     '@opentelemetry/instrumentation-fetch': {
       propagateTraceHeaderCorsUrls: [
-        // URL strings or regexes to propagate trace headers for on fetch requests
+        /example\.com/, // propagates for any CORS requests with URLs that match the regex
+        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
       ],
     },
     '@opentelemetry/instrumentation-xml-http-request': {
       propagateTraceHeaderCorsUrls: [
-        // URL strings or regexes to propagate trace headers for on XHR requests
+        /example\.com/, // propagates for any CORS requests with URLs that match the regex
+        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
       ],
     },
   },
+});
+```
+
+### Conflicting configuration
+
+Particular configurations of the SDK are incompatible with Network Span Forwarding and will cause the feature to be
+turned off if set:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+
+  // The following are not supported alongside Network Span Forwarding and will cause that feature to turn off:
+  // 1. Setting registerGlobally to false
+  registerGlobally: false,
+  // 2. Providing a custom propagator
+  propagator: myCustomPropagator,
+  // 3. Omitting both network instrumentations
+  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+});
+```
+
+### Blocking client-side
+
+A `blockNetworkSpanForwarding` configuration flag is available to block the Network Span Forwarding feature regardless
+of what has been configured server-side:
+
+```typescript
+import { sdk } from '@embrace-io/web-sdk';
+
+sdk.initSDK({
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+
+  blockNetworkSpanForwarding: true,
 });
 ```
 
@@ -491,9 +517,7 @@ from [Custom exporters](#custom-exporters) or else the SDK considers the configu
 
 ## Browser Support
 
-The SDK is intended to be imported as a module and transpiled by a bundler. We provide multiple builds of the SDK: ESNext and ES2022 module versions for use in modern build pipelines. OpenTelemetry set their current minumum language feature support to ES2022. Our default ESM SDK targets this as well to ensure compatibility. See more details in the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
-
-We recommend importing the ESNext version of the SDK if your bundler supports it and letting your build pipeline handle the transpilation. This will ensure that the SDK you import is the smallest possible size.
+The SDK is intended to be imported as a module and transpiled by a bundler. We provide an ES2022 module version for use in modern build pipelines. OpenTelemetry set their current minimum language feature support to ES2022. Our default ESM SDK targets this as well to ensure compatibility. See more details in the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
 
 We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum compatibility with older browsers.
 
@@ -505,17 +529,17 @@ Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
 
 ### Compatibility with OTel packages
 
-The SDK is built on top of OpenTelemetry and as such it is possible to use it alongside other OTel libraries. **Important:** The Embrace Web SDK only supports OpenTelemetry 1.x packages. OpenTelemetry 2.x (and above) is **not supported** and will not work with this SDK at this time.
+The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries. **Important: New projects should use OpenTelemetry 2.x.**
+OpenTelemetry 1.x support is limited to 1.x versions of the SDK, which are deprecated.
 
 If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations, you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
 
 | Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
 |-----------------|---------------------|--------|----------------------------|
-| ^2.0.0          | ^1.9.0              | ~2.0.3 | >=0.203.0 && <=0.299.0     |
-| ^1.0.0          | ^1.9.0              | 1.30.1 | 0.57.2                     |
+| ^2.0.0          | ^1.9.0              | ^2.0.3 | >=0.203.0 <0.300.0         |
+| 1.8.2           | ^1.9.0              | 1.30.1 | 0.57.2                     |
 
-For a full list of dependencies used by the SDK, please refer to the [package.json](./package.json)
-and [package-lock.json](./package-lock.json) files.
+For a full list of dependencies used by the SDK, please refer to [package.json](./package.json).
 
 ### Turning on verbose logging in the SDK
 
@@ -528,7 +552,7 @@ import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
-  logLevel: DiagLogLevel.INFO,
+  logLevel: DiagLogLevel.ALL,
 });
 ```
 
