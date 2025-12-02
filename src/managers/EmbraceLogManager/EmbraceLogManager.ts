@@ -172,7 +172,7 @@ export class EmbraceLogManager implements LogManager {
 
     let stacktraceString = '';
     if (severity !== 'info') {
-      if (stacktrace) {
+      if (typeof stacktrace === 'string') {
         stacktraceString = stacktrace;
       } else if (includeStacktrace) {
         stacktraceString = new Error().stack || '';
