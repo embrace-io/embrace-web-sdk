@@ -171,6 +171,11 @@ export class EmbraceLogManager implements LogManager {
       return;
     }
 
+    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
+      this._diag.warn('attributes must be a plain object', attributes);
+      attributes = {};
+    }
+
     if (severity === 'error') {
       this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
     }

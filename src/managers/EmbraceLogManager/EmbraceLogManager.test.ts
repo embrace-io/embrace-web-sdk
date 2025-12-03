@@ -154,6 +154,32 @@ describe('EmbraceLogManager', () => {
     expect(warningLogs[0]).to.equal('Severity must be info, warning, or error');
   });
 
+  it('should reject arrays passed as message attributes', () => {
+    const testDiag = new InMemoryDiagLogger();
+    const testManager = new EmbraceLogManager({
+      diag: testDiag,
+      perf,
+      spanSessionManager,
+      limitManager,
+    });
+
+    testManager.message('test message', 'info', {
+      // @ts-expect-error testing invalid attributes
+      attributes: ['foo', 'bar'],
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+
+    // Should still log but with empty attributes (array rejected)
+    expect(finishedLogs[0].attributes).to.not.have.property('0');
+    expect(finishedLogs[0].attributes).to.not.have.property('1');
+
+    const warningLogs = testDiag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(1);
+    expect(warningLogs[0]).to.equal('attributes must be a plain object');
+  });
+
   it('should reject arrays passed as exception attributes', () => {
     const testDiag = new InMemoryDiagLogger();
     const testManager = new EmbraceLogManager({
