@@ -1,1 +1,1 @@
-export { MockPerformanceManager } from './MockPerformanceManager.js';
+export { MockPerformanceManager } from './MockPerformanceManager.ts';

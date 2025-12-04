@@ -1,5 +1,5 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.js';
+import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.ts';
 
 export interface EmbracePageManagerArgs {
   diag?: DiagLogger;

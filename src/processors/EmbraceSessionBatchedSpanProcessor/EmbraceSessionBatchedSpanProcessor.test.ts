@@ -10,19 +10,19 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../managers/index.js';
+} from '../../managers/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
-} from '../../testUtils/index.js';
+} from '../../testUtils/index.ts';
 import {
   mockNetworkRequestSpan,
   mockSessionSpan,
   mockSpan,
-} from '../../testUtils/mockEntities/ReadableSpan.js';
-import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.js';
+} from '../../testUtils/mockEntities/ReadableSpan.ts';
+import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
 
 const { expect } = chai;
 

@@ -3,17 +3,17 @@ import { diag } from '@opentelemetry/api';
 import type {
   DynamicConfigManager,
   DynamicSDKConfig,
-} from '../../sdk/index.js';
+} from '../../sdk/index.ts';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
-} from './constants.js';
+} from './constants.ts';
 import type {
   EmbraceDynamicConfigManagerArgs,
   RemoteConfig,
   StoredRemoteConfig,
-} from './types.js';
-import { getConfigURL } from './utils.js';
+} from './types.ts';
+import { getConfigURL } from './utils.ts';
 
 const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
   const parsed: DynamicSDKConfig = {

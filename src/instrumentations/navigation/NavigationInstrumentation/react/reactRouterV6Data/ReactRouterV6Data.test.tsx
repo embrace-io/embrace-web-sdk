@@ -7,25 +7,25 @@ import {
   RouterProvider,
   useNavigate,
 } from 'react-router-domv6plus';
-import { page } from '../../../../../api-page';
-import type { SpanSessionManager } from '../../../../../api-sessions';
-import { session } from '../../../../../api-sessions';
+import { page } from '../../../../../api-page/index.ts';
+import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
+import { session } from '../../../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
   EmbraceSpanSessionManager,
-} from '../../../../../managers';
-import { PageSpanProcessor } from '../../../../../processors';
-import { setupTestTraceExporter } from '../../../../../testUtils';
-import { render } from '../../../../../testUtils/react/reactTestUtils';
-import { runReactRouterTest } from '../../../../../testUtils/react/sharedTests';
+} from '../../../../../managers/index.ts';
+import { PageSpanProcessor } from '../../../../../processors/index.ts';
+import { setupTestTraceExporter } from '../../../../../testUtils/index.ts';
+import { render } from '../../../../../testUtils/react/reactTestUtils.ts';
+import { runReactRouterTest } from '../../../../../testUtils/react/sharedTests.ts';
 import {
   About,
   Home,
   Product,
-} from '../../../../../testUtils/react/testComponents';
-import { listenToRouterChanges } from './listenToRouterChanges';
+} from '../../../../../testUtils/react/testComponents.tsx';
+import { listenToRouterChanges } from './listenToRouterChanges.ts';
 
 const { expect } = chai;
 

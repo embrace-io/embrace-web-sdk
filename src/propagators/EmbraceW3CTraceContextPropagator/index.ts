@@ -1,1 +1,1 @@
-export { EmbraceW3CTraceContextPropagator } from './EmbraceW3CTraceContextPropagator.js';
+export { EmbraceW3CTraceContextPropagator } from './EmbraceW3CTraceContextPropagator.ts';

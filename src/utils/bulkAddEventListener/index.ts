@@ -1,1 +1,1 @@
-export { bulkAddEventListener } from './bulkAddEventListener.js';
+export { bulkAddEventListener } from './bulkAddEventListener.ts';

@@ -1,7 +1,7 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { PageManager } from '../../api-page/index.js';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
-import type { PageSpanProcessorArgs } from './types.js';
+import type { PageManager } from '../../api-page/index.ts';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import type { PageSpanProcessorArgs } from './types.ts';
 
 export class PageSpanProcessor implements SpanProcessor {
   private readonly _pageManager: PageManager;

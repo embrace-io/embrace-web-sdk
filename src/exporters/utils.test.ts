@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getDataURL, getEmbraceHeaders } from './utils.js';
+import { getDataURL, getEmbraceHeaders } from './utils.ts';
 
 describe('utils', () => {
   describe('getEmbraceHeaders', () => {

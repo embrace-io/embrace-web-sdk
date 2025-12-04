@@ -13,8 +13,8 @@ import type {
   PropertyOptions,
   ReasonSessionEnded,
   StartSessionOptions,
-} from '../../api-sessions/index.js';
-import type { VisibilityStateDocument } from '../../common/index.js';
+} from '../../api-sessions/index.ts';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
@@ -31,23 +31,23 @@ import {
   KEY_EMB_TAB_ID,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/index.js';
-import type { ExtendedSpan } from '../../index.js';
-import { getAppInstanceId } from '../../resources/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
+} from '../../constants/index.ts';
+import type { ExtendedSpan } from '../../index.ts';
+import { getAppInstanceId } from '../../resources/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
 import {
   generateUUID,
   getIncrementedCount,
   getVisibilityState,
   OTelPerformanceManager,
-} from '../../utils/index.js';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.js';
+} from '../../utils/index.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
 import {
   EMBRACE_SESSION_NUMBER_STORAGE_KEY,
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
   EMBRACE_TAB_STORAGE_KEY,
-} from './constants.js';
+} from './constants.ts';
 import type {
   EmbraceSpanSessionManagerArgs,
   NavigationSource,
@@ -56,7 +56,7 @@ import type {
   SpanSessionManagerInternal,
   Tab,
   TabActivity,
-} from './types.js';
+} from './types.ts';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _previousSessionId: string | null = null;

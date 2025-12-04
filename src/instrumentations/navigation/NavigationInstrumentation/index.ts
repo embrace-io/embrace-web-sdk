@@ -1,3 +1,3 @@
-export { getNavigationInstrumentation } from './instance.js';
-export { NavigationInstrumentation } from './NavigationInstrumentation.js';
-export type { NavigationInstrumentationArgs } from './types.js';
+export { getNavigationInstrumentation } from './instance.ts';
+export { NavigationInstrumentation } from './NavigationInstrumentation.ts';
+export type { NavigationInstrumentationArgs } from './types.ts';

@@ -1,5 +1,5 @@
-import type { VisibilityStateDocument } from '../../../common/index.js';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
+import type { VisibilityStateDocument } from '../../../common/index.ts';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type SpanSessionVisibilityInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,

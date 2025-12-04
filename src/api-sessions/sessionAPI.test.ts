@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { SessionAPI } from './api/index.js';
-import { session } from './sessionAPI.js';
+import { SessionAPI } from './api/index.ts';
+import { session } from './sessionAPI.ts';
 
 describe('sessionAPI', () => {
   it('should export an instance of SessionAPI', () => {

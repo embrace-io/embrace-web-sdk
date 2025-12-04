@@ -3,8 +3,8 @@ import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../testUtils/index.js';
-import { getIncrementedCount } from './getIncrementedCount.js';
+} from '../testUtils/index.ts';
+import { getIncrementedCount } from './getIncrementedCount.ts';
 
 const { expect } = chai;
 

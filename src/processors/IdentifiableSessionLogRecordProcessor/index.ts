@@ -1,1 +1,1 @@
-export { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.js';
+export { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';

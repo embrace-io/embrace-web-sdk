@@ -1,1 +1,1 @@
-export { FailingStorage } from './FailingStorage.js';
+export { FailingStorage } from './FailingStorage.ts';

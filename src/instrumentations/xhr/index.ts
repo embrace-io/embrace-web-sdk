@@ -1,2 +1,2 @@
-export { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation/index.js';
-export type { EmbraceXHRInstrumentationArgs } from './EmbraceXHRInstrumentation/types.js';
+export { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation/index.ts';
+export type { EmbraceXHRInstrumentationArgs } from './EmbraceXHRInstrumentation/types.ts';

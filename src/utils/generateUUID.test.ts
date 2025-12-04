@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { generateUUID } from './generateUUID.js';
+import { generateUUID } from './generateUUID.ts';
 
 const { expect } = chai;
 

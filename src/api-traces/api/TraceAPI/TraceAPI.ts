@@ -1,11 +1,11 @@
 import type { Context } from '@opentelemetry/api';
-import type { TraceManager } from '../../manager/index.js';
-import { ProxyTraceManager } from '../../manager/index.js';
+import type { TraceManager } from '../../manager/index.ts';
+import { ProxyTraceManager } from '../../manager/index.ts';
 import type {
   ExtendedSpan,
   ExtendedSpanOptions,
   TraceAPIArgs,
-} from './types.js';
+} from './types.ts';
 
 export class TraceAPI implements TraceManager {
   private static _instance?: TraceAPI;

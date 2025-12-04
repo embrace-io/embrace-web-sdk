@@ -1,2 +1,2 @@
-export { EmbraceSpanStorage } from './EmbraceSpanStorage.js';
-export type { SpanStorageOptions } from './types.js';
+export { EmbraceSpanStorage } from './EmbraceSpanStorage.ts';
+export type { SpanStorageOptions } from './types.ts';

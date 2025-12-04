@@ -14,16 +14,16 @@ import {
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
 import { createSessionSpanProcessor } from '@opentelemetry/web-common';
-import { log } from '../api-logs/index.js';
-import { page } from '../api-page/index.js';
-import { session } from '../api-sessions/index.js';
-import { trace } from '../api-traces/index.js';
-import { user } from '../api-users/index.js';
-import type { AttributeScrubber } from '../common/index.js';
+import { log } from '../api-logs/index.ts';
+import { page } from '../api-page/index.ts';
+import { session } from '../api-sessions/index.ts';
+import { trace } from '../api-traces/index.ts';
+import { user } from '../api-users/index.ts';
+import type { AttributeScrubber } from '../common/index.ts';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
-} from '../exporters/index.js';
+} from '../exporters/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
@@ -34,7 +34,7 @@ import {
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-} from '../managers/index.js';
+} from '../managers/index.ts';
 import {
   EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
@@ -46,17 +46,17 @@ import {
   SpanScrubProcessor,
   UserLogRecordProcessor,
   UserSpanProcessor,
-} from '../processors/index.js';
-import { EmbraceW3CTraceContextPropagator } from '../propagators/index.js';
-import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.js';
+} from '../processors/index.ts';
+import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
+import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.ts';
 import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-} from '../utils/index.js';
-import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
-import { registry } from './registry.js';
-import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.js';
+} from '../utils/index.ts';
+import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
+import { registry } from './registry.ts';
+import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 import type {
   DynamicSDKConfig,
   SDKControl,
@@ -66,8 +66,8 @@ import type {
   SetupSessionArgs,
   SetupTracesArgs,
   SetupUserArgs,
-} from './types.js';
-import { isValidAppID } from './utils.js';
+} from './types.ts';
+import { isValidAppID } from './utils.ts';
 
 export const initSDK = (
   {

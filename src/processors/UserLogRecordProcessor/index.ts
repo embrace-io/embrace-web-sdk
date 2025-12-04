@@ -1,1 +1,1 @@
-export { UserLogRecordProcessor } from './UserLogRecordProcessor.js';
+export { UserLogRecordProcessor } from './UserLogRecordProcessor.ts';

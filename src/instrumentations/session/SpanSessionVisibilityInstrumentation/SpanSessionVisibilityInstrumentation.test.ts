@@ -2,23 +2,23 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { session } from '../../../api-sessions/index.js';
-import type { VisibilityStateDocument } from '../../../common/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import { session } from '../../../api-sessions/index.ts';
+import type { VisibilityStateDocument } from '../../../common/index.ts';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
-} from '../../../constants/index.js';
+} from '../../../constants/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
-import { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/index.js';
-import type { PerformanceManager } from '../../../utils/index.js';
-import { OTelPerformanceManager } from '../../../utils/index.js';
-import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
+} from '../../../managers/index.ts';
+import { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.ts';
+import { setupTestTraceExporter } from '../../../testUtils/index.ts';
+import type { PerformanceManager } from '../../../utils/index.ts';
+import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.ts';
 
 const { expect } = chai;
 

@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { throttle } from './index.js';
+import { throttle } from './index.ts';
 
 chai.use(sinonChai);
 

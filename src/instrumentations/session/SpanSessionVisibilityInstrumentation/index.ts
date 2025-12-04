@@ -1,2 +1,2 @@
-export { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.js';
-export type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+export { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.ts';
+export type { SpanSessionVisibilityInstrumentationArgs } from './types.ts';

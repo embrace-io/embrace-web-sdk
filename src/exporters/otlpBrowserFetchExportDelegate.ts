@@ -3,8 +3,8 @@ import type { ISerializer } from '@opentelemetry/otlp-transformer';
 import {
   createFetchTransport,
   createRetryingTransport,
-} from '../transport/index.js';
-import type { OtlpFetchExporterConfig } from './types.js';
+} from '../transport/index.ts';
+import type { OtlpFetchExporterConfig } from './types.ts';
 
 // createOtlpBrowserFetchExportDelegate creates an export delegate that uses
 // the Fetch API to send data to an OTLP receiver.

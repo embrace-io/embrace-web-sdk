@@ -1,1 +1,1 @@
-export { EmbraceLogRecordProcessor } from './EmbraceLogRecordProcessor.js';
+export { EmbraceLogRecordProcessor } from './EmbraceLogRecordProcessor.ts';

@@ -3,7 +3,7 @@ import type {
   LogManager,
   LogMessageOptions,
   LogSeverity,
-} from '../index.js';
+} from '../index.ts';
 
 export class NoOpLogManager implements LogManager {
   public logException(_error: unknown, _options?: LogExceptionOptions) {

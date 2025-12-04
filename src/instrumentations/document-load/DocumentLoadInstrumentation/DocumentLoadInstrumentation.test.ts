@@ -23,8 +23,8 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import { DocumentLoadInstrumentation } from '../index.js';
-import { EventNames } from './enums/EventNames.js';
+import { DocumentLoadInstrumentation } from '../index.ts';
+import { EventNames } from './enums/EventNames.ts';
 
 const exporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor(exporter);

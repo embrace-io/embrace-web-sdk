@@ -1,19 +1,19 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { page } from '../../../api-page/index.js';
-import { session } from '../../../api-sessions/index.js';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.js';
+import { page } from '../../../api-page/index.ts';
+import { session } from '../../../api-sessions/index.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
   EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
+} from '../../../managers/index.ts';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
-} from '../../../testUtils/index.js';
-import { NavigationInstrumentation } from './NavigationInstrumentation.js';
+} from '../../../testUtils/index.ts';
+import { NavigationInstrumentation } from './NavigationInstrumentation.ts';
 
 const { expect } = chai;
 

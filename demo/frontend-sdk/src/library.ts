@@ -1,4 +1,4 @@
-import { addEmbraceSDK, initSDK, sdkControl } from './otel';
+import { addEmbraceSDK, initSDK, sdkControl } from './otel.ts';
 
 addEmbraceSDK();
 

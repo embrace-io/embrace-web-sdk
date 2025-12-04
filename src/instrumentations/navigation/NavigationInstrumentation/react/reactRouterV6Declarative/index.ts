@@ -1,1 +1,1 @@
-export { withEmbraceRouting } from './withEmbraceRouting.js';
+export { withEmbraceRouting } from './withEmbraceRouting.ts';

@@ -1,2 +1,2 @@
-export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase.js';
-export type { EmbraceInstrumentationBaseArgs } from './types.js';
+export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase.ts';
+export type { EmbraceInstrumentationBaseArgs } from './types.ts';

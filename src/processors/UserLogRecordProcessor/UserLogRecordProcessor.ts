@@ -1,7 +1,7 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
-import type { UserManager } from '../../api-users/index.js';
-import type { UserLogRecordProcessorArgs } from './types.js';
+import type { UserManager } from '../../api-users/index.ts';
+import type { UserLogRecordProcessorArgs } from './types.ts';
 
 /**
  * UserLogRecordProcessor sets the userId attribute on all log records if the userId is set in the UserManager.

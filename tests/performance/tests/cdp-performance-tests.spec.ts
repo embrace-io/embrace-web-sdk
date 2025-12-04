@@ -5,15 +5,15 @@ import { test } from '@playwright/test';
 import getPort from 'get-port';
 import type { CDPSession } from 'playwright';
 import { chromium } from 'playwright';
-import { resultsToMarkdownTable } from '../../utils/index.js';
+import { resultsToMarkdownTable } from '../../utils/index.ts';
 import {
   TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
   TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
   TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
   TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
-} from '../config/index.js';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
-import type { Metric, TestPage } from '../types/index.js';
+} from '../config/index.ts';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.ts';
+import type { Metric, TestPage } from '../types/index.ts';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
 type PerformanceSnapshot = Record<PerformanceMetric, number>;

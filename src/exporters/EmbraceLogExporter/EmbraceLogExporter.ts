@@ -1,8 +1,8 @@
-import { DEFAULT_EMBRACE_EXPORTER_CONFIG } from '../constants.js';
-import { getEmbraceHeaders } from '../utils.js';
-import { OTLPFetchLogExporter } from './OTLPFetchLogExporter.js';
-import type { EmbraceLogExporterArgs } from './types.js';
-import { getLogEndpoint } from './utils.js';
+import { DEFAULT_EMBRACE_EXPORTER_CONFIG } from '../constants.ts';
+import { getEmbraceHeaders } from '../utils.ts';
+import { OTLPFetchLogExporter } from './OTLPFetchLogExporter.ts';
+import type { EmbraceLogExporterArgs } from './types.ts';
+import { getLogEndpoint } from './utils.ts';
 
 export class EmbraceLogExporter extends OTLPFetchLogExporter {
   public constructor({

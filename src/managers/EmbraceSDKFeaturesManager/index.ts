@@ -1,2 +1,2 @@
-export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.js';
-export type { SDKFeaturesManager } from './types.js';
+export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.ts';
+export type { SDKFeaturesManager } from './types.ts';

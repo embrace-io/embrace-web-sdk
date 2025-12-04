@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.js';
+import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 
 const { expect } = chai;
 

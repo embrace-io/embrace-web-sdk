@@ -1,5 +1,5 @@
-import type { NavigationInstrumentationArgs } from '../index.js';
-import { getNavigationInstrumentation } from '../index.js';
+import type { NavigationInstrumentationArgs } from '../index.ts';
+import { getNavigationInstrumentation } from '../index.ts';
 
 export const createReactRouterNavigationInstrumentation = (
   config: NavigationInstrumentationArgs = {},

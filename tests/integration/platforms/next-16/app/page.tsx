@@ -1,4 +1,4 @@
-import SDKTest from './SDKTest';
+import SDKTest from './SDKTest.tsx';
 
 export default function Home() {
   return (

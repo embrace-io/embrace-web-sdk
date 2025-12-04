@@ -9,7 +9,7 @@ import * as chai from 'chai';
 import type { SinonSandbox } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { VisibilityStateDocument } from '../../common/index.js';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_EXPERIENCE_ID,
   KEY_EMB_NAVIGATION_SOURCE,
@@ -19,24 +19,24 @@ import {
   KEY_EMB_SOURCE_TAB_ID,
   KEY_EMB_TAB_ID,
   KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/attributes.js';
+} from '../../constants/attributes.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
   setupTestTraceExporter,
-} from '../../testUtils/index.js';
+} from '../../testUtils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.js';
+} from '../EmbraceLimitManager/index.ts';
 import {
   EMBRACE_TAB_ACTIVITY_STORAGE_KEY,
   EMBRACE_TAB_STORAGE_KEY,
-} from './constants.js';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.js';
-import type { Tab, TabActivity } from './types.js';
+} from './constants.ts';
+import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
+import type { Tab, TabActivity } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

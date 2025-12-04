@@ -1,1 +1,1 @@
-export { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.js';
+export { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';

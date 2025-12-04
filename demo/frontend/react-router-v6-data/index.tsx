@@ -12,8 +12,8 @@ import {
 } from 'react-router-domv6plus';
 import logo from '../src/logo.png';
 import '../src/index.css';
-import { setupOTel } from '../src/otel';
-import { getBasename } from '../src/utils';
+import { setupOTel } from '../src/otel.ts';
+import { getBasename } from '../src/utils.ts';
 
 setupOTel();
 

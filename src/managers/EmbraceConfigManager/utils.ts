@@ -1,4 +1,4 @@
-import type { RemoteConfigURLParams } from './types.js';
+import type { RemoteConfigURLParams } from './types.ts';
 
 export const getConfigURL = (
   appId: string,

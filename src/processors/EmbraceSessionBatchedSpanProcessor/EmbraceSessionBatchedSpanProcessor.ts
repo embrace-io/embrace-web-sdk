@@ -11,14 +11,14 @@ import type {
   SpanExporter,
   SpanProcessor,
 } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import type { SessionSpan } from '../../instrumentations/index.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { SessionSpan } from '../../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
-} from '../../managers/index.js';
-import { EmbraceSpanStorage } from '../../utils/index.js';
-import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.js';
+} from '../../managers/index.ts';
+import { EmbraceSpanStorage } from '../../utils/index.ts';
+import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
   span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;

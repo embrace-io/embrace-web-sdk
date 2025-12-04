@@ -1,6 +1,6 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { AttributeScrubber } from '../../common/index.js';
-import type { SpanScrubProcessorArgs } from './types.js';
+import type { AttributeScrubber } from '../../common/index.ts';
+import type { SpanScrubProcessorArgs } from './types.ts';
 
 export class SpanScrubProcessor implements SpanProcessor {
   private readonly _attributeScrubbers: AttributeScrubber[];

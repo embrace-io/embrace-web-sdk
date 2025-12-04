@@ -1,1 +1,1 @@
-export { NoOpLogManager } from './NoOpLogManager.js';
+export { NoOpLogManager } from './NoOpLogManager.ts';

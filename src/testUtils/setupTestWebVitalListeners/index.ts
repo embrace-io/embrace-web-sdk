@@ -1,1 +1,1 @@
-export { setupTestWebVitalListeners } from './setupTestWebVitalListeners.js';
+export { setupTestWebVitalListeners } from './setupTestWebVitalListeners.ts';

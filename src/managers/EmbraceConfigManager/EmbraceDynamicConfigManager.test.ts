@@ -7,9 +7,9 @@ import {
   fakeFetchRespondWith,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../../testUtils/index.js';
-import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.js';
-import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.js';
+} from '../../testUtils/index.ts';
+import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.ts';
+import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';
 
 const { expect } = chai;
 

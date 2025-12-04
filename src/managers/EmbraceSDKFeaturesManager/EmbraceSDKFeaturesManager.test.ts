@@ -5,8 +5,8 @@ import {
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../testUtils/index.js';
-import { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.js';
+} from '../../testUtils/index.ts';
+import { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

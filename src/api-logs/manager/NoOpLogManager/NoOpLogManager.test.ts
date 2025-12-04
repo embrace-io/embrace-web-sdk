@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { NoOpLogManager } from './NoOpLogManager.js';
+import { NoOpLogManager } from './NoOpLogManager.ts';
 
 describe('NoOpLogManager', () => {
   let noOpLogManager: NoOpLogManager;

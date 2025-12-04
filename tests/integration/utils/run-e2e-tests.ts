@@ -1,7 +1,7 @@
-import type { ReceivedSpans } from '../index.js';
+import type { ReceivedSpans } from '../index.ts';
 import testWithMockApi, {
   expect as extendedMockApiTestExpect,
-} from './test-with-mock-api.js';
+} from './test-with-mock-api.ts';
 
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionBatchedSpanProcessor non-session span ended';

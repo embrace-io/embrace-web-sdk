@@ -1,4 +1,4 @@
-import type { SpanSessionManager } from '../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../api-sessions/index.ts';
 
 export interface IdentifiableSessionLogRecordProcessorArgs {
   spanSessionManager: SpanSessionManager;

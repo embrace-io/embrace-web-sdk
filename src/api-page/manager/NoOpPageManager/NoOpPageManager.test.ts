@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { NoOpPageManager } from './NoOpPageManager.js';
+import { NoOpPageManager } from './NoOpPageManager.ts';
 
 describe('NoOpPageManager', () => {
   let noOpPageManager: NoOpPageManager;

@@ -1,7 +1,7 @@
-import type { Route } from '../../../../../api-page/index.js';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
-import { getNavigationInstrumentation } from '../../index.js';
-import type { ListenToRouterChangesArgs, Match } from './types.js';
+import type { Route } from '../../../../../api-page/index.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
+import { getNavigationInstrumentation } from '../../index.ts';
+import type { ListenToRouterChangesArgs, Match } from './types.ts';
 
 /**
  * getRouteFromMatches goes through all the matches routes to build the full path

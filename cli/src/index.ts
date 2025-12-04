@@ -8,8 +8,8 @@ import {
   SOURCE_MAP_UPLOAD_HOST,
   SOURCE_MAP_UPLOAD_PATH,
   TEMPLATE_APP_VERSION,
-} from './constants.js';
-import { processSourceFiles } from './processSourceFiles.js';
+} from './constants.ts';
+import { processSourceFiles } from './processSourceFiles.ts';
 
 // Use commander to parse command-line options
 const program = new Command();

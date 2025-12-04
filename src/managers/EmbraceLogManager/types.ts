@@ -1,9 +1,9 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { LoggerProvider } from '@opentelemetry/sdk-logs';
-import type { VisibilityStateDocument } from '../../common/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
+import type { VisibilityStateDocument } from '../../common/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
 
 export interface EmbraceLogManagerArgs {
   diag?: DiagLogger;

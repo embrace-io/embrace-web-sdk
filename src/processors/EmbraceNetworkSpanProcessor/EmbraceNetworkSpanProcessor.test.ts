@@ -2,8 +2,8 @@ import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
-import { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor.js';
+import { setupTestTraceExporter } from '../../testUtils/index.ts';
+import { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor.ts';
 
 const { expect } = chai;
 

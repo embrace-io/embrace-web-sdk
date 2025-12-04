@@ -1,4 +1,4 @@
-import SDKTest from '@/components/SDKTest';
+import SDKTest from '@/components/SDKTest.tsx';
 import styles from './page.module.css';
 
 export default function Home() {

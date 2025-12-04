@@ -1,5 +1,5 @@
 import { log, session } from '@embrace-io/web-sdk';
-import { sdkControl } from './otel';
+import { sdkControl } from './otel.ts';
 
 const SDKTest = () => {
   const handleEndSession = async () => {

@@ -1,3 +1,3 @@
-import { PageSpanProcessor } from './PageSpanProcessor.js';
+import { PageSpanProcessor } from './PageSpanProcessor.ts';
 
 export { PageSpanProcessor };

@@ -5,9 +5,9 @@ import type {
   ReasonSessionEnded,
   SpanSessionManager,
   StartSessionOptions,
-} from '../../manager/index.js';
-import { ProxySpanSessionManager } from '../../manager/index.js';
-import type { SessionAPIArgs } from './types.js';
+} from '../../manager/index.ts';
+import { ProxySpanSessionManager } from '../../manager/index.ts';
+import type { SessionAPIArgs } from './types.ts';
 
 export class SessionAPI implements SpanSessionManager {
   private static _instance?: SessionAPI;

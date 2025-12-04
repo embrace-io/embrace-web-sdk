@@ -11,9 +11,9 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-} from '../../testUtils/index.js';
-import { EmbraceLogExporter } from './EmbraceLogExporter.js';
-import type { EmbraceLogExporterArgs } from './types.js';
+} from '../../testUtils/index.ts';
+import { EmbraceLogExporter } from './EmbraceLogExporter.ts';
+import type { EmbraceLogExporterArgs } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

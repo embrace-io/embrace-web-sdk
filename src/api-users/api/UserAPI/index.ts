@@ -1,1 +1,1 @@
-export { UserAPI } from './UserAPI.js';
+export { UserAPI } from './UserAPI.ts';
