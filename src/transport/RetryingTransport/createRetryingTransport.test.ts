@@ -3,8 +3,8 @@ import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { MockPerformanceManager } from '../../testUtils/index.js';
-import { createRetryingTransport } from './createRetryingTransport.js';
+import { MockPerformanceManager } from '../../testUtils/index.ts';
+import { createRetryingTransport } from './createRetryingTransport.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

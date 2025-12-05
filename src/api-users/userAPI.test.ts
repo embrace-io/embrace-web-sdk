@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { UserAPI } from './api/index.js';
-import { user } from './userAPI.js';
+import { UserAPI } from './api/index.ts';
+import { user } from './userAPI.ts';
 
 describe('userAPI', () => {
   it('should export an instance of UserAPI', () => {

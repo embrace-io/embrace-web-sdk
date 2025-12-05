@@ -14,8 +14,8 @@ import {
   ATTR_HTTP_REQUEST_BODY_SIZE,
   ATTR_HTTP_RESPONSE_BODY_SIZE,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import { isNetworkSpan } from './types.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { isNetworkSpan } from './types.ts';
 
 /**
  * Embrace's API expects network spans to have some specific attributes.

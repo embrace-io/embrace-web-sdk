@@ -1,9 +1,9 @@
 import * as chai from 'chai';
-import { SAMPLED_UUID } from '../testUtils/index.js';
+import { SAMPLED_UUID } from '../testUtils/index.ts';
 import {
   getNormalizedDeviceId,
   isDeviceIdEnabled,
-} from './isDeviceIdEnabled.js';
+} from './isDeviceIdEnabled.ts';
 
 const { expect } = chai;
 

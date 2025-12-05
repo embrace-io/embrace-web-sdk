@@ -1,1 +1,1 @@
-export type { SpanStorageOptions } from './EmbraceSpanStorage.js';
+export type { SpanStorageOptions } from './EmbraceSpanStorage.ts';

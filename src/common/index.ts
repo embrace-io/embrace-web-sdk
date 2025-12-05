@@ -3,4 +3,4 @@ export type {
   PathnameDocument,
   URLDocument,
   VisibilityStateDocument,
-} from './types.js';
+} from './types.ts';

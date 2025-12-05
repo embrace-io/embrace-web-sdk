@@ -8,26 +8,26 @@ import type {
   Metric,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.js';
-import { page } from '../../../api-page/index.js';
-import type { URLDocument } from '../../../common/index.js';
+import type { PageManager } from '../../../api-page/index.ts';
+import { page } from '../../../api-page/index.ts';
+import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-} from '../../../constants/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+} from '../../../constants/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ALL_WEB_VITALS,
   CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
   WEB_VITALS_ID_TO_LISTENER,
-} from './constants.js';
+} from './constants.ts';
 import type {
   WebVitalListeners,
   WebVitalsInstrumentationArgs,
-} from './types.js';
+} from './types.ts';
 
 type AttributedPage = {
   fullURL: string;

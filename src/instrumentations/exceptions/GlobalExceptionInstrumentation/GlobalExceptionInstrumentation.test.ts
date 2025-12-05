@@ -3,19 +3,19 @@ import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import type { LogManager } from '../../../api-logs/index.js';
-import { log } from '../../../api-logs/index.js';
+import type { LogManager } from '../../../api-logs/index.ts';
+import { log } from '../../../api-logs/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
+} from '../../../managers/index.ts';
 import {
   MockPerformanceManager,
   setupTestLogExporter,
-} from '../../../testUtils/index.js';
-import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.js';
+} from '../../../testUtils/index.ts';
+import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';
 
 const { expect } = chai;
 

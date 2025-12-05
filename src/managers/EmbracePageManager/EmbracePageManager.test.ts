@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import type { Route } from '../../api-page/index.js';
-import { UUID_PATTERN } from '../../testUtils/constants';
-import { EmbracePageManager } from './EmbracePageManager.js';
+import type { Route } from '../../api-page/index.ts';
+import { UUID_PATTERN } from '../../testUtils/constants.ts';
+import { EmbracePageManager } from './EmbracePageManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

@@ -11,9 +11,9 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore,
   mockSpan,
-} from '../../testUtils/index.js';
-import { EmbraceTraceExporter } from './EmbraceTraceExporter.js';
-import type { EmbraceTraceExporterArgs } from './types.js';
+} from '../../testUtils/index.ts';
+import { EmbraceTraceExporter } from './EmbraceTraceExporter.ts';
+import type { EmbraceTraceExporterArgs } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

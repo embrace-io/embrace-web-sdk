@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 
-import SDKTest from './SDKTest';
+import SDKTest from './SDKTest.tsx';
 
 const App = () => {
   return (

@@ -1,19 +1,19 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { session } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import { session } from '../../../api-sessions/index.ts';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
-} from '../../../constants/index.js';
+} from '../../../constants/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
-import { setupTestTraceExporter } from '../../../testUtils/index.js';
-import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.js';
+} from '../../../managers/index.ts';
+import { setupTestTraceExporter } from '../../../testUtils/index.ts';
+import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.ts';
 
 const { expect } = chai;
 

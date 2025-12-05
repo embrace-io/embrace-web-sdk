@@ -1,2 +1,2 @@
-export { EmptyRootInstrumentation } from './EmptyRootInstrumentation/index.js';
-export type { EmptyRootInstrumentationArgs } from './EmptyRootInstrumentation/types.js';
+export { EmptyRootInstrumentation } from './EmptyRootInstrumentation/index.ts';
+export type { EmptyRootInstrumentationArgs } from './EmptyRootInstrumentation/types.ts';

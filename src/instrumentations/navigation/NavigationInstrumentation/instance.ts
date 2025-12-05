@@ -1,5 +1,5 @@
-import { NavigationInstrumentation } from './NavigationInstrumentation.js';
-import type { NavigationInstrumentationArgs } from './types.js';
+import { NavigationInstrumentation } from './NavigationInstrumentation.ts';
+import type { NavigationInstrumentationArgs } from './types.ts';
 
 let navigationInstrumentation: NavigationInstrumentation | undefined;
 

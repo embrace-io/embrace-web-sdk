@@ -2,15 +2,15 @@ import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-import type { PerformanceManager } from '../../utils/index.js';
-import { OTelPerformanceManager } from '../../utils/index.js';
+import type { PerformanceManager } from '../../utils/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import {
   BACKOFF_MULTIPLIER,
   INITIAL_BACKOFF,
   JITTER,
   MAX_ATTEMPTS,
   MAX_BACKOFF,
-} from './constants.js';
+} from './constants.ts';
 
 /**
  * Get a pseudo-random jitter that falls in the range of [-JITTER, +JITTER]

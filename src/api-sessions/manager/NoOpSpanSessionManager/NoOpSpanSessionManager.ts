@@ -1,11 +1,11 @@
 import type { HrTime } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import type { ExtendedSpan } from '../../../index.js';
+import type { ExtendedSpan } from '../../../index.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
   SpanSessionManager,
-} from '../index.js';
+} from '../index.ts';
 
 export class NoOpSpanSessionManager implements SpanSessionManager {
   public addBreadcrumb(_name: string): void {

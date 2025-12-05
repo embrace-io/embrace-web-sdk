@@ -3,9 +3,9 @@ export type {
   ReasonSessionEnded,
   SpanSessionManager,
   StartSessionOptions,
-} from './manager/index.js';
+} from './manager/index.ts';
 export {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
-} from './manager/index.js';
-export { session } from './sessionAPI.js';
+} from './manager/index.ts';
+export { session } from './sessionAPI.ts';

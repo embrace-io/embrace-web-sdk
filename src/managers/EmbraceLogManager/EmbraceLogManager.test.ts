@@ -13,31 +13,31 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import type { VisibilityStateDocument } from '../../common/index.js';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.js';
+} from '../../constants/attributes.ts';
 import {
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
-} from '../../constants/index.js';
+} from '../../constants/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   setupTestLogExporter,
   setupTestTraceExporter,
-} from '../../testUtils/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
-import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
+} from '../../testUtils/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
+import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.js';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
-import { EmbraceLogManager } from './EmbraceLogManager.js';
+} from '../EmbraceLimitManager/index.ts';
+import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.ts';
+import { EmbraceLogManager } from './EmbraceLogManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -110,6 +110,100 @@ describe('EmbraceLogManager', () => {
 
   it('should initialize a EmbraceLogManager', () => {
     expect(manager).to.be.instanceOf(EmbraceLogManager);
+  });
+
+  it('should reject whitespace-only messages', () => {
+    const testDiag = new InMemoryDiagLogger();
+    const testManager = new EmbraceLogManager({
+      diag: testDiag,
+      perf,
+      spanSessionManager,
+      limitManager,
+    });
+
+    testManager.message('   ', 'info');
+    testManager.message('\t\n', 'error');
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(0);
+
+    const warningLogs = testDiag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(2);
+    expect(warningLogs[0]).to.equal('Message must be a non-empty string');
+  });
+
+  it('should reject invalid severity', () => {
+    const testDiag = new InMemoryDiagLogger();
+    const testManager = new EmbraceLogManager({
+      diag: testDiag,
+      perf,
+      spanSessionManager,
+      limitManager,
+    });
+
+    // @ts-expect-error testing invalid severity
+    testManager.message('test message', 'debug');
+    // @ts-expect-error testing invalid severity
+    testManager.message('test message', 'critical');
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(0);
+
+    const warningLogs = testDiag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(2);
+    expect(warningLogs[0]).to.equal('Severity must be info, warning, or error');
+  });
+
+  it('should reject arrays passed as message attributes', () => {
+    const testDiag = new InMemoryDiagLogger();
+    const testManager = new EmbraceLogManager({
+      diag: testDiag,
+      perf,
+      spanSessionManager,
+      limitManager,
+    });
+
+    testManager.message('test message', 'info', {
+      // @ts-expect-error testing invalid attributes
+      attributes: ['foo', 'bar'],
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+
+    // Should still log but with empty attributes (array rejected)
+    expect(finishedLogs[0].attributes).to.not.have.property('0');
+    expect(finishedLogs[0].attributes).to.not.have.property('1');
+
+    const warningLogs = testDiag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(1);
+    expect(warningLogs[0]).to.equal('attributes must be a plain object');
+  });
+
+  it('should reject arrays passed as exception attributes', () => {
+    const testDiag = new InMemoryDiagLogger();
+    const testManager = new EmbraceLogManager({
+      diag: testDiag,
+      perf,
+      spanSessionManager,
+      limitManager,
+    });
+
+    testManager.logException(new Error('test'), {
+      // @ts-expect-error testing invalid attributes
+      attributes: ['foo', 'bar'],
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+
+    // Should still log but with empty attributes (array rejected)
+    expect(finishedLogs[0].attributes).to.not.have.property('0');
+    expect(finishedLogs[0].attributes).to.not.have.property('1');
+
+    const warningLogs = testDiag.getWarnLogs();
+    expect(warningLogs).to.have.lengthOf(1);
+    expect(warningLogs[0]).to.equal('attributes must be a plain object');
   });
 
   it('should log an info log without stacktrace', () => {
@@ -1118,6 +1212,21 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(
         KEY_EMB_JS_EXCEPTION_STACKTRACE,
         'i am stacktrace passed in by the user',
+      );
+    });
+
+    it('should suppress auto-generated stacktrace when empty string is passed', () => {
+      manager.message('error log without stacktrace', 'error', {
+        stacktrace: '',
+      });
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      const log = finishedLogs[0];
+
+      expect(log.body).to.equal('error log without stacktrace');
+      expect(log.attributes).to.not.have.property(
+        KEY_EMB_JS_EXCEPTION_STACKTRACE,
       );
     });
 

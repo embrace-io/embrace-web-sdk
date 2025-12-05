@@ -1,4 +1,4 @@
-import type { DynamicConfigManager } from '../../sdk/index.js';
+import type { DynamicConfigManager } from '../../sdk/index.ts';
 
 export interface SDKFeaturesManagerArgs {
   deviceId: string;

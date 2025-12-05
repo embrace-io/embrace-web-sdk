@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { PageAPI } from './api/index.js';
-import { page } from './pageAPI.js';
+import { PageAPI } from './api/index.ts';
+import { page } from './pageAPI.ts';
 
 describe('pageAPI', () => {
   it('should export an instance of PageAPI', () => {

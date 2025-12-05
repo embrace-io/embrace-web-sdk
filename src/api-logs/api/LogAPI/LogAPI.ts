@@ -3,9 +3,9 @@ import type {
   LogManager,
   LogMessageOptions,
   LogSeverity,
-} from '../../manager/index.js';
-import { ProxyLogManager } from '../../manager/index.js';
-import type { LogAPIArgs } from './types.js';
+} from '../../manager/index.ts';
+import { ProxyLogManager } from '../../manager/index.ts';
+import type { LogAPIArgs } from './types.ts';
 
 export class LogAPI implements LogManager {
   private static _instance?: LogAPI;

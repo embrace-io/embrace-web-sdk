@@ -2,23 +2,23 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import type { SpanSessionManager } from '../../../api-sessions/index.js';
-import { session } from '../../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import { session } from '../../../api-sessions/index.ts';
 import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
-} from '../../../constants/index.js';
+} from '../../../constants/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../../managers/index.js';
+} from '../../../managers/index.ts';
 import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
-} from '../../../testUtils/index.js';
-import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.js';
-import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';
+} from '../../../testUtils/index.ts';
+import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.ts';
+import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.ts';
 
 const { expect } = chai;
 

@@ -4,7 +4,7 @@
  */
 
 import type { Span } from '@opentelemetry/api';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type DocumentLoadCustomAttributeFunction = (span: Span) => void;
 

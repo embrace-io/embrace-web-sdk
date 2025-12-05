@@ -1,1 +1,1 @@
-export { mockSpan } from './ReadableSpan.js';
+export { mockSpan } from './ReadableSpan.ts';

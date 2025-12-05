@@ -1,6 +1,6 @@
-import type { UserManager } from '../../manager/index.js';
-import { ProxyUserManager } from '../../manager/index.js';
-import type { UserAPIArgs } from './types.js';
+import type { UserManager } from '../../manager/index.ts';
+import { ProxyUserManager } from '../../manager/index.ts';
+import type { UserAPIArgs } from './types.ts';
 
 export class UserAPI implements UserManager {
   private static _instance?: UserAPI;

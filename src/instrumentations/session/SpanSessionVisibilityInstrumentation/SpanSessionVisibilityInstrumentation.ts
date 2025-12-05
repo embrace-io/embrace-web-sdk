@@ -1,13 +1,13 @@
-import type { SDKFeaturesManager } from '../../../managers';
-import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.js';
-import type { TimeoutRef } from '../../../utils/index.js';
+import type { SDKFeaturesManager } from '../../../managers/index.ts';
+import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.ts';
+import type { TimeoutRef } from '../../../utils/index.ts';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
-} from '../../../utils/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { SpanSessionVisibilityInstrumentationArgs } from './types.js';
+} from '../../../utils/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import type { SpanSessionVisibilityInstrumentationArgs } from './types.ts';
 
 const SESSION_INTERACTION_EVENTS = ['mousedown'];
 

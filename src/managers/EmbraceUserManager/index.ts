@@ -1,1 +1,1 @@
-export { EmbraceUserManager } from './EmbraceUserManager.js';
+export { EmbraceUserManager } from './EmbraceUserManager.ts';

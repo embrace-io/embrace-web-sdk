@@ -2,11 +2,11 @@ import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import type { PageManager, Route } from '../../api-page/index.js';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
-import { EmbracePageManager } from '../../managers/index.js';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
-import { PageSpanProcessor } from './PageSpanProcessor.js';
+import type { PageManager, Route } from '../../api-page/index.ts';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import { EmbracePageManager } from '../../managers/index.ts';
+import { setupTestTraceExporter } from '../../testUtils/index.ts';
+import { PageSpanProcessor } from './PageSpanProcessor.ts';
 
 const { expect } = chai;
 

@@ -1,1 +1,1 @@
-export { EmptyRootInstrumentation } from './EmptyRootInstrumentation.js';
+export { EmptyRootInstrumentation } from './EmptyRootInstrumentation.ts';

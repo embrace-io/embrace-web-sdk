@@ -1,1 +1,1 @@
-export { ProxyLogManager } from './ProxyLogManager.js';
+export { ProxyLogManager } from './ProxyLogManager.ts';

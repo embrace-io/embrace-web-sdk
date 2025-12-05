@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { User } from '../../api-users/index.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
+import type { User } from '../../api-users/index.ts';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 
 export interface EmbraceUserManagerArgs {
   diag?: DiagLogger;

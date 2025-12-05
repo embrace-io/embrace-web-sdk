@@ -4,8 +4,8 @@ import type { Resource } from '@opentelemetry/resources';
 import { emptyResource } from '@opentelemetry/resources';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { BasicTracerProvider } from '@opentelemetry/sdk-trace-web';
-import { KEY_EMB_MAX_PENDING_SPANS_REACHED } from '../../constants/index.js';
-import type { SpanSessionManagerInternal } from '../../managers/index.js';
+import { KEY_EMB_MAX_PENDING_SPANS_REACHED } from '../../constants/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/index.ts';
 
 const PENDING_SPANS_STORAGE_KEY_PREFIX = 'embrace_pending_';
 const MAX_PENDING_SPANS_ITEMS = 10;

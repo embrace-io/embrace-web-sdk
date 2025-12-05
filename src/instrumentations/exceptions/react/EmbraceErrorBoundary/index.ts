@@ -1,1 +1,1 @@
-export { EmbraceErrorBoundary } from './EmbraceErrorBoundary.js';
+export { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';

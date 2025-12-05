@@ -1,1 +1,1 @@
-export { FakeInstrumentation } from './FakeInstrumentation.js';
+export { FakeInstrumentation } from './FakeInstrumentation.ts';

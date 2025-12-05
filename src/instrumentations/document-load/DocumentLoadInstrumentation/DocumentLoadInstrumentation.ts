@@ -34,18 +34,18 @@ import {
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import { AttributeNames } from './enums/AttributeNames.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
-} from './types.js';
+} from './types.ts';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
-} from './utils.js';
+} from './utils.ts';
 
 /**
  * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):

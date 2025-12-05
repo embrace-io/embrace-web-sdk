@@ -1,1 +1,1 @@
-export { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.js';
+export { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.ts';

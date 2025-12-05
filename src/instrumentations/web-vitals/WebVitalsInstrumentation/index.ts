@@ -1,2 +1,2 @@
-export type { WebVitalOnReport } from './types.js';
-export { WebVitalsInstrumentation } from './WebVitalsInstrumentation.js';
+export type { WebVitalOnReport } from './types.ts';
+export { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';

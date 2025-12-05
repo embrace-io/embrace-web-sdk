@@ -2,8 +2,8 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { setupTestLogExporter } from '../../testUtils/index.js';
-import { LogRecordScrubProcessor } from './LogRecordScrubProcessor.js';
+import { setupTestLogExporter } from '../../testUtils/index.ts';
+import { LogRecordScrubProcessor } from './LogRecordScrubProcessor.ts';
 
 const { expect } = chai;
 

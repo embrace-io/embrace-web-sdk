@@ -1,17 +1,17 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../../testUtils/index.js';
+} from '../../testUtils/index.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,
   EMBRACE_USER_STORAGE_KEY_DEPRECATED,
-} from './constants.js';
-import { EmbraceUserManager } from './EmbraceUserManager.js';
+} from './constants.ts';
+import { EmbraceUserManager } from './EmbraceUserManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
