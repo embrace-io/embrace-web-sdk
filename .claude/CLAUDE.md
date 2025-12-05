@@ -26,7 +26,7 @@
 **Branches**
 - Ask for ticket number and description
 - If ticket: (gituser)/(type)/EMBR-(ticketnumber)-(three-word-description)
-- If no ticket: (gituser)/(type)/((three-word-description)
+- If no ticket: (gituser)/(type)/(three-word-description)
 
 **Commits**: Title only, no body, no ticket number, no Claude credits
 
