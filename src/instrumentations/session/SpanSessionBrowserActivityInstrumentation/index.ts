@@ -1,2 +1,2 @@
-export { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.js';
-export type { SpanSessionBrowserActivityInstrumentationArgs } from './types.js';
+export { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.ts';
+export type { SpanSessionBrowserActivityInstrumentationArgs } from './types.ts';

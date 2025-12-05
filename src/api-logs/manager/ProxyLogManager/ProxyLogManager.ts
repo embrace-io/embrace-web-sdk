@@ -3,8 +3,8 @@ import type {
   LogManager,
   LogMessageOptions,
   LogSeverity,
-} from '../index.js';
-import { NoOpLogManager } from '../NoOpLogManager/index.js';
+} from '../index.ts';
+import { NoOpLogManager } from '../NoOpLogManager/index.ts';
 
 const NOOP_LOG_MANAGER = new NoOpLogManager();
 

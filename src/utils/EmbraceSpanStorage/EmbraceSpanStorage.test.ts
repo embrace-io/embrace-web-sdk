@@ -10,15 +10,15 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../managers/index.js';
+} from '../../managers/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   mockSpan,
   setupTestTraceExporter,
-} from '../../testUtils/index.js';
-import { EmbraceSpanStorage } from './EmbraceSpanStorage.js';
+} from '../../testUtils/index.ts';
+import { EmbraceSpanStorage } from './EmbraceSpanStorage.ts';
 
 const { expect } = chai;
 

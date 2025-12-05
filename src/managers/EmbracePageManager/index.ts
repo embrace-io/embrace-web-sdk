@@ -1,2 +1,2 @@
-export { EmbracePageManager } from './EmbracePageManager.js';
-export type { EmbracePageManagerArgs } from './types.js';
+export { EmbracePageManager } from './EmbracePageManager.ts';
+export type { EmbracePageManagerArgs } from './types.ts';

@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { PageManager, Route } from '../index.js';
-import { NoOpPageManager } from '../NoOpPageManager/index.js';
-import { ProxyPageManager } from './ProxyPageManager.js';
+import type { PageManager, Route } from '../index.ts';
+import { NoOpPageManager } from '../NoOpPageManager/index.ts';
+import { ProxyPageManager } from './ProxyPageManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

@@ -2,14 +2,14 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import type { SpanSessionManager } from '../../api-sessions/index.js';
+import type { SpanSessionManager } from '../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../../managers/index.js';
-import { setupTestLogExporter } from '../../testUtils/index.js';
-import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.js';
+} from '../../managers/index.ts';
+import { setupTestLogExporter } from '../../testUtils/index.ts';
+import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
 
 const { expect } = chai;
 

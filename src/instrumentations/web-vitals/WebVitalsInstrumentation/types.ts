@@ -3,9 +3,9 @@ import type {
   MetricWithAttribution,
   ReportOpts,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.js';
-import type { URLDocument } from '../../../common/index.js';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.js';
+import type { PageManager } from '../../../api-page/index.ts';
+import type { URLDocument } from '../../../common/index.ts';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type TrackingLevel = 'core' | 'all';
 

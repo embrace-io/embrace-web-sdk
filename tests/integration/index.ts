@@ -1,1 +1,1 @@
-export type { ReceivedSpans } from './types.js';
+export type { ReceivedSpans } from './types.ts';

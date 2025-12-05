@@ -1,7 +1,7 @@
 import { isWrapped } from '@opentelemetry/instrumentation';
 
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import type { EmbraceFetchInstrumentationArgs } from './types.js';
+import type { EmbraceFetchInstrumentationArgs } from './types.ts';
 
 export class EmbraceFetchInstrumentation extends FetchInstrumentation {
   private readonly _omitIfAlreadyPatched?: boolean;

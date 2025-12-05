@@ -1,1 +1,1 @@
-export { UserSpanProcessor } from './UserSpanProcessor.js';
+export { UserSpanProcessor } from './UserSpanProcessor.ts';

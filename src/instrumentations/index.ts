@@ -1,22 +1,22 @@
-export type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/index.js';
-export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.js';
-export type { EmptyRootInstrumentationArgs } from '../instrumentations/empty-root/index.js';
-export { EmptyRootInstrumentation } from '../instrumentations/empty-root/index.js';
+export type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/index.ts';
+export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.ts';
+export type { EmptyRootInstrumentationArgs } from '../instrumentations/empty-root/index.ts';
+export { EmptyRootInstrumentation } from '../instrumentations/empty-root/index.ts';
 export {
   ClicksInstrumentation,
   type ClicksInstrumentationArgs,
-} from './clicks/index.js';
-export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.js';
+} from './clicks/index.ts';
+export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
 export {
   GlobalExceptionInstrumentation,
   type GlobalExceptionInstrumentationArgs,
-} from './exceptions/index.js';
+} from './exceptions/index.ts';
 export {
   EmbraceFetchInstrumentation,
   type EmbraceFetchInstrumentationArgs,
-} from './fetch/index.js';
-export { getNavigationInstrumentation } from './navigation/index.js';
-export type { SessionSpan } from './session/index.js';
+} from './fetch/index.ts';
+export { getNavigationInstrumentation } from './navigation/index.ts';
+export type { SessionSpan } from './session/index.ts';
 export {
   SpanSessionBrowserActivityInstrumentation,
   type SpanSessionBrowserActivityInstrumentationArgs,
@@ -26,13 +26,13 @@ export {
   type SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentation,
   type SpanSessionVisibilityInstrumentationArgs,
-} from './session/index.js';
+} from './session/index.ts';
 export {
   type WebVitalOnReport,
   WebVitalsInstrumentation,
   type WebVitalsInstrumentationArgs,
-} from './web-vitals/index.js';
+} from './web-vitals/index.ts';
 export {
   EmbraceXHRInstrumentation,
   type EmbraceXHRInstrumentationArgs,
-} from './xhr/index.js';
+} from './xhr/index.ts';

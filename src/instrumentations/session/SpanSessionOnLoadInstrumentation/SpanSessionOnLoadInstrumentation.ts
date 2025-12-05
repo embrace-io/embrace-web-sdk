@@ -1,5 +1,5 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { SpanSessionOnLoadInstrumentationArgs } from './types.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import type { SpanSessionOnLoadInstrumentationArgs } from './types.ts';
 
 export class SpanSessionOnLoadInstrumentation extends EmbraceInstrumentationBase {
   public constructor({ diag }: SpanSessionOnLoadInstrumentationArgs = {}) {

@@ -1,16 +1,16 @@
-import type { TimeoutRef } from '../../../utils/index.js';
+import type { TimeoutRef } from '../../../utils/index.ts';
 import {
   bulkAddEventListener,
   bulkRemoveEventListener,
   throttle,
-} from '../../../utils/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
+} from '../../../utils/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   EVENT_THROTTLING_TIME_WINDOW,
   TIMEOUT_TIME,
   WINDOW_USER_EVENTS,
-} from './constants.js';
-import type { SpanSessionBrowserActivityInstrumentationArgs } from './types.js';
+} from './constants.ts';
+import type { SpanSessionBrowserActivityInstrumentationArgs } from './types.ts';
 
 /**
  *  SpanSessionBrowserActivityInstrumentation will track the user activity and end the session span if there is no

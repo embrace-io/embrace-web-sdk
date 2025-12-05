@@ -1,1 +1,1 @@
-export { bulkRemoveEventListener } from './bulkRemoveEventListener.js';
+export { bulkRemoveEventListener } from './bulkRemoveEventListener.ts';

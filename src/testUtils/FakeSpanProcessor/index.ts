@@ -1,1 +1,1 @@
-export { FakeSpanProcessor } from './FakeSpanProcessor.js';
+export { FakeSpanProcessor } from './FakeSpanProcessor.ts';

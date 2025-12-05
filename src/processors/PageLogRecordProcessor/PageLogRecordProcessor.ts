@@ -1,7 +1,7 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import type { PageManager } from '../../api-page/index.js';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
-import type { PageLogRecordProcessorArgs } from './types.js';
+import type { PageManager } from '../../api-page/index.ts';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import type { PageLogRecordProcessorArgs } from './types.ts';
 
 export class PageLogRecordProcessor implements LogRecordProcessor {
   private readonly _pageManager: PageManager;

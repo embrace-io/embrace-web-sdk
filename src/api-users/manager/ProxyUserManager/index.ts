@@ -1,1 +1,1 @@
-export { ProxyUserManager } from './ProxyUserManager.js';
+export { ProxyUserManager } from './ProxyUserManager.ts';

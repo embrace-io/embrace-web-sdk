@@ -1,1 +1,1 @@
-export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.js';
+export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';

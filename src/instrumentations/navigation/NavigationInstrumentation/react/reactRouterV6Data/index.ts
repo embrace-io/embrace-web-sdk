@@ -1,1 +1,1 @@
-export { listenToRouterChanges } from './listenToRouterChanges.js';
+export { listenToRouterChanges } from './listenToRouterChanges.ts';

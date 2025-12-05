@@ -6,4 +6,4 @@ export {
   TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
   TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
   TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
-} from './thresholds.js';
+} from './thresholds.ts';

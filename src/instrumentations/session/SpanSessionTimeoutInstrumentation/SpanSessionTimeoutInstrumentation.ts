@@ -1,7 +1,7 @@
-import type { TimeoutRef } from '../../../utils/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import { TIMEOUT_TIME } from './constants.js';
-import type { SpanSessionTimeoutInstrumentationArgs } from './types.js';
+import type { TimeoutRef } from '../../../utils/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { TIMEOUT_TIME } from './constants.ts';
+import type { SpanSessionTimeoutInstrumentationArgs } from './types.ts';
 
 /**
  *  SpanSessionTimeoutInstrumentation will track how long has a session been active and end it after a certain amount of time.

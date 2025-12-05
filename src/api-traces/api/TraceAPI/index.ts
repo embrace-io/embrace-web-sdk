@@ -1,6 +1,6 @@
-export { TraceAPI } from './TraceAPI.js';
+export { TraceAPI } from './TraceAPI.ts';
 export type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
   ExtendedSpanOptions,
-} from './types.js';
+} from './types.ts';

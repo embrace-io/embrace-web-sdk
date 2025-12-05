@@ -13,31 +13,31 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import type { VisibilityStateDocument } from '../../common/index.js';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.js';
+} from '../../constants/attributes.ts';
 import {
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
-} from '../../constants/index.js';
+} from '../../constants/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   setupTestLogExporter,
   setupTestTraceExporter,
-} from '../../testUtils/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
-import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.js';
+} from '../../testUtils/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
+import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.js';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.js';
-import { EmbraceLogManager } from './EmbraceLogManager.js';
+} from '../EmbraceLimitManager/index.ts';
+import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.ts';
+import { EmbraceLogManager } from './EmbraceLogManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

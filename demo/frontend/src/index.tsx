@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { setupOTel } from './otel.js';
+import { setupOTel } from './otel.ts';
 
 setupOTel();
 

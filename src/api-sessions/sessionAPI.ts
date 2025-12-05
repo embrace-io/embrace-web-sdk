@@ -1,3 +1,3 @@
-import { SessionAPI } from './api/index.js';
+import { SessionAPI } from './api/index.ts';
 
 export const session = SessionAPI.getInstance();

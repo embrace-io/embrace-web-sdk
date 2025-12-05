@@ -12,12 +12,12 @@ import type {
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { LogManager } from '../api-logs/index.js';
-import type { PageManager } from '../api-page/index.js';
-import type { SpanSessionManager } from '../api-sessions/index.js';
-import type { TraceManager } from '../api-traces/index.js';
-import type { UserManager } from '../api-users/index.js';
-import type { AttributeScrubber } from '../common/index.js';
+import type { LogManager } from '../api-logs/index.ts';
+import type { PageManager } from '../api-page/index.ts';
+import type { SpanSessionManager } from '../api-sessions/index.ts';
+import type { TraceManager } from '../api-traces/index.ts';
+import type { UserManager } from '../api-users/index.ts';
+import type { AttributeScrubber } from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
@@ -30,13 +30,13 @@ import type {
   SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentationArgs,
   WebVitalsInstrumentationArgs,
-} from '../instrumentations/index.js';
+} from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   SDKFeaturesManager,
   SpanSessionManagerInternal,
-} from '../managers/index.js';
-import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.js';
+} from '../managers/index.ts';
+import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.ts';
 
 export interface DynamicSDKConfig {
   /**

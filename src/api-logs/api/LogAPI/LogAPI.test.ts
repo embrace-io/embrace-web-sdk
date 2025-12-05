@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { LogManager } from '../../manager/index.js';
-import { ProxyLogManager } from '../../manager/index.js';
-import { LogAPI } from './LogAPI.js';
+import type { LogManager } from '../../manager/index.ts';
+import { ProxyLogManager } from '../../manager/index.ts';
+import { LogAPI } from './LogAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

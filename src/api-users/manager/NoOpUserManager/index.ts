@@ -1,1 +1,1 @@
-export { NoOpUserManager } from './NoOpUserManager.js';
+export { NoOpUserManager } from './NoOpUserManager.ts';

@@ -5,9 +5,9 @@ import type {
   ExtendedSpanOptions,
   TraceManager,
   TraceManagerArgs,
-} from '../../api-traces/index.js';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.js';
+} from '../../api-traces/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
 
 export class EmbraceTraceManager implements TraceManager {
   private readonly _tracer: Tracer;

@@ -1,4 +1,4 @@
-import type { EmbraceLimitManagerArgs } from './types.js';
+import type { EmbraceLimitManagerArgs } from './types.ts';
 
 export const DEFAULT_MAX_LOG_ATTRIBUTES = 50;
 

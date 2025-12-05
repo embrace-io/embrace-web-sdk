@@ -1,7 +1,7 @@
 'use client';
 
 import { log, session } from '@embrace-io/web-sdk';
-import sdkControl from '@/lib/otel';
+import sdkControl from '@/lib/otel.ts';
 
 const SDKTest = () => {
   const handleEndSession = async () => {

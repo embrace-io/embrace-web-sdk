@@ -5,8 +5,8 @@ import type {
   ReasonSessionEnded,
   SpanSessionManager,
   StartSessionOptions,
-} from '../index.js';
-import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
+} from '../index.ts';
+import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.ts';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 

@@ -16,26 +16,26 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.js';
+import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
 import {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
   session,
-} from '../api-sessions/index.js';
+} from '../api-sessions/index.ts';
 import {
   trace as embtrace,
   NoOpTraceManager,
   ProxyTraceManager,
-} from '../api-traces/index.js';
-import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.js';
-import type { WebVitalOnReport } from '../instrumentations/index.js';
+} from '../api-traces/index.ts';
+import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
+import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
-} from '../managers/index.js';
-import { SDK_VERSION } from '../resources/index.js';
+} from '../managers/index.ts';
+import { SDK_VERSION } from '../resources/index.ts';
 import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
@@ -50,14 +50,14 @@ import {
   fakeFetchWasCalled,
   InMemoryDiagLogger,
   setupTestWebVitalListeners,
-} from '../testUtils/index.js';
-import { initSDK } from './initSDK.js';
-import { registry } from './registry.js';
+} from '../testUtils/index.ts';
+import { initSDK } from './initSDK.ts';
+import { registry } from './registry.ts';
 import type {
   DynamicConfigManager,
   SDKControl,
   SDKInitConfig,
-} from './types.js';
+} from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

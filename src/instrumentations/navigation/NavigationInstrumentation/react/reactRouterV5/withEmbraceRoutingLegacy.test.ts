@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { getNavigationInstrumentation } from '../../index.js';
-import type { RouteComponentProps } from './types.js';
-import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.js';
+import { getNavigationInstrumentation } from '../../index.ts';
+import type { RouteComponentProps } from './types.ts';
+import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 // Easier to parse incoming requests with a known type, only used for tests
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
-import type { ReceivedSpans } from '../tests/integration/types.js';
-import { logInfo, logReceivedSessionSpan } from './utils.js';
+import type { ReceivedSpans } from '../tests/integration/types.ts';
+import { logInfo, logReceivedSessionSpan } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

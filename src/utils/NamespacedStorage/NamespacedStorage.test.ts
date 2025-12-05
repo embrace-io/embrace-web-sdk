@@ -1,6 +1,6 @@
 import * as chai from 'chai';
-import { InMemoryStorage } from '../../testUtils/index.js';
-import { NamespacedStorage } from './NamespacedStorage.js';
+import { InMemoryStorage } from '../../testUtils/index.ts';
+import { NamespacedStorage } from './NamespacedStorage.ts';
 
 const { expect } = chai;
 

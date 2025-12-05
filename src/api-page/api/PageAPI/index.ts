@@ -1,2 +1,2 @@
-export { PageAPI } from './PageAPI.js';
-export type { PageAPIArgs } from './types.js';
+export { PageAPI } from './PageAPI.ts';
+export type { PageAPIArgs } from './types.ts';

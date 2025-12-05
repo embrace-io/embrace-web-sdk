@@ -1,2 +1,2 @@
-export { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.js';
-export type { SpanSessionOnLoadInstrumentationArgs } from './types.js';
+export { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.ts';
+export type { SpanSessionOnLoadInstrumentationArgs } from './types.ts';

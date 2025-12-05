@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { getNavigationInstrumentation } from './instance.js';
+import { getNavigationInstrumentation } from './instance.ts';
 
 const { expect } = chai;
 

@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { bulkAddEventListener } from './bulkAddEventListener.js';
+import { bulkAddEventListener } from './bulkAddEventListener.ts';
 
 chai.use(sinonChai);
 

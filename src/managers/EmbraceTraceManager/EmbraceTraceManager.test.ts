@@ -7,10 +7,10 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.js';
-import { setupTestTraceExporter } from '../../testUtils/index.js';
-import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.js';
-import { EmbraceTraceManager } from './EmbraceTraceManager.js';
+import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { setupTestTraceExporter } from '../../testUtils/index.ts';
+import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
+import { EmbraceTraceManager } from './EmbraceTraceManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

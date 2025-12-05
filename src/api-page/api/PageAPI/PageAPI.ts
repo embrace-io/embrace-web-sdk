@@ -1,6 +1,6 @@
-import type { PageManager, Route } from '../../manager/index.js';
-import { ProxyPageManager } from '../../manager/index.js';
-import type { PageAPIArgs } from './types.js';
+import type { PageManager, Route } from '../../manager/index.ts';
+import { ProxyPageManager } from '../../manager/index.ts';
+import type { PageAPIArgs } from './types.ts';
 
 export class PageAPI implements PageManager {
   private static _instance?: PageAPI;

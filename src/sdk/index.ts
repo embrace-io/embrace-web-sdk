@@ -1,6 +1,6 @@
-export { initSDK } from './initSDK.js';
+export { initSDK } from './initSDK.ts';
 export type {
   DynamicConfigManager,
   DynamicSDKConfig,
   SDKInitConfig,
-} from './types.js';
+} from './types.ts';

@@ -12,11 +12,11 @@ import {
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   WebVitalsInstrumentation,
-} from '../instrumentations/index.js';
+} from '../instrumentations/index.ts';
 import type {
   DefaultInstrumentationConfig,
   SetupDefaultInstrumentationsArgs,
-} from './types.js';
+} from './types.ts';
 
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},

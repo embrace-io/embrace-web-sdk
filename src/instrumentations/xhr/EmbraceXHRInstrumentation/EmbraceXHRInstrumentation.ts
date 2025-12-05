@@ -1,6 +1,6 @@
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import type { EmbraceXHRInstrumentationArgs } from './types.js';
+import type { EmbraceXHRInstrumentationArgs } from './types.ts';
 
 export class EmbraceXHRInstrumentation extends XMLHttpRequestInstrumentation {
   private readonly _omitIfAlreadyPatched?: boolean;

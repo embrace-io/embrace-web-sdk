@@ -1,5 +1,5 @@
-import type { PageManager, Route } from '../index.js';
-import { NoOpPageManager } from '../NoOpPageManager/index.js';
+import type { PageManager, Route } from '../index.ts';
+import { NoOpPageManager } from '../NoOpPageManager/index.ts';
 
 const NOOP_PAGE_MANAGER = new NoOpPageManager();
 

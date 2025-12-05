@@ -3,14 +3,14 @@ import type {
   InstrumentationConfig,
   InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type { LogManager } from '../../api-logs/index.js';
-import { log } from '../../api-logs/index.js';
-import type { SpanSessionManager } from '../../api-sessions/index.js';
-import { session } from '../../api-sessions/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
-import { OTelPerformanceManager } from '../../utils/index.js';
-import { InstrumentationAbstract } from '../InstrumentationAbstract/index.js';
-import type { EmbraceInstrumentationBaseArgs } from './types.js';
+import type { LogManager } from '../../api-logs/index.ts';
+import { log } from '../../api-logs/index.ts';
+import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import { session } from '../../api-sessions/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
+import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
+import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
 export abstract class EmbraceInstrumentationBase<
     ConfigType extends InstrumentationConfig = InstrumentationConfig,

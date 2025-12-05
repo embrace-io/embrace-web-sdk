@@ -1,1 +1,1 @@
-export { EmbraceFetchInstrumentation } from './EmbraceFetchInstrumentation.js';
+export { EmbraceFetchInstrumentation } from './EmbraceFetchInstrumentation.ts';
