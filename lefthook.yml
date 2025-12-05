@@ -1,9 +1,9 @@
 pre-commit:
   parallel: true
+  fail_on_changes: "always"
   commands:
     lint:
-      run: npm run sdk:lint:fix -- --diagnostic-level=error
-      stage_fixed: true
+      run: npm run sdk:lint:fix
     typecheck:
       run: npm run sdk:tsc:check
 commit-msg:
