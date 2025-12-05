@@ -354,35 +354,50 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      - name: Create PR comment with performance results
+      - name: Create performance results section
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          echo '<!-- performance-results -->' > performance-results.md
-          echo "## Performance results" >> performance-results.md
-          echo "" >> performance-results.md
-          echo "### CDP Performance Tests" >> performance-results.md
-          echo "" >> performance-results.md
-          cat ./tests/performance/test-results/cdp-performance-tests.md >> performance-results.md
-          echo "" >> performance-results.md
-          echo "### Lighthouse Startup Performance Tests" >> performance-results.md
-          echo "" >> performance-results.md
-          cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md >> performance-results.md
+          CDP_FILE=./tests/performance/test-results/cdp-performance-tests.md
+          CDP_TOTAL=$(grep '| Total |' "$CDP_FILE")
+          CDP_SCRIPT=$(echo "$CDP_TOTAL" | awk -F'|' '{print $5}' | tr -d ' +')
+          CDP_HEAP=$(echo "$CDP_TOTAL" | awk -F'|' '{print $7}' | tr -d ' +')
+          SCRIPT_EVAL=$(grep 'Script Evaluation Time' ./tests/performance/test-results/lighthouse-startup-performance-tests.md | sed 's/.*| \([^|]*ms\) |.*/\1/' | tr -d ' +')
+          {
+            echo '<!-- perf-section -->'
+            echo "<details>"
+            echo "<summary><strong>Chrome DevTools Protocol Tracing</strong> (Script: ${CDP_SCRIPT}, Heap: ${CDP_HEAP})</summary>"
+            echo ""
+            cat "$CDP_FILE"
+            echo ""
+            echo "</details>"
+            echo ""
+            echo "<details>"
+            echo "<summary><strong>Lighthouse</strong> (Script Eval: ${SCRIPT_EVAL})</summary>"
+            echo ""
+            cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md
+            echo ""
+            echo "</details>"
+            echo '<!-- /perf-section -->'
+          } > perf-section.md
 
       - name: Post or update PR comment with performance results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          BODY="$(cat performance-results.md)"
+          SECTION="$(cat perf-section.md)"
+          MARKER="<!-- ci-results -->"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- performance-results -->"))| .id' comments.json)
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("'"$MARKER"'"))| .id' comments.json)
 
           if [[ -n "$COMMENT_ID" ]]; then
-            echo "Updating comment $COMMENT_ID"
-            gh api \
-              --method PATCH \
-              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
-              -f body="$BODY"
+            EXISTING=$(gh api "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" --jq '.body')
+            if echo "$EXISTING" | grep -q '<!-- perf-section -->'; then
+              BODY=$(echo "$EXISTING" | perl -0777 -pe 's/<!-- perf-section -->.*?<!-- \/perf-section -->/'"$(echo "$SECTION" | sed 's/[&/\]/\\&/g')"'/s')
+            else
+              BODY="$EXISTING"$'\n\n'"$SECTION"
+            fi
+            gh api --method PATCH "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -f body="$BODY"
           else
-            echo "Creating new comment"
+            BODY="$MARKER"$'\n\n'"$SECTION"
             gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
@@ -558,31 +573,41 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      - name: Create PR comment with build results
+      - name: Create build results section
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          echo '<!-- build-results -->' > build-results.md
-          echo "## build results" >> build-results.md
-
-          for file in ./tests/integration/build-test-results/*.md; do
-            cat "$file" >> build-results.md
-          done
+          GZIP_SIZE=$(grep 'vite-7 - esnext' ./tests/integration/build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
+          {
+            echo '<!-- build-section -->'
+            echo "<details>"
+            echo "<summary><strong>Platform Tests</strong> (vite-7 gzip: ${GZIP_SIZE})</summary>"
+            echo ""
+            for file in ./tests/integration/build-test-results/*.md; do
+              cat "$file"
+            done
+            echo ""
+            echo "</details>"
+            echo '<!-- /build-section -->'
+          } > build-section.md
 
       - name: Post or update PR comment with build results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
-          BODY="$(cat build-results.md)"
+          SECTION="$(cat build-section.md)"
+          MARKER="<!-- ci-results -->"
           gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("<!-- build-results -->"))| .id' comments.json)
+          COMMENT_ID=$(jq -r '.[]| select(.body | contains("'"$MARKER"'"))| .id' comments.json)
 
           if [[ -n "$COMMENT_ID" ]]; then
-            echo "Updating comment $COMMENT_ID"
-            gh api \
-              --method PATCH \
-              "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" \
-              -f body="$BODY"
+            EXISTING=$(gh api "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" --jq '.body')
+            if echo "$EXISTING" | grep -q '<!-- build-section -->'; then
+              BODY=$(echo "$EXISTING" | perl -0777 -pe 's/<!-- build-section -->.*?<!-- \/build-section -->/'"$(echo "$SECTION" | sed 's/[&/\]/\\&/g')"'/s')
+            else
+              BODY="$EXISTING"$'\n\n'"$SECTION"
+            fi
+            gh api --method PATCH "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -f body="$BODY"
           else
-            echo "Creating new comment"
+            BODY="$MARKER"$'\n\n'"$SECTION"
             gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
