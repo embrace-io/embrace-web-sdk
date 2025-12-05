@@ -26,7 +26,7 @@
 **Branches**
 - Ask for ticket number and description
 - If ticket: (gituser)/(type)/EMBR-(ticketnumber)-(three-word-description)
-- If no ticket: (gituser)/(type)/((three-word-description)
+- If no ticket: (gituser)/(type)/(three-word-description)
 
 **Commits**: Title only, no body, no ticket number, no Claude credits
 
@@ -71,3 +71,9 @@ _findSourceTab()    // not _handleTabLogic()
 // BAD: Check if timestamp > 20000
 // GOOD: 20s window catches legitimate parents while avoiding stale matches
 ```
+
+## Performance
+
+- Hot paths must avoid allocations
+- Batching preferred over individual operations
+- Measure overhead before adding instrumentation
