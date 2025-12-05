@@ -357,6 +357,7 @@ jobs:
       - name: Create performance results section
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         run: |
+          SCRIPT_EVAL=$(grep 'Script Evaluation Time' ./tests/performance/test-results/lighthouse-startup-performance-tests.md | sed 's/.*| \([^|]*ms\) |.*/\1/' | tr -d ' +')
           {
             echo '<!-- perf-section -->'
             echo "<details>"
@@ -367,7 +368,7 @@ jobs:
             echo "</details>"
             echo ""
             echo "<details>"
-            echo "<summary><strong>Lighthouse</strong></summary>"
+            echo "<summary><strong>Lighthouse</strong> (Script Eval: ${SCRIPT_EVAL})</summary>"
             echo ""
             cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md
             echo ""
