@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { EmbraceUserManager } from '../managers';
 import { UserAPI } from './api/index.js';
 import { user } from './userAPI.js';
 
@@ -13,5 +14,35 @@ describe('userAPI', () => {
     const userInstance1 = user;
     const userInstance2 = UserAPI.getInstance();
     expect(userInstance1).to.equal(userInstance2);
+  });
+
+  describe('incorrect usage', () => {
+    let manager: EmbraceUserManager;
+
+    type IncorrectUsageTest = {
+      name: string;
+      invocation: () => unknown;
+    };
+
+    const tests: IncorrectUsageTest[] = [
+      {
+        name: 'setUserId',
+        // @ts-expect-error
+        invocation: () => user.setUserId({ foo: 'bar' }),
+      },
+    ];
+
+    beforeEach(() => {
+      manager = new EmbraceUserManager();
+      user.setGlobalUserManager(manager);
+    });
+
+    tests.forEach((test) => {
+      it(`${test.name} should handle incorrect usage`, async () => {
+        expect(() => {
+          test.invocation();
+        }).to.not.throw();
+      });
+    });
   });
 });

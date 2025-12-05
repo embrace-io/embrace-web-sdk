@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { EmbracePageManager } from '../managers';
 import { PageAPI } from './api/index.js';
 import { page } from './pageAPI.js';
 
@@ -13,5 +14,35 @@ describe('pageAPI', () => {
     const pageInstance1 = page;
     const pageInstance2 = PageAPI.getInstance();
     expect(pageInstance1).to.equal(pageInstance2);
+  });
+
+  describe('incorrect usage', () => {
+    let manager: EmbracePageManager;
+
+    type IncorrectUsageTest = {
+      name: string;
+      invocation: () => unknown;
+    };
+
+    const tests: IncorrectUsageTest[] = [
+      {
+        name: 'setCurrentRoute',
+        // @ts-expect-error
+        invocation: () => page.setCurrentRoute(undefined),
+      },
+    ];
+
+    beforeEach(() => {
+      manager = new EmbracePageManager();
+      page.setGlobalPageManager(manager);
+    });
+
+    tests.forEach((test) => {
+      it(`${test.name} should handle incorrect usage`, async () => {
+        expect(() => {
+          test.invocation();
+        }).to.not.throw();
+      });
+    });
   });
 });
