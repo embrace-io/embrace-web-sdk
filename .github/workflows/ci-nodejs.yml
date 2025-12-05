@@ -360,12 +360,15 @@ jobs:
           {
             echo '<!-- perf-section -->'
             echo "<details>"
-            echo "<summary><strong>Performance</strong></summary>"
+            echo "<summary><strong>Chrome DevTools Protocol Tracing</strong></summary>"
             echo ""
-            echo "#### CDP"
             cat ./tests/performance/test-results/cdp-performance-tests.md
             echo ""
-            echo "#### Lighthouse"
+            echo "</details>"
+            echo ""
+            echo "<details>"
+            echo "<summary><strong>Lighthouse</strong></summary>"
+            echo ""
             cat ./tests/performance/test-results/lighthouse-startup-performance-tests.md
             echo ""
             echo "</details>"
@@ -389,7 +392,7 @@ jobs:
             fi
             gh api --method PATCH "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -f body="$BODY"
           else
-            BODY="$MARKER"$'\n'"## CI Results"$'\n\n'"$SECTION"
+            BODY="$MARKER"$'\n\n'"$SECTION"
             gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
@@ -571,7 +574,7 @@ jobs:
           {
             echo '<!-- build-section -->'
             echo "<details>"
-            echo "<summary><strong>Build</strong></summary>"
+            echo "<summary><strong>Platform Tests</strong></summary>"
             echo ""
             for file in ./tests/integration/build-test-results/*.md; do
               cat "$file"
@@ -598,7 +601,7 @@ jobs:
             fi
             gh api --method PATCH "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -f body="$BODY"
           else
-            BODY="$MARKER"$'\n'"## CI Results"$'\n\n'"$SECTION"
+            BODY="$MARKER"$'\n\n'"$SECTION"
             gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
           fi
         env:
