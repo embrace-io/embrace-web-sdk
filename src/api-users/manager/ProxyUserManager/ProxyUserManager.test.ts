@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { UserManager } from '../index.js';
-import { NoOpUserManager } from '../NoOpUserManager/index.js';
-import { ProxyUserManager } from './ProxyUserManager.js';
+import type { UserManager } from '../index.ts';
+import { NoOpUserManager } from '../NoOpUserManager/index.ts';
+import { ProxyUserManager } from './ProxyUserManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

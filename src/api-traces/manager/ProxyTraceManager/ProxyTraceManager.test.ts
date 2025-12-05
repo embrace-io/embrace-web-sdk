@@ -2,10 +2,10 @@ import type { Context, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { ExtendedSpan } from '../../api/index.js';
-import type { TraceManager } from '../index.js';
-import { NoOpTraceManager } from '../NoOpTraceManager/index.js';
-import { ProxyTraceManager } from './ProxyTraceManager.js';
+import type { ExtendedSpan } from '../../api/index.ts';
+import type { TraceManager } from '../index.ts';
+import { NoOpTraceManager } from '../NoOpTraceManager/index.ts';
+import { ProxyTraceManager } from './ProxyTraceManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

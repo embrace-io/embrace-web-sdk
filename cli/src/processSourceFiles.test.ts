@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 // Import the function we're testing
-import { findJSFilesRecursively } from './processSourceFiles.js';
+import { findJSFilesRecursively } from './processSourceFiles.ts';
 
 describe('processSourceFiles - Security Tests', () => {
   let testDir: string;

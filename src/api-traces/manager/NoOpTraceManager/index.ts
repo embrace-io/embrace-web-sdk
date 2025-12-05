@@ -1,1 +1,1 @@
-export { NoOpTraceManager } from './NoOpTraceManager.js';
+export { NoOpTraceManager } from './NoOpTraceManager.ts';

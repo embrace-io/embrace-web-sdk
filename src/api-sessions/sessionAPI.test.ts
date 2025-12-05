@@ -3,8 +3,8 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
-} from '../managers';
-import { session } from './sessionAPI.js';
+} from '../managers/index.ts';
+import { session } from './sessionAPI.ts';
 
 describe('sessionAPI', () => {
   it('should export a session instance with expected methods', () => {

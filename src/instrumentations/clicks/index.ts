@@ -1,2 +1,2 @@
-export { ClicksInstrumentation } from './ClicksInstrumentation/index.js';
-export type { ClicksInstrumentationArgs } from './ClicksInstrumentation/types.js';
+export { ClicksInstrumentation } from './ClicksInstrumentation/index.ts';
+export type { ClicksInstrumentationArgs } from './ClicksInstrumentation/types.ts';

@@ -1,1 +1,1 @@
-export { ProxySpanSessionManager } from './ProxySpanSessionManager.js';
+export { ProxySpanSessionManager } from './ProxySpanSessionManager.ts';

@@ -1,5 +1,5 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { EmptyRootInstrumentationArgs } from './types.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import type { EmptyRootInstrumentationArgs } from './types.ts';
 
 /*
   EmptyRootInstrumentation observes changes to what is considered the root node of the application and emits a span

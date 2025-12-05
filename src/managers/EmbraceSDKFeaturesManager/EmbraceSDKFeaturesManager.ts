@@ -1,6 +1,6 @@
-import type { DynamicConfigManager } from '../../sdk/index.js';
-import { isDeviceIdEnabled } from '../../utils/index.js';
-import type { SDKFeaturesManager, SDKFeaturesManagerArgs } from './types.js';
+import type { DynamicConfigManager } from '../../sdk/index.ts';
+import { isDeviceIdEnabled } from '../../utils/index.ts';
+import type { SDKFeaturesManager, SDKFeaturesManagerArgs } from './types.ts';
 
 export class EmbraceSDKFeaturesManager implements SDKFeaturesManager {
   private readonly _dynamicConfigManager: DynamicConfigManager;

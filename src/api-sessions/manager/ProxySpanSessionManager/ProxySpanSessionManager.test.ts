@@ -2,9 +2,9 @@ import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { ReasonSessionEnded, SpanSessionManager } from '../index.js';
-import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.js';
-import { ProxySpanSessionManager } from './ProxySpanSessionManager.js';
+import type { ReasonSessionEnded, SpanSessionManager } from '../index.ts';
+import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.ts';
+import { ProxySpanSessionManager } from './ProxySpanSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

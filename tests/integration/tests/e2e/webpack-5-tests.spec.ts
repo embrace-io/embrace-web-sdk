@@ -1,4 +1,4 @@
-import { runE2ETests } from '../../utils/index.js';
+import { runE2ETests } from '../../utils/index.ts';
 
 runE2ETests({
   name: 'Webpack 5 ESNext',

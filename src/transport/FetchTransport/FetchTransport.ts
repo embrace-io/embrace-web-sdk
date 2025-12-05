@@ -2,7 +2,7 @@ import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-import type { FetchRequestParameters } from './types.js';
+import type { FetchRequestParameters } from './types.ts';
 
 export class FetchTransport implements IExporterTransport {
   public constructor(private readonly _config: FetchRequestParameters) {}

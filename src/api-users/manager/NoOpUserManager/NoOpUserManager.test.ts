@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { NoOpUserManager } from './NoOpUserManager.js';
+import { NoOpUserManager } from './NoOpUserManager.ts';
 
 describe('NoOpUserManager', () => {
   let noOpUserManager: NoOpUserManager;

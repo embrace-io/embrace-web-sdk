@@ -1,6 +1,6 @@
 import * as chai from 'chai';
-import { InMemoryDiagLogger } from '../../testUtils/index.js';
-import { createSafeProxy } from './createSafeProxy.js';
+import { InMemoryDiagLogger } from '../../testUtils/index.ts';
+import { createSafeProxy } from './createSafeProxy.ts';
 
 const { expect } = chai;
 

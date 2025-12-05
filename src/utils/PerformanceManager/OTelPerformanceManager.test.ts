@@ -1,8 +1,8 @@
 import type { HrTime } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { OTelPerformanceManager } from './OTelPerformanceManager.js';
-import type { PerformanceClock } from './types.js';
+import { OTelPerformanceManager } from './OTelPerformanceManager.ts';
+import type { PerformanceClock } from './types.ts';
 
 const { expect } = chai;
 

@@ -8,8 +8,8 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-} from '../../testUtils/index.js';
-import { createFetchTransport } from './createFetchTransport.js';
+} from '../../testUtils/index.ts';
+import { createFetchTransport } from './createFetchTransport.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

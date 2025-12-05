@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { uploadToApi } from './uploadToApi.js';
-import { validateInput } from './validateInput.js';
+import { uploadToApi } from './uploadToApi.ts';
+import { validateInput } from './validateInput.ts';
 
 class MapSecurityError extends Error {
   constructor(message: string) {

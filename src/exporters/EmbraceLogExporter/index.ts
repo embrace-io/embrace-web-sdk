@@ -1,1 +1,1 @@
-export { EmbraceLogExporter } from './EmbraceLogExporter.js';
+export { EmbraceLogExporter } from './EmbraceLogExporter.ts';

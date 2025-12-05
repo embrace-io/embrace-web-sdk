@@ -2,11 +2,11 @@ import type { Context, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { TraceManager } from '../../manager/index.js';
-import { ProxyTraceManager } from '../../manager/index.js';
-import type { TraceAPIInstance } from './TraceAPI.js';
-import { TraceAPI } from './TraceAPI.js';
-import type { ExtendedSpan } from './types.js';
+import type { TraceManager } from '../../manager/index.ts';
+import { ProxyTraceManager } from '../../manager/index.ts';
+import type { TraceAPIInstance } from './TraceAPI.ts';
+import { TraceAPI } from './TraceAPI.ts';
+import type { ExtendedSpan } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

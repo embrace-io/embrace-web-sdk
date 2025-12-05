@@ -1,1 +1,1 @@
-export { InMemoryStorage } from './InMemoryStorage.js';
+export { InMemoryStorage } from './InMemoryStorage.ts';

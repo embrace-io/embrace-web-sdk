@@ -1,1 +1,1 @@
-export { NamespacedStorage } from './NamespacedStorage.js';
+export { NamespacedStorage } from './NamespacedStorage.ts';

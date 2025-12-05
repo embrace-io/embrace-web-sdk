@@ -7,19 +7,19 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import type { LogManager, LogSeverity } from '../../api-logs/index.js';
+import type { LogManager, LogSeverity } from '../../api-logs/index.ts';
 import type {
   LogExceptionOptions,
   LogMessageOptions,
-} from '../../api-logs/manager/index.js';
-import type { ExceptionHandlerType } from '../../api-logs/manager/types';
-import type { VisibilityStateDocument } from '../../common/index.js';
+} from '../../api-logs/manager/index.ts';
+import type { ExceptionHandlerType } from '../../api-logs/manager/types.ts';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
   KEY_EMB_EXCEPTION_CAUSE,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.js';
+} from '../../constants/attributes.ts';
 import {
   EMB_TYPES,
   KEY_EMB_EXCEPTION_HANDLING,
@@ -27,17 +27,17 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
-} from '../../constants/index.js';
-import type { PerformanceManager } from '../../utils/index.js';
+} from '../../constants/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
 import {
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
   OTelPerformanceManager,
-} from '../../utils/index.js';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.js';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.js';
-import type { EmbraceLogManagerArgs } from './types.js';
+} from '../../utils/index.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
+import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
 /**
@@ -102,8 +102,8 @@ export class EmbraceLogManager implements LogManager {
       handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
-    if (attributes == null || typeof attributes !== 'object') {
-      this._diag.warn('attributes must be a non-null object', attributes);
+    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
+      this._diag.warn('attributes must be a plain object', attributes);
       attributes = {};
     }
 
@@ -138,7 +138,7 @@ export class EmbraceLogManager implements LogManager {
         ),
         [KEY_EMB_EXCEPTION_CAUSE]: normalizedError.cause,
         [ATTR_EXCEPTION_TYPE]: normalizedError.type,
-        ['exception.name']: normalizedError.name,
+        ['exception.name']: normalizedError.name, // not in OTel semconv, no constant available
         [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
         [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
         [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
@@ -161,9 +161,19 @@ export class EmbraceLogManager implements LogManager {
       stacktrace,
     }: LogMessageOptions = {},
   ) {
-    if (!message || typeof message !== 'string') {
-      this._diag.warn('Message must be a string');
+    if (typeof message !== 'string' || !message.trim()) {
+      this._diag.warn('Message must be a non-empty string');
       return;
+    }
+
+    if (!['info', 'warning', 'error'].includes(severity)) {
+      this._diag.warn('Severity must be info, warning, or error');
+      return;
+    }
+
+    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
+      this._diag.warn('attributes must be a plain object', attributes);
+      attributes = {};
     }
 
     if (severity === 'error') {
@@ -172,7 +182,7 @@ export class EmbraceLogManager implements LogManager {
 
     let stacktraceString = '';
     if (severity !== 'info') {
-      if (stacktrace) {
+      if (typeof stacktrace === 'string') {
         stacktraceString = stacktrace;
       } else if (includeStacktrace) {
         stacktraceString = new Error().stack || '';

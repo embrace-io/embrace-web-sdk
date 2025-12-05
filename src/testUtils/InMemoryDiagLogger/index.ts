@@ -1,1 +1,1 @@
-export { InMemoryDiagLogger } from './InMemoryDiagLogger.js';
+export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';

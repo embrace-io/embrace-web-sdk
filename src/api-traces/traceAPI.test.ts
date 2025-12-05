@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { EmbraceTraceManager } from '../managers';
-import { trace } from './traceAPI.js';
+import { EmbraceTraceManager } from '../managers/index.ts';
+import { trace } from './traceAPI.ts';
 
 describe('traceAPI', () => {
   it('should export a trace instance with expected methods', () => {

@@ -1,20 +1,20 @@
-export { EmbraceSpanSessionManager } from '../../managers/index.js';
-export type { EmbraceInstrumentationBaseArgs } from '../EmbraceInstrumentationBase/index.js';
-export { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.js';
+export { EmbraceSpanSessionManager } from '../../managers/index.ts';
+export type { EmbraceInstrumentationBaseArgs } from '../EmbraceInstrumentationBase/index.ts';
+export { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.ts';
 export {
   SpanSessionBrowserActivityInstrumentation,
   type SpanSessionBrowserActivityInstrumentationArgs,
-} from './SpanSessionBrowserActivityInstrumentation/index.js';
+} from './SpanSessionBrowserActivityInstrumentation/index.ts';
 export {
   SpanSessionOnLoadInstrumentation,
   type SpanSessionOnLoadInstrumentationArgs,
-} from './SpanSessionOnLoadInstrumentation/index.js';
+} from './SpanSessionOnLoadInstrumentation/index.ts';
 export {
   SpanSessionTimeoutInstrumentation,
   type SpanSessionTimeoutInstrumentationArgs,
-} from './SpanSessionTimeoutInstrumentation/index.js';
+} from './SpanSessionTimeoutInstrumentation/index.ts';
 export {
   SpanSessionVisibilityInstrumentation,
   type SpanSessionVisibilityInstrumentationArgs,
-} from './SpanSessionVisibilityInstrumentation/index.js';
-export type { SessionSpan } from './types.js';
+} from './SpanSessionVisibilityInstrumentation/index.ts';
+export type { SessionSpan } from './types.ts';

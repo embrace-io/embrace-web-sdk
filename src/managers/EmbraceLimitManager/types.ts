@@ -1,6 +1,6 @@
 import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import type { LogSeverity } from '../../api-logs/index.js';
+import type { LogSeverity } from '../../api-logs/index.ts';
 
 export interface EmbraceLimitManagerArgs {
   diag?: DiagLogger;

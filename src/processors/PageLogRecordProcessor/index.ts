@@ -1,3 +1,3 @@
-import { PageLogRecordProcessor } from './PageLogRecordProcessor.js';
+import { PageLogRecordProcessor } from './PageLogRecordProcessor.ts';
 
 export { PageLogRecordProcessor };

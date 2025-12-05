@@ -2,11 +2,11 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import type { PageManager, Route } from '../../api-page/index.js';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.js';
-import { EmbracePageManager } from '../../managers/index.js';
-import { setupTestLogExporter } from '../../testUtils/index.js';
-import { PageLogRecordProcessor } from './PageLogRecordProcessor.js';
+import type { PageManager, Route } from '../../api-page/index.ts';
+import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import { EmbracePageManager } from '../../managers/index.ts';
+import { setupTestLogExporter } from '../../testUtils/index.ts';
+import { PageLogRecordProcessor } from './PageLogRecordProcessor.ts';
 
 const { expect } = chai;
 

@@ -1,1 +1,1 @@
-export { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.js';
+export { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';

@@ -1,1 +1,1 @@
-export { ClicksInstrumentation } from './ClicksInstrumentation.js';
+export { ClicksInstrumentation } from './ClicksInstrumentation.ts';

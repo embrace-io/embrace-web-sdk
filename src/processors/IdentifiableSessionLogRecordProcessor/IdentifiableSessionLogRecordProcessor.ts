@@ -4,9 +4,9 @@ import {
   ATTR_SESSION_ID,
   ATTR_SESSION_PREVIOUS_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
-import type { SpanSessionManager } from '../../api-sessions/index.js';
-import { generateUUID } from '../../utils/index.js';
-import type { IdentifiableSessionLogRecordProcessorArgs } from './types.js';
+import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import { generateUUID } from '../../utils/index.ts';
+import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
 
 export class IdentifiableSessionLogRecordProcessor
   implements LogRecordProcessor

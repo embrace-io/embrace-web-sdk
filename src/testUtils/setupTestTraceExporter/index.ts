@@ -1,1 +1,1 @@
-export { setupTestTraceExporter } from './setupTestTraceExporter.js';
+export { setupTestTraceExporter } from './setupTestTraceExporter.ts';

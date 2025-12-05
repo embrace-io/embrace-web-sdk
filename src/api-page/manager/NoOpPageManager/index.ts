@@ -1,1 +1,1 @@
-export { NoOpPageManager } from './NoOpPageManager.js';
+export { NoOpPageManager } from './NoOpPageManager.ts';

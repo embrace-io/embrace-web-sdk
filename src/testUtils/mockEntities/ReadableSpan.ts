@@ -1,6 +1,6 @@
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.js';
-import { mockResource } from './Resource.js';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { mockResource } from './Resource.ts';
 
 export const mockSpan: ReadableSpan = {
   name: 'mock span',

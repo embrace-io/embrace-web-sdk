@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-import type { SDKControl, SDKRegistryManager } from './types.js';
+import type { SDKControl, SDKRegistryManager } from './types.ts';
 
 class Registry implements SDKRegistryManager {
   private _sdk: SDKControl | null = null;

@@ -1,1 +1,1 @@
-export { LogAPI } from './LogAPI/index.js';
+export { LogAPI } from './LogAPI/index.ts';

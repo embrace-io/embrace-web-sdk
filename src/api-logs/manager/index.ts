@@ -1,8 +1,8 @@
-export { NoOpLogManager } from './NoOpLogManager/index.js';
-export { ProxyLogManager } from './ProxyLogManager/index.js';
+export { NoOpLogManager } from './NoOpLogManager/index.ts';
+export { ProxyLogManager } from './ProxyLogManager/index.ts';
 export type {
   LogExceptionOptions,
   LogManager,
   LogMessageOptions,
   LogSeverity,
-} from './types.js';
+} from './types.ts';

@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
 
-import type { DynamicSDKConfig } from '../../sdk/index.js';
+import type { DynamicSDKConfig } from '../../sdk/index.ts';
 
 export type RemoteConfigURLParams = {
   osVersion: string;

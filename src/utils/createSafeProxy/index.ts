@@ -1,1 +1,1 @@
-export { createSafeProxy } from './createSafeProxy.js';
+export { createSafeProxy } from './createSafeProxy.ts';

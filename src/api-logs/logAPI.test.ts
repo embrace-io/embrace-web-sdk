@@ -4,8 +4,8 @@ import {
   EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
-} from '../managers';
-import { log } from './logAPI.js';
+} from '../managers/index.ts';
+import { log } from './logAPI.ts';
 
 describe('logAPI', () => {
   it('should export a log instance with expected methods', () => {

@@ -1,1 +1,1 @@
-export { SpanScrubProcessor } from './SpanScrubProcessor.js';
+export { SpanScrubProcessor } from './SpanScrubProcessor.ts';

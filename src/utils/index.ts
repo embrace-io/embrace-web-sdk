@@ -1,20 +1,20 @@
-export { bulkAddEventListener } from './bulkAddEventListener/index.js';
-export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.js';
-export { createSafeProxy } from './createSafeProxy/index.js';
+export { bulkAddEventListener } from './bulkAddEventListener/index.ts';
+export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.ts';
+export { createSafeProxy } from './createSafeProxy/index.ts';
 export {
   EmbraceSpanStorage,
   type SpanStorageOptions,
-} from './EmbraceSpanStorage/index.js';
-export { generateUUID } from './generateUUID.js';
-export { getIncrementedCount } from './getIncrementedCount.js';
-export { getVisibilityState } from './getVisibilityState.js';
-export { GLOBAL_CONFIG } from './globalConfig.js';
-export { isDeviceIdEnabled } from './isDeviceIdEnabled.js';
-export { NamespacedStorage } from './NamespacedStorage/index.js';
-export { nsfConfigValidation } from './nsfConfigValidation.js';
+} from './EmbraceSpanStorage/index.ts';
+export { generateUUID } from './generateUUID.ts';
+export { getIncrementedCount } from './getIncrementedCount.ts';
+export { getVisibilityState } from './getVisibilityState.ts';
+export { GLOBAL_CONFIG } from './globalConfig.ts';
+export { isDeviceIdEnabled } from './isDeviceIdEnabled.ts';
+export { NamespacedStorage } from './NamespacedStorage/index.ts';
+export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
   OTelPerformanceManager,
   type PerformanceManager,
-} from './PerformanceManager/index.js';
-export { throttle } from './throttle.js';
-export type { TimeoutRef } from './timeout/index.js';
+} from './PerformanceManager/index.ts';
+export { throttle } from './throttle.ts';
+export type { TimeoutRef } from './timeout/index.ts';

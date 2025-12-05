@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { EmbraceUserManager } from '../managers';
-import { UserAPI } from './api/index.js';
-import { user } from './userAPI.js';
+import { EmbraceUserManager } from '../managers/index.ts';
+import { UserAPI } from './api/index.ts';
+import { user } from './userAPI.ts';
 
 describe('userAPI', () => {
   it('should export a user instance with expected methods', () => {

@@ -1,5 +1,5 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { GlobalExceptionInstrumentationArgs } from './types.js';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import type { GlobalExceptionInstrumentationArgs } from './types.ts';
 
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;

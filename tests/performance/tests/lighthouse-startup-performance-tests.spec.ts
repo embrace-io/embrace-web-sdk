@@ -5,14 +5,14 @@ import { test } from '@playwright/test';
 import getPort from 'get-port';
 import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
-import { resultsToMarkdownTable } from '../../utils/index.js';
+import { resultsToMarkdownTable } from '../../utils/index.ts';
 import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
   TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
-} from '../config/index.js';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.js';
-import type { Metric, TestPage } from '../types/index.js';
+} from '../config/index.ts';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.ts';
+import type { Metric, TestPage } from '../types/index.ts';
 
 type AuditResult = {
   numericValue?: number;

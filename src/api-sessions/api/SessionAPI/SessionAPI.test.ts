@@ -2,10 +2,10 @@ import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManager } from '../../manager/index.js';
-import { ProxySpanSessionManager } from '../../manager/index.js';
-import type { SessionAPIInstance } from './SessionAPI.js';
-import { SessionAPI } from './SessionAPI.js';
+import type { SpanSessionManager } from '../../manager/index.ts';
+import { ProxySpanSessionManager } from '../../manager/index.ts';
+import type { SessionAPIInstance } from './SessionAPI.ts';
+import { SessionAPI } from './SessionAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

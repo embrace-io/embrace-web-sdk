@@ -1,4 +1,4 @@
-export type { EMB_INSTRUMENTATIONS } from './attributes.js';
+export type { EMB_INSTRUMENTATIONS } from './attributes.ts';
 export {
   EMB_ERROR_INSTRUMENTATIONS,
   EMB_NAVIGATION_INSTRUMENTATIONS,
@@ -28,4 +28,4 @@ export {
   KEY_EMB_TYPE,
   KEY_EMB_W3C_TRACEPARENT,
   KEY_PREFIX_EMB_PROPERTIES,
-} from './attributes.js';
+} from './attributes.ts';

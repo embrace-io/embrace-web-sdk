@@ -2,21 +2,21 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
-import type { LogManager } from '../../../../api-logs/index.js';
-import { log } from '../../../../api-logs/index.js';
+import type { LogManager } from '../../../../api-logs/index.ts';
+import { log } from '../../../../api-logs/index.ts';
 import {
   EMB_ERROR_INSTRUMENTATIONS,
   KEY_EMB_INSTRUMENTATION,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
-} from '../../../../constants/attributes.js';
+} from '../../../../constants/attributes.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
   EmbraceSpanSessionManager,
-} from '../../../../managers/index.js';
-import { setupTestLogExporter } from '../../../../testUtils/index.js';
-import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.js';
+} from '../../../../managers/index.ts';
+import { setupTestLogExporter } from '../../../../testUtils/index.ts';
+import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
 
 const { expect } = chai;
 

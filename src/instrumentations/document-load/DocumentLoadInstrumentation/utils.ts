@@ -6,7 +6,7 @@
 import type { Span } from '@opentelemetry/api';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
-import { EventNames } from './enums/EventNames.js';
+import { EventNames } from './enums/EventNames.ts';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};

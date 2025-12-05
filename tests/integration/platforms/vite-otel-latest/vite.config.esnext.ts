@@ -1,4 +1,4 @@
-import createConfig from './vite.config.base';
+import createConfig from './vite.config.base.ts';
 
 export default createConfig({
   target: 'esnext',

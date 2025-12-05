@@ -1,15 +1,15 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-import type { UserManagerInternal } from '../../api-users/index.js';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.js';
-import { generateUUID } from '../../utils/index.js';
+import type { UserManagerInternal } from '../../api-users/index.ts';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
+import { generateUUID } from '../../utils/index.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,
   EMBRACE_USER_STORAGE_KEY_DEPRECATED,
-} from './constants.js';
-import type { EmbraceUserManagerArgs } from './types.js';
-import { isUser, isUserId } from './types.js';
+} from './constants.ts';
+import type { EmbraceUserManagerArgs } from './types.ts';
+import { isUser, isUserId } from './types.ts';
 
 export class EmbraceUserManager implements UserManagerInternal {
   private readonly _diag: DiagLogger;

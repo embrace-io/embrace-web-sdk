@@ -4,7 +4,7 @@ import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
-} from '../../managers/index.js';
+} from '../../managers/index.ts';
 
 export type EmbraceSessionBatchedSpanProcessorArgs = {
   resource: Resource;

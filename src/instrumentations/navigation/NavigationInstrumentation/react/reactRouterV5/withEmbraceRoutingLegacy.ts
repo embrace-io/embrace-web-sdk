@@ -1,11 +1,11 @@
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import * as React from 'react';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.js';
-import { getNavigationInstrumentation } from '../../index.js';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
+import { getNavigationInstrumentation } from '../../index.ts';
 import type {
   RouteComponentProps,
   SwitchedRouteComponentProps,
-} from './types.js';
+} from './types.ts';
 
 export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
   WrappedComponent: React.ComponentType<P>,

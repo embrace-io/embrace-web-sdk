@@ -1,2 +1,2 @@
-export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation/index.js';
-export type { GlobalExceptionInstrumentationArgs } from './GlobalExceptionInstrumentation/types.js';
+export { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation/index.ts';
+export type { GlobalExceptionInstrumentationArgs } from './GlobalExceptionInstrumentation/types.ts';

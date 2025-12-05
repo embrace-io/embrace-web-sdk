@@ -1,6 +1,6 @@
 import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import * as chai from 'chai';
-import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
+import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.ts';
 
 const { expect } = chai;
 

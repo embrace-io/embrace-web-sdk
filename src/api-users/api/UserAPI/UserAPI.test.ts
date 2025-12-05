@@ -1,10 +1,10 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { UserManager } from '../../manager/index.js';
-import { ProxyUserManager } from '../../manager/index.js';
-import type { UserAPIInstance } from './UserAPI.js';
-import { UserAPI } from './UserAPI.js';
+import type { UserManager } from '../../manager/index.ts';
+import { ProxyUserManager } from '../../manager/index.ts';
+import type { UserAPIInstance } from './UserAPI.ts';
+import { UserAPI } from './UserAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

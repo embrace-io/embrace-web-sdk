@@ -1,1 +1,1 @@
-export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.js';
+export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.ts';

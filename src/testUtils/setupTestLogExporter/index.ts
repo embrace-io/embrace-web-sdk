@@ -1,1 +1,1 @@
-export { setupTestLogExporter } from './setupTestLogExporter.js';
+export { setupTestLogExporter } from './setupTestLogExporter.ts';

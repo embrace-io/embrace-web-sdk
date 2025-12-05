@@ -1,1 +1,1 @@
-export { createFetchTransport } from './createFetchTransport.js';
+export { createFetchTransport } from './createFetchTransport.ts';

@@ -1,10 +1,10 @@
 import { diag } from '@opentelemetry/api';
-import { createSafeProxy } from '../../../utils/index.js';
-import type { SpanSessionManager } from '../../manager/index.js';
+import { createSafeProxy } from '../../../utils/index.ts';
+import type { SpanSessionManager } from '../../manager/index.ts';
 import {
   NoOpSpanSessionManager,
   ProxySpanSessionManager,
-} from '../../manager/index.js';
+} from '../../manager/index.ts';
 
 /**
  * Public interface for SessionAPI including SDK-internal methods.

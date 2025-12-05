@@ -77,10 +77,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Get installed Playwright version
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -184,10 +187,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Get installed Playwright version
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -284,10 +290,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Get installed Playwright version
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -423,10 +432,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Test CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -480,10 +492,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Get installed Playwright version
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -593,9 +608,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - run: npm install -g npm@11.6.4
       - name: Install npm dependencies
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name == 'push'
@@ -643,10 +659,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install NPM dependencies
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Lint
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
@@ -693,10 +712,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install NPM dependencies
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: TSC
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
@@ -745,10 +767,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - run: npm install -g npm@11.6.4
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+
       - name: Install NPM dependencies
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Build SDK and CLI
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
@@ -800,9 +825,11 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      - run: npm install -g npm@11.6.4
+
       - name: Install NPM dependencies
         run: |
-          npm ci --strict-peer-deps
+          npm ci
 
       - name: Build SDK and CLI
         run: |

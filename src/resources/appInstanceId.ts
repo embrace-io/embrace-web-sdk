@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import { generateUUID } from '../utils/index.js';
-import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.js';
+import { generateUUID } from '../utils/index.ts';
+import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.ts';
 
 export const getAppInstanceId = (
   pageSessionStorage: Storage,

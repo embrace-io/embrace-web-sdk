@@ -1,8 +1,8 @@
 import type { Context } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/api';
 import { expect } from 'chai';
-import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.js';
-import { NoOpTraceManager } from './NoOpTraceManager.js';
+import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.ts';
+import { NoOpTraceManager } from './NoOpTraceManager.ts';
 
 describe('NoOpTraceManager', () => {
   let noOpTraceManager: NoOpTraceManager;

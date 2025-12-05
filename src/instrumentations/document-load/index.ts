@@ -2,8 +2,8 @@ export type {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
-} from './DocumentLoadInstrumentation/index.js';
+} from './DocumentLoadInstrumentation/index.ts';
 export {
   AttributeNames,
   DocumentLoadInstrumentation,
-} from './DocumentLoadInstrumentation/index.js';
+} from './DocumentLoadInstrumentation/index.ts';

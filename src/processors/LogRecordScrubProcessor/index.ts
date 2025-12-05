@@ -1,1 +1,1 @@
-export { LogRecordScrubProcessor } from './LogRecordScrubProcessor.js';
+export { LogRecordScrubProcessor } from './LogRecordScrubProcessor.ts';

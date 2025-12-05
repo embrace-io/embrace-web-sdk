@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { EmbracePageManager } from '../managers';
-import { PageAPI } from './api/index.js';
-import { page } from './pageAPI.js';
+import { EmbracePageManager } from '../managers/index.ts';
+import { PageAPI } from './api/index.ts';
+import { page } from './pageAPI.ts';
 
 describe('pageAPI', () => {
   it('should export a page instance with expected methods', () => {

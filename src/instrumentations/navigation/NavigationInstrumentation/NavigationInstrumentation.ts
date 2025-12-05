@@ -1,6 +1,6 @@
 import type { Span } from '@opentelemetry/api';
-import type { Route } from '../../../api-page/index.js';
-import { page } from '../../../api-page/index.js';
+import type { Route } from '../../../api-page/index.ts';
+import { page } from '../../../api-page/index.ts';
 import {
   EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
@@ -8,9 +8,9 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-} from '../../../constants/index.js';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.js';
-import type { NavigationInstrumentationArgs } from './types.js';
+} from '../../../constants/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import type { NavigationInstrumentationArgs } from './types.ts';
 
 // Regular expression to match path options in the format "(option)"
 // Used to clean up paths that are like "/order/:orderState(pending|shipped|delivered)/type:(sale|normal)" to "/order/:orderState/:type"

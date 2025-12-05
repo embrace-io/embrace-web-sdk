@@ -1,9 +1,9 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { getNavigationInstrumentation } from '../../index.js';
-import { listenToRouterChanges } from './listenToRouterChanges.js';
-import type { Router, RouterState } from './types.js';
+import { getNavigationInstrumentation } from '../../index.ts';
+import { listenToRouterChanges } from './listenToRouterChanges.ts';
+import type { Router, RouterState } from './types.ts';
 
 chai.use(sinonChai);
 

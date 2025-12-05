@@ -1,2 +1,2 @@
-export { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.js';
-export type { SpanSessionTimeoutInstrumentationArgs } from './types.js';
+export { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.ts';
+export type { SpanSessionTimeoutInstrumentationArgs } from './types.ts';

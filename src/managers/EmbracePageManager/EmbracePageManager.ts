@@ -1,5 +1,5 @@
-import type { PageManager, Route } from '../../api-page/index.js';
-import { generateUUID } from '../../utils/index.js';
+import type { PageManager, Route } from '../../api-page/index.ts';
+import { generateUUID } from '../../utils/index.ts';
 
 export class EmbracePageManager implements PageManager {
   private _currentRoute: Route | null = null;

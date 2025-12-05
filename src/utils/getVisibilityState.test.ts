@@ -1,6 +1,6 @@
 import * as chai from 'chai';
-import type { VisibilityStateDocument } from '../common/index.js';
-import { getVisibilityState } from './getVisibilityState.js';
+import type { VisibilityStateDocument } from '../common/index.ts';
+import { getVisibilityState } from './getVisibilityState.ts';
 
 const { expect } = chai;
 
