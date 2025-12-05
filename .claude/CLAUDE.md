@@ -71,3 +71,9 @@ _findSourceTab()    // not _handleTabLogic()
 // BAD: Check if timestamp > 20000
 // GOOD: 20s window catches legitimate parents while avoiding stale matches
 ```
+
+## Performance
+
+- Hot paths must avoid allocations
+- Batching preferred over individual operations
+- Measure overhead before adding instrumentation
