@@ -31,7 +31,7 @@
     "sdk:compile": "npx rimraf dist && npm run sdk:compile:iife && npm run sdk:compile:sdk",
     "sdk:compile:iife": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js && terser dist/embrace-web-sdk.js -c -m --source-map \"content='dist/embrace-web-sdk.js.map',url='embrace-web-sdk.js.map'\" -o dist/embrace-web-sdk.js",
     "sdk:compile:iife:watch": "esbuild src/index.ts --bundle --format=iife --global-name=EmbraceWebSdk --target=es6 --sourcemap --outfile=dist/embrace-web-sdk.js --watch",
-    "sdk:compile:sdk": "tsdown 'src/**/*.ts' '!src/**/*.test.*' '!src/testUtils/**' --format cjs,esm --target=es2022 --dts --outDir dist --sourcemap --platform browser --no-splitting --unbundle --no-clean",
+    "sdk:compile:sdk": "tsdown",
     "sdk:compile:sdk:watch": "npm run sdk:compile:sdk -- --watch ./src",
     "sdk:lint": "biome check",
     "sdk:lint:fix": "biome check --write",
@@ -112,6 +112,7 @@
     "web-vitals": "5.1.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/core": "0.18.2",
     "@biomejs/biome": "2.3.8",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
@@ -152,7 +153,7 @@
     "sinon-chai": "4.0.1",
     "sonda": "0.10.1",
     "terser": "5.44.1",
-    "tsdown": "0.16.8",
+    "tsdown": "0.17.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vite": "7.2.6"
