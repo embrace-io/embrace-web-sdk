@@ -1,4 +1,4 @@
-import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
+import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
@@ -41,8 +41,8 @@ import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
 /**
- * GLOBAL_CONFIG._EmbraceFileBundleIDs is populated on run time when each file is loaded,
- * based on the contents that were injected by the embrace-web-cli.
+ * GLOBAL_CONFIG._EmbraceFileBundleIDs is populated at runtime when each file is loaded,
+ * based on the contents injected by the embrace-web-cli.
  */
 const getJSFileBundleIDs = () =>
   JSON.stringify(GLOBAL_CONFIG._EmbraceFileBundleIDs || {});
@@ -80,6 +80,14 @@ export class EmbraceLogManager implements LogManager {
     this._storage = storage;
   }
 
+  private _validateAttributes(attributes: unknown): Attributes {
+    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
+      this._diag.warn('attributes must be a plain object', attributes);
+      return {};
+    }
+    return attributes as Attributes;
+  }
+
   private static _logSeverityToSeverityNumber(
     severity: LogSeverity,
   ): SeverityNumber {
@@ -102,10 +110,7 @@ export class EmbraceLogManager implements LogManager {
       handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
-    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
-      this._diag.warn('attributes must be a plain object', attributes);
-      attributes = {};
-    }
+    const validAttrs = this._validateAttributes(attributes);
 
     if (!handled) {
       this._spanSessionManager.incrSessionCountForKey(
@@ -113,14 +118,29 @@ export class EmbraceLogManager implements LogManager {
       );
     }
 
-    const normalizedError = EmbraceLogManager._normalizeErrorData(error);
+    const type = error?.constructor?.name || typeof error;
+    let errMessage = '';
+    let errName = type;
+    let errStack = '';
+    let errCause = '';
 
-    const limitedException = this._limitManager.limitException(
-      normalizedError.message,
-      attributes,
-    );
+    if (error instanceof Error) {
+      errMessage = String(error.message || '').trim();
+      errName = error.name || '';
+      errStack = error.stack || '';
+      errCause = error.cause ? 'present' : '';
+    } else if (error && typeof error === 'object') {
+      try {
+        errMessage = JSON.stringify(error);
+      } catch {
+        errMessage = String(error).trim();
+      }
+    } else {
+      errMessage = String(error).trim();
+    }
 
-    if (limitedException === 'dropped') {
+    const limited = this._limitManager.limitException(errMessage, validAttrs);
+    if (limited === 'dropped') {
       return;
     }
 
@@ -128,19 +148,19 @@ export class EmbraceLogManager implements LogManager {
       timestamp,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
-      body: limitedException.message,
+      body: limited.message,
       attributes: {
-        ...limitedException.attributes,
+        ...limited.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemException,
         [KEY_EMB_EXCEPTION_HANDLING]: EmbraceLogManager._exceptionHandlingType(
           handled,
           handler,
         ),
-        [KEY_EMB_EXCEPTION_CAUSE]: normalizedError.cause,
-        [ATTR_EXCEPTION_TYPE]: normalizedError.type,
-        ['exception.name']: normalizedError.name, // not in OTel semconv, no constant available
-        [ATTR_EXCEPTION_MESSAGE]: limitedException.message,
-        [ATTR_EXCEPTION_STACKTRACE]: normalizedError.stack,
+        [KEY_EMB_EXCEPTION_CAUSE]: errCause,
+        [ATTR_EXCEPTION_TYPE]: type,
+        ['exception.name']: errName,
+        [ATTR_EXCEPTION_MESSAGE]: limited.message,
+        [ATTR_EXCEPTION_STACKTRACE]: errStack,
         [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
         [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
         [KEY_EMB_EXCEPTION_NUMBER]: getIncrementedCount(
@@ -171,21 +191,18 @@ export class EmbraceLogManager implements LogManager {
       return;
     }
 
-    if (Object.prototype.toString.call(attributes) !== '[object Object]') {
-      this._diag.warn('attributes must be a plain object', attributes);
-      attributes = {};
-    }
+    const validAttrs = this._validateAttributes(attributes);
 
     if (severity === 'error') {
       this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
     }
 
-    let stacktraceString = '';
+    let stack = '';
     if (severity !== 'info') {
       if (typeof stacktrace === 'string') {
-        stacktraceString = stacktrace;
+        stack = stacktrace;
       } else if (includeStacktrace) {
-        stacktraceString = new Error().stack || '';
+        stack = new Error().stack || '';
       }
     }
 
@@ -193,8 +210,8 @@ export class EmbraceLogManager implements LogManager {
       message: message.trim(),
       severity,
       timestamp: this._perf.getNowMillis(),
-      attributes,
-      stacktrace: stacktraceString,
+      attributes: validAttrs,
+      stack,
     });
   }
 
@@ -203,13 +220,13 @@ export class EmbraceLogManager implements LogManager {
     severity,
     timestamp,
     attributes = {},
-    stacktrace,
+    stack,
   }: {
     message: string;
     severity: LogSeverity;
     timestamp: number;
-    attributes?: Record<string, AttributeValue | undefined>;
-    stacktrace?: string;
+    attributes?: Attributes;
+    stack?: string;
   }) {
     const limitedLog = this._limitManager.limitLog(
       message,
@@ -229,69 +246,15 @@ export class EmbraceLogManager implements LogManager {
       attributes: {
         ...limitedLog.attributes,
         [KEY_EMB_TYPE]: EMB_TYPES.SystemLog,
-        ...(stacktrace
+        ...(stack
           ? {
-              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stacktrace,
+              [KEY_EMB_JS_EXCEPTION_STACKTRACE]: stack,
               [KEY_EMB_JS_FILE_BUNDLE_IDS]: getJSFileBundleIDs(),
             }
           : {}),
         [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
       },
     });
-  }
-
-  private static _normalizeErrorData(error: unknown): {
-    message: string;
-    type: string;
-    name: string;
-    stack: string; // 'stack' not 'stacktrace' here to match the standard Error.stack property name
-    cause: string;
-  } {
-    const constructorName = EmbraceLogManager._getConstructorName(error);
-
-    if (error instanceof Error) {
-      return {
-        message: String(error.message || '').trim(),
-        type: constructorName,
-        name: error.name || '',
-        stack: error.stack || '',
-        cause: error.cause ? 'present' : '',
-      };
-    }
-
-    let message = '';
-    if (typeof error === 'object') {
-      try {
-        message = JSON.stringify(error);
-      } catch {
-        message = String(error).trim();
-      }
-    } else {
-      message = String(error).trim();
-    }
-
-    return {
-      message,
-      type: constructorName,
-      name: constructorName,
-      stack: '',
-      cause: '',
-    };
-  }
-
-  /**
-   * Safely extracts constructor name from an object.
-   * Handles edge cases like Object.create(null) or missing constructor.
-   */
-  private static _getConstructorName(obj: unknown): string {
-    try {
-      if (obj?.constructor?.name) {
-        return obj.constructor.name;
-      }
-    } catch {
-      // Accessing constructor can throw in some edge cases
-    }
-    return typeof obj;
   }
 
   private static _exceptionHandlingType(
