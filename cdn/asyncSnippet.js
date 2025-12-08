@@ -9,7 +9,7 @@
   };
   const script = document.createElement('script');
   script.async = true;
-  script.crossOrigin = "anonymous"
+  script.crossOrigin = 'anonymous';
   script.src = 'https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X';
   script.onload = () => {
     window.EmbraceWebSdkOnReady.q.forEach((fn) => {
