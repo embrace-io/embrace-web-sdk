@@ -15,6 +15,15 @@ module.exports = {
         './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js',
       ),
       uuid: path.resolve(__dirname, './node_modules/uuid/dist/index.js'),
+      // @bufbuild/protobuf uses subpath exports which webpack 4 doesn't support
+      '@bufbuild/protobuf/codegenv1': path.resolve(
+        __dirname,
+        '../../../../node_modules/@bufbuild/protobuf/dist/esm/codegenv1/index.js',
+      ),
+      '@bufbuild/protobuf': path.resolve(
+        __dirname,
+        '../../../../node_modules/@bufbuild/protobuf/dist/esm/index.js',
+      ),
     },
   },
   devServer: {
