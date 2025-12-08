@@ -3,20 +3,22 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { UserManager } from '../../manager/index.ts';
 import { ProxyUserManager } from '../../manager/index.ts';
+import type { UserAPIInstance } from './UserAPI.ts';
 import { UserAPI } from './UserAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
+afterEach(() => {
+  sinon.restore();
+  UserAPI.resetInstance();
+});
+
 describe('UserAPI', () => {
-  let userAPI: UserAPI;
+  let userAPI: UserAPIInstance;
 
   beforeEach(() => {
     userAPI = UserAPI.getInstance();
-  });
-
-  it('should return an instance of UserAPI', () => {
-    expect(userAPI).to.be.instanceOf(UserAPI);
   });
 
   it('should return the same instance on multiple calls', () => {

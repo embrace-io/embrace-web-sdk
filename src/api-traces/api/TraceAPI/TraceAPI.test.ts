@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { TraceManager } from '../../manager/index.ts';
 import { ProxyTraceManager } from '../../manager/index.ts';
+import type { TraceAPIInstance } from './TraceAPI.ts';
 import { TraceAPI } from './TraceAPI.ts';
 import type { ExtendedSpan } from './types.ts';
 
@@ -12,10 +13,11 @@ const { expect } = chai;
 
 afterEach(() => {
   sinon.restore();
+  TraceAPI.resetInstance();
 });
 
 describe('TraceAPI', () => {
-  let traceAPI: TraceAPI;
+  let traceAPI: TraceAPIInstance;
 
   beforeEach(() => {
     traceAPI = TraceAPI.getInstance();

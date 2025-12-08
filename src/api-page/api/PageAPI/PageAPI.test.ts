@@ -3,22 +3,24 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { PageManager, Route } from '../../index.ts';
 import { ProxyPageManager } from '../../index.ts';
+import type { PageAPIInstance } from './PageAPI.ts';
 import { PageAPI } from './PageAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
+afterEach(() => {
+  sinon.restore();
+  PageAPI.resetInstance();
+});
+
 describe('PageAPI', () => {
-  let pageAPI: PageAPI;
+  let pageAPI: PageAPIInstance;
   let mockRoute: Route;
 
   beforeEach(() => {
     pageAPI = PageAPI.getInstance();
     mockRoute = { path: '/products/:id', url: '/products/123' };
-  });
-
-  it('should return an instance of PageAPI', () => {
-    expect(pageAPI).to.be.instanceOf(PageAPI);
   });
 
   it('should return the same instance on multiple calls', () => {

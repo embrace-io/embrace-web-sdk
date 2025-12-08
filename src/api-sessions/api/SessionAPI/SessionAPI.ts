@@ -1,95 +1,54 @@
-import type { HrTime } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import type {
-  PropertyOptions,
-  ReasonSessionEnded,
-  SpanSessionManager,
-  StartSessionOptions,
+import { diag } from '@opentelemetry/api';
+import { createSafeProxy } from '../../../utils/index.ts';
+import type { SpanSessionManager } from '../../manager/index.ts';
+import {
+  NoOpSpanSessionManager,
+  ProxySpanSessionManager,
 } from '../../manager/index.ts';
-import { ProxySpanSessionManager } from '../../manager/index.ts';
-import type { SessionAPIArgs } from './types.ts';
 
-export class SessionAPI implements SpanSessionManager {
-  private static _instance?: SessionAPI;
-  private readonly _proxySpanSessionManager;
+/**
+ * Public interface for SessionAPI including SDK-internal methods.
+ */
+export interface SessionAPIInstance extends SpanSessionManager {
+  /** @internal SDK use only */
+  setGlobalSessionManager(sessionManager: SpanSessionManager): void;
+  /** @internal SDK use only */
+  getSpanSessionManager(): SpanSessionManager;
+}
 
-  private constructor({ proxySpanSessionManager }: SessionAPIArgs) {
-    this._proxySpanSessionManager = proxySpanSessionManager;
-  }
+const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
+const INTERNAL_METHODS = new Set(['setDelegate', 'getDelegate']);
 
-  public static getInstance(): SessionAPI {
+export class SessionAPI {
+  private static _instance?: SessionAPIInstance;
+
+  public static getInstance(): SessionAPIInstance {
     if (!SessionAPI._instance) {
-      SessionAPI._instance = new SessionAPI({
-        proxySpanSessionManager: new ProxySpanSessionManager(),
-      });
+      const proxyManager = new ProxySpanSessionManager();
+
+      const safeManager = createSafeProxy(
+        proxyManager,
+        NOOP_SPAN_SESSION_MANAGER,
+        diag.createComponentLogger({ namespace: 'SessionAPI' }),
+        INTERNAL_METHODS,
+      );
+
+      // Combine safe-wrapped manager methods with SDK-internal methods
+      SessionAPI._instance = Object.assign(safeManager, {
+        setGlobalSessionManager(sessionManager: SpanSessionManager): void {
+          proxyManager.setDelegate(sessionManager);
+        },
+        getSpanSessionManager(): SpanSessionManager {
+          return proxyManager;
+        },
+      }) as SessionAPIInstance;
     }
 
     return SessionAPI._instance;
   }
 
-  public getSpanSessionManager: () => SpanSessionManager = () => {
-    return this._proxySpanSessionManager;
-  };
-
-  public setGlobalSessionManager(sessionManager: SpanSessionManager): void {
-    this._proxySpanSessionManager.setDelegate(sessionManager);
-  }
-
-  public addBreadcrumb(name: string): void {
-    this.getSpanSessionManager().addBreadcrumb(name);
-  }
-
-  public addProperty(
-    key: string,
-    value: string,
-    options?: PropertyOptions,
-  ): void {
-    this.getSpanSessionManager().addProperty(key, value, options);
-  }
-
-  public removeProperty(key: string): void {
-    this.getSpanSessionManager().removeProperty(key);
-  }
-
-  public endSessionSpan() {
-    this.getSpanSessionManager().endSessionSpan();
-  }
-
-  public endSessionSpanInternal(reason: ReasonSessionEnded) {
-    this.getSpanSessionManager().endSessionSpanInternal(reason);
-  }
-
-  public currentSessionAsReadableSpan(
-    reason: ReasonSessionEnded,
-  ): ReadableSpan | null {
-    return this.getSpanSessionManager().currentSessionAsReadableSpan(reason);
-  }
-
-  public getSessionId(): string | null {
-    return this.getSpanSessionManager().getSessionId();
-  }
-
-  public getPreviousSessionId(): string | null {
-    return this.getSpanSessionManager().getPreviousSessionId();
-  }
-
-  public getSessionSpan() {
-    return this.getSpanSessionManager().getSessionSpan();
-  }
-
-  public getSessionStartTime(): HrTime | null {
-    return this.getSpanSessionManager().getSessionStartTime();
-  }
-
-  public startSessionSpan(options?: StartSessionOptions) {
-    this.getSpanSessionManager().startSessionSpan(options);
-  }
-
-  public addSessionStartedListener(listener: () => void): () => void {
-    return this.getSpanSessionManager().addSessionStartedListener(listener);
-  }
-
-  public addSessionEndedListener(listener: () => void): () => void {
-    return this.getSpanSessionManager().addSessionEndedListener(listener);
+  // Static method to reset instance for testing
+  public static resetInstance(): void {
+    SessionAPI._instance = undefined;
   }
 }

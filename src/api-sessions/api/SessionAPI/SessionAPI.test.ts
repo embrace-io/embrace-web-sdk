@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { SpanSessionManager } from '../../manager/index.ts';
 import { ProxySpanSessionManager } from '../../manager/index.ts';
+import type { SessionAPIInstance } from './SessionAPI.ts';
 import { SessionAPI } from './SessionAPI.ts';
 
 chai.use(sinonChai);
@@ -11,10 +12,11 @@ const { expect } = chai;
 
 afterEach(() => {
   sinon.restore();
+  SessionAPI.resetInstance();
 });
 
 describe('SessionAPI', () => {
-  let sessionAPI: SessionAPI;
+  let sessionAPI: SessionAPIInstance;
 
   beforeEach(() => {
     sessionAPI = SessionAPI.getInstance();

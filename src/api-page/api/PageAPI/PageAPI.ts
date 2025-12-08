@@ -1,46 +1,49 @@
-import type { PageManager, Route } from '../../manager/index.ts';
-import { ProxyPageManager } from '../../manager/index.ts';
-import type { PageAPIArgs } from './types.ts';
+import { diag } from '@opentelemetry/api';
+import { createSafeProxy } from '../../../utils/index.ts';
+import type { PageManager } from '../../manager/index.ts';
+import { NoOpPageManager, ProxyPageManager } from '../../manager/index.ts';
 
-export class PageAPI implements PageManager {
-  private static _instance?: PageAPI;
-  private readonly _proxyPageManager;
+/**
+ * Public interface for PageAPI including SDK-internal methods.
+ */
+export interface PageAPIInstance extends PageManager {
+  /** @internal SDK use only */
+  setGlobalPageManager(pageManager: PageManager): void;
+  /** @internal SDK use only */
+  getPageManager(): PageManager;
+}
 
-  private constructor({ proxyPageManager }: PageAPIArgs) {
-    this._proxyPageManager = proxyPageManager;
-  }
+const NOOP_PAGE_MANAGER = new NoOpPageManager();
+const INTERNAL_METHODS = new Set(['setDelegate', 'getDelegate']);
 
-  public static getInstance(): PageAPI {
+export class PageAPI {
+  private static _instance?: PageAPIInstance;
+
+  public static getInstance(): PageAPIInstance {
     if (!PageAPI._instance) {
-      PageAPI._instance = new PageAPI({
-        proxyPageManager: new ProxyPageManager(),
-      });
+      const proxyManager = new ProxyPageManager();
+
+      const safeManager = createSafeProxy(
+        proxyManager,
+        NOOP_PAGE_MANAGER,
+        diag.createComponentLogger({ namespace: 'PageAPI' }),
+        INTERNAL_METHODS,
+      );
+
+      PageAPI._instance = Object.assign(safeManager, {
+        setGlobalPageManager(pageManager: PageManager): void {
+          proxyManager.setDelegate(pageManager);
+        },
+        getPageManager(): PageManager {
+          return proxyManager;
+        },
+      }) as PageAPIInstance;
     }
 
     return PageAPI._instance;
   }
 
-  public getPageManager(): PageManager {
-    return this._proxyPageManager;
-  }
-
-  public setGlobalPageManager(pageManager: PageManager): void {
-    this._proxyPageManager.setDelegate(pageManager);
-  }
-
-  public setCurrentRoute(route: Route): void {
-    this.getPageManager().setCurrentRoute(route);
-  }
-
-  public getCurrentRoute(): Route | null {
-    return this.getPageManager().getCurrentRoute();
-  }
-
-  public getCurrentPageId(): string | null {
-    return this.getPageManager().getCurrentPageId();
-  }
-
-  public clearCurrentRoute(): void {
-    this.getPageManager().clearCurrentRoute();
+  public static resetInstance(): void {
+    PageAPI._instance = undefined;
   }
 }

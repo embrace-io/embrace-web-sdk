@@ -1,5 +1,6 @@
 export { bulkAddEventListener } from './bulkAddEventListener/index.ts';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.ts';
+export { createSafeProxy } from './createSafeProxy/index.ts';
 export {
   EmbraceSpanStorage,
   type SpanStorageOptions,
@@ -17,4 +18,3 @@ export {
 } from './PerformanceManager/index.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';
-export { withErrorFallback } from './withErrorFallback.ts';

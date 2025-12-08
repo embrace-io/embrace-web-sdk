@@ -3,15 +3,19 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { LogManager } from '../../manager/index.ts';
 import { ProxyLogManager } from '../../manager/index.ts';
+import type { LogAPIInstance } from './LogAPI.ts';
 import { LogAPI } from './LogAPI.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
+
 afterEach(() => {
   sinon.restore();
+  LogAPI.resetInstance();
 });
+
 describe('LogAPI', () => {
-  let logAPI: LogAPI;
+  let logAPI: LogAPIInstance;
 
   beforeEach(() => {
     logAPI = LogAPI.getInstance();

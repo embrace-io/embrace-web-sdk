@@ -1,47 +1,49 @@
-import type {
-  LogExceptionOptions,
-  LogManager,
-  LogMessageOptions,
-  LogSeverity,
-} from '../../manager/index.ts';
-import { ProxyLogManager } from '../../manager/index.ts';
-import type { LogAPIArgs } from './types.ts';
+import { diag } from '@opentelemetry/api';
+import { createSafeProxy } from '../../../utils/index.ts';
+import type { LogManager } from '../../manager/index.ts';
+import { NoOpLogManager, ProxyLogManager } from '../../manager/index.ts';
 
-export class LogAPI implements LogManager {
-  private static _instance?: LogAPI;
-  private readonly _proxyLogManager;
+/**
+ * Public interface for LogAPI including SDK-internal methods.
+ */
+export interface LogAPIInstance extends LogManager {
+  /** @internal SDK use only */
+  setGlobalLogManager(logManager: LogManager): void;
+  /** @internal SDK use only */
+  getLogManager(): LogManager;
+}
 
-  private constructor({ proxyLogManager }: LogAPIArgs) {
-    this._proxyLogManager = proxyLogManager;
-  }
+const NOOP_LOG_MANAGER = new NoOpLogManager();
+const INTERNAL_METHODS = new Set(['setDelegate', 'getDelegate']);
 
-  public static getInstance(): LogAPI {
+export class LogAPI {
+  private static _instance?: LogAPIInstance;
+
+  public static getInstance(): LogAPIInstance {
     if (!LogAPI._instance) {
-      LogAPI._instance = new LogAPI({
-        proxyLogManager: new ProxyLogManager(),
-      });
+      const proxyManager = new ProxyLogManager();
+
+      const safeManager = createSafeProxy(
+        proxyManager,
+        NOOP_LOG_MANAGER,
+        diag.createComponentLogger({ namespace: 'LogAPI' }),
+        INTERNAL_METHODS,
+      );
+
+      LogAPI._instance = Object.assign(safeManager, {
+        setGlobalLogManager(logManager: LogManager): void {
+          proxyManager.setDelegate(logManager);
+        },
+        getLogManager(): LogManager {
+          return proxyManager;
+        },
+      }) as LogAPIInstance;
     }
 
     return LogAPI._instance;
   }
 
-  public getLogManager: () => LogManager = () => {
-    return this._proxyLogManager;
-  };
-
-  public setGlobalLogManager(logManager: LogManager): void {
-    this._proxyLogManager.setDelegate(logManager);
-  }
-
-  public logException(error: unknown, options?: LogExceptionOptions) {
-    this.getLogManager().logException(error, options);
-  }
-
-  public message(
-    message: string,
-    level: LogSeverity,
-    options?: LogMessageOptions,
-  ) {
-    this.getLogManager().message(message, level, options);
+  public static resetInstance(): void {
+    LogAPI._instance = undefined;
   }
 }
