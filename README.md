@@ -172,7 +172,7 @@ If you want to add permanent properties that are sent across all sessions, you c
 
 ```typescript
 session.addProperty("my-custom-property", "some value", {
-   lifespan: 'permanent',
+  lifespan: 'permanent',
 });
 ```
 
@@ -279,7 +279,7 @@ authorization. Since these export requests will be made from a browser it is als
 appropriate CORS headers in its responses:
 
 ```typescript
-import { OTLPLogExporter }   from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 initSDK({
@@ -350,8 +350,8 @@ as you refer to that documentation:
    ```
 
 2) Our CLI tool does not support injecting an app version when loading from CDN since in that case our SDK is not
-bundled with your code, instead you will need to make sure to pass in your app version when initializing the sdk as in
-the following example:
+   bundled with your code, instead you will need to make sure to pass in your app version when initializing the sdk as
+   in the following example:
 
    ```javascript
    initSDK({
@@ -362,7 +362,9 @@ the following example:
 
 ### Async Loading
 
-If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add the following snippet to your HTML file. Remember to replace `X.X.X` with the version of the SDK you want to include:
+If you prefer to load the SDK asynchronously to avoid blocking the rendering of your page, you'll need to add the
+following snippet to your HTML file. Remember to replace `X.X.X` with the version of the SDK you want to include:
+
 ```html
 <script>
    !function(){window.EmbraceWebSdkOnReady=window.EmbraceWebSdkOnReady||{q:[],onReady:function(e){window.EmbraceWebSdkOnReady.q.push(e)}};let e=document.createElement("script");e.async=!0,e.src="https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X",e.onload=function(){window.EmbraceWebSdkOnReady.q.forEach(e=>e()),window.EmbraceWebSdkOnReady.q=[],window.EmbraceWebSdkOnReady.onReady=function(e){e()}};let n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(e,n)}();
@@ -373,10 +375,10 @@ By deferring the loading of the SDK, any early calls to the SDK need to be wrapp
 
 ```javascript
 window.EmbraceWebSdkOnReady.onReady(() => {
-   window.EmbraceWebSdk.initSDK({
-      appVersion: '0.0.1',
-      /*...*/
-   });
+  window.EmbraceWebSdk.initSDK({
+    appVersion: '0.0.1',
+    /*...*/
+  });
 })
 ```
 
@@ -395,9 +397,9 @@ initializing the SDK.
 import { initSDK } from '@embrace-io/web-sdk';
 
 const embraceSDK = initSDK({
-   appID: "YOUR_EMBRACE_APP_ID",
-   appVersion: "YOUR_APP_VERSION",
-   registerGlobally: false, // Prevents the SDK from registering itself globally
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  registerGlobally: false, // Prevents the SDK from registering itself globally
 });
 ```
 
@@ -408,9 +410,9 @@ and properties.
 import { initSDK } from '@embrace-io/web-sdk';
 
 const embraceSDK = initSDK({
-   appID: "YOUR_EMBRACE_APP_ID",
-   appVersion: "YOUR_APP_VERSION",
-   registerGlobally: false, // Prevents the SDK from registering itself globally
+  appID: "YOUR_EMBRACE_APP_ID",
+  appVersion: "YOUR_APP_VERSION",
+  registerGlobally: false, // Prevents the SDK from registering itself globally
 });
 
 // Use this
@@ -423,6 +425,7 @@ log.message('This is a log message', 'info');
 ```
 
 Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
+
 * Fetch and XHR instrumentations are registered globally, so by default the last SDK to register will override the
   previous instance's configuration and only the last instance will be able to capture network requests. If you don't
   want the last instance to be the one that captures network request you can set `omitIfAlreadyPatched` to true when
@@ -517,7 +520,10 @@ from [Custom exporters](#custom-exporters) or else the SDK considers the configu
 
 ## Browser Support
 
-The SDK is intended to be imported as a module and transpiled by a bundler. We provide an ES2022 module version for use in modern build pipelines. OpenTelemetry set their current minimum language feature support to ES2022. Our default ESM SDK targets this as well to ensure compatibility. See more details in the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
+The SDK is intended to be imported as a module and transpiled by a bundler. We provide an ES2022 module version for use
+in modern build pipelines. OpenTelemetry set their current minimum language feature support to ES2022. Our default ESM
+SDK targets this as well to ensure compatibility. See more details in
+the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
 
 We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum compatibility with older browsers.
 
@@ -529,10 +535,12 @@ Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
 
 ### Compatibility with OTel packages
 
-The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries. **Important: New projects should use OpenTelemetry 2.x.**
+The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries. 
+**Important: New projects should use OpenTelemetry 2.x.**
 OpenTelemetry 1.x support is limited to 1.x versions of the SDK, which are deprecated.
 
-If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations, you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
+If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations,
+you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
 
 | Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
 |-----------------|---------------------|--------|----------------------------|
@@ -605,6 +613,20 @@ module.exports = {
 
 See the [webpack 4 integration test](./tests/integration/platforms/webpack-4/webpack.config.js) for a complete example.
 
+### Client-side only usage
+
+The Embrace SDK can **only be imported in code that executes exclusively in the browser**. Do not import the SDK in
+server-side code or code that runs in edge runtimes.
+
+Importing the SDK in server-side or edge runtime contexts will cause build errors due to the SDK's dependency on
+browser-specific APIs and OpenTelemetry packages that use dynamic code evaluation.
+
+**Next.js example:**
+
+- ✅ **Safe to import:** Client Components (files with `"use client"` directive), browser-only scripts
+- ❌ **Do not import:** `middleware.ts`, API routes (`pages/api/*` or `app/*/route.ts`), Server Components, Server
+  Actions
+
 ## FAQ
 
 ### How is data exported from the SDK
@@ -613,7 +635,8 @@ Refer to [DATA_EXPORT.md](./DATA_EXPORT.md) for details on how data is exported 
 
 ### How is sensitive data protected
 
-The SDK offers a few options to help protect sensitive data, refer to [these guidelines](https://embrace.io/docs/web/best-practices/security-considerations/)
+The SDK offers a few options to help protect sensitive data, refer
+to [these guidelines](https://embrace.io/docs/web/best-practices/security-considerations/)
 for more information.
 
 ## Support
