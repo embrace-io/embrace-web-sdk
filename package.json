@@ -13,7 +13,7 @@
   "scripts": {
     "prepare": "lefthook install -f",
     "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
-    "compile": "npm run sdk:compile && npm run compile --workspaces --if-present",
+    "compile": "npm run sdk:compile && npm run cli:compile",
     "test": "npm run sdk:test && npm run cli:test",
     "lint": "npm run sdk:lint:fix && npm run sdk:check",
     "validate": "npm run sdk:validate && npm run cli:validate",
@@ -43,6 +43,7 @@
     "sdk:validate:versions": "node scripts/validate-versions.js",
     "sdk:validate:versions:fix": "node scripts/validate-versions.js --fix",
     "sdk:validate:baseline": "node scripts/validate-sdk.js",
+    "cli:compile": "npm run compile --prefix cli",
     "cli:validate": "npm run validate --prefix cli",
     "cli:test": "npm run test --prefix cli",
     "server": "npx tsx server/server.ts",

@@ -800,15 +800,25 @@ jobs:
         run: |
           npm ci
 
-      - name: Build SDK and CLI
+      - name: Build SDK
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run compile
+          npm run sdk:compile
 
-      - name: Validate SDK and CLI
+      - name: Validate SDK
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run validate
+          npm run sdk:validate
+
+      - name: Build CLI
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run cli:compile
+
+      - name: Validate CLI
+        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
+        run: |
+          npm run cli:validate
 
       - name: Build Demo
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
