@@ -1,8 +1,5 @@
 // Shared build configuration for Embrace Web SDK
 
-// Browserslist query targeting baseline-compatible browsers
-export const BROWSERSLIST_QUERY = 'baseline widely available with downstream';
-
 // Maximum bundle size (gzipped) to ensure fast load times
 export const MAX_BUNDLE_SIZE_KB = 100;
 
