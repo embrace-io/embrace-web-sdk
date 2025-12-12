@@ -3,11 +3,12 @@
  * SDK build validation
  *
  * Validates:
- * 1. Package exports & integrity (artifacts, sourcemaps, imports)
- * 2. Bundle size
- * 3. Module integrity (ESM/CJS separation)
+ * 1. Syntax compliance (es-check on compiled output)
+ * 2. Package exports & integrity (artifacts, sourcemaps, imports)
+ * 3. Bundle size
+ * 4. Module integrity (ESM/CJS separation)
  *
- * Note: Syntax and Web API baseline compliance are checked by eslint-plugin-baseline-js
+ * Note: Web API baseline compliance is checked by eslint-plugin-baseline-js
  * during linting (npm run sdk:check:eslint)
  */
 
@@ -30,6 +31,54 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.join(__dirname, '..');
 const DIST_DIR = path.join(ROOT, 'dist');
+
+// Verifies compiled bundles parse as expected ES version
+function checkSyntaxCompliance() {
+  logSection('1. Syntax Compliance (es-check)');
+
+  const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
+
+  const checks = [
+    { name: 'IIFE bundle (ES6)', file: bundleFile, esVersion: 'es6' },
+    {
+      name: 'ESM modules (ES2022)',
+      pattern: `${DIST_DIR}/**/*.js`,
+      exclude: `${bundleFile}*`,
+      esVersion: 'es2022',
+      modules: true,
+    },
+    {
+      name: 'CJS modules (ES2022)',
+      pattern: `${DIST_DIR}/**/*.cjs`,
+      esVersion: 'es2022',
+      modules: true,
+    },
+  ];
+
+  const failures = [];
+
+  for (const check of checks) {
+    const args = ['es-check', check.esVersion, check.file || check.pattern];
+    if (check.exclude) args.push('--not', check.exclude);
+    if (check.modules) args.push('--module');
+
+    const result = spawnSync('npx', args, { encoding: 'utf-8', stdio: 'pipe' });
+
+    if (result.status !== 0) {
+      log(`  ✗ ${check.name}`, COLORS.red);
+      failures.push(check.name);
+    } else {
+      log(`  ✓ ${check.name}`, COLORS.green);
+    }
+  }
+
+  if (failures.length > 0) {
+    return false;
+  }
+
+  log('\n✓ All syntax checks passed', COLORS.green);
+  return true;
+}
 
 // Packs SDK and runs test callback in temp environment with installed tarball
 function withPackedSDK(options, testCallback) {
@@ -164,7 +213,7 @@ function validateWithPublint() {
 }
 
 function checkPackageExports() {
-  logSection('1. Package Exports & Integrity');
+  logSection('2. Package Exports & Integrity');
 
   if (!checkBuildArtifactsExist()) return false;
   if (!validateSourcemapIntegrity()) return false;
@@ -177,7 +226,7 @@ function checkPackageExports() {
 }
 
 function checkBundleSize() {
-  logSection('2. Bundle Size');
+  logSection('3. Bundle Size');
 
   const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
 
@@ -208,7 +257,7 @@ function checkBundleSize() {
 
 // Validates ESM/CJS don't mix syntax (require() in .js or import in .cjs causes runtime errors)
 function validateModuleSystemSeparation() {
-  logSection('3. Module Integrity');
+  logSection('4. Module Integrity');
 
   const checks = [
     {
@@ -271,6 +320,7 @@ function main() {
   }
 
   const results = [
+    { name: 'Syntax compliance', passed: checkSyntaxCompliance() },
     { name: 'Package exports', passed: checkPackageExports() },
     { name: 'Bundle size', passed: checkBundleSize() },
     { name: 'Module integrity', passed: validateModuleSystemSeparation() },
