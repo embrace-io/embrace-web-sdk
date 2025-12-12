@@ -7,12 +7,12 @@ import type { FetchRequestParameters } from './types.ts';
 export class FetchTransport implements IExporterTransport {
   public constructor(private readonly _config: FetchRequestParameters) {}
 
+  /* eslint-disable baseline-js/use-baseline -- compression-streams baseline widely available since May 2023, plugin data stale */
   // _compressRequest compresses the data using the gzip algorithm.
   // Embrace Data endpoints require the data to be compressed.
   private static async _compressRequest(
     data: Uint8Array<ArrayBuffer>,
   ): Promise<Uint8Array<ArrayBuffer>> {
-    // eslint-disable-next-line baseline-js/use-baseline -- baseline widely available since May 2023, plugin data stale
     const stream = new CompressionStream('gzip');
     const writer = stream.writable.getWriter();
 
@@ -46,6 +46,7 @@ export class FetchTransport implements IExporterTransport {
 
     return compressedData;
   }
+  /* eslint-enable baseline-js/use-baseline */
 
   public send(
     data: Uint8Array<ArrayBuffer>,
