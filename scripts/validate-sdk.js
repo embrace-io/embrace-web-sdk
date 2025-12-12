@@ -4,12 +4,10 @@
  *
  * Validates:
  * 1. Syntax compliance (es-check on compiled output)
- * 2. Package exports & integrity (artifacts, sourcemaps, imports)
- * 3. Bundle size
- * 4. Module integrity (ESM/CJS separation)
- *
- * Note: Web API baseline compliance is checked by eslint-plugin-baseline-js
- * during linting (npm run sdk:check:eslint)
+ * 2. Web API baseline (eslint-plugin-baseline-js on compiled output)
+ * 3. Package exports & integrity (artifacts, sourcemaps, imports)
+ * 4. Bundle size
+ * 5. Module integrity (ESM/CJS separation)
  */
 
 import { execSync, spawnSync } from 'node:child_process';
@@ -77,6 +75,32 @@ function checkSyntaxCompliance() {
   }
 
   log('\n✓ All syntax checks passed', COLORS.green);
+  return true;
+}
+
+// Runs eslint baseline-js on compiled output to catch non-baseline APIs from dependencies
+function checkBaselineAPIs() {
+  logSection('2. Web API Baseline (eslint)');
+
+  const result = spawnSync(
+    'npx',
+    ['eslint', '--config', 'eslint.dist.config.js', 'dist/'],
+    {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+      cwd: ROOT,
+    },
+  );
+
+  if (result.status !== 0) {
+    log('  ✗ Non-baseline APIs found in compiled output', COLORS.red);
+    if (result.stdout) {
+      log(result.stdout.trim(), COLORS.dim);
+    }
+    return false;
+  }
+
+  log('  ✓ All APIs are baseline compatible', COLORS.green);
   return true;
 }
 
@@ -213,7 +237,7 @@ function validateWithPublint() {
 }
 
 function checkPackageExports() {
-  logSection('2. Package Exports & Integrity');
+  logSection('3. Package Exports & Integrity');
 
   if (!checkBuildArtifactsExist()) return false;
   if (!validateSourcemapIntegrity()) return false;
@@ -226,7 +250,7 @@ function checkPackageExports() {
 }
 
 function checkBundleSize() {
-  logSection('3. Bundle Size');
+  logSection('4. Bundle Size');
 
   const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
 
@@ -257,7 +281,7 @@ function checkBundleSize() {
 
 // Validates ESM/CJS don't mix syntax (require() in .js or import in .cjs causes runtime errors)
 function validateModuleSystemSeparation() {
-  logSection('4. Module Integrity');
+  logSection('5. Module Integrity');
 
   const checks = [
     {
@@ -321,6 +345,7 @@ function main() {
 
   const results = [
     { name: 'Syntax compliance', passed: checkSyntaxCompliance() },
+    { name: 'Web API baseline', passed: checkBaselineAPIs() },
     { name: 'Package exports', passed: checkPackageExports() },
     { name: 'Bundle size', passed: checkBundleSize() },
     { name: 'Module integrity', passed: validateModuleSystemSeparation() },
