@@ -12,6 +12,7 @@ export class FetchTransport implements IExporterTransport {
   private static async _compressRequest(
     data: Uint8Array<ArrayBuffer>,
   ): Promise<Uint8Array<ArrayBuffer>> {
+    // eslint-disable-next-line baseline-js/use-baseline -- baseline widely available since May 2023, plugin data stale
     const stream = new CompressionStream('gzip');
     const writer = stream.writable.getWriter();
 
