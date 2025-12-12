@@ -82,20 +82,16 @@ function checkSyntaxCompliance() {
 function checkBaselineAPIs() {
   logSection('2. Web API Baseline (eslint)');
 
-  const result = spawnSync(
-    'npx',
-    ['eslint', '--config', 'eslint.dist.config.js', 'dist/'],
-    {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      cwd: ROOT,
-    },
-  );
+  const result = spawnSync('npm', ['run', 'sdk:check:dist'], {
+    encoding: 'utf-8',
+    stdio: 'pipe',
+    cwd: ROOT,
+  });
 
   if (result.status !== 0) {
     log('  ✗ Non-baseline APIs found in compiled output', COLORS.red);
-    if (result.stdout) {
-      log(result.stdout.trim(), COLORS.dim);
+    if (result.stderr) {
+      log(result.stderr.trim(), COLORS.dim);
     }
     return false;
   }
