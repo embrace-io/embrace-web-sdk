@@ -745,10 +745,10 @@ jobs:
         run: |
           npm ci
 
-      - name: TSC
+      - name: Type check
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:tsc:check
+          npm run sdk:check
 
       - name: Cache successful type check results
         if: ${{ success() }}

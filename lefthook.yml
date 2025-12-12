@@ -5,7 +5,7 @@ pre-commit:
     lint:
       run: npm run sdk:lint:fix
     typecheck:
-      run: npm run sdk:tsc:check
+      run: npm run sdk:check:tsc
 commit-msg:
   commands:
     commitlint:
