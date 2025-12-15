@@ -16,7 +16,7 @@ export default [
         'error',
         {
           available: 'widely',
-          // compression-streams: widely available since May 2023, plugin data stale
+          // compression-streams: widely available since Nov 2025, plugin data stale
           // proto: deprecated but universally supported, used by bundled dependencies
           ignoreFeatures: ['compression-streams', 'proto'],
         },
