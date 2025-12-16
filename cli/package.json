@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "npx rimraf dist",
-    "compile": "tsdown",
+    "compile": "npm run clean && tsc && tsdown",
     "test": "tsx --test src/**/*.test.ts",
     "validate": "tsx scripts/validate-cli.ts"
   },
