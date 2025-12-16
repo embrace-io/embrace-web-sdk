@@ -1,4 +1,4 @@
-// Shared build configuration for Embrace Web SDK
+// Shared build configuration for SDK and CLI
 
 // Maximum bundle size (gzipped) to ensure fast load times
 export const MAX_BUNDLE_SIZE_KB = 100;

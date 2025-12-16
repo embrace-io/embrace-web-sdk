@@ -1,7 +1,7 @@
 {
   "name": "@embrace-io/web-cli",
   "bin": {
-    "embrace-web-cli": "dist/index.js"
+    "embrace-web-cli": "dist/index.mjs"
   },
   "version": "2.9.0",
   "description": "Embrace Web CLI for uploading sourcemaps and versioning bundles",
@@ -11,14 +11,12 @@
   },
   "scripts": {
     "clean": "npx rimraf dist",
-    "compile": "tsc && esbuild src/index.ts --bundle --format=esm --platform=node --target=es2022 --outfile=dist/index.js --external:commander",
+    "compile": "npm run clean && tsc && tsdown",
     "test": "tsx --test src/**/*.test.ts",
-    "validate": "bash scripts/validate-cli.sh"
+    "validate": "tsx scripts/validate-cli.ts"
   },
   "files": [
-    "dist",
-    "LICENSE",
-    "README.md"
+    "dist"
   ],
   "bugs": {
     "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
