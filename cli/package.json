@@ -13,7 +13,7 @@
     "clean": "npx rimraf dist",
     "compile": "tsdown",
     "test": "tsx --test src/**/*.test.ts",
-    "validate": "bash scripts/validate-cli.sh"
+    "validate": "tsx scripts/validate-cli.ts"
   },
   "files": [
     "dist",
