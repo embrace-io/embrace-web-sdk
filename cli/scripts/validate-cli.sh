@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CLI_FILE="dist/index.js"
+CLI_FILE="dist/index.mjs"
 
 SIZE=$(wc -c < "$CLI_FILE" | tr -d ' ')
 SIZE_KB=$((SIZE / 1024))
