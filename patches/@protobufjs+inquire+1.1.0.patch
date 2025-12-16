@@ -1,0 +1,31 @@
+# Why: @protobufjs/inquire uses eval() to dynamically require modules, which breaks
+# CSP policies and causes issues with bundlers. This patch replaces the obfuscated
+# eval("quire".replace(/^/,"re")) with a direct require() call.
+# Upstream: https://github.com/protobufjs/protobuf.js/issues/593
+# Remove when: protobufjs updates inquire or we migrate away from protobufjs
+
+diff --git a/node_modules/@protobufjs/inquire/index.js b/node_modules/@protobufjs/inquire/index.js
+index 259011b..5dd720b 100644
+--- a/node_modules/@protobufjs/inquire/index.js
++++ b/node_modules/@protobufjs/inquire/index.js
+@@ -8,10 +8,15 @@ module.exports = inquire;
+  * @returns {?Object} Required module if available and not empty, otherwise `null`
+  */
+ function inquire(moduleName) {
+-    try {
+-        var mod = eval("quire".replace(/^/,"re"))(moduleName); // eslint-disable-line no-eval
+-        if (mod && (mod.length || Object.keys(mod).length))
+-            return mod;
+-    } catch (e) {} // eslint-disable-line no-empty
++  try {
++    if (typeof require !== "function") {
++      return null;
++    }
++    var mod = require(moduleName);
++    if (mod && (mod.length || Object.keys(mod).length)) return mod;
+     return null;
++  } catch (err) {
++    // ignore
++    return null;
++  }
+ }
