@@ -9,7 +9,4 @@ export default defineConfig({
   external: ['commander'],
   clean: true,
   publint: true,
-  attw: {
-    profile: 'esm-only',
-  },
 });
