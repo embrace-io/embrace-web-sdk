@@ -149,7 +149,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._listeners = listeners;
     this._urlDocument = urlDocument;
     this._metricsToTrack =
-      trackingLevel === 'core' ? [...CORE_WEB_VITALS] : [...ALL_WEB_VITALS];
+      trackingLevel === 'all' ? [...ALL_WEB_VITALS] : [...CORE_WEB_VITALS];
     this._urlAttribution = urlAttribution;
     this._pageManager = pageManager ?? page.getPageManager();
 
