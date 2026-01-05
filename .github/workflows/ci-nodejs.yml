@@ -65,7 +65,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -175,7 +175,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -278,7 +278,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -435,7 +435,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -495,7 +495,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -625,7 +625,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -673,7 +673,7 @@ jobs:
             echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -726,7 +726,7 @@ jobs:
             echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -781,7 +781,7 @@ jobs:
             echo 'VALIDATE_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -849,7 +849,7 @@ jobs:
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
