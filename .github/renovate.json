@@ -57,13 +57,6 @@
       "matchUpdateTypes": ["minor", "patch"]
     },
     {
-      "description": "GitHub Actions - auto-merge minor/patch",
-      "matchManagers": ["github-actions"],
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
       "description": "npm, node, @types/node - pinned due to Node.js bug",
       "matchPackageNames": ["npm", "node", "@types/node"],
       "enabled": false
