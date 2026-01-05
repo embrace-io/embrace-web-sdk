@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -92,7 +92,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -161,7 +161,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -202,7 +202,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -264,7 +264,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Restore previous test results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -305,7 +305,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -421,7 +421,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -481,7 +481,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -522,7 +522,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -659,7 +659,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous lint results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.LINT_STATUS_FILE }}
@@ -712,7 +712,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous type check results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.TYPE_CHECK_STATUS_FILE }}
@@ -767,7 +767,7 @@ jobs:
       VALIDATE_STATUS_FILE: validate.success.txt
     steps:
       - name: Restore previous validate results
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ${{ env.VALIDATE_STATUS_FILE }}
