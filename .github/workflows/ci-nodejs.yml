@@ -405,7 +405,7 @@ jobs:
 
       - name: Update artifact with performance results
         if: ${{ success() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: performance-results
           path: |
@@ -615,7 +615,7 @@ jobs:
 
       - name: Update artifact with build results
         if: ${{ needs.environment.outputs.name == 'development' }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           include-hidden-files: true
           name: build-results
