@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "noEmit": true
   }
 }
