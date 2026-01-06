@@ -25,4 +25,15 @@ describe('generateUUID', () => {
     const uuid2 = generateUUID();
     expect(uuid1).to.not.equal(uuid2);
   });
+
+  it('should only contain valid hex characters', () => {
+    const validHex = /^[0-9A-F]+$/;
+    for (let i = 0; i < 100; i++) {
+      const uuid = generateUUID();
+      expect(uuid).to.match(
+        validHex,
+        `UUID ${uuid} contains invalid characters`,
+      );
+    }
+  });
 });
