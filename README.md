@@ -535,7 +535,7 @@ Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
 
 ### Compatibility with OTel packages
 
-The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries. 
+The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries.
 **Important: New projects should use OpenTelemetry 2.x.**
 OpenTelemetry 1.x support is limited to 1.x versions of the SDK, which are deprecated.
 
@@ -605,7 +605,6 @@ module.exports = {
         __dirname,
         './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js'
       ),
-      uuid: path.resolve(__dirname, './node_modules/uuid/dist/index.js'),
     },
   },
 };
