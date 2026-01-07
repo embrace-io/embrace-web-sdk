@@ -29,8 +29,6 @@ interface NetworkSpan extends ReadableSpan {
   attributes: NetworkSpanAttributes;
 }
 
-const SCHEME_RE = /.+:\/\/.+/;
-
 export const isNetworkSpan = (
   span: ReadableSpan | NetworkSpan,
 ): span is NetworkSpan => {
@@ -43,7 +41,7 @@ export const isNetworkSpan = (
     const url =
       span.attributes[ATTR_URL_FULL] ?? span.attributes[SEMATTRS_HTTP_URL];
 
-    return !!(url && typeof url === 'string' && SCHEME_RE.exec(url));
+    return typeof url === 'string' && url.includes('://');
   }
 
   return false;
