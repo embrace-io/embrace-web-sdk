@@ -17,11 +17,10 @@
       "groupName": "production-deps"
     },
     {
-      "description": "Patch versions - more frequent updates",
+      "description": "Patch versions - group together",
       "groupName": "all patch versions",
       "groupSlug": "all-patch",
-      "matchUpdateTypes": ["patch"],
-      "schedule": ["before 3am every weekday"]
+      "matchUpdateTypes": ["patch"]
     },
     {
       "description": "react-router-dom - prevent major updates",
