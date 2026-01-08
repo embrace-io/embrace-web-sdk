@@ -1,65 +1,27 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:best-practices"],
   "schedule": ["before 3am on Monday"],
   "prConcurrentLimit": 5,
-  "dependencyDashboard": true,
   "rangeStrategy": "pin",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 3am on the first day of the month"]
-  },
   "packageRules": [
     {
-      "description": "OpenTelemetry packages - group and wait for stability",
+      "description": "OpenTelemetry packages - group together",
       "matchPackagePatterns": ["^@opentelemetry/"],
-      "groupName": "OpenTelemetry",
-      "stabilityDays": 3
+      "groupName": "OpenTelemetry"
     },
     {
-      "description": "Production dependencies - manual review required",
+      "description": "Production dependencies - group for review",
       "matchDepTypes": ["dependencies"],
       "excludePackagePatterns": ["^@opentelemetry/"],
-      "groupName": "production-deps",
-      "stabilityDays": 3
+      "groupName": "production-deps"
     },
     {
-      "description": "Build tools - auto-merge minor and patch",
-      "matchPackageNames": [
-        "@biomejs/biome",
-        "es-check",
-        "globals",
-        "publint",
-        "rimraf",
-        "sonda",
-        "tsdown",
-        "tsx",
-        "typescript",
-        "vite"
-      ],
-      "groupName": "build-tools",
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
-      "description": "Testing tools - auto-merge minor and patch",
-      "matchPackagePatterns": [
-        "chai",
-        "mocha",
-        "sinon",
-        "playwright",
-        "test-runner"
-      ],
-      "groupName": "test-tools",
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
-    },
-    {
-      "description": "npm, node, @types/node - pinned due to Node.js bug",
-      "matchPackageNames": ["npm", "node", "@types/node"],
-      "enabled": false
+      "description": "Patch versions - more frequent updates",
+      "groupName": "all patch versions",
+      "groupSlug": "all-patch",
+      "matchUpdateTypes": ["patch"],
+      "schedule": ["before 3am every weekday"]
     },
     {
       "description": "react-router-dom - prevent major updates",
@@ -72,5 +34,10 @@
       "matchDepTypes": ["peerDependencies"],
       "enabled": false
     }
-  ]
+  ],
+  "lockFileMaintenance": { "enabled": true },
+  "rebaseWhen": "conflicted",
+  "ignoreDeps": ["@types/node", "node", "npm"],
+  "labels": ["dependencies"],
+  "postUpdateOptions": ["npmDedupe"]
 }
