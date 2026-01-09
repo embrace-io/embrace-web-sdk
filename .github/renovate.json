@@ -1,69 +1,63 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": ["config:best-practices"],
   "schedule": ["before 3am on Monday"],
   "prConcurrentLimit": 5,
-  "dependencyDashboard": true,
   "rangeStrategy": "pin",
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 3am on the first day of the month"]
-  },
   "packageRules": [
     {
-      "description": "OpenTelemetry packages - group and wait for stability",
-      "matchPackagePatterns": ["^@opentelemetry/"],
-      "groupName": "OpenTelemetry",
-      "stabilityDays": 3
+      "description": "OpenTelemetry packages - group together",
+      "matchPackageNames": ["/^@opentelemetry\\//"],
+      "groupName": "OpenTelemetry"
     },
     {
-      "description": "Production dependencies - manual review required",
+      "description": "Production dependencies - group for review",
       "matchDepTypes": ["dependencies"],
-      "excludePackagePatterns": ["^@opentelemetry/"],
-      "groupName": "production-deps",
-      "stabilityDays": 3
+      "excludePackageNames": ["/^@opentelemetry\\//"],
+      "groupName": "production-deps"
     },
     {
-      "description": "Build tools - auto-merge minor and patch",
+      "description": "Playwright - keep in sync",
+      "matchPackageNames": ["@playwright/test", "playwright"],
+      "groupName": "playwright"
+    },
+    {
+      "description": "TypeScript tooling - group together",
+      "matchPackageNames": ["typescript", "typescript-eslint"],
+      "groupName": "typescript"
+    },
+    {
+      "description": "React - group together",
       "matchPackageNames": [
-        "@biomejs/biome",
-        "es-check",
-        "globals",
-        "publint",
-        "rimraf",
-        "sonda",
-        "tsdown",
-        "tsx",
-        "typescript",
-        "vite"
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom"
       ],
-      "groupName": "build-tools",
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
+      "groupName": "react"
     },
     {
-      "description": "Testing tools - auto-merge minor and patch",
-      "matchPackagePatterns": [
-        "chai",
-        "mocha",
-        "sinon",
-        "playwright",
-        "test-runner"
+      "description": "Web Test Runner - group together",
+      "matchPackageNames": [
+        "/^@web\\/test-runner/",
+        "/^@remcovaes\\/web-test-runner/"
       ],
-      "groupName": "test-tools",
-      "automerge": true,
-      "automergeType": "pr",
-      "matchUpdateTypes": ["minor", "patch"]
+      "groupName": "web-test-runner"
     },
     {
-      "description": "npm, node, @types/node - pinned due to Node.js bug",
-      "matchPackageNames": ["npm", "node", "@types/node"],
-      "enabled": false
+      "description": "Commitlint - group together",
+      "matchPackageNames": ["/^@commitlint\\//"],
+      "groupName": "commitlint"
+    },
+    {
+      "description": "DevDependencies patches - automerge",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
     },
     {
       "description": "react-router-dom - prevent major updates",
-      "matchPackagePatterns": ["^react-router-dom"],
+      "matchPackageNames": ["react-router-dom"],
       "matchUpdateTypes": ["major"],
       "enabled": false
     },
@@ -72,5 +66,10 @@
       "matchDepTypes": ["peerDependencies"],
       "enabled": false
     }
-  ]
+  ],
+  "lockFileMaintenance": { "enabled": true },
+  "rebaseWhen": "conflicted",
+  "ignoreDeps": ["@types/node", "node", "npm"],
+  "labels": ["dependencies"],
+  "postUpdateOptions": ["npmDedupe"]
 }
