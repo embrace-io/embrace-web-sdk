@@ -13,8 +13,8 @@
     {
       "description": "Production dependencies - group for review",
       "matchDepTypes": ["dependencies"],
-      "excludePackageNames": ["/^@opentelemetry\\//"],
-      "groupName": "production-deps"
+      "groupName": "production-deps",
+      "matchPackageNames": ["!/^@opentelemetry\\//"]
     },
     {
       "description": "Playwright - keep in sync",
@@ -67,7 +67,9 @@
       "enabled": false
     }
   ],
-  "lockFileMaintenance": { "enabled": true },
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "rebaseWhen": "conflicted",
   "ignoreDeps": ["@types/node", "node", "npm"],
   "labels": ["dependencies"],
