@@ -16,7 +16,7 @@ import {
   mockNetworkRequestSpan,
   mockSessionSpan,
   mockSpan,
-} from '../../../tests/utils/mockEntities/ReadableSpan.ts';
+} from '../../../tests/utils/mock-entities/ReadableSpan.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,

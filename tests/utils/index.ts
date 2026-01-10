@@ -23,7 +23,7 @@ export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
 export { InMemoryStorage } from './InMemoryStorage.ts';
 export { resultsToMarkdownTable } from './jsonToMarkdownTable.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
-export { mockSpan } from './mockEntities/index.ts';
+export { mockSpan } from './mock-entities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';
 export { setupTestTraceExporter } from './setupTestTraceExporter.ts';
 export { setupTestWebVitalListeners } from './setupTestWebVitalListeners.ts';
