@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 export default [
   {
     files: ['src/**/*.{js,ts}'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts', '**/testUtils/**'],
+    ignores: ['**/*.test.ts', '**/*.spec.ts'],
     languageOptions: {
       parser: tseslint.parser,
       // enables type-aware linting to detect instance method usage
