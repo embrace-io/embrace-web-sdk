@@ -3,6 +3,10 @@ import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import {
+  MockPerformanceManager,
+  setupTestLogExporter,
+} from '../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../api-logs/index.ts';
 import { log } from '../../../api-logs/index.ts';
 import {
@@ -11,10 +15,6 @@ import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import {
-  MockPerformanceManager,
-  setupTestLogExporter,
-} from '../../../testUtils/index.ts';
 import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';
 
 const { expect } = chai;

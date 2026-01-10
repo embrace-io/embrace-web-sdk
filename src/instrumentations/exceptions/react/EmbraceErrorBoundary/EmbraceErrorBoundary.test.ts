@@ -2,6 +2,7 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
+import { setupTestLogExporter } from '../../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../../api-logs/index.ts';
 import { log } from '../../../../api-logs/index.ts';
 import {
@@ -15,7 +16,6 @@ import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../../managers/index.ts';
-import { setupTestLogExporter } from '../../../../testUtils/index.ts';
 import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
 
 const { expect } = chai;

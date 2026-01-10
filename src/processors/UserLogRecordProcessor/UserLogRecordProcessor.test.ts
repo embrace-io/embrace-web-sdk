@@ -2,12 +2,12 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import type { UserManager } from '../../api-users/index.ts';
-import { EmbraceUserManager } from '../../managers/index.ts';
 import {
   InMemoryStorage,
   setupTestLogExporter,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
+import type { UserManager } from '../../api-users/index.ts';
+import { EmbraceUserManager } from '../../managers/index.ts';
 import { UserLogRecordProcessor } from './UserLogRecordProcessor.ts';
 
 const { expect } = chai;

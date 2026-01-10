@@ -1,6 +1,7 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
+import { setupTestTraceExporter } from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
@@ -12,7 +13,6 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import { setupTestTraceExporter } from '../../../testUtils/index.ts';
 import { SpanSessionOnLoadInstrumentation } from './SpanSessionOnLoadInstrumentation.ts';
 
 const { expect } = chai;

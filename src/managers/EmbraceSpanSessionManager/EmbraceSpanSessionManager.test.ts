@@ -9,6 +9,13 @@ import * as chai from 'chai';
 import type { SinonSandbox } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import {
+  FailingStorage,
+  InMemoryDiagLogger,
+  InMemoryStorage,
+  MockPerformanceManager,
+  setupTestTraceExporter,
+} from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_EXPERIENCE_ID,
@@ -20,13 +27,6 @@ import {
   KEY_EMB_TAB_ID,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.ts';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-  MockPerformanceManager,
-  setupTestTraceExporter,
-} from '../../testUtils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,

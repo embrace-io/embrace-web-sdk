@@ -1,11 +1,11 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
+import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,

@@ -7,17 +7,17 @@ import type {
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../managers/index.ts';
-import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   mockSpan,
   setupTestTraceExporter,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.ts';
 import { EmbraceSpanStorage } from './EmbraceSpanStorage.ts';
 
 const { expect } = chai;

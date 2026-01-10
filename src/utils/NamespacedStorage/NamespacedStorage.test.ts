@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { InMemoryStorage } from '../../testUtils/index.ts';
+import { InMemoryStorage } from '../../../tests/utils/index.ts';
 import { NamespacedStorage } from './NamespacedStorage.ts';
 
 const { expect } = chai;

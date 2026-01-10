@@ -2,6 +2,11 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import {
+  fakeFetchInstall,
+  fakeFetchRestore,
+  setupTestTraceExporter,
+} from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
@@ -9,11 +14,6 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import {
-  fakeFetchInstall,
-  fakeFetchRestore,
-  setupTestTraceExporter,
-} from '../../../testUtils/index.ts';
 import { EmbraceFetchInstrumentation } from './EmbraceFetchInstrumentation.ts';
 
 chai.use(sinonChai);
