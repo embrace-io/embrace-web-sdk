@@ -3,27 +3,27 @@ export {
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from './constants.ts';
-export { FailingStorage } from './FailingStorage/index.ts';
-export { FakeInstrumentation } from './FakeInstrumentation/index.ts';
-export { FakeLogRecordProcessor } from './FakeLogRecordProcessor/index.ts';
-export { FakeSpanProcessor } from './FakeSpanProcessor/index.ts';
+export { FailingStorage } from './FailingStorage.ts';
+export { FakeInstrumentation } from './FakeInstrumentation.ts';
+export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.ts';
+export { FakeSpanProcessor } from './FakeSpanProcessor.ts';
 export {
-  getBody as fakeFetchGetBody,
-  getMethod as fakeFetchGetMethod,
-  getOptions as fakeFetchGetOptions,
-  getRequestHeaders as fakeFetchGetRequestHeaders,
-  getUrl as fakeFetchGetUrl,
-  install as fakeFetchInstall,
-  resetHistory as fakeFetchResetHistory,
-  respondWith as fakeFetchRespondWith,
-  restore as fakeFetchRestore,
-  wasCalled as fakeFetchWasCalled,
-} from './fake-fetch/index.ts';
-export { InMemoryDiagLogger } from './InMemoryDiagLogger/index.ts';
-export { InMemoryStorage } from './InMemoryStorage/index.ts';
+  fakeFetchGetBody,
+  fakeFetchGetMethod,
+  fakeFetchGetOptions,
+  fakeFetchGetRequestHeaders,
+  fakeFetchGetUrl,
+  fakeFetchInstall,
+  fakeFetchResetHistory,
+  fakeFetchRespondWith,
+  fakeFetchRestore,
+  fakeFetchWasCalled,
+} from './fakeFetch.ts';
+export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
+export { InMemoryStorage } from './InMemoryStorage.ts';
 export { resultsToMarkdownTable } from './jsonToMarkdownTable.ts';
-export { MockPerformanceManager } from './MockPerformanceManager/index.ts';
+export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mockEntities/index.ts';
-export { setupTestLogExporter } from './setupTestLogExporter/index.ts';
-export { setupTestTraceExporter } from './setupTestTraceExporter/index.ts';
-export { setupTestWebVitalListeners } from './setupTestWebVitalListeners/index.ts';
+export { setupTestLogExporter } from './setupTestLogExporter.ts';
+export { setupTestTraceExporter } from './setupTestTraceExporter.ts';
+export { setupTestWebVitalListeners } from './setupTestWebVitalListeners.ts';
