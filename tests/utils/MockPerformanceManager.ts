@@ -1,4 +1,4 @@
-import { OTelPerformanceManager } from '../../../src/utils/PerformanceManager/index.ts';
+import { OTelPerformanceManager } from '../../src/utils/PerformanceManager/index.ts';
 
 export class MockPerformanceManager extends OTelPerformanceManager {
   public constructor(clock: sinon.SinonFakeTimers) {
