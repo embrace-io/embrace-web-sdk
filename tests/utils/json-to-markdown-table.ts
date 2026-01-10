@@ -4,7 +4,9 @@ type Metric = {
   unit: string;
 };
 
-const resultsToMarkdownTable = (data: Record<string, Metric[]>): string => {
+export const resultsToMarkdownTable = (
+  data: Record<string, Metric[]>,
+): string => {
   const rows = Object.entries(data).map(([section, metrics]) => {
     const row: Record<string, string | number> = { Section: section };
 
@@ -43,5 +45,3 @@ const resultsToMarkdownTable = (data: Record<string, Metric[]>): string => {
 
   return `${headerRow}${separatorRow}${bodyRows}`;
 };
-
-export default resultsToMarkdownTable;
