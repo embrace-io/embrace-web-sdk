@@ -21,7 +21,7 @@ export {
 } from './fake-fetch/index.ts';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger/index.ts';
 export { InMemoryStorage } from './InMemoryStorage/index.ts';
-export { resultsToMarkdownTable } from './json-to-markdown-table.ts';
+export { resultsToMarkdownTable } from './jsonToMarkdownTable.ts';
 export { MockPerformanceManager } from './MockPerformanceManager/index.ts';
 export { mockSpan } from './mockEntities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter/index.ts';
