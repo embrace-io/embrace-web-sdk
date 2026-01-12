@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nginx:
-    image: nginx:stable-alpine
+    image: nginx:stable-alpine@sha256:67c129e5545fd0c5fdbaf8e7039b8925d472679e94bd65f2a423578469e16718
     ports:
       - '7070:7070'
     networks:
@@ -15,7 +15,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/otel-lgtm
+    image: grafana/otel-lgtm@sha256:72628a43fbd8574b066cd06273545ec9cc74314f360598ee8de27770bd904faa
     ports:
       - '3000:3000'
       - '4317:4317'
