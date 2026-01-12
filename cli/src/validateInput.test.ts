@@ -120,6 +120,18 @@ describe('validateInput', () => {
       });
       assert.strictEqual(result, null);
     });
+
+    it('should allow undefined token when upload is false', () => {
+      const { token: _, ...inputWithoutToken } = validInput();
+      const result = validateInput({ ...inputWithoutToken, upload: false });
+      assert.strictEqual(result, null);
+    });
+
+    it('should reject undefined token when upload is true', () => {
+      const { token: _, ...inputWithoutToken } = validInput();
+      const result = validateInput({ ...inputWithoutToken, upload: true });
+      assert.strictEqual(result, 'Token cannot be empty.');
+    });
   });
 
   describe('appID', () => {

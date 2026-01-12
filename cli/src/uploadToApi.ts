@@ -4,13 +4,13 @@ interface UploadToApiArgs {
   jsContent: string;
   mapContent: string;
   bundleID: string;
-  token: string;
+  token?: string;
   appID: string;
   host: string;
   pathForUpload: string;
   storeType: string;
   cliVersion: string;
-  dryRun: boolean;
+  dryRun?: boolean;
   upload: boolean;
 }
 
@@ -32,6 +32,9 @@ export const uploadToApi = async ({
   );
   if (dryRun || !upload) {
     return;
+  }
+  if (!token) {
+    throw new Error('Token is required for upload');
   }
 
   // prepare the body for the API request as a gzipped JSON object

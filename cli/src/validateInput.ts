@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 interface ValidateInputArgs {
   buildPath: string;
-  token: string;
+  token?: string;
   appID: string;
   host: string;
   pathForUpload: string;
@@ -38,10 +38,10 @@ export const validateInput = ({
       return 'appVersion cannot be longer than 20 characters.';
     }
   }
-  if (upload && !token.trim()) {
+  if (upload && !token?.trim()) {
     return 'Token cannot be empty.';
   }
-  if (upload && token.length !== 32) {
+  if (upload && token && token.length !== 32) {
     return 'Token must be 32 characters long.';
   }
   if (!appID.trim()) {

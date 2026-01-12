@@ -26,7 +26,7 @@ interface SourceMap {
 
 interface ProcessSourceFilesArgs {
   buildPath: string;
-  token: string;
+  token?: string;
   appID: string;
   appVersion?: string;
   host: string;
@@ -35,7 +35,7 @@ interface ProcessSourceFilesArgs {
   cliVersion: string;
   templateAppVersion: string;
   fileEncoding: BufferEncoding;
-  dryRun: boolean;
+  dryRun?: boolean;
   replaceBundleID: boolean;
   upload: boolean;
 }
