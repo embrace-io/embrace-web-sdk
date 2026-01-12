@@ -1647,6 +1647,24 @@ describe('isolated instances', () => {
     fakeFetchRestore();
   });
 
+  // Poll for localStorage keys to be set, avoiding flaky fixed timeouts
+  const waitForLocalStorageKeys = async (
+    keys: string[],
+    timeout = 1000,
+  ): Promise<void> => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (keys.every((key) => localStorage.getItem(key) !== null)) {
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    const missing = keys.filter((key) => localStorage.getItem(key) === null);
+    throw new Error(
+      `Timed out waiting for localStorage keys: ${missing.join(', ')}`,
+    );
+  };
+
   it('should allow multiple isolated instances', () => {
     const firstSDKInstance = initSDK({
       logExporters: [logExporter],
@@ -1807,9 +1825,11 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance, 'second SDK instance failed to initialize')
       .not.to.be.false;
 
-    // Need to give time for the remote config to be fetched and then parsed
-    await new Promise((r) => setTimeout(r, 1));
-    await new Promise((r) => setTimeout(r, 1));
+    // Wait for remote config to be fetched and stored for both instances
+    await waitForLocalStorageKeys([
+      'app11_embrace_remote_config',
+      'app22_embrace_remote_config',
+    ]);
 
     // First instance using namespaced storage
     expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
@@ -1888,9 +1908,8 @@ describe('isolated instances', () => {
     void expect(firstSDKInstance).not.to.be.false;
     void expect(secondSDKInstance).not.to.be.false;
 
-    // Need to give time for the remote config to be fetched and then parsed
-    await new Promise((r) => setTimeout(r, 1));
-    await new Promise((r) => setTimeout(r, 1));
+    // Wait for remote config to be fetched and stored (only second instance has appID)
+    await waitForLocalStorageKeys(['app22_embrace_remote_config']);
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
@@ -1929,9 +1948,11 @@ describe('isolated instances', () => {
     void expect(firstSDKInstance).not.to.be.false;
     void expect(secondSDKInstance).not.to.be.false;
 
-    // Need to give time for the remote config to be fetched and then parsed
-    await new Promise((r) => setTimeout(r, 1));
-    await new Promise((r) => setTimeout(r, 1));
+    // Wait for remote config to be fetched and stored for both instances
+    await waitForLocalStorageKeys([
+      'embrace_remote_config',
+      'app22_embrace_remote_config',
+    ]);
 
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
