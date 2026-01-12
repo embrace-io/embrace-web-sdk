@@ -161,7 +161,69 @@ describe('initSDK', () => {
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appID should be 5 characters long',
+      'failed to initialize the SDK: appID should be 5 characters long. Received foo-app-id',
+    );
+  });
+
+  it('should reject empty string appVersion', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      appVersion: '',
+      diagLogger,
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: appVersion cannot be empty.',
+    );
+  });
+
+  it('should reject whitespace-only appVersion', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      appVersion: '   ',
+      diagLogger,
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: appVersion cannot be empty.',
+    );
+  });
+
+  it('should reject non-string appVersion (number)', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      // @ts-expect-error testing runtime behavior with invalid type
+      appVersion: 123,
+      diagLogger,
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: appVersion must be a string. Received 123.',
+    );
+  });
+
+  it('should reject non-string appVersion (null)', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const result = initSDK({
+      appID: 'abc12',
+      // @ts-expect-error testing runtime behavior with invalid type
+      appVersion: null,
+      diagLogger,
+    });
+    void expect(result).to.be.false;
+
+    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.getErrorLogs()[0]).to.equal(
+      'failed to initialize the SDK: appVersion must be a string. Received null.',
     );
   });
 
