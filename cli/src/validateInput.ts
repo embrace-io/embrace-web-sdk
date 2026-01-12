@@ -30,7 +30,10 @@ export const validateInput = ({
   if (!buildPath.trim()) {
     return 'buildPath cannot be empty.';
   }
-  if (appVersion) {
+  if (appVersion !== undefined) {
+    if (appVersion.trim() === '') {
+      return 'appVersion cannot be an empty string.';
+    }
     if (appVersion.length > 20) {
       return 'appVersion cannot be longer than 20 characters.';
     }
