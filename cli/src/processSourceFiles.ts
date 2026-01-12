@@ -28,7 +28,7 @@ interface ProcessSourceFilesArgs {
   buildPath: string;
   token: string;
   appID: string;
-  appVersion: string;
+  appVersion?: string;
   host: string;
   pathForUpload: string;
   storeType: string;

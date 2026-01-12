@@ -9,7 +9,7 @@ interface ValidateInputArgs {
   host: string;
   pathForUpload: string;
   storeType: string;
-  appVersion: string;
+  appVersion?: string;
   cliVersion: string;
   templateAppVersion: string;
   upload: boolean;
