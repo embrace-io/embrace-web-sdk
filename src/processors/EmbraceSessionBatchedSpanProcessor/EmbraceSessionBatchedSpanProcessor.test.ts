@@ -7,21 +7,21 @@ import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../managers/index.ts';
-import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
 import {
   mockNetworkRequestSpan,
   mockSessionSpan,
   mockSpan,
-} from '../../testUtils/mockEntities/ReadableSpan.ts';
+} from '../../../tests/utils/mock-entities/ReadableSpan.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../managers/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
 
 const { expect } = chai;

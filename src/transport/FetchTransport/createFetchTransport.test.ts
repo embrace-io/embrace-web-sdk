@@ -8,7 +8,7 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
 import { createFetchTransport } from './createFetchTransport.ts';
 
 chai.use(sinonChai);

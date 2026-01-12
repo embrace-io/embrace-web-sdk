@@ -16,6 +16,21 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
+import {
+  FakeInstrumentation,
+  FakeLogRecordProcessor,
+  FakeSpanProcessor,
+  fakeFetchGetBody,
+  fakeFetchGetRequestHeaders,
+  fakeFetchGetUrl,
+  fakeFetchInstall,
+  fakeFetchResetHistory,
+  fakeFetchRespondWith,
+  fakeFetchRestore,
+  fakeFetchWasCalled,
+  InMemoryDiagLogger,
+  setupTestWebVitalListeners,
+} from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
 import {
   NoOpSpanSessionManager,
@@ -36,21 +51,6 @@ import {
   EmbraceUserManager,
 } from '../managers/index.ts';
 import { SDK_VERSION } from '../resources/index.ts';
-import {
-  FakeInstrumentation,
-  FakeLogRecordProcessor,
-  FakeSpanProcessor,
-  fakeFetchGetBody,
-  fakeFetchGetRequestHeaders,
-  fakeFetchGetUrl,
-  fakeFetchInstall,
-  fakeFetchResetHistory,
-  fakeFetchRespondWith,
-  fakeFetchRestore,
-  fakeFetchWasCalled,
-  InMemoryDiagLogger,
-  setupTestWebVitalListeners,
-} from '../testUtils/index.ts';
 import { initSDK } from './initSDK.ts';
 import { registry } from './registry.ts';
 import type {

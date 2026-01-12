@@ -2,6 +2,14 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import { createBrowserHistory } from 'history';
 import { Route, Router, Switch, useHistory } from 'react-router-domv4v5';
+import { setupTestTraceExporter } from '../../../../../../tests/utils/index.ts';
+import { render } from '../../../../../../tests/utils/react/reactTestUtils.ts';
+import { runReactRouterTest } from '../../../../../../tests/utils/react/sharedTests.ts';
+import {
+  About,
+  Home,
+  Product,
+} from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
 import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
 import { session } from '../../../../../api-sessions/index.ts';
@@ -12,14 +20,6 @@ import {
   EmbraceSpanSessionManager,
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
-import { setupTestTraceExporter } from '../../../../../testUtils/index.ts';
-import { render } from '../../../../../testUtils/react/reactTestUtils.ts';
-import { runReactRouterTest } from '../../../../../testUtils/react/sharedTests.ts';
-import {
-  About,
-  Home,
-  Product,
-} from '../../../../../testUtils/react/testComponents.tsx';
 import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';
 
 const { expect } = chai;

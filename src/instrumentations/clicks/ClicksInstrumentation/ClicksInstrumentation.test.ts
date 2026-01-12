@@ -1,5 +1,9 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
+import {
+  InMemoryDiagLogger,
+  setupTestTraceExporter,
+} from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
@@ -7,10 +11,6 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import {
-  InMemoryDiagLogger,
-  setupTestTraceExporter,
-} from '../../../testUtils/index.ts';
 import { ClicksInstrumentation } from './ClicksInstrumentation.ts';
 
 const { expect } = chai;

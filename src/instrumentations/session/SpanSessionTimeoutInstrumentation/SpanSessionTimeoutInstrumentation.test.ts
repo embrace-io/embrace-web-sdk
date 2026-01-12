@@ -2,6 +2,11 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import {
+  InMemoryDiagLogger,
+  MockPerformanceManager,
+  setupTestTraceExporter,
+} from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
@@ -13,11 +18,6 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import {
-  InMemoryDiagLogger,
-  MockPerformanceManager,
-  setupTestTraceExporter,
-} from '../../../testUtils/index.ts';
 import { TIMEOUT_TIME } from './constants.ts';
 import { SpanSessionTimeoutInstrumentation } from './SpanSessionTimeoutInstrumentation.ts';
 

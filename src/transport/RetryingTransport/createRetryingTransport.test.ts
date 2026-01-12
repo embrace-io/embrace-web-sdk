@@ -3,7 +3,7 @@ import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { MockPerformanceManager } from '../../testUtils/index.ts';
+import { MockPerformanceManager } from '../../../tests/utils/index.ts';
 import { createRetryingTransport } from './createRetryingTransport.ts';
 
 chai.use(sinonChai);

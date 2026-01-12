@@ -7,8 +7,8 @@ import {
 } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
+import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.ts';
-import { setupTestTraceExporter } from '../../testUtils/index.ts';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
 import { EmbraceTraceManager } from './EmbraceTraceManager.ts';
 

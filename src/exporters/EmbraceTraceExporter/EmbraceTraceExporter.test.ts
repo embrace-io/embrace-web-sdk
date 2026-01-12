@@ -11,7 +11,7 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore,
   mockSpan,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
 import { EmbraceTraceExporter } from './EmbraceTraceExporter.ts';
 import type { EmbraceTraceExporterArgs } from './types.ts';
 

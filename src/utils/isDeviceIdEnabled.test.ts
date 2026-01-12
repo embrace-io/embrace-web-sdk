@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { SAMPLED_UUID } from '../testUtils/index.ts';
+import { SAMPLED_UUID } from '../../tests/utils/index.ts';
 import {
   getNormalizedDeviceId,
   isDeviceIdEnabled,

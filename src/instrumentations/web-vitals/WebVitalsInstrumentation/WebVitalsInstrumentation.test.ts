@@ -6,6 +6,12 @@ import type {
   CLSMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
+import {
+  InMemoryDiagLogger,
+  MockPerformanceManager,
+  setupTestTraceExporter,
+  setupTestWebVitalListeners,
+} from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
@@ -19,12 +25,6 @@ import {
   EmbracePageManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import {
-  InMemoryDiagLogger,
-  MockPerformanceManager,
-  setupTestTraceExporter,
-  setupTestWebVitalListeners,
-} from '../../../testUtils/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 

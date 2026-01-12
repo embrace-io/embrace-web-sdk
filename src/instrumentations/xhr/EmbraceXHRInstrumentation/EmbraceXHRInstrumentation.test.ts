@@ -3,6 +3,7 @@ import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { setupTestTraceExporter } from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
@@ -10,7 +11,6 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import { setupTestTraceExporter } from '../../../testUtils/index.ts';
 import { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.ts';
 
 chai.use(sinonChai);

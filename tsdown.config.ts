@@ -20,7 +20,7 @@ export default defineConfig([
   },
   // ESM/CJS modules for package consumers
   {
-    entry: ['src/**/*.ts', '!src/**/*.test.*', '!src/testUtils/**'],
+    entry: ['src/**/*.ts', '!src/**/*.test.*'],
     format: ['cjs', 'esm'],
     target: 'es2022',
     dts: true,

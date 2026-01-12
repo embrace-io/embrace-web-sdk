@@ -1,10 +1,10 @@
 import * as chai from 'chai';
-import { getWebSDKResource, SDK_VERSION } from '../resources/index.ts';
 import {
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../testUtils/index.ts';
+} from '../../tests/utils/index.ts';
+import { getWebSDKResource, SDK_VERSION } from '../resources/index.ts';
 import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.ts';
 
 const { expect } = chai;

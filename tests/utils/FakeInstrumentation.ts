@@ -1,4 +1,4 @@
-import { EmbraceInstrumentationBase } from '../../instrumentations/index.ts';
+import { EmbraceInstrumentationBase } from '../../src/instrumentations/index.ts';
 
 export class FakeInstrumentation extends EmbraceInstrumentationBase {
   private _enabled = false;

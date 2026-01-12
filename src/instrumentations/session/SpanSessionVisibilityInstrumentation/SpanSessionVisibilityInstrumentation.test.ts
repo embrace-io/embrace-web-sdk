@@ -2,6 +2,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import sinon from 'sinon';
+import { setupTestTraceExporter } from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { VisibilityStateDocument } from '../../../common/index.ts';
@@ -15,7 +16,6 @@ import {
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.ts';
-import { setupTestTraceExporter } from '../../../testUtils/index.ts';
 import type { PerformanceManager } from '../../../utils/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { SpanSessionVisibilityInstrumentation } from './SpanSessionVisibilityInstrumentation.ts';

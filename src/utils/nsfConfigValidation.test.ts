@@ -1,12 +1,12 @@
 import { CompositePropagator } from '@opentelemetry/core';
 import * as chai from 'chai';
-import { EmbraceSDKFeaturesManager } from '../managers/index.ts';
 import {
   InMemoryDiagLogger,
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../testUtils/index.ts';
+} from '../../tests/utils/index.ts';
+import { EmbraceSDKFeaturesManager } from '../managers/index.ts';
 import { nsfConfigValidation } from './nsfConfigValidation.ts';
 
 const { expect } = chai;

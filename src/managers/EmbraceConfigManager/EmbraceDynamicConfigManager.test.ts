@@ -7,7 +7,7 @@ import {
   fakeFetchRespondWith,
   InMemoryDiagLogger,
   InMemoryStorage,
-} from '../../testUtils/index.ts';
+} from '../../../tests/utils/index.ts';
 import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.ts';
 import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';
 

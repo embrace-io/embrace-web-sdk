@@ -7,47 +7,47 @@ const withRequest = (arg: unknown) => arg instanceof window.Request;
 
 let fetchStub: SinonStub | undefined;
 
-export const getOptions = (callNumber = 0) =>
+export const fakeFetchGetOptions = (callNumber = 0) =>
   (fetchStub?.getCall(callNumber).args[1] || {}) as Parameters<
     typeof window.fetch
   >[1];
 
-export const install = () => {
+export const fakeFetchInstall = () => {
   fetchStub = sinon.stub(window, 'fetch');
   fetchStub.callsFake(() => Promise.resolve(new Response()));
 
   return fetchStub;
 };
 
-export const restore = () => {
+export const fakeFetchRestore = () => {
   fetchStub?.restore();
 };
 
-export const resetHistory = () => {
+export const fakeFetchResetHistory = () => {
   fetchStub?.resetHistory();
 };
 
-export const getMethod = (callNumber = 0) => {
+export const fakeFetchGetMethod = (callNumber = 0) => {
   const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
     typeof window.fetch
   >[0];
   if (withRequest(firstArg)) {
     return firstArg.method;
   }
-  return getOptions(callNumber)?.method ?? 'get';
+  return fakeFetchGetOptions(callNumber)?.method ?? 'get';
 };
 
-export const getBody = (callNumber = 0) => {
+export const fakeFetchGetBody = (callNumber = 0) => {
   const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
     typeof window.fetch
   >[0];
   if (withRequest(firstArg)) {
     return firstArg.body;
   }
-  return getOptions(callNumber)?.body ?? '';
+  return fakeFetchGetOptions(callNumber)?.body ?? '';
 };
 
-export const getUrl = (callNumber = 0) => {
+export const fakeFetchGetUrl = (callNumber = 0) => {
   const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
     typeof window.fetch
   >[0];
@@ -57,7 +57,7 @@ export const getUrl = (callNumber = 0) => {
   return firstArg;
 };
 
-export const getRequestHeaders = (callNumber = 0) => {
+export const fakeFetchGetRequestHeaders = (callNumber = 0) => {
   const firstArg = fetchStub?.getCall(callNumber).args[0] as Parameters<
     typeof window.fetch
   >[0];
@@ -65,10 +65,13 @@ export const getRequestHeaders = (callNumber = 0) => {
   if (withRequest(firstArg)) {
     return firstArg.headers;
   }
-  return getOptions(callNumber)?.headers ?? {};
+  return fakeFetchGetOptions(callNumber)?.headers ?? {};
 };
 
-export const respondWith = (data: BodyInit | null, options?: ResponseInit) =>
-  fetchStub?.callsFake(() => Promise.resolve(new Response(data, options)));
+export const fakeFetchRespondWith = (
+  data: BodyInit | null,
+  options?: ResponseInit,
+) => fetchStub?.callsFake(() => Promise.resolve(new Response(data, options)));
 
-export const wasCalled = (callNumber = 0) => !!fetchStub?.getCall(callNumber);
+export const fakeFetchWasCalled = (callNumber = 0) =>
+  !!fetchStub?.getCall(callNumber);

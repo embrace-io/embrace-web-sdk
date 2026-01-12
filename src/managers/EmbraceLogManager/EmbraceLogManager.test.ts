@@ -13,6 +13,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
+import {
+  FailingStorage,
+  InMemoryDiagLogger,
+  setupTestLogExporter,
+  setupTestTraceExporter,
+} from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
@@ -24,12 +30,6 @@ import {
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  setupTestLogExporter,
-  setupTestTraceExporter,
-} from '../../testUtils/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.ts';
 import {
