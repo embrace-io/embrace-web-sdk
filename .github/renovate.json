@@ -2,7 +2,8 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
   "schedule": ["before 3am on Monday"],
-  "prConcurrentLimit": 5,
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 10,
   "rangeStrategy": "pin",
   "packageRules": [
     {
