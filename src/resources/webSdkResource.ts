@@ -24,6 +24,10 @@ export const getWebSDKResource = ({
   return resourceFromAttributes({
     [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
+    // NOTE: `appVersion` may originate from TEMPLATE_APP_VERSION, which is padded
+    // with whitespace by the CLI to keep sourcemap offsets stable. The padding is
+    // intentionally trimmed earlier (see validateAppVersion in utils.ts), so by the
+    // time it is passed here `appVersion` should already be a normalized value.
     app_version: appVersion,
     app_framework: NATIVE_FRAMEWORK,
     sdk_version: SDK_VERSION,
