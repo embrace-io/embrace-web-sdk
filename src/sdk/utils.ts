@@ -20,8 +20,9 @@ export const validateAppVersion = (appVersion: unknown): string => {
       `appVersion must be a string. Received ${String(appVersion)}.`,
     );
   }
-  if (appVersion.trim() === '') {
+  const trimmedAppVersion = appVersion.trim();
+  if (trimmedAppVersion === '') {
     throw new Error('appVersion cannot be empty.');
   }
-  return appVersion;
+  return trimmedAppVersion;
 };
