@@ -13,7 +13,12 @@ export const validateAppID = (appID: unknown): string | undefined => {
 
 export const validateAppVersion = (appVersion: unknown): string => {
   if (appVersion === undefined) {
-    return TEMPLATE_APP_VERSION.trim();
+    // TEMPLATE_APP_VERSION is rewritten by the CLI at build time and may be empty
+    const trimmedTemplate = TEMPLATE_APP_VERSION.trim();
+    if (trimmedTemplate === '') {
+      return 'unspecified';
+    }
+    return trimmedTemplate;
   }
   if (typeof appVersion !== 'string') {
     throw new Error(
