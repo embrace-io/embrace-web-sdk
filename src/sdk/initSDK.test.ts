@@ -154,77 +154,111 @@ describe('initSDK', () => {
     );
   });
 
-  it('should ensure the app ID is valid', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const result = initSDK({ appID: 'foo-app-id', diagLogger });
-    void expect(result).to.be.false;
+  describe('appVersion validation', () => {
+    it('should reject empty string', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: '',
+        diagLogger,
+      });
+      void expect(result).to.be.false;
 
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appID should be 5 characters long. Received foo-app-id',
-    );
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appVersion cannot be empty.',
+      );
+    });
+
+    it('should reject whitespace-only', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: '   ',
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appVersion cannot be empty.',
+      );
+    });
+
+    it('should reject number', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        // @ts-expect-error testing runtime behavior with invalid type
+        appVersion: 123,
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appVersion must be a string. Received 123.',
+      );
+    });
+
+    it('should reject null', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        // @ts-expect-error testing runtime behavior with invalid type
+        appVersion: null,
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appVersion must be a string. Received null.',
+      );
+    });
   });
 
-  it('should reject empty string appVersion', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const result = initSDK({
-      appID: 'abc12',
-      appVersion: '',
-      diagLogger,
+  describe('appID validation', () => {
+    it('should ensure a specified appID is valid', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({ appID: 'foo-app-id', diagLogger });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appID should be 5 characters long. Received foo-app-id',
+      );
     });
-    void expect(result).to.be.false;
 
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appVersion cannot be empty.',
-    );
-  });
+    it('should reject number', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        // @ts-expect-error testing runtime behavior with invalid type
+        appID: 12345,
+        diagLogger,
+      });
+      void expect(result).to.be.false;
 
-  it('should reject whitespace-only appVersion', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const result = initSDK({
-      appID: 'abc12',
-      appVersion: '   ',
-      diagLogger,
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appID must be a string. Received 12345.',
+      );
     });
-    void expect(result).to.be.false;
 
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appVersion cannot be empty.',
-    );
-  });
+    it('should reject null', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        // @ts-expect-error testing runtime behavior with invalid type
+        appID: null,
+        diagLogger,
+      });
+      void expect(result).to.be.false;
 
-  it('should reject non-string appVersion (number)', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const result = initSDK({
-      appID: 'abc12',
-      // @ts-expect-error testing runtime behavior with invalid type
-      appVersion: 123,
-      diagLogger,
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appID must be a string. Received null.',
+      );
     });
-    void expect(result).to.be.false;
-
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appVersion must be a string. Received 123.',
-    );
-  });
-
-  it('should reject non-string appVersion (null)', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const result = initSDK({
-      appID: 'abc12',
-      // @ts-expect-error testing runtime behavior with invalid type
-      appVersion: null,
-      diagLogger,
-    });
-    void expect(result).to.be.false;
-
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: appVersion must be a string. Received null.',
-    );
   });
 
   it('should allow setting custom instrumentations', async () => {
