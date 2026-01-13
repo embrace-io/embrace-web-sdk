@@ -215,7 +215,7 @@ export const initSDK = (
       embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
         resource: resourceWithWebSDKAttributes,
         exporter: new EmbraceTraceExporter({
-          appID: validatedAppID as string,
+          appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
@@ -229,7 +229,7 @@ export const initSDK = (
 
       embraceLogProcessor = new BatchLogRecordProcessor(
         new EmbraceLogExporter({
-          appID: validatedAppID as string,
+          appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
