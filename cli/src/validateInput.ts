@@ -32,7 +32,7 @@ export const validateInput = ({
   }
   if (appVersion !== undefined) {
     if (appVersion.trim() === '') {
-      return 'appVersion cannot be an empty string.';
+      return 'appVersion cannot be empty.';
     }
     if (appVersion.length > 20) {
       return 'appVersion cannot be longer than 20 characters.';
