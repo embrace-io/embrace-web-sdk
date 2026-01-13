@@ -164,7 +164,7 @@ export const initSDK = (
     const dynamicConfigManager =
       providedDynamicSDKConfigManager ??
       new EmbraceDynamicConfigManager({
-        appID,
+        appID: validatedAppID,
         appVersion: validatedAppVersion,
         embraceConfigURL,
         defaultConfig: dynamicSDKConfig,
