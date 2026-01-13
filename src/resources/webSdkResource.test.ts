@@ -23,6 +23,7 @@ describe('webSdkResource', () => {
   it('should include the correct sync attributes', () => {
     const resource = getWebSDKResource({
       diagLogger,
+      appVersion: 'EmbIOAppVersionX.X.X',
       pageSessionStorage: storage,
     });
 
@@ -43,20 +44,21 @@ describe('webSdkResource', () => {
     });
   });
 
-  it('should allow the app version to be overridden', () => {
+  it('should use the provided appVersion', () => {
     const resource = getWebSDKResource({
       diagLogger,
-      pageSessionStorage: storage,
       appVersion: '3.4.2',
+      pageSessionStorage: storage,
     });
 
-    expect(resource.attributes['app_version']).to.be.equal('3.4.2');
+    expect(resource.attributes['app_version']).to.equal('3.4.2');
   });
 
   it('should restore an app instance id if there is one in storage', () => {
     storage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, VALID_UUID);
     const resource = getWebSDKResource({
       diagLogger,
+      appVersion: '1.0.0',
       pageSessionStorage: storage,
     });
 
@@ -66,6 +68,7 @@ describe('webSdkResource', () => {
   it('should generate and store a new app instance id if there is not one in storage', () => {
     const resource = getWebSDKResource({
       diagLogger,
+      appVersion: '1.0.0',
       pageSessionStorage: storage,
     });
 
@@ -79,6 +82,7 @@ describe('webSdkResource', () => {
   it('should handle being setup with a non-functional storage', () => {
     const resource = getWebSDKResource({
       diagLogger,
+      appVersion: '1.0.0',
       // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
       pageSessionStorage: null,
     });
@@ -95,6 +99,7 @@ describe('webSdkResource', () => {
   it('should handle its storage throwing errors', () => {
     const resource = getWebSDKResource({
       diagLogger,
+      appVersion: '1.0.0',
       pageSessionStorage: new FailingStorage(),
     });
 

@@ -48,7 +48,7 @@ import {
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
-import { getWebSDKResource, TEMPLATE_APP_VERSION } from '../resources/index.ts';
+import { getWebSDKResource } from '../resources/index.ts';
 import {
   NamespacedStorage,
   nsfConfigValidation,
@@ -67,7 +67,7 @@ import type {
   SetupTracesArgs,
   SetupUserArgs,
 } from './types.ts';
-import { isValidAppID } from './utils.ts';
+import { validateAppID, validateAppVersion } from './utils.ts';
 
 export const initSDK = (
   {
@@ -116,7 +116,10 @@ export const initSDK = (
       logLevel,
     });
 
-    const sendingToEmbrace = !!appID && isValidAppID(appID);
+    const validatedAppID = validateAppID(appID);
+    const validatedAppVersion = validateAppVersion(appVersion);
+
+    const sendingToEmbrace = validatedAppID !== undefined;
 
     if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
       throw new Error(
@@ -147,7 +150,7 @@ export const initSDK = (
     const resourceWithWebSDKAttributes = resource.merge(
       getWebSDKResource({
         diagLogger,
-        appVersion,
+        appVersion: validatedAppVersion,
         pageSessionStorage: sdkSessionStorage,
       }),
     );
@@ -161,9 +164,8 @@ export const initSDK = (
     const dynamicConfigManager =
       providedDynamicSDKConfigManager ??
       new EmbraceDynamicConfigManager({
-        appID,
-        appVersion:
-          appVersion || TEMPLATE_APP_VERSION.trim() || 'no-app-version',
+        appID: validatedAppID,
+        appVersion: validatedAppVersion,
         embraceConfigURL,
         defaultConfig: dynamicSDKConfig,
         deviceId: enduserPseudoID,
@@ -213,7 +215,7 @@ export const initSDK = (
       embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
         resource: resourceWithWebSDKAttributes,
         exporter: new EmbraceTraceExporter({
-          appID,
+          appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
@@ -227,7 +229,7 @@ export const initSDK = (
 
       embraceLogProcessor = new BatchLogRecordProcessor(
         new EmbraceLogExporter({
-          appID,
+          appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
