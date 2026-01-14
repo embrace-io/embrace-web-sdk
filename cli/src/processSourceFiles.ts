@@ -325,20 +325,23 @@ export const processSourceFiles = async ({
       }
 
       // upload the files to the Embrace API
-      await uploadToApi({
-        jsContent,
-        mapContent,
-        bundleID,
-        token,
-        appID,
-        host,
-        pathForUpload,
-        storeType,
-        cliVersion,
-        dryRun,
-        upload,
-      });
-      console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
+      if (dryRun) {
+        console.log('Dry run, skipping upload');
+      } else if (upload) {
+        console.log('Uploading file to Embrace API');
+        await uploadToApi({
+          jsContent,
+          mapContent,
+          bundleID,
+          token,
+          appID,
+          host,
+          pathForUpload,
+          storeType,
+          cliVersion,
+        });
+        console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
+      }
     }
 
     // If the app version was provided, but it couldn't be replaced in any of the files, exit with error.
