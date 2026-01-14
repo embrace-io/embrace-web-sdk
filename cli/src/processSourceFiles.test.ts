@@ -482,7 +482,7 @@ describe('processSourceFiles - Snippet Minification', () => {
     assert.ok(result.code, 'Terser should produce minified code');
 
     // The constant uses a template literal to substitute FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE
-    const expectedSnippet = ";" + result.code
+    const expectedSnippet = `;${result.code}`;
 
     // Replace the template placeholder back to verify the template structure matches
     const constantWithPlaceholder = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
