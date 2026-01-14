@@ -24,11 +24,13 @@ To upload sourcemaps to Embrace as part of your build process you will require t
 [Settings->API](https://dash.embrace.io/settings/organization/api))
 * The path to where the built JS files live
 
-Note that uploading multiple JS bundles and sourcemaps is not currently supported.
-
 ```sh
 npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "BUILD_PATH"
 ```
+
+> [!WARNING]
+> The CLI must be run BEFORE the files are packaged (e.g., before creating a Docker image or deployment archive).
+> The CLI modifies your bundle files to inject sourcemap debugIDs, so it needs to happen before packaging.
 
 ## Setting app version
 

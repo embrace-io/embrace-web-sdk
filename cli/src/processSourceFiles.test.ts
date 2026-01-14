@@ -5,7 +5,11 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 // Import the function we're testing
-import { findJSFilesRecursively } from './processSourceFiles.ts';
+import {
+  findJSFilesRecursively,
+  injectBundleIDToSourceFile,
+  isAlreadyInjected,
+} from './processSourceFiles.ts';
 
 describe('processSourceFiles - Security Tests', () => {
   let testDir: string;
@@ -346,6 +350,110 @@ console.log('nested with relative path');
           fs.unlinkSync(maliciousMapFile);
         }
       }
+    });
+  });
+});
+
+describe('processSourceFiles - Injection Detection', () => {
+  describe('isAlreadyInjected', () => {
+    it('should return false for files without injection marker', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        false,
+        'Should return false for unprocessed files',
+      );
+    });
+
+    it('should return true for files with injection marker', () => {
+      const jsContent = `console.log('test');
+// Injected by Embrace Web CLI:
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="abc123")}catch(e){}}();
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        true,
+        'Should return true for already processed files',
+      );
+    });
+
+    it('should detect injection marker anywhere in the file', () => {
+      const jsContent = `// Injected by Embrace Web CLI:
+!function(){try{var e="undefined"!=typeof window?window}catch(e){}}();
+console.log('test');
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        true,
+        'Should detect marker regardless of position',
+      );
+    });
+  });
+
+  describe('injectBundleIDToSourceFile', () => {
+    it('should inject snippet before sourceMappingURL comment', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+      const bundleID = 'abc123def456';
+
+      const result = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.ok(
+        result.includes('// Injected by Embrace Web CLI:'),
+        'Should include injection marker',
+      );
+      assert.ok(
+        result.includes(bundleID),
+        'Should include the bundle ID in the snippet',
+      );
+
+      const lines = result.split('\n');
+      const markerIndex = lines.findIndex((l) =>
+        l.includes('// Injected by Embrace Web CLI:'),
+      );
+      const sourceMapIndex = lines.findIndex((l) =>
+        l.includes('//# sourceMappingURL='),
+      );
+      assert.ok(
+        markerIndex < sourceMapIndex,
+        'Injection should be before sourceMappingURL',
+      );
+    });
+
+    it('should inject at end if no sourceMappingURL comment exists', () => {
+      const jsContent = `console.log('test');`;
+      const bundleID = 'abc123def456';
+
+      const result = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.ok(
+        result.includes('// Injected by Embrace Web CLI:'),
+        'Should include injection marker',
+      );
+      assert.ok(result.includes(bundleID), 'Should include the bundle ID');
+    });
+
+    it('should produce content detectable by isAlreadyInjected', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+      const bundleID = 'abc123def456';
+
+      const injectedContent = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        false,
+        'Original content should not be detected as injected',
+      );
+      assert.strictEqual(
+        isAlreadyInjected(injectedContent),
+        true,
+        'Injected content should be detected as already injected',
+      );
     });
   });
 });

@@ -14,6 +14,7 @@ class MapSecurityError extends Error {
 // The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
 const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
 const FILE_BUNDLE_IDS_CODE_SNIPPET = `!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(e){}}();`;
+const INJECTION_MARKER = '// Injected by Embrace Web CLI:';
 
 interface SourceMap {
   version: number;
@@ -55,7 +56,14 @@ const addHyphensToUuid = (uuidStr: string): string => {
   return uuidStr.replace(UUID_PARTS_REGEX, '$1-$2-$3-$4-$5');
 };
 
-const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
+export const isAlreadyInjected = (sourceFile: string): boolean => {
+  return sourceFile.includes(INJECTION_MARKER);
+};
+
+export const injectBundleIDToSourceFile = (
+  sourceFile: string,
+  bundleID: string,
+) => {
   const jsLines = sourceFile.split('\n');
   const sourceMapCommentIndex = jsLines.findIndex((line) =>
     line.trim().startsWith('//# sourceMappingURL='),
@@ -69,7 +77,7 @@ const injectBundleIDToSourceFile = (sourceFile: string, bundleID: string) => {
     bundleID,
   );
   jsLines.splice(injectIndex, 0, snippet);
-  jsLines.splice(injectIndex, 0, '// Injected by Embrace Web CLI:');
+  jsLines.splice(injectIndex, 0, INJECTION_MARKER);
 
   return jsLines.join('\n');
 };
@@ -298,8 +306,12 @@ export const processSourceFiles = async ({
         console.log(`Generated debugID ${debugID} for ${jsFilePath}`);
       }
 
-      // Inject the file->bundleID map snippet:
-      jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
+      // Inject the file->bundleID map snippet (skip if already injected):
+      if (isAlreadyInjected(jsContent)) {
+        console.log(`Skipping injection for ${jsFilePath} - already processed`);
+      } else {
+        jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
+      }
 
       console.log(
         `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`,
