@@ -13,7 +13,7 @@ class MapSecurityError extends Error {
 
 // The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in cli/snippet/fileBundleIDsSnippet.js
 const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
-const FILE_BUNDLE_IDS_CODE_SNIPPET = `(()=>{try{const l=(new globalThis.Error).stack;l&&(globalThis._EmbraceFileBundleIDs=globalThis._EmbraceFileBundleIDs||{},globalThis._EmbraceFileBundleIDs[l]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(l){}})();`
+const FILE_BUNDLE_IDS_CODE_SNIPPET = `(E=>{try{const _=globalThis,c=(new _.Error).stack;c&&(_[E]=_[E]||{},_[E][c]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(E){}})("_EmbraceFileBundleIDs");`
 const INJECTION_MARKER = '// Injected by Embrace Web CLI:';
 
 interface SourceMap {
