@@ -3,9 +3,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { minify } from 'terser';
 
 // Import the function we're testing
 import {
+  FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
+  FILE_BUNDLE_IDS_CODE_SNIPPET,
   findJSFilesRecursively,
   injectBundleIDToSourceFile,
   isAlreadyInjected,
@@ -455,5 +459,45 @@ console.log('test');
         'Injected content should be detected as already injected',
       );
     });
+  });
+});
+
+describe('processSourceFiles - Snippet Minification', () => {
+  it('should have FILE_BUNDLE_IDS_CODE_SNIPPET matching terser output of fileBundleIDsSnippet.js', async () => {
+    // Read the source snippet file
+    const currentDir = path.dirname(fileURLToPath(import.meta.url));
+    const snippetPath = path.resolve(
+      currentDir,
+      '../snippet/fileBundleIDsSnippet.js',
+    );
+    const snippetSource = fs.readFileSync(snippetPath, 'utf-8');
+
+    // Minify using terser with compress and mangle options (equivalent to -c -m flags)
+    // Use format.preamble to add the defensive semicolon
+    const result = await minify(snippetSource, {
+      compress: true,
+      mangle: true,
+    });
+
+    assert.ok(result.code, 'Terser should produce minified code');
+
+    // The constant uses a template literal to substitute FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE
+    const expectedSnippet = ";" + result.code
+
+    // Replace the template placeholder back to verify the template structure matches
+    const constantWithPlaceholder = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
+      FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional - matching the literal placeholder in terser output
+      '${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}',
+    );
+
+    assert.strictEqual(
+      constantWithPlaceholder,
+      expectedSnippet,
+      `FILE_BUNDLE_IDS_CODE_SNIPPET does not match terser output.\n` +
+        `Run: npx terser ./cli/snippet/fileBundleIDsSnippet.js -c -m\n` +
+        `Expected: ${expectedSnippet}\n` +
+        `Got: ${constantWithPlaceholder}`,
+    );
   });
 });
