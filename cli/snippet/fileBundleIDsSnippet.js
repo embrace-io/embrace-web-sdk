@@ -3,24 +3,15 @@
 // This code can be minified with: `npx terser ./cli/snippet/fileBundleIDsSnippet.js -c -m`
 (() => {
   try {
-    function getGlobal() {
-      if (typeof window !== 'undefined') return window;
-      if (typeof global !== 'undefined') return global;
-      if (typeof globalThis !== 'undefined') return globalThis;
-      if (typeof self !== 'undefined') return self;
-      return {};
-    }
-    const globalObj = getGlobal();
-
     // Create an error just to capture the stack trace
-    const stack = new globalObj.Error().stack;
+    const stack = new globalThis.Error().stack;
 
     if (stack) {
       // Initialize the global map if it doesn't exist
-      globalObj._EmbraceFileBundleIDs = globalObj._EmbraceFileBundleIDs || {};
+      globalThis._EmbraceFileBundleIDs = globalThis._EmbraceFileBundleIDs || {};
 
       // Store a mapping of the stack trace to a placeholder (this is actually replaced in cli/src/processSourceFiles.ts)
-      globalObj._EmbraceFileBundleIDs[stack] =
+      globalThis._EmbraceFileBundleIDs[stack] =
         // biome-ignore lint/suspicious/noTemplateCurlyInString: template string is replaced during build process
         '${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}';
     }
