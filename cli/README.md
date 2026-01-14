@@ -30,7 +30,8 @@ npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_
 
 > [!WARNING]
 > The CLI must be run BEFORE the files are packaged (e.g., before creating a Docker image or deployment archive).
-> The CLI modifies your bundle files to inject sourcemap debugIDs, so it needs to happen before packaging.
+> The CLI injects a comment and a short function to the end of bundle files to enable symbolication, so it needs to
+> happen before packaging.
 
 ## Setting app version
 
