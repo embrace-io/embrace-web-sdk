@@ -6,7 +6,6 @@ export default defineConfig([
     entry: { 'embrace-web-sdk': 'src/index.ts' },
     format: 'iife',
     target: 'es6',
-    globalName: 'EmbraceWebSdk',
     outDir: 'dist',
     sourcemap: true,
     platform: 'browser',
@@ -14,7 +13,7 @@ export default defineConfig([
     clean: true,
     noExternal: [/.*/],
     outputOptions: {
-      banner: '"use strict";',
+      banner: '"use strict"; window.EmbraceWebSdk = window.EmbraceWebSdk || ',
       entryFileNames: 'embrace-web-sdk.js',
     },
   },
