@@ -28,7 +28,7 @@
     "sdk:test:performance": "npm run test --prefix tests/performance",
     "sdk:test:integration": "npm run test --prefix tests/integration",
     "sdk:test:integration:update-golden": "npm run update-golden --prefix tests/integration",
-    "sdk:compile": "patch-package && npx rimraf dist && tsdown",
+    "sdk:compile": "npx rimraf dist && tsdown",
     "sdk:compile:watch": "npx rimraf dist && tsdown --watch ./src",
     "sdk:lint": "biome check",
     "sdk:lint:fix": "biome check --write",
