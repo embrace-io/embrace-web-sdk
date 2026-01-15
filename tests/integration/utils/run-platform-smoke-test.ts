@@ -1,22 +1,19 @@
 import assert from 'node:assert';
 import { exec } from 'node:child_process';
 import fs from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { resultsToMarkdownTable } from '../../utils/index.ts';
 import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.ts';
 import { processSondaReport } from './process-sonda-report.ts';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
 
 type RunPlatformBuildSmokeTestOptions = {
   targets: string[];
   platformName: string;
   includePlatformSizeTest?: boolean;
-  copyOutputToServer?: boolean;
   // These are useful to perform more tests for each target, or to log the results
   onSuccess?: (target: string, stdout: string) => void;
   onError?: (target: string, stderr: string) => void;
@@ -32,9 +29,6 @@ type RunPlatformBuildSmokeTestOptions = {
  * If `includePlatformSizeTest` is true, it processes the Sonda report to check the total gzip size against a threshold,
  * producing a markdown report with the results in `./test-results/<platformName>-tests.md`.
  * Sonda output is expected to be in the `.sonda/<target>/sonda_0.json` file in the app directory.
- *
- * It also copies the build output to server/public directory so we can serve it in other tests.
- * The output of the build must be in the `dist` directory of the platform.
  */
 const runPlatformBuildSmokeTest = async (
   platformPath: string,
@@ -43,7 +37,6 @@ const runPlatformBuildSmokeTest = async (
     onSuccess,
     onError,
     includePlatformSizeTest = true,
-    copyOutputToServer = true,
     platformName = platformPath,
   }: RunPlatformBuildSmokeTestOptions,
 ) => {
@@ -83,23 +76,6 @@ const runPlatformBuildSmokeTest = async (
             );
 
             results[target] = report;
-          }
-
-          if (copyOutputToServer) {
-            // Copy the build output to server/public directory
-            const buildOutputPath = resolve(platformPath, 'dist');
-            const serverPath = resolve(__dirname, '../../../server/public');
-            const publicOutputPath = resolve(
-              buildOutputPath,
-              serverPath,
-              platformName,
-            );
-
-            fs.mkdirSync(publicOutputPath, { recursive: true });
-            fs.cpSync(buildOutputPath, publicOutputPath, {
-              recursive: true,
-              force: true,
-            });
           }
         } catch (error) {
           const errorMessage =
