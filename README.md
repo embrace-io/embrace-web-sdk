@@ -223,6 +223,12 @@ to perform the upload:
 npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_TOKEN" -p "JS_BUILD_PATH"
 ```
 
+> [!WARNING]
+> The CLI must be run BEFORE the files are packaged (e.g., before creating a Docker image or deployment archive).
+> The CLI injects a comment and a short function to the end of bundle files to enable symbolication, so it needs to
+> happen before packaging.
+
+
 Additionally, if your app version is only known at build-time you can include it in the same command to have it injected
 into the bundle. If you follow this method do not also include appVersion when calling `initSDK` as that value will take
 precedence:

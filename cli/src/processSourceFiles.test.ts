@@ -3,9 +3,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { minify } from 'terser';
 
 // Import the function we're testing
-import { findJSFilesRecursively } from './processSourceFiles.ts';
+import {
+  FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
+  FILE_BUNDLE_IDS_CODE_SNIPPET,
+  findJSFilesRecursively,
+  injectBundleIDToSourceFile,
+  isAlreadyInjected,
+} from './processSourceFiles.ts';
 
 describe('processSourceFiles - Security Tests', () => {
   let testDir: string;
@@ -347,5 +355,149 @@ console.log('nested with relative path');
         }
       }
     });
+  });
+});
+
+describe('processSourceFiles - Injection Detection', () => {
+  describe('isAlreadyInjected', () => {
+    it('should return false for files without injection marker', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        false,
+        'Should return false for unprocessed files',
+      );
+    });
+
+    it('should return true for files with injection marker', () => {
+      const jsContent = `console.log('test');
+// Injected by Embrace Web CLI:
+!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof globalThis?globalThis:"undefined"!=typeof self?self:{},l=(new e.Error).stack;l&&(e._EmbraceFileBundleIDs=e._EmbraceFileBundleIDs||{},e._EmbraceFileBundleIDs[l]="abc123")}catch(e){}}();
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        true,
+        'Should return true for already processed files',
+      );
+    });
+
+    it('should detect injection marker anywhere in the file', () => {
+      const jsContent = `// Injected by Embrace Web CLI:
+!function(){try{var e="undefined"!=typeof window?window}catch(e){}}();
+console.log('test');
+//# sourceMappingURL=test.js.map`;
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        true,
+        'Should detect marker regardless of position',
+      );
+    });
+  });
+
+  describe('injectBundleIDToSourceFile', () => {
+    it('should inject snippet before sourceMappingURL comment', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+      const bundleID = 'abc123def456';
+
+      const result = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.ok(
+        result.includes('// Injected by Embrace Web CLI:'),
+        'Should include injection marker',
+      );
+      assert.ok(
+        result.includes(bundleID),
+        'Should include the bundle ID in the snippet',
+      );
+
+      const lines = result.split('\n');
+      const markerIndex = lines.findIndex((l) =>
+        l.includes('// Injected by Embrace Web CLI:'),
+      );
+      const sourceMapIndex = lines.findIndex((l) =>
+        l.includes('//# sourceMappingURL='),
+      );
+      assert.ok(
+        markerIndex < sourceMapIndex,
+        'Injection should be before sourceMappingURL',
+      );
+    });
+
+    it('should inject at end if no sourceMappingURL comment exists', () => {
+      const jsContent = `console.log('test');`;
+      const bundleID = 'abc123def456';
+
+      const result = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.ok(
+        result.includes('// Injected by Embrace Web CLI:'),
+        'Should include injection marker',
+      );
+      assert.ok(result.includes(bundleID), 'Should include the bundle ID');
+    });
+
+    it('should produce content detectable by isAlreadyInjected', () => {
+      const jsContent = `console.log('test');
+//# sourceMappingURL=test.js.map`;
+      const bundleID = 'abc123def456';
+
+      const injectedContent = injectBundleIDToSourceFile(jsContent, bundleID);
+
+      assert.strictEqual(
+        isAlreadyInjected(jsContent),
+        false,
+        'Original content should not be detected as injected',
+      );
+      assert.strictEqual(
+        isAlreadyInjected(injectedContent),
+        true,
+        'Injected content should be detected as already injected',
+      );
+    });
+  });
+});
+
+describe('processSourceFiles - Snippet Minification', () => {
+  it('should have FILE_BUNDLE_IDS_CODE_SNIPPET matching terser output of fileBundleIDsSnippet.js', async () => {
+    // Read the source snippet file
+    const currentDir = path.dirname(fileURLToPath(import.meta.url));
+    const snippetPath = path.resolve(
+      currentDir,
+      '../snippet/fileBundleIDsSnippet.js',
+    );
+    const snippetSource = fs.readFileSync(snippetPath, 'utf-8');
+
+    // Minify using terser with compress and mangle options (equivalent to -c -m flags)
+    // Use format.preamble to add the defensive semicolon
+    const result = await minify(snippetSource, {
+      compress: true,
+      mangle: true,
+    });
+
+    assert.ok(result.code, 'Terser should produce minified code');
+
+    // The constant uses a template literal to substitute FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE
+    const expectedSnippet = `;${result.code}`;
+
+    // Replace the template placeholder back to verify the template structure matches
+    const constantWithPlaceholder = FILE_BUNDLE_IDS_CODE_SNIPPET.replace(
+      FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: intentional - matching the literal placeholder in terser output
+      '${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}',
+    );
+
+    assert.strictEqual(
+      constantWithPlaceholder,
+      expectedSnippet,
+      `FILE_BUNDLE_IDS_CODE_SNIPPET does not match terser output.\n` +
+        `Run: npx terser ./cli/snippet/fileBundleIDsSnippet.js -c -m\n` +
+        `Expected: ${expectedSnippet}\n` +
+        `Got: ${constantWithPlaceholder}`,
+    );
   });
 });

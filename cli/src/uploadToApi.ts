@@ -10,8 +10,6 @@ interface UploadToApiArgs {
   pathForUpload: string;
   storeType: string;
   cliVersion: string;
-  dryRun?: boolean;
-  upload: boolean;
 }
 
 export const uploadToApi = async ({
@@ -24,15 +22,7 @@ export const uploadToApi = async ({
   pathForUpload,
   storeType,
   cliVersion,
-  dryRun,
-  upload,
 }: UploadToApiArgs): Promise<void> => {
-  console.log(
-    upload && !dryRun ? 'Uploading to Embrace API' : 'Dry run, skipping upload',
-  );
-  if (dryRun || !upload) {
-    return;
-  }
   if (!token) {
     throw new Error('Token is required for upload');
   }
