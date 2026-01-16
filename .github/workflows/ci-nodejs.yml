@@ -72,7 +72,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -182,7 +182,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -285,7 +285,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -442,7 +442,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -502,7 +502,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -629,7 +629,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -678,7 +678,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -731,7 +731,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -786,7 +786,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -854,7 +854,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
