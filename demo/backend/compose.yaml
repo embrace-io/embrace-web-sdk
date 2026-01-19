@@ -15,7 +15,7 @@ services:
     restart: always
 
   grafana:
-    image: grafana/otel-lgtm@sha256:72628a43fbd8574b066cd06273545ec9cc74314f360598ee8de27770bd904faa
+    image: grafana/otel-lgtm@sha256:c258debb6cd0e2be844adad8231a1268d9e12fa46aa0f78e15472bbe7837f12b
     ports:
       - '3000:3000'
       - '4317:4317'
