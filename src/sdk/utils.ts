@@ -1,7 +1,7 @@
 import { TEMPLATE_APP_VERSION } from '../resources/constants/index.ts';
 
 export const validateAppID = (appID: unknown): string | undefined => {
-  if (appID === undefined) return undefined;
+  if (appID === undefined || appID === '') return undefined;
   if (typeof appID !== 'string') {
     throw new Error(`appID must be a string. Received ${String(appID)}.`);
   }

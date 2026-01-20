@@ -259,6 +259,57 @@ describe('initSDK', () => {
         'failed to initialize the SDK: appID must be a string. Received null.',
       );
     });
+
+    it('should reject empty string without exporters', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: '',
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
+      );
+    });
+
+    it('should accept empty string with exporters (demo setup)', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: '',
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        diagLogger,
+      });
+      void expect(result).not.to.be.false;
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+    });
+
+    it('should treat undefined as omitted', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      // @ts-expect-error testing runtime behavior with invalid type
+      const result = initSDK({
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
+      );
+    });
+
+    it('should accept undefined with exporters', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        diagLogger,
+      });
+      void expect(result).not.to.be.false;
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+    });
   });
 
   it('should allow setting custom instrumentations', async () => {

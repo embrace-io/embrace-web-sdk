@@ -36,7 +36,9 @@ npm ci --prefix ../..
 VITE_BASE_URL=/embrace-web-sdk/ npm run build
 
 # add env vars from .env file to the current environment
-export $(grep -v '^#' .env | xargs)
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
 
 # process the bundle to replace the bundle id. NOTE: we don't upload source maps on each run, to avoid spamming s3, so symbolication won't work
 # If you need to upload source maps for testing, remove the "--no-upload" flag
