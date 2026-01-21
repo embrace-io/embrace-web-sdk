@@ -1,6 +1,6 @@
 # Local debugging collector
 
-This is a simple collector for local debugging and testing purposes. It listens on port 3000 for OTLP HTTP requests and logs the received data to the console.
+This is a simple collector for local debugging and testing purposes. It listens on port 3001 for OTLP HTTP requests and logs the received data to the console.
 It runs automatically when you run `npm run dev` in the root of the repository.
 
 ## Usage

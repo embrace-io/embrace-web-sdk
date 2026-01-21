@@ -10,6 +10,8 @@ import type { ReceivedSpans } from '../tests/integration/types.ts';
 import { logInfo, logReceivedSessionSpan } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const distDir = join(__dirname, '..', 'dist');
+const platformsDir = join(__dirname, '..', 'tests', 'integration', 'platforms');
 
 const PORT = 3001;
 
@@ -115,11 +117,59 @@ const server = createServer((req, res) => {
       });
   }
 
-  if (req.url?.includes('public')) {
+  // Serve platform test builds: /platforms/{name}/{target}/ → platforms/{name}/dist/{target}/
+  if (req.url?.startsWith('/platforms/')) {
+    const url = new URL(
+      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
+    );
+    // Transform /platforms/vite-7/esnext/index.html → platforms/vite-7/dist/esnext/index.html
+    const pathParts = url.pathname.replace('/platforms/', '').split('/');
+    const platformName = pathParts[0];
+    const rest = pathParts.slice(1).join('/');
+    const filePath = join(platformsDir, platformName, 'dist', rest);
+
+    readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File Not Found');
+        return;
+      }
+
+      const ext = extname(filePath);
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(data);
+    });
+  }
+
+  // Serve static test files from server/public/
+  if (req.url?.startsWith('/public/')) {
     const url = new URL(
       `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
     );
     const filePath = join(__dirname, url.pathname);
+
+    readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File Not Found');
+        return;
+      }
+
+      const ext = extname(filePath);
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(data);
+    });
+  }
+
+  if (req.url?.startsWith('/dist/')) {
+    const url = new URL(
+      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
+    );
+    const filePath = join(distDir, url.pathname.replace('/dist/', ''));
 
     readFile(filePath, (err, data) => {
       if (err) {

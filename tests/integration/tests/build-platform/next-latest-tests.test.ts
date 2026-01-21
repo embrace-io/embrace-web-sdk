@@ -10,6 +10,4 @@ await runPlatformBuildSmokeTest(platformDir, {
   platformName: 'next-latest',
   // With Next.js, it's hard to say what the platform size will be, since it uses SSR and split the builds into different chunks depending on what it needs.
   includePlatformSizeTest: false,
-  // We serve Next JS directly with `next start`
-  copyOutputToServer: false,
 });
