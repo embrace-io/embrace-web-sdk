@@ -10,7 +10,7 @@ const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 const setupOTel = () => {
   const result = initSDK({
     logLevel: DiagLogLevel.ALL,
-    appID: SAMPLE_APP_ID,
+    appID: SAMPLE_APP_ID || undefined,
     appVersion: '1.0.0',
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
