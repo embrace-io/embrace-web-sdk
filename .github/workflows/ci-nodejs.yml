@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -65,14 +65,14 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -92,7 +92,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -161,7 +161,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -175,14 +175,14 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -202,7 +202,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -264,7 +264,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Restore previous test results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -278,14 +278,14 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -305,7 +305,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -405,7 +405,7 @@ jobs:
 
       - name: Update artifact with performance results
         if: ${{ success() }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: performance-results
           path: |
@@ -421,7 +421,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -435,14 +435,14 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -481,7 +481,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -495,14 +495,14 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -522,7 +522,7 @@ jobs:
 
       - name: Restore cached playwright browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
@@ -615,7 +615,7 @@ jobs:
 
       - name: Update artifact with build results
         if: ${{ needs.environment.outputs.name == 'development' }}
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           include-hidden-files: true
           name: build-results
@@ -625,11 +625,11 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -659,7 +659,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous lint results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.LINT_STATUS_FILE }}
@@ -673,12 +673,12 @@ jobs:
             echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -712,7 +712,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous type check results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.TYPE_CHECK_STATUS_FILE }}
@@ -726,12 +726,12 @@ jobs:
             echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -767,7 +767,7 @@ jobs:
       VALIDATE_STATUS_FILE: validate.success.txt
     steps:
       - name: Restore previous validate results
-        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5.0.2
         with:
           path: |
             ${{ env.VALIDATE_STATUS_FILE }}
@@ -781,12 +781,12 @@ jobs:
             echo 'VALIDATE_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -849,12 +849,12 @@ jobs:
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version-file: .nvmrc
           cache: npm
