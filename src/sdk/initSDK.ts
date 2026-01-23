@@ -96,7 +96,7 @@ export const initSDK = (
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
-  }: SDKInitConfig = { appID: '' },
+  }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
     const perf = new OTelPerformanceManager();
