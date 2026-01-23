@@ -142,7 +142,7 @@ describe('initSDK', () => {
     fakeFetchRestore();
   });
 
-  it('should require an app ID when not setting custom exporters', () => {
+  it('should require an appID when not setting custom exporters', () => {
     const diagLogger = new InMemoryDiagLogger();
     // @ts-expect-error need to bypass type checking to test this invalid configuration
     const result = initSDK({ diagLogger });
@@ -150,7 +150,7 @@ describe('initSDK', () => {
 
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
     expect(diagLogger.getErrorLogs()[0]).to.equal(
-      'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
+      'failed to initialize the SDK: when appID is omitted, at least one logExporter or spanExporter must be set',
     );
   });
 
@@ -166,7 +166,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appVersion cannot be empty.',
+        'failed to initialize the SDK: if appVersion is specified, it cannot be an empty string.',
       );
     });
 
@@ -181,7 +181,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appVersion cannot be empty.',
+        'failed to initialize the SDK: if appVersion is specified, it cannot be an empty string.',
       );
     });
 
@@ -197,7 +197,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appVersion must be a string. Received 123.',
+        'failed to initialize the SDK: if appVersion is specified, it must be a string. Received 123',
       );
     });
 
@@ -213,20 +213,31 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appVersion must be a string. Received null.',
+        'failed to initialize the SDK: if appVersion is specified, it must be a string. Received null',
       );
+    });
+
+    it('should accept undefined', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+      });
+      void expect(result).not.to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
     });
   });
 
   describe('appID validation', () => {
-    it('should ensure a specified appID is valid', () => {
+    it('should ensure specified string is 5 characters long', () => {
       const diagLogger = new InMemoryDiagLogger();
-      const result = initSDK({ appID: 'foo-app-id', diagLogger });
+      const result = initSDK({ appID: 'long-app-id', diagLogger });
       void expect(result).to.be.false;
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appID should be 5 characters long. Received foo-app-id',
+        'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received "long-app-id"',
       );
     });
 
@@ -241,7 +252,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appID must be a string. Received 12345.',
+        'failed to initialize the SDK: appID must be a string, or omitted if not using Embrace. Received 12345',
       );
     });
 
@@ -256,39 +267,13 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appID must be a string. Received null.',
+        'failed to initialize the SDK: appID must be a string, or omitted if not using Embrace. Received null',
       );
     });
 
-    it('should reject empty string without exporters', () => {
+    it('should reject undefined without exporters', () => {
       const diagLogger = new InMemoryDiagLogger();
-      const result = initSDK({
-        appID: '',
-        diagLogger,
-      });
-      void expect(result).to.be.false;
-
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
-      );
-    });
-
-    it('should accept empty string with exporters (demo setup)', () => {
-      const diagLogger = new InMemoryDiagLogger();
-      const result = initSDK({
-        appID: '',
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-        diagLogger,
-      });
-      void expect(result).not.to.be.false;
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
-    });
-
-    it('should treat undefined as omitted', () => {
-      const diagLogger = new InMemoryDiagLogger();
-      // @ts-expect-error testing runtime behavior with invalid type
+      // @ts-expect-error intentionally missing appID
       const result = initSDK({
         diagLogger,
       });
@@ -296,7 +281,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
+        'failed to initialize the SDK: when appID is omitted, at least one logExporter or spanExporter must be set',
       );
     });
 
@@ -309,6 +294,21 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+    });
+
+    it('should reject empty string', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: '',
+        logExporters: [logExporter],
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received ""',
+      );
     });
   });
 
