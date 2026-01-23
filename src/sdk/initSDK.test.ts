@@ -237,7 +237,7 @@ describe('initSDK', () => {
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received long-app-id',
+        'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received "long-app-id"',
       );
     });
 
@@ -294,6 +294,21 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+    });
+
+    it('should reject empty string', () => {
+      const diagLogger = new InMemoryDiagLogger();
+      const result = initSDK({
+        appID: '',
+        logExporters: [logExporter],
+        diagLogger,
+      });
+      void expect(result).to.be.false;
+
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.equal(
+        'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received ""',
+      );
     });
   });
 

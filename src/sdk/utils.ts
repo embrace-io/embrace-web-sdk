@@ -9,7 +9,7 @@ export const validateAppID = (appID: unknown): string | undefined => {
   }
   if (appID.length !== 5) {
     throw new Error(
-      `appID should be 5 characters long, or omitted if not using Embrace. Received ${appID}`,
+      `appID should be 5 characters long, or omitted if not using Embrace. Received "${appID}"`,
     );
   }
   return appID;
