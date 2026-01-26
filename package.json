@@ -3,6 +3,13 @@
   "version": "2.11.0",
   "description": "Embrace Web SDK",
   "type": "module",
+  "imports": {
+    "#otlp-transformer": {
+      "embrace": "./packages/otlp-transformer/src/index.ts",
+      "types": "./packages/otlp-transformer/dist/index.d.ts",
+      "default": "./packages/otlp-transformer/dist/index.js"
+    }
+  },
   "jsdelivr": "./dist/embrace-web-sdk.js",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

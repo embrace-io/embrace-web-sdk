@@ -1,5 +1,5 @@
-import { JsonTraceSerializer } from '@embrace-io/otlp-transformer';
 import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-web';
+import { JsonTraceSerializer } from '#otlp-transformer';
 import { BaseFetchExporter } from '../BaseFetchExporter/index.ts';
 import { createOtlpBrowserFetchExportDelegate } from '../otlpBrowserFetchExportDelegate.ts';
 import type { OtlpFetchExporterConfig } from '../types.ts';

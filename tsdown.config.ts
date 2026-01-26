@@ -50,7 +50,7 @@ export default defineConfig([
     clean: false,
     publint: true,
     plugins: [failOnWarnPlugin],
-    inlineOnly: ['@embrace-io/otlp-transformer'],
+    noExternal: ['#otlp-transformer'],
     inputOptions: {
       checks: {
         pluginTimings: false, // CI environments vary in speed
