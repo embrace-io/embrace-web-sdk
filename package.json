@@ -11,7 +11,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "prepare": "lefthook install -f && patch-package",
+    "prepare": "lefthook install -f",
     "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
     "compile": "npm run sdk:compile && npm run cli:compile",
     "test": "npm run sdk:test && npm run cli:test",
@@ -28,8 +28,7 @@
     "sdk:test:performance": "npm run test --prefix tests/performance",
     "sdk:test:integration": "npm run test --prefix tests/integration",
     "sdk:test:integration:update-golden": "npm run update-golden --prefix tests/integration",
-    "sdk:compile": "npx rimraf dist && tsdown",
-    "sdk:compile:watch": "npx rimraf dist && tsdown --watch ./src",
+    "sdk:compile": "npm run compile --prefix packages/otlp-transformer && npx rimraf dist && tsdown",
     "sdk:lint": "biome check",
     "sdk:lint:fix": "biome check --write",
     "sdk:check": "npm run sdk:check:tsc && npm run sdk:check:eslint",
@@ -101,7 +100,6 @@
     "@opentelemetry/instrumentation-fetch": "0.211.0",
     "@opentelemetry/instrumentation-xml-http-request": "0.211.0",
     "@opentelemetry/otlp-exporter-base": "0.211.0",
-    "@opentelemetry/otlp-transformer": "0.211.0",
     "@opentelemetry/resources": "2.5.0",
     "@opentelemetry/sdk-logs": "0.211.0",
     "@opentelemetry/sdk-trace-web": "2.5.0",
@@ -139,7 +137,6 @@
     "jest-diff": "30.2.0",
     "lefthook": "2.0.15",
     "lighthouse": "13.0.1",
-    "patch-package": "8.0.1",
     "playwright": "1.57.0",
     "publint": "0.3.17",
     "react": "19.2.4",
@@ -167,6 +164,7 @@
   "workspaces": [
     "cli",
     "demo/*",
+    "packages/*",
     "tests/performance"
   ],
   "packageManager": "npm@11.6.4",
