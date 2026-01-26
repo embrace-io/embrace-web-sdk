@@ -48,7 +48,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
     expect(log.attributes['session.id']).to.be.equal(sessionID);
-    expect(log.attributes).not.to.have.property('session.previous_id');
+    void expect(log.attributes['session.previous_id']).to.be.null;
   });
 
   it('should handle a session ID not being available', () => {
@@ -61,8 +61,8 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     const log = finishedLogs[0];
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    void expect(log.attributes['session.id']).to.be.undefined;
-    expect(log.attributes).not.to.have.property('session.previous_id');
+    void expect(log.attributes['session.id']).to.be.null;
+    void expect(log.attributes['session.previous_id']).to.be.null;
   });
 
   it('should attach a previous session ID when available', () => {
@@ -79,7 +79,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     const log = finishedLogs[0];
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    expect(log.attributes).not.to.have.property('session.id');
+    void expect(log.attributes['session.id']).to.be.null;
     expect(log.attributes['session.previous_id']).to.be.equal(sessionID);
   });
 
