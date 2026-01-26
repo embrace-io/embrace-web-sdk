@@ -139,6 +139,9 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   public enable = () => {
+    this.setConfig({
+      enabled: true,
+    });
     this._diag.debug(
       'NavigationInstrumentation enabled, listening for navigation events.',
     );
