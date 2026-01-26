@@ -11,6 +11,7 @@ export default defineConfig([
     platform: 'browser',
     minify: true,
     clean: true,
+    inlineOnly: false,
     noExternal: [/.*/],
     outputOptions: {
       banner: '"use strict"; window.EmbraceWebSdk = window.EmbraceWebSdk || ',
