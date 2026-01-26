@@ -818,4 +818,21 @@ describe('WebVitalsInstrumentation', () => {
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_PATH]).to.be.undefined;
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_ID]).to.be.undefined;
   });
+
+  it('should not register duplicate callbacks when enable() is called multiple times', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    // Call enable() multiple times
+    instrumentation.enable();
+    instrumentation.enable();
+
+    // BUG: Without fix, clsStub will be called 6 times (2 per enable())
+    // With fix, only 2 calls from constructor
+    expect(clsStub.callCount).to.equal(2);
+  });
 });

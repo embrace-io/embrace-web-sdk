@@ -883,6 +883,38 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
+  describe('enable() idempotency', () => {
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should not collect performance twice when enable() is called multiple times', (done) => {
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+
+      plugin.enable();
+      plugin.enable();
+      plugin.enable();
+
+      setTimeout(() => {
+        const finishedSpans = exporter.getFinishedSpans();
+        const documentLoadSpans = finishedSpans.filter(
+          (s) => s.name === 'documentLoad',
+        );
+
+        // BUG: Without fix, this could be 3 (one per enable() call)
+        assert.strictEqual(documentLoadSpans.length, 1);
+        done();
+      }, 100);
+    });
+  });
+
   describe('ignore span events if specified', () => {
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {

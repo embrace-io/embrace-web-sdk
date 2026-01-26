@@ -302,4 +302,32 @@ describe('NavigationInstrumentation', () => {
       'Ending route span for url: /test/123',
     ]);
   });
+
+  it('should work correctly after disable() then enable()', () => {
+    navigationInstrumentation = new NavigationInstrumentation({ diag });
+    spanSessionManager.startSessionSpan();
+
+    navigationInstrumentation.setCurrentRoute({
+      path: '/first',
+      url: '/first',
+    });
+
+    navigationInstrumentation.disable();
+    navigationInstrumentation.enable();
+
+    navigationInstrumentation.setCurrentRoute({
+      path: '/second',
+      url: '/second',
+    });
+
+    spanSessionManager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const navigationSpans = finishedSpans.filter(
+      (s) => s.attributes['emb.type'] === 'ux.surface',
+    );
+
+    // BUG: Without fix, only 1 navigation span (second route ignored)
+    expect(navigationSpans).to.have.lengthOf(2);
+  });
 });
