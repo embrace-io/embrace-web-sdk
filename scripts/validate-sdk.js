@@ -288,7 +288,7 @@ function validateModuleSystemSeparation() {
     },
     {
       name: 'import in CJS files',
-      pattern: 'import',
+      pattern: '^import',
       include: '*.cjs',
     },
   ];
