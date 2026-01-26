@@ -96,7 +96,7 @@ export const initSDK = (
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
-  }: SDKInitConfig = { appID: '' },
+  }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
     const perf = new OTelPerformanceManager();
@@ -123,7 +123,7 @@ export const initSDK = (
 
     if (!sendingToEmbrace && !logExporters.length && !spanExporters.length) {
       throw new Error(
-        'when the embrace appID is omitted then at least one logExporter or spanExporter must be set',
+        'when appID is omitted, at least one logExporter or spanExporter must be set',
       );
     }
 
