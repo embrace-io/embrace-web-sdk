@@ -908,7 +908,6 @@ describe('DocumentLoad Instrumentation', () => {
           (s) => s.name === 'documentLoad',
         );
 
-        // BUG: Without fix, this could be 3 (one per enable() call)
         assert.strictEqual(documentLoadSpans.length, 1);
         done();
       }, 100);
