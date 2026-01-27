@@ -1792,6 +1792,7 @@ describe('isolated instances', () => {
     spanExporter.reset();
     logExporter.reset();
     fakeFetchRestore();
+    registry.clear();
   });
 
   // Poll for localStorage keys to be set, avoiding flaky fixed timeouts
@@ -2033,7 +2034,7 @@ describe('isolated instances', () => {
     );
   });
 
-  it('should not namespace the storage if there is no appID provided', async () => {
+  it('should namespace the storage with generated prefix when no appID provided', async () => {
     fakeFetchRespondWith(
       JSON.stringify({
         threshold: 90,
@@ -2058,7 +2059,7 @@ describe('isolated instances', () => {
     // Wait for remote config to be fetched and stored (only second instance has appID)
     await waitForLocalStorageKeys(['app22_embrace_remote_config']);
 
-    // Second instance using namespaced storage
+    // Second instance using appID-namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
     expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
       true,
@@ -2068,10 +2069,24 @@ describe('isolated instances', () => {
     );
     expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
 
-    // First instance using storage without a prefix
-    expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
+    // First instance using generated-prefix-namespaced storage (sdk_* prefix)
+    // Find the generated namespace by looking for keys starting with sdk_
+    const localStorageKeys = Object.keys(localStorage);
+    const generatedUserIdKey = localStorageKeys.find(
+      (key) => key.startsWith('sdk_') && key.endsWith('_embrace_user_id'),
+    );
+    expect(generatedUserIdKey).to.not.be.undefined;
+
+    const sessionStorageKeys = Object.keys(sessionStorage);
+    const generatedAppInstanceIdKey = sessionStorageKeys.find(
+      (key) =>
+        key.startsWith('sdk_') && key.endsWith('_embrace_app_instance_id'),
+    );
+    const generatedTabKey = sessionStorageKeys.find(
+      (key) => key.startsWith('sdk_') && key.endsWith('_embrace_tab'),
+    );
+    expect(generatedAppInstanceIdKey).to.not.be.undefined;
+    expect(generatedTabKey).to.not.be.undefined;
   });
 
   it('should not namespace the storage when registering globally', async () => {
@@ -2116,5 +2131,71 @@ describe('isolated instances', () => {
     expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
+  });
+
+  it('should warn when initializing global instance after non-global instance', () => {
+    const consoleWarnStub = sinon.stub(console, 'warn');
+
+    try {
+      // First: non-global instance
+      const firstSDKInstance = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        registerGlobally: false,
+        logLevel: DiagLogLevel.WARN,
+      });
+
+      // Second: global instance
+      const secondSDKInstance = initSDK({
+        appID: 'app11',
+        appVersion: 'app-version',
+        logLevel: DiagLogLevel.WARN,
+      });
+
+      void expect(firstSDKInstance).not.to.be.false;
+      void expect(secondSDKInstance).not.to.be.false;
+
+      expect(
+        consoleWarnStub.calledWith(
+          'embrace-sdk',
+          'Initializing with registerGlobally=true after a non-global instance exists. This may cause unexpected behavior.',
+        ),
+      ).to.be.true;
+    } finally {
+      consoleWarnStub.restore();
+    }
+  });
+
+  it('should warn when initializing non-global instance after global instance', () => {
+    const consoleWarnStub = sinon.stub(console, 'warn');
+
+    try {
+      // First: global instance
+      const firstSDKInstance = initSDK({
+        appID: 'app11',
+        appVersion: 'app-version',
+        logLevel: DiagLogLevel.WARN,
+      });
+
+      // Second: non-global instance
+      const secondSDKInstance = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        registerGlobally: false,
+        logLevel: DiagLogLevel.WARN,
+      });
+
+      void expect(firstSDKInstance).not.to.be.false;
+      void expect(secondSDKInstance).not.to.be.false;
+
+      expect(
+        consoleWarnStub.calledWith(
+          'embrace-sdk',
+          'Initializing with registerGlobally=false after a global instance exists. The non-global instance will not affect global APIs.',
+        ),
+      ).to.be.true;
+    } finally {
+      consoleWarnStub.restore();
+    }
   });
 });

@@ -108,6 +108,19 @@ export const initSDK = (
         );
         return existingSDK;
       }
+      if (registry.hasNonGlobalInstance) {
+        diagLogger.warn(
+          'Initializing with registerGlobally=true after a non-global instance exists. This may cause unexpected behavior.',
+        );
+      }
+      registry.hasGlobalInstance = true;
+    } else {
+      if (registry.hasGlobalInstance) {
+        diagLogger.warn(
+          'Initializing with registerGlobally=false after a global instance exists. The non-global instance will not affect global APIs.',
+        );
+      }
+      registry.hasNonGlobalInstance = true;
     }
 
     diag.setLogger(new DiagConsoleLogger(), {
@@ -144,12 +157,15 @@ export const initSDK = (
       );
     }
 
-    const useNamespace = !registerGlobally && appID;
+    const useNamespace = !registerGlobally;
+    // Generated namespace ensures storage isolation but is non-deterministic across page loads.
+    // Users needing deterministic storage can provide an appID.
+    const storageNamespace = appID || `sdk_${crypto.randomUUID().slice(0, 8)}`;
     const sdkLocalStorage = useNamespace
-      ? new NamespacedStorage(appID, window.localStorage)
+      ? new NamespacedStorage(storageNamespace, window.localStorage)
       : window.localStorage;
     const sdkSessionStorage = useNamespace
-      ? new NamespacedStorage(appID, window.sessionStorage)
+      ? new NamespacedStorage(storageNamespace, window.sessionStorage)
       : window.sessionStorage;
 
     const resourceWithWebSDKAttributes = resource.merge(

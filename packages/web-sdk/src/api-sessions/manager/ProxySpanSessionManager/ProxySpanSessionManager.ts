@@ -12,6 +12,8 @@ const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 
 export class ProxySpanSessionManager implements SpanSessionManager {
   private _delegate?: SpanSessionManager;
+  private _pendingStartListeners: Array<() => void> = [];
+  private _pendingEndListeners: Array<() => void> = [];
 
   public getDelegate(): SpanSessionManager {
     return this._delegate ?? NOOP_SPAN_SESSION_MANAGER;
@@ -19,6 +21,15 @@ export class ProxySpanSessionManager implements SpanSessionManager {
 
   public setDelegate(delegate: SpanSessionManager): void {
     this._delegate = delegate;
+    // Replay pending listeners registered before delegate was set
+    this._pendingStartListeners.forEach((listener) => {
+      delegate.addSessionStartedListener(listener);
+    });
+    this._pendingEndListeners.forEach((listener) => {
+      delegate.addSessionEndedListener(listener);
+    });
+    this._pendingStartListeners = [];
+    this._pendingEndListeners = [];
   }
 
   public addBreadcrumb(name: string): void {
@@ -72,10 +83,30 @@ export class ProxySpanSessionManager implements SpanSessionManager {
   }
 
   public addSessionStartedListener(listener: () => void): () => void {
-    return this.getDelegate().addSessionStartedListener(listener);
+    if (this._delegate) {
+      return this._delegate.addSessionStartedListener(listener);
+    }
+    // Queue for replay when delegate is set
+    this._pendingStartListeners.push(listener);
+    return () => {
+      const idx = this._pendingStartListeners.indexOf(listener);
+      if (idx >= 0) {
+        this._pendingStartListeners.splice(idx, 1);
+      }
+    };
   }
 
   public addSessionEndedListener(listener: () => void): () => void {
-    return this.getDelegate().addSessionEndedListener(listener);
+    if (this._delegate) {
+      return this._delegate.addSessionEndedListener(listener);
+    }
+    // Queue for replay when delegate is set
+    this._pendingEndListeners.push(listener);
+    return () => {
+      const idx = this._pendingEndListeners.indexOf(listener);
+      if (idx >= 0) {
+        this._pendingEndListeners.splice(idx, 1);
+      }
+    };
   }
 }

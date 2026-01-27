@@ -5,6 +5,8 @@ import type { SDKControl, SDKRegistryManager } from './types.ts';
 class Registry implements SDKRegistryManager {
   private _sdk: SDKControl | null = null;
   private readonly _diag: DiagLogger;
+  public hasGlobalInstance = false;
+  public hasNonGlobalInstance = false;
 
   public constructor({
     diagLogger = diag.createComponentLogger({ namespace: 'embrace-registry' }),
@@ -14,7 +16,9 @@ class Registry implements SDKRegistryManager {
 
   public register: (sdk: SDKControl) => void = (sdk) => {
     if (this._sdk !== null) {
-      this._diag.warn('previously registered sdk will be overwritten');
+      throw new Error(
+        'SDK has already been registered. Call registry.clear() before re-initializing, or use registerGlobally: false for multiple instances.',
+      );
     }
     this._sdk = sdk;
   };
@@ -24,6 +28,8 @@ class Registry implements SDKRegistryManager {
       this._diag.warn('sdk already cleared, this is a no-op');
     }
     this._sdk = null;
+    this.hasGlobalInstance = false;
+    this.hasNonGlobalInstance = false;
   };
 
   public registered: () => SDKControl | null = () => {

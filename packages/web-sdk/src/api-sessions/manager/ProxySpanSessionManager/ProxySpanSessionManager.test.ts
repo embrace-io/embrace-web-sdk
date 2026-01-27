@@ -146,4 +146,106 @@ describe('ProxySpanSessionManager', () => {
       listener,
     );
   });
+
+  describe('listener queueing', () => {
+    it('should queue session started listeners registered before delegate is set', () => {
+      const listener1 = sinon.stub();
+      const listener2 = sinon.stub();
+
+      // Register listeners before setting delegate
+      proxySpanSessionManager.addSessionStartedListener(listener1);
+      proxySpanSessionManager.addSessionStartedListener(listener2);
+
+      // Listeners should not have been called yet
+      expect(mockDelegate.addSessionStartedListener).not.to.have.been.called;
+
+      // Set delegate - should replay queued listeners
+      proxySpanSessionManager.setDelegate(mockDelegate);
+
+      expect(mockDelegate.addSessionStartedListener).to.have.been.calledTwice;
+      expect(mockDelegate.addSessionStartedListener).to.have.been.calledWith(
+        listener1,
+      );
+      expect(mockDelegate.addSessionStartedListener).to.have.been.calledWith(
+        listener2,
+      );
+    });
+
+    it('should queue session ended listeners registered before delegate is set', () => {
+      const listener1 = sinon.stub();
+      const listener2 = sinon.stub();
+
+      // Register listeners before setting delegate
+      proxySpanSessionManager.addSessionEndedListener(listener1);
+      proxySpanSessionManager.addSessionEndedListener(listener2);
+
+      // Listeners should not have been called yet
+      expect(mockDelegate.addSessionEndedListener).not.to.have.been.called;
+
+      // Set delegate - should replay queued listeners
+      proxySpanSessionManager.setDelegate(mockDelegate);
+
+      expect(mockDelegate.addSessionEndedListener).to.have.been.calledTwice;
+      expect(mockDelegate.addSessionEndedListener).to.have.been.calledWith(
+        listener1,
+      );
+      expect(mockDelegate.addSessionEndedListener).to.have.been.calledWith(
+        listener2,
+      );
+    });
+
+    it('should allow unsubscribing from pending session started listeners', () => {
+      const listener = sinon.stub();
+
+      // Register listener before setting delegate
+      const unsubscribe =
+        proxySpanSessionManager.addSessionStartedListener(listener);
+
+      // Unsubscribe before delegate is set
+      unsubscribe();
+
+      // Set delegate - listener should not be replayed
+      proxySpanSessionManager.setDelegate(mockDelegate);
+
+      expect(mockDelegate.addSessionStartedListener).not.to.have.been.called;
+    });
+
+    it('should allow unsubscribing from pending session ended listeners', () => {
+      const listener = sinon.stub();
+
+      // Register listener before setting delegate
+      const unsubscribe =
+        proxySpanSessionManager.addSessionEndedListener(listener);
+
+      // Unsubscribe before delegate is set
+      unsubscribe();
+
+      // Set delegate - listener should not be replayed
+      proxySpanSessionManager.setDelegate(mockDelegate);
+
+      expect(mockDelegate.addSessionEndedListener).not.to.have.been.called;
+    });
+
+    it('should clear pending listeners after delegate is set', () => {
+      const listener = sinon.stub();
+
+      // Register listener before setting delegate
+      proxySpanSessionManager.addSessionStartedListener(listener);
+
+      // Set delegate first time
+      proxySpanSessionManager.setDelegate(mockDelegate);
+      expect(mockDelegate.addSessionStartedListener).to.have.been.calledOnce;
+
+      // Create a new mock delegate
+      const newMockDelegate = {
+        ...mockDelegate,
+        addSessionStartedListener: sinon.stub(),
+        addSessionEndedListener: sinon.stub(),
+      };
+
+      // Set delegate second time - should not replay again
+      proxySpanSessionManager.setDelegate(newMockDelegate);
+      expect(newMockDelegate.addSessionStartedListener).not.to.have.been.called;
+    });
+  });
 });
