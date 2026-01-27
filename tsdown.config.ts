@@ -59,7 +59,7 @@ export default defineConfig([
     clean: false,
     publint: true,
     plugins: [failOnWarnPlugin],
-    // Aliased otlp-transformer is intentionally inlined; others are transitive type deps
+    // Aliased otlp-transformer is intentionally inlined; others are transitive deps
     inlineOnly: [
       '@opentelemetry/otlp-transformer',
       '@opentelemetry/sdk-metrics', // type-only, transitive from otlp-transformer

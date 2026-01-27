@@ -27,6 +27,7 @@ export default defineConfig({
   },
   platform: 'browser',
   clean: true,
+  publint: true,
   plugins: [failOnWarnPlugin],
   inlineOnly: false,
   noExternal: [/.*/],
