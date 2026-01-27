@@ -3,4 +3,6 @@ export type {
   URLDocument,
   PathnameDocument,
   AttributeScrubber,
+  EmbraceWebSdk,
+  QueuedCall,
 } from './types.js';

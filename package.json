@@ -3,7 +3,7 @@
   "version": "1.8.1",
   "description": "Embrace Web SDK",
   "type": "module",
-  "jsdelivr": "build/iife/bundle.js",
+  "jsdelivr": "build/iife/iife.js",
   "main": "build/src/index.js",
   "module": "build/esm/index.js",
   "esnext": "build/esnext/index.js",
@@ -61,6 +61,8 @@
   "files": [
     "build/esm/**/*.js",
     "build/esm/**/*.js.map",
+    "build/esm-bundle/**/*.js",
+    "build/esm-bundle/**/*.js.map",
     "build/esnext/**/*.js",
     "build/esnext/**/*.js.map",
     "build/src/**/*.js",
@@ -82,18 +84,29 @@
       "default": "./build/src/index.js"
     },
     "./react-instrumentation": {
-      "esnext": "./build/esnext/react-instrumentation.js",
-      "module": "./build/esm/react-instrumentation.js",
+      "esnext": "./build/esnext/react-instrumentation/index.js",
+      "module": "./build/esm/react-instrumentation/index.js",
       "types": "./build/types/react/index.d.ts",
-      "import": "./build/esm/react-instrumentation.js",
-      "require": "./build/src/react-instrumentation.js",
-      "default": "./build/src/react-instrumentation.js"
+      "import": "./build/esm/react-instrumentation/index.js",
+      "require": "./build/src/react-instrumentation/index.js",
+      "default": "./build/src/react-instrumentation/index.js"
+    },
+    "./proxy": {
+      "esnext": "./build/esnext/proxy/index.js",
+      "module": "./build/esm/proxy/index.js",
+      "types": "./build/types/proxy/index.d.ts",
+      "import": "./build/esm/proxy/index.js",
+      "require": "./build/src/proxy/index.js",
+      "default": "./build/src/proxy/index.js"
     }
   },
   "typesVersions": {
     "*": {
       "react-instrumentation": [
         "build/types/react/index.d.ts"
+      ],
+      "proxy": [
+        "build/types/proxy/index.d.ts"
       ],
       "*": [
         "build/types/index.d.ts"

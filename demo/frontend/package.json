@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "clean": "npm run demo:frontend:install:clean && npm run demo:frontend:build:clean",
-    "build": "npm run compile --prefix ../.. && npm i && npm run demo:frontend:build:clean && npm run demo:frontend:build",
+    "build": "npm run compile --prefix ../.. && npm i && npm run demo:frontend:build:clean && npm run demo:frontend:build && npm run demo:frontend:link:sdk",
     "dev": "npm run demo:frontend:dev -- --open",
     "demo": "bash ./scripts/runDemo.sh",
     "demo:frontend:build:clean": "npx rimraf .sonda dist",
     "demo:frontend:install:clean": "npx rimraf node_modules",
     "demo:frontend:dev": "vite",
     "demo:frontend:build": "tsc -b && vite build",
+    "demo:frontend:link:sdk": "ln -f ../../build/iife/iife.js ./public/iife.js",
     "demo:frontend:upload:sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
     "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1",
     "demo:frontend:preview": "vite preview --open"

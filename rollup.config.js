@@ -18,7 +18,13 @@ const isExternal = id =>
 
 const input = {
   index: 'src/index.ts',
-  'react-instrumentation': 'src/react/index.ts',
+  'react-instrumentation/index': 'src/react/index.ts',
+  'proxy/index': 'src/proxy/index.ts',
+};
+
+const inputBundles = {
+  index: 'src/index.ts',
+  'proxy/index': 'src/proxy/index.ts',
 };
 
 // Suppress irrelevant warnings to keep the build output clean
@@ -92,35 +98,41 @@ export default defineConfig([
   },
 
   // CJS Build: CommonJS modules for older bundlers
+  // {
+  //   input,
+  //   plugins: plugins({ target: 'es2022' }),
+  //   output: {
+  //     dir: 'build/src',
+  //     format: 'cjs',
+  //     sourcemap: true,
+  //     preserveModules: true,
+  //     preserveModulesRoot: 'src',
+  //   },
+  //   external: isExternal,
+  //   onwarn,
+  // },
+
+  // CDN IIFE Build: bundle that populates global window object
   {
-    input,
-    plugins: plugins({ target: 'es2022' }),
+    input: 'src/iife.ts',
+    plugins: [...plugins({ target: 'es6' })],
     output: {
-      dir: 'build/src',
-      format: 'cjs',
+      dir: 'build/iife/',
       sourcemap: true,
-      preserveModules: true,
-      preserveModulesRoot: 'src',
     },
-    external: isExternal,
+    external: peerDeps,
     onwarn,
   },
 
-  // CDN Build: IIFE bundle for direct browser usage
+  // CDN ESM Build: bundle that exports all modules
   {
-    input: 'src/index.ts',
-    plugins: [...plugins({ target: 'es6' }), terser()], // Minify for smaller bundle size
+    input: inputBundles,
+    plugins: [...plugins({ target: 'es6' })],
     output: {
-      file: 'build/iife/bundle.js',
-      format: 'iife',
-      // global variable name for the SDK
-      name: 'EmbraceWebSdk',
+      dir: 'build/esm-bundle',
+      format: 'esm',
       sourcemap: true,
-      // TODO create a new entry file that sets the window variable explicitly and remove this line.
-      // This is a workaround to assign the SDK to the global window object so users can lazyload the SDK.
-      // By default, rollup creates the export with 'var' and assumes the SDK is being used in a script tag,
-      // which would normally be the window.
-      footer: 'window.EmbraceWebSdk = EmbraceWebSdk;',
+      preserveModules: false,
     },
     external: peerDeps,
     onwarn,

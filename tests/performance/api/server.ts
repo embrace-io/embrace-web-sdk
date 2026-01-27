@@ -5,7 +5,7 @@ import { extname, join } from 'path';
 const PORT = 3000;
 
 const PUBLIC_DIR = join(process.cwd(), 'public');
-const SDK_SOURCE = join(process.cwd(), '../../build/iife/bundle.js');
+const SDK_SOURCE = join(process.cwd(), '../../build/iife/iife.js');
 const SDK_DESTINATION = join(PUBLIC_DIR, 'bundle.js');
 
 const mimeTypes: Record<string, string> = {

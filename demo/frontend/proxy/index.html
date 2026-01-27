@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embrace Web SDK React Demo</title>
+    <!-- <script src="/bundle.js"></script> -->
+    <!-- <script>
+      // prettier-ignore
+      (function(e,m,b,r,c){let d=0;let rc=[];b[e]=cb=>{if(d)cb();else rc.push(cb)};b[m]=()=>{d=1;rc.forEach(cb=>{try{cb()}catch{}});rc=[]};const s=r.createElement('script');s.async=!0;s.src=c;r.head.appendChild(s)})('onEmbraceReady','__embrace__',window,document,'https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X')
+    </script> -->
+    <script type="module">
+      import { sdk, loadSdk, session } from '@embrace-io/web-sdk/proxy';
+
+      console.log('module loaded');
+      sdk.initSDK({
+        appVersion: '0.0.0',
+        appID: 'XXXXX',
+        appVersion: 'YOUR_APP_VERSION',
+        logLevel: 60,
+      });
+
+      // Dynamically load the real SDK and replay queued calls
+      loadSdk('https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@1');
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embrace Web SDK React Demo</title>
+    <!-- <script src="/bundle.js"></script> -->
+    <!-- <script>
+      // prettier-ignore
+      (function(e,m,b,r,c){let d=0;let rc=[];b[e]=cb=>{if(d)cb();else rc.push(cb)};b[m]=()=>{d=1;rc.forEach(cb=>{try{cb()}catch{}});rc=[]};const s=r.createElement('script');s.async=!0;s.src=c;r.head.appendChild(s)})('onEmbraceReady','__embrace__',window,document,'https://cdn.jsdelivr.net/npm/@embrace-io/web-sdk@X.X.X')
+    </script> -->
+    <script>
+      (function () {
+        try {
+          // Only install the stub if not already installed
+          if (
+            !window.EmbraceWebSdk ||
+            !window.EmbraceWebSdk._isEmbraceProxyStub
+          ) {
+            window.EmbraceWebSdk = window.EmbraceWebSdk || {};
+            window.EmbraceWebSdk._queue = window.EmbraceWebSdk._queue || [];
+            window.EmbraceWebSdk._isEmbraceProxyStub = true; // Mark as stub
+
+            function makeProxy(path) {
+              return new Proxy(function () {}, {
+                get(target, prop) {
+                  // console.log('proxy get', path, prop);
+                  if (prop === '_isEmbraceProxyStub') return true;
+                  return makeProxy(path.concat([prop]));
+                },
+                apply(target, thisArg, args) {
+                  console.log('apply', path, args);
+                  window.EmbraceWebSdk._queue.push({
+                    path: path,
+                    args: Array.from(args),
+                  });
+                  return undefined;
+                },
+              });
+            }
+
+            Object.setPrototypeOf(window.EmbraceWebSdk, makeProxy([]));
+          }
+        } catch {
+          // Fail silently if anything goes wrong
+        }
+        const script = document.createElement('script');
+        script.onload = () => console.log('script loaded');
+        script.async = true;
+        script.src = '/iife.js';
+        document.head.appendChild(script);
+        console.log('script requested');
+      })();
+    </script>
+    <script type="module">
+      console.warn('module', window.EmbraceWebSdk);
+      window.EmbraceWebSdk.sdk.initSDK({
+        appVersion: '0.0.0',
+        appID: 'XXXXX',
+        appVersion: 'YOUR_APP_VERSION',
+        logLevel: 60,
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
