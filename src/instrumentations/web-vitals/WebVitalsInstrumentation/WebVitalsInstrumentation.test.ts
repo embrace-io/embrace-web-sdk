@@ -831,8 +831,6 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation.enable();
     instrumentation.enable();
 
-    // BUG: Without fix, clsStub will be called 6 times (2 per enable())
-    // With fix, only 2 calls from constructor
     expect(clsStub.callCount).to.equal(2);
   });
 });
