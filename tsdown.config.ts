@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import type { Plugin } from 'rolldown';
 import { defineConfig } from 'tsdown';
 
@@ -31,14 +30,6 @@ export default defineConfig([
         missingNameOptionForIifeExport: false, // We use banner to assign global
         pluginTimings: false, // CI environments vary in speed
       },
-      resolve: {
-        alias: {
-          '@opentelemetry/otlp-transformer': resolve(
-            import.meta.dirname,
-            'packages/otlp-transformer/dist/index.js',
-          ),
-        },
-      },
     },
     outputOptions: {
       // Assign to global for CDN script tag usage
@@ -59,23 +50,10 @@ export default defineConfig([
     clean: false,
     publint: true,
     plugins: [failOnWarnPlugin],
-    // Aliased otlp-transformer is intentionally inlined; others are transitive deps
-    inlineOnly: [
-      '@opentelemetry/otlp-transformer',
-      '@opentelemetry/sdk-metrics', // type-only, transitive from otlp-transformer
-      '@opentelemetry/sdk-trace-base', // transitive from sdk-trace-web
-    ],
+    inlineOnly: ['@embrace-io/otlp-transformer'],
     inputOptions: {
       checks: {
         pluginTimings: false, // CI environments vary in speed
-      },
-      resolve: {
-        alias: {
-          '@opentelemetry/otlp-transformer': resolve(
-            import.meta.dirname,
-            'packages/otlp-transformer/dist/index.js',
-          ),
-        },
       },
     },
     attw: {

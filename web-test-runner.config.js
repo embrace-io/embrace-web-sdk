@@ -45,7 +45,8 @@ export default {
           'prop-types',
           'react-is',
           'path-to-regexp',
-          '@opentelemetry/otlp-transformer',
+          '@embrace-io/otlp-transformer',
+          '@opentelemetry/otlp-transformer', // used by test utils for internal types
           '@opentelemetry/instrumentation-fetch',
         ],
       },

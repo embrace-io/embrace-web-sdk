@@ -1,4 +1,4 @@
-import { JsonLogsSerializer } from '@opentelemetry/otlp-transformer';
+import { JsonLogsSerializer } from '@embrace-io/otlp-transformer';
 import type {
   LogRecordExporter,
   ReadableLogRecord,
