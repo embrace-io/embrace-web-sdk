@@ -327,7 +327,6 @@ describe('NavigationInstrumentation', () => {
       (s) => s.attributes['emb.type'] === 'ux.surface',
     );
 
-    // BUG: Without fix, only 1 navigation span (second route ignored)
     expect(navigationSpans).to.have.lengthOf(2);
   });
 });
