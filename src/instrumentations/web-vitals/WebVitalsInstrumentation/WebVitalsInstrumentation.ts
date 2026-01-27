@@ -128,6 +128,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     TTFB: undefined,
   };
   private _largestShiftTargetForCLS: string | undefined;
+  private _listenersRegistered = false;
 
   // instrumentation that adds an event to the session span for each web vital report
   public constructor({
@@ -164,6 +165,12 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public enable(): void {
+    // web-vitals library doesn't support removing listeners, so only register once
+    if (this._listenersRegistered) {
+      return;
+    }
+    this._listenersRegistered = true;
+
     this._metricsToTrack.forEach((name) => {
       this._listeners[name]?.((metric) => {
         const currentSessionSpan = this.sessionManager.getSessionSpan();

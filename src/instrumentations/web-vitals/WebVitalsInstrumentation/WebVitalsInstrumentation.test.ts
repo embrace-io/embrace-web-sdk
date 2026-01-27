@@ -818,4 +818,19 @@ describe('WebVitalsInstrumentation', () => {
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_PATH]).to.be.undefined;
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_ID]).to.be.undefined;
   });
+
+  it('should not register duplicate callbacks when enable() is called multiple times', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    // Call enable() multiple times
+    instrumentation.enable();
+    instrumentation.enable();
+
+    expect(clsStub.callCount).to.equal(2);
+  });
 });

@@ -72,6 +72,7 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
+  private _performanceCollected = false;
 
   public constructor({
     diag,
@@ -127,6 +128,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * Collects information about performance and creates appropriate spans
    */
   private _collectPerformance(): void {
+    if (this._performanceCollected) {
+      return;
+    }
+    this._performanceCollected = true;
+
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
