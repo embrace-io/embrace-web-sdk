@@ -1,0 +1,150 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "27A8D5F41131871F8AFD170B0AF67AF3"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1769633051958199951",
+              "observedTimeUnixNano": "1769633051958000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at e.message (http://localhost:3002/_next/static/chunks/436-4600dc2e983b432d.js:1:14155)\n    at a.message (http://localhost:3002/_next/static/chunks/436-4600dc2e983b432d.js:1:369)\n    at Proxy.<anonymous> (http://localhost:3002/_next/static/chunks/436-4600dc2e983b432d.js:1:74971)\n    at a (http://localhost:3002/_next/static/chunks/app/page-98c965eb55920f4d.js:1:556)\n    at i8 (http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:135363)\n    at http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:141449\n    at nz (http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:19197)\n    at sn (http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:136596)\n    at cc (http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163598)\n    at ci (http://localhost:3002/_next/static/chunks/4bd1b696-ec67ac596534aad8.js:1:163420)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "A2033D48866C59DBD265037DAF8C11CE"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "E9BFA53657C1F14376DFAC02C9069D65"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {}
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3002/"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
