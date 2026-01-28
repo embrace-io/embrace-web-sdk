@@ -1,0 +1,32 @@
+{
+  "name": "next-15-ssr",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "start": "next start -p 3002",
+    "lint": "eslint .",
+    "build": "npm run build:clean && npm run build:es2020 && npm run process-sourcemaps",
+    "build:clean": "npx rimraf .next",
+    "build:es2020": "next build",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks --no-upload"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../..",
+    "@opentelemetry/sdk-logs": "^0",
+    "@opentelemetry/sdk-trace-web": "^2",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15",
+    "typescript": "^5"
+  }
+}

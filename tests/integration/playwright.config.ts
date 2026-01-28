@@ -11,8 +11,15 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
+      name: 'next-15-ssr',
+      command:
+        'cd platforms/next-15-ssr && npm run build:es2020 && npm run start',
+      url: 'http://localhost:3002',
+      reuseExistingServer: false,
+    },
+    {
       name: 'api',
-      command: 'npx tsx ../../server/server.ts',
+      command: 'npm run server --prefix ../..',
       url: 'http://localhost:3001/health-check',
       reuseExistingServer: true,
     },
