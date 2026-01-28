@@ -1,5 +1,5 @@
 import { createOtlpNetworkExportDelegate } from '@opentelemetry/otlp-exporter-base';
-import type { ISerializer } from '#otlp-transformer';
+import type { ISerializer } from '#embrace-io/otlp-transformer';
 import {
   createFetchTransport,
   createRetryingTransport,

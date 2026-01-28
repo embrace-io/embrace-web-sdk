@@ -33,7 +33,7 @@ export default {
     vitePlugin({
       resolve: {
         alias: {
-          '#otlp-transformer': resolve(
+          '#embrace-io/otlp-transformer': resolve(
             import.meta.dirname,
             'packages/otlp-transformer/src/index.ts',
           ),

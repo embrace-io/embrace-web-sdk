@@ -2,7 +2,7 @@ import type {
   LogRecordExporter,
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
-import { JsonLogsSerializer } from '#otlp-transformer';
+import { JsonLogsSerializer } from '#embrace-io/otlp-transformer';
 import { BaseFetchExporter } from '../BaseFetchExporter/index.ts';
 import { createOtlpBrowserFetchExportDelegate } from '../otlpBrowserFetchExportDelegate.ts';
 import type { OtlpFetchExporterConfig } from '../types.ts';
