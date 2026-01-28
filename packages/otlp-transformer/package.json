@@ -1,0 +1,23 @@
+{
+  "name": "@embrace-io/otlp-transformer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "compile": "tsdown",
+    "clean": "npx rimraf dist"
+  },
+  "dependencies": {
+    "@opentelemetry/otlp-transformer": "0.211.0"
+  }
+}

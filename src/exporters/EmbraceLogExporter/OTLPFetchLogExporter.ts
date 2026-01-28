@@ -1,8 +1,8 @@
-import { JsonLogsSerializer } from '@opentelemetry/otlp-transformer';
 import type {
   LogRecordExporter,
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
+import { JsonLogsSerializer } from '#embrace-io/otlp-transformer'; // internal package: https://nodejs.org/api/packages.html#imports
 import { BaseFetchExporter } from '../BaseFetchExporter/index.ts';
 import { createOtlpBrowserFetchExportDelegate } from '../otlpBrowserFetchExportDelegate.ts';
 import type { OtlpFetchExporterConfig } from '../types.ts';
