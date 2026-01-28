@@ -99,22 +99,29 @@ export const initSDK = (
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
-    const perf = new OTelPerformanceManager();
-    const initSDKStart = perf.getNowMillis();
+    const existingSDK = registerGlobally ? registry.registered() : null;
 
-    if (registerGlobally) {
-      const existingSDK = registry.registered();
-      if (existingSDK !== null) {
-        diagLogger.warn(
-          'SDK has already been successfully initialized, skipping this invocation of initSDK',
-        );
-        return existingSDK;
-      }
+    // Only configure diag on first init to preserve the original caller's log level
+    if (!existingSDK) {
+      diag.setLogger(new DiagConsoleLogger(), {
+        logLevel,
+      });
     }
 
-    diag.setLogger(new DiagConsoleLogger(), {
-      logLevel,
-    });
+    if (typeof window === 'undefined') {
+      diagLogger.warn('browser not detected, skipping initialization');
+      return false;
+    }
+
+    if (existingSDK !== null) {
+      diagLogger.warn(
+        'SDK has already been successfully initialized, skipping this invocation of initSDK',
+      );
+      return existingSDK;
+    }
+
+    const perf = new OTelPerformanceManager();
+    const initSDKStart = perf.getNowMillis();
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);

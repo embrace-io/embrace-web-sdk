@@ -5,7 +5,7 @@ import type { PerformanceClock, PerformanceManager } from './types.ts';
 export class OTelPerformanceManager implements PerformanceManager {
   private readonly _clock: PerformanceClock;
 
-  public constructor(clock: PerformanceClock = window.performance) {
+  public constructor(clock: PerformanceClock = performance) {
     this._clock = clock;
   }
 
