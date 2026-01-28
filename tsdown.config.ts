@@ -50,6 +50,7 @@ export default defineConfig([
     clean: false,
     publint: true,
     plugins: [failOnWarnPlugin],
+    // include prebundled package in output: ./packages/otlp-transformer/package.json
     noExternal: ['#embrace-io/otlp-transformer'],
     inputOptions: {
       checks: {
