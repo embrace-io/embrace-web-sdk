@@ -1,18 +1,53 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  timeout: 60 * 1000, // 60 seconds
+  timeout: 10 * 1000, // 10 seconds
   webServer: [
     {
-      name: 'next-latest',
+      name: 'next-15-turbopack-app',
       command:
-        'cd platforms/next-latest && npm run build:es2020 && npm run start',
-      url: 'http://localhost:3000',
+        'cd platforms/next-15-turbopack-app && npm run build && npx next start -p 3010',
+      url: 'http://localhost:3010',
+      reuseExistingServer: false,
+    },
+    {
+      name: 'next-15-turbopack-pages',
+      command:
+        'cd platforms/next-15-turbopack-pages && npm run build && npx next start -p 3011',
+      url: 'http://localhost:3011',
+      reuseExistingServer: false,
+    },
+    {
+      name: 'next-15-webpack-app',
+      command:
+        'cd platforms/next-15-webpack-app && npm run build && npx next start -p 3012',
+      url: 'http://localhost:3012',
+      reuseExistingServer: false,
+    },
+    {
+      name: 'next-15-webpack-pages',
+      command:
+        'cd platforms/next-15-webpack-pages && npm run build && npx next start -p 3013',
+      url: 'http://localhost:3013',
+      reuseExistingServer: false,
+    },
+    {
+      name: 'next-16-app',
+      command:
+        'cd platforms/next-16-app && npm run build && npx next start -p 3014',
+      url: 'http://localhost:3014',
+      reuseExistingServer: false,
+    },
+    {
+      name: 'next-16-pages',
+      command:
+        'cd platforms/next-16-pages && npm run build && npx next start -p 3015',
+      url: 'http://localhost:3015',
       reuseExistingServer: false,
     },
     {
       name: 'api',
-      command: 'npx tsx ../../server/server.ts',
+      command: 'npm run server --prefix ../..',
       url: 'http://localhost:3001/health-check',
       reuseExistingServer: true,
     },

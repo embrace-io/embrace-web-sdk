@@ -4,13 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "webpack serve --config webpack.config.esnext.mjs --mode development",
-    "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
+    "dev": "webpack serve --config webpack.config.es2015.mjs --mode development",
+    "build": "npm run build:clean && npm run build:es2015",
     "build:clean": "npx rimraf dist .sonda",
-    "build:esnext": "webpack --config webpack.config.esnext.mjs --mode production && npm run process-sourcemaps:esnext",
-    "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production && npm run process-sourcemaps:es2015",
-    "process-sourcemaps:esnext": "embrace-web-cli upload -a NOEMB -p ./dist/esnext --no-upload",
-    "process-sourcemaps:es2015": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
+    "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production && npm run process-sourcemaps",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
