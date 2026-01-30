@@ -1,0 +1,150 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "6E1BD19A33519F4E37A4099262499170"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0.2) Gecko/20100101 Firefox/144.0.2"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1769811595178000000",
+              "observedTimeUnixNano": "1769811595179000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "message@http://localhost:3010/_next/static/chunks/dca1a7d3f4253d7c.js:1:26341\nmessage@http://localhost:3010/_next/static/chunks/dca1a7d3f4253d7c.js:1:4585\nt/get/<@http://localhost:3010/_next/static/chunks/dca1a7d3f4253d7c.js:1:4026\no@http://localhost:3010/_next/static/chunks/d1f52894775ef03c.js:1:335\ni2@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:144381\ni9/<@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:150468\ntk@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:28376\ni9@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:145615\ncu@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:172615\nca@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:172435\nEventListener.handleEvent*i5@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:145178\ni4@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:144577\ni8/<@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:144743\ni8@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:144688\nn.hydrateRoot@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:181970\nL/<@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:252487\nr.startTransition@http://localhost:3010/_next/static/chunks/2bb490b90a366d51.js:1:7357\nL@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:252456\n@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:252963\nn@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:1293\nl@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:1632\n@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:1:252930\nx@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:977\nregisterChunk/<@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:2257\nregisterChunk@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:2273\nasync*N@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:1744\n@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:3756\n@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:3:3768\n"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"@http://localhost:3010/_next/static/chunks/d1f52894775ef03c.js:4:33\\n@http://localhost:3010/_next/static/chunks/d1f52894775ef03c.js:4:126\\n\":\"62daae22085216409a457a21cb79a1b4\",\"@http://localhost:3010/_next/static/chunks/a8b74a60f3556d84.js:4:33\\n@http://localhost:3010/_next/static/chunks/a8b74a60f3556d84.js:4:126\\n\":\"15fd21ff52e283c3bb62052de324ad34\",\"@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:6:33\\n@http://localhost:3010/_next/static/chunks/turbopack-877dadc786d07713.js:6:126\\n\":\"734e6ec704f57fd3eb85256dd8f38044\",\"@http://localhost:3010/_next/static/chunks/0f3c9c623a8d056e.js:4:33\\n@http://localhost:3010/_next/static/chunks/0f3c9c623a8d056e.js:4:126\\n\":\"ea3ef035957877fbf63a62637cdfcc92\",\"@http://localhost:3010/_next/static/chunks/2bb490b90a366d51.js:4:33\\n@http://localhost:3010/_next/static/chunks/2bb490b90a366d51.js:4:126\\n\":\"7f0a703a46bf13f33017d981466478d2\",\"@http://localhost:3010/_next/static/chunks/dca1a7d3f4253d7c.js:4:33\\n@http://localhost:3010/_next/static/chunks/dca1a7d3f4253d7c.js:4:126\\n\":\"f06fd0cd216422bc438c490a646ec9f9\",\"@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:4:33\\n@http://localhost:3010/_next/static/chunks/9f41ebb97540b354.js:4:126\\n\":\"9854c0c6494879a068188282e03f6e99\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "3F56428A3BB3AC87540D15915DEEBB1D"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "5259046BAACF6F61BBF04C180837DE7E"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {}
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3010/"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

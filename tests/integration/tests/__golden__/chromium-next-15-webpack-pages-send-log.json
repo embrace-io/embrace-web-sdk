@@ -1,0 +1,150 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
+          },
+          {
+            "key": "app_version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "app_framework",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "2.11.0"
+            }
+          },
+          {
+            "key": "sdk_simple_version",
+            "value": {
+              "intValue": 1
+            }
+          },
+          {
+            "key": "sdk_platform",
+            "value": {
+              "stringValue": "web"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "webjs"
+            }
+          },
+          {
+            "key": "emb.app_instance_id",
+            "value": {
+              "stringValue": "3D97ADD48FC817FFEABC654D8EDF6ADF"
+            }
+          },
+          {
+            "key": "user_agent.original",
+            "value": {
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.7499.4 Safari/537.36"
+            }
+          },
+          {
+            "key": "screen_resolution",
+            "value": {
+              "stringValue": "1280x720"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeLogs": [
+        {
+          "scope": {
+            "name": "embrace-web-sdk-logs"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1769811576360899902",
+              "observedTimeUnixNano": "1769811576361000000",
+              "severityNumber": 13,
+              "severityText": "WARNING",
+              "body": {
+                "stringValue": "This is a test log message"
+              },
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "sys.log"
+                  }
+                },
+                {
+                  "key": "emb.stacktrace.js",
+                  "value": {
+                    "stringValue": "Error\n    at e.message (http://localhost:3013/_next/static/chunks/pages/_app-beed7a3bc3ac10e7.js:1:15768)\n    at o.message (http://localhost:3013/_next/static/chunks/pages/_app-beed7a3bc3ac10e7.js:1:161330)\n    at Proxy.<anonymous> (http://localhost:3013/_next/static/chunks/pages/_app-beed7a3bc3ac10e7.js:1:405)\n    at e (http://localhost:3013/_next/static/chunks/pages/index-602cac9f2e93f9bd.js:1:254)\n    at u5 (http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:144440)\n    at http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:150526\n    at tC (http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:26613)\n    at sr (http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:145673)\n    at cp (http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:172907)\n    at cf (http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:1:172729)"
+                  }
+                },
+                {
+                  "key": "emb.js_file_bundle_ids",
+                  "value": {
+                    "stringValue": "{\"Error\\n    at http://localhost:3013/_next/static/chunks/webpack-46411e45a030f20d.js:3:33\\n    at http://localhost:3013/_next/static/chunks/webpack-46411e45a030f20d.js:3:126\":\"83e11f515c3dd4bae61cc83762e2b966\",\"Error\\n    at http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:3:33\\n    at http://localhost:3013/_next/static/chunks/framework-3d014c7f24204ca8.js:3:126\":\"4f849cfb9cbfa72f78ca1de4f0bd3109\",\"Error\\n    at http://localhost:3013/_next/static/chunks/main-3a170b9de52065d7.js:3:33\\n    at http://localhost:3013/_next/static/chunks/main-3a170b9de52065d7.js:3:126\":\"593c99ee21a8cc8bca9429b57ea67a5d\",\"Error\\n    at http://localhost:3013/_next/static/chunks/pages/_app-beed7a3bc3ac10e7.js:3:33\\n    at http://localhost:3013/_next/static/chunks/pages/_app-beed7a3bc3ac10e7.js:3:126\":\"7b0b0f922f2b23c4389fd9af07f9fe98\",\"Error\\n    at http://localhost:3013/_next/static/chunks/pages/index-602cac9f2e93f9bd.js:3:33\\n    at http://localhost:3013/_next/static/chunks/pages/index-602cac9f2e93f9bd.js:3:126\":\"d7214d225755faaf6582232a473e127d\"}"
+                  }
+                },
+                {
+                  "key": "emb.state",
+                  "value": {
+                    "stringValue": "foreground"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "C301EB98C8E12C0176ED5E13FD19EBB6"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "3E7A0B8EF38A37983BA2C4B89C919733"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {}
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3013/"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
