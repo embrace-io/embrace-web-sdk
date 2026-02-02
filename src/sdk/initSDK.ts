@@ -99,9 +99,6 @@ export const initSDK = (
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
-    const perf = new OTelPerformanceManager();
-    const initSDKStart = perf.getNowMillis();
-
     if (registerGlobally) {
       const existingSDK = registry.registered();
       if (existingSDK !== null) {
@@ -116,6 +113,13 @@ export const initSDK = (
       logLevel,
     });
 
+    if (typeof window === 'undefined') {
+      diagLogger.warn('browser not detected, skipping initialization');
+      return false;
+    }
+
+    const perf = new OTelPerformanceManager();
+    const initSDKStart = perf.getNowMillis();
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);
 
