@@ -44,22 +44,22 @@
     },
     {
       "description": "OpenTelemetry group",
-      "matchPackageNames": ["/^@opentelemetry\\//"],
+      "matchDepNames": ["/^@opentelemetry\\//"],
       "groupName": "opentelemetry"
     },
     {
       "description": "Playwright group",
-      "matchPackageNames": ["@playwright/test", "playwright"],
+      "matchDepNames": ["@playwright/test", "playwright"],
       "groupName": "playwright"
     },
     {
       "description": "ESLint group",
-      "matchPackageNames": ["typescript-eslint", "/^eslint/", "/^@eslint\\//"],
+      "matchDepNames": ["typescript-eslint", "/^eslint/", "/^@eslint\\//"],
       "groupName": "eslint"
     },
     {
       "description": "React group",
-      "matchPackageNames": [
+      "matchDepNames": [
         "react",
         "react-dom",
         "react-router-domv4v5",
@@ -72,7 +72,7 @@
     },
     {
       "description": "React - prevent major updates",
-      "matchPackageNames": [
+      "matchDepNames": [
         "react",
         "react-dom",
         "react-router-domv4v5",
@@ -86,7 +86,7 @@
     },
     {
       "description": "Web Test Runner group",
-      "matchPackageNames": [
+      "matchDepNames": [
         "/^@web\\/test-runner/",
         "/^@remcovaes\\/web-test-runner/"
       ],
@@ -94,7 +94,7 @@
     },
     {
       "description": "Commitlint group",
-      "matchPackageNames": ["/^@commitlint\\//"],
+      "matchDepNames": ["/^@commitlint\\//"],
       "groupName": "commitlint"
     },
     {
