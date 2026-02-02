@@ -26,8 +26,10 @@ export default defineConfig([
           includeWebApis: { preset: 'type-aware' },
           includeJsBuiltins: { preset: 'type-aware' },
           ignoreFeatures: [
-            // compression-streams: widely available since Nov 2025, plugin data stale
-            'compression-streams',
+            // document.wasDiscarded is guarded from web-vitals
+            'page-lifecycle',
+            // document.prerendering is guarded from web-vitals
+            'speculation-rules',
             // proto: deprecated but universally supported, used by bundled dependencies
             'proto',
           ],
