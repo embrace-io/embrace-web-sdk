@@ -5,40 +5,87 @@
   "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
   "rangeStrategy": "pin",
+  "rebaseWhen": "behind-base-branch",
+  "ignorePaths": ["tests/integration/platforms/**"],
+  "ignoreDeps": ["@types/node", "node", "npm"],
+  "labels": ["dependencies"],
+  "postUpdateOptions": ["npmDedupe"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "packageRules": [
     {
-      "description": "OpenTelemetry packages - group together",
-      "matchPackageNames": ["/^@opentelemetry\\//"],
-      "groupName": "OpenTelemetry"
+      "description": "GitHub Actions automerge",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "automerge": true
     },
     {
-      "description": "Production dependencies - group for review",
+      "description": "Production group",
       "matchDepTypes": ["dependencies"],
-      "groupName": "production-deps",
-      "matchPackageNames": ["!/^@opentelemetry\\//"]
+      "groupName": "production-deps"
     },
     {
-      "description": "Playwright - keep in sync",
+      "description": "Dev group",
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev-deps"
+    },
+    {
+      "description": "Dev major updates",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "dev-deps-major"
+    },
+    {
+      "description": "Dev patches and minors - automerge",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "description": "OpenTelemetry group",
+      "matchPackageNames": ["/^@opentelemetry\\//"],
+      "groupName": "opentelemetry"
+    },
+    {
+      "description": "Playwright group",
       "matchPackageNames": ["@playwright/test", "playwright"],
       "groupName": "playwright"
     },
     {
-      "description": "TypeScript tooling - group together",
-      "matchPackageNames": ["typescript", "typescript-eslint"],
-      "groupName": "typescript"
+      "description": "ESLint group",
+      "matchPackageNames": ["typescript-eslint", "/^eslint/", "/^@eslint\\//"],
+      "groupName": "eslint"
     },
     {
-      "description": "React - group together",
+      "description": "React group",
       "matchPackageNames": [
         "react",
         "react-dom",
+        "react-router-domv4v5",
+        "react-router-domv6plus",
         "@types/react",
-        "@types/react-dom"
+        "@types/react-dom",
+        "@types/react-router-domv4v5"
       ],
       "groupName": "react"
     },
     {
-      "description": "Web Test Runner - group together",
+      "description": "React - prevent major updates",
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-router-domv4v5",
+        "react-router-domv6plus",
+        "@types/react",
+        "@types/react-dom",
+        "@types/react-router-domv4v5"
+      ],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Web Test Runner group",
       "matchPackageNames": [
         "/^@web\\/test-runner/",
         "/^@remcovaes\\/web-test-runner/"
@@ -46,33 +93,20 @@
       "groupName": "web-test-runner"
     },
     {
-      "description": "Commitlint - group together",
+      "description": "Commitlint group",
       "matchPackageNames": ["/^@commitlint\\//"],
       "groupName": "commitlint"
     },
     {
-      "description": "DevDependencies patches - automerge",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch"],
+      "description": "Demo backend automerge",
+      "matchFileNames": ["demo/backend/**"],
+      "groupName": "demo-backend",
       "automerge": true
-    },
-    {
-      "description": "react-router-dom - prevent major updates",
-      "matchPackageNames": ["react-router-dom"],
-      "matchUpdateTypes": ["major"],
-      "enabled": false
     },
     {
       "description": "Peer dependencies - do not update",
       "matchDepTypes": ["peerDependencies"],
       "enabled": false
     }
-  ],
-  "lockFileMaintenance": {
-    "enabled": true
-  },
-  "rebaseWhen": "conflicted",
-  "ignoreDeps": ["@types/node", "node", "npm"],
-  "labels": ["dependencies"],
-  "postUpdateOptions": ["npmDedupe"]
+  ]
 }
