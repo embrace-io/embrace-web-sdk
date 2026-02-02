@@ -239,7 +239,7 @@ const runE2ETests = ({
         let currentSessionId: string | null = await getCurrentSessionId();
 
         // First load works as expected as we don't wait for the remote config to be applied
-        testE2E.expect(currentSessionId).not.toBeNull();
+        testE2E.expect(currentSessionId).toHaveLength(32);
 
         await page.reload();
 
