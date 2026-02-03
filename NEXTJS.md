@@ -9,7 +9,7 @@ Next.js 15 and 16 are tested and supported, including both Turbopack and Webpack
 > [!TIP]
 > Call `initSDK` in a Client Component or a file imported exclusively by client code.
 
-## App Router (Next.js 13.4+)
+## Setup for App Router (Next.js 13.4+)
 
 ### Step 1: Create a Client Component that initializes the SDK
 
@@ -74,7 +74,7 @@ export default function Checkout() {
 > [!NOTE]
 > Ensure the initialization component (`EmbraceWebSdk`) is rendered before components that call SDK APIs. Placing it at the top of your root layout handles this.
 
-## Pages Router
+## Setup for Pages Router
 
 ### Step 1: Create an initialization file
 
