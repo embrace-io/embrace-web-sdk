@@ -1,85 +1,50 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices"
-  ],
-  "schedule": [
-    "before 3am on Monday"
-  ],
+  "extends": ["config:best-practices"],
+  "schedule": ["before 3am on Monday"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
   "rebaseWhen": "behind-base-branch",
-  "ignorePaths": [
-    "tests/integration/platforms/**"
-  ],
-  "ignoreDeps": [
-    "@types/node",
-    "node",
-    "npm"
-  ],
-  "labels": [
-    "dependencies"
-  ],
-  "postUpdateOptions": [
-    "npmDedupe"
-  ],
+  "ignorePaths": ["tests/integration/platforms/**"],
+  "ignoreDeps": ["@types/node", "node", "npm"],
+  "labels": ["dependencies"],
+  "postUpdateOptions": ["npmDedupe"],
   "packageRules": [
     {
       "description": "GitHub Actions",
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "groupName": "github-actions"
     },
     {
       "description": "Production dependencies (excludes OTel)",
-      "matchDepTypes": [
-        "dependencies"
-      ],
+      "matchDepTypes": ["dependencies"],
       "groupName": "production-deps",
-      "matchDepNames": [
-        "!/^@opentelemetry\\//"
-      ]
+      "matchDepNames": ["!/^@opentelemetry\\//"]
     },
     {
       "description": "Dev minor and patches",
-      "matchDepTypes": [
-        "devDependencies"
-      ],
+      "matchDepTypes": ["devDependencies"],
       "groupName": "dev-deps"
     },
     {
       "description": "Dev major",
-      "matchDepTypes": [
-        "devDependencies"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
       "groupName": "dev-deps-major"
     },
     {
       "description": "OpenTelemetry",
-      "matchDepNames": [
-        "/^@opentelemetry\\//"
-      ],
+      "matchDepNames": ["/^@opentelemetry\\//"],
       "groupName": "opentelemetry"
     },
     {
       "description": "Playwright group",
-      "matchDepNames": [
-        "@playwright/test",
-        "playwright"
-      ],
+      "matchDepNames": ["@playwright/test", "playwright"],
       "groupName": "playwright"
     },
     {
       "description": "ESLint group",
-      "matchDepNames": [
-        "typescript-eslint",
-        "/^eslint/",
-        "/^@eslint\\//"
-      ],
+      "matchDepNames": ["typescript-eslint", "/^eslint/", "/^@eslint\\//"],
       "groupName": "eslint"
     },
     {
@@ -106,9 +71,7 @@
         "@types/react-dom",
         "@types/react-router-domv4v5"
       ],
-      "matchUpdateTypes": [
-        "major"
-      ],
+      "matchUpdateTypes": ["major"],
       "enabled": false
     },
     {
@@ -121,23 +84,17 @@
     },
     {
       "description": "Commitlint group",
-      "matchDepNames": [
-        "/^@commitlint\\//"
-      ],
+      "matchDepNames": ["/^@commitlint\\//"],
       "groupName": "commitlint"
     },
     {
       "description": "Demo backend group",
-      "matchFileNames": [
-        "demo/backend/**"
-      ],
+      "matchFileNames": ["demo/backend/**"],
       "groupName": "demo-backend"
     },
     {
       "description": "Peer dependencies - do not update",
-      "matchDepTypes": [
-        "peerDependencies"
-      ],
+      "matchDepTypes": ["peerDependencies"],
       "enabled": false
     }
   ]
