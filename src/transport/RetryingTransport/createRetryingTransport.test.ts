@@ -156,4 +156,87 @@ describe('createRetryingTransport', () => {
       status: 'success',
     });
   });
+
+  it('should exhaust max attempts before returning', async () => {
+    sendStub.resolves({ status: 'retryable' });
+    const pendingResult = retryingTransport.send(
+      new TextEncoder().encode('{"data": "my data"}'),
+      60_000, // Long timeout to ensure we hit max attempts
+    );
+
+    // Go through all 6 attempts (initial + 5 retries)
+    await assertBackoffs([1000, 1500, 2250, 3375, 5000]);
+
+    const result = await pendingResult;
+    expect(result).to.deep.equal({
+      status: 'retryable',
+    });
+    // 6 total attempts: initial + 5 retries
+    expect(sendStub).callCount(6);
+  });
+
+  it('should handle transport failure during retry', async () => {
+    sendStub
+      .onFirstCall()
+      .resolves({ status: 'retryable' })
+      .onSecondCall()
+      .resolves({ status: 'failure', error: new Error('transport error') });
+
+    const pendingResult = retryingTransport.send(
+      new TextEncoder().encode('{"data": "my data"}'),
+      30_000,
+    );
+
+    await Promise.resolve();
+    clock.tick(1100);
+
+    const result = await pendingResult;
+    expect(result).to.deep.equal({
+      status: 'failure',
+      error: new Error('transport error'),
+    });
+    expect(sendStub).callCount(2);
+  });
+
+  it('should respect very short timeout', async () => {
+    sendStub.resolves({ status: 'retryable' });
+    const pendingResult = retryingTransport.send(
+      new TextEncoder().encode('{"data": "my data"}'),
+      500, // Very short timeout - less than first retry delay
+    );
+
+    await Promise.resolve();
+    // First retry would be at 1000ms but timeout is 500ms
+    clock.tick(600);
+    await Promise.resolve();
+
+    const result = await pendingResult;
+    expect(result).to.deep.equal({
+      status: 'retryable',
+    });
+    // Should only have 1 attempt since timeout is reached before first retry
+    expect(sendStub).callCount(1);
+  });
+
+  it('should handle zero timeout gracefully', async () => {
+    sendStub.resolves({ status: 'retryable' });
+    const pendingResult = retryingTransport.send(
+      new TextEncoder().encode('{"data": "my data"}'),
+      0, // Zero timeout
+    );
+
+    await Promise.resolve();
+
+    const result = await pendingResult;
+    expect(result).to.deep.equal({
+      status: 'retryable',
+    });
+    // Should only have 1 attempt
+    expect(sendStub).callCount(1);
+  });
+
+  it('should call shutdown on underlying transport', () => {
+    retryingTransport.shutdown();
+    expect(stubbedTransport.shutdown).to.have.been.calledOnce;
+  });
 });

@@ -343,4 +343,73 @@ describe('EmbraceDynamicConfigManager', () => {
       `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`,
     );
   });
+
+  it('should handle HTTP 500 response gracefully', async () => {
+    fakeFetchRespondWith('Internal Server Error', {
+      status: 500,
+      statusText: 'Internal Server Error',
+    });
+
+    const configManager = new EmbraceDynamicConfigManager({
+      appID: 'test-app',
+      appVersion: '1.0.0',
+      deviceId: 'test-device',
+      storage,
+      diag,
+    });
+
+    await configManager.refreshRemoteConfig();
+
+    const config = configManager.getConfig();
+
+    // Should fall back to default config
+    expect(config).to.deep.equal({
+      samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
+    });
+    expect(diag.getWarnLogs()[0]).to.contain('Failed to fetch remote config');
+  });
+
+  it('should handle malformed JSON in storage gracefully', () => {
+    storage.setItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY, 'not valid json {{{');
+
+    const configManager = new EmbraceDynamicConfigManager({
+      storage,
+      diag,
+    });
+
+    const config = configManager.getConfig();
+
+    // Should fall back to default config
+    expect(config).to.deep.equal({
+      samplingPct: 100,
+      networkSpansForwardingThreshold: 0,
+    });
+    expect(diag.getWarnLogs()[0]).to.contain(
+      'Failed to parse remote config from storage',
+    );
+  });
+
+  it('should handle partial malformed JSON in storage with missing threshold', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: 'some-etag',
+        config: {
+          // threshold is undefined
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({
+      storage,
+      diag,
+    });
+
+    const config = configManager.getConfig();
+
+    // When threshold is undefined, samplingPct will also be undefined
+    expect(config.networkSpansForwardingThreshold).to.equal(0);
+    expect(config.samplingPct).to.be.undefined;
+  });
 });
