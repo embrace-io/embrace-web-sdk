@@ -18,8 +18,8 @@
     {
       "description": "Production dependencies (excludes OTel)",
       "matchDepTypes": ["dependencies"],
-      "excludeDepNames": ["/^@opentelemetry\\//"],
-      "groupName": "production-deps"
+      "groupName": "production-deps",
+      "matchDepNames": ["!/^@opentelemetry\\//"]
     },
     {
       "description": "Dev minor and patches",
