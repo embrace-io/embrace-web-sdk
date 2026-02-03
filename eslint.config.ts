@@ -18,6 +18,9 @@ export default defineConfig([
     plugins: {
       'baseline-js': baselinePlugin as ESLint.Plugin,
     },
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+    },
     rules: {
       'baseline-js/use-baseline': [
         'error',
