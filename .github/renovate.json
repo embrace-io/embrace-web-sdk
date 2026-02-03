@@ -4,46 +4,36 @@
   "schedule": ["before 3am on Monday"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 10,
-  "rangeStrategy": "pin",
   "rebaseWhen": "behind-base-branch",
   "ignorePaths": ["tests/integration/platforms/**"],
   "ignoreDeps": ["@types/node", "node", "npm"],
   "labels": ["dependencies"],
   "postUpdateOptions": ["npmDedupe"],
-  "lockFileMaintenance": {
-    "enabled": true
-  },
   "packageRules": [
     {
-      "description": "GitHub Actions automerge",
+      "description": "GitHub Actions",
       "matchManagers": ["github-actions"],
-      "groupName": "github-actions",
-      "automerge": true
+      "groupName": "github-actions"
     },
     {
-      "description": "Production group",
+      "description": "Production dependencies (excludes OTel)",
       "matchDepTypes": ["dependencies"],
+      "excludeDepNames": ["/^@opentelemetry\\//"],
       "groupName": "production-deps"
     },
     {
-      "description": "Dev group",
+      "description": "Dev minor and patches",
       "matchDepTypes": ["devDependencies"],
       "groupName": "dev-deps"
     },
     {
-      "description": "Dev major updates",
+      "description": "Dev major",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["major"],
       "groupName": "dev-deps-major"
     },
     {
-      "description": "Dev patches and minors - automerge",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true
-    },
-    {
-      "description": "OpenTelemetry group",
+      "description": "OpenTelemetry",
       "matchDepNames": ["/^@opentelemetry\\//"],
       "groupName": "opentelemetry"
     },
@@ -98,10 +88,9 @@
       "groupName": "commitlint"
     },
     {
-      "description": "Demo backend automerge",
+      "description": "Demo backend group",
       "matchFileNames": ["demo/backend/**"],
-      "groupName": "demo-backend",
-      "automerge": true
+      "groupName": "demo-backend"
     },
     {
       "description": "Peer dependencies - do not update",
