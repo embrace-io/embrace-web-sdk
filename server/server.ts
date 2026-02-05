@@ -20,6 +20,7 @@ const mimeTypes: Record<string, string> = {
   '.js': 'application/javascript',
   '.css': 'text/css',
   '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
 };
 
 const receivedSpans: ReceivedSpans = {};
@@ -115,6 +116,24 @@ const server = createServer((req, res) => {
         res.end('Internal Server Error');
         return;
       });
+  }
+
+  // Serve favicon.ico from server/public/ for Vite/webpack platforms
+  if (req.url === '/favicon.ico') {
+    const filePath = join(__dirname, 'public', 'favicon.ico');
+
+    readFile(filePath, (err, data) => {
+      if (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File Not Found');
+        return;
+      }
+
+      res.writeHead(200, { 'Content-Type': 'image/x-icon' });
+      res.end(data);
+    });
+
+    return;
   }
 
   // Serve platform test builds: /platforms/{name}/{target}/ → platforms/{name}/dist/{target}/

@@ -35,6 +35,10 @@ const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
 const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
 const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
 const SIMULATED_REQUEST_REGEX = /simulated/;
+// Next.js build hashes make the full path non-deterministic for internal manifest fetches,
+// so skip exact comparison when both URLs end with the same filename
+const URL_ATTRIBUTE_KEYS = new Set(['http.url', 'url.full']);
+const NEXTJS_URL_SUFFIX_REGEX = /\/_clientMiddlewareManifest\.json$/;
 
 type EmbraceDataRequest = {
   url: string;
@@ -245,6 +249,17 @@ const expect = testWithMockApi.expect.extend({
 
       const receivedValue = getAttributeValue(receivedAttr);
       const expectedValue = getAttributeValue(expectedAttr);
+
+      // skip value comparison when both sides end with the same Nextjs filename
+      if (
+        URL_ATTRIBUTE_KEYS.has(receivedAttr.key) &&
+        typeof receivedValue === 'string' &&
+        typeof expectedValue === 'string' &&
+        NEXTJS_URL_SUFFIX_REGEX.test(receivedValue) &&
+        NEXTJS_URL_SUFFIX_REGEX.test(expectedValue)
+      ) {
+        continue;
+      }
 
       if (
         receivedAttr.key !== expectedAttr.key ||

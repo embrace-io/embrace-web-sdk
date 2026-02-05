@@ -4,13 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.esnext.ts",
-    "build": "npm run build:clean && npm run build:esnext && npm run build:es2015",
+    "dev": "vite",
+    "build": "npm run build:clean && npm run build:es2015",
     "build:clean": "npx rimraf dist .sonda",
-    "build:esnext": "vite build --config vite.config.esnext.ts && npm run process-sourcemaps:esnext",
-    "build:es2015": "vite build --config vite.config.es2015.ts && npm run process-sourcemaps:es2015",
-    "process-sourcemaps:esnext": "embrace-web-cli upload -a NOEMB -p ./dist/esnext/assets --no-upload",
-    "process-sourcemaps:es2015": "embrace-web-cli upload -a NOEMB -p ./dist/es2015/assets --no-upload"
+    "build:es2015": "vite build && npm run process-sourcemaps",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../..",
@@ -19,17 +17,11 @@
   },
   "devDependencies": {
     "@embrace-io/web-cli": "file:../../../../cli",
-    "@eslint/js": "^9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5",
-    "eslint": "^9",
-    "eslint-plugin-react-hooks": "^5",
-    "eslint-plugin-react-refresh": "^0",
-    "globals": "^16",
     "sonda": "^0",
-    "typescript": "~5.8.0",
-    "typescript-eslint": "^8",
+    "typescript": "~5.8.3",
     "vite": "^7"
   }
 }

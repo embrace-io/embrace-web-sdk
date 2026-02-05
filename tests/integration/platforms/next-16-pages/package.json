@@ -1,0 +1,27 @@
+{
+  "name": "next-16-pages",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run build:clean && npm run build:es2020 && npm run process-sourcemaps",
+    "build:clean": "npx rimraf .next",
+    "build:es2020": "next build",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks --no-upload",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../..",
+    "next": "^16",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "typescript": "^5"
+  }
+}

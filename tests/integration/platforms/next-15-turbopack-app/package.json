@@ -1,0 +1,26 @@
+{
+  "name": "next-15-turbopack-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "npm run build:clean && npm run build:es2020 && npm run process-sourcemaps",
+    "build:clean": "npx rimraf .next",
+    "build:es2020": "next build --turbopack",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks --no-upload",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../..",
+    "react": "^19",
+    "react-dom": "^19",
+    "next": "^15"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
+  }
+}

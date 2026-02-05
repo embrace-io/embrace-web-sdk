@@ -1,0 +1,27 @@
+{
+  "name": "vite-6",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:clean && npm run build:es2015",
+    "build:clean": "npx rimraf dist .sonda",
+    "build:es2015": "vite build && npm run process-sourcemaps",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../..",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../cli",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "sonda": "^0",
+    "typescript": "~5.8.3",
+    "vite": "^6"
+  }
+}

@@ -620,17 +620,12 @@ See the [webpack 4 integration test](./tests/integration/platforms/webpack-4/web
 
 ### Client-side only usage
 
-The Embrace SDK can **only be imported in code that executes exclusively in the browser**. Do not import the SDK in
-server-side code or code that runs in edge runtimes.
+The Embrace SDK is designed for browser environments. Importing it in server-side code (e.g. Next.js Server Components,
+API routes, edge middleware) will not cause runtime errors because `initSDK` detects non-browser environments and returns
+`false`. SDK APIs like `session` and `trace` require browser context and will not function on the server.
 
-Importing the SDK in server-side or edge runtime contexts will cause build errors due to the SDK's dependency on
-browser-specific APIs and OpenTelemetry packages that use dynamic code evaluation.
-
-**Next.js example:**
-
-- ✅ **Safe to import:** Client Components (files with `"use client"` directive), browser-only scripts
-- ❌ **Do not import:** `middleware.ts`, API routes (`pages/api/*` or `app/*/route.ts`), Server Components, Server
-  Actions
+For best results, import and initialize the SDK in client-only code. For Next.js setup, including App Router and Pages
+Router examples and build configuration, see [NEXTJS.md](./NEXTJS.md).
 
 ## FAQ
 
