@@ -1,0 +1,35 @@
+# Manual trigger for publishing preview packages to pkg.pr.new.
+# Automatic preview publishing happens in CI workflow (ci-nodejs.yml)
+# after all checks pass on pushes to main.
+name: Preview
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm install -g npm@11.8.0
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build SDK and CLI
+        run: npm run compile
+
+      - name: Publish preview packages
+        run: npx --yes pkg-pr-new publish --compact '.' './cli'
