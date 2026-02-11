@@ -19,13 +19,13 @@ const rootDir = path.resolve(
 
 // File groups
 const packageFiles = {
-  sdk: 'package.json',
-  cli: 'cli/package.json',
+  sdk: 'packages/web-sdk/package.json',
+  cli: 'packages/web-cli/package.json',
 };
 
 const constantsFiles = {
-  sdk: 'src/resources/constants/index.ts',
-  cli: 'cli/src/constants.ts',
+  sdk: 'packages/web-sdk/src/resources/constants/index.ts',
+  cli: 'packages/web-cli/src/constants.ts',
 };
 
 const goldenDir = path.join(rootDir, 'tests/integration/tests/__golden__');
@@ -121,7 +121,7 @@ if (!shouldFix) {
   // Check CLI package.json
   if (packageVersions.cli.version !== targetVersion) {
     console.error(
-      `❌ cli/package.json version is ${packageVersions.cli.version}, expected ${targetVersion}`,
+      `❌ ${packageFiles.cli} version is ${packageVersions.cli.version}, expected ${targetVersion}`,
     );
     hasErrors = true;
   }

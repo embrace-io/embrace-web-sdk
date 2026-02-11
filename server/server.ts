@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs';
-import type { IncomingMessage } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'node:http';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import type { ReceivedSpans } from '../tests/integration/types.ts';
 import { logInfo, logReceivedSessionSpan } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const distDir = join(__dirname, '..', 'dist');
+const sdkDistDir = join(__dirname, '..', 'packages', 'web-sdk', 'dist');
 const platformsDir = join(__dirname, '..', 'tests', 'integration', 'platforms');
 
 const PORT = 3001;
@@ -24,6 +24,21 @@ const mimeTypes: Record<string, string> = {
 };
 
 const receivedSpans: ReceivedSpans = {};
+
+function serveFile(res: ServerResponse, filePath: string) {
+  readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+      return;
+    }
+
+    const contentType =
+      mimeTypes[extname(filePath)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
+  });
+}
 
 const parseGzip = async (
   req: IncomingMessage,
@@ -63,28 +78,27 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && req.url === '/health-check') {
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+
+  if (req.method === 'GET' && pathname === '/health-check') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
-
     return;
   }
 
-  if (req.url === '/received-spans') {
+  if (pathname === '/received-spans') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
-
     return;
   }
 
-  if (req.url?.includes('logs')) {
+  if (pathname?.includes('logs')) {
     res.writeHead(200);
     res.end('OK');
-
     return;
   }
 
-  if (req.url?.includes('spans')) {
+  if (pathname?.includes('spans')) {
     parseGzip(req)
       .then((request: IExportTraceServiceRequest) => {
         const sessionSpan =
@@ -114,98 +128,37 @@ const server = createServer((req, res) => {
         console.error('Error parsing gzip request:', e);
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Internal Server Error');
-        return;
       });
-  }
-
-  // Serve favicon.ico from server/public/ for Vite/webpack platforms
-  if (req.url === '/favicon.ico') {
-    const filePath = join(__dirname, 'public', 'favicon.ico');
-
-    readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File Not Found');
-        return;
-      }
-
-      res.writeHead(200, { 'Content-Type': 'image/x-icon' });
-      res.end(data);
-    });
-
     return;
   }
 
-  // Serve platform test builds: /platforms/{name}/{target}/ → platforms/{name}/dist/{target}/
-  if (req.url?.startsWith('/platforms/')) {
-    const url = new URL(
-      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
-    );
-    // Transform /platforms/vite-7/esnext/index.html → platforms/vite-7/dist/esnext/index.html
-    const pathParts = url.pathname.replace('/platforms/', '').split('/');
+  if (pathname === '/embrace-web-sdk.js') {
+    serveFile(res, join(sdkDistDir, 'embrace-web-sdk.js'));
+    return;
+  }
+
+  if (pathname === '/favicon.ico') {
+    serveFile(res, join(__dirname, 'public', 'favicon.ico'));
+    return;
+  }
+
+  // /platforms/vite-7/esnext/index.html → platforms/vite-7/dist/esnext/index.html
+  if (pathname?.startsWith('/platforms/')) {
+    const pathParts = pathname.replace('/platforms/', '').split('/');
     const platformName = pathParts[0];
     const rest = pathParts.slice(1).join('/');
-    const filePath = join(platformsDir, platformName, 'dist', rest);
-
-    readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File Not Found');
-        return;
-      }
-
-      const ext = extname(filePath);
-      const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(data);
-    });
+    serveFile(res, join(platformsDir, platformName, 'dist', rest));
+    return;
   }
 
-  // Serve static test files from server/public/
-  if (req.url?.startsWith('/public/')) {
-    const url = new URL(
-      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
-    );
-    const filePath = join(__dirname, url.pathname);
-
-    readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File Not Found');
-        return;
-      }
-
-      const ext = extname(filePath);
-      const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(data);
-    });
-  }
-
-  if (req.url?.startsWith('/dist/')) {
-    const url = new URL(
-      `http://${process.env['HOST'] ?? 'localhost'}${req.url ?? '/'}`,
-    );
-    const filePath = join(distDir, url.pathname.replace('/dist/', ''));
-
-    readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File Not Found');
-        return;
-      }
-
-      const ext = extname(filePath);
-      const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(data);
-    });
+  if (pathname?.startsWith('/public/')) {
+    serveFile(res, join(__dirname, pathname));
+    return;
   }
 });
 
 server.listen(PORT, () => {
-  logInfo(`Server is running on http://localhost:${PORT.toString()}`);
+  logInfo(`Debug collector running on http://localhost:${PORT}`);
+  logInfo('To send telemetry to the debug collector, set:');
+  logInfo(`  VITE_DATA_URL=http://localhost:${PORT} in your .env file`);
 });

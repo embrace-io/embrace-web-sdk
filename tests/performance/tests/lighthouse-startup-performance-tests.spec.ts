@@ -5,7 +5,7 @@ import { test } from '@playwright/test';
 import getPort from 'get-port';
 import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
-import { resultsToMarkdownTable } from '../../utils/index.ts';
+import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
 import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,

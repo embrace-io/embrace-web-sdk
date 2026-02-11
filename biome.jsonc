@@ -10,9 +10,11 @@
     "includes": [
       "**",
       "!**/node_modules",
+      "!!**/dist",
       "!!**/__golden__",
       "!!**/public",
-      "!!**/.next"
+      "!!**/.next",
+      "!!**/.turbo"
     ]
   },
   "assist": {

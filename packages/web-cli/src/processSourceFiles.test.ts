@@ -495,7 +495,7 @@ describe('processSourceFiles - Snippet Minification', () => {
       constantWithPlaceholder,
       expectedSnippet,
       `FILE_BUNDLE_IDS_CODE_SNIPPET does not match terser output.\n` +
-        `Run: npx terser ./cli/snippet/fileBundleIDsSnippet.js -c -m\n` +
+        `Run: npx terser ./packages/web-cli/snippet/fileBundleIDsSnippet.js -c -m\n` +
         `Expected: ${expectedSnippet}\n` +
         `Got: ${constantWithPlaceholder}`,
     );

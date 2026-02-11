@@ -3,9 +3,9 @@ pre-commit:
   fail_on_changes: "always"
   commands:
     lint:
-      run: npm run sdk:lint:fix
+      run: npm run lint:fix
     typecheck:
-      run: npm run sdk:check:tsc
+      run: npm run check
 commit-msg:
   commands:
     commitlint:

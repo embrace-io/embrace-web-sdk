@@ -553,7 +553,7 @@ you must ensure that you are using versions of the OTel packages that are compat
 | ^2.0.0          | ^1.9.0              | ^2.0.3 | >=0.203.0 <0.300.0         |
 | 1.8.2           | ^1.9.0              | 1.30.1 | 0.57.2                     |
 
-For a full list of dependencies used by the SDK, please refer to [package.json](./package.json).
+For a full list of dependencies used by the SDK, please refer to [package.json](./packages/web-sdk/package.json).
 
 ### Turning on verbose logging in the SDK
 

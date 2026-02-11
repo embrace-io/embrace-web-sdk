@@ -27,7 +27,7 @@ import type { Request, Route } from 'playwright';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/__golden__');
-const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run sdk:test:integration:update-golden instead.`;
+const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run test:integration:update-golden instead.`;
 const shouldUpdateGolden = process.env.UPDATE_GOLDEN === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests

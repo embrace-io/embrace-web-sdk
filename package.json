@@ -1,138 +1,40 @@
 {
-  "name": "@embrace-io/web-sdk",
-  "version": "2.11.1",
-  "description": "Embrace Web SDK",
+  "name": "embrace-web-monorepo",
+  "private": true,
   "type": "module",
-  "imports": {
-    "#embrace-io/otlp-transformer": {
-      "embrace": "./packages/otlp-transformer/src/index.ts",
-      "default": "./packages/otlp-transformer/dist/index.js"
-    }
-  },
-  "jsdelivr": "./dist/embrace-web-sdk.js",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "publishConfig": {
-    "access": "public"
-  },
-  "sideEffects": false,
   "scripts": {
-    "prepare": "lefthook install -f",
-    "clean": "npm run clean --workspaces --if-present; npx -y rimraf -g \"**/.sonda\" \"**/build\" \"**/dist\" \"**/node_modules\"",
-    "compile": "npm run sdk:compile && npm run cli:compile",
-    "test": "npm run sdk:test && npm run cli:test",
-    "lint": "npm run sdk:lint:fix && npm run sdk:check",
-    "validate": "npm run sdk:validate && npm run cli:validate",
-    "dev": "npm run dev --workspace=embrace-web-sdk-react-demo",
-    "demo": "npm run demo --workspace=embrace-web-sdk-react-demo",
-    "sdk:docs": "npx typedoc --readme none && touch docs/.nojekyll",
-    "sdk:test": "web-test-runner",
-    "sdk:test:watch": "npm run sdk:test -- --watch",
-    "sdk:test:manual": "npm run sdk:test -- --manual",
-    "sdk:test:coverage": "npm run sdk:test -- --config=web-test-runner.coverage.config.js",
-    "sdk:test:multiBrowsers": "npm run sdk:test -- --config=web-test-runner.multi-browser.config.js",
-    "sdk:test:performance": "npm run test --prefix tests/performance",
-    "sdk:test:integration": "npm run test --prefix tests/integration",
-    "sdk:test:integration:update-golden": "npm run update-golden --prefix tests/integration",
-    "sdk:compile": "npm run compile --prefix packages/otlp-transformer && npx rimraf dist && tsdown",
-    "sdk:lint": "biome check",
-    "sdk:lint:fix": "biome check --write",
-    "sdk:check": "npm run sdk:check:tsc && npm run sdk:check:eslint",
-    "sdk:check:tsc": "tsc --build --noEmit tsconfig.json cli/tsconfig.json",
-    "sdk:check:eslint": "eslint --max-warnings 0",
-    "sdk:check:dist": "eslint --max-warnings 0 --config eslint.dist.config.ts dist/",
-    "sdk:validate": "npm run sdk:validate:versions && npm run sdk:validate:baseline",
-    "sdk:validate:versions": "node scripts/validate-versions.js",
-    "sdk:validate:versions:fix": "node scripts/validate-versions.js --fix",
-    "sdk:validate:baseline": "node scripts/validate-sdk.js",
-    "cli:compile": "npm run compile --prefix cli",
-    "cli:validate": "npm run validate --prefix cli",
-    "cli:test": "npm run test --prefix cli",
+    "prepare": "npx -y lefthook install -f",
+    "clean": "npx rimraf -g \"**/.turbo\" \"**/.next\" \"**/dist\" \"**/node_modules\"",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "check": "turbo run check",
+    "validate:versions": "node scripts/validate-versions.js",
+    "validate": "npm run validate:versions && turbo run validate",
+    "dev": "turbo run dev --filter=embrace-web-sdk-react-demo",
+    "demo": "npm run demo -w demo/frontend",
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
-    "playwright": "playwright"
+    "test:integration": "turbo run test --filter=tests-integration",
+    "test:integration:update-golden": "turbo run update-golden --filter=tests-integration",
+    "test:performance": "turbo run test --filter=tests-performance",
+    "test:multiBrowsers": "turbo run test:multiBrowsers --filter=@embrace-io/web-sdk"
   },
-  "files": [
-    "dist",
-    "LICENSE",
-    "*.md"
+  "workspaces": [
+    "packages/*",
+    "demo/*",
+    "tests/integration",
+    "tests/performance"
   ],
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./react-instrumentation": {
-      "import": "./dist/react-instrumentation/index.js",
-      "require": "./dist/react-instrumentation/index.cjs"
-    },
-    "./package.json": "./package.json"
-  },
-  "typesVersions": {
-    "*": {
-      ".": [
-        "./dist/index.d.ts"
-      ],
-      "react-instrumentation": [
-        "./dist/react-instrumentation/index.d.ts"
-      ]
-    }
-  },
-  "author": "Embrace <support@embrace.io> (https://embrace.io/)",
-  "bugs": {
-    "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
-    "email": "support@embrace.io"
-  },
-  "homepage": "https://github.com/embrace-io/embrace-web-sdk",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/embrace-io/embrace-web-sdk.git"
-  },
-  "keywords": [
-    "embrace",
-    "web",
-    "tracking",
-    "observability",
-    "otel",
-    "instrumentation",
-    "telemetry"
-  ],
-  "dependencies": {
-    "@opentelemetry/api": "1.9.0",
-    "@opentelemetry/api-logs": "0.211.0",
-    "@opentelemetry/core": "2.5.0",
-    "@opentelemetry/instrumentation": "0.211.0",
-    "@opentelemetry/instrumentation-fetch": "0.211.0",
-    "@opentelemetry/instrumentation-xml-http-request": "0.211.0",
-    "@opentelemetry/otlp-exporter-base": "0.211.0",
-    "@opentelemetry/resources": "2.5.0",
-    "@opentelemetry/sdk-logs": "0.211.0",
-    "@opentelemetry/sdk-trace-web": "2.5.0",
-    "@opentelemetry/semantic-conventions": "1.39.0",
-    "@opentelemetry/web-common": "0.211.0",
-    "hoist-non-react-statics": "3.3.2",
-    "web-vitals": "5.1.0"
-  },
   "devDependencies": {
     "@arethetypeswrong/core": "0.18.2",
     "@biomejs/biome": "2.3.15",
     "@commitlint/cli": "20.4.1",
     "@commitlint/config-conventional": "20.4.1",
     "@playwright/test": "1.58.2",
-    "@remcovaes/web-test-runner-vite-plugin": "1.4.0",
-    "@types/chai": "5.2.3",
     "@types/chrome-remote-interface": "0.33.0",
-    "@types/hoist-non-react-statics": "3.3.7",
-    "@types/mocha": "10.0.10",
     "@types/node": "24.10.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "@types/sinon": "21.0.0",
-    "@types/sinon-chai": "4.0.0",
-    "@web/test-runner": "0.20.2",
-    "@web/test-runner-playwright": "0.11.1",
-    "chai": "6.2.2",
     "chrome-launcher": "1.2.1",
     "chrome-remote-interface": "0.34.0",
     "es-check": "9.5.4",
@@ -145,32 +47,15 @@
     "lighthouse": "13.0.3",
     "playwright": "1.58.2",
     "publint": "0.3.17",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
     "rimraf": "6.1.2",
-    "sinon-chai": "4.0.1",
     "sonda": "0.10.2",
     "terser": "5.46.0",
     "tsdown": "0.20.3",
     "tsx": "4.21.0",
+    "turbo": "2.8.5",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.55.0",
-    "vite": "7.3.1"
+    "typescript-eslint": "8.55.0"
   },
-  "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
-  },
-  "workspaces": [
-    "cli",
-    "demo/*",
-    "packages/*",
-    "tests/performance"
-  ],
   "packageManager": "npm@11.8.0",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

@@ -21,7 +21,6 @@ export {
 } from './fakeFetch.ts';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
 export { InMemoryStorage } from './InMemoryStorage.ts';
-export { resultsToMarkdownTable } from './jsonToMarkdownTable.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mock-entities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';

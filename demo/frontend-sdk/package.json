@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "setup": "npm run sdk:compile --prefix ../.. && bash scripts/setupBundleSymLinks.sh",
+    "setup": "npx turbo run build && bash scripts/setupBundleSymLinks.sh",
     "build": "tsc && vite build",
     "dev": "vite",
     "serve": "npm run build && vite preview"
   },
   "dependencies": {
+    "@embrace-io/web-sdk": "*",
     "@opentelemetry/sdk-logs": "0.211.0",
     "@opentelemetry/sdk-trace-web": "2.5.0"
   }

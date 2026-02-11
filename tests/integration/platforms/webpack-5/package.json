@@ -11,12 +11,12 @@
     "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
   },
   "dependencies": {
-    "@embrace-io/web-sdk": "file:../../../..",
+    "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
     "react": "^19",
     "react-dom": "^19"
   },
   "devDependencies": {
-    "@embrace-io/web-cli": "file:../../../../cli",
+    "@embrace-io/web-cli": "file:../../../../packages/web-cli",
     "@babel/core": "^7",
     "@babel/preset-env": "^7",
     "@babel/preset-react": "^7",

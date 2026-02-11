@@ -5,7 +5,7 @@ import { test } from '@playwright/test';
 import getPort from 'get-port';
 import type { CDPSession } from 'playwright';
 import { chromium } from 'playwright';
-import { resultsToMarkdownTable } from '../../utils/index.ts';
+import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
 import {
   TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
   TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
