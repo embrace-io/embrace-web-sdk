@@ -3,7 +3,7 @@
 ## When is data sent?
 
 Telemetry data for Spans and Logs are exported from the SDK independently. Spans are sent as a batch whenever a session
-ends, this is managed by the [EmbraceSessionBatchedSpanProcessor](./packages/web-sdk/src/processors/EmbraceSessionBatchedSpanProcessor/EmbraceSessionBatchedSpanProcessor.ts).
+ends, this is managed by the [EmbraceSessionBatchedSpanProcessor](./src/processors/EmbraceSessionBatchedSpanProcessor/EmbraceSessionBatchedSpanProcessor.ts).
 Logs are also batched but can be sent throughout a session, this is managed by a [BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.57.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts).
 
 ## How is data sent?
@@ -12,8 +12,8 @@ Data from the SDK is sent to Embrace using a CORS HTTP POST request. The data is
 [OTLP JSON Protobuf](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding). We make use of the
 [keepalive property](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive) of the browser's Fetch API to
 help ensure the transmission of data even if the page has been closed. If possible we will attempt to retry request
-failures following an exponential backoff. See [FetchTransport](./packages/web-sdk/src/transport/FetchTransport/FetchTransport.ts) and
-[RetryingTransport](./packages/web-sdk/src/transport/RetryingTransport/RetryingTransport.ts) for more details. 
+failures following an exponential backoff. See [FetchTransport](./src/transport/FetchTransport/FetchTransport.ts) and
+[RetryingTransport](./src/transport/RetryingTransport/RetryingTransport.ts) for more details. 
 
 > [!NOTE]
 > The Fetch API's `keepalive` property is supported by all modern browsers, however it was a relatively recent addition
