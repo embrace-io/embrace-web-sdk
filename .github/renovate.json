@@ -2,13 +2,12 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
   "schedule": ["before 3am on Monday"],
-  "prHourlyLimit": 0,
-  "prConcurrentLimit": 10,
-  "rebaseWhen": "behind-base-branch",
+  "rebaseWhen": "conflicted",
   "ignorePaths": ["tests/integration/platforms/**"],
   "ignoreDeps": ["@types/node", "node", "npm"],
   "labels": ["dependencies"],
   "postUpdateOptions": ["npmDedupe"],
+  "rangeStrategy": "bump",
   "packageRules": [
     {
       "description": "GitHub Actions",
@@ -18,8 +17,7 @@
     {
       "description": "Production dependencies (excludes OTel)",
       "matchDepTypes": ["dependencies"],
-      "groupName": "production-deps",
-      "matchDepNames": ["!/^@opentelemetry\\//"]
+      "groupName": "production-deps"
     },
     {
       "description": "Dev minor and patches",
@@ -34,17 +32,13 @@
     },
     {
       "description": "OpenTelemetry",
-      "matchDepNames": ["/^@opentelemetry\\//"],
+      "matchDepNames": ["@opentelemetry/**"],
+      "matchDepTypes": ["dependencies", "devDependencies"],
       "groupName": "opentelemetry"
     },
     {
-      "description": "Playwright group",
-      "matchDepNames": ["@playwright/test", "playwright"],
-      "groupName": "playwright"
-    },
-    {
       "description": "ESLint group",
-      "matchDepNames": ["typescript-eslint", "/^eslint/", "/^@eslint\\//"],
+      "matchDepNames": ["eslint", "eslint-plugin-*", "typescript-eslint"],
       "groupName": "eslint"
     },
     {
@@ -73,19 +67,6 @@
       ],
       "matchUpdateTypes": ["major"],
       "enabled": false
-    },
-    {
-      "description": "Web Test Runner group",
-      "matchDepNames": [
-        "/^@web\\/test-runner/",
-        "/^@remcovaes\\/web-test-runner/"
-      ],
-      "groupName": "web-test-runner"
-    },
-    {
-      "description": "Commitlint group",
-      "matchDepNames": ["/^@commitlint\\//"],
-      "groupName": "commitlint"
     },
     {
       "description": "Demo backend group",
