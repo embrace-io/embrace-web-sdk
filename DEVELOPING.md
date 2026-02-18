@@ -98,6 +98,13 @@ To update golden files replace the last command with:
 npm run test:integration:update-golden
 ```
 
+## Dependency Versioning
+
+Production dependencies use caret (`^`) ranges so that consumers' package
+managers can deduplicate shared transitive dependencies. The lockfile still pins
+the exact versions used in CI. Dev dependencies remain pinned to exact versions
+because they are never resolved by consumers.
+
 ## Publishing
 
 To release a new version of the SDK:
