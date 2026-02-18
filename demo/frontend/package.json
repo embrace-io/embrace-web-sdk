@@ -6,7 +6,7 @@
     "check": "tsc",
     "clean": "npx -y rimraf .sonda dist",
     "dev": "VITE_BASE_URL=/embrace-web-sdk/ vite --open",
-    "build": "npm i && VITE_BASE_URL=/embrace-web-sdk/ vite build",
+    "build": "VITE_BASE_URL=/embrace-web-sdk/ vite build",
     "preview": "VITE_BASE_URL=/embrace-web-sdk/ vite preview --open",
     "demo": "bash ./scripts/runDemo.sh",
     "upload-sourcemaps": "embrace-web-cli upload --app-version 0.0.1",

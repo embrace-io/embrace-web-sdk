@@ -32,7 +32,6 @@ fi
 npm run clean
 
 # build sdk and demo
-npm ci
 npx turbo run build --filter=embrace-web-sdk-react-demo
 
 # add env vars from .env file to the current environment
