@@ -29,7 +29,6 @@ export default defineConfig([
       checks: {
         missingNameOptionForIifeExport: false, // We use banner to assign global
         pluginTimings: false, // CI environments vary in speed
-        eval: false, // Dependencies use eval for require detection
       },
     },
     outputOptions: {
@@ -56,7 +55,6 @@ export default defineConfig([
     inputOptions: {
       checks: {
         pluginTimings: false, // CI environments vary in speed
-        eval: false, // Dependencies use eval for require detection
       },
     },
     attw: {
