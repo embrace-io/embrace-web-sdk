@@ -1,20 +1,35 @@
-import { copyFile, readFile } from 'node:fs';
+import { readFile } from 'node:fs';
+import type { ServerResponse } from 'node:http';
 import { createServer } from 'node:http';
 import { extname, join } from 'node:path';
 
 const PORT = 3000;
-
 const PUBLIC_DIR = join(process.cwd(), 'public');
-const SDK_SOURCE = join(process.cwd(), '../../dist/embrace-web-sdk.js');
-const SDK_DESTINATION = join(PUBLIC_DIR, 'embrace-web-sdk.js');
+const SDK_SOURCE = join(
+  process.cwd(),
+  '../../packages/web-sdk/dist/embrace-web-sdk.js',
+);
 
 const mimeTypes: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
 };
 
+function serveFile(res: ServerResponse, filePath: string) {
+  readFile(filePath, (err, data) => {
+    if (err) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+      return;
+    }
+    const contentType =
+      mimeTypes[extname(filePath)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(data);
+  });
+}
+
 const server = createServer((req, res) => {
-  // allow cors
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -25,52 +40,29 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && req.url === '/health-check') {
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+
+  if (
+    req.method === 'GET' &&
+    (pathname === '/health-check' || pathname === '/sample-request')
+  ) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
     return;
   }
 
-  if (req.method === 'GET' && req.url === '/sample-request') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('OK');
+  if (req.method === 'GET' && pathname === '/embrace-web-sdk.js') {
+    serveFile(res, SDK_SOURCE);
     return;
   }
 
-  if (!req.url) {
+  if (!pathname) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
     return;
   }
 
-  const url = new URL(
-    `http://${process.env.HOST ?? 'localhost'}${req.url ?? '/'}`,
-  );
-
-  const filePath = join(PUBLIC_DIR, url.pathname);
-
-  readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('File Not Found');
-      return;
-    }
-
-    const ext = extname(filePath);
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(data);
-  });
-});
-
-// Copy the SDK file to the public directory
-copyFile(SDK_SOURCE, SDK_DESTINATION, (err) => {
-  if (err) {
-    console.error('Failed to copy SDK file:', err);
-  } else {
-    console.log('SDK file copied to public directory.');
-  }
+  serveFile(res, join(PUBLIC_DIR, pathname));
 });
 
 server.listen(PORT, () => {

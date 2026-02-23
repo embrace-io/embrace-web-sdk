@@ -112,13 +112,13 @@ jobs:
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: npm run playwright -- install --with-deps
+        run: npx playwright install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: npm run playwright -- install-deps
+        run: npx playwright install-deps
 
       - name: Test with coverage
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -130,7 +130,7 @@ jobs:
             argsCoverage='--config=web-test-runner.coverage.config.js'
             echo 'TEST_COLLECTED_COVERAGE=true' >> $GITHUB_ENV
           fi
-          npm run sdk:test -- $argsCoverage
+          npx turbo run test --filter=@embrace-io/web-sdk -- $argsCoverage
         env:
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
 
@@ -222,18 +222,18 @@ jobs:
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: npm run playwright -- install --with-deps
+        run: npx playwright install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: npm run playwright -- install-deps
+        run: npx playwright install-deps
 
       - name: Test SDK multiple browsers
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:test:multiBrowsers
+          npm run test:multiBrowsers
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -325,24 +325,18 @@ jobs:
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: npm run playwright -- install --with-deps
+        run: npx playwright install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: npm run playwright -- install-deps
-
-      # We need the SDK to be built, so we can use it during performance tests
-      - name: Build SDK
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run sdk:compile
+        run: npx playwright install-deps
 
       - name: Test performance
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:test:performance
+          npm run test:performance
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -458,7 +452,7 @@ jobs:
       - name: Test CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run test --prefix cli
+          npx turbo run test --filter=@embrace-io/web-cli
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -542,26 +536,20 @@ jobs:
       # playwright to install everything for us.
       - name: Install Playwright browsers with dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit != 'true' }}
-        run: npm run playwright -- install --with-deps
+        run: npx playwright install --with-deps
 
       # If the Playwright browser binaries were restored, we tell
       # playwright to install just system deps.
       - name: Install Playwright's dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && steps.playwright-cache.outputs.cache-hit == 'true' }}
-        run: npm run playwright -- install-deps
-
-      # We need the SDK and CLI to be built, so we can use them in the sample apps
-      - name: Build SDK and CLI
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run compile
+        run: npx playwright install-deps
 
       - name: Test Integration
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         # Build needs to run first so e2e tests can use the built apps and not build again
         # Run the e2e tests in a virtual display, since Playwright needs a display to run
         run: |
-          npm run sdk:test:integration
+          npm run test:integration
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -695,7 +683,7 @@ jobs:
       - name: Lint
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:lint
+          npm run lint
 
       - name: Cache successful lint results
         if: ${{ success() }}
@@ -748,7 +736,7 @@ jobs:
       - name: Type check
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:check
+          npm run check
 
       - name: Cache successful type check results
         if: ${{ success() }}
@@ -800,30 +788,15 @@ jobs:
         run: |
           npm ci
 
-      - name: Build SDK
+      - name: Build All Packages
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:compile
+          npm run build
 
-      - name: Validate SDK
+      - name: Validate Packages
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run sdk:validate
-
-      - name: Build CLI
-        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run cli:compile
-
-      - name: Validate CLI
-        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run cli:validate
-
-      - name: Build Demo
-        if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          npm run build --prefix demo/frontend
+          npm run validate
 
       - name: Cache successful validate results
         if: ${{ success() }}
@@ -868,15 +841,16 @@ jobs:
 
       - name: Build SDK and CLI
         run: |
-          npm run compile
+          npm run build
 
       - name: Publish SDK
         run: |
+          cd packages/web-sdk
           npm publish --provenance --access public
 
       - name: Publish CLI
         run: |
-          cd cli
+          cd packages/web-cli
           npm publish --provenance --access public
 
   # Publishes preview packages to pkg.pr.new after CI passes on main.
@@ -910,10 +884,10 @@ jobs:
         run: npm ci
 
       - name: Build SDK and CLI
-        run: npm run compile
+        run: npm run build
 
       - name: Publish preview packages
-        run: npx --yes pkg-pr-new publish --compact '.' './cli'
+        run: npx --yes pkg-pr-new publish --compact './packages/web-sdk' './packages/web-cli'
 
   # not used yet, there are no "production" releases
   report-release-slack:

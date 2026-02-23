@@ -29,11 +29,10 @@ if [ -f .env ]; then
 fi
 
 # clean workspaces
-npm run clean --prefix ../..
+npm run clean
 
-# compile sdk and build demo
-npm ci --prefix ../..
-VITE_BASE_URL=/embrace-web-sdk/ npm run build
+# build sdk and demo
+npx turbo run build --filter=embrace-web-sdk-react-demo
 
 # add env vars from .env file to the current environment
 if [ -f .env ]; then
@@ -43,7 +42,7 @@ fi
 # process the bundle to replace the bundle id. NOTE: we don't upload source maps on each run, to avoid spamming s3, so symbolication won't work
 # If you need to upload source maps for testing, remove the "--no-upload" flag
 if [ -n "$VITE_APP_ID" ]; then
-    npm run demo:frontend:upload:sourcemaps -- -a $VITE_APP_ID -p ./dist/assets --no-upload
+    npm run upload-sourcemaps -- -a $VITE_APP_ID -p ./dist/assets --no-upload
 fi
 
-VITE_BASE_URL=/embrace-web-sdk/ npm run demo:frontend:preview
+npx turbo run preview --filter=embrace-web-sdk-react-demo

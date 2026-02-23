@@ -53,7 +53,7 @@ npm run demo
 
 The demo app uses your local SDK source code instead of the published npm
 package. In the demo's `package.json`, the dependency
-`"@embrace-io/web-sdk": "file:../.."` creates a direct link to the SDK source
+`"@embrace-io/web-sdk": "../../packages/web-sdk"` creates a direct link to the SDK source
 code two directories up. This means any changes you make to the SDK will be
 immediately available in the demo app.
 
@@ -74,7 +74,7 @@ This single command will:
 ## 📤 Testing Source Map Upload
 
 The demo app uses a local CLI dependency
-(`"@embrace-io/web-cli": "file:../../cli"`) to test source map upload
+(`"@embrace-io/web-cli": "../../packages/web-cli"`) to test source map upload
 functionality directly from your development environment.
 
 The CLI uploads source maps to Embrace for better production debugging:
@@ -84,10 +84,10 @@ The CLI uploads source maps to Embrace for better production debugging:
 npm run build
 
 # Dry run (preview files to be uploaded without actually uploading them)
-npm run demo:frontend:upload:sourcemaps:dry
+npm run upload-sourcemaps:dry
 
 # Real upload (requires valid appID in your .env file)
-npm run demo:frontend:upload:sourcemaps
+npm run upload-sourcemaps
 ```
 
 > 💡 **Note**: The CLI automatically detects and uploads source maps from the

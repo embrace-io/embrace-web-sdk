@@ -1,0 +1,11 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "customConditions": ["embrace"],
+    // "erasableSyntaxOnly": true,
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src", "tests", "scripts"]
+}

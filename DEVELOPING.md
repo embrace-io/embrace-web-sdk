@@ -24,7 +24,7 @@ This command will:
 
 ## Repo Layout
 
-The code within `src/` is divided as follows:
+The code within `packages/web-sdk/src/` is divided as follows:
 
 - `api-*/`
   - High-level APIs that expose the SDK's functionality. By default these
@@ -63,36 +63,39 @@ together).
 Run tests with:
 
 ```sh
-npm run sdk:test
+npm run test
 ```
 
 For debugging, you can run tests in a browser to set breakpoints, open the dev
 console, etc. with:
 
 ```sh
-npm run sdk:test:manual
+npm run test:manual
 ```
 
 Manual mode as well as other debugging options can also be reached from watch
 mode:
 
 ```sh
-npm run sdk:test:watch
+npm run test:watch
 ```
+
+> Note: These commands should be run from `packages/web-sdk/`. From the repo
+> root, `npm run test` runs tests across all packages via Turbo.
 
 ## Integration Testing
 
 Run the integration tests and build all prerequisites with:
 
 ```bash
-npm run sdk:compile
-npm run sdk:test:integration
+npm run build
+npm run test:integration
 ```
 
 To update golden files replace the last command with:
 
 ```bash
-npm run sdk:test:integration:update-golden
+npm run test:integration:update-golden
 ```
 
 ## Dependency Versioning

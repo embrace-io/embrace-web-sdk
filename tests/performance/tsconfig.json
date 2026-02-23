@@ -1,13 +1,7 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
     "resolveJsonModule": true,
-    "strict": true,
-    "outDir": "dist",
-    "noEmit": true
+    "outDir": "dist"
   }
 }

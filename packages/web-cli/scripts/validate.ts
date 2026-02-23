@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { COLORS, log, logSection } from '../../scripts/build-config.js';
+import { COLORS, log, logSection } from '../../../scripts/build-config.ts';
 
 const CLI_FILE = 'dist/index.mjs';
 const cliDir = join(import.meta.dirname, '..');

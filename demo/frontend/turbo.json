@@ -1,0 +1,25 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "clean": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["clean", "^build"],
+      "cache": false
+    },
+    "preview": {
+      "with": ["//#server"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    },
+    "dev": {
+      "with": ["//#server"],
+      "cache": false,
+      "persistent": true,
+      "interactive": true
+    }
+  }
+}

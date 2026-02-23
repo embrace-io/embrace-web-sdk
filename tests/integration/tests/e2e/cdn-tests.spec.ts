@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 declare global {
   interface Window {
-    EmbraceWebSdk: typeof import('../../../../src/index.ts');
+    EmbraceWebSdk: typeof import('../../../../packages/web-sdk/src/index.ts');
   }
 }
 
@@ -46,7 +46,7 @@ test.describe('CDN E2E Tests', () => {
       // Simulate loading the script again by creating another script element
       return new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = '/dist/embrace-web-sdk.js';
+        script.src = '/embrace-web-sdk.js';
         script.onload = () => {
           resolve(window.EmbraceWebSdk === firstRef);
         };

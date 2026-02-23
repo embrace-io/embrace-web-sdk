@@ -1,9 +1,12 @@
 {
   "name": "tests-performance",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "test": "npx playwright test"
+  },
+  "dependencies": {
+    "@embrace-io/web-cli": "*",
+    "@embrace-io/web-sdk": "*"
   }
 }

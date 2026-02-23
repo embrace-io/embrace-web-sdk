@@ -13,7 +13,7 @@ Data from the SDK is sent to Embrace using a CORS HTTP POST request. The data is
 [keepalive property](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive) of the browser's Fetch API to
 help ensure the transmission of data even if the page has been closed. If possible we will attempt to retry request
 failures following an exponential backoff. See [FetchTransport](./src/transport/FetchTransport/FetchTransport.ts) and
-[RetryingTransport](src/transport/RetryingTransport/RetryingTransport.ts) for more details. 
+[RetryingTransport](./src/transport/RetryingTransport/RetryingTransport.ts) for more details. 
 
 > [!NOTE]
 > The Fetch API's `keepalive` property is supported by all modern browsers, however it was a relatively recent addition

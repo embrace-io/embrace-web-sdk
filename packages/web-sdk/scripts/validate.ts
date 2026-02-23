@@ -15,39 +15,47 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
-import {
-  BUNDLE_FILE,
-  BUNDLE_MAP_FILE,
-  COLORS,
-  EXPECTED_FILES,
-  log,
-  logSection,
-  MAX_BUNDLE_SIZE_KB,
-} from './build-config.js';
+import { COLORS, log, logSection } from '../../../scripts/build-config.ts';
+
+// Maximum bundle size (gzipped) to ensure fast load times
+const MAX_BUNDLE_SIZE_KB = 100;
+
+const BUNDLE_FILE = 'embrace-web-sdk.js';
+const BUNDLE_MAP_FILE = 'embrace-web-sdk.js.map';
+
+// Files that must exist after build
+const EXPECTED_FILES = [
+  'dist/embrace-web-sdk.js',
+  'dist/embrace-web-sdk.js.map',
+  'dist/index.js',
+  'dist/index.d.ts',
+  'dist/index.cjs',
+  'dist/index.d.cts',
+];
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.join(__dirname, '..');
-const DIST_DIR = path.join(ROOT, 'dist');
+const SDK_ROOT = path.join(__dirname, '..');
+const SDK_DIST_DIR = path.join(SDK_ROOT, 'dist');
 
 // Verifies compiled bundles parse as expected ES version
 function checkSyntaxCompliance() {
   logSection('1. Syntax Compliance (es-check)');
 
-  const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
+  const bundleFile = path.join(SDK_DIST_DIR, BUNDLE_FILE);
 
   const checks = [
     { name: 'IIFE bundle (ES6)', file: bundleFile, esVersion: 'es6' },
     {
       name: 'ESM modules (ES2022)',
-      pattern: `${DIST_DIR}/**/*.js`,
+      pattern: `${SDK_DIST_DIR}/**/*.js`,
       exclude: `${bundleFile}*`,
       esVersion: 'es2022',
       modules: true,
     },
     {
       name: 'CJS modules (ES2022)',
-      pattern: `${DIST_DIR}/**/*.cjs`,
+      pattern: `${SDK_DIST_DIR}/**/*.cjs`,
       esVersion: 'es2022',
       modules: true,
     },
@@ -56,7 +64,11 @@ function checkSyntaxCompliance() {
   const failures = [];
 
   for (const check of checks) {
-    const args = ['es-check', check.esVersion, check.file || check.pattern];
+    const args = [
+      'es-check',
+      check.esVersion,
+      (check.file ?? check.pattern) as string,
+    ];
     if (check.exclude) args.push('--not', check.exclude);
     if (check.modules) args.push('--module');
 
@@ -82,10 +94,10 @@ function checkSyntaxCompliance() {
 function checkBaselineAPIs() {
   logSection('2. Web API Baseline (eslint)');
 
-  const result = spawnSync('npm', ['run', 'sdk:check:dist'], {
+  const result = spawnSync('npm', ['run', 'check:dist'], {
     encoding: 'utf-8',
     stdio: 'pipe',
-    cwd: ROOT,
+    cwd: SDK_ROOT,
   });
 
   if (result.status !== 0) {
@@ -101,14 +113,17 @@ function checkBaselineAPIs() {
 }
 
 // Packs SDK and runs test callback in temp environment with installed tarball
-function withPackedSDK(options, testCallback) {
-  const tempDir = fs.mkdtempSync(path.join(ROOT, '.tmp'));
+function withPackedSDK(
+  options: { packageJson: Record<string, unknown> },
+  testCallback: (dir: string) => boolean,
+) {
+  const tempDir = fs.mkdtempSync(path.join(SDK_ROOT, '.tmp'));
 
   try {
     // Pack the SDK
-    execSync('npm pack --quiet', { cwd: ROOT, stdio: 'pipe' });
+    execSync('npm pack --quiet', { cwd: SDK_ROOT, stdio: 'pipe' });
     const tarball = fs
-      .readdirSync(ROOT)
+      .readdirSync(SDK_ROOT)
       .find((f) => f.startsWith('embrace-io-web-sdk-') && f.endsWith('.tgz'));
 
     if (!tarball) {
@@ -116,7 +131,10 @@ function withPackedSDK(options, testCallback) {
     }
 
     // Move tarball to temp directory
-    fs.renameSync(path.join(ROOT, tarball), path.join(tempDir, 'package.tgz'));
+    fs.renameSync(
+      path.join(SDK_ROOT, tarball),
+      path.join(tempDir, 'package.tgz'),
+    );
 
     // Create package.json
     fs.writeFileSync(
@@ -151,7 +169,7 @@ function checkBuildArtifactsExist() {
 
 function validateSourcemapIntegrity() {
   try {
-    const mapPath = path.join(DIST_DIR, BUNDLE_MAP_FILE);
+    const mapPath = path.join(SDK_DIST_DIR, BUNDLE_MAP_FILE);
     const map = JSON.parse(fs.readFileSync(mapPath, 'utf-8'));
     if (!map.sources?.length) {
       log('  ✗ Sourcemap has no sources', COLORS.red);
@@ -159,15 +177,15 @@ function validateSourcemapIntegrity() {
     }
     log(`  ✓ Sourcemap valid (${map.sources.length} sources)`, COLORS.green);
     return true;
-  } catch (error) {
-    log(`  ✗ Invalid sourcemap: ${error.message}`, COLORS.red);
+  } catch (error: unknown) {
+    log(`  ✗ Invalid sourcemap: ${(error as Error).message}`, COLORS.red);
     log(`    File: ${BUNDLE_MAP_FILE}`, COLORS.dim);
     return false;
   }
 }
 
 function validateSourcemapReference() {
-  const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
+  const bundleFile = path.join(SDK_DIST_DIR, BUNDLE_FILE);
   const content = fs.readFileSync(bundleFile, 'utf-8');
   const lines = content.split('\n');
   const lastLine = lines[lines.length - 1] || lines[lines.length - 2];
@@ -193,8 +211,8 @@ function testPackageInstallAndImports() {
           { cwd: tempDir, stdio: 'pipe' },
         );
         log('  ✓ ESM imports work', COLORS.green);
-      } catch (error) {
-        throw new Error(`ESM import failed: ${error.message}`);
+      } catch (error: unknown) {
+        throw new Error(`ESM import failed: ${(error as Error).message}`);
       }
 
       // Test CommonJS require
@@ -204,16 +222,17 @@ function testPackageInstallAndImports() {
           { cwd: tempDir, stdio: 'pipe' },
         );
         log('  ✓ CommonJS require works', COLORS.green);
-      } catch (error) {
-        throw new Error(`CommonJS require failed: ${error.message}`);
+      } catch (error: unknown) {
+        throw new Error(`CommonJS require failed: ${(error as Error).message}`);
       }
 
       return true;
     });
-  } catch (error) {
-    log(`  ✗ Import test failed: ${error.message}`, COLORS.red);
-    if (error.stderr) {
-      log(`    ${error.stderr.toString()}`, COLORS.dim);
+  } catch (error: unknown) {
+    const err = error as Error & { stderr?: Buffer };
+    log(`  ✗ Import test failed: ${err.message}`, COLORS.red);
+    if (err.stderr) {
+      log(`    ${err.stderr.toString()}`, COLORS.dim);
     }
     return false;
   }
@@ -221,12 +240,13 @@ function testPackageInstallAndImports() {
 
 function validateWithPublint() {
   try {
-    execSync('npx publint', { cwd: ROOT, stdio: 'pipe' });
+    execSync('npx publint', { cwd: SDK_ROOT, stdio: 'pipe' });
     log('  ✓ publint passed', COLORS.green);
-  } catch (error) {
+  } catch (error: unknown) {
+    const err = error as Error & { stdout?: Buffer };
     log('  ⚠ publint warnings (non-fatal)', COLORS.yellow);
-    if (error.stdout) {
-      log(`    ${error.stdout.toString().trim()}`, COLORS.dim);
+    if (err.stdout) {
+      log(`    ${err.stdout.toString().trim()}`, COLORS.dim);
     }
   }
   return true;
@@ -248,7 +268,7 @@ function checkPackageExports() {
 function checkBundleSize() {
   logSection('4. Bundle Size');
 
-  const bundleFile = path.join(DIST_DIR, BUNDLE_FILE);
+  const bundleFile = path.join(SDK_DIST_DIR, BUNDLE_FILE);
 
   try {
     // Read file once for both size calculations
@@ -269,8 +289,11 @@ function checkBundleSize() {
     }
 
     return true;
-  } catch (error) {
-    log(`✗ Bundle not found or unreadable: ${error.message}`, COLORS.red);
+  } catch (error: unknown) {
+    log(
+      `✗ Bundle not found or unreadable: ${(error as Error).message}`,
+      COLORS.red,
+    );
     return false;
   }
 }
@@ -299,7 +322,7 @@ function validateModuleSystemSeparation() {
       const args = [
         '-r',
         check.pattern,
-        DIST_DIR,
+        SDK_DIST_DIR,
         `--include=${check.include}`,
       ];
       if (check.exclude) {
@@ -334,8 +357,8 @@ function validateModuleSystemSeparation() {
 function main() {
   logSection('Embrace Web SDK Validation');
 
-  if (!fs.existsSync(DIST_DIR)) {
-    log('✗ dist/ not found. Run npm run compile first.', COLORS.red);
+  if (!fs.existsSync(SDK_DIST_DIR)) {
+    log('✗ dist/ not found. Run npm run build first.', COLORS.red);
     process.exit(1);
   }
 

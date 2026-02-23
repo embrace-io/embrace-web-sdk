@@ -10,10 +10,11 @@
     "access": "public"
   },
   "scripts": {
-    "clean": "npx rimraf dist",
-    "compile": "npm run clean && tsc && tsdown",
+    "clean": "npx -y rimraf dist",
+    "build": "tsdown",
+    "check": "tsc",
     "test": "tsx --test src/**/*.test.ts",
-    "validate": "tsx scripts/validate-cli.ts"
+    "validate": "tsx scripts/validate.ts"
   },
   "files": [
     "dist"
@@ -28,7 +29,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/embrace-io/embrace-web-sdk.git",
-    "directory": "cli"
+    "directory": "packages/web-cli"
   },
   "keywords": [
     "embrace",
@@ -41,7 +42,7 @@
     "cli"
   ],
   "dependencies": {
-    "commander": "14.0.3"
+    "commander": "^14.0.3"
   },
   "engines": {
     "node": ">=18.0.0"

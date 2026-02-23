@@ -1,6 +1,6 @@
 # Embrace Web SDK CLI
 
-This tool is intended to help with build-time tasks for the [Embrace Web SDK](../README.md).
+This tool is intended to help with build-time tasks for the [Embrace Web SDK](../web-sdk/README.md).
 
 ## Quick Start
 
@@ -37,7 +37,7 @@ npx embrace-web-cli upload -a "YOUR_EMBRACE_APP_ID" -t "YOUR_EMBRACE_UPLOAD_API_
 
 The same `upload` sub-command as above can be used to inject your app's version into your bundle if the value is only
 known at build time. If the version is known prior to build time you can provide it when initializing the SDK as
-described in [Keeping your app version up-to-date](../README.md#including-the-sdk-as-a-code-snippet-from-cdn).
+described in [Keeping your app version up-to-date](../web-sdk/README.md#keeping-your-app-version-up-to-date).
 Execute the same command as above while also providing your app's version:
 
 ```sh

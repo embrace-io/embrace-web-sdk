@@ -1,23 +1,19 @@
 {
   "name": "embrace-web-sdk-react-demo",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "clean": "npm run demo:frontend:install:clean && npm run demo:frontend:build:clean",
-    "build": "npm run compile --prefix ../.. && npm i && npm run demo:frontend:build:clean && npm run demo:frontend:build",
-    "dev": "npm run demo:frontend:dev -- --open",
+    "check": "tsc",
+    "clean": "npx -y rimraf .sonda dist",
+    "dev": "VITE_BASE_URL=/embrace-web-sdk/ vite --open",
+    "build": "VITE_BASE_URL=/embrace-web-sdk/ vite build",
+    "preview": "VITE_BASE_URL=/embrace-web-sdk/ vite preview --open",
     "demo": "bash ./scripts/runDemo.sh",
-    "demo:frontend:build:clean": "npx rimraf .sonda dist",
-    "demo:frontend:install:clean": "npx rimraf node_modules",
-    "demo:frontend:dev": "vite",
-    "demo:frontend:build": "tsc -b && vite build",
-    "demo:frontend:upload:sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
-    "demo:frontend:upload:sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1",
-    "demo:frontend:preview": "vite preview --open"
+    "upload-sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
+    "upload-sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1"
   },
   "dependencies": {
-    "@embrace-io/web-sdk": "../..",
+    "@embrace-io/web-sdk": "*",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "^0.212.0",
     "@opentelemetry/sdk-logs": "^0.212.0",
@@ -28,7 +24,7 @@
     "react-router-domv6plus": "npm:react-router-dom@^7.13.0"
   },
   "devDependencies": {
-    "@embrace-io/web-cli": "../../cli",
-    "@types/react-router-domv4v5": "npm:@types/react-router-dom@5.3.3"
+    "@embrace-io/web-cli": "*",
+    "@types/react-router-domv4v5": "npm:@types/react-router-dom@^5.3.3"
   }
 }

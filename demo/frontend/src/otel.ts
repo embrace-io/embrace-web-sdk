@@ -30,7 +30,7 @@ const setupOTel = () => {
   if (result) {
     console.log('Successfully initialized the Embrace SDK', SAMPLE_APP_ID);
   } else {
-    console.log('Failed to initialize the Embrace SDK', SAMPLE_APP_ID);
+    console.error('Failed to initialize the Embrace SDK', SAMPLE_APP_ID);
   }
 
   user.setUserId('test-user-id');

@@ -17,22 +17,20 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 
 ```bash
 # Build
-npm run sdk:compile              # Build SDK (ESM/CJS/IIFE)
-npm run cli:compile              # Build CLI tool
+npm run build                    # Build all packages (turbo)
 
 # Test
-npm run test                 # Run unit tests
-npm run sdk:test:coverage        # With coverage
-npm run sdk:test:integration     # Integration tests (requires sdk:compile first)
+npm run test                     # Run unit tests (turbo)
+npm run test:integration         # Integration tests (requires build first)
 
 # Lint & Check
-npm run lint             # Auto-fix with Biome
-npm run validate            # All checks (tsc + eslint baseline)
+npm run lint                     # Auto-fix with Biome
+npm run validate                 # All checks (tsc + eslint baseline)
 ```
 
 ## Architecture
 
-### Source Layout (`src/`)
+### Source Layout (`packages/web-sdk/src/`)
 
 ```
 api-*/          Public APIs with no-op defaults (traces, logs, sessions, users, page)
@@ -89,9 +87,9 @@ transport/      HTTP transport with retry logic
 Framework: @web/test-runner + Playwright + Mocha + Chai
 
 ```bash
-npm run sdk:test              # Headless
-npm run sdk:test:manual       # Browser with DevTools
-npm run sdk:test:watch        # Watch mode
+npm run test                  # Headless (from packages/web-sdk/)
+npm run test:manual           # Browser with DevTools
+npm run test:watch            # Watch mode
 ```
 
 ### Integration Tests
@@ -99,9 +97,9 @@ npm run sdk:test:watch        # Watch mode
 Test SDK against bundlers (Webpack 4/5, Vite 7, Next.js):
 
 ```bash
-npm run sdk:compile                       # Build first
-npm run sdk:test:integration              # Run tests
-npm run sdk:test:integration:update-golden  # Update golden files
+npm run build                             # Build first
+npm run test:integration                  # Run tests
+npm run test:integration:update-golden    # Update golden files
 ```
 
 ## Constraints
@@ -132,16 +130,16 @@ npm run sdk:test:integration:update-golden  # Update golden files
 
 ### Adding an Instrumentation
 
-1. Create in `src/instrumentations/<name>/`
+1. Create in `packages/web-sdk/src/instrumentations/<name>/`
 2. Extend `EmbraceInstrumentationBase`
-3. Export from `src/instrumentations/index.ts`
+3. Export from `packages/web-sdk/src/instrumentations/index.ts`
 4. Register in `setupDefaultInstrumentations.ts` if auto-enabled
 
 ### Adding a Processor
 
-1. Create in `src/processors/<Name>Processor/`
+1. Create in `packages/web-sdk/src/processors/<Name>Processor/`
 2. Implement `SpanProcessor` or `LogRecordProcessor`
-3. Export from `src/processors/index.ts`
+3. Export from `packages/web-sdk/src/processors/index.ts`
 4. Wire into processor chain in `initSDK.ts`
 
 ## Git Workflow
@@ -194,5 +192,5 @@ npm run sdk:test:integration:update-golden  # Update golden files
 
 ### Tests Flaky
 
-- Ensure `npm run sdk:compile` before integration tests
-- Use `sdk:test:manual` for debugging
+- Ensure `npm run build` before integration tests
+- Use `npm run test:manual` for debugging (from `packages/web-sdk/`)

@@ -1,0 +1,102 @@
+{
+  "name": "@embrace-io/web-sdk",
+  "version": "2.11.2",
+  "description": "Embrace Web SDK",
+  "type": "module",
+  "imports": {
+    "#embrace-io/otlp-transformer": {
+      "embrace": "./packages/otlp-transformer/src/index.ts",
+      "default": "./packages/otlp-transformer/dist/index.js"
+    }
+  },
+  "jsdelivr": "./dist/embrace-web-sdk.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "npm run build --prefix packages/otlp-transformer && npx rimraf dist && tsdown",
+    "test": "web-test-runner",
+    "test:watch": "npm run test -- --watch",
+    "test:manual": "npm run test -- --manual",
+    "test:coverage": "npm run test -- --config=web-test-runner.coverage.config.js",
+    "test:multiBrowsers": "npm run test -- --config=web-test-runner.multi-browser.config.js",
+    "check": "tsc",
+    "check:dist": "eslint --max-warnings 0 --config eslint.dist.config.ts dist/",
+    "validate": "tsx scripts/validate.ts",
+    "docs": "npx typedoc --readme none && touch docs/.nojekyll"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "*.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./react-instrumentation": {
+      "import": "./dist/react-instrumentation/index.js",
+      "require": "./dist/react-instrumentation/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.d.ts"
+      ],
+      "react-instrumentation": [
+        "./dist/react-instrumentation/index.d.ts"
+      ]
+    }
+  },
+  "author": "Embrace <support@embrace.io> (https://embrace.io/)",
+  "bugs": {
+    "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
+    "email": "support@embrace.io"
+  },
+  "homepage": "https://github.com/embrace-io/embrace-web-sdk",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/embrace-io/embrace-web-sdk.git",
+    "directory": "packages/web-sdk"
+  },
+  "keywords": [
+    "embrace",
+    "web",
+    "tracking",
+    "observability",
+    "otel",
+    "instrumentation",
+    "telemetry"
+  ],
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.212.0",
+    "@opentelemetry/core": "^2.5.1",
+    "@opentelemetry/instrumentation": "^0.212.0",
+    "@opentelemetry/instrumentation-fetch": "^0.212.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.212.0",
+    "@opentelemetry/otlp-exporter-base": "^0.212.0",
+    "@opentelemetry/resources": "^2.5.1",
+    "@opentelemetry/sdk-logs": "^0.212.0",
+    "@opentelemetry/sdk-trace-web": "^2.5.1",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
+    "@opentelemetry/web-common": "^0.212.0",
+    "hoist-non-react-statics": "^3.3.2",
+    "web-vitals": "^5.1.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

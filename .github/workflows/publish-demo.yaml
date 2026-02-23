@@ -6,7 +6,7 @@ on:
     paths:
       - demo/**
       - package*.json
-      - src/**
+      - packages/web-sdk/src/**
       - .nvmrc
   workflow_dispatch:
 
@@ -38,9 +38,7 @@ jobs:
       - run: npm ci
 
       - name: Build demo
-        run: npm run build --prefix demo/frontend
-        env:
-          VITE_BASE_URL: /embrace-web-sdk/
+        run: npx turbo run build --filter=embrace-web-sdk-react-demo
 
       - name: Verify build output
         run: |

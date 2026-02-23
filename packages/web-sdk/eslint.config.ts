@@ -7,7 +7,7 @@ export default defineConfig([
   globalIgnores(['**/*', '!src/', '!src/**/*']),
   {
     files: ['src/**/*.{js,ts,mjs,cjs}'],
-    ignores: ['**/*.test.*', '**/testUtils/**'],
+    ignores: ['**/*.test.*'],
     languageOptions: {
       parser: tseslint.parser,
       // enables type-aware linting to detect instance method usage

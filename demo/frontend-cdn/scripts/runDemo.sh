@@ -11,9 +11,9 @@ done
 # clean workspaces
 npm run clean --prefix ../..
 
-# compile sdk and build demo
+# build sdk and demo
 npm ci --prefix ../..
-npm run compile --prefix ../..
+npm run build --prefix ../..
 npm install
 
 # create .env file if it doesn't exist
@@ -26,9 +26,9 @@ rm -rf build dist
 npm run demo:cdn:sync:web:sdk
 
 if [ "$ASYNC_MODE" = true ]; then
-  npm run demo:cdn:frontend:compile:async
+  npm run demo:cdn:frontend:build:async
 else
-  npm run demo:cdn:frontend:compile
+  npm run demo:cdn:frontend:build
 fi
 
 npm run demo:cdn:frontend:preview

@@ -5,7 +5,7 @@
 On one terminal, on the root of the repo run:
 
 ```bash
-npm run sdk:compile:sdk:watch
+npm run build
 ```
 
 This allows you to work on the SDK and see the changes reflected in the demo app without needing to rebuild the SDK
