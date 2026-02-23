@@ -84,6 +84,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
+          chown root:root /github/home
 
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -165,6 +166,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
+          chown root:root /github/home
 
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -238,6 +240,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
+          chown root:root /github/home
 
       - name: Install GitHub CLI and jq
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
@@ -423,6 +426,7 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
+          chown root:root /github/home
 
       - name: Install GitHub CLI and jq
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
