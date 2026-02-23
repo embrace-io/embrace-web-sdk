@@ -1,3 +1,4 @@
+export { attributes } from './attributes.ts';
 export type {
   AttributeScrubber,
   PathnameDocument,
@@ -5,4 +6,3 @@ export type {
   URLDocument,
   VisibilityStateDocument,
 } from './types.ts';
-export { attributes } from './attributes.ts';

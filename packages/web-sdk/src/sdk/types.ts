@@ -17,7 +17,7 @@ import type { PageManager } from '../api-page/index.ts';
 import type { SpanSessionManager } from '../api-sessions/index.ts';
 import type { TraceManager } from '../api-traces/index.ts';
 import type { UserManager } from '../api-users/index.ts';
-import type { AttributeScrubber, TitleDocument } from '../common/index.ts';
+import type { AttributeScrubber } from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
