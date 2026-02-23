@@ -96,6 +96,7 @@ export const initSDK = (
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
+    disableDocumentTitleFallback = false,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -240,7 +241,10 @@ export const initSDK = (
       );
     }
 
-    const pageManager = setupPage({ registerGlobally });
+    const pageManager = setupPage({
+      disableDocumentTitleFallback,
+      registerGlobally,
+    });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
@@ -485,8 +489,13 @@ const setupLogs = ({
   return { loggerProvider, embraceLogManager };
 };
 
-const setupPage = ({ registerGlobally }: SetupPageArgs) => {
-  const embracePageManager = new EmbracePageManager();
+const setupPage = ({
+  disableDocumentTitleFallback,
+  registerGlobally,
+}: SetupPageArgs) => {
+  const embracePageManager = new EmbracePageManager({
+    disableDocumentTitleFallback,
+  });
 
   if (registerGlobally) {
     page.setGlobalPageManager(embracePageManager);

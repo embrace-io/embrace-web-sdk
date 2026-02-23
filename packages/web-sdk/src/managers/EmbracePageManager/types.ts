@@ -1,9 +1,12 @@
 import type { DiagLogger } from '@opentelemetry/api';
+import type { TitleDocument } from '../../common/index.ts';
 import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.ts';
 
 export interface EmbracePageManagerArgs {
   diag?: DiagLogger;
   shouldCleanupPathOptionsFromRouteName?: boolean;
+  disableDocumentTitleFallback?: boolean;
+  titleDocument?: TitleDocument;
 }
 
 export interface SetCurrentRouteSpanOptions {

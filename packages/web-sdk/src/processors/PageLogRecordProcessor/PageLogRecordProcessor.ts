@@ -1,6 +1,10 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import type { PageManager } from '../../api-page/index.ts';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import {
+  KEY_APP_SURFACE_LABEL,
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../constants/index.ts';
 import type { PageLogRecordProcessorArgs } from './types.ts';
 
 export class PageLogRecordProcessor implements LogRecordProcessor {
@@ -32,6 +36,11 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
         KEY_EMB_PAGE_ID,
         this._pageManager.getCurrentPageId(),
       );
+    }
+
+    const appSurfaceLabel = this._pageManager.getAppSurfaceLabel();
+    if (appSurfaceLabel) {
+      logRecord.setAttribute(KEY_APP_SURFACE_LABEL, appSurfaceLabel);
     }
   }
 

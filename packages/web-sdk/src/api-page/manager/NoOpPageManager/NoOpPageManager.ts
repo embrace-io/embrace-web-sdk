@@ -11,5 +11,11 @@ export class NoOpPageManager implements PageManager {
     return '';
   }
 
+  public setAppSurfaceLabel(_label: string): void {}
+
+  public getAppSurfaceLabel(): string | null {
+    return null;
+  }
+
   public clearCurrentRoute(): void {}
 }

@@ -12,5 +12,9 @@ export interface PageManager {
 
   getCurrentPageId: () => string | null;
 
+  setAppSurfaceLabel: (label: string) => void;
+
+  getAppSurfaceLabel: () => string | null;
+
   clearCurrentRoute: () => void;
 }

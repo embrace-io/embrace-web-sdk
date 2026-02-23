@@ -4,7 +4,11 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
 import type { PageManager, Route } from '../../api-page/index.ts';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import {
+  KEY_APP_SURFACE_LABEL,
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../constants/index.ts';
 import { EmbracePageManager } from '../../managers/index.ts';
 import { PageSpanProcessor } from './PageSpanProcessor.ts';
 
@@ -49,6 +53,22 @@ describe('PageSpanProcessor', () => {
     );
     expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.equal(
       '/products/:id',
+    );
+    void expect(readableSpan.attributes[KEY_APP_SURFACE_LABEL]).to.be.undefined;
+  });
+
+  it('should attach custom label when available', () => {
+    pageManager.setCurrentRoute(mockRoute);
+    pageManager.setAppSurfaceLabel('SpanLabel');
+
+    const span = tracer.startSpan('test-span-label');
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const readableSpan = finishedSpans[finishedSpans.length - 1];
+
+    expect(readableSpan.attributes[KEY_APP_SURFACE_LABEL]).to.equal(
+      'SpanLabel',
     );
   });
 

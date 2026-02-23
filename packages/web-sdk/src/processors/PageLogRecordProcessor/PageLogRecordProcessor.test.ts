@@ -4,7 +4,11 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import { setupTestLogExporter } from '../../../tests/utils/index.ts';
 import type { PageManager, Route } from '../../api-page/index.ts';
-import { KEY_EMB_PAGE_ID, KEY_EMB_PAGE_PATH } from '../../constants/index.ts';
+import {
+  KEY_APP_SURFACE_LABEL,
+  KEY_EMB_PAGE_ID,
+  KEY_EMB_PAGE_PATH,
+} from '../../constants/index.ts';
 import { EmbracePageManager } from '../../managers/index.ts';
 import { PageLogRecordProcessor } from './PageLogRecordProcessor.ts';
 
@@ -49,6 +53,21 @@ describe('PageLogRecordProcessor', () => {
       pageManager.getCurrentPageId(),
     );
     expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/products/:id');
+    void expect(log.attributes[KEY_APP_SURFACE_LABEL]).to.be.undefined;
+  });
+
+  it('should attach custom label when available', () => {
+    pageManager.setCurrentRoute(mockRoute);
+    pageManager.setAppSurfaceLabel('CustomLabel');
+
+    logger.emit({
+      body: 'some log',
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    const log = finishedLogs[finishedLogs.length - 1];
+
+    expect(log.attributes[KEY_APP_SURFACE_LABEL]).to.equal('CustomLabel');
   });
 
   it('should not override page attributes', () => {
