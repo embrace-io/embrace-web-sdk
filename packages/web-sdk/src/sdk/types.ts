@@ -225,11 +225,11 @@ type BaseSDKInitConfig = {
   restrictedProtocols?: Set<string>;
 
   /**
-   * disableDocumentTitleFallback disables the fallback to document.title for app.surface.label when a custom label is not set.
+   * useDocumentTitleAsPageLabel enables the fallback to document.title for page label when a custom label is not set.
    *
-   * **default**: false
+   * **default**: true
    */
-  disableDocumentTitleFallback?: boolean;
+  useDocumentTitleAsPageLabel?: boolean;
 };
 
 /*
@@ -335,7 +335,7 @@ export interface SetupLogsArgs {
 }
 
 export interface SetupPageArgs {
-  disableDocumentTitleFallback?: boolean;
+  useDocumentTitleAsPageLabel?: boolean;
   registerGlobally?: boolean;
 }
 

@@ -36,8 +36,8 @@ export class PageSpanProcessor implements SpanProcessor {
       span.attributes[KEY_EMB_PAGE_ID] = currentPageId;
     }
 
-    const appSurfaceLabel = this._pageManager.getAppSurfaceLabel();
-    if (appSurfaceLabel) {
+    const appSurfaceLabel = this._pageManager.getPageLabel();
+    if (appSurfaceLabel && !span.attributes[KEY_APP_SURFACE_LABEL]) {
       span.attributes[KEY_APP_SURFACE_LABEL] = appSurfaceLabel;
     }
   }

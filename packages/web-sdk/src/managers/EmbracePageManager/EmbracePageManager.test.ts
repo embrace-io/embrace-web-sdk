@@ -76,35 +76,45 @@ describe('EmbracePageManager', () => {
     expect(initialPageId).to.equal(secondPageId);
   });
 
-  it('should set and get custom app surface label', () => {
-    pageManager.setAppSurfaceLabel('my-custom-label');
-    expect(pageManager.getAppSurfaceLabel()).to.equal('my-custom-label');
+  it('should set and get custom route label', () => {
+    pageManager.setPageLabel('my-custom-label');
+    expect(pageManager.getPageLabel()).to.equal('my-custom-label');
   });
 
   it('should fallback to document.title when custom label is not set', () => {
     mockDocument.title = 'My Page Title';
-    expect(pageManager.getAppSurfaceLabel()).to.equal('My Page Title');
+    expect(pageManager.getPageLabel()).to.equal('My Page Title');
   });
 
   it('should not fallback to document.title when fallback is disabled', () => {
     const customPageManager = new EmbracePageManager({
-      disableDocumentTitleFallback: true,
+      useDocumentTitleAsPageLabel: false,
       titleDocument: mockDocument,
     });
     mockDocument.title = 'My Page Title';
-    void expect(customPageManager.getAppSurfaceLabel()).to.be.null;
+    void expect(customPageManager.getPageLabel()).to.be.null;
   });
 
   it('should prefer custom label over document.title fallback', () => {
     mockDocument.title = 'My Page Title';
-    pageManager.setAppSurfaceLabel('custom-label');
-    expect(pageManager.getAppSurfaceLabel()).to.equal('custom-label');
+    pageManager.setPageLabel('custom-label');
+    expect(pageManager.getPageLabel()).to.equal('custom-label');
+  });
+
+  it('should set route label from route.label when setting route', () => {
+    const routeWithLabel: Route = {
+      path: '/products/:id',
+      url: '/products/123',
+      label: 'Products Page',
+    };
+    pageManager.setCurrentRoute(routeWithLabel);
+    expect(pageManager.getPageLabel()).to.equal('Products Page');
   });
 
   it('should clear custom label on routing', () => {
     mockDocument.title = 'My Page Title';
-    pageManager.setAppSurfaceLabel('custom-label');
+    pageManager.setPageLabel('custom-label');
     pageManager.clearCurrentRoute();
-    expect(pageManager.getAppSurfaceLabel()).to.equal('My Page Title');
+    expect(pageManager.getPageLabel()).to.equal('My Page Title');
   });
 });

@@ -3,6 +3,8 @@ export interface Route {
   path: string;
   // This is the URL of the route after replacing the URL params. i.e. /products/123
   url: string;
+  // Optional label for the route, used as app.surface.label
+  label?: string;
 }
 
 export interface PageManager {
@@ -12,9 +14,9 @@ export interface PageManager {
 
   getCurrentPageId: () => string | null;
 
-  setAppSurfaceLabel: (label: string) => void;
+  setPageLabel: (label: string) => void;
 
-  getAppSurfaceLabel: () => string | null;
+  getPageLabel: () => string | null;
 
   clearCurrentRoute: () => void;
 }

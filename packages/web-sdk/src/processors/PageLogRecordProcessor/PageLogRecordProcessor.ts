@@ -38,8 +38,8 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
       );
     }
 
-    const appSurfaceLabel = this._pageManager.getAppSurfaceLabel();
-    if (appSurfaceLabel) {
+    const appSurfaceLabel = this._pageManager.getPageLabel();
+    if (appSurfaceLabel && !logRecord.attributes[KEY_APP_SURFACE_LABEL]) {
       logRecord.setAttribute(KEY_APP_SURFACE_LABEL, appSurfaceLabel);
     }
   }

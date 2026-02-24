@@ -40,8 +40,8 @@ describe('PageAPI', () => {
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
       clearCurrentRoute: sinon.stub(),
-      setAppSurfaceLabel: sinon.stub(),
-      getAppSurfaceLabel: sinon.stub(),
+      setPageLabel: sinon.stub(),
+      getPageLabel: sinon.stub(),
     };
     pageAPI.setGlobalPageManager(mockPageManager);
     const pageManager = pageAPI.getPageManager();
@@ -57,8 +57,8 @@ describe('PageAPI', () => {
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
       clearCurrentRoute: sinon.stub(),
-      setAppSurfaceLabel: sinon.stub(),
-      getAppSurfaceLabel: sinon.stub(),
+      setPageLabel: sinon.stub(),
+      getPageLabel: sinon.stub(),
     };
     pageAPI.setGlobalPageManager(mockPageManager);
 

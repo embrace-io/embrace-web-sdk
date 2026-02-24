@@ -6,15 +6,15 @@ import type { EmbracePageManagerArgs } from './types.ts';
 export class EmbracePageManager implements PageManager {
   private _currentRoute: Route | null = null;
   private _currentPageId: string | null = null;
-  private _customAppSurfaceLabel: string | null = null;
+  private _pageLabel: string | null = null;
   private readonly _titleDocument: TitleDocument | undefined;
-  private readonly _disableDocumentTitleFallback: boolean;
+  private readonly _useDocumentTitleAsPageLabel: boolean;
 
   public constructor({
-    disableDocumentTitleFallback,
+    useDocumentTitleAsPageLabel = true,
     titleDocument = window.document,
   }: EmbracePageManagerArgs = {}) {
-    this._disableDocumentTitleFallback = disableDocumentTitleFallback ?? false;
+    this._useDocumentTitleAsPageLabel = useDocumentTitleAsPageLabel;
     this._titleDocument = titleDocument;
   }
 
@@ -22,14 +22,14 @@ export class EmbracePageManager implements PageManager {
 
   public getCurrentRoute = () => this._currentRoute;
 
-  public setAppSurfaceLabel = (label: string): void => {
-    this._customAppSurfaceLabel = label;
+  public setPageLabel = (label: string): void => {
+    this._pageLabel = label;
   };
 
-  public getAppSurfaceLabel = (): string | null => {
+  public getPageLabel = (): string | null => {
     return (
-      this._customAppSurfaceLabel ||
-      (this._disableDocumentTitleFallback || !this._titleDocument
+      this._pageLabel ||
+      (!this._useDocumentTitleAsPageLabel || !this._titleDocument
         ? null
         : this._titleDocument.title)
     );
@@ -41,11 +41,15 @@ export class EmbracePageManager implements PageManager {
     }
 
     this._currentRoute = route;
+
+    if (route.label) {
+      this._pageLabel = route.label;
+    }
   };
 
   public clearCurrentRoute = () => {
     this._currentRoute = null;
     this._currentPageId = null;
-    this._customAppSurfaceLabel = null;
+    this._pageLabel = null;
   };
 }

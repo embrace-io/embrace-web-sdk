@@ -11,9 +11,9 @@ export class NoOpPageManager implements PageManager {
     return '';
   }
 
-  public setAppSurfaceLabel(_label: string): void {}
+  public setPageLabel(_label: string): void {}
 
-  public getAppSurfaceLabel(): string | null {
+  public getPageLabel(): string | null {
     return null;
   }
 

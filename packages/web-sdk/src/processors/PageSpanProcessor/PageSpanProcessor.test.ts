@@ -59,7 +59,7 @@ describe('PageSpanProcessor', () => {
 
   it('should attach custom label when available', () => {
     pageManager.setCurrentRoute(mockRoute);
-    pageManager.setAppSurfaceLabel('SpanLabel');
+    pageManager.setPageLabel('SpanLabel');
 
     const span = tracer.startSpan('test-span-label');
     span.end();
@@ -105,6 +105,25 @@ describe('PageSpanProcessor', () => {
     );
     void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.equal(
       '/some/other/path',
+    );
+  });
+
+  it('should not override surface label attribute', () => {
+    pageManager.setCurrentRoute(mockRoute);
+    pageManager.setPageLabel('DefaultLabel');
+
+    const span = tracer.startSpan('span-with-label', {
+      attributes: {
+        [KEY_APP_SURFACE_LABEL]: 'ExistingLabel',
+      },
+    });
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const readableSpan = finishedSpans[finishedSpans.length - 1];
+
+    expect(readableSpan.attributes[KEY_APP_SURFACE_LABEL]).to.be.equal(
+      'ExistingLabel',
     );
   });
 

@@ -96,7 +96,7 @@ export const initSDK = (
     registerGlobally = true,
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
-    disableDocumentTitleFallback = false,
+    useDocumentTitleAsPageLabel = true,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -242,7 +242,7 @@ export const initSDK = (
     }
 
     const pageManager = setupPage({
-      disableDocumentTitleFallback,
+      useDocumentTitleAsPageLabel,
       registerGlobally,
     });
 
@@ -490,11 +490,11 @@ const setupLogs = ({
 };
 
 const setupPage = ({
-  disableDocumentTitleFallback,
+  useDocumentTitleAsPageLabel,
   registerGlobally,
 }: SetupPageArgs) => {
   const embracePageManager = new EmbracePageManager({
-    disableDocumentTitleFallback,
+    useDocumentTitleAsPageLabel,
   });
 
   if (registerGlobally) {

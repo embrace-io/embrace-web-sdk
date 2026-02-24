@@ -26,12 +26,12 @@ export class ProxyPageManager implements PageManager {
     return this.getDelegate().getCurrentPageId();
   }
 
-  public setAppSurfaceLabel(label: string): void {
-    this.getDelegate().setAppSurfaceLabel(label);
+  public setPageLabel(label: string): void {
+    this.getDelegate().setPageLabel(label);
   }
 
-  public getAppSurfaceLabel(): string | null {
-    return this.getDelegate().getAppSurfaceLabel();
+  public getPageLabel(): string | null {
+    return this.getDelegate().getPageLabel();
   }
 
   public clearCurrentRoute(): void {

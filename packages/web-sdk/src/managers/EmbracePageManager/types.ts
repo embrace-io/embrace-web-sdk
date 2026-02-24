@@ -5,7 +5,7 @@ import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.ts';
 export interface EmbracePageManagerArgs {
   diag?: DiagLogger;
   shouldCleanupPathOptionsFromRouteName?: boolean;
-  disableDocumentTitleFallback?: boolean;
+  useDocumentTitleAsPageLabel?: boolean;
   titleDocument?: TitleDocument;
 }
 

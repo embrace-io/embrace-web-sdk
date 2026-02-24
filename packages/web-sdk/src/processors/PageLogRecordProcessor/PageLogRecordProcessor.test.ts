@@ -58,7 +58,7 @@ describe('PageLogRecordProcessor', () => {
 
   it('should attach custom label when available', () => {
     pageManager.setCurrentRoute(mockRoute);
-    pageManager.setAppSurfaceLabel('CustomLabel');
+    pageManager.setPageLabel('CustomLabel');
 
     logger.emit({
       body: 'some log',
@@ -87,6 +87,23 @@ describe('PageLogRecordProcessor', () => {
 
     expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal('custom-page-id');
     expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/custom/path');
+  });
+
+  it('should not override surface label attribute', () => {
+    pageManager.setCurrentRoute(mockRoute);
+    pageManager.setPageLabel('DefaultLabel');
+
+    logger.emit({
+      body: 'some log',
+      attributes: {
+        [KEY_APP_SURFACE_LABEL]: 'ExistingLabel',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    const log = finishedLogs[finishedLogs.length - 1];
+
+    expect(log.attributes[KEY_APP_SURFACE_LABEL]).to.equal('ExistingLabel');
   });
 
   it('should not attach surface name and id when route is null', () => {
