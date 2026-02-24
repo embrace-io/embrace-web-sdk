@@ -39,7 +39,8 @@ export type ReasonSessionEnded =
   | 'timer' // max_time_reached limit
   | 'manual' // using the public api
   | 'max_size_reached'
-  | 'state_changed'; // visibility change
+  | 'state_changed' // visibility change
+  | 'bfcache'; // page entering back-forward cache
 
 export type PropertyOptions = {
   lifespan?: 'permanent';

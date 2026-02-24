@@ -70,7 +70,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
   private readonly _tab: Tab;
-  private readonly _navigationSource: NavigationSource;
+  // This field is mutable to support updating navigation source during bfcache restoration.
+  private _navigationSource: NavigationSource;
   private readonly _referrerInfo: {
     isValid: boolean;
     isSameOrigin: boolean;
@@ -120,6 +121,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._tab = initResult.tab;
     this._navigationSource = initResult.navigationSource;
     this._setupNewTabClickListeners();
+    this._setupBfcacheListener();
   }
 
   // Collects all permanent session properties from localStorage
@@ -591,5 +593,36 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     const options = { capture: true, passive: true };
     document.addEventListener('auxclick', handleNewTabClick, options);
     document.addEventListener('click', handleNewTabClick, options);
+  }
+
+  private _setupBfcacheListener(): void {
+    // Handle page entering bfcache - end the session
+    window.addEventListener(
+      'pagehide',
+      (event) => {
+        // persisted = true means page is entering bfcache and will be restored later
+        // persisted = false means page is being unloaded permanently
+        if (event.persisted) {
+          this._diag.debug('Page entering bfcache, ending session');
+          this.endSessionSpanInternal('bfcache');
+        }
+      },
+      { passive: true },
+    );
+
+    // Handle page restoring from bfcache - start a new session
+    window.addEventListener(
+      'pageshow',
+      (event) => {
+        // persisted = true means page was restored from back-forward cache
+        if (event.persisted) {
+          this._navigationSource = 'back_forward';
+          this._diag.debug('Page restored from bfcache, starting new session');
+
+          this.startSessionSpan({ reason: 'bfcache_restore' });
+        }
+      },
+      { passive: true },
+    );
   }
 }

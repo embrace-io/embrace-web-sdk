@@ -1368,4 +1368,193 @@ describe('EmbraceSpanSessionManager', () => {
       });
     });
   });
+
+  // bfcache tests need isolation because each manager registers window listeners
+  // that can't be cleaned up, so we use a dedicated exporter for each test
+  describe('bfcache handling', () => {
+    let bfcacheExporter: InMemorySpanExporter;
+    let bfcacheProvider: WebTracerProvider;
+    let bfcacheDiag: InMemoryDiagLogger;
+    let bfcacheStorage: InMemoryStorage;
+    let bfcacheSessionStorage: InMemoryStorage;
+    let bfcacheLimitManager: EmbraceLimitManager;
+
+    beforeEach(() => {
+      bfcacheExporter = new InMemorySpanExporter();
+      bfcacheProvider = new WebTracerProvider({
+        spanProcessors: [new SimpleSpanProcessor(bfcacheExporter)],
+      });
+      bfcacheDiag = new InMemoryDiagLogger();
+      bfcacheStorage = new InMemoryStorage();
+      bfcacheSessionStorage = new InMemoryStorage();
+      bfcacheLimitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    });
+
+    afterEach(() => {
+      bfcacheExporter.reset();
+    });
+
+    it('should end session with bfcache reason when pagehide fires with persisted=true', () => {
+      const manager = new EmbraceSpanSessionManager({
+        diag: bfcacheDiag,
+        storage: bfcacheStorage,
+        sessionStorage: bfcacheSessionStorage,
+        limitManager: bfcacheLimitManager,
+        referrer: '',
+      });
+      manager.setTracerProvider(bfcacheProvider);
+
+      manager.startSessionSpan();
+      void expect(manager.getSessionId()).to.not.be.null;
+
+      // Simulate page entering bfcache
+      const pagehideEvent = new PageTransitionEvent('pagehide', {
+        persisted: true,
+      });
+      window.dispatchEvent(pagehideEvent);
+
+      // Session should be ended
+      void expect(manager.getSessionId()).to.be.null;
+
+      const finishedSpans = bfcacheExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(1);
+      expect(finishedSpans[0].attributes).to.have.property(
+        KEY_EMB_SESSION_REASON_ENDED,
+        'bfcache',
+      );
+    });
+
+    it('should NOT end session when pagehide fires with persisted=false', () => {
+      const manager = new EmbraceSpanSessionManager({
+        diag: bfcacheDiag,
+        storage: bfcacheStorage,
+        sessionStorage: bfcacheSessionStorage,
+        limitManager: bfcacheLimitManager,
+        referrer: '',
+      });
+      manager.setTracerProvider(bfcacheProvider);
+
+      manager.startSessionSpan();
+      const sessionId = manager.getSessionId();
+      void expect(sessionId).to.not.be.null;
+
+      // Simulate normal page unload (not entering bfcache)
+      const pagehideEvent = new PageTransitionEvent('pagehide', {
+        persisted: false,
+      });
+      window.dispatchEvent(pagehideEvent);
+
+      // Session should still be active
+      expect(manager.getSessionId()).to.equal(sessionId);
+      expect(bfcacheExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it('should start new session with bfcache_restore reason when pageshow fires with persisted=true', () => {
+      const manager = new EmbraceSpanSessionManager({
+        diag: bfcacheDiag,
+        storage: bfcacheStorage,
+        sessionStorage: bfcacheSessionStorage,
+        limitManager: bfcacheLimitManager,
+        referrer: '',
+      });
+      manager.setTracerProvider(bfcacheProvider);
+
+      // Simulate page restoring from bfcache (no active session)
+      const pageshowEvent = new PageTransitionEvent('pageshow', {
+        persisted: true,
+      });
+      window.dispatchEvent(pageshowEvent);
+
+      // New session should be started
+      void expect(manager.getSessionId()).to.not.be.null;
+
+      manager.endSessionSpan();
+      const finishedSpans = bfcacheExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(1);
+      expect(finishedSpans[0].attributes).to.have.property(
+        KEY_EMB_SESSION_REASON_STARTED,
+        'bfcache_restore',
+      );
+      expect(finishedSpans[0].attributes).to.have.property(
+        KEY_EMB_NAVIGATION_SOURCE,
+        'back_forward',
+      );
+    });
+
+    it('should NOT start session when pageshow fires with persisted=false', () => {
+      const manager = new EmbraceSpanSessionManager({
+        diag: bfcacheDiag,
+        storage: bfcacheStorage,
+        sessionStorage: bfcacheSessionStorage,
+        limitManager: bfcacheLimitManager,
+        referrer: '',
+      });
+      manager.setTracerProvider(bfcacheProvider);
+
+      // No session active initially
+      void expect(manager.getSessionId()).to.be.null;
+
+      // Simulate normal page load (not from bfcache)
+      const pageshowEvent = new PageTransitionEvent('pageshow', {
+        persisted: false,
+      });
+      window.dispatchEvent(pageshowEvent);
+
+      // No session should be started
+      void expect(manager.getSessionId()).to.be.null;
+    });
+
+    it('should handle multiple bfcache cycles correctly', () => {
+      const manager = new EmbraceSpanSessionManager({
+        diag: bfcacheDiag,
+        storage: bfcacheStorage,
+        sessionStorage: bfcacheSessionStorage,
+        limitManager: bfcacheLimitManager,
+        referrer: '',
+      });
+      manager.setTracerProvider(bfcacheProvider);
+
+      // First session
+      manager.startSessionSpan();
+      const firstSessionId = manager.getSessionId();
+
+      // Enter bfcache
+      window.dispatchEvent(
+        new PageTransitionEvent('pagehide', { persisted: true }),
+      );
+      void expect(manager.getSessionId()).to.be.null;
+
+      // Restore from bfcache
+      window.dispatchEvent(
+        new PageTransitionEvent('pageshow', { persisted: true }),
+      );
+      const secondSessionId = manager.getSessionId();
+      expect(secondSessionId).to.not.equal(firstSessionId);
+
+      // Enter bfcache again
+      window.dispatchEvent(
+        new PageTransitionEvent('pagehide', { persisted: true }),
+      );
+      void expect(manager.getSessionId()).to.be.null;
+
+      // Restore from bfcache again
+      window.dispatchEvent(
+        new PageTransitionEvent('pageshow', { persisted: true }),
+      );
+      const thirdSessionId = manager.getSessionId();
+      expect(thirdSessionId).to.not.equal(secondSessionId);
+
+      // Verify all sessions ended correctly
+      const finishedSpans = bfcacheExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      expect(finishedSpans[0].attributes).to.have.property(
+        KEY_EMB_SESSION_REASON_ENDED,
+        'bfcache',
+      );
+      expect(finishedSpans[1].attributes).to.have.property(
+        KEY_EMB_SESSION_REASON_ENDED,
+        'bfcache',
+      );
+    });
+  });
 });

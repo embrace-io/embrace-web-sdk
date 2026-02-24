@@ -397,4 +397,119 @@ describe('SpanSessionVisibilityInstrumentation', () => {
       'Tab visibility changed to hidden',
     );
   });
+
+  // bfcache coordination tests
+  describe('bfcache coordination', () => {
+    it('should skip visibility change handling after bfcache restoration', () => {
+      const visibilityDoc: VisibilityStateDocument = {
+        visibilityState: 'hidden',
+      };
+
+      instrumentation = new SpanSessionVisibilityInstrumentation(
+        {
+          visibilityDoc,
+        },
+        createMockSDKFeaturesManager(false),
+      );
+
+      // Simulate pageshow with persisted=true (bfcache restoration)
+      // This will trigger the session manager to start a new session
+      const pageshowEvent = new PageTransitionEvent('pageshow', {
+        persisted: true,
+      });
+      window.dispatchEvent(pageshowEvent);
+
+      // Capture the session ID after bfcache restoration
+      const sessionId = spanSessionManager.getSessionId();
+      void expect(sessionId).to.not.be.null;
+
+      // Now simulate visibilitychange to visible (which normally follows pageshow)
+      visibilityDoc.visibilityState = 'visible';
+      window.dispatchEvent(new Event('visibilitychange'));
+
+      // The session should NOT have been ended and restarted
+      // (same session ID means visibility instrumentation skipped handling)
+      expect(spanSessionManager.getSessionId()).to.equal(sessionId);
+    });
+
+    it('should NOT skip visibility change when pageshow has persisted=false', () => {
+      const visibilityDoc: VisibilityStateDocument = {
+        visibilityState: 'hidden',
+      };
+
+      instrumentation = new SpanSessionVisibilityInstrumentation(
+        {
+          visibilityDoc,
+        },
+        createMockSDKFeaturesManager(false),
+      );
+
+      // Start a session
+      spanSessionManager.startSessionSpan();
+      const sessionId = spanSessionManager.getSessionId();
+      void expect(sessionId).to.not.be.null;
+
+      // Simulate pageshow with persisted=false (normal navigation, not bfcache)
+      const pageshowEvent = new PageTransitionEvent('pageshow', {
+        persisted: false,
+      });
+      window.dispatchEvent(pageshowEvent);
+
+      // Now simulate visibilitychange to visible
+      visibilityDoc.visibilityState = 'visible';
+      window.dispatchEvent(new Event('visibilitychange'));
+
+      // The session SHOULD have been ended and a new one started
+      expect(spanSessionManager.getSessionId()).to.not.equal(sessionId);
+
+      // Verify session was ended with state_changed reason
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans.length).to.be.greaterThan(0);
+      const endedSession = finishedSpans.find(
+        (span) =>
+          span.attributes[KEY_EMB_SESSION_REASON_ENDED] === 'state_changed',
+      );
+      void expect(endedSession).to.not.be.undefined;
+    });
+
+    it('should only skip one visibility change after bfcache restoration', () => {
+      const visibilityDoc: VisibilityStateDocument = {
+        visibilityState: 'hidden',
+      };
+
+      instrumentation = new SpanSessionVisibilityInstrumentation(
+        {
+          visibilityDoc,
+        },
+        createMockSDKFeaturesManager(false),
+      );
+
+      // Simulate bfcache restoration - session manager starts a new session
+      const pageshowEvent = new PageTransitionEvent('pageshow', {
+        persisted: true,
+      });
+      window.dispatchEvent(pageshowEvent);
+
+      // Capture the session ID after bfcache restoration
+      const sessionId = spanSessionManager.getSessionId();
+      void expect(sessionId).to.not.be.null;
+
+      // First visibility change should be skipped
+      visibilityDoc.visibilityState = 'visible';
+      window.dispatchEvent(new Event('visibilitychange'));
+      expect(spanSessionManager.getSessionId()).to.equal(sessionId);
+
+      // Second visibility change should NOT be skipped
+      visibilityDoc.visibilityState = 'hidden';
+      window.dispatchEvent(new Event('visibilitychange'));
+
+      // Session should have ended - find the span with state_changed reason
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      const endedSession = finishedSpans.find(
+        (span) =>
+          span.attributes[KEY_EMB_SESSION_REASON_ENDED] === 'state_changed',
+      );
+      void expect(endedSession).to.not.be.undefined;
+    });
+  });
 });

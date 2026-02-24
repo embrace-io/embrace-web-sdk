@@ -15,11 +15,14 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   private _currentVisibilityState: DocumentVisibilityState;
   private _checkVisibilityTimeout: TimeoutRef | null;
   private _interactionSinceLastVisibilityChange: boolean;
+  // Tracks bfcache restoration to avoid double-handling with session manager's pageshow listener
+  private _restoringFromBfcache: boolean;
   private readonly _avoidEndingLimitedSessions: boolean;
   private readonly _embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
   private readonly _onInteractionThrottled: () => void;
+  private readonly _onPageShow: (event: PageTransitionEvent) => void;
 
   public constructor(
     {
@@ -45,6 +48,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     this._currentVisibilityState = visibilityDoc.visibilityState;
     this._checkVisibilityTimeout = null;
     this._interactionSinceLastVisibilityChange = false;
+    this._restoringFromBfcache = false;
     this._avoidEndingLimitedSessions =
       limitedSessionMaxDurationMs > 0 &&
       featureManager.isEmptySessionAvoidanceEnabled();
@@ -87,6 +91,16 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
     };
 
     this._onVisibilityChange = () => {
+      // Skip handling if this visibility change follows a bfcache restoration.
+      // The session manager's pageshow handler already started the new session.
+      if (this._restoringFromBfcache) {
+        this._diag.debug(
+          'Skipping visibility change handling after bfcache restoration',
+        );
+        this._restoringFromBfcache = false;
+        return;
+      }
+
       this._diag.debug(
         `Visibility change detected: ${visibilityDoc.visibilityState}`,
       );
@@ -156,6 +170,16 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       this._interactionSinceLastVisibilityChange = true;
     }, 1000);
 
+    // Track bfcache restoration to coordinate with session manager's pageshow handler
+    this._onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        this._diag.debug(
+          'Page restored from bfcache, will skip next visibility change',
+        );
+        this._restoringFromBfcache = true;
+      }
+    };
+
     if (this._config.enabled) {
       this.enable();
     }
@@ -163,6 +187,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
   public disable(): void {
     window.removeEventListener('visibilitychange', this._checkVisibilityChange);
+    window.removeEventListener('pageshow', this._onPageShow);
 
     if (this._avoidEndingLimitedSessions) {
       bulkRemoveEventListener({
@@ -175,6 +200,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
 
   public enable(): void {
     window.addEventListener('visibilitychange', this._checkVisibilityChange);
+    window.addEventListener('pageshow', this._onPageShow, { passive: true });
 
     if (this._avoidEndingLimitedSessions) {
       bulkAddEventListener({
