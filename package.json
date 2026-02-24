@@ -12,7 +12,7 @@
     "check": "turbo run check",
     "validate:versions": "node scripts/validate-versions.js",
     "validate": "npm run validate:versions && turbo run validate",
-    "dev": "turbo run dev --filter=embrace-web-sdk-react-demo",
+    "dev": "turbo run dev --filter=embrace-web-sdk-react-demo...",
     "demo": "npm i && npm run demo -w demo/frontend",
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",

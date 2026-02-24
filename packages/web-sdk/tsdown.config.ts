@@ -21,7 +21,7 @@ export default defineConfig([
     sourcemap: true,
     platform: 'browser',
     minify: true,
-    clean: true,
+    clean: false,
     plugins: [failOnWarnPlugin],
     inlineOnly: false, // IIFE bundles all deps intentionally
     noExternal: [/.*/],
