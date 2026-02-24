@@ -11,7 +11,8 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "validate": {
       "dependsOn": ["build"],
@@ -19,7 +20,8 @@
     },
     "test:multiBrowsers": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "//#server": {
       "cache": false,
