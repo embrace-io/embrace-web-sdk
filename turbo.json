@@ -5,6 +5,9 @@
     "build": {
       "dependsOn": ["^build"]
     },
+    "clean": {
+      "cache": false
+    },
     "check": {
       "dependsOn": ["^check"],
       "cache": false
@@ -25,8 +28,8 @@
     },
     "dev": {
       "dependsOn": ["^build"],
-      "persistent": true,
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "//#server": {
       "cache": false,
