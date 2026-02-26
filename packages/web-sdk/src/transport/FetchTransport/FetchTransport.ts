@@ -104,7 +104,16 @@ export class FetchTransport implements IExporterTransport {
 
     try {
       if (this._config.compression === 'gzip') {
-        request = await FetchTransport._compressRequest(data);
+        try {
+          request = await FetchTransport._compressRequest(data);
+        } catch (error) {
+          const compressError =
+            error instanceof Error ? error : new Error(String(error));
+          diag.warn(
+            `Fetch transport gzip compression failed: ${compressError.message}`,
+          );
+          return { status: 'failure', error: compressError };
+        }
         headers['Content-Encoding'] = 'gzip';
         headers['Content-Length'] = request.length.toString();
       }
@@ -118,9 +127,10 @@ export class FetchTransport implements IExporterTransport {
         inflightKeepaliveBytes += request.byteLength;
         inflightKeepaliveCount++;
       } else {
-        diag.warn(
-          `Sending without keepalive: ${wouldExceedBytes ? `inflight bytes (${inflightKeepaliveBytes} + ${request.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget` : `concurrent count (${inflightKeepaliveCount}) at limit of ${MAX_KEEPALIVE_REQUESTS}`}`,
-        );
+        const reason = wouldExceedBytes
+          ? `inflight bytes (${inflightKeepaliveBytes} + ${request.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget`
+          : `concurrent count (${inflightKeepaliveCount}) at limit of ${MAX_KEEPALIVE_REQUESTS}`;
+        diag.debug(`Sending without keepalive: ${reason}`);
       }
 
       const response = await fetch(this._config.url, {
@@ -133,22 +143,33 @@ export class FetchTransport implements IExporterTransport {
 
       if (response.ok) {
         return { status: 'success' };
-      } else {
-        diag.debug(
-          `Fetch transport received HTTP ${response.status} (keepalive=${keepalive})`,
-        );
-        const error = new Error(`${response.status} Fetch request failed`);
-        return response.status >= 500
-          ? { status: 'retryable', error }
-          : { status: 'failure', error };
       }
+
+      const error = new Error(`${response.status} Fetch request failed`);
+      const message = `Fetch transport received HTTP ${response.status} (keepalive=${keepalive})`;
+      if (response.status >= 500) {
+        diag.debug(message);
+        return { status: 'retryable', error };
+      }
+      diag.warn(message);
+      return { status: 'failure', error };
     } catch (error) {
-      const resolved =
+      const fetchError =
         error instanceof Error ? error : new Error(String(error));
-      diag.warn(
-        `Fetch transport failed (keepalive=${keepalive}): ${resolved.message}`,
-      );
-      return { status: 'failure', error: resolved };
+      const isRetryable =
+        fetchError instanceof TypeError ||
+        (fetchError instanceof DOMException &&
+          fetchError.name === 'TimeoutError');
+      const message = `Fetch transport failed (keepalive=${keepalive}): ${fetchError.message}`;
+      if (isRetryable) {
+        diag.debug(message);
+      } else {
+        diag.warn(message);
+      }
+      return {
+        status: isRetryable ? 'retryable' : 'failure',
+        error: fetchError,
+      };
     } finally {
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);

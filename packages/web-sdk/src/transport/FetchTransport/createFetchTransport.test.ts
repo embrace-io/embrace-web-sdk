@@ -10,11 +10,13 @@ import {
   fakeFetchRestore,
 } from '../../../tests/utils/index.ts';
 import { createFetchTransport } from './createFetchTransport.ts';
+import { _resetKeepaliveTracking } from './FetchTransport.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 describe('createFetchTransport', () => {
   beforeEach(() => {
+    _resetKeepaliveTracking();
     fakeFetchInstall();
   });
 

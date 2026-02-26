@@ -40,6 +40,11 @@ function createDeferred(): Deferred {
   return { promise, resolve, reject };
 }
 
+function reinstallFetch() {
+  fakeFetchRestore();
+  return fakeFetchInstall();
+}
+
 describe('FetchTransport', () => {
   let diagLogger: InMemoryDiagLogger;
 
@@ -88,8 +93,7 @@ describe('FetchTransport', () => {
   describe('keepalive cumulative tracking', () => {
     it('should disable keepalive when cumulative bytes exceed the budget', async () => {
       const deferred = createDeferred();
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
       stub.onCall(0).returns(deferred.promise);
       stub.onCall(1).resolves(new Response('ok', { status: 200 }));
 
@@ -117,8 +121,7 @@ describe('FetchTransport', () => {
 
     it('should disable keepalive when concurrent count reaches 9', async () => {
       const deferreds: Deferred[] = [];
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
 
       for (let i = 0; i < 9; i++) {
         const d = createDeferred();
@@ -155,8 +158,7 @@ describe('FetchTransport', () => {
 
     it('should decrement counters after request completes', async () => {
       const deferred = createDeferred();
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
       stub.onCall(0).returns(deferred.promise);
       stub.onCall(1).resolves(new Response('ok', { status: 200 }));
       stub.onCall(2).resolves(new Response('ok', { status: 200 }));
@@ -185,8 +187,7 @@ describe('FetchTransport', () => {
 
     it('should decrement counters after request fails', async () => {
       const deferred = createDeferred();
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
       stub.onCall(0).returns(deferred.promise);
       stub.onCall(1).resolves(new Response('ok', { status: 200 }));
       stub.onCall(2).resolves(new Response('ok', { status: 200 }));
@@ -217,8 +218,7 @@ describe('FetchTransport', () => {
   describe('keepalive tracking with gzip compression', () => {
     it('should use compressed size for budget check', async () => {
       const deferred = createDeferred();
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
 
       let firstFetchCalled!: () => void;
       const firstFetchCalledPromise = new Promise<void>((r) => {
@@ -255,8 +255,7 @@ describe('FetchTransport', () => {
 
     it('should disable keepalive when compressed bytes exceed budget', async () => {
       const deferred = createDeferred();
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
 
       let firstFetchCalled!: () => void;
       const firstFetchCalledPromise = new Promise<void>((r) => {
@@ -304,8 +303,7 @@ describe('FetchTransport', () => {
     });
 
     it('should free budget after gzip request fails', async () => {
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
       stub.onCall(0).rejects(new TypeError('Failed to fetch'));
       stub.onCall(1).resolves(new Response('ok', { status: 200 }));
 
@@ -321,38 +319,110 @@ describe('FetchTransport', () => {
     });
   });
 
+  describe('compression failure', () => {
+    it('should return failure with diagnostic log when compression fails', async () => {
+      const original = globalThis.CompressionStream;
+      globalThis.CompressionStream = class {
+        constructor() {
+          throw new Error('CompressionStream not supported');
+        }
+      } as unknown as typeof CompressionStream;
+
+      try {
+        const transport = makeTransport({ compression: 'gzip' });
+        const result = await transport.send(smallPayload, 1000);
+
+        expect(result.status).to.equal('failure');
+
+        const warns = diagLogger.getWarnLogs();
+        expect(warns.some((msg) => msg.includes('gzip compression failed'))).to
+          .be.true;
+      } finally {
+        globalThis.CompressionStream = original;
+      }
+    });
+
+    it('should not corrupt keepalive counters when compression fails', async () => {
+      const original = globalThis.CompressionStream;
+      globalThis.CompressionStream = class {
+        constructor() {
+          throw new Error('CompressionStream not supported');
+        }
+      } as unknown as typeof CompressionStream;
+
+      const transport = makeTransport({ compression: 'gzip' });
+      await transport.send(smallPayload, 1000);
+
+      globalThis.CompressionStream = original;
+
+      fakeFetchRespondWith('ok', { status: 200 });
+      const transport2 = makeTransport();
+      await transport2.send(smallPayload, 1000);
+
+      expect(fakeFetchGetKeepalive()).to.equal(true);
+    });
+  });
+
   describe('network errors', () => {
-    it('should return failure when fetch throws', async () => {
-      // Restore then re-install to reconfigure the stub to reject
-      fakeFetchRestore();
-      fakeFetchInstall().rejects(new TypeError('Failed to fetch'));
+    it('should return retryable when fetch throws a TypeError', async () => {
+      reinstallFetch().rejects(new TypeError('Failed to fetch'));
 
       const transport = makeTransport();
       const result = await transport.send(smallPayload, 1000);
 
       expect(result).to.deep.equal({
-        status: 'failure',
+        status: 'retryable',
         error: new TypeError('Failed to fetch'),
       });
+    });
+
+    it('should return retryable when fetch throws a TimeoutError', async () => {
+      reinstallFetch().rejects(
+        new DOMException('The operation was aborted', 'TimeoutError'),
+      );
+
+      const transport = makeTransport();
+      const result = await transport.send(smallPayload, 1000);
+
+      expect(result.status).to.equal('retryable');
+    });
+  });
+
+  describe('HTTP status classification', () => {
+    it('should return retryable for 5xx responses', async () => {
+      fakeFetchRespondWith('error', { status: 503 });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+
+      expect(result.status).to.equal('retryable');
+    });
+
+    it('should return failure for 4xx responses', async () => {
+      fakeFetchRespondWith('error', { status: 400 });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+
+      expect(result.status).to.equal('failure');
     });
   });
 
   describe('diagnostic logging', () => {
-    it('should warn via diag when keepalive is downgraded for byte budget', async () => {
+    it('should log debug when keepalive is downgraded for byte budget', async () => {
       fakeFetchRespondWith('ok', { status: 200 });
       const transport = makeTransport();
 
       await transport.send(largePayload, 1000);
 
-      const warns = diagLogger.getWarnLogs();
-      expect(warns).to.have.lengthOf(1);
-      expect(warns[0]).to.include('inflight bytes');
+      const debugs = diagLogger.getDebugLogs();
+      const match = debugs.find((msg) => msg.includes('inflight bytes'));
+      expect(match).to.be.a('string');
     });
 
-    it('should warn via diag when keepalive is downgraded for concurrent count', async () => {
+    it('should log debug when keepalive is downgraded for concurrent count', async () => {
       const deferreds: Deferred[] = [];
-      fakeFetchRestore();
-      const stub = fakeFetchInstall();
+      const stub = reinstallFetch();
 
       for (let i = 0; i < 9; i++) {
         const d = createDeferred();
@@ -370,12 +440,12 @@ describe('FetchTransport', () => {
         await Promise.resolve();
       }
 
-      // 10th request should trigger the warning
+      // 10th request should trigger the debug log
       await transport.send(tinyPayload, 5000);
 
-      const warns = diagLogger.getWarnLogs();
-      expect(warns).to.have.lengthOf(1);
-      expect(warns[0]).to.include('concurrent count');
+      const debugs = diagLogger.getDebugLogs();
+      const match = debugs.find((msg) => msg.includes('concurrent count'));
+      expect(match).to.be.a('string');
 
       for (const d of deferreds) {
         d.resolve(new Response('ok', { status: 200 }));
@@ -383,19 +453,20 @@ describe('FetchTransport', () => {
       await Promise.all(pending);
     });
 
-    it('should warn via diag when fetch throws', async () => {
-      fakeFetchRestore();
-      fakeFetchInstall().rejects(new TypeError('Failed to fetch'));
+    it('should log debug when fetch throws a transient error', async () => {
+      reinstallFetch().rejects(new TypeError('Failed to fetch'));
 
       const transport = makeTransport();
       await transport.send(smallPayload, 1000);
 
-      const warns = diagLogger.getWarnLogs();
-      expect(warns).to.have.lengthOf(1);
-      expect(warns[0]).to.include('Fetch transport failed');
+      const debugs = diagLogger.getDebugLogs();
+      const match = debugs.find((msg) =>
+        msg.includes('Fetch transport failed'),
+      );
+      expect(match).to.be.a('string');
     });
 
-    it('should log debug when HTTP response is not ok', async () => {
+    it('should log debug when HTTP response is 5xx', async () => {
       fakeFetchRespondWith('error', { status: 500 });
       const transport = makeTransport();
 
@@ -404,6 +475,17 @@ describe('FetchTransport', () => {
       const match = diagLogger
         .getDebugLogs()
         .find((msg) => msg.includes('HTTP 500'));
+      expect(match).to.be.a('string');
+    });
+
+    it('should warn via diag when HTTP response is 4xx', async () => {
+      fakeFetchRespondWith('error', { status: 401 });
+      const transport = makeTransport();
+
+      await transport.send(smallPayload, 1000);
+
+      const warns = diagLogger.getWarnLogs();
+      const match = warns.find((msg) => msg.includes('HTTP 401'));
       expect(match).to.be.a('string');
     });
   });
