@@ -100,7 +100,7 @@ describe('createFetchTransport', () => {
       foo: 'bar',
     });
     expect(result).to.deep.equal({
-      status: 'failure',
+      status: 'retryable',
       error: new Error(`500 Fetch request failed`),
     });
   });
