@@ -20,22 +20,20 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
   }
 
   public onEmit(logRecord: SdkLogRecord): void {
+    // If the log already has page attributes, do not override them
     if (
-      logRecord.attributes[KEY_EMB_PAGE_PATH] ||
-      logRecord.attributes[KEY_EMB_PAGE_ID]
+      !logRecord.attributes[KEY_EMB_PAGE_PATH] ||
+      !logRecord.attributes[KEY_EMB_PAGE_ID]
     ) {
-      // If the log already has page attributes, do not override them
-      return;
-    }
+      const currentRoute = this._pageManager.getCurrentRoute();
 
-    const currentRoute = this._pageManager.getCurrentRoute();
-
-    if (currentRoute) {
-      logRecord.setAttribute(KEY_EMB_PAGE_PATH, currentRoute.path);
-      logRecord.setAttribute(
-        KEY_EMB_PAGE_ID,
-        this._pageManager.getCurrentPageId(),
-      );
+      if (currentRoute) {
+        logRecord.setAttribute(KEY_EMB_PAGE_PATH, currentRoute.path);
+        logRecord.setAttribute(
+          KEY_EMB_PAGE_ID,
+          this._pageManager.getCurrentPageId(),
+        );
+      }
     }
 
     const appSurfaceLabel = this._pageManager.getPageLabel();

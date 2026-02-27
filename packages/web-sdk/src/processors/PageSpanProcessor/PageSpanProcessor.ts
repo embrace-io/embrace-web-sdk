@@ -20,20 +20,18 @@ export class PageSpanProcessor implements SpanProcessor {
 
   // Attach page attributes at span end to capture the page where the span completed
   public onEnd(span: ReadableSpan): void {
+    // If the span already has page attributes, do not override them
     if (
-      span.attributes[KEY_EMB_PAGE_PATH] ||
-      span.attributes[KEY_EMB_PAGE_ID]
+      !span.attributes[KEY_EMB_PAGE_PATH] ||
+      !span.attributes[KEY_EMB_PAGE_ID]
     ) {
-      // If the span already has page attributes, do not override them
-      return;
-    }
+      const currentRoute = this._pageManager.getCurrentRoute();
+      const currentPageId = this._pageManager.getCurrentPageId();
 
-    const currentRoute = this._pageManager.getCurrentRoute();
-    const currentPageId = this._pageManager.getCurrentPageId();
-
-    if (currentRoute && currentPageId) {
-      span.attributes[KEY_EMB_PAGE_PATH] = currentRoute.path;
-      span.attributes[KEY_EMB_PAGE_ID] = currentPageId;
+      if (currentRoute && currentPageId) {
+        span.attributes[KEY_EMB_PAGE_PATH] = currentRoute.path;
+        span.attributes[KEY_EMB_PAGE_ID] = currentPageId;
+      }
     }
 
     const appSurfaceLabel = this._pageManager.getPageLabel();
