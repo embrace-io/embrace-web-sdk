@@ -17,6 +17,7 @@ export type WebVitalListeners = Record<
 >;
 
 export type WebVitalsInstrumentationArgs = {
+  /** @deprecated All vitals metrics are tracked by default */
   trackingLevel?: TrackingLevel;
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;

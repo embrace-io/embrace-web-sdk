@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type {
   CLSMetricWithAttribution,
+  FCPMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
 import {
@@ -179,7 +180,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsEvent.time).to.deep.equal([3, 0]);
   });
 
-  it('should not report FCP metrics by default', () => {
+  it('should report FCP metrics', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
@@ -187,19 +188,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(fcpStub.called).to.be.false;
-  });
-
-  it('should report FCP metrics when tracking is set to all', () => {
-    instrumentation = new WebVitalsInstrumentation({
-      diag,
-      perf,
-      urlDocument,
-      trackingLevel: 'all',
-      listeners: mockWebVitalListeners,
-    });
-
-    void expect(fcpStub.calledOnce).to.be.true;
+    void expect(fcpStub.calledTwice).to.be.true;
     const { args } = fcpStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -368,7 +357,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(inpEvent.time).to.deep.equal([19, 0]);
   });
 
-  it('should not report TTFB metrics by default', () => {
+  it('should report TTFB metrics', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
@@ -376,19 +365,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
     });
 
-    void expect(ttfbStub.called).to.be.false;
-  });
-
-  it('should report TTFB metrics when tracking is set to all', () => {
-    instrumentation = new WebVitalsInstrumentation({
-      diag,
-      perf,
-      urlDocument,
-      trackingLevel: 'all',
-      listeners: mockWebVitalListeners,
-    });
-
-    void expect(ttfbStub.calledOnce).to.be.true;
+    void expect(ttfbStub.calledTwice).to.be.true;
     const { args } = ttfbStub.callsArg(0);
     const metricReportFunc = args[0][0] as WebVitalOnReport;
 
@@ -730,6 +707,148 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
     expect(clsEvent.attributes).to.containSubset({
+      'url.full': 'https://second.com',
+      'app.surface.name': '/second/:id',
+      'app.surface.id': attributedPageID,
+    });
+  });
+
+  it('should attribute the correct URL for FCP metrics', () => {
+    const testDocument: URLDocument = {
+      URL: 'https://first.com',
+    };
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/first/:id',
+      url: '/first/123',
+    });
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      pageManager,
+      urlDocument: testDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: true,
+    });
+
+    void expect(fcpStub.callCount).to.equal(2);
+    const fcpFinalReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+    const fcpChangeReportFunc = fcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    const fcpMetric = {
+      name: 'FCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 0,
+        firstByteToFCP: 0,
+        loadState: 'complete',
+      },
+    } as FCPMetricWithAttribution;
+
+    fcpChangeReportFunc(fcpMetric);
+
+    testDocument.URL = 'https://second.com';
+    pageManager.setCurrentRoute({
+      path: '/second/:id',
+      url: '/second/123',
+    });
+    const attributedPageID = pageManager.getCurrentPageId();
+    fcpChangeReportFunc(fcpMetric);
+    // should NOT be attributed to this URL since the metric hasn't changed
+    testDocument.URL = 'https://third.com';
+    pageManager.setCurrentRoute({
+      path: '/third/:id',
+      url: '/third/123',
+    });
+    fcpFinalReportFunc(fcpMetric);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const fcpEvent = sessionSpan.events[0];
+
+    expect(fcpEvent.name).to.be.equal('emb-web-vitals-report-FCP');
+    expect(fcpEvent.attributes).to.containSubset({
+      'url.full': 'https://second.com',
+      'app.surface.name': '/second/:id',
+      'app.surface.id': attributedPageID,
+    });
+  });
+
+  it('should attribute the correct URL for TTFB metrics', () => {
+    const testDocument: URLDocument = {
+      URL: 'https://first.com',
+    };
+    const pageManager = new EmbracePageManager();
+    pageManager.setCurrentRoute({
+      path: '/first/:id',
+      url: '/first/123',
+    });
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      pageManager,
+      urlDocument: testDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: true,
+    });
+
+    void expect(ttfbStub.callCount).to.equal(2);
+    const ttfbFinalReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
+    const ttfbChangeReportFunc = ttfbStub.getCall(1)
+      .args[0] as WebVitalOnReport;
+
+    const ttfbMetric = {
+      name: 'TTFB',
+      value: 33,
+      rating: 'poor',
+      delta: 99,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 20,
+        cacheDuration: 40,
+        dnsDuration: 60,
+        connectionDuration: 80,
+        requestDuration: 100,
+      },
+    } as MetricWithAttribution;
+
+    ttfbChangeReportFunc(ttfbMetric);
+    // should be attributed to this URL since that is when the last change to the metric occurred
+    testDocument.URL = 'https://second.com';
+    pageManager.setCurrentRoute({
+      path: '/second/:id',
+      url: '/second/123',
+    });
+    const attributedPageID = pageManager.getCurrentPageId();
+    ttfbChangeReportFunc(ttfbMetric);
+    testDocument.URL = 'https://third.com';
+    pageManager.setCurrentRoute({
+      path: '/third/:id',
+      url: '/third/123',
+    });
+    ttfbFinalReportFunc(ttfbMetric);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(1);
+
+    const ttfbEvent = sessionSpan.events[0];
+
+    expect(ttfbEvent.name).to.be.equal('emb-web-vitals-report-TTFB');
+    expect(ttfbEvent.attributes).to.containSubset({
       'url.full': 'https://second.com',
       'app.surface.name': '/second/:id',
       'app.surface.id': attributedPageID,
