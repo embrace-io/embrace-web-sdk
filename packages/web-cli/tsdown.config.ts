@@ -7,6 +7,6 @@ export default defineConfig({
   platform: 'node',
   outDir: 'dist',
   external: ['commander'],
-  clean: true,
+  clean: false,
   publint: true,
 });

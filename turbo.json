@@ -1,9 +1,12 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "node_modules/turbo/schema.json",
   "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
     },
     "check": {
       "dependsOn": ["^check"],
@@ -11,7 +14,8 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "validate": {
       "dependsOn": ["build"],
@@ -19,7 +23,13 @@
     },
     "test:multiBrowsers": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "persistent": true
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
     },
     "//#server": {
       "cache": false,

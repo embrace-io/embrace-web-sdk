@@ -17,7 +17,9 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "npm run build --prefix packages/otlp-transformer && npx rimraf dist && tsdown",
+    "clean": "npx -y rimraf dist",
+    "build": "npm run build --prefix packages/otlp-transformer && tsdown",
+    "dev": "tsdown --watch --no-clean",
     "test": "web-test-runner",
     "test:watch": "npm run test -- --watch",
     "test:manual": "npm run test -- --manual",
