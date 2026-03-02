@@ -44,6 +44,8 @@ export class EmbracePageManager implements PageManager {
 
     if (route.label) {
       this._pageLabel = route.label;
+    } else {
+      this._pageLabel = null;
     }
   };
 
