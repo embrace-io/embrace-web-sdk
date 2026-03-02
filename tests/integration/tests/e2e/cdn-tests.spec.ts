@@ -29,12 +29,14 @@ test.describe('CDN E2E Tests', () => {
     expect(hasInitSDK).toBe(true);
   });
 
-  test('it should expose 8 functions', async ({ page }) => {
+  test('it should expose 8 functions and an attributes object', async ({
+    page,
+  }) => {
     await page.goto(CDN_TEST_URL);
 
     const sdk = await page.evaluate(() => window.EmbraceWebSdk);
 
-    expect(Object.entries(sdk).length).toBe(8);
+    expect(Object.entries(sdk).length).toBe(9);
   });
 
   test('it should not reinitialize when loaded twice', async ({ page }) => {

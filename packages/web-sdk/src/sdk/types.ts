@@ -223,6 +223,13 @@ type BaseSDKInitConfig = {
    * **default**: new Set(['file:'])
    */
   restrictedProtocols?: Set<string>;
+
+  /**
+   * useDocumentTitleAsPageLabel enables the fallback to document.title for page label when a custom label is not set.
+   *
+   * **default**: true
+   */
+  useDocumentTitleAsPageLabel?: boolean;
 };
 
 /*
@@ -328,6 +335,7 @@ export interface SetupLogsArgs {
 }
 
 export interface SetupPageArgs {
+  useDocumentTitleAsPageLabel?: boolean;
   registerGlobally?: boolean;
 }
 

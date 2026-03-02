@@ -26,6 +26,14 @@ export class ProxyPageManager implements PageManager {
     return this.getDelegate().getCurrentPageId();
   }
 
+  public setPageLabel(label: string): void {
+    this.getDelegate().setPageLabel(label);
+  }
+
+  public getPageLabel(): string | null {
+    return this.getDelegate().getPageLabel();
+  }
+
   public clearCurrentRoute(): void {
     this.getDelegate().clearCurrentRoute();
   }
