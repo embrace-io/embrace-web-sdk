@@ -30,6 +30,7 @@ export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
 // to be consistent with mobile where we use 'app.surface.*' for screen names and ids
 export const KEY_EMB_PAGE_PATH = 'app.surface.name';
 export const KEY_EMB_PAGE_ID = 'app.surface.id';
+export const KEY_APP_SURFACE_LABEL = 'app.surface.label';
 
 export enum EMB_TYPES {
   Session = 'ux.session',

@@ -13,6 +13,11 @@ export interface PathnameDocument {
   pathname: string;
 }
 
+// Useful for testing so that we can pass in a document-like object and change its title
+export interface TitleDocument {
+  title: string;
+}
+
 export interface AttributeScrubber {
   key: string;
   scrub: (value: string) => string;
