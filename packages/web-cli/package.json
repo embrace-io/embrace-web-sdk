@@ -12,6 +12,7 @@
   "scripts": {
     "clean": "npx -y rimraf dist",
     "build": "tsdown",
+    "dev": "tsdown --watch --no-clean",
     "check": "tsc",
     "test": "tsx --test src/**/*.test.ts",
     "validate": "tsx scripts/validate.ts"
