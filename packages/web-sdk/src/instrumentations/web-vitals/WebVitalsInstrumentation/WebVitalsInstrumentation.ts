@@ -13,6 +13,7 @@ import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
+  KEY_APP_SURFACE_LABEL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
@@ -33,6 +34,7 @@ type AttributedPage = {
   fullURL: string;
   path?: string;
   pageID?: string;
+  label?: string;
 };
 
 const webVitalAttributionToReport = (
@@ -202,6 +204,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           attrs[KEY_EMB_PAGE_ID] = attributedPage.pageID;
         }
 
+        if (attributedPage.label) {
+          attrs[KEY_APP_SURFACE_LABEL] = attributedPage.label;
+        }
+
         currentSessionSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
           attrs,
@@ -278,6 +284,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     if (currentRoute && currentPageId) {
       attributed.path = currentRoute.path;
       attributed.pageID = currentPageId;
+    }
+
+    const pageLabel = this._pageManager.getPageLabel();
+    if (pageLabel) {
+      attributed.label = pageLabel;
     }
 
     return attributed;
