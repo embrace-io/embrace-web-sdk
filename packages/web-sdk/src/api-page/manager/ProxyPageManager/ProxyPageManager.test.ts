@@ -21,6 +21,8 @@ describe('ProxyPageManager', () => {
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
       clearCurrentRoute: sinon.stub(),
+      setPageLabel: sinon.stub(),
+      getPageLabel: sinon.stub(),
     };
   });
 

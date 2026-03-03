@@ -13,6 +13,7 @@ import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
+  KEY_APP_SURFACE_LABEL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
@@ -33,6 +34,7 @@ type AttributedPage = {
   fullURL: string;
   path?: string;
   pageID?: string;
+  label?: string;
 };
 
 const webVitalAttributionToReport = (
@@ -129,6 +131,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   };
   private _largestShiftTargetForCLS: string | undefined;
   private _listenersRegistered = false;
+  private _isEnabled = false;
 
   // instrumentation that adds an event to the session span for each web vital report
   public constructor({
@@ -160,19 +163,30 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override disable(): void {
-    // do nothing.
+    // web-vitals library doesn't support removing listeners, so we just pause emission
     // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
+    this._isEnabled = false;
+    this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
 
   public enable(): void {
+    this._isEnabled = true;
+
     // web-vitals library doesn't support removing listeners, so only register once
     if (this._listenersRegistered) {
+      this._diag.debug(
+        'WebVitalsInstrumentation listeners already registered, resuming emission',
+      );
       return;
     }
     this._listenersRegistered = true;
 
     this._metricsToTrack.forEach((name) => {
       this._listeners[name]?.((metric) => {
+        if (!this._isEnabled) {
+          return;
+        }
+
         const currentSessionSpan = this.sessionManager.getSessionSpan();
 
         if (!currentSessionSpan) {
@@ -200,6 +214,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         if (attributedPage.path && attributedPage.pageID) {
           attrs[KEY_EMB_PAGE_PATH] = attributedPage.path;
           attrs[KEY_EMB_PAGE_ID] = attributedPage.pageID;
+        }
+
+        if (attributedPage.label) {
+          attrs[KEY_APP_SURFACE_LABEL] = attributedPage.label;
         }
 
         currentSessionSpan.addEvent(
@@ -278,6 +296,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     if (currentRoute && currentPageId) {
       attributed.path = currentRoute.path;
       attributed.pageID = currentPageId;
+    }
+
+    const pageLabel = this._pageManager.getPageLabel();
+    if (pageLabel) {
+      attributed.label = pageLabel;
     }
 
     return attributed;

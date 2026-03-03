@@ -10,6 +10,8 @@ const sdkControl = initSDK({
   logLevel: DiagLogLevel.ALL,
   embraceDataURL: 'http://localhost:3001',
   embraceConfigURL: 'http://localhost:3001',
+  // Disabled until integration testing golden file generation is made more consistent across environments
+  useDocumentTitleAsPageLabel: false,
 });
 
 declare global {
