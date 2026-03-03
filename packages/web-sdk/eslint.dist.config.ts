@@ -32,6 +32,8 @@ export default defineConfig([
             'speculation-rules',
             // proto: deprecated but universally supported, used by bundled dependencies
             'proto',
+            // AbortSignal.timeout is guarded in FetchTransport
+            'abortsignal-timeout',
           ],
         },
       ],
