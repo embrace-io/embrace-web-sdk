@@ -46,7 +46,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
@@ -129,7 +129,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
@@ -201,7 +201,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -387,7 +387,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.58.2-noble
+      image: mcr.microsoft.com/playwright:v1.58.2-noble@sha256:6446946a1d9fd62d9ae501312a2d76a43ee688542b21622056a372959b65d63d
     permissions:
       pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
