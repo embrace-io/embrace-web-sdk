@@ -913,4 +913,114 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(clsStub.callCount).to.equal(2);
   });
+
+  it('should log debug message when enable() is called on already registered listeners', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    instrumentation.enable();
+
+    expect(diag.getDebugLogs()).to.include(
+      'WebVitalsInstrumentation listeners already registered, resuming emission',
+    );
+  });
+
+  it('should pause emission when disable() is called', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    // First metric should be recorded
+    metricReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution);
+
+    // Disable and try to record another metric
+    instrumentation.disable();
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 33,
+      rating: 'poor',
+      delta: 11,
+      id: 'm2',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+
+    // Only the first metric should be recorded
+    expect(sessionSpan.events).to.have.lengthOf(1);
+    expect(sessionSpan.events[0].attributes?.['emb.web_vital.id']).to.equal(
+      'm1',
+    );
+  });
+
+  it('should resume emission when enable() is called after disable()', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    instrumentation.disable();
+    instrumentation.enable();
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+
+    expect(sessionSpan.events).to.have.lengthOf(1);
+  });
+
+  it('should log debug message when disable() is called', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    instrumentation.disable();
+
+    expect(diag.getDebugLogs()).to.include(
+      'WebVitalsInstrumentation disabled, pausing emission',
+    );
+  });
 });
