@@ -196,6 +196,13 @@ const App = () => {
     document.body.appendChild(img);
   };
 
+  const handleTriggerLoaf = () => {
+    const start = performance.now();
+    while (performance.now() - start < 200) {
+      /* block main thread to trigger a long animation frame */
+    }
+  };
+
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
   const handleThrowError = () => {
     handleThrowErrorA(true);
@@ -490,6 +497,18 @@ const App = () => {
           </button>
           <button type="button" onClick={handleCancelXMLNetworkRequest}>
             Cancel a XML Network Request
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>LoAF</legend>
+        <div className={styles.actions}>
+          <button type="button" onClick={handleTriggerLoaf}>
+            Block Main Thread (200ms)
+          </button>
+          <button type="button" onClick={handleEndSessionSpan}>
+            End Session (flush LoAF report)
           </button>
         </div>
       </fieldset>
