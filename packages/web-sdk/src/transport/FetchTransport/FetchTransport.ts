@@ -91,6 +91,8 @@ export class FetchTransport implements IExporterTransport {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     if ('timeout' in AbortSignal) {
+      // ok to ignore because there is a guard
+      // eslint-disable-next-line baseline-js/use-baseline
       signal = AbortSignal.timeout(timeoutMillis);
     } else {
       const controller = new AbortController();
