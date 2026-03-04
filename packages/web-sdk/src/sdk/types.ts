@@ -25,6 +25,7 @@ import type {
   EmbraceXHRInstrumentationArgs,
   EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
+  LoafInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
   SpanSessionTimeoutInstrumentationArgs,
@@ -343,6 +344,7 @@ type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'web-vital'
+  | 'loaf'
   | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
@@ -368,6 +370,7 @@ export interface DefaultInstrumentationConfig {
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
+  loaf?: LoafInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
