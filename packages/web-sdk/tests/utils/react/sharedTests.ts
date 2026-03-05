@@ -9,7 +9,6 @@ const { expect } = chai;
 type ReactRouterTestOptions = {
   pageManager: PageManager;
   rootElement: Element;
-  productDetailsPath?: string;
 };
 
 export const runReactRouterTest = async ({
