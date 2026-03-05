@@ -1054,6 +1054,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1129,6 +1130,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1207,6 +1209,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1878,7 +1881,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load']),
+        omit: new Set(['document-load', 'loaf']),
       },
     });
 
@@ -1891,7 +1894,7 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load']),
+        omit: new Set(['document-load', 'loaf']),
       },
     });
 
