@@ -363,7 +363,15 @@ const expect = testWithMockApi.expect.extend({
       message: `Attributes mismatch for span ${received.name}`,
     });
 
-    expect(received.events).toMatchSpanEvents(expected.events, {
+    const sortedReceivedEvents = received.events.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    const sortedExpectedEvents = expected.events.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    expect(sortedReceivedEvents).toMatchSpanEvents(sortedExpectedEvents, {
       message: `Events mismatch for span ${received.name}`,
     });
 
