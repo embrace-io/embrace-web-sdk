@@ -18,6 +18,12 @@
     "commitlint": "commitlint",
     "test:integration": "turbo run test --filter=tests-integration",
     "test:integration:update-golden": "turbo run update-golden --filter=tests-integration",
+    "test:integration:container": "make run_e2e_in_container",
+    "test:integration:container:update-golden": "UPDATE_GOLDEN=1 make run_e2e_in_container",
+    "test:integration:container:serve": "make start_e2e_servers",
+    "test:integration:container:test": "make run_e2e_in_container_fast",
+    "test:integration:container:test:update-golden": "UPDATE_GOLDEN=1 make run_e2e_in_container_fast",
+    "test:integration:container:stop": "make stop_e2e_servers",
     "test:performance": "turbo run test --filter=tests-performance",
     "test:multiBrowsers": "turbo run test:multiBrowsers --filter=@embrace-io/web-sdk"
   },
