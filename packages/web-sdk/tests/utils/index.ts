@@ -9,6 +9,7 @@ export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.ts';
 export { FakeSpanProcessor } from './FakeSpanProcessor.ts';
 export {
   fakeFetchGetBody,
+  fakeFetchGetKeepalive,
   fakeFetchGetMethod,
   fakeFetchGetOptions,
   fakeFetchGetRequestHeaders,
