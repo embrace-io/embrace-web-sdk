@@ -2,6 +2,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   MemoryRouter,
+  Outlet,
   Route,
   Routes,
   useNavigate,
@@ -13,6 +14,7 @@ import {
   About,
   Home,
   Product,
+  ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
 import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
@@ -46,8 +48,22 @@ const renderReactApp = () => {
         />
         <Route
           path="/product/:id"
-          element={<Product onNavigate={handleNavigation} />}
-        />
+          element={
+            <>
+              <Product onNavigate={handleNavigation} />
+              <Outlet />
+            </>
+          }
+        >
+          <Route
+            path="/product/:id/details"
+            element={<ProductDetails onNavigate={handleNavigation} />}
+          />
+          <Route
+            path="more-details"
+            element={<div>Product Details Relative</div>}
+          />
+        </Route>
       </EmbraceRoutes>
     );
   };
@@ -59,7 +75,7 @@ const renderReactApp = () => {
   );
 };
 
-describe('ReactRouterV5Legacy', () => {
+describe('ReactRouterV6Declarative', () => {
   let pageManager: EmbracePageManager;
   let memoryExporter: InMemorySpanExporter;
   let spanSessionManager: SpanSessionManager;
@@ -100,8 +116,10 @@ describe('ReactRouterV5Legacy', () => {
     const routeSpans = memoryExporter
       .getFinishedSpans()
       .filter((span) => span.name !== 'emb-session');
-    expect(routeSpans.length).to.equal(2);
+    expect(routeSpans.length).to.equal(4);
     expect(routeSpans[0].name).to.equal('/');
     expect(routeSpans[1].name).to.equal('/product/:id');
+    expect(routeSpans[2].name).to.equal('/product/:id/details');
+    expect(routeSpans[3].name).to.equal('/product/:id/more-details');
   });
 });

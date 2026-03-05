@@ -15,9 +15,11 @@ const getLastRoute = (
     return null;
   }
 
-  const path = lastRoute
-    ? `${lastRoute.path}/${matchedComponent.props.match.route.path}`
-    : matchedComponent.props.match.route.path;
+  const childPath = matchedComponent.props.match.route.path;
+  const path =
+    lastRoute && !childPath.startsWith('/')
+      ? `${lastRoute.path}/${childPath}`
+      : childPath;
 
   if (matchedComponent.props.routeContext?.outlet) {
     return getLastRoute(matchedComponent.props.routeContext.outlet, {

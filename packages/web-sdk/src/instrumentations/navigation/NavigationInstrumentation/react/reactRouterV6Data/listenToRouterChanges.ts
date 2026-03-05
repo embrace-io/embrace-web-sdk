@@ -13,26 +13,35 @@ import type { ListenToRouterChangesArgs, Match } from './types.ts';
 const getRouteFromMatches = (
   matches: Match[],
   currentPathname: string,
-): Route | null =>
-  matches
-    .filter((m) => currentPathname.includes(m.pathname))
-    .reduce<null | Route>((route, match) => {
-      if (!match.route.path) {
-        return route;
+): Route | null => {
+  const currentMatchIndex = matches.findIndex(
+    (match) => match.pathname === currentPathname,
+  );
+
+  if (currentMatchIndex === -1 || !matches[currentMatchIndex].route.path) {
+    return null;
+  }
+
+  // Build full absolute path by reducing all matches up to the current one.
+  // Absolute child paths reset the accumulation; relative paths are appended.
+  return matches
+    .slice(0, currentMatchIndex + 1)
+    .reduce<Route | null>((acc, match) => {
+      const routePath = match.route.path;
+
+      if (!routePath) {
+        return acc;
       }
 
-      if (route) {
-        return {
-          url: match.pathname,
-          path: `${route.path}/${match.route.path}`,
-        } as Route;
-      }
+      // If the route path starts with '/', it's an absolute path and should reset the accumulated path.
+      // Otherwise, it's a relative path and should be appended to the accumulated path.
+      const path = routePath.startsWith('/')
+        ? routePath
+        : `${acc?.path ?? ''}/${routePath}`;
 
-      return {
-        url: match.pathname,
-        path: match.route.path,
-      } as Route;
+      return { path, url: matches[currentMatchIndex].pathname };
     }, null);
+};
 
 export const listenToRouterChanges = ({
   router,
