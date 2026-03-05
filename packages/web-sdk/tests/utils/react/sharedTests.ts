@@ -9,6 +9,7 @@ const { expect } = chai;
 type ReactRouterTestOptions = {
   pageManager: PageManager;
   rootElement: Element;
+  productDetailsPath?: string;
 };
 
 export const runReactRouterTest = async ({
@@ -41,4 +42,43 @@ export const runReactRouterTest = async ({
   expect(productHeading?.textContent).to.equal('Product');
 
   expect(pageManager.getCurrentRoute()?.path).to.equal('/product/:id');
+
+  const goToProductDetailsButton = rootElement.querySelector(
+    '#to-product-details-button',
+  );
+  expect(goToProductDetailsButton).to.not.be.null;
+  expect(goToProductDetailsButton?.textContent).to.equal(
+    'Go to Product Details',
+  );
+
+  flushSync(() => {
+    goToProductDetailsButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }),
+    );
+  });
+
+  await waitFor(() => {
+    return pageManager.getCurrentRoute()?.path === '/product/:id/details';
+  });
+
+  await waitFor(() => {
+    const h2 = rootElement.querySelector('h2');
+
+    return h2 !== null && h2.textContent === 'Product Details';
+  });
+
+  const toRelativeDetailsButton = rootElement.querySelector(
+    '#to-relative-product-details-button',
+  );
+  expect(toRelativeDetailsButton).to.not.be.null;
+
+  flushSync(() => {
+    toRelativeDetailsButton?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true }),
+    );
+  });
+
+  await waitFor(
+    () => pageManager.getCurrentRoute()?.path === '/product/:id/more-details',
+  );
 };

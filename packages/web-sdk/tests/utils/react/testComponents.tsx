@@ -34,6 +34,28 @@ export const Product: FC<PageProps> = ({ onNavigate }) => {
       <button type="button" onClick={() => onNavigate('/about')}>
         Go to About Page
       </button>
+      <button
+        type="button"
+        id="to-product-details-button"
+        onClick={() => onNavigate('/product/123/details')}
+      >
+        Go to Product Details
+      </button>
+    </div>
+  );
+};
+
+export const ProductDetails: FC<PageProps> = ({ onNavigate }) => {
+  return (
+    <div>
+      <h2>Product Details</h2>
+      <button
+        type="button"
+        id="to-relative-product-details-button"
+        onClick={() => onNavigate('/product/123/more-details')}
+      >
+        Go to Relative Details
+      </button>
     </div>
   );
 };

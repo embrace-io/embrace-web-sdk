@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import {
   createBrowserRouter,
   matchRoutes,
+  Outlet,
   RouterProvider,
   useNavigate,
 } from 'react-router-domv6plus';
@@ -14,6 +15,7 @@ import {
   About,
   Home,
   Product,
+  ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
 import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
@@ -38,13 +40,24 @@ const HomeWithNavigation = () => {
 const ProductWithNavigation = () => {
   const navigate = useNavigate();
 
-  return <Product onNavigate={navigate} />;
+  return (
+    <>
+      <Product onNavigate={navigate} />
+      <Outlet />
+    </>
+  );
 };
 
 const AboutWithNavigation = () => {
   const navigate = useNavigate();
 
   return <About onNavigate={navigate} />;
+};
+
+const DetailsWithNavigation = () => {
+  const navigate = useNavigate();
+
+  return <ProductDetails onNavigate={navigate} />;
 };
 
 const router = createBrowserRouter([
@@ -55,6 +68,16 @@ const router = createBrowserRouter([
   {
     path: '/product/:id',
     element: <ProductWithNavigation />,
+    children: [
+      {
+        path: '/product/:id/details',
+        element: <DetailsWithNavigation />,
+      },
+      {
+        path: 'more-details',
+        element: <div>Product Details Relative</div>,
+      },
+    ],
   },
   {
     path: '/about',
@@ -118,8 +141,10 @@ describe('ReactRouterV6Data', () => {
     const routeSpans = memoryExporter
       .getFinishedSpans()
       .filter((span) => span.name !== 'emb-session');
-    expect(routeSpans.length).to.equal(2);
+    expect(routeSpans.length).to.equal(4);
     expect(routeSpans[0].name).to.equal('/');
     expect(routeSpans[1].name).to.equal('/product/:id');
+    expect(routeSpans[2].name).to.equal('/product/:id/details');
+    expect(routeSpans[3].name).to.equal('/product/:id/more-details');
   });
 });
