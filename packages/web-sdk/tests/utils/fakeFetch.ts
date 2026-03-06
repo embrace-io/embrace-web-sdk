@@ -73,5 +73,8 @@ export const fakeFetchRespondWith = (
   options?: ResponseInit,
 ) => fetchStub?.callsFake(() => Promise.resolve(new Response(data, options)));
 
+export const fakeFetchGetKeepalive = (callNumber = 0) =>
+  fakeFetchGetOptions(callNumber)?.keepalive;
+
 export const fakeFetchWasCalled = (callNumber = 0) =>
   !!fetchStub?.getCall(callNumber);

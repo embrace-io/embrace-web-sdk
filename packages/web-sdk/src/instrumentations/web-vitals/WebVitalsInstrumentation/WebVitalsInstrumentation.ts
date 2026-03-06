@@ -21,7 +21,6 @@ import {
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ALL_WEB_VITALS,
-  CORE_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.ts';
@@ -114,7 +113,6 @@ const webVitalAttributionToReport = (
 };
 
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _metricsToTrack: Metric['name'][];
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
@@ -137,7 +135,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   public constructor({
     diag,
     perf,
-    trackingLevel = 'core',
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument = window.document,
     urlAttribution = true,
@@ -152,8 +149,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     });
     this._listeners = listeners;
     this._urlDocument = urlDocument;
-    this._metricsToTrack =
-      trackingLevel === 'all' ? [...ALL_WEB_VITALS] : [...CORE_WEB_VITALS];
     this._urlAttribution = urlAttribution;
     this._pageManager = pageManager ?? page.getPageManager();
 
@@ -181,7 +176,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     }
     this._listenersRegistered = true;
 
-    this._metricsToTrack.forEach((name) => {
+    ALL_WEB_VITALS.forEach((name) => {
       this._listeners[name]?.((metric) => {
         if (!this._isEnabled) {
           return;
@@ -232,6 +227,22 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       // When these web vitals make their final report (e.g. when the listeners w/ reportAllChanges=false trigger) the
       // document's URL at that time may not match what it was at the time the scores were last updated. Instead, listen
       // for updates to the scores and keep track of the Page information to attribute for each
+      this._listeners.TTFB?.(
+        () => {
+          this._attributedPage.TTFB = this._currentAttributedPage();
+        },
+        {
+          reportAllChanges: true,
+        },
+      );
+      this._listeners.FCP?.(
+        () => {
+          this._attributedPage.FCP = this._currentAttributedPage();
+        },
+        {
+          reportAllChanges: true,
+        },
+      );
       this._listeners.INP?.(
         () => {
           this._attributedPage.INP = this._currentAttributedPage();
@@ -309,6 +320,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _getAttributedPageForMetric(
     metric: MetricWithAttribution,
   ): AttributedPage {
+    if (metric.name === 'FCP' && this._attributedPage.FCP) {
+      return this._attributedPage.FCP;
+    }
+
+    if (metric.name === 'TTFB' && this._attributedPage.TTFB) {
+      return this._attributedPage.TTFB;
+    }
+
     if (metric.name === 'INP' && this._attributedPage.INP) {
       return this._attributedPage.INP;
     }
