@@ -11,22 +11,6 @@ if ! podman ps -q --filter "name=${SERVE_CONTAINER}" | grep -q .; then
   exit 1
 fi
 
-podman run --rm \
+run_with_golden_copy "npx playwright test --config playwright.config.prebuilt.ts" \
   --network "container:${SERVE_CONTAINER}" \
-  "${PODMAN_BASE_FLAGS[@]}" \
-  -e "UPDATE_GOLDEN=${UPDATE_GOLDEN}" \
-  -w /workspace/tests/integration \
-  "${PLAYWRIGHT_IMAGE}" \
-  bash -c "
-    set -e
-    mkdir -p /root/.cache && ln -sf /ms-playwright /root/.cache/ms-playwright
-    npm install -g npm@\$(node -e \"process.stdout.write(require('/workspace/package.json').packageManager.split('@')[1])\")
-    if [ '${UPDATE_GOLDEN}' = '1' ]; then
-      UPDATE_GOLDEN=1 npx playwright test --config playwright.config.prebuilt.ts
-    else
-      npx playwright test --config playwright.config.prebuilt.ts
-    fi
-  " &
-PODMAN_PID=$!
-trap 'kill "${PODMAN_PID}" 2>/dev/null' INT TERM
-wait "${PODMAN_PID}"
+  -w /workspace/tests/integration
