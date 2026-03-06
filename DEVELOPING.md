@@ -141,7 +141,7 @@ If you need a clean install of Linux-compatible node_modules (e.g. after
 changing `package.json`):
 
 ```bash
-make reset_container_dependencies
+bash scripts/e2e-reset-deps.sh
 ```
 
 ## Dependency Versioning
