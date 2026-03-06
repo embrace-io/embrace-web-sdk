@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Config for fast iteration: assumes all platforms are already built and servers are already running.
-// Use with the --serve / --test modes of scripts/test-integration-docker.sh.
+// Use with the --serve / --test modes of scripts/test-integration-podman.sh.
 export default defineConfig({
   globalSetup: './global-setup.ts',
   timeout: 10 * 1000, // 10 seconds

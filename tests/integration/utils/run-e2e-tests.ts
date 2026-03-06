@@ -124,12 +124,17 @@ type RunE2ETestsOptions = {
   url: string;
   name: string;
   numberOfExpectedSpans: number;
+  // When true, golden file snapshots are recorded and compared for this platform.
+  // Enable selectively to avoid maintaining redundant snapshots across platforms
+  // that produce equivalent SDK output.
+  goldenFiles?: boolean;
 };
 
 const runE2ETests = ({
   url,
   name,
   numberOfExpectedSpans,
+  goldenFiles = false,
 }: RunE2ETestsOptions) => {
   const codifiedName = name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
@@ -188,9 +193,11 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(1);
 
-        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-session.json`,
-        );
+        if (goldenFiles) {
+          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-session.json`,
+          );
+        }
       },
     );
 
@@ -210,9 +217,11 @@ const runE2ETests = ({
         await waitForOTelRequest();
 
         testE2E.expect(requests).toHaveLength(1);
-        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-send-log.json`,
-        );
+        if (goldenFiles) {
+          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-send-log.json`,
+          );
+        }
       },
     );
 
@@ -389,9 +398,11 @@ const runE2ETests = ({
         testE2E.expect(requests).toHaveLength(1);
         // The request should contain just a single log from clicking 'Send Log' and not any exception generated
         // from the fetch request
-        extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
-        );
+        if (goldenFiles) {
+          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
+          );
+        }
 
         await page.getByRole('button', { name: 'End Session' }).click();
         await waitForOTelRequest();
@@ -404,9 +415,11 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(2);
         // Should contain a span capturing the fetch request
-        extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
-          `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
-        );
+        if (goldenFiles) {
+          extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
+          );
+        }
       },
     );
 

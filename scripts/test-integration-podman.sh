@@ -3,14 +3,14 @@
 # This ensures golden file comparisons are consistent between local and CI.
 #
 # Usage:
-#   ./scripts/test-integration-docker.sh                  # Run tests
-#   UPDATE_GOLDEN=1 ./scripts/test-integration-docker.sh  # Regenerate golden files
-#   ./scripts/test-integration-docker.sh --reset-deps     # Clear the Linux node_modules volume and reinstall
+#   ./scripts/test-integration-podman.sh                  # Run tests
+#   UPDATE_GOLDEN=1 ./scripts/test-integration-podman.sh  # Regenerate golden files
+#   ./scripts/test-integration-podman.sh --reset-deps     # Clear the Linux node_modules volume and reinstall
 #
 # On Apple Silicon the script defaults to linux/arm64 (native, no QEMU).
 # On Intel Macs it defaults to linux/amd64 to match CI.
 # Override with ARCH=linux/amd64 if you want to force amd64 emulation (requires QEMU, may be unstable):
-#   ARCH=linux/amd64 ./scripts/test-integration-docker.sh
+#   ARCH=linux/amd64 ./scripts/test-integration-podman.sh
 
 set -euo pipefail
 

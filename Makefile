@@ -25,7 +25,7 @@ PODMAN_BASE_FLAGS := \
 
 ## Full CI-equivalent run: build SDK + platforms, then run all tests.
 run_e2e_in_container:
-	bash scripts/test-integration-docker.sh
+	bash scripts/test-integration-podman.sh
 
 ## Start a long-running container with all Next.js servers pre-started.
 ## Requires the SDK and platforms to be already built (run run_e2e_in_container once first).
