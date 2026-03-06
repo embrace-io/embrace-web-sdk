@@ -26,6 +26,7 @@ describe('BrowserLogRecordProcessor', () => {
 
   afterEach(() => {
     memoryExporter.reset();
+    urlDocument.URL = 'https://example.com/products/123';
   });
 
   it('should attach browser.url.full when a log is emitted', () => {
@@ -35,21 +36,18 @@ describe('BrowserLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    expect(log.attributes[KEY_BROWSER_URL_FULL]).to.equal(urlDocument.URL);
+    expect(log.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      'https://example.com/products/123',
+    );
   });
 
   it('should reflect the current url at emit time', () => {
-    const mutableDocument: URLDocument = { URL: 'https://example.com/page-1' };
-    const exporter = setupTestLogExporter([
-      new BrowserLogRecordProcessor({ urlDocument: mutableDocument }),
-    ]);
-    const localLogger = logs.getLogger('test-logger-mutable');
+    urlDocument.URL = 'https://example.com/page-2';
+    logger.emit({ body: 'some log' });
 
-    mutableDocument.URL = 'https://example.com/page-2';
-    localLogger.emit({ body: 'some log' });
-
-    const finishedLogs = exporter.getFinishedLogRecords();
-    const log = finishedLogs[finishedLogs.length - 1];
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
 
     expect(log.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/page-2',

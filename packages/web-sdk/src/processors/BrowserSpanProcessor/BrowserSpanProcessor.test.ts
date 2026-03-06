@@ -26,6 +26,7 @@ describe('BrowserSpanProcessor', () => {
 
   afterEach(() => {
     memoryExporter.reset();
+    urlDocument.URL = 'https://example.com/products/123';
   });
 
   it('should attach browser.url.full when span ends', () => {
@@ -37,23 +38,18 @@ describe('BrowserSpanProcessor', () => {
     const readableSpan = finishedSpans[0];
 
     expect(readableSpan.attributes[KEY_BROWSER_URL_FULL]).to.equal(
-      urlDocument.URL,
+      'https://example.com/products/123',
     );
   });
 
   it('should reflect the url at span end time', () => {
-    const mutableDocument: URLDocument = { URL: 'https://example.com/page-1' };
-    const exporter = setupTestTraceExporter([
-      new BrowserSpanProcessor({ urlDocument: mutableDocument }),
-    ]);
-    const localTracer = trace.getTracer('test-tracer-mutable');
-
-    const span = localTracer.startSpan('test-span');
-    mutableDocument.URL = 'https://example.com/page-2';
+    const span = tracer.startSpan('test-span');
+    urlDocument.URL = 'https://example.com/page-2';
     span.end();
 
-    const finishedSpans = exporter.getFinishedSpans();
-    const readableSpan = finishedSpans[finishedSpans.length - 1];
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const readableSpan = finishedSpans[0];
 
     expect(readableSpan.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/page-2',
