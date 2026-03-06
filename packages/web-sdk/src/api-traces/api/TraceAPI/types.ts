@@ -14,12 +14,13 @@ export type ExtendedSpanFailedOptions = {
 };
 
 /**
- * Exposes the span's current attributes (readonly) without defining all properties of the ReadableSpan interface.
- * Ideally, we create a new interface that merges OpenTelemetry's Span, ReadableSpan and the not-yet-implemented
- * Writable Span described here:
- * https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
+ * Extends the API Span with readable access to attributes and events,
+ * plus Embrace-specific helpers like removeAttribute and fail.
+ * See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/sdk.md#additional-span-interfaces
  */
-export interface ExtendedSpan extends Span, Pick<ReadableSpan, 'attributes'> {
+export interface ExtendedSpan
+  extends Span,
+    Pick<ReadableSpan, 'attributes' | 'events'> {
   removeAttribute: (key: string) => this;
   fail: (options?: ExtendedSpanFailedOptions) => void;
 }

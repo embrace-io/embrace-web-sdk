@@ -7,6 +7,7 @@ import type {
   TimeInput,
 } from '@opentelemetry/api';
 import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
+import type { TimedEvent } from '@opentelemetry/sdk-trace-web';
 import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
@@ -39,6 +40,7 @@ export class NonRecordingExtendedSpan implements ExtendedSpan {
   }
 
   public attributes: Attributes = {};
+  public events: TimedEvent[] = [];
 
   public fail(_options?: ExtendedSpanFailedOptions) {}
 

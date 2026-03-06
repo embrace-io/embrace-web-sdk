@@ -8,6 +8,7 @@ import type {
   SpanStatus,
   TimeInput,
 } from '@opentelemetry/api';
+import type { TimedEvent } from '@opentelemetry/sdk-trace-web';
 import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
@@ -26,11 +27,12 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
     this._span = span as ExtendedSpan;
   }
 
-  /**
-   * Expose attributes by extending OpenTelemetry's ReadableSpan.
-   */
   public get attributes(): Attributes {
     return this._span.attributes;
+  }
+
+  public get events(): TimedEvent[] {
+    return this._span.events;
   }
 
   public addEvent(
