@@ -23,5 +23,4 @@ PODMAN_BASE_FLAGS=(
   -v "${WORKSPACE}:/workspace"
   -v "${NODE_MODULES_VOLUME}:/workspace/node_modules"
   -e HOME=/root
-  -e "UPDATE_GOLDEN=${UPDATE_GOLDEN}"
 )
