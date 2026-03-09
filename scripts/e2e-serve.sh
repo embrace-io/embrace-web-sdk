@@ -6,8 +6,6 @@ set -euo pipefail
 # shellcheck source=e2e-container-env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/e2e-container-env.sh"
 
-build_integration_image
-
 podman rm -f "${SERVE_CONTAINER}" 2>/dev/null || true
 podman run -d \
   --name "${SERVE_CONTAINER}" \
