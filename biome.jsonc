@@ -42,13 +42,9 @@
   "linter": {
     "rules": {
       "security": {
-        "recommended": true,
-        // too many false positives within test files
-        "noSecrets": "off"
-      },
-      "a11y": {
         "recommended": true
       },
+      "a11y": "error",
       "complexity": {
         "recommended": true,
         // https://github.com/biomejs/biome/discussions/7404
@@ -81,8 +77,7 @@
         "recommended": true
       },
       "nursery": {
-        // experimental rule but working well
-        "noImportCycles": "error"
+        "recommended": true
       }
     }
   }
