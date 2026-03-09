@@ -5,15 +5,6 @@ set -euo pipefail
 
 cd /workspace
 
-echo "--- Building SDK ---"
-npm run build
-
-echo "--- Installing platform dependencies ---"
-npm run install-dependencies --prefix tests/integration
-
-echo "--- Building platforms ---"
-npm run build-platforms --prefix tests/integration
-
 wait_for_url() {
   local url=$1
   local logfile=${2:-}

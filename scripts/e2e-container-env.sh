@@ -33,6 +33,9 @@ WORKDIR /workspace
 COPY . .
 RUN mkdir -p /root/.cache && ln -sf /ms-playwright /root/.cache/ms-playwright
 RUN npm i -g npm@11 && npm ci
+RUN npm run build
+RUN npm run install-dependencies --prefix tests/integration
+RUN npm run build-platforms --prefix tests/integration
 DOCKERFILE
   then
     echo "Error: failed to build integration image '${IMAGE_TAG}'" >&2
