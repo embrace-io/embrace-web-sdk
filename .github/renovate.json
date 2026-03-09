@@ -11,6 +11,7 @@
   "labels": ["dependencies"],
   "postUpdateOptions": ["npmDedupe"],
   "rangeStrategy": "bump",
+  "separateMajorMinor": false,
   "packageRules": [
     {
       "description": "GitHub Actions",
@@ -23,26 +24,15 @@
       "groupName": "production-deps"
     },
     {
-      "description": "Dev minor and patches",
+      "description": "Dev dependencies",
       "matchDepTypes": ["devDependencies"],
       "groupName": "dev-deps"
-    },
-    {
-      "description": "Dev major",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "dev-deps-major"
     },
     {
       "description": "OpenTelemetry",
       "matchDepNames": ["@opentelemetry/**"],
       "matchDepTypes": ["dependencies", "devDependencies"],
       "groupName": "opentelemetry"
-    },
-    {
-      "description": "ESLint group",
-      "matchDepNames": ["eslint", "eslint-plugin-*", "typescript-eslint"],
-      "groupName": "eslint"
     },
     {
       "description": "React group",
@@ -70,11 +60,6 @@
       ],
       "matchUpdateTypes": ["major"],
       "enabled": false
-    },
-    {
-      "description": "Demo backend group",
-      "matchFileNames": ["demo/backend/**"],
-      "groupName": "demo-backend"
     },
     {
       "description": "Peer dependencies - do not update",
