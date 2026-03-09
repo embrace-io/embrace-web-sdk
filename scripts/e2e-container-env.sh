@@ -24,6 +24,10 @@ PODMAN_BASE_FLAGS=(
 )
 
 build_integration_image() {
+  if podman image exists "${IMAGE_TAG}" 2>/dev/null; then
+    echo "Image '${IMAGE_TAG}' already exists (use e2e-reset-deps.sh to force rebuild)"
+    return 0
+  fi
   echo "Building integration image (${IMAGE_TAG})..."
   if ! podman build --platform "${PLATFORM}" \
     -t "${IMAGE_TAG}" \
@@ -48,11 +52,16 @@ run_with_golden_copy() {
   shift
   if [[ "${UPDATE_GOLDEN}" == "1" ]]; then
     local CONTAINER_ID TEST_EXIT
-    CONTAINER_ID=$(podman create "${PODMAN_BASE_FLAGS[@]}" -e UPDATE_GOLDEN=1 "$@" "${IMAGE_TAG}" bash -c "${cmd}")
+    CONTAINER_ID=$(podman create "${PODMAN_BASE_FLAGS[@]}" -e UPDATE_GOLDEN=1 "$@" "${IMAGE_TAG}" bash -c "${cmd}") || {
+      echo "Error: failed to create container from image '${IMAGE_TAG}'" >&2
+      return 1
+    }
     podman start -a "${CONTAINER_ID}" && TEST_EXIT=0 || TEST_EXIT=$?
     if ! podman cp "${CONTAINER_ID}:/workspace/tests/integration/tests/__golden__/." \
          "${WORKSPACE}/tests/integration/tests/__golden__/"; then
-      echo "Warning: failed to copy golden files from container" >&2
+      echo "Error: failed to copy golden files from container. The update was not applied." >&2
+      podman rm "${CONTAINER_ID}" 2>/dev/null || true
+      return 1
     fi
     podman rm "${CONTAINER_ID}" 2>/dev/null || true
     return "${TEST_EXIT}"
