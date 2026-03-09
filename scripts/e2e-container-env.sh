@@ -47,8 +47,8 @@ run_with_golden_copy() {
   local cmd="$1"
   shift
   if [[ "${UPDATE_GOLDEN}" == "1" ]]; then
-    local CONTAINER_ID
-    CONTAINER_ID=$(podman create "${PODMAN_BASE_FLAGS[@]}" "$@" "${IMAGE_TAG}" bash -c "${cmd}")
+    local CONTAINER_ID TEST_EXIT
+    CONTAINER_ID=$(podman create "${PODMAN_BASE_FLAGS[@]}" -e UPDATE_GOLDEN=1 "$@" "${IMAGE_TAG}" bash -c "${cmd}")
     podman start -a "${CONTAINER_ID}" && TEST_EXIT=0 || TEST_EXIT=$?
     if ! podman cp "${CONTAINER_ID}:/workspace/tests/integration/tests/__golden__/." \
          "${WORKSPACE}/tests/integration/tests/__golden__/"; then

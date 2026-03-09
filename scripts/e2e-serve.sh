@@ -8,7 +8,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/e2e-container-env.sh"
 
 build_integration_image
 
-podman rm "${SERVE_CONTAINER}" 2>/dev/null || true
+podman rm -f "${SERVE_CONTAINER}" 2>/dev/null || true
 podman run -d \
   --name "${SERVE_CONTAINER}" \
   "${PODMAN_BASE_FLAGS[@]}" \
@@ -17,5 +17,9 @@ podman run -d \
   bash /workspace/scripts/test-integration-serve-startup.sh
 
 echo "Waiting for all servers to be ready (may take a few minutes on first run)..."
-timeout 300 bash -c "until podman logs ${SERVE_CONTAINER} 2>&1 | grep -q 'All servers ready'; do sleep 2; done"
+if ! timeout 300 bash -c "until podman logs ${SERVE_CONTAINER} 2>&1 | grep -q 'All servers ready'; do sleep 2; done"; then
+  echo "Error: servers did not become ready within 5 minutes. Last 50 lines of logs:" >&2
+  podman logs --tail 50 "${SERVE_CONTAINER}" >&2
+  exit 124
+fi
 echo "Servers are up. Run tests with: npm run test:integration:container:test"
