@@ -6,6 +6,9 @@ set -e
 mkdir -p /root/.cache
 ln -sf /ms-playwright /root/.cache/ms-playwright
 
+echo "--- npm install -g npm ---"
+npm install -g npm@$(node -e "process.stdout.write(require('/workspace/package.json').packageManager.split('@')[1])")
+
 echo "--- npm ci ---"
 cd /workspace && npm ci
 

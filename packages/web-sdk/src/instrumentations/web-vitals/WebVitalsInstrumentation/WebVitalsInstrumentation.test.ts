@@ -122,6 +122,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
@@ -174,6 +175,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.largestShiftTarget': 'some-target',
       'emb.web_vital.attribution.largestShiftValue': 3.0,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     // Since we have a largestShiftTime attribution time should be based on that
@@ -227,6 +229,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.rating': 'needs-improvement',
       'emb.web_vital.value': 33,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     expect(fcpEvent.time).to.deep.equal([5, 0]);
@@ -284,6 +287,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.resourceLoadDuration': 2000,
       'emb.web_vital.attribution.elementRenderDelay': 3000,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     expect(lcpEvent.time).to.deep.equal([5, 0]);
@@ -351,6 +355,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.presentationDelay': 3000,
       'emb.web_vital.attribution.processingDuration': 2000,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     // Time should be based on interactionTime from attribution
@@ -406,6 +411,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.rating': 'poor',
       'emb.web_vital.value': 33,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     expect(ttfbEvent.time).to.deep.equal([5, 0]);
@@ -476,6 +482,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
     expect(lcpEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -490,6 +497,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.resourceLoadDuration': 2000,
       'emb.web_vital.attribution.elementRenderDelay': 3000,
       'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
     });
 
     expect(clsEvent.time).to.deep.equal([5, 0]);
