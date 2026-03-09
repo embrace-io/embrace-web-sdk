@@ -19,33 +19,14 @@
       "groupName": "github-actions"
     },
     {
-      "description": "Production dependencies (excludes OTel)",
-      "matchDepTypes": ["dependencies"],
-      "groupName": "production-deps"
-    },
-    {
-      "description": "Dev dependencies",
-      "matchDepTypes": ["devDependencies"],
-      "groupName": "dev-deps"
+      "description": "All dependencies",
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "groupName": "dependencies"
     },
     {
       "description": "OpenTelemetry",
       "matchDepNames": ["@opentelemetry/**"],
-      "matchDepTypes": ["dependencies", "devDependencies"],
       "groupName": "opentelemetry"
-    },
-    {
-      "description": "React group",
-      "matchDepNames": [
-        "react",
-        "react-dom",
-        "react-router-domv4v5",
-        "react-router-domv6plus",
-        "@types/react",
-        "@types/react-dom",
-        "@types/react-router-domv4v5"
-      ],
-      "groupName": "react"
     },
     {
       "description": "React - prevent major updates",
