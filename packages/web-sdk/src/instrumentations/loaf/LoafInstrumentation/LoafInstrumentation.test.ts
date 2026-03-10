@@ -9,7 +9,6 @@ import {
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { log } from '../../../api-logs/index.ts';
-import type { PageManager } from '../../../api-page/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -64,20 +63,6 @@ const triggerEntries = (
   observerCallback?.({ getEntries: () => entries });
 };
 
-const makePageManager = (
-  route: { path: string } | null = null,
-  pageId: string | null = null,
-  label: string | null = null,
-): PageManager =>
-  ({
-    getCurrentRoute: () => route,
-    getCurrentPageId: () => pageId,
-    getPageLabel: () => label,
-    setCurrentRoute: () => {},
-    setPageLabel: () => {},
-    clearCurrentRoute: () => {},
-  }) as PageManager;
-
 describe('LoafInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let clock: sinon.SinonFakeTimers;
@@ -121,7 +106,6 @@ describe('LoafInstrumentation', () => {
   it('should observe long-animation-frame entries', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -136,7 +120,6 @@ describe('LoafInstrumentation', () => {
   it('should emit a report on session end with correct aggregate metrics', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -176,7 +159,6 @@ describe('LoafInstrumentation', () => {
   it('should calculate work duration correctly', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -200,7 +182,6 @@ describe('LoafInstrumentation', () => {
   it('should calculate style and layout duration correctly', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -226,7 +207,6 @@ describe('LoafInstrumentation', () => {
   it('should skip first entry for total blocking duration calculation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -250,7 +230,6 @@ describe('LoafInstrumentation', () => {
   it('should filter interaction-driven entries from total blocking duration', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -274,7 +253,6 @@ describe('LoafInstrumentation', () => {
   it('should not emit report when there are no entries', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -298,7 +276,6 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
       diag: diagLogger,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -311,7 +288,6 @@ describe('LoafInstrumentation', () => {
   it('should not process entries when disabled', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -332,7 +308,6 @@ describe('LoafInstrumentation', () => {
   it('should disconnect observer on disable', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -340,55 +315,9 @@ describe('LoafInstrumentation', () => {
     expect(observerDisconnected).to.be.true;
   });
 
-  it('should include page attribution when available', () => {
-    const pageManager = makePageManager(
-      { path: '/dashboard' },
-      'page-123',
-      'Dashboard',
-    );
-    const instrumentation = new LoafInstrumentation({
-      perf,
-      pageManager,
-    });
-    instrumentation.setSessionManager(spanSessionManager);
-
-    triggerEntries([makeEntry()]);
-    spanSessionManager.endSessionSpan();
-
-    const report = memoryExporter
-      .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['app.surface.name']).to.equal('/dashboard');
-    expect(report?.attributes['app.surface.id']).to.equal('page-123');
-    expect(report?.attributes['app.surface.label']).to.equal('Dashboard');
-
-    instrumentation.disable();
-  });
-
-  it('should not include page attribution when not available', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-      pageManager: makePageManager(),
-    });
-    instrumentation.setSessionManager(spanSessionManager);
-
-    triggerEntries([makeEntry()]);
-    spanSessionManager.endSessionSpan();
-
-    const report = memoryExporter
-      .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['app.surface.name']).to.be.undefined;
-    expect(report?.attributes['app.surface.id']).to.be.undefined;
-    expect(report?.attributes['app.surface.label']).to.be.undefined;
-
-    instrumentation.disable();
-  });
-
   it('should handle longestDurationExcludingFirst when only one entry', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -409,7 +338,6 @@ describe('LoafInstrumentation', () => {
   it('should rate total blocking duration as good at exact 200ms boundary', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -434,7 +362,6 @@ describe('LoafInstrumentation', () => {
   it('should rate total blocking duration as needs-improvement at 201ms', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -459,7 +386,6 @@ describe('LoafInstrumentation', () => {
   it('should rate total blocking duration as needs-improvement at exact 600ms boundary', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -484,7 +410,6 @@ describe('LoafInstrumentation', () => {
   it('should rate total blocking duration as poor at 601ms', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -509,7 +434,6 @@ describe('LoafInstrumentation', () => {
   it('should not create duplicate observers when enable() is called twice', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -530,7 +454,6 @@ describe('LoafInstrumentation', () => {
   it('should re-register session end listener when setSessionManager is called', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 
@@ -561,51 +484,9 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should not include page attribution when route exists but pageId is null', () => {
-    const pageManager = makePageManager({ path: '/dashboard' }, null, null);
-    const instrumentation = new LoafInstrumentation({
-      perf,
-      pageManager,
-    });
-    instrumentation.setSessionManager(spanSessionManager);
-
-    triggerEntries([makeEntry()]);
-    spanSessionManager.endSessionSpan();
-
-    const report = memoryExporter
-      .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['app.surface.name']).to.be.undefined;
-    expect(report?.attributes['app.surface.id']).to.be.undefined;
-
-    instrumentation.disable();
-  });
-
-  it('should include page label even without route', () => {
-    const pageManager = makePageManager(null, null, 'Dashboard');
-    const instrumentation = new LoafInstrumentation({
-      perf,
-      pageManager,
-    });
-    instrumentation.setSessionManager(spanSessionManager);
-
-    triggerEntries([makeEntry()]);
-    spanSessionManager.endSessionSpan();
-
-    const report = memoryExporter
-      .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['app.surface.name']).to.be.undefined;
-    expect(report?.attributes['app.surface.id']).to.be.undefined;
-    expect(report?.attributes['app.surface.label']).to.equal('Dashboard');
-
-    instrumentation.disable();
-  });
-
   it('should clamp negative style and layout duration to zero', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
-      pageManager: makePageManager(),
     });
     instrumentation.setSessionManager(spanSessionManager);
 

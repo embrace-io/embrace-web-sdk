@@ -60,9 +60,7 @@ export const setupDefaultInstrumentations = (
   }
 
   if (!config.omit?.has('loaf')) {
-    instrumentations.push(
-      new LoafInstrumentation({ ...config['loaf'], pageManager }),
-    );
+    instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
   }
 
   if (!config.omit?.has('document-load')) {

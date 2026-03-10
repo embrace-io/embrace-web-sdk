@@ -1,15 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import type { PageManager } from '../../../api-page/index.ts';
-import { page } from '../../../api-page/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
-import {
-  EMB_TYPES,
-  KEY_APP_SURFACE_LABEL,
-  KEY_EMB_PAGE_ID,
-  KEY_EMB_PAGE_PATH,
-  KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_LOAF_COUNT,
@@ -30,18 +21,13 @@ import type {
 } from './types.ts';
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _pageManager: PageManager;
   private _observer: PerformanceObserver | null = null;
   private _entries: PerformanceLongAnimationFrameTimingEntry[] = [];
   private _isFirstEntry = true;
   private _removeSessionEndListener: (() => void) | null = null;
   private _isEnabled = false;
 
-  public constructor({
-    diag,
-    perf,
-    pageManager,
-  }: LoafInstrumentationArgs = {}) {
+  public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -49,7 +35,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       perf,
       config: {},
     });
-    this._pageManager = pageManager ?? page.getPageManager();
 
     if (this._config.enabled) {
       this.enable();
@@ -198,7 +183,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.LoAF,
-      [ATTR_URL_FULL]: window.document.URL,
       [ATTR_LOAF_TOTAL_DURATION]: totalDuration,
       [ATTR_LOAF_WORK_DURATION]: workDuration,
       [ATTR_LOAF_STYLE_AND_LAYOUT_DURATION]: styleLayoutDuration,
@@ -210,23 +194,11 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       [ATTR_LOAF_RATING]: rating,
     };
 
-    const currentRoute = this._pageManager.getCurrentRoute();
-    const currentPageId = this._pageManager.getCurrentPageId();
-    if (currentRoute && currentPageId) {
-      attrs[KEY_EMB_PAGE_PATH] = currentRoute.path;
-      attrs[KEY_EMB_PAGE_ID] = currentPageId;
-    }
-
-    const pageLabel = this._pageManager.getPageLabel();
-    if (pageLabel) {
-      attrs[KEY_APP_SURFACE_LABEL] = pageLabel;
-    }
-
     this.logger.emit({
       eventName: LOAF_EVENT_NAME,
-      timestamp: this.perf.getNowMillis(),
+      // timestamp: this.perf.getNowMillis(),
       severityNumber: SeverityNumber.INFO,
-      severityText: 'INFO',
+      // severityText: 'INFO',
       attributes: attrs,
     });
   }

@@ -1,4 +1,3 @@
-import type { PageManager } from '../../../api-page/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 // TypeScript's DOM lib does not yet include Long Animation Frames API types (as of TS 5.9).
@@ -43,5 +42,5 @@ export interface PerformanceLongAnimationFrameTimingEntry {
 }
 
 export type LoafInstrumentationArgs = {
-  pageManager?: PageManager;
+  // none yet
 } & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
