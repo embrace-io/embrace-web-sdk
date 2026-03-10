@@ -91,6 +91,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
       this._registerSessionEndListener();
     } catch (e) {
+      this._isEnabled = false;
       this._diag.error('LoafInstrumentation: failed to enable', e);
     }
   }
@@ -120,13 +121,8 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public disable(): void {
-    try {
-      this._flushReport();
-    } catch (e) {
-      this._diag.error('LoafInstrumentation: error flushing report', e);
-    }
-
     this._isEnabled = false;
+    this._resetAccumulators();
 
     if (this._observer) {
       this._observer.disconnect();
@@ -159,21 +155,16 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     this._longestDuration = Math.max(this._longestDuration, entry.duration);
 
-    if (!(this._isFirstEntry && this._count === 1)) {
+    if (this._isFirstEntry && this._count === 1) {
+      this._isFirstEntry = false;
+    } else {
       this._longestDurationExcludingFirst = Math.max(
         this._longestDurationExcludingFirst,
         entry.duration,
       );
-    }
-
-    if (!(this._isFirstEntry && this._count === 1)) {
       if (entry.firstUIEventTimestamp === 0) {
         this._totalBlockingDuration += entry.blockingDuration;
       }
-    }
-
-    if (this._isFirstEntry && this._count === 1) {
-      this._isFirstEntry = false;
     }
   }
 
@@ -212,6 +203,10 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       attributes: attrs,
     });
 
+    this._resetAccumulators();
+  }
+
+  private _resetAccumulators(): void {
     this._totalDuration = 0;
     this._workDuration = 0;
     this._styleLayoutDuration = 0;
@@ -219,5 +214,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDuration = 0;
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
+    this._isFirstEntry = true;
   }
 }

@@ -485,6 +485,75 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
+  it('should not emit a log record when disable() is called', () => {
+    const instrumentation = new LoafInstrumentation({
+      perf,
+    });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
+
+    instrumentation.disable();
+
+    const reports = memoryExporter
+      .getFinishedLogRecords()
+      .filter((l) => l.eventName === 'emb-loaf-report');
+    expect(reports).to.have.lengthOf(0);
+  });
+
+  it('should not bleed accumulated data across sessions', () => {
+    const instrumentation = new LoafInstrumentation({
+      perf,
+    });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    triggerEntries([
+      makeEntry({ duration: 100, blockingDuration: 50 }),
+      makeEntry({ duration: 80, blockingDuration: 30 }),
+    ]);
+
+    spanSessionManager.endSessionSpan();
+
+    const firstReport = memoryExporter
+      .getFinishedLogRecords()
+      .find((l) => l.eventName === 'emb-loaf-report');
+    expect(firstReport).to.exist;
+    expect(firstReport?.attributes['emb.loaf.total_duration']).to.equal(180);
+    expect(firstReport?.attributes['emb.loaf.count']).to.equal(2);
+    // First entry excluded from blocking duration: only 30
+    expect(
+      firstReport?.attributes['emb.loaf.total_blocking_duration'],
+    ).to.equal(30);
+
+    memoryExporter.reset();
+
+    spanSessionManager.startSessionSpan();
+
+    triggerEntries([
+      makeEntry({ duration: 60, blockingDuration: 20 }),
+      makeEntry({ duration: 40, blockingDuration: 10 }),
+    ]);
+
+    spanSessionManager.endSessionSpan();
+
+    const secondReport = memoryExporter
+      .getFinishedLogRecords()
+      .find((l) => l.eventName === 'emb-loaf-report');
+    expect(secondReport).to.exist;
+    expect(secondReport?.attributes['emb.loaf.total_duration']).to.equal(100);
+    expect(secondReport?.attributes['emb.loaf.count']).to.equal(2);
+    // First entry of second session excluded: only 10
+    expect(
+      secondReport?.attributes['emb.loaf.total_blocking_duration'],
+    ).to.equal(10);
+    // First entry excluded from longest_duration_excluding_first
+    expect(
+      secondReport?.attributes['emb.loaf.longest_duration_excluding_first'],
+    ).to.equal(40);
+
+    instrumentation.disable();
+  });
+
   it('should clamp negative style and layout duration to zero', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
