@@ -1,12 +1,12 @@
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 // TypeScript's DOM lib does not yet include Long Animation Frames API types (as of TS 5.9).
+// Spec: https://w3c.github.io/long-animation-frames/
+// MDN: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongAnimationFrameTiming
 // Replace these with the built-in types once they are available.
-export interface PerformanceScriptTimingEntry {
+export interface PerformanceScriptTimingEntry extends PerformanceEntry {
   readonly name: 'script';
   readonly entryType: 'script';
-  readonly startTime: number;
-  readonly duration: number;
   readonly invoker: string;
   readonly invokerType:
     | 'classic-script'
@@ -29,11 +29,10 @@ export interface PerformanceScriptTimingEntry {
   readonly executionStart: number;
 }
 
-export interface PerformanceLongAnimationFrameTimingEntry {
+export interface PerformanceLongAnimationFrameTimingEntry
+  extends PerformanceEntry {
   readonly name: 'long-animation-frame';
   readonly entryType: 'long-animation-frame';
-  readonly startTime: number;
-  readonly duration: number;
   readonly renderStart: number;
   readonly styleAndLayoutStart: number;
   readonly blockingDuration: number;

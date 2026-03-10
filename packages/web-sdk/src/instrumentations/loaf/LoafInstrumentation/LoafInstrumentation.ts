@@ -65,7 +65,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
         for (const entry of list.getEntries()) {
           try {
             this._processEntry(
-              entry as unknown as PerformanceLongAnimationFrameTimingEntry,
+              entry as PerformanceLongAnimationFrameTimingEntry,
             );
           } catch (e) {
             this._diag.error('LoafInstrumentation: error processing entry', e);

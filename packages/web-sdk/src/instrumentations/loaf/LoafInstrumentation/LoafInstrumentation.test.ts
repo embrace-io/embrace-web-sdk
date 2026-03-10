@@ -32,6 +32,7 @@ const makeEntry = (
   blockingDuration: 30,
   firstUIEventTimestamp: 0,
   scripts: [],
+  toJSON: () => ({}),
   ...overrides,
 });
 
