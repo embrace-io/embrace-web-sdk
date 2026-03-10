@@ -25,7 +25,7 @@ import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';
 
 const { expect } = chai;
 
-export const history = createBrowserHistory();
+const history = createBrowserHistory();
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 
 const renderReactApp = () => {
