@@ -1,3 +1,5 @@
+export { BrowserLogRecordProcessor } from './BrowserLogRecordProcessor/index.ts';
+export { BrowserSpanProcessor } from './BrowserSpanProcessor/index.ts';
 export { EmbraceLogRecordProcessor } from './EmbraceLogRecordProcessor/index.ts';
 export { EmbraceNetworkSpanProcessor } from './EmbraceNetworkSpanProcessor/index.ts';
 export { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor/index.ts';

@@ -36,6 +36,8 @@ import {
   EmbraceUserManager,
 } from '../managers/index.ts';
 import {
+  BrowserLogRecordProcessor,
+  BrowserSpanProcessor,
   EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
@@ -389,6 +391,7 @@ const setupTraces = ({
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     createSessionSpanProcessor(spanSessionManager),
+    new BrowserSpanProcessor(),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
@@ -455,6 +458,7 @@ const setupLogs = ({
     new IdentifiableSessionLogRecordProcessor({
       spanSessionManager,
     }),
+    new BrowserLogRecordProcessor(),
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
     new LogRecordScrubProcessor({ attributeScrubbers }),

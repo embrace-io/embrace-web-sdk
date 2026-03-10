@@ -40,15 +40,19 @@
     }
   },
   "linter": {
+    "domains": {
+      "playwright": "all",
+      "project": "recommended",
+      "react": "all",
+      "test": "all",
+      "turborepo": "all",
+      "types": "all"
+    },
     "rules": {
       "security": {
-        "recommended": true,
-        // too many false positives within test files
-        "noSecrets": "off"
-      },
-      "a11y": {
         "recommended": true
       },
+      "a11y": "error",
       "complexity": {
         "recommended": true,
         // https://github.com/biomejs/biome/discussions/7404
@@ -75,14 +79,18 @@
         "useNodejsImportProtocol": {
           "level": "error",
           "fix": "unsafe"
-        }
+        },
+        // allow self-contained react component files
+        "useComponentExportOnlyModules": "off"
       },
       "suspicious": {
-        "recommended": true
+        "recommended": true,
+        "noImportCycles": "error"
+        // turn on when we are ready to use all new OTel semantic conventions
+        // "noDeprecatedImports": "warn"
       },
       "nursery": {
-        // experimental rule but working well
-        "noImportCycles": "error"
+        "recommended": true
       }
     }
   }

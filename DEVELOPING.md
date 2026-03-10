@@ -85,17 +85,63 @@ npm run test:watch
 
 ## Integration Testing
 
-Run the integration tests and build all prerequisites with:
+Integration tests run against real Next.js apps using Playwright and compare
+output against golden files. Tests must be run in a container to match the CI
+environment and avoid golden file diffs caused by OS differences.
+
+### Full run (CI-equivalent)
+
+Builds everything from scratch and runs all tests:
+
+```bash
+npm run test:integration:container
+```
+
+To update golden files:
+
+```bash
+npm run test:integration:container:update-golden
+```
+
+### Fast iteration (servers stay alive between runs)
+
+On the first run (or after SDK/platform changes), build everything:
 
 ```bash
 npm run build
-npm run test:integration
 ```
 
-To update golden files replace the last command with:
+Then start the long-running server container (only needed once per session):
 
 ```bash
-npm run test:integration:update-golden
+npm run test:integration:container:serve
+```
+
+Run tests against the already-running servers (fast, no rebuild):
+
+```bash
+npm run test:integration:container:test
+```
+
+To update golden files in fast mode:
+
+```bash
+npm run test:integration:container:test:update-golden
+```
+
+When done, stop the server container:
+
+```bash
+npm run test:integration:container:stop
+```
+
+### Resetting container dependencies
+
+If you need a clean install of Linux-compatible node_modules (e.g. after
+changing `package.json`):
+
+```bash
+bash scripts/e2e-reset-deps.sh
 ```
 
 ## Dependency Versioning

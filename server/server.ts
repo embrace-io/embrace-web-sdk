@@ -87,6 +87,15 @@ const server = createServer((req, res) => {
   }
 
   if (pathname === '/received-spans') {
+    if (req.method === 'DELETE') {
+      for (const key of Object.keys(receivedSpans)) {
+        delete receivedSpans[key];
+      }
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
     return;

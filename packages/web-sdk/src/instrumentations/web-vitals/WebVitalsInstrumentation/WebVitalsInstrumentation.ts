@@ -14,6 +14,7 @@ import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
+  KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
@@ -196,6 +197,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         const attrs: Attributes = {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
           [ATTR_URL_FULL]: attributedPage.fullURL,
+          [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
           'emb.web_vital.navigation_type': metric.navigationType,
           'emb.web_vital.name': metric.name,
           'emb.web_vital.rating': metric.rating,
