@@ -113,7 +113,12 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public disable(): void {
-    this._flushReport();
+    try {
+      this._flushReport();
+    } catch (e) {
+      this._diag.error('LoafInstrumentation: error flushing report', e);
+    }
+
     this._isEnabled = false;
 
     if (this._observer) {
