@@ -24,11 +24,16 @@ export default defineConfig({
   minify: {
     // Remove comments but don't mangle
     compress: true,
+    mangle: false,
   },
   platform: 'browser',
   clean: true,
   publint: true,
   plugins: [failOnWarnPlugin],
-  inlineOnly: false,
-  noExternal: [/.*/],
+  deps: {
+    alwaysBundle: () => true,
+  },
+  attw: {
+    profile: 'esm-only',
+  },
 });
