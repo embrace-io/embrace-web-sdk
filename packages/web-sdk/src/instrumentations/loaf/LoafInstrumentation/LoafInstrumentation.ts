@@ -61,6 +61,10 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
       this._isEnabled = true;
 
+      if (this._observer) {
+        this._observer.disconnect();
+      }
+
       this._observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           try {
