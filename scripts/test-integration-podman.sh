@@ -49,16 +49,27 @@ podman run --rm \
   "${PLAYWRIGHT_IMAGE}" \
   bash -c "
     set -e
-
     # Mirror the CI container setup: link pre-installed browsers to the expected cache path
     mkdir -p /root/.cache
     ln -sf /ms-playwright /root/.cache/ms-playwright
+
+    # Upgrade npm to the version required by devEngines.packageManager
+    echo '--- npm install -g npm ---'
+    npm install -g npm@\$(node -e \"process.stdout.write(require('/workspace/package.json').packageManager.split('@')[1])\")
 
     # Install dependencies (Linux-compatible binaries go into the named volume)
     echo '--- npm ci ---'
     npm ci
 
     # Run integration tests
-    echo '--- npm run test:integration ---'
-    npm run test:integration
-  "
+    if [ '${UPDATE_GOLDEN}' = '1' ]; then
+      echo '--- npm run test:integration:update-golden ---'
+      npm run test:integration:update-golden
+    else
+      echo '--- npm run test:integration ---'
+      npm run test:integration
+    fi
+  " &
+PODMAN_PID=$!
+trap 'kill "${PODMAN_PID}" 2>/dev/null' INT TERM
+wait "${PODMAN_PID}"
