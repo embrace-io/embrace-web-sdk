@@ -1062,7 +1062,7 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
           ]),
@@ -1138,7 +1138,7 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
           ]),
@@ -1217,7 +1217,7 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
           ]),
