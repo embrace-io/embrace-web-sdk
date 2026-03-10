@@ -21,7 +21,7 @@ export const runReactRouterTest = async ({
   });
   expect(pageManager.getCurrentPageId()).to.match(UUID_PATTERN);
 
-  const goToProductButton = rootElement.querySelector('#to-product-button');
+  const goToProductButton = rootElement.querySelector('.to-product-button');
   expect(goToProductButton).to.not.be.null;
   expect(goToProductButton?.textContent).to.equal('Go to Product Page');
 
@@ -43,7 +43,7 @@ export const runReactRouterTest = async ({
   expect(pageManager.getCurrentRoute()?.path).to.equal('/product/:id');
 
   const goToProductDetailsButton = rootElement.querySelector(
-    '#to-product-details-button',
+    '.to-product-details-button',
   );
   expect(goToProductDetailsButton).to.not.be.null;
   expect(goToProductDetailsButton?.textContent).to.equal(
@@ -67,7 +67,7 @@ export const runReactRouterTest = async ({
   });
 
   const toRelativeDetailsButton = rootElement.querySelector(
-    '#to-relative-product-details-button',
+    '.to-relative-product-details-button',
   );
   expect(toRelativeDetailsButton).to.not.be.null;
 

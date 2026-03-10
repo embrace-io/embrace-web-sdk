@@ -40,6 +40,14 @@
     }
   },
   "linter": {
+    "domains": {
+      "playwright": "all",
+      "project": "recommended",
+      "react": "all",
+      "test": "all",
+      "turborepo": "all",
+      "types": "all"
+    },
     "rules": {
       "security": {
         "recommended": true
@@ -71,10 +79,15 @@
         "useNodejsImportProtocol": {
           "level": "error",
           "fix": "unsafe"
-        }
+        },
+        // allow self-contained react component files
+        "useComponentExportOnlyModules": "off"
       },
       "suspicious": {
-        "recommended": true
+        "recommended": true,
+        "noImportCycles": "error"
+        // turn on when we are ready to use all new OTel semantic conventions
+        // "noDeprecatedImports": "warn"
       },
       "nursery": {
         "recommended": true
