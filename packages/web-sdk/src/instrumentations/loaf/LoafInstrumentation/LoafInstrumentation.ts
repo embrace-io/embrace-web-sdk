@@ -22,10 +22,17 @@ import type {
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
-  private _entries: PerformanceLongAnimationFrameTimingEntry[] = [];
   private _isFirstEntry = true;
   private _removeSessionEndListener: (() => void) | null = null;
   private _isEnabled = false;
+
+  private _totalDuration = 0;
+  private _workDuration = 0;
+  private _styleLayoutDuration = 0;
+  private _count = 0;
+  private _longestDuration = 0;
+  private _longestDurationExcludingFirst = 0;
+  private _totalBlockingDuration = 0;
 
   public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
@@ -137,54 +144,50 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    this._entries.push(entry);
+    this._count++;
+    this._totalDuration += entry.duration;
+    this._workDuration += entry.renderStart
+      ? entry.renderStart - entry.startTime
+      : entry.duration;
+
+    if (entry.styleAndLayoutStart) {
+      this._styleLayoutDuration += Math.max(
+        0,
+        entry.startTime + entry.duration - entry.styleAndLayoutStart,
+      );
+    }
+
+    this._longestDuration = Math.max(this._longestDuration, entry.duration);
+
+    if (!(this._isFirstEntry && this._count === 1)) {
+      this._longestDurationExcludingFirst = Math.max(
+        this._longestDurationExcludingFirst,
+        entry.duration,
+      );
+    }
+
+    if (!(this._isFirstEntry && this._count === 1)) {
+      if (entry.firstUIEventTimestamp === 0) {
+        this._totalBlockingDuration += entry.blockingDuration;
+      }
+    }
+
+    if (this._isFirstEntry && this._count === 1) {
+      this._isFirstEntry = false;
+    }
   }
 
   private _flushReport(): void {
-    if (this._entries.length === 0) {
+    if (this._count === 0) {
       return;
     }
 
-    const entries = this._entries;
-
-    this._entries = [];
-    const wasFirstEntry = this._isFirstEntry;
-    this._isFirstEntry = false;
-
-    const totalDuration = entries.reduce((sum, e) => sum + e.duration, 0);
-
-    const workDuration = entries.reduce((sum, e) => {
-      return sum + (e.renderStart ? e.renderStart - e.startTime : e.duration);
-    }, 0);
-
-    const styleLayoutDuration = entries.reduce((sum, e) => {
-      if (!e.styleAndLayoutStart) {
-        return sum;
-      }
-      return (
-        sum + Math.max(0, e.startTime + e.duration - e.styleAndLayoutStart)
-      );
-    }, 0);
-
-    const count = entries.length;
-
-    const longestDuration = Math.max(...entries.map((e) => e.duration));
-
-    const entriesAfterFirst = entries.slice(1);
-    const longestDurationExcludingFirst =
-      entriesAfterFirst.length > 0
-        ? Math.max(...entriesAfterFirst.map((e) => e.duration))
-        : 0;
-
-    const entriesToSum = wasFirstEntry ? entries.slice(1) : entries;
-    const totalBlockingDuration = entriesToSum
-      .filter((e) => e.firstUIEventTimestamp === 0)
-      .reduce((sum, e) => sum + e.blockingDuration, 0);
-
     let rating: string;
-    if (totalBlockingDuration <= BLOCKING_DURATION_GOOD_THRESHOLD) {
+    if (this._totalBlockingDuration <= BLOCKING_DURATION_GOOD_THRESHOLD) {
       rating = 'good';
-    } else if (totalBlockingDuration <= BLOCKING_DURATION_POOR_THRESHOLD) {
+    } else if (
+      this._totalBlockingDuration <= BLOCKING_DURATION_POOR_THRESHOLD
+    ) {
       rating = 'needs-improvement';
     } else {
       rating = 'poor';
@@ -192,23 +195,29 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.LoAF,
-      [ATTR_LOAF_TOTAL_DURATION]: totalDuration,
-      [ATTR_LOAF_WORK_DURATION]: workDuration,
-      [ATTR_LOAF_STYLE_AND_LAYOUT_DURATION]: styleLayoutDuration,
-      [ATTR_LOAF_COUNT]: count,
-      [ATTR_LOAF_LONGEST_DURATION]: longestDuration,
+      [ATTR_LOAF_TOTAL_DURATION]: this._totalDuration,
+      [ATTR_LOAF_WORK_DURATION]: this._workDuration,
+      [ATTR_LOAF_STYLE_AND_LAYOUT_DURATION]: this._styleLayoutDuration,
+      [ATTR_LOAF_COUNT]: this._count,
+      [ATTR_LOAF_LONGEST_DURATION]: this._longestDuration,
       [ATTR_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]:
-        longestDurationExcludingFirst,
-      [ATTR_LOAF_TOTAL_BLOCKING_DURATION]: totalBlockingDuration,
+        this._longestDurationExcludingFirst,
+      [ATTR_LOAF_TOTAL_BLOCKING_DURATION]: this._totalBlockingDuration,
       [ATTR_LOAF_RATING]: rating,
     };
 
     this.logger.emit({
       eventName: LOAF_EVENT_NAME,
-      // timestamp: this.perf.getNowMillis(),
       severityNumber: SeverityNumber.INFO,
-      // severityText: 'INFO',
       attributes: attrs,
     });
+
+    this._totalDuration = 0;
+    this._workDuration = 0;
+    this._styleLayoutDuration = 0;
+    this._count = 0;
+    this._longestDuration = 0;
+    this._longestDurationExcludingFirst = 0;
+    this._totalBlockingDuration = 0;
   }
 }
