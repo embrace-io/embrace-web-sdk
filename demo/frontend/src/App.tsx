@@ -203,6 +203,15 @@ const App = () => {
     }
   };
 
+  const handleTriggerLoafNonInteraction = () => {
+    setTimeout(() => {
+      const start = performance.now();
+      while (performance.now() - start < 200) {
+        /* block main thread to trigger a long animation frame */
+      }
+    }, 0);
+  };
+
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
   const handleThrowError = () => {
     handleThrowErrorA(true);
@@ -506,6 +515,9 @@ const App = () => {
         <div className={styles.actions}>
           <button type="button" onClick={handleTriggerLoaf}>
             Block Main Thread (200ms)
+          </button>
+          <button type="button" onClick={handleTriggerLoafNonInteraction}>
+            Block Main Thread (200ms, non-interaction)
           </button>
           <button type="button" onClick={handleEndSessionSpan}>
             End Session (flush LoAF report)
