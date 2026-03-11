@@ -14,6 +14,7 @@ export const embraceWebSdk = initSDK({
   embraceConfigURL: 'http://localhost:3001',
   // Disabled until integration testing golden file generation is made more consistent across environments
   useDocumentTitleAsPageLabel: false,
+  defaultInstrumentationConfig: { omit: new Set(['loaf']) },
 });
 
 declare global {

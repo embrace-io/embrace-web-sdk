@@ -185,14 +185,13 @@ const runE2ETests = ({
         await button.click();
         await waitForOTelRequest();
 
-        const expectedSessionRequests = browserName === 'chromium' ? 2 : 1;
-        if (requests.length < expectedSessionRequests) {
+        if (requests.length === 0) {
           // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
           // yet populated
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        testE2E.expect(requests).toHaveLength(expectedSessionRequests);
+        testE2E.expect(requests).toHaveLength(1);
 
         if (goldenFiles) {
           extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
@@ -408,14 +407,13 @@ const runE2ETests = ({
         await page.getByRole('button', { name: 'End Session' }).click();
         await waitForOTelRequest();
 
-        const expected204Requests = browserName === 'chromium' ? 3 : 2;
-        if (requests.length < expected204Requests) {
+        if (requests.length === 1) {
           // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
           // yet populated
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        testE2E.expect(requests).toHaveLength(expected204Requests);
+        testE2E.expect(requests).toHaveLength(2);
         // Should contain a span capturing the fetch request
         if (goldenFiles) {
           extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
