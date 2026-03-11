@@ -172,7 +172,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    let rating: string;
+    let rating: 'good' | 'needs-improvement' | 'poor';
     if (this._totalBlockingDuration <= BLOCKING_DURATION_GOOD_THRESHOLD) {
       rating = 'good';
     } else if (
