@@ -214,6 +214,5 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDuration = 0;
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
-    this._isFirstEntry = true;
   }
 }
