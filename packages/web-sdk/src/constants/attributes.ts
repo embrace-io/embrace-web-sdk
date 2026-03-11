@@ -44,7 +44,6 @@ export enum EMB_TYPES {
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',
   LoAF = 'perf.loaf',
-  LoAFScript = 'perf.loaf_script',
 }
 
 export enum EMB_STATES {
