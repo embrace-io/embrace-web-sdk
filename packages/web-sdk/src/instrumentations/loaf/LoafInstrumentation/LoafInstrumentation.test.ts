@@ -584,4 +584,73 @@ describe('LoafInstrumentation', () => {
 
     instrumentation.disable();
   });
+
+  it('should handle error in entry processing gracefully', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const instrumentation = new LoafInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    // Trigger an entry that will cause an error by passing a broken object
+    triggerEntries([
+      {
+        get duration(): number {
+          throw new Error('broken');
+        },
+      } as PerformanceLongAnimationFrameTimingEntry,
+    ]);
+
+    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+
+    instrumentation.disable();
+  });
+
+  it('should handle error in flush report gracefully', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const instrumentation = new LoafInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    triggerEntries([makeEntry()]);
+
+    // Sabotage the logger to trigger an error during flush
+    const originalEmit = instrumentation['logger'].emit;
+    instrumentation['logger'].emit = () => {
+      throw new Error('emit failed');
+    };
+
+    spanSessionManager.endSessionSpan();
+
+    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+
+    instrumentation['logger'].emit = originalEmit;
+    instrumentation.disable();
+  });
+
+  it('should handle enable() failure gracefully', () => {
+    const original = globalThis.PerformanceObserver;
+    // @ts-expect-error redefinition is intentional for testing
+    globalThis.PerformanceObserver = class {
+      public static supportedEntryTypes = ['long-animation-frame'];
+      public constructor() {
+        throw new Error('constructor failed');
+      }
+    };
+
+    const diagLogger = new InMemoryDiagLogger();
+    const instrumentation = new LoafInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+
+    globalThis.PerformanceObserver = original;
+    instrumentation.disable();
+  });
 });
