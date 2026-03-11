@@ -1,13 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:best-practices"],
-  "schedule": ["before 3am on Monday"],
-  "rebaseWhen": "conflicted",
+  "extends": [
+    "config:best-practices",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "schedule": ["before 8am on Monday"],
+  "rebaseWhen": "behind-base-branch",
   "ignorePaths": ["tests/integration/platforms/**"],
   "ignoreDeps": ["@types/node", "node", "npm"],
   "labels": ["dependencies"],
   "postUpdateOptions": ["npmDedupe"],
   "rangeStrategy": "bump",
+  "separateMajorMinor": false,
   "packageRules": [
     {
       "description": "GitHub Actions",
@@ -15,44 +19,14 @@
       "groupName": "github-actions"
     },
     {
-      "description": "Production dependencies (excludes OTel)",
-      "matchDepTypes": ["dependencies"],
-      "groupName": "production-deps"
-    },
-    {
-      "description": "Dev minor and patches",
-      "matchDepTypes": ["devDependencies"],
-      "groupName": "dev-deps"
-    },
-    {
-      "description": "Dev major",
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "dev-deps-major"
+      "description": "All dependencies",
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "groupName": "dependencies"
     },
     {
       "description": "OpenTelemetry",
       "matchDepNames": ["@opentelemetry/**"],
-      "matchDepTypes": ["dependencies", "devDependencies"],
       "groupName": "opentelemetry"
-    },
-    {
-      "description": "ESLint group",
-      "matchDepNames": ["eslint", "eslint-plugin-*", "typescript-eslint"],
-      "groupName": "eslint"
-    },
-    {
-      "description": "React group",
-      "matchDepNames": [
-        "react",
-        "react-dom",
-        "react-router-domv4v5",
-        "react-router-domv6plus",
-        "@types/react",
-        "@types/react-dom",
-        "@types/react-router-domv4v5"
-      ],
-      "groupName": "react"
     },
     {
       "description": "React - prevent major updates",
@@ -67,11 +41,6 @@
       ],
       "matchUpdateTypes": ["major"],
       "enabled": false
-    },
-    {
-      "description": "Demo backend group",
-      "matchFileNames": ["demo/backend/**"],
-      "groupName": "demo-backend"
     },
     {
       "description": "Peer dependencies - do not update",
