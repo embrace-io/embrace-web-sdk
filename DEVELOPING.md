@@ -135,10 +135,9 @@ When done, stop the server container:
 npm run test:integration:container:stop
 ```
 
-### Resetting container dependencies
+### Resetting the container image
 
-If you need a clean install of Linux-compatible node_modules (e.g. after
-changing `package.json`):
+If you need a full rebuild (e.g. after changing `package.json` or dependencies):
 
 ```bash
 bash scripts/e2e-reset-deps.sh

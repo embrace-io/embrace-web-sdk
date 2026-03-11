@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
-    "build-platforms": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000",
+    "build-platforms": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000 --test-concurrency=1",
     "test": "npx playwright test",
     "update-golden": "UPDATE_GOLDEN=1 npm run test"
   },
