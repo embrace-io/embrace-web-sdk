@@ -205,7 +205,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should skip first entry for total blocking duration calculation', () => {
+  it('should include all entries in total blocking duration calculation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
@@ -222,13 +222,15 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    // First entry (100) skipped, sum of 50 + 30 = 80
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(80);
+    // All entries included: 100 + 50 + 30 = 180
+    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
+      180,
+    );
 
     instrumentation.disable();
   });
 
-  it('should filter interaction-driven entries from total blocking duration', () => {
+  it('should include interaction-driven entries in total blocking duration', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
@@ -237,7 +239,7 @@ describe('LoafInstrumentation', () => {
     triggerEntries([
       makeEntry({ blockingDuration: 100, firstUIEventTimestamp: 0 }),
       makeEntry({ blockingDuration: 50, firstUIEventTimestamp: 0 }),
-      makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 12345 }), // interaction-driven
+      makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 12345 }),
     ]);
 
     spanSessionManager.endSessionSpan();
@@ -245,8 +247,10 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    // First skipped, third filtered (interaction), only second counted = 50
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(50);
+    // All entries included: 100 + 50 + 30 = 180
+    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
+      180,
+    );
 
     instrumentation.disable();
   });
@@ -520,10 +524,10 @@ describe('LoafInstrumentation', () => {
     expect(firstReport).to.exist;
     expect(firstReport?.attributes['emb.loaf.total_duration']).to.equal(180);
     expect(firstReport?.attributes['emb.loaf.count']).to.equal(2);
-    // First entry excluded from blocking duration: only 30
+    // All entries included: 50 + 30 = 80
     expect(
       firstReport?.attributes['emb.loaf.total_blocking_duration'],
-    ).to.equal(30);
+    ).to.equal(80);
 
     memoryExporter.reset();
 
@@ -542,14 +546,14 @@ describe('LoafInstrumentation', () => {
     expect(secondReport).to.exist;
     expect(secondReport?.attributes['emb.loaf.total_duration']).to.equal(100);
     expect(secondReport?.attributes['emb.loaf.count']).to.equal(2);
-    // First entry of second session excluded: only 10
+    // All entries included: 20 + 10 = 30
     expect(
       secondReport?.attributes['emb.loaf.total_blocking_duration'],
-    ).to.equal(10);
-    // First entry excluded from longest_duration_excluding_first
+    ).to.equal(30);
+    // _isFirstEntry only applies after hard nav, not reset between sessions
     expect(
       secondReport?.attributes['emb.loaf.longest_duration_excluding_first'],
-    ).to.equal(40);
+    ).to.equal(60);
 
     instrumentation.disable();
   });
