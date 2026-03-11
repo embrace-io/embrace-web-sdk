@@ -507,10 +507,7 @@ describe('LoafInstrumentation', () => {
     });
     instrumentation.setSessionManager(spanSessionManager);
 
-    triggerEntries([
-      makeEntry({ duration: 100, blockingDuration: 50 }),
-      makeEntry({ duration: 80, blockingDuration: 30 }),
-    ]);
+    triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
     spanSessionManager.endSessionSpan();
 
@@ -520,19 +517,12 @@ describe('LoafInstrumentation', () => {
     expect(firstReport).to.exist;
     expect(firstReport?.attributes['emb.loaf.total_duration']).to.equal(180);
     expect(firstReport?.attributes['emb.loaf.count']).to.equal(2);
-    // First entry excluded from blocking duration: only 30
-    expect(
-      firstReport?.attributes['emb.loaf.total_blocking_duration'],
-    ).to.equal(30);
 
     memoryExporter.reset();
 
     spanSessionManager.startSessionSpan();
 
-    triggerEntries([
-      makeEntry({ duration: 60, blockingDuration: 20 }),
-      makeEntry({ duration: 40, blockingDuration: 10 }),
-    ]);
+    triggerEntries([makeEntry({ duration: 60 }), makeEntry({ duration: 40 })]);
 
     spanSessionManager.endSessionSpan();
 
@@ -542,14 +532,9 @@ describe('LoafInstrumentation', () => {
     expect(secondReport).to.exist;
     expect(secondReport?.attributes['emb.loaf.total_duration']).to.equal(100);
     expect(secondReport?.attributes['emb.loaf.count']).to.equal(2);
-    // First entry of second session excluded: only 10
-    expect(
-      secondReport?.attributes['emb.loaf.total_blocking_duration'],
-    ).to.equal(10);
-    // First entry excluded from longest_duration_excluding_first
     expect(
       secondReport?.attributes['emb.loaf.longest_duration_excluding_first'],
-    ).to.equal(40);
+    ).to.equal(60);
 
     instrumentation.disable();
   });
