@@ -1010,6 +1010,7 @@ describe('initSDK', () => {
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
     // used:
     // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
+    // biome-ignore lint/suspicious/noSkippedTests: waiting on OTel bugfix https://github.com/open-telemetry/opentelemetry-js/pull/6479
     xit('should apply limits on the attributes of an individual span event', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
