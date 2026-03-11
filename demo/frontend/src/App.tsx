@@ -209,7 +209,15 @@ const App = () => {
       while (performance.now() - start < 200) {
         /* block main thread to trigger a long animation frame */
       }
-    }, 0);
+    }, 100);
+  };
+
+  const handleTriggerLoafRandom = () => {
+    const duration = Math.floor(Math.random() * 500) + 100;
+    const start = performance.now();
+    while (performance.now() - start < duration) {
+      /* block main thread for a random 100–600ms */
+    }
   };
 
   // handleThrowError Throws an error by going through a set of nested functions to validate stacktraces
@@ -518,6 +526,9 @@ const App = () => {
           </button>
           <button type="button" onClick={handleTriggerLoafNonInteraction}>
             Block Main Thread (200ms, non-interaction)
+          </button>
+          <button type="button" onClick={handleTriggerLoafRandom}>
+            Block Main Thread (100–600ms random)
           </button>
           <button type="button" onClick={handleEndSessionSpan}>
             End Session (flush LoAF report)
