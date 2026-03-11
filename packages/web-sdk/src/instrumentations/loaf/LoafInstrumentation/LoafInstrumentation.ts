@@ -155,8 +155,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     this._longestDuration = Math.max(this._longestDuration, entry.duration);
 
-    this._totalBlockingDuration += entry.blockingDuration;
-
     if (this._isFirstEntry && this._count === 1) {
       this._isFirstEntry = false;
     } else {
@@ -164,6 +162,9 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
         this._longestDurationExcludingFirst,
         entry.duration,
       );
+      if (entry.firstUIEventTimestamp === 0) {
+        this._totalBlockingDuration += entry.blockingDuration;
+      }
     }
   }
 
