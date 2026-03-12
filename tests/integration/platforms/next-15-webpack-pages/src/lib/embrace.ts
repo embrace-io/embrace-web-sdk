@@ -10,6 +10,7 @@ export const embraceWebSdk = initSDK({
   logLevel: DiagLogLevel.ALL,
   embraceDataURL: 'http://localhost:3001',
   embraceConfigURL: 'http://localhost:3001',
+  defaultInstrumentationConfig: { omit: new Set(['loaf']) },
 });
 
 declare global {

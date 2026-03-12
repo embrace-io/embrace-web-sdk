@@ -15,6 +15,10 @@ export {
   EmbraceFetchInstrumentation,
   type EmbraceFetchInstrumentationArgs,
 } from './fetch/index.ts';
+export {
+  LoafInstrumentation,
+  type LoafInstrumentationArgs,
+} from './loaf/index.ts';
 export { getNavigationInstrumentation } from './navigation/index.ts';
 export type { SessionSpan } from './session/index.ts';
 export {
