@@ -57,9 +57,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
           'long-animation-frame',
         )
       ) {
-        this._diag.debug(
-          'LoafInstrumentation: long-animation-frame not supported, skipping',
-        );
+        this._diag.debug('long-animation-frame not supported, skipping');
         return;
       }
 
@@ -72,9 +70,10 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           try {
+            this._diag.debug('entry observed', entry);
             this._processEntry(entry as PerformanceLongAnimationFrameTiming);
           } catch (e) {
-            this._diag.error('LoafInstrumentation: error processing entry', e);
+            this._diag.error('error processing entry', e);
           }
         }
       });
@@ -87,7 +86,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._registerSessionEndListener();
     } catch (e) {
       this._isEnabled = false;
-      this._diag.error('LoafInstrumentation: failed to enable', e);
+      this._diag.error('failed to enable', e);
     }
   }
 
@@ -105,7 +104,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
         try {
           this._flushReport();
         } catch (e) {
-          this._diag.error('LoafInstrumentation: error flushing report', e);
+          this._diag.error('error flushing report', e);
         }
       });
   }
