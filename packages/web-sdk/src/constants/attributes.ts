@@ -43,7 +43,6 @@ export enum EMB_TYPES {
   ResourceFetch = 'ux.resource_fetch',
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',
-  LoAF = 'perf.loaf',
 }
 
 export enum EMB_STATES {

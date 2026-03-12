@@ -1,24 +1,21 @@
+/* eslint-disable baseline-js/use-baseline */
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import type { Metric } from 'web-vitals';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
-  ATTR_LOAF_COUNT,
-  ATTR_LOAF_LONGEST_DURATION,
-  ATTR_LOAF_LONGEST_DURATION_EXCLUDING_FIRST,
-  ATTR_LOAF_RATING,
-  ATTR_LOAF_STYLE_AND_LAYOUT_DURATION,
-  ATTR_LOAF_TOTAL_BLOCKING_DURATION,
-  ATTR_LOAF_TOTAL_DURATION,
-  ATTR_LOAF_WORK_DURATION,
+  ATTR_TBD_LOAF_COUNT,
+  ATTR_TBD_LOAF_LONGEST_DURATION,
+  ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST,
+  ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION,
+  ATTR_TBD_LOAF_TOTAL_DURATION,
+  ATTR_TBD_LOAF_WORK_DURATION,
   BLOCKING_DURATION_GOOD_THRESHOLD,
   BLOCKING_DURATION_POOR_THRESHOLD,
   LOAF_EVENT_NAME,
 } from './constants.ts';
-import type {
-  LoafInstrumentationArgs,
-  PerformanceLongAnimationFrameTimingEntry,
-} from './types.ts';
+import type { LoafInstrumentationArgs } from './types.ts';
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
@@ -75,9 +72,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           try {
-            this._processEntry(
-              entry as PerformanceLongAnimationFrameTimingEntry,
-            );
+            this._processEntry(entry as PerformanceLongAnimationFrameTiming);
           } catch (e) {
             this._diag.error('LoafInstrumentation: error processing entry', e);
           }
@@ -135,7 +130,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  private _processEntry(entry: PerformanceLongAnimationFrameTimingEntry): void {
+  private _processEntry(entry: PerformanceLongAnimationFrameTiming): void {
     if (!this._isEnabled) {
       return;
     }
@@ -173,7 +168,8 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    let rating: 'good' | 'needs-improvement' | 'poor';
+    // use web-vitals Metric type for rating
+    let rating: Metric['rating'];
     if (this._totalBlockingDuration <= BLOCKING_DURATION_GOOD_THRESHOLD) {
       rating = 'good';
     } else if (
@@ -185,16 +181,17 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
 
     const attrs: Record<string, string | number> = {
-      [KEY_EMB_TYPE]: EMB_TYPES.LoAF,
-      [ATTR_LOAF_TOTAL_DURATION]: this._totalDuration,
-      [ATTR_LOAF_WORK_DURATION]: this._workDuration,
-      [ATTR_LOAF_STYLE_AND_LAYOUT_DURATION]: this._styleLayoutDuration,
-      [ATTR_LOAF_COUNT]: this._count,
-      [ATTR_LOAF_LONGEST_DURATION]: this._longestDuration,
-      [ATTR_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]:
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      ['emb.web_vital.name']: 'TBD',
+      ['emb.web_vital.value']: this._totalBlockingDuration,
+      ['emb.web_vital.rating']: rating,
+      [ATTR_TBD_LOAF_TOTAL_DURATION]: this._totalDuration,
+      [ATTR_TBD_LOAF_WORK_DURATION]: this._workDuration,
+      [ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION]: this._styleLayoutDuration,
+      [ATTR_TBD_LOAF_COUNT]: this._count,
+      [ATTR_TBD_LOAF_LONGEST_DURATION]: this._longestDuration,
+      [ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]:
         this._longestDurationExcludingFirst,
-      [ATTR_LOAF_TOTAL_BLOCKING_DURATION]: this._totalBlockingDuration,
-      [ATTR_LOAF_RATING]: rating,
     };
 
     this.logger.emit({

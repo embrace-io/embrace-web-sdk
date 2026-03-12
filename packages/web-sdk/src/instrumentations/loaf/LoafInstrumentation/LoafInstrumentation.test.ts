@@ -16,13 +16,12 @@ import {
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
 import { LoafInstrumentation } from './LoafInstrumentation.ts';
-import type { PerformanceLongAnimationFrameTimingEntry } from './types.ts';
 
 const { expect } = chai;
 
 const makeEntry = (
-  overrides: Partial<PerformanceLongAnimationFrameTimingEntry> = {},
-): PerformanceLongAnimationFrameTimingEntry => ({
+  overrides: Partial<PerformanceLongAnimationFrameTiming> = {},
+): PerformanceLongAnimationFrameTiming => ({
   name: 'long-animation-frame',
   entryType: 'long-animation-frame',
   startTime: 100,
@@ -37,7 +36,7 @@ const makeEntry = (
 });
 
 type ObserverCallback = (list: {
-  getEntries: () => PerformanceLongAnimationFrameTimingEntry[];
+  getEntries: () => PerformanceLongAnimationFrameTiming[];
 }) => void;
 
 let observerCallback: ObserverCallback | null = null;
@@ -58,9 +57,7 @@ class MockPerformanceObserver {
   }
 }
 
-const triggerEntries = (
-  entries: PerformanceLongAnimationFrameTimingEntry[],
-) => {
+const triggerEntries = (entries: PerformanceLongAnimationFrameTiming[]) => {
   observerCallback?.({ getEntries: () => entries });
 };
 
@@ -580,7 +577,7 @@ describe('LoafInstrumentation', () => {
         get duration(): number {
           throw new Error('broken');
         },
-      } as PerformanceLongAnimationFrameTimingEntry,
+      } as PerformanceLongAnimationFrameTiming,
     ]);
 
     expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);

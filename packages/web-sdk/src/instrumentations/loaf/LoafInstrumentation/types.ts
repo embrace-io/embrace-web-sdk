@@ -1,45 +1,12 @@
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
-
-// TypeScript's DOM lib does not yet include Long Animation Frames API types (as of TS 5.9).
+// TypeScript's DOM lib does not yet include Long Animation Frames API types (as of TS 5.9)
+// so we use the global augmentation from 'web-vitals' instead.
 // Spec: https://w3c.github.io/long-animation-frames/
 // MDN: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongAnimationFrameTiming
-// Replace these with the built-in types once they are available.
-export interface PerformanceScriptTimingEntry extends PerformanceEntry {
-  readonly name: 'script';
-  readonly entryType: 'script';
-  readonly invoker: string;
-  readonly invokerType:
-    | 'classic-script'
-    | 'module-script'
-    | 'event-listener'
-    | 'user-callback'
-    | 'resolve-promise'
-    | 'reject-promise';
-  readonly sourceURL: string;
-  readonly sourceFunctionName: string;
-  readonly sourceCharPosition: number;
-  readonly pauseDuration: number;
-  readonly forcedStyleAndLayoutDuration: number;
-  readonly windowAttribution:
-    | 'self'
-    | 'descendant'
-    | 'ancestor'
-    | 'same-page'
-    | 'other';
-  readonly executionStart: number;
-}
+// This is not a typo:
+import type {} from 'web-vitals';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
-export interface PerformanceLongAnimationFrameTimingEntry
-  extends PerformanceEntry {
-  readonly name: 'long-animation-frame';
-  readonly entryType: 'long-animation-frame';
-  readonly renderStart: number;
-  readonly styleAndLayoutStart: number;
-  readonly blockingDuration: number;
-  readonly firstUIEventTimestamp: number;
-  readonly scripts: readonly PerformanceScriptTimingEntry[];
-}
-
-export type LoafInstrumentationArgs = {
-  // none yet
-} & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
+export type LoafInstrumentationArgs = {} & Pick<
+  EmbraceInstrumentationBaseArgs,
+  'diag' | 'perf'
+>;
