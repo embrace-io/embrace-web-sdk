@@ -143,13 +143,15 @@ describe('LoafInstrumentation', () => {
     expect(report).to.exist;
     expect(report?.eventName).to.equal('emb-loaf-report');
     expect(report?.severityNumber).to.equal(SeverityNumber.INFO);
-    expect(report?.attributes['emb.type']).to.equal('perf.loaf');
-    expect(report?.attributes['emb.loaf.total_duration']).to.equal(180);
-    expect(report?.attributes['emb.loaf.count']).to.equal(2);
-    expect(report?.attributes['emb.loaf.longest_duration']).to.equal(100);
+    expect(report?.attributes['emb.type']).to.equal('ux.web_vital');
+    expect(report?.attributes['emb.web_vital.name']).to.equal('TBD');
+    expect(report?.attributes['emb.tbd.loaf_total_duration']).to.equal(180);
+    expect(report?.attributes['emb.tbd.loaf_count']).to.equal(2);
+    expect(report?.attributes['emb.tbd.loaf_longest_duration']).to.equal(100);
     expect(
-      report?.attributes['emb.loaf.longest_duration_excluding_first'],
+      report?.attributes['emb.tbd.loaf_longest_duration_excluding_first'],
     ).to.equal(80);
+    expect(Object.keys(report?.attributes ?? {})).to.have.lengthOf(10);
 
     instrumentation.disable();
   });
@@ -172,7 +174,7 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.work_duration']).to.equal(130);
+    expect(report?.attributes['emb.tbd.loaf_work_duration']).to.equal(130);
 
     instrumentation.disable();
   });
@@ -195,9 +197,9 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.style_and_layout_duration']).to.equal(
-      20,
-    );
+    expect(
+      report?.attributes['emb.tbd.loaf_style_and_layout_duration'],
+    ).to.equal(20);
 
     instrumentation.disable();
   });
@@ -220,7 +222,7 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
     // First entry (100) skipped, sum of 50 + 30 = 80
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(80);
+    expect(report?.attributes['emb.web_vital.value']).to.equal(80);
 
     instrumentation.disable();
   });
@@ -243,7 +245,7 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
     // First skipped, third filtered (interaction), only second counted = 50
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(50);
+    expect(report?.attributes['emb.web_vital.value']).to.equal(50);
 
     instrumentation.disable();
   });
@@ -325,9 +327,9 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.longest_duration']).to.equal(100);
+    expect(report?.attributes['emb.tbd.loaf_longest_duration']).to.equal(100);
     expect(
-      report?.attributes['emb.loaf.longest_duration_excluding_first'],
+      report?.attributes['emb.tbd.loaf_longest_duration_excluding_first'],
     ).to.equal(0);
 
     instrumentation.disable();
@@ -349,10 +351,8 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
-      200,
-    );
-    expect(report?.attributes['emb.loaf.rating']).to.equal('good');
+    expect(report?.attributes['emb.web_vital.value']).to.equal(200);
+    expect(report?.attributes['emb.web_vital.rating']).to.equal('good');
 
     instrumentation.disable();
   });
@@ -373,10 +373,10 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
-      201,
+    expect(report?.attributes['emb.web_vital.value']).to.equal(201);
+    expect(report?.attributes['emb.web_vital.rating']).to.equal(
+      'needs-improvement',
     );
-    expect(report?.attributes['emb.loaf.rating']).to.equal('needs-improvement');
 
     instrumentation.disable();
   });
@@ -397,10 +397,10 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
-      600,
+    expect(report?.attributes['emb.web_vital.value']).to.equal(600);
+    expect(report?.attributes['emb.web_vital.rating']).to.equal(
+      'needs-improvement',
     );
-    expect(report?.attributes['emb.loaf.rating']).to.equal('needs-improvement');
 
     instrumentation.disable();
   });
@@ -421,10 +421,8 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.total_blocking_duration']).to.equal(
-      601,
-    );
-    expect(report?.attributes['emb.loaf.rating']).to.equal('poor');
+    expect(report?.attributes['emb.web_vital.value']).to.equal(601);
+    expect(report?.attributes['emb.web_vital.rating']).to.equal('poor');
 
     instrumentation.disable();
   });
@@ -477,7 +475,7 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'emb-loaf-report');
     expect(reports).to.have.lengthOf(1);
-    expect(reports[0].attributes['emb.loaf.total_duration']).to.equal(150);
+    expect(reports[0].attributes['emb.tbd.loaf_total_duration']).to.equal(150);
 
     instrumentation.disable();
   });
@@ -512,8 +510,10 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
     expect(firstReport).to.exist;
-    expect(firstReport?.attributes['emb.loaf.total_duration']).to.equal(180);
-    expect(firstReport?.attributes['emb.loaf.count']).to.equal(2);
+    expect(firstReport?.attributes['emb.tbd.loaf_total_duration']).to.equal(
+      180,
+    );
+    expect(firstReport?.attributes['emb.tbd.loaf_count']).to.equal(2);
 
     memoryExporter.reset();
 
@@ -527,10 +527,12 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
     expect(secondReport).to.exist;
-    expect(secondReport?.attributes['emb.loaf.total_duration']).to.equal(100);
-    expect(secondReport?.attributes['emb.loaf.count']).to.equal(2);
+    expect(secondReport?.attributes['emb.tbd.loaf_total_duration']).to.equal(
+      100,
+    );
+    expect(secondReport?.attributes['emb.tbd.loaf_count']).to.equal(2);
     expect(
-      secondReport?.attributes['emb.loaf.longest_duration_excluding_first'],
+      secondReport?.attributes['emb.tbd.loaf_longest_duration_excluding_first'],
     ).to.equal(60);
 
     instrumentation.disable();
@@ -556,9 +558,9 @@ describe('LoafInstrumentation', () => {
     const report = memoryExporter
       .getFinishedLogRecords()
       .find((l) => l.eventName === 'emb-loaf-report');
-    expect(report?.attributes['emb.loaf.style_and_layout_duration']).to.equal(
-      0,
-    );
+    expect(
+      report?.attributes['emb.tbd.loaf_style_and_layout_duration'],
+    ).to.equal(0);
 
     instrumentation.disable();
   });
