@@ -6,7 +6,6 @@ export default defineConfig({
   target: 'es2022',
   platform: 'node',
   outDir: 'dist',
-  external: ['commander'],
   clean: false,
   publint: true,
 });

@@ -11,9 +11,6 @@ if ! podman ps -q --filter "name=${SERVE_CONTAINER}" | grep -q .; then
   exit 1
 fi
 
-podman run --rm \
+run_with_golden_copy "npx playwright test --config playwright.config.prebuilt.ts" \
   --network "container:${SERVE_CONTAINER}" \
-  "${PODMAN_BASE_FLAGS[@]}" \
-  -w /workspace/tests/integration \
-  "${PLAYWRIGHT_IMAGE}" \
-  bash -c "mkdir -p /root/.cache && ln -sf /ms-playwright /root/.cache/ms-playwright && npx playwright test --config playwright.config.prebuilt.ts"
+  -w /workspace/tests/integration
