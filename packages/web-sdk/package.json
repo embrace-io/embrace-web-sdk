@@ -17,7 +17,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "clean": "npx -y rimraf dist",
+    "clean": "npx -y rimraf dist .sonda",
     "build": "npm run build --prefix packages/otlp-transformer && tsdown",
     "dev": "tsdown --watch --no-clean",
     "test": "web-test-runner",

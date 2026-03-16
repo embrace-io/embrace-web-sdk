@@ -1,4 +1,6 @@
+import process from 'node:process';
 import type { Plugin } from 'rolldown';
+import Sonda from 'sonda/rolldown';
 import { defineConfig } from 'tsdown';
 
 // Treat warnings as errors; use checks config to disable known harmless warnings
@@ -22,7 +24,15 @@ export default defineConfig([
     platform: 'browser',
     minify: true,
     clean: false,
-    plugins: [failOnWarnPlugin],
+    plugins: [
+      Sonda({
+        enabled: !!process.env.SONDA,
+        format: ['html', 'json'],
+        open: false,
+        gzip: true,
+      }),
+      failOnWarnPlugin,
+    ],
     deps: {
       alwaysBundle: () => true,
     },
