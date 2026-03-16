@@ -22,5 +22,6 @@ jobs:
         with:
           # only create a release if the last commit merged starts with "release". Coming from .github/workflows/release.yaml
           disable-releaser: ${{ !startsWith(github.event.head_commit.message, 'release') }}
+          commitish: main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
