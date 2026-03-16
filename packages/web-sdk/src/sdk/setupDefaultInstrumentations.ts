@@ -7,6 +7,7 @@ import {
   EmbraceXHRInstrumentation,
   EmptyRootInstrumentation,
   GlobalExceptionInstrumentation,
+  LoafInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
@@ -56,6 +57,10 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new WebVitalsInstrumentation({ ...config['web-vital'], pageManager }),
     );
+  }
+
+  if (!config.omit?.has('loaf')) {
+    instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
   }
 
   if (!config.omit?.has('document-load')) {

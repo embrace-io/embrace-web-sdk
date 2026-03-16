@@ -7,6 +7,12 @@ const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
 const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 
+// Force onscreen rendering to trigger a long animation frame
+const start = performance.now();
+while (performance.now() - start < 200) {
+  // block main thread
+}
+
 const setupOTel = () => {
   const result = initSDK({
     logLevel: DiagLogLevel.ALL,
