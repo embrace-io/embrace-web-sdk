@@ -15,7 +15,10 @@ export class EmbraceW3CTraceContextPropagator extends W3CTraceContextPropagator 
     // context if both are available
     const span = trace.getSpan(context);
     if (span) {
-      const traceparent = defaultTextMapGetter.get(carrier, 'traceparent');
+      const traceparent =
+        carrier instanceof Headers
+          ? carrier.get('traceparent')
+          : defaultTextMapGetter.get(carrier, 'traceparent');
       if (traceparent) {
         span.setAttribute(KEY_EMB_W3C_TRACEPARENT, traceparent);
       }
