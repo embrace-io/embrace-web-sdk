@@ -1,7 +1,6 @@
 {
   "name": "webpack-4",
   "private": true,
-  "version": "0.0.0",
   "scripts": {
     "build": "npm run build:clean && npm run build:es2015",
     "build:es2015": "webpack && npm run process-sourcemaps",
@@ -11,13 +10,14 @@
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
     "@opentelemetry/context-zone": "^2",
+    "@opentelemetry/instrumentation": "^0",
     "@opentelemetry/instrumentation-document-load": "^0",
     "@opentelemetry/sdk-logs": "^0",
-    "@opentelemetry/semantic-conventions": "^1"
+    "@opentelemetry/sdk-trace-web": "^2"
   },
   "devDependencies": {
-    "@embrace-io/web-cli": "file:../../../../packages/web-cli",
     "@babel/preset-env": "^7",
+    "@embrace-io/web-cli": "file:../../../../packages/web-cli",
     "babel-loader": "^8",
     "html-loader": "^1",
     "html-webpack-plugin": "^4",

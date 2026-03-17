@@ -1,6 +1,5 @@
 {
   "name": "next-16-app",
-  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,16 +11,14 @@
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
+    "@opentelemetry/sdk-logs": "^0",
+    "@opentelemetry/sdk-trace-web": "^2",
     "next": "^16",
     "react": "^19",
     "react-dom": "^19"
   },
   "devDependencies": {
     "@embrace-io/web-cli": "file:../../../../packages/web-cli",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "babel-plugin-react-compiler": "1.0.0",
-    "typescript": "^5"
+    "babel-plugin-react-compiler": "^1"
   }
 }

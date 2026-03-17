@@ -1,7 +1,6 @@
 {
   "name": "webpack-5",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "webpack serve --config webpack.config.es2015.mjs --mode development",
@@ -12,6 +11,8 @@
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
+    "@opentelemetry/sdk-logs": "^0",
+    "@opentelemetry/sdk-trace-web": "^2",
     "react": "^19",
     "react-dom": "^19"
   },
@@ -21,12 +22,9 @@
     "@babel/preset-env": "^7",
     "@babel/preset-react": "^7",
     "@babel/preset-typescript": "^7",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "babel-loader": "^10",
     "html-webpack-plugin": "^5",
     "sonda": "^0",
-    "typescript": "~5.8.0",
     "webpack": "^5",
     "webpack-cli": "^6",
     "webpack-dev-server": "^5",
