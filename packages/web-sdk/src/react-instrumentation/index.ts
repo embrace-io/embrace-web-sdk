@@ -8,8 +8,8 @@ import { withEmbraceRouting } from '../instrumentations/navigation/NavigationIns
 
 export {
   createReactRouterNavigationInstrumentation,
-  withEmbraceRoutingLegacy,
-  withEmbraceRouting,
-  listenToRouterChanges,
   EmbraceErrorBoundary,
+  listenToRouterChanges,
+  withEmbraceRouting,
+  withEmbraceRoutingLegacy,
 };
