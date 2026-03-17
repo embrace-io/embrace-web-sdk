@@ -10,11 +10,13 @@ import {
   fakeFetchRestore,
 } from '../../../tests/utils/index.ts';
 import { createFetchTransport } from './createFetchTransport.ts';
+import { _resetKeepaliveTracking } from './FetchTransport.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 describe('createFetchTransport', () => {
   beforeEach(() => {
+    _resetKeepaliveTracking();
     fakeFetchInstall();
   });
 
@@ -100,7 +102,7 @@ describe('createFetchTransport', () => {
       foo: 'bar',
     });
     expect(result).to.deep.equal({
-      status: 'failure',
+      status: 'retryable',
       error: new Error(`500 Fetch request failed`),
     });
   });

@@ -716,6 +716,11 @@ describe('initSDK', () => {
       void expect(tabId).to.be.a('string');
       void expect(tabId).to.have.lengthOf(32);
 
+      const browserUrlFull = sessionSpan['attributes'].find(
+        (attr) => attr.key === 'browser.url.full',
+      )?.value.stringValue;
+      void expect(browserUrlFull).to.be.a('string');
+
       expect(sessionSpan['attributes']).to.deep.equal([
         { key: 'emb.type', value: { stringValue: 'ux.session' } },
         { key: 'emb.state', value: { stringValue: 'foreground' } },
@@ -731,6 +736,7 @@ describe('initSDK', () => {
         { key: 'emb.session_start_type', value: { stringValue: 'init' } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,
+        { key: 'browser.url.full', value: { stringValue: browserUrlFull } },
       ]);
     });
 
@@ -895,11 +901,13 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      expect(exportedAttributes).to.have.lengthOf(200);
+      // 200 is the span attribute cap. browser.url.full is added by BrowserSpanProcessor.onEnd()
+      // which writes directly to span.attributes, bypassing the cap
+      expect(exportedAttributes).to.have.lengthOf(201);
 
       expect(exportedAttributes[0].key).to.equal('emb.type');
       expect(exportedAttributes[1].key).to.equal('session.id');
-      for (let i = 2; i < exportedAttributes.length; i++) {
+      for (let i = 2; i < exportedAttributes.length - 1; i++) {
         // Newest attributes are dropped when the limit is reached, start counting after
         // the 2 internal attributes added by our API
         const expected = i - 2;
@@ -910,6 +918,7 @@ describe('initSDK', () => {
           stringValue: expected.toString(),
         });
       }
+      expect(exportedAttributes[200].key).to.equal('browser.url.full');
     });
 
     it('should apply limits on the length of span attribute values', async () => {
@@ -1001,6 +1010,7 @@ describe('initSDK', () => {
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
     // used:
     // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
+    // biome-ignore lint/suspicious/noSkippedTests: waiting on OTel bugfix https://github.com/open-telemetry/opentelemetry-js/pull/6479
     xit('should apply limits on the attributes of an individual span event', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
@@ -1052,8 +1062,9 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1127,8 +1138,9 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1205,8 +1217,9 @@ describe('initSDK', () => {
           omit: new Set([
             // This instrumentation does its own patching of Fetch which interferes with our test stub
             '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
+            // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'loaf',
           ]),
         },
       });
@@ -1879,7 +1892,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load']),
+        omit: new Set(['document-load', 'loaf']),
       },
     });
 
@@ -1892,7 +1905,7 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load']),
+        omit: new Set(['document-load', 'loaf']),
       },
     });
 

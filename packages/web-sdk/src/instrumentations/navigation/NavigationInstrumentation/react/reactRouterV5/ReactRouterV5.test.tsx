@@ -9,6 +9,7 @@ import {
   About,
   Home,
   Product,
+  ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
 import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
@@ -24,7 +25,7 @@ import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';
 
 const { expect } = chai;
 
-export const history = createBrowserHistory();
+const history = createBrowserHistory();
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
 
 const renderReactApp = () => {
@@ -36,6 +37,12 @@ const renderReactApp = () => {
 
     return (
       <Switch>
+        <EmbraceRoute path="/product/:id/details">
+          <ProductDetails onNavigate={handleNavigation} />
+        </EmbraceRoute>
+        <EmbraceRoute path="/product/:id/more-details">
+          <div>Product Details Relative</div>
+        </EmbraceRoute>
         <EmbraceRoute path="/product/:id">
           <Product onNavigate={handleNavigation} />
         </EmbraceRoute>
@@ -97,8 +104,10 @@ describe('ReactRouterV5Legacy', () => {
     const routeSpans = memoryExporter
       .getFinishedSpans()
       .filter((span) => span.name !== 'emb-session');
-    expect(routeSpans.length).to.equal(2);
+    expect(routeSpans.length).to.equal(4);
     expect(routeSpans[0].name).to.equal('/');
     expect(routeSpans[1].name).to.equal('/product/:id');
+    expect(routeSpans[2].name).to.equal('/product/:id/details');
+    expect(routeSpans[3].name).to.equal('/product/:id/more-details');
   });
 });

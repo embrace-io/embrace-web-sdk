@@ -65,6 +65,11 @@ type TestWithMockApi = {
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   'DocumentLoadInstrumentation',
 ];
+// Resource spans whose url.full matches any of these patterns are excluded from
+// comparison entirely. Favicons are fetched asynchronously by the browser and
+// may or may not complete before the SDK captures PerformanceResourceTiming
+// entries, making their presence in a session non-deterministic.
+const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
   'log.record.uid',
@@ -202,6 +207,20 @@ const getAttributeValue = (
   }
 
   return null;
+};
+
+const isExcludedSpan = (entity: ISpan | ILogRecord): boolean => {
+  if (!isSpan(entity)) {
+    return false;
+  }
+  const urlAttr = entity.attributes?.find((attr) =>
+    URL_ATTRIBUTE_KEYS.has(attr.key),
+  );
+  const url = urlAttr ? getAttributeValue(urlAttr) : null;
+  return (
+    typeof url === 'string' &&
+    EXCLUDED_RESOURCE_URL_PATTERNS.some((pattern) => pattern.test(url))
+  );
 };
 
 const isResourceSpan = (
@@ -363,7 +382,15 @@ const expect = testWithMockApi.expect.extend({
       message: `Attributes mismatch for span ${received.name}`,
     });
 
-    expect(received.events).toMatchSpanEvents(expected.events, {
+    const sortedReceivedEvents = received.events.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    const sortedExpectedEvents = expected.events.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    expect(sortedReceivedEvents).toMatchSpanEvents(sortedExpectedEvents, {
       message: `Events mismatch for span ${received.name}`,
     });
 
@@ -455,12 +482,19 @@ const expect = testWithMockApi.expect.extend({
 
           if (receivedScope.scope) {
             if (receivedScopes && expectedScopes) {
-              if (receivedScopes.length !== expectedScopes.length) {
+              const filteredReceived = receivedScopes.filter(
+                (e) => !isExcludedSpan(e),
+              );
+              const filteredExpected = expectedScopes.filter(
+                (e) => !isExcludedSpan(e),
+              );
+
+              if (filteredReceived.length !== filteredExpected.length) {
                 return {
                   pass: false,
                   message: () =>
-                    `Expected ${chalk.green(expectedScopes.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(receivedScopes.length)}${INTENDED_CHANGE_MESSAGE}\n${
-                      diff(receivedScopes, expectedScopes, {
+                    `Expected ${chalk.green(filteredExpected.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(filteredReceived.length)}${INTENDED_CHANGE_MESSAGE}\n${
+                      diff(filteredReceived, filteredExpected, {
                         expand: true,
                         aAnnotation: 'Received',
                         bAnnotation: 'Expected',
@@ -482,8 +516,8 @@ const expect = testWithMockApi.expect.extend({
               for (const [
                 entityIndex,
                 receivedEntity,
-              ] of receivedScopes.entries()) {
-                const expectedEntity = expectedScopes[entityIndex];
+              ] of filteredReceived.entries()) {
+                const expectedEntity = filteredExpected[entityIndex];
 
                 try {
                   if (isSpan(receivedEntity) && isSpan(expectedEntity)) {

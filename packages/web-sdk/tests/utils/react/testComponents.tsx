@@ -9,8 +9,8 @@ export const Home: FC<PageProps> = ({ onNavigate }) => {
     <div>
       <h1>Home</h1>
       <button
-        id="to-product-button"
         type="button"
+        className="to-product-button"
         onClick={() =>
           onNavigate(`/product/${Math.floor(Math.random() * 100)}`)
         }
@@ -33,6 +33,28 @@ export const Product: FC<PageProps> = ({ onNavigate }) => {
       </button>
       <button type="button" onClick={() => onNavigate('/about')}>
         Go to About Page
+      </button>
+      <button
+        type="button"
+        className="to-product-details-button"
+        onClick={() => onNavigate('/product/123/details')}
+      >
+        Go to Product Details
+      </button>
+    </div>
+  );
+};
+
+export const ProductDetails: FC<PageProps> = ({ onNavigate }) => {
+  return (
+    <div>
+      <h2>Product Details</h2>
+      <button
+        type="button"
+        className="to-relative-product-details-button"
+        onClick={() => onNavigate('/product/123/more-details')}
+      >
+        Go to Relative Details
       </button>
     </div>
   );

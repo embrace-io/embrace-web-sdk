@@ -10,7 +10,7 @@ const TOTAL_UNCOMPRESSED_SIZE_THRESHOLD_IN_KB = getFromEnv(
 );
 const TOTAL_GZIP_SIZE_THRESHOLD_IN_KB = getFromEnv(
   'TOTAL_GZIP_SIZE_THRESHOLD_IN_KB',
-  67,
+  69,
 );
 
 export {

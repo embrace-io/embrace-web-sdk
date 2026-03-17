@@ -23,8 +23,9 @@ export default defineConfig([
     minify: true,
     clean: false,
     plugins: [failOnWarnPlugin],
-    inlineOnly: false, // IIFE bundles all deps intentionally
-    noExternal: [/.*/],
+    deps: {
+      alwaysBundle: () => true,
+    },
     inputOptions: {
       checks: {
         missingNameOptionForIifeExport: false, // We use banner to assign global
@@ -50,15 +51,13 @@ export default defineConfig([
     clean: false,
     publint: true,
     plugins: [failOnWarnPlugin],
-    // include prebundled package in output: ./packages/otlp-transformer/package.json
-    noExternal: ['#embrace-io/otlp-transformer'],
     inputOptions: {
       checks: {
         pluginTimings: false, // CI environments vary in speed
       },
     },
     attw: {
-      profile: 'esm-only',
+      profile: 'strict',
     },
   },
 ]);
