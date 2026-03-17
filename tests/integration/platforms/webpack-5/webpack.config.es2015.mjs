@@ -37,13 +37,7 @@ export default merge(baseConfig, {
   },
   plugins: [
     new Sonda({
-      format: 'json',
-      open: false,
-      gzip: true,
-      outputDir: '.sonda/es2015',
-    }),
-    new Sonda({
-      format: 'html',
+      format: ['json', 'html'],
       open: false,
       gzip: true,
       outputDir: '.sonda/es2015',
