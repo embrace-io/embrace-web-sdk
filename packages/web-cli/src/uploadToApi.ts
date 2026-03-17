@@ -1,4 +1,5 @@
 import zlib from 'node:zlib';
+import { log } from './log.ts';
 
 interface UploadToApiArgs {
   jsContent: string;
@@ -10,6 +11,7 @@ interface UploadToApiArgs {
   pathForUpload: string;
   storeType: string;
   cliVersion: string;
+  relJs: string;
 }
 
 export const uploadToApi = async ({
@@ -22,6 +24,7 @@ export const uploadToApi = async ({
   pathForUpload,
   storeType,
   cliVersion,
+  relJs,
 }: UploadToApiArgs): Promise<void> => {
   if (!token) {
     throw new Error('Token is required for upload');
@@ -44,7 +47,7 @@ export const uploadToApi = async ({
   formData.append('file', body);
 
   try {
-    console.log(`Uploading to API bundle ID ${bundleID}, appID ${appID}`);
+    log.dim(`    uploading bundle ${bundleID.substring(0, 8)}, app ${appID}`);
     const response = await fetch(host + pathForUpload + storeType, {
       method: 'POST',
       headers: {
@@ -60,9 +63,13 @@ export const uploadToApi = async ({
       );
     }
 
-    console.log('API Response status:', response.status);
+    log.dim(`    API response: ${response.status.toString()}`);
+
+    log.success(`    uploaded ${relJs}`);
   } catch (error) {
-    console.error('Error uploading to API:', error);
+    log.error(
+      `    upload failed for ${relJs}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     throw error;
   }
 };

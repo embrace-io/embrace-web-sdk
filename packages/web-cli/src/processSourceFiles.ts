@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { log } from './log.ts';
 import { uploadToApi } from './uploadToApi.ts';
 import { validateInput } from './validateInput.ts';
 
@@ -61,6 +62,28 @@ export const isAlreadyInjected = (sourceFile: string): boolean => {
   return sourceFile.includes(INJECTION_MARKER);
 };
 
+const diagnoseInvalidDebugId = (debugId: string): string => {
+  // Check if it's a valid UUID without hyphens
+  if (UUID_WITHOUT_HYPHENS_REGEX.test(debugId)) {
+    const withHyphens = addHyphensToUuid(debugId);
+    return `UUID is missing hyphens. Expected format: ${withHyphens}`;
+  }
+
+  // Check length
+  const stripped = debugId.replace(/-/g, '');
+  if (stripped.length !== 32) {
+    return `UUID must be 32 hex characters (got ${stripped.length.toString()})`;
+  }
+
+  // Check for invalid characters
+  if (!/^[0-9a-fA-F-]+$/.test(debugId)) {
+    return 'UUID contains invalid characters (only 0-9, a-f, A-F, and hyphens allowed)';
+  }
+
+  // Wrong hyphen placement
+  return 'UUID has incorrect format. Expected: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+};
+
 export const injectBundleIDToSourceFile = (
   sourceFile: string,
   bundleID: string,
@@ -102,9 +125,6 @@ const findSourceMapForJsFile = (
   const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
 
   if (fs.existsSync(fallbackMapFilePath)) {
-    console.log(
-      `Using fallback source map ${fallbackMapPath} for ${jsFileName}`,
-    );
     return fallbackMapPath;
   }
 
@@ -164,9 +184,7 @@ export const findJSFilesRecursively = (
       const mapFilePath = path.resolve(realPath, sourceMapUrl);
 
       if (!fs.existsSync(mapFilePath)) {
-        console.warn(
-          `Skipping ${jsFileName} - source map file not found at ${mapFilePath}`,
-        );
+        log.warn(`Skipping ${jsFileName} - map file not found`);
         continue;
       }
 
@@ -179,7 +197,9 @@ export const findJSFilesRecursively = (
         throw err;
       }
       // For other errors, just warn and continue
-      console.warn(`Error reading ${jsFileName}:`, err);
+      log.warn(
+        `Error reading ${jsFileName}: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -193,7 +213,9 @@ export const findJSFilesRecursively = (
         results.push(...findJSFilesRecursively(fullPath, searchRoot));
       }
     } catch (err) {
-      console.warn(`Error reading ${fullPath}:`, err);
+      log.warn(
+        `Error reading directory: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -228,34 +250,59 @@ export const processSourceFiles = async ({
     upload,
   });
   if (validationError) {
-    console.error('Input Validation Error: ', validationError);
-    process.exit(1); // Exit with error code
+    log.error(`Validation error: ${validationError}`);
+    process.exit(1);
   }
 
   // Validate that path is a directory
   const stats = fs.statSync(buildPath);
   if (!stats.isDirectory()) {
-    console.error(`Path must be a directory: ${buildPath}`);
-    process.exit(1); // Exit with error code
+    log.error(`Path must be a directory: ${buildPath}`);
+    process.exit(1);
   }
+
+  const rootPath = fs.realpathSync(buildPath);
+  const relativePath = (absPath: string) => path.relative(rootPath, absPath);
 
   try {
     // Recursively find all .js files with corresponding .js.map files
     const jsFiles = findJSFilesRecursively(buildPath);
 
-    console.log(
-      `Found ${jsFiles.length} JavaScript files in directory tree: ${buildPath}`,
-    );
+    if (jsFiles.length === 0) {
+      if (appVersion) {
+        log.error('Template app version not found in any files');
+        process.exit(1);
+      }
+      log.warn('No JavaScript files with source maps found');
+      return;
+    }
 
-    let appVersionReplaced = false;
+    log.info(`Found ${jsFiles.length} files with source maps in ${buildPath}`);
+
+    if (dryRun) {
+      log.warn('Dry run mode - no files will be modified or uploaded');
+    }
+
+    let appVersionFile: string | null = null;
+    let processed = 0;
+    let debugIdsGenerated = 0;
+
     for (const { jsFilePath, mapFilePath } of jsFiles) {
-      console.log(`Processing ${jsFilePath} and ${mapFilePath}...`);
+      const relJs = relativePath(jsFilePath);
+      const relMap = relativePath(mapFilePath);
+
+      // Print file being processed
+      log.info(relJs);
 
       // load files content
       let jsContent = fs.readFileSync(jsFilePath, fileEncoding);
       let mapContent = fs.readFileSync(mapFilePath, fileEncoding);
 
+      // Source map info
+      log.dim(`    sourcemap: ${relMap}`);
+
       // if an app version is provided, inject it into the source code
+      let thisFileVersionReplaced = false;
       if (appVersion) {
         // generate a 20 chars long appVersion by adding leading spaces to the appVersion
         const paddedAppVersion =
@@ -269,10 +316,9 @@ export const processSourceFiles = async ({
           paddedAppVersion,
         );
 
-        if (newJsContent === jsContent && newMapContent === mapContent) {
-          console.warn(`Template App version not found in ${jsFilePath}`);
-        } else {
-          appVersionReplaced = true;
+        if (newJsContent !== jsContent || newMapContent !== mapContent) {
+          appVersionFile = relJs;
+          thisFileVersionReplaced = true;
         }
 
         // save the content to the base vars for later processing
@@ -280,9 +326,15 @@ export const processSourceFiles = async ({
         mapContent = newMapContent;
       }
 
+      // App version status - only show when template found
+      if (appVersion && thisFileVersionReplaced) {
+        log.bold(`    app version: ${appVersion}`);
+      }
+
       // Now inject the debug_id:
       let bundleID = ''; // BundleID does not have hyphens. E.g. cf3c7caa072c4b2283bc691d71e49bcd
       let debugID = ''; // DebugID has hyphens. E.g. cf3c7caa-072c-4b22-83bc-691d71e49bcd
+      let debugIdSource = '';
       const sourceMap = JSON.parse(mapContent) as SourceMap;
 
       // If the sourcemap already has a debug_id use that, otherwise we generate it.
@@ -290,33 +342,31 @@ export const processSourceFiles = async ({
       // uses hyphens, and our bundle_id does not, we need to have the two variables separately.
       if (sourceMap.debugId) {
         if (!UUID_WITH_HYPHENS_REGEX.test(sourceMap.debugId)) {
+          const diagnosis = diagnoseInvalidDebugId(sourceMap.debugId);
           throw new Error(
-            `SourceMap file at ${mapFilePath} contains a debugID that is not a valid UUID string: '${sourceMap.debugId}'.\nIf you are generating these debugIDs manually, you should make sure the generated ids are valid UUIDs.\nIf you are using a build tool that generates these ids, we suggest that you disable that, and our cli will generate them automatically.`,
+            `Invalid debugId in ${relMap}: ${diagnosis}\nIf a build tool generated this, consider disabling its debugId generation so the CLI can generate them automatically.`,
           );
         }
         bundleID = sourceMap.debugId.replaceAll('-', '');
         debugID = sourceMap.debugId;
-        console.log(
-          `Using debugID ${debugID} from sourceMap for ${jsFilePath}`,
-        );
+        debugIdSource = 'existing';
       } else {
         bundleID = crypto.createHash('md5').update(jsContent).digest('hex'); // No hyphens
         debugID = addHyphensToUuid(bundleID);
         sourceMap.debugId = debugID;
         mapContent = JSON.stringify(sourceMap);
-        console.log(`Generated debugID ${debugID} for ${jsFilePath}`);
+        debugIdSource = 'generated';
+        debugIdsGenerated++;
       }
+
+      log.dim(`    debug id: ${debugID.substring(0, 8)} (${debugIdSource})`);
 
       // Inject the file->bundleID map snippet (skip if already injected):
       if (isAlreadyInjected(jsContent)) {
-        console.log(`Skipping injection for ${jsFilePath} - already processed`);
+        log.dim(`    skipping injection - already processed`);
       } else {
         jsContent = injectBundleIDToSourceFile(jsContent, bundleID);
       }
-
-      console.log(
-        `${replaceBundleID && !dryRun ? 'Replacing' : 'Dry run mode, not replacing'} the contents for ${jsFilePath} and ${mapFilePath}`,
-      );
 
       // write the updated source code back to the file
       if (!dryRun && replaceBundleID) {
@@ -326,9 +376,9 @@ export const processSourceFiles = async ({
 
       // upload the files to the Embrace API
       if (dryRun) {
-        console.log('Dry run, skipping upload');
+        log.info('Dry run, skipping upload');
       } else if (upload) {
-        console.log('Uploading file to Embrace API');
+        log.info('Uploading file to Embrace API');
         await uploadToApi({
           jsContent,
           mapContent,
@@ -339,20 +389,39 @@ export const processSourceFiles = async ({
           pathForUpload,
           storeType,
           cliVersion,
+          relJs,
         });
-        console.log(`Uploaded ${jsFilePath} and ${mapFilePath}`);
+        log.success(`  ${relJs} [${debugID.slice(0, 8)}]`);
       }
+
+      processed++;
     }
 
     // If the app version was provided, but it couldn't be replaced in any of the files, exit with error.
-    if (appVersion && !appVersionReplaced) {
-      console.error(
-        `Template App version not found in any of the js files. Exiting.`,
+    if (appVersion && !appVersionFile) {
+      log.error('Template app version not found in any files');
+      process.exit(1);
+    }
+
+    // Summary
+    log.dim('');
+    if (appVersion && appVersionFile) {
+      log.info(`App version: ${appVersion} (${appVersionFile})`);
+    }
+    if (debugIdsGenerated > 0) {
+      log.info(
+        `Debug IDs: ${debugIdsGenerated.toString()} generated (sourcemaps without debugId get one added)`,
       );
-      process.exit(1); // Exit with error code
+    }
+    if (dryRun) {
+      log.info(`Dry run complete: ${processed} files would be processed`);
+    } else if (upload) {
+      log.success(`Done: ${processed} files processed and uploaded`);
+    } else {
+      log.success(`Done: ${processed} files processed (upload disabled)`);
     }
   } catch (err) {
-    console.error('Error processing files:', err);
-    process.exit(1); // Exit with error code
+    log.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
   }
 };
