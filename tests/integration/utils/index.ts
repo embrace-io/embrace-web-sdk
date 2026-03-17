@@ -6,9 +6,9 @@ import testWithMockApi, {
 } from './test-with-mock-api.ts';
 
 export {
+  extendedMockApiTestExpect,
   processSondaReport,
+  runE2ETests,
   runPlatformBuildSmokeTest,
   testWithMockApi,
-  extendedMockApiTestExpect,
-  runE2ETests,
 };
