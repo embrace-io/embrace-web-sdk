@@ -11,7 +11,6 @@ interface UploadToApiArgs {
   pathForUpload: string;
   storeType: string;
   cliVersion: string;
-  relJs: string;
 }
 
 export const uploadToApi = async ({
@@ -24,7 +23,6 @@ export const uploadToApi = async ({
   pathForUpload,
   storeType,
   cliVersion,
-  relJs,
 }: UploadToApiArgs): Promise<void> => {
   if (!token) {
     throw new Error('Token is required for upload');
@@ -64,11 +62,9 @@ export const uploadToApi = async ({
     }
 
     log.dim(`    API response: ${response.status.toString()}`);
-
-    log.success(`    uploaded ${relJs}`);
   } catch (error) {
     log.error(
-      `    upload failed for ${relJs}: ${error instanceof Error ? error.message : String(error)}`,
+      `    upload failed: ${error instanceof Error ? error.message : String(error)}`,
     );
     throw error;
   }

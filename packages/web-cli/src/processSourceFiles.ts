@@ -125,6 +125,7 @@ const findSourceMapForJsFile = (
   const fallbackMapFilePath = path.join(realPath, fallbackMapPath);
 
   if (fs.existsSync(fallbackMapFilePath)) {
+    log.dim(`    using fallback source map ${fallbackMapPath}`);
     return fallbackMapPath;
   }
 
@@ -177,14 +178,16 @@ export const findJSFilesRecursively = (
       );
 
       if (!sourceMapUrl) {
-        console.warn(`Skipping ${jsFileName} - no source map found`);
+        log.warn(`Skipping ${jsFileName} - no source map found`);
         continue;
       }
 
       const mapFilePath = path.resolve(realPath, sourceMapUrl);
 
       if (!fs.existsSync(mapFilePath)) {
-        log.warn(`Skipping ${jsFileName} - map file not found`);
+        log.warn(
+          `Skipping ${jsFileName} - map file not found at ${mapFilePath}`,
+        );
         continue;
       }
 
@@ -214,7 +217,7 @@ export const findJSFilesRecursively = (
       }
     } catch (err) {
       log.warn(
-        `Error reading directory: ${err instanceof Error ? err.message : String(err)}`,
+        `Error reading ${fullPath}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
@@ -389,7 +392,6 @@ export const processSourceFiles = async ({
           pathForUpload,
           storeType,
           cliVersion,
-          relJs,
         });
         log.success(`  ${relJs} [${debugID.slice(0, 8)}]`);
       }
@@ -422,6 +424,9 @@ export const processSourceFiles = async ({
     }
   } catch (err) {
     log.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    if (err instanceof Error && err.stack) {
+      log.dim(err.stack);
+    }
     process.exit(1);
   }
 };
