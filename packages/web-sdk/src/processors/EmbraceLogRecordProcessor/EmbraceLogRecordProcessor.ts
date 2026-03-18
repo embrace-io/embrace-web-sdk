@@ -23,7 +23,9 @@ export class EmbraceLogRecordProcessor implements LogRecordProcessor {
       logRecord.setAttribute(KEY_EMB_TYPE, EMB_TYPES.SystemLog);
     }
 
-    logRecord.setAttribute(ATTR_URL_FULL, this._urlDocument.URL);
+    if (!logRecord.attributes[ATTR_URL_FULL]) {
+      logRecord.setAttribute(ATTR_URL_FULL, this._urlDocument.URL);
+    }
   }
 
   // no-op

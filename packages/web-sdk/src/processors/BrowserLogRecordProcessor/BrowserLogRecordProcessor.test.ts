@@ -54,6 +54,20 @@ describe('BrowserLogRecordProcessor', () => {
     );
   });
 
+  it('should not override an existing browser.url.full attribute', () => {
+    logger.emit({
+      body: 'some log',
+      attributes: { [KEY_BROWSER_URL_FULL]: 'https://existing.com/path' },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+
+    expect(finishedLogs[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      'https://existing.com/path',
+    );
+  });
+
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new BrowserLogRecordProcessor({ urlDocument });
 
