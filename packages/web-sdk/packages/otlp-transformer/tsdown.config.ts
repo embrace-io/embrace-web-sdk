@@ -29,7 +29,9 @@ export default defineConfig({
   platform: 'browser',
   clean: true,
   publint: true,
-  plugins: [failOnWarnPlugin],
+  plugins: [
+    failOnWarnPlugin, // used in place of failOnWarn: true
+  ],
   deps: {
     alwaysBundle: () => true,
   },

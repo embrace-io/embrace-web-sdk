@@ -7,5 +7,6 @@ export default defineConfig({
   platform: 'node',
   outDir: 'dist',
   clean: false,
+  failOnWarn: true,
   publint: true,
 });
