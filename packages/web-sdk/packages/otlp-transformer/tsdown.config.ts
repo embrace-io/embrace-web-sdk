@@ -30,6 +30,11 @@ export default defineConfig({
   deps: {
     alwaysBundle: () => true,
   },
+  inputOptions: {
+    checks: {
+      pluginTimings: false, // CI environments vary in speed
+    },
+  },
   attw: {
     profile: 'esm-only',
   },
