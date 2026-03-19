@@ -21,11 +21,6 @@ export default defineConfig({
   dts: true,
   outDir: 'dist',
   sourcemap: true,
-  minify: {
-    // Remove comments but don't mangle
-    compress: true,
-    mangle: false,
-  },
   platform: 'browser',
   clean: true,
   publint: true,
