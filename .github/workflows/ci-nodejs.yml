@@ -121,7 +121,7 @@ jobs:
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }} # zizmor: ignore[secrets-outside-env]
           slug: embrace-io/embrace-web-sdk
 
   test-sdk-multiple-browsers:
