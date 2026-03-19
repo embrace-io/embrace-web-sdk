@@ -56,6 +56,19 @@ describe('BrowserSpanProcessor', () => {
     );
   });
 
+  it('should not override an existing browser.url.full attribute', () => {
+    const span = tracer.startSpan('test-span');
+    span.setAttribute(KEY_BROWSER_URL_FULL, 'https://existing.com/path');
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+
+    expect(finishedSpans[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      'https://existing.com/path',
+    );
+  });
+
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new BrowserSpanProcessor({ urlDocument });
 

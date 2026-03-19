@@ -21,7 +21,9 @@ export class BrowserLogRecordProcessor implements LogRecordProcessor {
   }
 
   public onEmit(logRecord: SdkLogRecord): void {
-    logRecord.setAttribute(KEY_BROWSER_URL_FULL, this._urlDocument.URL);
+    if (!logRecord.attributes[KEY_BROWSER_URL_FULL]) {
+      logRecord.setAttribute(KEY_BROWSER_URL_FULL, this._urlDocument.URL);
+    }
   }
 
   // no-op

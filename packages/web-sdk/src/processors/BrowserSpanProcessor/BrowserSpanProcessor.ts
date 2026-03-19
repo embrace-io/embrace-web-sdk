@@ -20,7 +20,9 @@ export class BrowserSpanProcessor implements SpanProcessor {
   }
 
   public onEnd(span: ReadableSpan): void {
-    span.attributes[KEY_BROWSER_URL_FULL] = this._urlDocument.URL;
+    if (!span.attributes[KEY_BROWSER_URL_FULL]) {
+      span.attributes[KEY_BROWSER_URL_FULL] = this._urlDocument.URL;
+    }
   }
 
   public onStart(this: void): void {
