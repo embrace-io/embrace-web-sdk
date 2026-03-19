@@ -40,4 +40,18 @@ describe('EmbraceLogRecordProcessor', () => {
     expect(log.attributes['emb.type']).to.be.equal('sys.log');
     expect(log.attributes['url.full']).to.be.equal(urlDocument.URL);
   });
+
+  it('should not override an existing url.full attribute', () => {
+    logger.emit({
+      body: 'some log',
+      attributes: { 'url.full': 'https://existing.com/path' },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+
+    expect(finishedLogs[0].attributes['url.full']).to.equal(
+      'https://existing.com/path',
+    );
+  });
 });
