@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["clean", "^build"],
-      "outputs": ["dist/**", ".sonda/**"]
+      "outputs": ["dist/**", "packages/*/dist/**"]
     },
     "dev": {
       "dependsOn": ["build"],

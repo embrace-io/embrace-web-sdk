@@ -1,17 +1,6 @@
 import process from 'node:process';
-import type { Plugin } from 'rolldown';
 import Sonda from 'sonda/rolldown';
 import { defineConfig } from 'tsdown';
-
-// Treat warnings as errors; use checks config to disable known harmless warnings
-const failOnWarnPlugin: Plugin = {
-  name: 'fail-on-warn',
-  onLog(level, log) {
-    if (level === 'warn') {
-      throw new Error(`Build warning [${log.code}]: ${log.message}`);
-    }
-  },
-};
 
 export default defineConfig([
   // IIFE bundle for CDN usage
@@ -24,6 +13,7 @@ export default defineConfig([
     platform: 'browser',
     minify: true,
     clean: false,
+    failOnWarn: true,
     plugins: [
       Sonda({
         enabled: true,
@@ -32,7 +22,6 @@ export default defineConfig([
         gzip: true,
         deep: true,
       }),
-      failOnWarnPlugin,
     ],
     deps: {
       alwaysBundle: () => true,
@@ -60,8 +49,8 @@ export default defineConfig([
     platform: 'browser',
     unbundle: true,
     clean: false,
+    failOnWarn: true,
     publint: true,
-    plugins: [failOnWarnPlugin],
     inputOptions: {
       checks: {
         pluginTimings: false, // CI environments vary in speed

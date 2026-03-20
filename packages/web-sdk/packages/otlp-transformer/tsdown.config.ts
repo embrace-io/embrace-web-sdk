@@ -21,17 +21,19 @@ export default defineConfig({
   dts: true,
   outDir: 'dist',
   sourcemap: true,
-  minify: {
-    // Remove comments but don't mangle
-    compress: true,
-    mangle: false,
-  },
   platform: 'browser',
   clean: true,
   publint: true,
-  plugins: [failOnWarnPlugin],
+  plugins: [
+    failOnWarnPlugin, // used in place of failOnWarn: true
+  ],
   deps: {
     alwaysBundle: () => true,
+  },
+  inputOptions: {
+    checks: {
+      pluginTimings: false, // CI environments vary in speed
+    },
   },
   attw: {
     profile: 'esm-only',
