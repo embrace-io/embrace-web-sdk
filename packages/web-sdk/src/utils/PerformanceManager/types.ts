@@ -6,9 +6,11 @@ export interface PerformanceManager {
   getNowMillis: () => number;
   millisSinceHRTime: (time: HrTime) => number;
   millisFromZeroTime: (originOffset: number) => number;
+  getPageStartMillis: () => number;
 }
 
 export interface PerformanceClock {
   now: () => number;
   timeOrigin: number;
+  getEntriesByType?: (type: string) => PerformanceEntry[];
 }

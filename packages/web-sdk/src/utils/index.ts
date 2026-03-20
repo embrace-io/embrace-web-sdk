@@ -13,6 +13,7 @@ export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
   OTelPerformanceManager,
   type PerformanceManager,
+  updatePageStartMillis,
 } from './PerformanceManager/index.ts';
 export {
   createPerformanceObserver,
