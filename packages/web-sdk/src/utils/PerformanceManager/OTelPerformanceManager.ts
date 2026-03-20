@@ -19,18 +19,22 @@ export class OTelPerformanceManager implements PerformanceManager {
     this._clock = clock;
   }
 
-  public epochMillisFromOriginOffset = (originOffset: number) =>
-    this.getPageStartMillis() + originOffset;
+  public epochMillisFromZeroTime = (originOffset: number) =>
+    this.getZeroTime() + originOffset;
 
   public getNowHRTime = () => millisToHrTime(this.getNowMillis());
 
-  public getNowMillis = () =>
-    this.epochMillisFromOriginOffset(this._clock.now()); // otperformance.now() returns milliseconds since timeOrigin, timeOrigin is the time from epoch to the start of the page load
+  public getNowMillis = () => this.epochMillisFromZeroTime(this._clock.now()); // otperformance.now() returns milliseconds since timeOrigin, timeOrigin is the time from epoch to the start of the page load
 
   public millisSinceHRTime = (time: HrTime) =>
     Math.max(0, this.getNowMillis() - hrTimeToMilliseconds(time));
 
-  public getPageStartMillis = (): number =>
+  /**
+   * To measure the way a user experienced a metric, we measure metrics relative to the time the user
+   * started viewing the page. On prerendered pages, this is activationStart. On bfcache restores, this
+   * is the page restore time. On all other pages this value will be zero.
+   */
+  public getZeroTime = (): number =>
     Math.max(
       this._clock.timeOrigin + this._getNavigationActivationStart(),
       _pageShowMillis ?? 0,

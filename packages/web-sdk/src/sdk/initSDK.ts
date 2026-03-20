@@ -61,7 +61,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  updatePageStartMillis,
+  updatePageShowMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -213,7 +213,7 @@ export const initSDK = (
     }
 
     window.addEventListener('pageshow', (event: PageTransitionEvent) => {
-      updatePageStartMillis(perf.epochMillisFromOriginOffset(event.timeStamp));
+      updatePageShowMillis(window.performance.timeOrigin + event.timeStamp);
     });
 
     const nsfValid = nsfConfigValidation({
