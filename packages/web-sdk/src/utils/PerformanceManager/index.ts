@@ -1,5 +1,5 @@
 export {
-  _resetPageShowMillisForTesting as _resetPageStartMillisForTesting,
+  _resetPageShowMillisForTesting,
   OTelPerformanceManager,
   updatePageShowMillis as updatePageStartMillis,
 } from './OTelPerformanceManager.ts';

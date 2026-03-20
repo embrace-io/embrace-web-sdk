@@ -212,6 +212,10 @@ export const initSDK = (
       return false;
     }
 
+    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
+      updatePageStartMillis(perf.epochMillisFromOriginOffset(event.timeStamp));
+    });
+
     const nsfValid = nsfConfigValidation({
       featureManager: sdkFeaturesManager,
       diag: diagLogger,

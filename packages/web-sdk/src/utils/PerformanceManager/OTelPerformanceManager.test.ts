@@ -29,9 +29,21 @@ describe('OTelPerformanceManager', () => {
     expect(result).to.equal(1300); // timeOrigin (1000) + offset (300)
   });
 
+  it('shifts epochMillisFromOriginOffset by pageshow when page start is updated', () => {
+    updatePageShowMillis(1500); // pageshow bumps page start to 1500
+    // getPageStartMillis() = max(timeOrigin(1000) + activationStart(0), 1500) = 1500
+    expect(performanceManager.epochMillisFromOriginOffset(300)).to.equal(1800); // 1500 + 300
+  });
+
   it('should get current time in milliseconds', () => {
     const result = performanceManager.getNowMillis();
     expect(result).to.equal(1500); // timeOrigin (1000) + now() (500)
+  });
+
+  it('shifts getNowMillis by pageshow when page start is updated', () => {
+    updatePageShowMillis(1500); // pageshow bumps page start to 1500
+    // getNowMillis() = getPageStartMillis() + now() = 1500 + 500 = 2000
+    expect(performanceManager.getNowMillis()).to.equal(2000);
   });
 
   it('should get current time in HR time format', () => {
@@ -63,23 +75,31 @@ describe('OTelPerformanceManager', () => {
     expect(performanceManager.millisSinceHRTime(futureTime)).to.equal(0);
   });
 
-  it('clamps millisSinceHRTime to 0 for events registered before the effective page start', () => {
+  it('calculates elapsed time relative to effective page start after pageshow, clamping future HrTimes to 0', () => {
     // page start is bumped to 1800 via pageshow; now() = 1500 → getNowMillis = 1800 + 500 = 2300
     updatePageShowMillis(1800);
-    // an event recorded at HrTime 1900ms (after original timeOrigin but before pageshow) should clamp
-    const beforePageShow: HrTime = [1, 950000000]; // 1950ms — between timeOrigin(1000) and pageshow(1800), but expressed as HrTime ms
     // getNowMillis() = getPageStartMillis() + now() = 1800 + 500 = 2300
-    // hrTimeToMilliseconds([1, 950000000]) = 1950
-    // 2300 - 1950 = 350, not clamped
-    expect(performanceManager.millisSinceHRTime(beforePageShow)).to.equal(350);
+    // hrTimeToMilliseconds([1, 950000000]) = 1950 → 2300 - 1950 = 350, not clamped
+    const beforeNow: HrTime = [1, 950000000]; // 1950ms
+    expect(performanceManager.millisSinceHRTime(beforeNow)).to.equal(350);
 
-    // an event whose HrTime exceeds getNowMillis should clamp to 0
+    // an event whose HrTime exceeds getNowMillis clamps to 0
     const afterNow: HrTime = [2, 400000000]; // 2400ms > 2300ms
     expect(performanceManager.millisSinceHRTime(afterNow)).to.equal(0);
   });
 
   it('returns timeOrigin when clock has no getEntriesByType (activationStart = 0)', () => {
     expect(performanceManager.getPageStartMillis()).to.equal(1000); // timeOrigin (1000) + activationStart (0)
+  });
+
+  it('returns timeOrigin when getEntriesByType returns an empty array', () => {
+    const clockWithEmptyNav: PerformanceClock = {
+      timeOrigin: 1000,
+      now: sinon.stub().returns(500),
+      getEntriesByType: sinon.stub().returns([]),
+    };
+    const perf = new OTelPerformanceManager(clockWithEmptyNav);
+    expect(perf.getPageStartMillis()).to.equal(1000);
   });
 
   it('returns timeOrigin + activationStart when nav entry has nonzero activationStart', () => {
@@ -94,12 +114,12 @@ describe('OTelPerformanceManager', () => {
     expect(perf.getPageStartMillis()).to.equal(1200); // timeOrigin (1000) + activationStart (200)
   });
 
-  it('returns pageshow epoch when updatePageStartMillis is called with a later value', () => {
+  it('returns pageshow epoch when updatePageShowMillis is called with a later value', () => {
     updatePageShowMillis(1500); // later than timeOrigin (1000) + activationStart (0)
     expect(performanceManager.getPageStartMillis()).to.equal(1500);
   });
 
-  it('returns timeOrigin + activationStart when updatePageStartMillis is called with an earlier value', () => {
+  it('returns timeOrigin + activationStart when updatePageShowMillis is called with an earlier value', () => {
     updatePageShowMillis(500); // earlier than timeOrigin (1000) + activationStart (0)
     expect(performanceManager.getPageStartMillis()).to.equal(1000); // max wins
   });
