@@ -15,7 +15,6 @@ import {
   BLOCKING_DURATION_POOR_THRESHOLD,
   LOAF_EVENT_NAME,
   LOAF_SCRIPTS_EVENT_NAME,
-  MAX_SCRIPT_ENTRIES,
   MAX_SCRIPT_URL_LENGTH,
 } from './constants.ts';
 import type { LoafInstrumentationArgs } from './types.ts';
@@ -42,13 +41,9 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _longestDurationExcludingFirst = 0;
   private _totalBlockingDuration = 0;
   private _scriptSummaries: ScriptSummaries = new Map();
-  private _maxScriptEntries: number;
+  private _maxScriptEntries = 250;
 
-  public constructor({
-    diag,
-    perf,
-    maxScriptEntries,
-  }: LoafInstrumentationArgs = {}) {
+  public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -56,16 +51,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       perf,
       config: {},
     });
-
-    this._maxScriptEntries = Math.max(
-      1,
-      Math.min(
-        typeof maxScriptEntries === 'number'
-          ? maxScriptEntries
-          : MAX_SCRIPT_ENTRIES,
-        MAX_SCRIPT_ENTRIES,
-      ),
-    );
 
     if (this._config.enabled) {
       this.enable();
@@ -188,7 +173,8 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
 
     for (const script of entry.scripts) {
-      const key = script.sourceURL || '(inline)';
+      const key =
+        script.sourceURL?.substring(0, MAX_SCRIPT_URL_LENGTH) || '(inline)';
       const existing = this._scriptSummaries.get(key);
       if (existing) {
         existing.totalDuration += script.duration;
@@ -250,7 +236,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
           .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
           .slice(0, this._maxScriptEntries)
           .map(([url, scriptEntry]) => [
-            url.substring(0, MAX_SCRIPT_URL_LENGTH),
+            url,
             {
               total_duration: Math.round(scriptEntry.totalDuration),
               style_and_layout_duration: Math.round(

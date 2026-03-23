@@ -7,6 +7,7 @@ import type {} from 'web-vitals';
 
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
-export type LoafInstrumentationArgs = {
-  maxScriptEntries?: number;
-} & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
+export type LoafInstrumentationArgs = Pick<
+  EmbraceInstrumentationBaseArgs,
+  'diag' | 'perf'
+>;

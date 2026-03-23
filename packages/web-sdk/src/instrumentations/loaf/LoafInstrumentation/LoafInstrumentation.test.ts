@@ -739,102 +739,28 @@ describe('LoafInstrumentation', () => {
       instrumentation.disable();
     });
 
-    it('should limit script entries to maxScriptEntries', () => {
-      const instrumentation = new LoafInstrumentation({
-        perf,
-        maxScriptEntries: 2,
-      });
+    it('should limit script entries to 250', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
       instrumentation.setSessionManager(spanSessionManager);
 
-      triggerEntries([
-        makeEntry({
-          scripts: [
-            makeScript({
-              sourceURL: 'https://example.com/a.js',
-              duration: 10,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-            makeScript({
-              sourceURL: 'https://example.com/b.js',
-              duration: 50,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-            makeScript({
-              sourceURL: 'https://example.com/c.js',
-              duration: 30,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+      // 251 scripts with unique URLs and incrementing durations (script 0 has lowest duration)
+      const scripts = Array.from({ length: 251 }, (_, i) =>
+        makeScript({
+          sourceURL: `https://example.com/script-${i}.js`,
+          duration: i + 1,
+          forcedStyleAndLayoutDuration: 0,
         }),
-      ]);
+      ) as unknown as PerformanceLongAnimationFrameTiming['scripts'];
 
+      triggerEntries([makeEntry({ scripts })]);
       spanSessionManager.endSessionSpan();
 
       const summary = memoryExporter
         .getFinishedLogRecords()
         .find((l) => l.eventName === 'emb-loaf-scripts');
       const body = JSON.parse(summary?.body as string);
-      const keys = Object.keys(body);
-      expect(keys).to.have.lengthOf(2);
-      expect(body['https://example.com/b.js']).to.exist;
-      expect(body['https://example.com/c.js']).to.exist;
-      expect(body['https://example.com/a.js']).to.not.exist;
-
-      instrumentation.disable();
-    });
-
-    it('should select by accumulated duration, not per-entry duration', () => {
-      const instrumentation = new LoafInstrumentation({
-        perf,
-        maxScriptEntries: 1,
-      });
-      instrumentation.setSessionManager(spanSessionManager);
-
-      triggerEntries([
-        makeEntry({
-          scripts: [
-            makeScript({
-              sourceURL: 'https://example.com/a.js',
-              duration: 10,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
-        }),
-        makeEntry({
-          scripts: [
-            makeScript({
-              sourceURL: 'https://example.com/a.js',
-              duration: 8,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-            makeScript({
-              sourceURL: 'https://example.com/b.js',
-              duration: 9,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
-        }),
-        makeEntry({
-          scripts: [
-            makeScript({
-              sourceURL: 'https://example.com/a.js',
-              duration: 8,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
-        }),
-      ]);
-
-      spanSessionManager.endSessionSpan();
-
-      const summary = memoryExporter
-        .getFinishedLogRecords()
-        .find((l) => l.eventName === 'emb-loaf-scripts');
-      const body = JSON.parse(summary?.body as string);
-      expect(Object.keys(body)).to.have.lengthOf(1);
-      // a.js total: 26ms, b.js total: 9ms — a.js wins on accumulated duration
-      expect(body['https://example.com/a.js']).to.exist;
-      expect(body['https://example.com/b.js']).to.not.exist;
+      expect(Object.keys(body)).to.have.lengthOf(250);
+      expect(body['https://example.com/script-0.js']).to.not.exist;
 
       instrumentation.disable();
     });
@@ -972,42 +898,6 @@ describe('LoafInstrumentation', () => {
         style_and_layout_duration: 10,
         count: 1,
       });
-
-      instrumentation.disable();
-    });
-
-    it('should clamp maxScriptEntries = 0 to 1', () => {
-      const instrumentation = new LoafInstrumentation({
-        perf,
-        maxScriptEntries: 0,
-      });
-      instrumentation.setSessionManager(spanSessionManager);
-
-      triggerEntries([
-        makeEntry({
-          scripts: [
-            makeScript({
-              sourceURL: 'https://example.com/a.js',
-              duration: 10,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-            makeScript({
-              sourceURL: 'https://example.com/b.js',
-              duration: 50,
-              forcedStyleAndLayoutDuration: 0,
-            }),
-          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
-        }),
-      ]);
-
-      spanSessionManager.endSessionSpan();
-
-      const summary = memoryExporter
-        .getFinishedLogRecords()
-        .find((l) => l.eventName === 'emb-loaf-scripts');
-      const body = JSON.parse(summary?.body as string);
-      expect(Object.keys(body)).to.have.lengthOf(1);
-      expect(body['https://example.com/b.js']).to.exist;
 
       instrumentation.disable();
     });
