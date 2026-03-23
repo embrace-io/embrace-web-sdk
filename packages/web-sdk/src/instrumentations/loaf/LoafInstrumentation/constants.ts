@@ -10,6 +10,7 @@ export const ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST =
 export const BLOCKING_DURATION_GOOD_THRESHOLD = 200;
 export const BLOCKING_DURATION_POOR_THRESHOLD = 600;
 
-export const LOAF_EVENT_NAME = 'emb-loaf';
+export const LOAF_EVENT_NAME = 'emb-loaf-report';
 export const LOAF_SCRIPTS_EVENT_NAME = 'emb-loaf-scripts';
 export const MAX_SCRIPT_URL_LENGTH = 2048;
+export const MAX_SCRIPT_ENTRIES = 250;

@@ -4,10 +4,9 @@
 // MDN: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongAnimationFrameTiming
 // This is not a typo:
 import type {} from 'web-vitals';
-
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
-export type LoafInstrumentationArgs = Pick<
+export type LoafInstrumentationArgs = {} & Pick<
   EmbraceInstrumentationBaseArgs,
   'diag' | 'perf'
 >;
