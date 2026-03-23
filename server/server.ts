@@ -5,9 +5,14 @@ import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 // Easier to parse incoming requests with a known type, only used for tests
+import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import type { ReceivedSpans } from '../tests/integration/types.ts';
-import { logInfo, logReceivedSessionSpan } from './utils.ts';
+import {
+  logInfo,
+  logReceivedLogRecords,
+  logReceivedSessionSpan,
+} from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const sdkDistDir = join(__dirname, '..', 'packages', 'web-sdk', 'dist');
@@ -47,6 +52,7 @@ const parseGzip = async (
     const chunks: Buffer[] = [];
 
     req.on('data', (chunk) => chunks.push(chunk as Buffer));
+    req.on('error', reject);
     req.on('end', () => {
       const buffer = Buffer.concat(chunks);
       zlib.gunzip(buffer, (err, decoded) => {
@@ -68,7 +74,7 @@ const parseGzip = async (
 const server = createServer((req, res) => {
   // allow cors
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
   res.setHeader('Access-Control-Allow-Headers', '*');
 
   if (req.method === 'OPTIONS') {
@@ -102,8 +108,23 @@ const server = createServer((req, res) => {
   }
 
   if (pathname?.includes('logs')) {
-    res.writeHead(200);
-    res.end('OK');
+    parseGzip(req)
+      .then((request: IExportLogsServiceRequest) => {
+        const logRecords =
+          request.resourceLogs?.flatMap(
+            (r) => r.scopeLogs?.flatMap((s) => s.logRecords ?? []) ?? [],
+          ) ?? [];
+
+        logReceivedLogRecords(logRecords);
+
+        res.writeHead(200);
+        res.end('OK');
+      })
+      .catch((e: unknown) => {
+        console.error('Error handling log request:', e);
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Internal Server Error');
+      });
     return;
   }
 
@@ -185,6 +206,9 @@ for (let i = 0; i < count; i++) {
 
 server.listen(PORT, () => {
   logInfo(`Debug collector running on http://localhost:${PORT}`);
-  logInfo('To send telemetry to the debug collector, set:');
-  logInfo(`  VITE_DATA_URL=http://localhost:${PORT} in your .env file`);
+  logInfo('To send telemetry to the debug collector, add your');
+  logInfo(`appID to ./demo/frontend/.env:`);
+  logInfo(`  VITE_APP_ID=your-app-id`);
+  logInfo(`  VITE_DATA_URL=http://localhost:${PORT}`);
+  logInfo(`  VITE_CONFIG_URL=http://localhost:${PORT}`);
 });
