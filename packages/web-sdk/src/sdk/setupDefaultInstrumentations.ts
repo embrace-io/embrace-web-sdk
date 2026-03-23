@@ -72,7 +72,6 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new EmbraceFetchInstrumentation({
-        ...config['network'],
         ...config['@opentelemetry/instrumentation-fetch'],
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
@@ -85,7 +84,6 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
     instrumentations.push(
       new EmbraceXHRInstrumentation({
-        ...config['network'],
         ...config['@opentelemetry/instrumentation-xml-http-request'],
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
