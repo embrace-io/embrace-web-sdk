@@ -74,6 +74,10 @@ export const setupDefaultInstrumentations = (
       new EmbraceFetchInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-fetch'],
+        ignoreUrls: [
+          ...(config['network']?.ignoreUrls ?? []),
+          ...(config['@opentelemetry/instrumentation-fetch']?.ignoreUrls ?? []),
+        ],
       }),
     );
   }
@@ -83,6 +87,11 @@ export const setupDefaultInstrumentations = (
       new EmbraceXHRInstrumentation({
         ...config['network'],
         ...config['@opentelemetry/instrumentation-xml-http-request'],
+        ignoreUrls: [
+          ...(config['network']?.ignoreUrls ?? []),
+          ...(config['@opentelemetry/instrumentation-xml-http-request']
+            ?.ignoreUrls ?? []),
+        ],
       }),
     );
   }
