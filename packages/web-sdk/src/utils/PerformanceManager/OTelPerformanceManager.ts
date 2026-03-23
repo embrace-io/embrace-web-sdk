@@ -14,6 +14,7 @@ export function _resetPageShowMillisForTesting(): void {
 
 export class OTelPerformanceManager implements PerformanceManager {
   private readonly _clock: PerformanceClock;
+  private navigationEntry: PerformanceNavigationTiming | null = null;
 
   public constructor(clock: PerformanceClock = window.performance) {
     this._clock = clock;
@@ -40,11 +41,24 @@ export class OTelPerformanceManager implements PerformanceManager {
       _pageShowMillis ?? 0,
     );
 
-  private _getNavigationActivationStart(): number {
-    const entry = this._clock.getEntriesByType?.('navigation')[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+  private _getNavigationEntry(): PerformanceNavigationTiming | null {
+    if (this.navigationEntry) {
+      return this.navigationEntry;
+    }
 
+    const [entry] = this._clock.getEntriesByType?.('navigation') ?? [];
+
+    if (entry) {
+      this.navigationEntry = entry as PerformanceNavigationTiming;
+
+      return this.navigationEntry;
+    }
+
+    return null;
+  }
+
+  private _getNavigationActivationStart(): number {
+    const entry = this._getNavigationEntry();
     return entry?.activationStart ?? 0;
   }
 
