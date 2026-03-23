@@ -1,9 +1,6 @@
 # create .env file if it doesn't exist
 if [ ! -f .env ]; then
-    echo "# Add your appID from https://dash.embrace.io" > .env
-    echo "VITE_APP_ID=" >> .env
-    echo "VITE_DATA_URL=" >> .env
-    echo "VITE_CONFIG_URL=" >> .env
+    cp .env.template .env
 fi
 
 # if .env file exists, check if it contains a valid appID
@@ -12,7 +9,7 @@ if [ -f .env ]; then
     if [ -z "$app_id" ]; then
         echo ""
         echo " ┌───────────────────────────────────────────────────────────────────┐"
-        echo " │  .env is missing appID. Please signup at https://dash.embrace.io  │"
+        echo " │ .env is missing appID. Please sign up at https://dash.embrace.io  │"
         echo " │    or continue to preview the demo in browser console mode only   │"
         echo " └───────────────────────────────────────────────────────────────────┘"
         echo ""
