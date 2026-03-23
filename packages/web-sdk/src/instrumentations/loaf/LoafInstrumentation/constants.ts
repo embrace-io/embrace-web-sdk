@@ -12,4 +12,5 @@ export const BLOCKING_DURATION_POOR_THRESHOLD = 600;
 
 export const LOAF_EVENT_NAME = 'emb-loaf';
 export const LOAF_SCRIPTS_EVENT_NAME = 'emb-loaf-scripts';
-export const DEFAULT_MAX_SCRIPT_ENTRIES = 25;
+export const MAX_SCRIPT_ENTRIES = 1000;
+export const MAX_SCRIPT_URL_LENGTH = 1024;

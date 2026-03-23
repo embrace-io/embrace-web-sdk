@@ -13,9 +13,10 @@ import {
   ATTR_TBD_LOAF_WORK_DURATION,
   BLOCKING_DURATION_GOOD_THRESHOLD,
   BLOCKING_DURATION_POOR_THRESHOLD,
-  DEFAULT_MAX_SCRIPT_ENTRIES,
   LOAF_EVENT_NAME,
   LOAF_SCRIPTS_EVENT_NAME,
+  MAX_SCRIPT_ENTRIES,
+  MAX_SCRIPT_URL_LENGTH,
 } from './constants.ts';
 import type { LoafInstrumentationArgs } from './types.ts';
 
@@ -58,7 +59,12 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     this._maxScriptEntries = Math.max(
       1,
-      maxScriptEntries ?? DEFAULT_MAX_SCRIPT_ENTRIES,
+      Math.min(
+        typeof maxScriptEntries === 'number'
+          ? maxScriptEntries
+          : MAX_SCRIPT_ENTRIES,
+        MAX_SCRIPT_ENTRIES,
+      ),
     );
 
     if (this._config.enabled) {
@@ -241,11 +247,11 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       });
 
       if (this._scriptSummaries.size > 0) {
-        const scriptEntries = [...this._scriptSummaries.entries()]
+        const scriptEntries = [...this._scriptSummaries]
           .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
           .slice(0, this._maxScriptEntries)
           .map(([url, scriptEntry]) => [
-            url,
+            url.substring(0, MAX_SCRIPT_URL_LENGTH),
             {
               total_duration: Math.round(scriptEntry.totalDuration),
               style_and_layout_duration: Math.round(
@@ -261,6 +267,8 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
           body: JSON.stringify(Object.fromEntries(scriptEntries)),
         });
       }
+    } catch (e) {
+      this._diag.error('Error emitting LOAF event', e);
     } finally {
       this._resetAccumulators();
     }
