@@ -16,7 +16,7 @@ And update your .env file to point to the local collector:
 ```
 # demo/frontend/.env
 
-VITE_DATA_URL=http://localhost:3000
+VITE_DATA_URL=http://localhost:3001
 ```
 
 ## Integration tests

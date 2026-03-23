@@ -1,4 +1,5 @@
 import type { IKeyValue } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types';
+import type { ILogRecord } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import type {
   IResourceSpans,
   ISpan,
@@ -150,4 +151,37 @@ const logBreadcrumbs = (sessionSpan: ISpan) => {
   });
 };
 
-export { logInfo, logReceivedSessionSpan };
+const LOG_RECORD_IGNORED_KEYS = [
+  'app.surface.label',
+  'log.record.uid',
+  'session.id',
+  'session.previous_id',
+  'user.id',
+];
+
+const logReceivedLogRecords = (logRecords: ILogRecord[]) => {
+  if (logRecords.length === 0) {
+    return;
+  }
+
+  for (const record of logRecords) {
+    const eventName = record.eventName ?? '<no eventName>';
+    const parts: string[] = [];
+
+    for (const attr of record.attributes ?? []) {
+      if (LOG_RECORD_IGNORED_KEYS.includes(attr.key)) {
+        continue;
+      }
+
+      const value = getAttributeValue(attr);
+      parts.push(`${attr.key}=${value ?? '<unsupported type>'}`);
+    }
+
+    const body = record.body?.stringValue
+      ? `\n  body=${record.body.stringValue}`
+      : '';
+    logInfo(`Log record: ${eventName}\n  ${parts.join('\n  ')}${body}`);
+  }
+};
+
+export { logInfo, logReceivedLogRecords, logReceivedSessionSpan };

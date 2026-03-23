@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { COLORS, log, logSection } from '../../../scripts/build-config.ts';
 
-// Maximum bundle size (gzipped) to ensure fast load times
-const MAX_BUNDLE_SIZE_KB = 100;
+// Maximum bundle size (gzipped) — triggers hard failure to catch bloat/duplication early
+const MAX_BUNDLE_SIZE_KB = 55;
 
 const BUNDLE_FILE = 'embrace-web-sdk.js';
 const BUNDLE_MAP_FILE = 'embrace-web-sdk.js.map';
@@ -283,11 +283,13 @@ function checkBundleSize() {
 
     if (gzipSizeKB > MAX_BUNDLE_SIZE_KB) {
       log(
-        `  ⚠ Bundle is large (${gzipSizeKB.toFixed(2)} KB gzipped)`,
-        COLORS.yellow + COLORS.bold,
+        `  ✗ Bundle exceeds ${MAX_BUNDLE_SIZE_KB} KB gzipped (${gzipSizeKB.toFixed(2)} KB)`,
+        COLORS.red,
       );
+      return false;
     }
 
+    log('\n✓ Bundle size within budget', COLORS.green);
     return true;
   } catch (error: unknown) {
     log(
@@ -298,9 +300,59 @@ function checkBundleSize() {
   }
 }
 
+// Detects duplicate dependencies in the IIFE bundle using the Sonda report.
+// A dependency with multiple paths means the bundler resolved it from different
+// locations in node_modules, producing duplicated code in the output.
+// Fix: add overrides in the root package.json to pin the conflicting package.
+function checkBundleDuplicates() {
+  logSection('5. Bundle Deduplication');
+
+  const sondaPath = path.join(SDK_ROOT, '.sonda', 'sonda_0.json');
+
+  if (!fs.existsSync(sondaPath)) {
+    log('  ✗ Sonda report not found at .sonda/sonda_0.json', COLORS.red);
+    log('  Ensure the IIFE build generates a Sonda JSON report', COLORS.dim);
+    return false;
+  }
+
+  try {
+    const report = JSON.parse(fs.readFileSync(sondaPath, 'utf-8'));
+    const deps: { name: string; paths: string[] }[] = report.dependencies ?? [];
+
+    const duplicates = deps.filter((d) => d.paths.length > 1);
+
+    if (duplicates.length > 0) {
+      log('  ✗ Duplicate dependencies found in IIFE bundle:', COLORS.red);
+      for (const dep of duplicates) {
+        log(`    ${dep.name} (${dep.paths.length} copies):`, COLORS.red);
+        for (const p of dep.paths) {
+          log(`      ${p}`, COLORS.dim);
+        }
+      }
+      log(
+        '  Fix: add overrides in root package.json to pin the conflicting versions',
+        COLORS.dim,
+      );
+      return false;
+    }
+
+    log(
+      `  ✓ No duplicate dependencies in bundle (${deps.length} checked)`,
+      COLORS.green,
+    );
+    return true;
+  } catch (error: unknown) {
+    log(
+      `  ✗ Failed to parse Sonda report: ${(error as Error).message}`,
+      COLORS.red,
+    );
+    return false;
+  }
+}
+
 // Validates ESM/CJS don't mix syntax (require() in .js or import in .cjs causes runtime errors)
 function validateModuleSystemSeparation() {
-  logSection('5. Module Integrity');
+  logSection('6. Module Integrity');
 
   const checks = [
     {
@@ -367,6 +419,7 @@ function main() {
     { name: 'Web API baseline', passed: checkBaselineAPIs() },
     { name: 'Package exports', passed: checkPackageExports() },
     { name: 'Bundle size', passed: checkBundleSize() },
+    { name: 'Bundle deduplication', passed: checkBundleDuplicates() },
     { name: 'Module integrity', passed: validateModuleSystemSeparation() },
   ];
 

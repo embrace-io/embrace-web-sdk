@@ -16,10 +16,11 @@ export default defineConfig([
     failOnWarn: true,
     plugins: [
       Sonda({
-        enabled: !!process.env.SONDA,
-        format: ['html', 'json'],
-        open: false,
+        enabled: true,
+        format: process.env.SONDA ? ['html', 'json'] : ['json'],
+        open: process.env.SONDA ? 'html' : false,
         gzip: true,
+        deep: true,
       }),
     ],
     deps: {
