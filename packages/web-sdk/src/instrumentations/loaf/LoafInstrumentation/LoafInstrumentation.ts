@@ -97,7 +97,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           try {
-            this._diag.debug('entry observed', entry);
             this._processEntry(entry as PerformanceLongAnimationFrameTiming);
           } catch (e) {
             this._diag.error('error processing entry', e);
