@@ -13,9 +13,19 @@ import {
   ATTR_TBD_LOAF_WORK_DURATION,
   BLOCKING_DURATION_GOOD_THRESHOLD,
   BLOCKING_DURATION_POOR_THRESHOLD,
+  DEFAULT_MAX_SCRIPT_ENTRIES,
   LOAF_EVENT_NAME,
+  LOAF_SCRIPTS_EVENT_NAME,
 } from './constants.ts';
 import type { LoafInstrumentationArgs } from './types.ts';
+
+type ScriptSummaryValue = {
+  totalDuration: number;
+  styleAndLayoutDuration: number;
+  count: number;
+};
+
+type ScriptSummaries = Map<string, ScriptSummaryValue>;
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
@@ -30,8 +40,14 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _longestDuration = 0;
   private _longestDurationExcludingFirst = 0;
   private _totalBlockingDuration = 0;
+  private _scriptSummaries: ScriptSummaries = new Map();
+  private _maxScriptEntries: number;
 
-  public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
+  public constructor({
+    diag,
+    perf,
+    maxScriptEntries,
+  }: LoafInstrumentationArgs = {}) {
     super({
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -39,6 +55,11 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       perf,
       config: {},
     });
+
+    this._maxScriptEntries = Math.max(
+      1,
+      maxScriptEntries ?? DEFAULT_MAX_SCRIPT_ENTRIES,
+    );
 
     if (this._config.enabled) {
       this.enable();
@@ -160,6 +181,22 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
         this._totalBlockingDuration += entry.blockingDuration;
       }
     }
+
+    for (const script of entry.scripts) {
+      const key = script.sourceURL || '(inline)';
+      const existing = this._scriptSummaries.get(key);
+      if (existing) {
+        existing.totalDuration += script.duration;
+        existing.styleAndLayoutDuration += script.forcedStyleAndLayoutDuration;
+        existing.count++;
+      } else {
+        this._scriptSummaries.set(key, {
+          totalDuration: script.duration,
+          styleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
+          count: 1,
+        });
+      }
+    }
   }
 
   private _flushReport(): void {
@@ -182,24 +219,51 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       ['emb.web_vital.name']: 'TBD',
-      ['emb.web_vital.value']: this._totalBlockingDuration,
+      ['emb.web_vital.value']: Math.round(this._totalBlockingDuration),
       ['emb.web_vital.rating']: rating,
-      [ATTR_TBD_LOAF_TOTAL_DURATION]: this._totalDuration,
-      [ATTR_TBD_LOAF_WORK_DURATION]: this._workDuration,
-      [ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION]: this._styleLayoutDuration,
+      [ATTR_TBD_LOAF_TOTAL_DURATION]: Math.round(this._totalDuration),
+      [ATTR_TBD_LOAF_WORK_DURATION]: Math.round(this._workDuration),
+      [ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION]: Math.round(
+        this._styleLayoutDuration,
+      ),
       [ATTR_TBD_LOAF_COUNT]: this._count,
-      [ATTR_TBD_LOAF_LONGEST_DURATION]: this._longestDuration,
-      [ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]:
+      [ATTR_TBD_LOAF_LONGEST_DURATION]: Math.round(this._longestDuration),
+      [ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]: Math.round(
         this._longestDurationExcludingFirst,
+      ),
     };
 
-    this.logger.emit({
-      eventName: LOAF_EVENT_NAME,
-      severityNumber: SeverityNumber.INFO,
-      attributes: attrs,
-    });
+    try {
+      this.logger.emit({
+        eventName: LOAF_EVENT_NAME,
+        severityNumber: SeverityNumber.INFO,
+        attributes: attrs,
+      });
 
-    this._resetAccumulators();
+      if (this._scriptSummaries.size > 0) {
+        const scriptEntries = [...this._scriptSummaries.entries()]
+          .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
+          .slice(0, this._maxScriptEntries)
+          .map(([url, scriptEntry]) => [
+            url,
+            {
+              total_duration: Math.round(scriptEntry.totalDuration),
+              style_and_layout_duration: Math.round(
+                scriptEntry.styleAndLayoutDuration,
+              ),
+              count: scriptEntry.count,
+            },
+          ]);
+
+        this.logger.emit({
+          eventName: LOAF_SCRIPTS_EVENT_NAME,
+          severityNumber: SeverityNumber.INFO,
+          body: JSON.stringify(Object.fromEntries(scriptEntries)),
+        });
+      }
+    } finally {
+      this._resetAccumulators();
+    }
   }
 
   private _resetAccumulators(): void {
@@ -210,5 +274,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDuration = 0;
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
+    this._scriptSummaries = new Map();
   }
 }

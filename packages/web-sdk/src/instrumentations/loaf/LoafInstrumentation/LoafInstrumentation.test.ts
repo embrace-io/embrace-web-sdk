@@ -19,6 +19,27 @@ import { LoafInstrumentation } from './LoafInstrumentation.ts';
 
 const { expect } = chai;
 
+const makeScript = (
+  overrides: Partial<PerformanceScriptTiming> = {},
+): PerformanceScriptTiming => ({
+  name: 'script',
+  entryType: 'script',
+  startTime: 0,
+  duration: 50,
+  invoker: '',
+  invokerType: 'classic-script',
+  sourceURL: 'https://example.com/app.js',
+  sourceFunctionName: '',
+  sourceCharPosition: 0,
+  executionStart: 0,
+  forcedStyleAndLayoutDuration: 0,
+  pauseDuration: 0,
+  windowAttribution: 'self',
+  window: undefined,
+  toJSON: () => ({}),
+  ...overrides,
+});
+
 const makeEntry = (
   overrides: Partial<PerformanceLongAnimationFrameTiming> = {},
 ): PerformanceLongAnimationFrameTiming => ({
@@ -139,9 +160,9 @@ describe('LoafInstrumentation', () => {
     spanSessionManager.endSessionSpan();
 
     const logs = memoryExporter.getFinishedLogRecords();
-    const report = logs.find((l) => l.eventName === 'emb-loaf-report');
+    const report = logs.find((l) => l.eventName === 'emb-loaf');
     expect(report).to.exist;
-    expect(report?.eventName).to.equal('emb-loaf-report');
+    expect(report?.eventName).to.equal('emb-loaf');
     expect(report?.severityNumber).to.equal(SeverityNumber.INFO);
     expect(report?.attributes['emb.type']).to.equal('ux.web_vital');
     expect(report?.attributes['emb.web_vital.name']).to.equal('TBD');
@@ -173,7 +194,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.tbd.loaf_work_duration']).to.equal(130);
 
     instrumentation.disable();
@@ -196,7 +217,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(
       report?.attributes['emb.tbd.loaf_style_and_layout_duration'],
     ).to.equal(20);
@@ -220,7 +241,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     // First entry (100) skipped, sum of 50 + 30 = 80
     expect(report?.attributes['emb.web_vital.value']).to.equal(80);
 
@@ -243,7 +264,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     // First skipped, third filtered (interaction), only second counted = 50
     expect(report?.attributes['emb.web_vital.value']).to.equal(50);
 
@@ -259,7 +280,7 @@ describe('LoafInstrumentation', () => {
     spanSessionManager.endSessionSpan();
 
     const logs = memoryExporter.getFinishedLogRecords();
-    const reports = logs.filter((l) => l.eventName === 'emb-loaf-report');
+    const reports = logs.filter((l) => l.eventName === 'emb-loaf');
     expect(reports).to.have.lengthOf(0);
 
     instrumentation.disable();
@@ -301,7 +322,7 @@ describe('LoafInstrumentation', () => {
 
     const reports = memoryExporter
       .getFinishedLogRecords()
-      .filter((l) => l.eventName === 'emb-loaf-report');
+      .filter((l) => l.eventName === 'emb-loaf');
     expect(reports).to.have.lengthOf(0);
   });
 
@@ -326,7 +347,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.tbd.loaf_longest_duration']).to.equal(100);
     expect(
       report?.attributes['emb.tbd.loaf_longest_duration_excluding_first'],
@@ -350,7 +371,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.web_vital.value']).to.equal(200);
     expect(report?.attributes['emb.web_vital.rating']).to.equal('good');
 
@@ -372,7 +393,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.web_vital.value']).to.equal(201);
     expect(report?.attributes['emb.web_vital.rating']).to.equal(
       'needs-improvement',
@@ -396,7 +417,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.web_vital.value']).to.equal(600);
     expect(report?.attributes['emb.web_vital.rating']).to.equal(
       'needs-improvement',
@@ -420,7 +441,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(report?.attributes['emb.web_vital.value']).to.equal(601);
     expect(report?.attributes['emb.web_vital.rating']).to.equal('poor');
 
@@ -441,7 +462,7 @@ describe('LoafInstrumentation', () => {
 
     const reports = memoryExporter
       .getFinishedLogRecords()
-      .filter((l) => l.eventName === 'emb-loaf-report');
+      .filter((l) => l.eventName === 'emb-loaf');
     expect(reports).to.have.lengthOf(1);
 
     instrumentation.disable();
@@ -473,7 +494,7 @@ describe('LoafInstrumentation', () => {
 
     const reports = memoryExporter
       .getFinishedLogRecords()
-      .filter((l) => l.eventName === 'emb-loaf-report');
+      .filter((l) => l.eventName === 'emb-loaf');
     expect(reports).to.have.lengthOf(1);
     expect(reports[0].attributes['emb.tbd.loaf_total_duration']).to.equal(150);
 
@@ -492,7 +513,7 @@ describe('LoafInstrumentation', () => {
 
     const reports = memoryExporter
       .getFinishedLogRecords()
-      .filter((l) => l.eventName === 'emb-loaf-report');
+      .filter((l) => l.eventName === 'emb-loaf');
     expect(reports).to.have.lengthOf(0);
   });
 
@@ -508,7 +529,7 @@ describe('LoafInstrumentation', () => {
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(firstReport).to.exist;
     expect(firstReport?.attributes['emb.tbd.loaf_total_duration']).to.equal(
       180,
@@ -525,7 +546,7 @@ describe('LoafInstrumentation', () => {
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(secondReport).to.exist;
     expect(secondReport?.attributes['emb.tbd.loaf_total_duration']).to.equal(
       100,
@@ -557,7 +578,7 @@ describe('LoafInstrumentation', () => {
 
     const report = memoryExporter
       .getFinishedLogRecords()
-      .find((l) => l.eventName === 'emb-loaf-report');
+      .find((l) => l.eventName === 'emb-loaf');
     expect(
       report?.attributes['emb.tbd.loaf_style_and_layout_duration'],
     ).to.equal(0);
@@ -632,5 +653,363 @@ describe('LoafInstrumentation', () => {
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+
+  describe('script summary', () => {
+    it('should emit script summary log with correct aggregated data', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 60,
+              forcedStyleAndLayoutDuration: 10,
+            }),
+            makeScript({
+              sourceURL: 'https://example.com/vendor.js',
+              duration: 40,
+              forcedStyleAndLayoutDuration: 5,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const logs = memoryExporter.getFinishedLogRecords();
+      const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
+      expect(summary).to.exist;
+      expect(summary?.severityNumber).to.equal(SeverityNumber.INFO);
+
+      const body = JSON.parse(summary?.body as string);
+      expect(body['https://example.com/app.js']).to.deep.equal({
+        total_duration: 60,
+        style_and_layout_duration: 10,
+        count: 1,
+      });
+      expect(body['https://example.com/vendor.js']).to.deep.equal({
+        total_duration: 40,
+        style_and_layout_duration: 5,
+        count: 1,
+      });
+
+      instrumentation.disable();
+    });
+
+    it('should group scripts by sourceURL across multiple LoAF entries', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 60,
+              forcedStyleAndLayoutDuration: 10,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 40,
+              forcedStyleAndLayoutDuration: 20,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(body['https://example.com/app.js']).to.deep.equal({
+        total_duration: 100,
+        style_and_layout_duration: 30,
+        count: 2,
+      });
+
+      instrumentation.disable();
+    });
+
+    it('should limit script entries to maxScriptEntries', () => {
+      const instrumentation = new LoafInstrumentation({
+        perf,
+        maxScriptEntries: 2,
+      });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/a.js',
+              duration: 10,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+            makeScript({
+              sourceURL: 'https://example.com/b.js',
+              duration: 50,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+            makeScript({
+              sourceURL: 'https://example.com/c.js',
+              duration: 30,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      const keys = Object.keys(body);
+      expect(keys).to.have.lengthOf(2);
+      expect(body['https://example.com/b.js']).to.exist;
+      expect(body['https://example.com/c.js']).to.exist;
+      expect(body['https://example.com/a.js']).to.not.exist;
+
+      instrumentation.disable();
+    });
+
+    it('should select by accumulated duration, not per-entry duration', () => {
+      const instrumentation = new LoafInstrumentation({
+        perf,
+        maxScriptEntries: 1,
+      });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/a.js',
+              duration: 10,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/a.js',
+              duration: 8,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+            makeScript({
+              sourceURL: 'https://example.com/b.js',
+              duration: 9,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/a.js',
+              duration: 8,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(Object.keys(body)).to.have.lengthOf(1);
+      // a.js total: 26ms, b.js total: 9ms — a.js wins on accumulated duration
+      expect(body['https://example.com/a.js']).to.exist;
+      expect(body['https://example.com/b.js']).to.not.exist;
+
+      instrumentation.disable();
+    });
+
+    it('should not emit script summary log when no scripts present', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([makeEntry({ scripts: [] })]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summaries = memoryExporter
+        .getFinishedLogRecords()
+        .filter((l) => l.eventName === 'emb-loaf-scripts');
+      expect(summaries).to.have.lengthOf(0);
+
+      instrumentation.disable();
+    });
+
+    it('should reset script summaries between sessions', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 100,
+              forcedStyleAndLayoutDuration: 10,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      memoryExporter.reset();
+
+      spanSessionManager.startSessionSpan();
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 25,
+              forcedStyleAndLayoutDuration: 5,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(body['https://example.com/app.js']).to.deep.equal({
+        total_duration: 25,
+        style_and_layout_duration: 5,
+        count: 1,
+      });
+
+      instrumentation.disable();
+    });
+
+    it('should group scripts with empty sourceURL under (inline)', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: '',
+              duration: 30,
+              forcedStyleAndLayoutDuration: 5,
+            }),
+            makeScript({
+              sourceURL: '',
+              duration: 20,
+              forcedStyleAndLayoutDuration: 3,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(body['(inline)']).to.deep.equal({
+        total_duration: 50,
+        style_and_layout_duration: 8,
+        count: 2,
+      });
+
+      instrumentation.disable();
+    });
+
+    it('should round float durations to integers in script summary', () => {
+      const instrumentation = new LoafInstrumentation({ perf });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({ duration: 80 }),
+        makeEntry({
+          duration: 205.7,
+          blockingDuration: 105.3,
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/app.js',
+              duration: 60.9,
+              forcedStyleAndLayoutDuration: 10.4,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const logs = memoryExporter.getFinishedLogRecords();
+      const report = logs.find((l) => l.eventName === 'emb-loaf');
+      expect(report?.attributes['emb.web_vital.value']).to.equal(105);
+      expect(report?.attributes['emb.tbd.loaf_total_duration']).to.equal(286);
+
+      const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(body['https://example.com/app.js']).to.deep.equal({
+        total_duration: 61,
+        style_and_layout_duration: 10,
+        count: 1,
+      });
+
+      instrumentation.disable();
+    });
+
+    it('should clamp maxScriptEntries = 0 to 1', () => {
+      const instrumentation = new LoafInstrumentation({
+        perf,
+        maxScriptEntries: 0,
+      });
+      instrumentation.setSessionManager(spanSessionManager);
+
+      triggerEntries([
+        makeEntry({
+          scripts: [
+            makeScript({
+              sourceURL: 'https://example.com/a.js',
+              duration: 10,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+            makeScript({
+              sourceURL: 'https://example.com/b.js',
+              duration: 50,
+              forcedStyleAndLayoutDuration: 0,
+            }),
+          ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
+        }),
+      ]);
+
+      spanSessionManager.endSessionSpan();
+
+      const summary = memoryExporter
+        .getFinishedLogRecords()
+        .find((l) => l.eventName === 'emb-loaf-scripts');
+      const body = JSON.parse(summary?.body as string);
+      expect(Object.keys(body)).to.have.lengthOf(1);
+      expect(body['https://example.com/b.js']).to.exist;
+
+      instrumentation.disable();
+    });
   });
 });

@@ -212,6 +212,18 @@ const App = () => {
     }, 100);
   };
 
+  const handleLoadLoafScripts = () => {
+    for (let i = 1; i <= 4; i++) {
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = `http://localhost:3001/loaf/${i}`;
+      script.onerror = () => {
+        console.error(`failed to load loaf script ${i}`);
+      };
+      document.body.appendChild(script);
+    }
+  };
+
   const handleTriggerLoafRandom = () => {
     const duration = Math.floor(Math.random() * 500) + 100;
     const start = performance.now();
@@ -529,6 +541,9 @@ const App = () => {
           </button>
           <button type="button" onClick={handleTriggerLoafRandom}>
             Block Main Thread (100–600ms random)
+          </button>
+          <button type="button" onClick={handleLoadLoafScripts}>
+            Load LoAF Scripts (x4)
           </button>
           <button type="button" onClick={handleEndSessionSpan}>
             End Session (flush LoAF report)
