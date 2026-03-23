@@ -265,6 +265,9 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
           eventName: LOAF_SCRIPTS_EVENT_NAME,
           severityNumber: SeverityNumber.INFO,
           body: JSON.stringify(Object.fromEntries(scriptEntries)),
+          attributes: {
+            [KEY_EMB_TYPE]: attrs[KEY_EMB_TYPE],
+          },
         });
       }
     } catch (e) {
