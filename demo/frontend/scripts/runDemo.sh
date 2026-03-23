@@ -2,8 +2,8 @@
 if [ ! -f .env ]; then
     echo "# Add your appID from https://dash.embrace.io" > .env
     echo "VITE_APP_ID=" >> .env
-    echo "VITE_DATA_URL=" >> .env
-    echo "VITE_CONFIG_URL=" >> .env
+    echo "VITE_DATA_URL=http://localhost:3001 # leave empty for production" >> .env
+    echo "VITE_CONFIG_URL=http://localhost:3000 # leave empty for production" >> .env
 fi
 
 # if .env file exists, check if it contains a valid appID
