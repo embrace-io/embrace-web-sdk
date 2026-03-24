@@ -2,6 +2,7 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { eventWithTime } from 'rrweb';
 import { record } from 'rrweb';
 
+import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { ReplayInstrumentationArgs } from './types.ts';
 
@@ -11,6 +12,7 @@ export class ReplayInstrumentation extends EmbraceInstrumentationBase {
 
   private _eventBuffer: eventWithTime[] = [];
   private _flushIntervalId?: ReturnType<typeof setInterval>;
+  private _removeSessionEndListener?: () => void;
   private _stopRecording?: () => void;
 
   public constructor({ diag, perf }: ReplayInstrumentationArgs = {}) {
@@ -27,6 +29,25 @@ export class ReplayInstrumentation extends EmbraceInstrumentationBase {
     } else {
       this._diag.debug('disabled, not starting');
     }
+  }
+
+  public override setSessionManager(sessionManager: SpanSessionManager): void {
+    super.setSessionManager(sessionManager);
+    this._registerSessionEndListener();
+  }
+
+  private _registerSessionEndListener(): void {
+    if (this._removeSessionEndListener) {
+      this._removeSessionEndListener();
+    }
+    this._removeSessionEndListener =
+      this.sessionManager.addSessionEndedListener(() => {
+        try {
+          this._flush();
+        } catch (e) {
+          this._diag.error('error flushing on session end', e);
+        }
+      });
   }
 
   private _flush(): void {
@@ -62,6 +83,8 @@ export class ReplayInstrumentation extends EmbraceInstrumentationBase {
       this._diag.debug('stopping recording');
       clearInterval(this._flushIntervalId);
       this._flushIntervalId = undefined;
+      this._removeSessionEndListener?.();
+      this._removeSessionEndListener = undefined;
       this._stopRecording();
       this._stopRecording = undefined;
       this._flush();
@@ -91,6 +114,7 @@ export class ReplayInstrumentation extends EmbraceInstrumentationBase {
       this._flushIntervalId = setInterval(() => {
         this._flush();
       }, ReplayInstrumentation.FLUSH_INTERVAL_MS);
+      this._registerSessionEndListener();
       this._diag.debug('recording started');
     } catch (e) {
       this._diag.error('failed to start recording', e);
