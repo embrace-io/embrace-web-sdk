@@ -37,6 +37,10 @@ export class ReplayInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _registerSessionEndListener(): void {
+    if (!this._stopRecording) {
+      return;
+    }
+
     if (this._removeSessionEndListener) {
       this._removeSessionEndListener();
     }
