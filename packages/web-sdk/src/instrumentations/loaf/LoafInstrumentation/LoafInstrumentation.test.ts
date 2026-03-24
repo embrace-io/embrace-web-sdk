@@ -683,7 +683,7 @@ describe('LoafInstrumentation', () => {
       const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
       expect(summary).to.exist;
       expect(summary?.severityNumber).to.equal(SeverityNumber.INFO);
-      expect(summary?.attributes['emb.type']).to.equal('ux.web_vital');
+      expect(summary?.attributes['emb.type']).to.equal('ux.loaf_scripts');
 
       const body = JSON.parse(summary?.body as string);
       expect(body['https://example.com/app.js']).to.deep.equal({
