@@ -5,7 +5,11 @@
     "customConditions": ["embrace"],
     // "erasableSyntaxOnly": true,
     "jsx": "react-jsx",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": ["ES2022", "DOM"],
+    "types": ["mocha"],
+    // waiting on web-vitals release
+    // https://github.com/GoogleChrome/web-vitals/pull/703
+    "skipLibCheck": true
   },
   "include": ["src", "tests", "scripts"]
 }
