@@ -20,6 +20,8 @@ export {
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';
 export { getNavigationInstrumentation } from './navigation/index.ts';
+export type { ReplayInstrumentationArgs } from './replay/index.ts';
+export { ReplayInstrumentation } from './replay/index.ts';
 export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,

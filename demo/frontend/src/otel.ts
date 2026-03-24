@@ -1,3 +1,4 @@
+import { ReplayInstrumentation } from '@embrace-io/web-sdk';
 import { setupSDK } from './otel-base.ts';
 
 // Force onscreen rendering to trigger a long animation frame
@@ -6,6 +7,6 @@ while (performance.now() - start < 200) {
   // block main thread
 }
 
-const setupOTel = () => setupSDK();
+const setupOTel = () => setupSDK([new ReplayInstrumentation()]);
 
 export { setupOTel };
