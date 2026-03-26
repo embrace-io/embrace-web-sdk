@@ -1,0 +1,16 @@
+name: Autolabel PR
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  autolabeler:
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: release-drafter/release-drafter/autolabeler@v7
