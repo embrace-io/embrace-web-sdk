@@ -1,6 +1,8 @@
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals/attribution';
 
 export const EMB_WEB_VITALS_PREFIX = 'emb-web-vitals';
+export const MAX_LOAF_SCRIPT_URL_LENGTH = 2048;
+export const MAX_LOAF_SCRIPT_ENTRIES = 250;
 export const CORE_WEB_VITALS = ['CLS', 'INP', 'LCP'] as const;
 export const ALL_WEB_VITALS = ['CLS', 'INP', 'LCP', 'FCP', 'TTFB'] as const;
 export const WEB_VITALS_ID_TO_LISTENER = {
