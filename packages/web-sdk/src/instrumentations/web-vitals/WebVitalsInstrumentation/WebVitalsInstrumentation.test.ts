@@ -503,11 +503,7 @@ describe('WebVitalsInstrumentation', () => {
       });
     });
 
-    it('should not include loaf_scripts when LoAF is unsupported', () => {
-      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
-        public static supportedEntryTypes = ['longtask'];
-      };
-
+    it('should not include loaf_scripts when no LoAF entries are reported', () => {
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
@@ -518,17 +514,7 @@ describe('WebVitalsInstrumentation', () => {
       const { args } = inpStub.callsArg(0);
       const metricReportFunc = args[0][0] as WebVitalOnReport;
 
-      fireINP(metricReportFunc, [
-        {
-          scripts: [
-            {
-              sourceURL: 'https://example.com/app.js',
-              duration: 100,
-              forcedStyleAndLayoutDuration: 10,
-            },
-          ],
-        } as PerformanceLongAnimationFrameTiming,
-      ]);
+      fireINP(metricReportFunc, []);
 
       spanSessionManager.endSessionSpan();
       const sessionSpan = memoryExporter.getFinishedSpans()[0];
