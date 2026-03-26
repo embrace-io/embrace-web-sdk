@@ -1,4 +1,4 @@
-import type { Attributes } from '@opentelemetry/api';
+import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   CLSAttribution,
@@ -23,6 +23,8 @@ import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/ind
 import {
   ALL_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
+  MAX_LOAF_SCRIPT_ENTRIES,
+  MAX_LOAF_SCRIPT_URL_LENGTH,
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.ts';
 import type {
@@ -40,6 +42,7 @@ type AttributedPage = {
 const webVitalAttributionToReport = (
   name: Metric['name'],
   metric: MetricWithAttribution,
+  diag: DiagLogger,
 ) => {
   const attributes: Attributes = {};
   const toReport: {
@@ -86,6 +89,67 @@ const webVitalAttributionToReport = (
         { key: 'loadState', value: attribution.loadState },
       ],
     );
+
+    try {
+      // suppress LoAF baseline errors
+      /* eslint-disable baseline-js/use-baseline */
+      if (attribution.longAnimationFrameEntries.length > 0) {
+        const scripts = new Map<
+          string,
+          {
+            totalDuration: number;
+            styleAndLayoutDuration: number;
+            count: number;
+          }
+        >();
+        for (const entry of attribution.longAnimationFrameEntries) {
+          for (const script of entry.scripts) {
+            let url = script.sourceURL || '(inline)';
+            if (url.length > MAX_LOAF_SCRIPT_URL_LENGTH) {
+              url = `${url.substring(0, MAX_LOAF_SCRIPT_URL_LENGTH)}...`;
+            }
+            const existing = scripts.get(url);
+            if (existing) {
+              existing.totalDuration += script.duration;
+              existing.styleAndLayoutDuration +=
+                script.forcedStyleAndLayoutDuration;
+              existing.count++;
+            } else {
+              scripts.set(url, {
+                totalDuration: script.duration,
+                styleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
+                count: 1,
+              });
+            }
+          }
+        }
+        if (scripts.size > 0) {
+          toReport.push({
+            key: 'loaf_scripts',
+            value: JSON.stringify(
+              Object.fromEntries(
+                [...scripts]
+                  .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
+                  .slice(0, MAX_LOAF_SCRIPT_ENTRIES)
+                  .map(([url, script]) => [
+                    url,
+                    {
+                      total_duration: Math.round(script.totalDuration),
+                      style_and_layout_duration: Math.round(
+                        script.styleAndLayoutDuration,
+                      ),
+                      count: script.count,
+                    },
+                  ]),
+              ),
+            ),
+          });
+        }
+      }
+      /* eslint-enable baseline-js/use-baseline */
+    } catch (e) {
+      diag.error('error building loaf scripts for INP', e);
+    }
   } else if (name === 'LCP') {
     // https://www.npmjs.com/package/web-vitals#lcpattribution
     const attribution = metric.attribution as LCPAttribution;
@@ -204,7 +268,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           'emb.web_vital.id': metric.id,
           'emb.web_vital.delta': metric.delta,
           'emb.web_vital.value': metric.value,
-          ...webVitalAttributionToReport(name, metric),
+          ...webVitalAttributionToReport(name, metric, this._diag),
         };
 
         // Add page attributes if route and page ID exist
