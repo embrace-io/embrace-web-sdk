@@ -93,12 +93,7 @@ const webVitalAttributionToReport = (
     try {
       // suppress LoAF baseline errors
       /* eslint-disable baseline-js/use-baseline */
-      if (
-        typeof PerformanceObserver !== 'undefined' &&
-        PerformanceObserver.supportedEntryTypes?.includes(
-          'long-animation-frame',
-        )
-      ) {
+      if (attribution.longAnimationFrameEntries.length > 0) {
         const scripts = new Map<
           string,
           {
