@@ -79,9 +79,14 @@
     "vite": "8.0.1"
   },
   "overrides": {
-    "typescript": "6.0.2",
     "@remcovaes/web-test-runner-vite-plugin": {
       "vite": "8.0.1"
+    },
+    "tsdown": {
+      "typescript": "^6"
+    },
+    "typescript-eslint": {
+      "typescript": "^6"
     }
   },
   "packageManager": "npm@11.9.0",
