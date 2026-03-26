@@ -5,6 +5,7 @@ import sinonChai from 'sinon-chai';
 import type {
   CLSMetricWithAttribution,
   FCPMetricWithAttribution,
+  INPMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
 import {
@@ -360,6 +361,183 @@ describe('WebVitalsInstrumentation', () => {
 
     // Time should be based on interactionTime from attribution
     expect(inpEvent.time).to.deep.equal([19, 0]);
+  });
+
+  describe('loaf_scripts attribution', () => {
+    let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+    beforeEach(() => {
+      originalPerformanceObserver = globalThis.PerformanceObserver;
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = ['long-animation-frame'];
+      };
+    });
+
+    afterEach(() => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        originalPerformanceObserver;
+    });
+
+    const fireINP = (
+      metricReportFunc: WebVitalOnReport,
+      loafEntries: PerformanceLongAnimationFrameTiming[],
+    ) => {
+      metricReportFunc({
+        name: 'INP',
+        value: 200,
+        rating: 'needs-improvement',
+        delta: 200,
+        id: 'm2',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          interactionTarget: 'button',
+          interactionTargetElement: undefined,
+          interactionTime: 1000,
+          nextPaintTime: 1200,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: loafEntries,
+          inputDelay: 10,
+          processingDuration: 150,
+          presentationDelay: 40,
+          loadState: 'complete',
+        },
+      } as INPMetricWithAttribution);
+    };
+
+    it('should include loaf_scripts in INP event', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      void expect(inpStub.calledTwice).to.be.true;
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, [
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 100,
+              forcedStyleAndLayoutDuration: 10,
+            },
+            {
+              sourceURL: '',
+              duration: 50,
+              forcedStyleAndLayoutDuration: 5,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      expect(sessionSpan.events).to.have.lengthOf(1);
+      const loafScripts = JSON.parse(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ] as string,
+      ) as Record<string, unknown>;
+
+      expect(loafScripts['https://example.com/app.js']).to.deep.equal({
+        total_duration: 100,
+        style_and_layout_duration: 10,
+        count: 1,
+      });
+      expect(loafScripts['(inline)']).to.deep.equal({
+        total_duration: 50,
+        style_and_layout_duration: 5,
+        count: 1,
+      });
+    });
+
+    it('should aggregate scripts across multiple loaf entries', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, [
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 60,
+              forcedStyleAndLayoutDuration: 10,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 40,
+              forcedStyleAndLayoutDuration: 20,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      const loafScripts = JSON.parse(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ] as string,
+      ) as Record<string, unknown>;
+
+      expect(loafScripts['https://example.com/app.js']).to.deep.equal({
+        total_duration: 100,
+        style_and_layout_duration: 30,
+        count: 2,
+      });
+    });
+
+    it('should not include loaf_scripts when LoAF is unsupported', () => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = ['longtask'];
+      };
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, [
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 100,
+              forcedStyleAndLayoutDuration: 10,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      expect(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ],
+      ).to.be.undefined;
+    });
   });
 
   it('should report TTFB metrics', () => {
