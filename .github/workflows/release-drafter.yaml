@@ -3,8 +3,6 @@ name: Draft Release
 on:
   push:
     branches: [main]
-  pull_request:
-    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
@@ -13,8 +11,7 @@ jobs:
   next-release:
     permissions:
       contents: write
-      # write permission is required for autolabeler
-      pull-requests: write
+      pull-requests: read
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
