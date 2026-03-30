@@ -10,8 +10,8 @@ import {
   useHistory,
   useParams,
 } from 'react-router-domv4v5';
-import logo from '../src/logo.png';
 import '../src/index.css';
+import { Layout } from '../src/Layout.tsx';
 import { setupOTel } from '../src/otel.ts';
 import { getBasename } from '../src/utils.ts';
 
@@ -98,35 +98,24 @@ const About = () => {
   );
 };
 
-const App = () => {
-  return (
-    <>
-      <a href={import.meta.env.BASE_URL} className="exit-link">
-        <span>←</span>
-        <span>Exit Router Demo</span>
-      </a>
-      <div className="container">
-        <a href={import.meta.env.BASE_URL} className="logo-link">
-          <img src={logo} alt="Embrace" />
-        </a>
-        <h1>React Router v4/v5</h1>
-        <Router history={history}>
-          <Switch>
-            <EmbraceRoute exact path="/" component={Home} />
-            <EmbraceRoute path="/product/:id" component={Product} />
-            <EmbraceRoute path="/about" component={About} />
-          </Switch>
-        </Router>
-      </div>
-    </>
-  );
-};
+const App = () => (
+  <Router history={history}>
+    <Switch>
+      <EmbraceRoute exact path="/" component={Home} />
+      <EmbraceRoute path="/product/:id" component={Product} />
+      <EmbraceRoute path="/about" component={About} />
+    </Switch>
+  </Router>
+);
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <Layout>
+        <h1>React Router v4/v5</h1>
+        <App />
+      </Layout>
     </StrictMode>,
   );
 }

@@ -10,8 +10,8 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-domv6plus';
-import logo from '../src/logo.png';
 import '../src/index.css';
+import { Layout } from '../src/Layout.tsx';
 import { setupOTel } from '../src/otel.ts';
 import { getBasename } from '../src/utils.ts';
 
@@ -161,28 +161,17 @@ const App = () => {
     });
   }, []);
 
-  return (
-    <>
-      <a href={import.meta.env.BASE_URL} className="exit-link">
-        <span>←</span>
-        <span>Exit Router Demo</span>
-      </a>
-      <div className="container">
-        <a href={import.meta.env.BASE_URL} className="logo-link">
-          <img src={logo} alt="Embrace" />
-        </a>
-        <h1>React Router v6 Data API</h1>
-        <RouterProvider router={router} />
-      </div>
-    </>
-  );
+  return <RouterProvider router={router} />;
 };
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <Layout>
+        <h1>React Router v6 Data API</h1>
+        <App />
+      </Layout>
     </StrictMode>,
   );
 }
