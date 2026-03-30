@@ -10,8 +10,8 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-domv6plus';
-import logo from '../src/logo.png';
 import '../src/index.css';
+import { Layout } from '../src/Layout.tsx';
 import { setupOTel } from '../src/otel.ts';
 import { getBasename } from '../src/utils.ts';
 
@@ -125,38 +125,27 @@ const About = () => {
   );
 };
 
-const App = () => {
-  return (
-    <>
-      <a href={import.meta.env.BASE_URL} className="exit-link">
-        <span>←</span>
-        <span>Exit Router Demo</span>
-      </a>
-      <div className="container">
-        <a href={import.meta.env.BASE_URL} className="logo-link">
-          <img src={logo} alt="Embrace" />
-        </a>
-        <h1>React Router v6 Declarative</h1>
-        <BrowserRouter basename={getBasename('react-router-v6-declarative')}>
-          <EmbraceRoutes>
-            <Route path="/" element={<Home />} />
-            <Route path="/product/:id" element={<Product />}>
-              <Route path="comments" element={<ProductComments />} />
-              <Route path="photos" element={<ProductComments />} />
-            </Route>
-            <Route path="/about" element={<About />} />
-          </EmbraceRoutes>
-        </BrowserRouter>
-      </div>
-    </>
-  );
-};
+const App = () => (
+  <BrowserRouter basename={getBasename('react-router-v6-declarative')}>
+    <EmbraceRoutes>
+      <Route path="/" element={<Home />} />
+      <Route path="/product/:id" element={<Product />}>
+        <Route path="comments" element={<ProductComments />} />
+        <Route path="photos" element={<ProductComments />} />
+      </Route>
+      <Route path="/about" element={<About />} />
+    </EmbraceRoutes>
+  </BrowserRouter>
+);
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>
-      <App />
+      <Layout>
+        <h1>React Router v6 Declarative</h1>
+        <App />
+      </Layout>
     </StrictMode>,
   );
 }

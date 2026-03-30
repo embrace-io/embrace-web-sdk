@@ -22,6 +22,7 @@ export default defineConfig({
           __dirname,
           'react-router-v6-data/index.html',
         ),
+        soft: resolve(__dirname, 'soft/index.html'),
       },
       output: {
         sourcemapDebugIds: true,

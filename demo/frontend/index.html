@@ -14,6 +14,11 @@
       };
 
       if (
+        path.startsWith(getRouterPath('soft').replace(/\/$/, '')) &&
+        path !== getRouterPath('soft')
+      ) {
+        window.location.assign(getRouterPath('soft'));
+      } else if (
         path.startsWith(getRouterPath('react-router-v5').replace(/\/$/, '')) &&
         path !== getRouterPath('react-router-v5')
       ) {
