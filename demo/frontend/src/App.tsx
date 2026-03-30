@@ -3,9 +3,29 @@ import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation'
 
 import type { Span } from '@opentelemetry/api';
 import { useCallback, useEffect, useState } from 'react';
-import styles from './App.module.css';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender.tsx';
-import logo from './logo.png';
+import { getSessionAttributes } from './utils.ts';
+
+const formatValue = (value: string | null, truncate?: boolean): string => {
+  if (!value) return '—';
+  if (truncate) return value.substring(0, 8);
+  return value;
+};
+
+const InfoItem = ({
+  label,
+  value,
+  truncate,
+}: {
+  label: string;
+  value: string | null;
+  truncate?: boolean;
+}) => (
+  <div>
+    <dt>{label}</dt>
+    <dd title={value || undefined}>{formatValue(value, truncate)}</dd>
+  </div>
+);
 
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const sessionProvider = session.getSpanSessionManager();
@@ -23,16 +43,12 @@ const App = () => {
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
   const updateCrossTabData = useCallback(() => {
-    const sessionSpan = sessionProvider.getSessionSpan();
-    if (sessionSpan && 'attributes' in sessionSpan) {
-      const attrs = (sessionSpan as { attributes: Record<string, unknown> })
-        .attributes;
-      setExperienceId((attrs['emb.experience_id'] as string) || null);
-      setTabId((attrs['emb.tab_id'] as string) || null);
-      setSourceTabId((attrs['emb.source_tab_id'] as string) || null);
-      setNavigationSource((attrs['emb.navigation_source'] as string) || null);
-      setReferrerUrl((attrs['emb.referrer_url'] as string) || null);
-    }
+    const attrs = getSessionAttributes();
+    setExperienceId(attrs?.['emb.experience_id'] ?? null);
+    setTabId(attrs?.['emb.tab_id'] ?? null);
+    setSourceTabId(attrs?.['emb.source_tab_id'] ?? null);
+    setNavigationSource(attrs?.['emb.navigation_source'] ?? null);
+    setReferrerUrl(attrs?.['emb.referrer_url'] ?? null);
   }, []);
 
   useEffect(() => {
@@ -266,62 +282,22 @@ const App = () => {
   };
 
   return (
-    <div className="container">
-      <a href="./" className="logo-link">
-        <img src={logo} alt="Embrace" />
-      </a>
-      <div className={styles.sessionInfo}>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Session ID:</span>
-          <span
-            className={styles.sessionValue}
-            title={currentSession || undefined}
-          >
-            {currentSession ? currentSession.substring(0, 8) : '-'}
-          </span>
-        </div>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Tab ID:</span>
-          <span className={styles.sessionValue} title={tabId || undefined}>
-            {tabId ? tabId.substring(0, 8) : '-'}
-          </span>
-        </div>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Source Tab ID:</span>
-          <span
-            className={styles.sessionValue}
-            title={sourceTabId || undefined}
-          >
-            {sourceTabId ? sourceTabId.substring(0, 8) : '-'}
-          </span>
-        </div>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Experience ID:</span>
-          <span
-            className={styles.sessionValue}
-            title={experienceId || undefined}
-          >
-            {experienceId ? experienceId.substring(0, 8) : '-'}
-          </span>
-        </div>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Navigation Source:</span>
-          <span className={styles.sessionValue}>{navigationSource || '-'}</span>
-        </div>
-        <div className={styles.sessionRow}>
-          <span className={styles.sessionLabel}>Referrer URL:</span>
-          <span
-            className={styles.sessionValue}
-            title={referrerUrl || undefined}
-          >
-            {referrerUrl || '-'}
-          </span>
-        </div>
-      </div>
+    <>
+      <fieldset style={{ gridColumn: '1 / -1' }}>
+        <legend>Experience</legend>
+        <dl className="info-list info-list-horizontal">
+          <InfoItem label="Session ID" value={currentSession} truncate />
+          <InfoItem label="Tab ID" value={tabId} truncate />
+          <InfoItem label="Source Tab ID" value={sourceTabId} truncate />
+          <InfoItem label="Experience ID" value={experienceId} truncate />
+          <InfoItem label="Navigation Source" value={navigationSource} />
+          <InfoItem label="Referrer URL" value={referrerUrl} />
+        </dl>
+      </fieldset>
 
       <fieldset>
         <legend>Session Control</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={handleStartSessionSpan}
@@ -357,12 +333,9 @@ const App = () => {
           Start Span
         </button>
         {spans.length > 0 && (
-          <div className={styles.spans}>
+          <div className="spans">
             {spans.map((span, index) => (
-              <div
-                className={styles.span}
-                key={`span-${span.spanContext().spanId}`}
-              >
+              <div className="span" key={`span-${span.spanContext().spanId}`}>
                 <div>Span {index}</div>
 
                 <button
@@ -379,7 +352,7 @@ const App = () => {
 
       <fieldset>
         <legend>Embrace Logs</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={handleSendEmbraceInfoLog}
@@ -406,7 +379,7 @@ const App = () => {
 
       <fieldset>
         <legend>Session Properties</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={() =>
@@ -428,7 +401,7 @@ const App = () => {
             Remove Permanent Session Property
           </button>
         </div>
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={() =>
@@ -450,7 +423,7 @@ const App = () => {
 
       <fieldset>
         <legend>Exceptions</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={handleRecordException}
@@ -474,7 +447,7 @@ const App = () => {
           </button>
         </div>
 
-        <div className={styles.actions}>
+        <div className="actions">
           <button
             type="button"
             onClick={handleThrowDOMException}
@@ -508,7 +481,7 @@ const App = () => {
 
       <fieldset>
         <legend>Network Requests</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button type="button" onClick={handleSendFetchNetworkRequest}>
             Send a Fetch Network Request
           </button>
@@ -520,7 +493,7 @@ const App = () => {
           </button>
         </div>
 
-        <div className={styles.actions}>
+        <div className="actions">
           <button type="button" onClick={handleCancelFetchNetworkRequest}>
             Cancel a Fetch Network Request
           </button>
@@ -532,7 +505,7 @@ const App = () => {
 
       <fieldset>
         <legend>LoAF</legend>
-        <div className={styles.actions}>
+        <div className="actions">
           <button type="button" onClick={handleTriggerLoaf}>
             Block Main Thread (200ms)
           </button>
@@ -552,28 +525,6 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>React Router Demos</legend>
-        <div className={styles.actions}>
-          <a href="./react-router-v5/">React Router v4/v5 Demo</a>
-          <a href="./react-router-v6-declarative/">
-            React Router v6 Declarative Demo
-          </a>
-          <a href="./react-router-v6-data/">React Router v6 Data Demo</a>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Navigation</legend>
-        <div className={styles.actions}>
-          <a href="https://google.com">Navigate to google.com</a>
-          <a href="./">Open demo in same tab</a>
-          <a href="./" target="_blank" rel="noopener">
-            Open demo in new tab
-          </a>
-        </div>
-      </fieldset>
-
-      <fieldset>
         <legend>React Render Errors</legend>
         <div>
           <p>Inside an error boundary:</p>
@@ -586,7 +537,7 @@ const App = () => {
           <ComponentWithErrorInRender />
         </div>
       </fieldset>
-    </div>
+    </>
   );
 };
 
