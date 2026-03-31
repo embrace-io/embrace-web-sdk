@@ -40,6 +40,7 @@ import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
   DocumentLoadCustomAttributeFunction,
   DocumentLoadInstrumentationConfig,
+  HeadBlockingMap,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
 import {
@@ -119,7 +120,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    */
   private _addResourcesSpans(
     rootSpan: Span,
-    headBlockingMap: Map<string, 'blocking' | 'non-blocking'>,
+    headBlockingMap: HeadBlockingMap,
   ): void {
     const resources: EmbracePerformanceResourceTiming[] =
       performance.getEntriesByType('resource');
@@ -182,7 +183,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       rootSpan.setAttribute(ATTR_URL_FULL, location.href);
       rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
 
-      let headBlockingMap = new Map<string, 'blocking' | 'non-blocking'>();
+      let headBlockingMap: HeadBlockingMap = new Map();
       if (!('renderBlockingStatus' in PerformanceResourceTiming.prototype)) {
         try {
           headBlockingMap = buildHeadBlockingMap();
@@ -287,7 +288,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _initResourceSpan(
     resource: EmbracePerformanceResourceTiming,
     parentSpan: Span,
-    headBlockingMap: Map<string, 'blocking' | 'non-blocking'>,
+    headBlockingMap: HeadBlockingMap,
   ) {
     const span = this._startSpan(
       AttributeNames.RESOURCE_FETCH,

@@ -13,6 +13,8 @@ export type ResourceFetchCustomAttributeFunction = (
   resource: PerformanceResourceTiming,
 ) => void;
 
+export type HeadBlockingMap = Map<string, 'blocking' | 'non-blocking'>;
+
 export type DocumentLoadInstrumentationConfig = Pick<
   EmbraceInstrumentationBaseArgs,
   'diag' | 'perf'

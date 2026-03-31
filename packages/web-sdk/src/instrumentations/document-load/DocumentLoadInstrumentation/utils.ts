@@ -7,6 +7,7 @@ import type { Span } from '@opentelemetry/api';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
 import { EventNames } from './enums/EventNames.ts';
+import type { HeadBlockingMap } from './types.ts';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
@@ -45,11 +46,8 @@ export const addSpanPerformancePaintEvents = (span: Span) => {
 // - <link rel="stylesheet"> = "blocking"
 // - Any element with blocking="render" = "blocking"
 // - Otherwise = "non-blocking"
-export const buildHeadBlockingMap = (): Map<
-  string,
-  'blocking' | 'non-blocking'
-> => {
-  const map = new Map<string, 'blocking' | 'non-blocking'>();
+export const buildHeadBlockingMap = (): HeadBlockingMap => {
+  const map: HeadBlockingMap = new Map();
   const elements = document.head.querySelectorAll<
     HTMLScriptElement | HTMLLinkElement
   >('script[src], link[rel="stylesheet"][href], [blocking="render"][href]');
