@@ -14,8 +14,19 @@ import {
   BLOCKING_DURATION_GOOD_THRESHOLD,
   BLOCKING_DURATION_POOR_THRESHOLD,
   LOAF_EVENT_NAME,
+  LOAF_SCRIPTS_EVENT_NAME,
+  MAX_SCRIPT_ENTRIES,
+  MAX_SCRIPT_URL_LENGTH,
 } from './constants.ts';
 import type { LoafInstrumentationArgs } from './types.ts';
+
+type ScriptSummaryValue = {
+  totalDuration: number;
+  styleAndLayoutDuration: number;
+  count: number;
+};
+
+type ScriptSummaries = Map<string, ScriptSummaryValue>;
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
@@ -30,6 +41,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _longestDuration = 0;
   private _longestDurationExcludingFirst = 0;
   private _totalBlockingDuration = 0;
+  private _scriptSummaries: ScriptSummaries = new Map();
 
   public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
@@ -70,7 +82,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           try {
-            this._diag.debug('entry observed', entry);
             this._processEntry(entry as PerformanceLongAnimationFrameTiming);
           } catch (e) {
             this._diag.error('error processing entry', e);
@@ -160,6 +171,32 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
         this._totalBlockingDuration += entry.blockingDuration;
       }
     }
+
+    try {
+      for (const script of entry.scripts) {
+        // sourceURL is an empty string for inline scripts
+        let url = script.sourceURL || '(inline)';
+        if (url.length > MAX_SCRIPT_URL_LENGTH) {
+          url = `${url.substring(0, MAX_SCRIPT_URL_LENGTH)}...`;
+        }
+
+        const existing = this._scriptSummaries.get(url);
+        if (existing) {
+          existing.totalDuration += script.duration;
+          existing.styleAndLayoutDuration +=
+            script.forcedStyleAndLayoutDuration;
+          existing.count++;
+        } else {
+          this._scriptSummaries.set(url, {
+            totalDuration: script.duration,
+            styleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
+            count: 1,
+          });
+        }
+      }
+    } catch (e) {
+      this._diag.error('error processing scripts for entry', e);
+    }
   }
 
   private _flushReport(): void {
@@ -182,22 +219,58 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       ['emb.web_vital.name']: 'TBD',
-      ['emb.web_vital.value']: this._totalBlockingDuration,
+      ['emb.web_vital.value']: Math.round(this._totalBlockingDuration),
       ['emb.web_vital.rating']: rating,
-      [ATTR_TBD_LOAF_TOTAL_DURATION]: this._totalDuration,
-      [ATTR_TBD_LOAF_WORK_DURATION]: this._workDuration,
-      [ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION]: this._styleLayoutDuration,
+      [ATTR_TBD_LOAF_TOTAL_DURATION]: Math.round(this._totalDuration),
+      [ATTR_TBD_LOAF_WORK_DURATION]: Math.round(this._workDuration),
+      [ATTR_TBD_LOAF_STYLE_AND_LAYOUT_DURATION]: Math.round(
+        this._styleLayoutDuration,
+      ),
       [ATTR_TBD_LOAF_COUNT]: this._count,
-      [ATTR_TBD_LOAF_LONGEST_DURATION]: this._longestDuration,
-      [ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]:
+      [ATTR_TBD_LOAF_LONGEST_DURATION]: Math.round(this._longestDuration),
+      [ATTR_TBD_LOAF_LONGEST_DURATION_EXCLUDING_FIRST]: Math.round(
         this._longestDurationExcludingFirst,
+      ),
     };
 
-    this.logger.emit({
-      eventName: LOAF_EVENT_NAME,
-      severityNumber: SeverityNumber.INFO,
-      attributes: attrs,
-    });
+    try {
+      this.logger.emit({
+        eventName: LOAF_EVENT_NAME,
+        severityNumber: SeverityNumber.INFO,
+        attributes: attrs,
+      });
+    } catch (e) {
+      this._diag.error('error emitting loaf report', e);
+    }
+
+    try {
+      if (this._scriptSummaries.size > 0) {
+        const scripts = [...this._scriptSummaries]
+          .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
+          .slice(0, MAX_SCRIPT_ENTRIES)
+          .map(([url, script]) => [
+            url,
+            {
+              total_duration: Math.round(script.totalDuration),
+              style_and_layout_duration: Math.round(
+                script.styleAndLayoutDuration,
+              ),
+              count: script.count,
+            },
+          ]);
+
+        this.logger.emit({
+          eventName: LOAF_SCRIPTS_EVENT_NAME,
+          severityNumber: SeverityNumber.INFO,
+          body: JSON.stringify(Object.fromEntries(scripts)),
+          attributes: {
+            [KEY_EMB_TYPE]: EMB_TYPES.LoafScripts,
+          },
+        });
+      }
+    } catch (e) {
+      this._diag.error('error emitting loaf script summary', e);
+    }
 
     this._resetAccumulators();
   }
@@ -210,5 +283,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDuration = 0;
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
+    this._scriptSummaries = new Map();
   }
 }

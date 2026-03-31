@@ -1,6 +1,6 @@
 {
   "name": "@embrace-io/web-sdk",
-  "version": "2.14.0",
+  "version": "2.16.0",
   "description": "Embrace Web SDK",
   "type": "module",
   "imports": {
@@ -17,7 +17,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "clean": "npx -y rimraf dist",
+    "clean": "npx -y rimraf dist .sonda",
     "build": "npm run build --prefix packages/otlp-transformer && tsdown",
     "dev": "tsdown --watch --no-clean",
     "test": "web-test-runner",
@@ -79,19 +79,20 @@
   ],
   "dependencies": {
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/api-logs": "^0.212.0",
-    "@opentelemetry/core": "^2.5.1",
-    "@opentelemetry/instrumentation": "^0.212.0",
-    "@opentelemetry/instrumentation-fetch": "^0.212.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.212.0",
-    "@opentelemetry/otlp-exporter-base": "^0.212.0",
-    "@opentelemetry/resources": "^2.5.1",
-    "@opentelemetry/sdk-logs": "^0.212.0",
-    "@opentelemetry/sdk-trace-web": "^2.5.1",
+    "@opentelemetry/api-logs": "^0.213.0",
+    "@opentelemetry/core": "^2.6.0",
+    "@opentelemetry/instrumentation": "^0.213.0",
+    "@opentelemetry/instrumentation-fetch": "^0.213.0",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.213.0",
+    "@opentelemetry/otlp-exporter-base": "^0.213.0",
+    "@opentelemetry/otlp-transformer": "^0.213.0",
+    "@opentelemetry/resources": "^2.6.0",
+    "@opentelemetry/sdk-logs": "^0.213.0",
+    "@opentelemetry/sdk-trace-web": "^2.6.0",
     "@opentelemetry/semantic-conventions": "^1.40.0",
-    "@opentelemetry/web-common": "^0.212.0",
+    "@opentelemetry/web-common": "^0.213.0",
     "hoist-non-react-statics": "^3.3.2",
-    "web-vitals": "^5.1.0"
+    "web-vitals": "^5.2.0"
   },
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"

@@ -5,4 +5,4 @@ type Metric = {
   unit: string;
 };
 
-export type { TestPage, Metric };
+export type { Metric, TestPage };

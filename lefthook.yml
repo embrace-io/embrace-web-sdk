@@ -6,7 +6,3 @@ pre-commit:
       run: npm run lint:fix
     typecheck:
       run: npm run check
-commit-msg:
-  commands:
-    commitlint:
-      run: npx --no -- commitlint --edit {1}

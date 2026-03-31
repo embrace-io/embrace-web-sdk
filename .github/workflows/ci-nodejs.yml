@@ -53,7 +53,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -118,10 +118,10 @@ jobs:
 
       # https://github.com/codecov/codecov-action
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }} # zizmor: ignore[secrets-outside-env]
           slug: embrace-io/embrace-web-sdk
 
   test-sdk-multiple-browsers:
@@ -135,7 +135,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -209,7 +209,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Restore previous test results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -336,7 +336,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -395,7 +395,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -519,14 +519,6 @@ jobs:
         run: |
           npm ci
 
-      - name: Validate current commit (last commit) with commitlint
-        if: github.event_name == 'push'
-        run: npm run commitlint -- --last --verbose
-
-      - name: Validate PR commits with commitlint
-        if: github.event_name == 'pull_request'
-        run: npm run commitlint -- --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
-
       - name: Validate PR title with commitlint
         if: github.event_name == 'pull_request'
         run: |
@@ -540,7 +532,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous lint results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.LINT_STATUS_FILE }}
@@ -590,7 +582,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous type check results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TYPE_CHECK_STATUS_FILE }}
@@ -642,7 +634,7 @@ jobs:
       VALIDATE_STATUS_FILE: validate.success.txt
     steps:
       - name: Restore previous validate results
-        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.VALIDATE_STATUS_FILE }}

@@ -1721,14 +1721,14 @@ describe('initSDK', () => {
           await fetch('something');
           clock.tick(1000);
 
-          const headers = (fetchStub.lastCall.args[1] as RequestInit).headers;
+          const headers = (fetchStub.lastCall.args[1] as RequestInit)
+            .headers as Headers;
           if (test.expectInjection) {
-            expect(headers).to.have.property('traceparent');
-            injectedTraceparentHeader = (headers as Record<string, string>)[
-              'traceparent'
-            ];
+            expect(headers.get('traceparent')).to.not.be.null;
+            injectedTraceparentHeader =
+              headers.get('traceparent') ?? "this shouldn't be empty";
           } else {
-            expect(headers).not.to.have.property('traceparent');
+            expect(headers.get('traceparent')).to.be.null;
           }
         } else {
           const req = new XMLHttpRequest();
@@ -1757,7 +1757,7 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.212.0',
+            version: '0.213.0',
           },
         );
         expect(exportedSpans).to.have.lengthOf(1);
