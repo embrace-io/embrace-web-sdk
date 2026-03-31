@@ -179,6 +179,12 @@ for (let i = 0; i < count; i++) {
     return;
   }
 
+  if (req.method === 'GET' && pathname.startsWith('/script/')) {
+    res.writeHead(200, { 'Content-Type': 'application/javascript' });
+    res.end(`console.log('script loaded', '${JSON.stringify(pathname)}')`);
+    return;
+  }
+
   if (pathname === '/embrace-web-sdk.js') {
     serveFile(res, join(sdkDistDir, 'embrace-web-sdk.js'));
     return;
