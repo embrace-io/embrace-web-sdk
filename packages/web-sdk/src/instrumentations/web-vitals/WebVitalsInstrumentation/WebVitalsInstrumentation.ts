@@ -7,6 +7,7 @@ import type {
   LCPAttribution,
   Metric,
   MetricWithAttribution,
+  TTFBAttribution,
 } from 'web-vitals/attribution';
 import type { PageManager } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
@@ -32,6 +33,10 @@ import type {
   WebVitalsInstrumentationArgs,
 } from './types.ts';
 
+type NavigationTimingWithEarlyHints = PerformanceNavigationTiming & {
+  finalResponseHeadersStart?: number;
+};
+
 type AttributedPage = {
   fullURL: string;
   path?: string;
@@ -51,7 +56,7 @@ const webVitalAttributionToReport = (
   }[] = [];
 
   if (name === 'CLS') {
-    // https://www.npmjs.com/package/web-vitals#CLSAttribution
+    // https://github.com/GoogleChrome/web-vitals#CLSAttribution
     const attribution = metric.attribution as CLSAttribution;
     toReport.push(
       ...[
@@ -66,7 +71,7 @@ const webVitalAttributionToReport = (
       ],
     );
   } else if (name === 'INP') {
-    // https://www.npmjs.com/package/web-vitals#inpattribution
+    // https://github.com/GoogleChrome/web-vitals#inpattribution
     const attribution = metric.attribution as INPAttribution;
     toReport.push(
       ...[
@@ -151,7 +156,7 @@ const webVitalAttributionToReport = (
       diag.error('error building loaf scripts for INP', e);
     }
   } else if (name === 'LCP') {
-    // https://www.npmjs.com/package/web-vitals#lcpattribution
+    // https://github.com/GoogleChrome/web-vitals#lcpattribution
     const attribution = metric.attribution as LCPAttribution;
     toReport.push(
       ...[
@@ -166,6 +171,63 @@ const webVitalAttributionToReport = (
         { key: 'elementRenderDelay', value: attribution.elementRenderDelay },
       ],
     );
+  } else if (name === 'TTFB') {
+    // https://github.com/GoogleChrome/web-vitals#ttfbattribution
+    const attribution = metric.attribution as TTFBAttribution;
+    const entry = attribution.navigationEntry as
+      | NavigationTimingWithEarlyHints
+      | undefined;
+    if (entry) {
+      try {
+        const redirect = Math.max(0, entry.redirectEnd - entry.redirectStart);
+        const domainLookup = Math.max(
+          0,
+          entry.domainLookupEnd - entry.domainLookupStart,
+        );
+        const tcpConnection = Math.max(
+          0,
+          entry.secureConnectionStart > 0
+            ? entry.secureConnectionStart - entry.connectStart
+            : entry.connectEnd - entry.connectStart,
+        );
+        const tlsNegotiation = Math.max(
+          0,
+          entry.secureConnectionStart > 0
+            ? entry.connectEnd - entry.secureConnectionStart
+            : 0,
+        );
+        const effectiveResponseStart = Math.max(
+          entry.finalResponseHeadersStart ?? 0,
+          entry.responseStart,
+        );
+        const serverResponse = Math.max(
+          0,
+          effectiveResponseStart - entry.requestStart,
+        );
+        const unattributed = Math.max(
+          0,
+          entry.responseEnd -
+            entry.startTime -
+            redirect -
+            domainLookup -
+            tcpConnection -
+            tlsNegotiation -
+            serverResponse,
+        );
+        toReport.push(
+          { key: 'redirect', value: Math.round(redirect) },
+          { key: 'domainLookup', value: Math.round(domainLookup) },
+          { key: 'tcpConnection', value: Math.round(tcpConnection) },
+          { key: 'tlsNegotiation', value: Math.round(tlsNegotiation) },
+          { key: 'serverResponse', value: Math.round(serverResponse) },
+          { key: 'unattributed', value: Math.round(unattributed) },
+        );
+      } catch (e) {
+        diag.error('error computing TTFB timing breakdown', e);
+      }
+    } else {
+      diag.debug('TTFB navigationEntry unavailable, skipping timing breakdown');
+    }
   }
 
   toReport.forEach((report) => {
