@@ -44,6 +44,7 @@ import type {
 } from './types.ts';
 import {
   addSpanPerformancePaintEvents,
+  buildHeadBlockingMap,
   getPerformanceNavigationEntries,
 } from './utils.ts';
 
@@ -116,11 +117,14 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * Adds spans for all resources
    * @param rootSpan
    */
-  private _addResourcesSpans(rootSpan: Span): void {
+  private _addResourcesSpans(
+    rootSpan: Span,
+    headBlockingMap: Map<string, 'blocking' | 'non-blocking'>,
+  ): void {
     const resources: EmbracePerformanceResourceTiming[] =
       performance.getEntriesByType('resource');
     resources.forEach((resource) => {
-      this._initResourceSpan(resource, rootSpan);
+      this._initResourceSpan(resource, rootSpan, headBlockingMap);
     });
   }
 
@@ -178,7 +182,18 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       rootSpan.setAttribute(ATTR_URL_FULL, location.href);
       rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
 
-      this._addResourcesSpans(rootSpan);
+      let headBlockingMap = new Map<string, 'blocking' | 'non-blocking'>();
+      if (!('renderBlockingStatus' in PerformanceResourceTiming.prototype)) {
+        try {
+          headBlockingMap = buildHeadBlockingMap();
+        } catch (e) {
+          this._diag.error(
+            'error building head blocking map, renderBlockingStatus will be missing',
+            e,
+          );
+        }
+      }
+      this._addResourcesSpans(rootSpan, headBlockingMap);
 
       if (!this.getConfig().ignoreNetworkEvents) {
         addSpanNetworkEvent(
@@ -272,6 +287,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _initResourceSpan(
     resource: EmbracePerformanceResourceTiming,
     parentSpan: Span,
+    headBlockingMap: Map<string, 'blocking' | 'non-blocking'>,
   ) {
     const span = this._startSpan(
       AttributeNames.RESOURCE_FETCH,
@@ -301,10 +317,17 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       );
     }
 
+    const headBlockingStatus = headBlockingMap.get(resource.name);
+
     if (resource.renderBlockingStatus) {
       span.setAttribute(
         ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
         resource.renderBlockingStatus,
+      );
+    } else if (headBlockingStatus !== undefined) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
+        headBlockingStatus,
       );
     }
 

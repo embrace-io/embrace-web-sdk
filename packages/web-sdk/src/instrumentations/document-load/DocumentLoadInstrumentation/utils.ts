@@ -39,3 +39,48 @@ export const addSpanPerformancePaintEvents = (span: Span) => {
     }
   });
 };
+
+// Cross-browser fallback for browsers lacking PerformanceResourceTiming.renderBlockingStatus
+// - <script src> without async and without defer = "blocking"
+// - <link rel="stylesheet"> = "blocking"
+// - Any element with blocking="render" = "blocking"
+// - Otherwise = "non-blocking"
+export const buildHeadBlockingMap = (): Map<
+  string,
+  'blocking' | 'non-blocking'
+> => {
+  const map = new Map<string, 'blocking' | 'non-blocking'>();
+  const elements = document.head.querySelectorAll<
+    HTMLScriptElement | HTMLLinkElement
+  >('script[src], link[rel="stylesheet"][href], [blocking="render"][href]');
+
+  for (const el of elements) {
+    const url =
+      el instanceof HTMLScriptElement ? el.src : (el as HTMLLinkElement).href;
+    if (!url) {
+      continue;
+    }
+
+    let status: 'blocking' | 'non-blocking' = 'non-blocking';
+    if (el.getAttribute('blocking') === 'render') {
+      status = 'blocking';
+    } else if (
+      el instanceof HTMLScriptElement &&
+      !el.async &&
+      !el.defer &&
+      el.type !== 'module'
+    ) {
+      status = 'blocking';
+    } else if (
+      el instanceof HTMLLinkElement &&
+      el.rel === 'stylesheet' &&
+      el.media !== 'print'
+    ) {
+      status = 'blocking';
+    }
+
+    map.set(url, status);
+  }
+
+  return map;
+};

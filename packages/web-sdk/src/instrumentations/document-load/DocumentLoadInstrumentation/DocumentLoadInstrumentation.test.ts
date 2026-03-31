@@ -25,6 +25,7 @@ import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
+import { buildHeadBlockingMap } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor(exporter);
@@ -186,6 +187,35 @@ const ensureNetworkEventsExists = (
   }
 };
 
+const addedHeadElements: Element[] = [];
+
+const addHeadScript = (
+  src: string,
+  opts: { async?: boolean; defer?: boolean } = {},
+) => {
+  const el = document.createElement('script');
+  el.src = src;
+  // Dynamically created scripts default to async=true, so explicitly set false for blocking
+  el.async = opts.async ?? false;
+  if (opts.defer) {
+    el.defer = true;
+  }
+  document.head.appendChild(el);
+  addedHeadElements.push(el);
+  return el;
+};
+
+const addHeadLink = (href: string, attrs: Record<string, string>) => {
+  const el = document.createElement('link');
+  el.href = href;
+  for (const [key, value] of Object.entries(attrs)) {
+    el.setAttribute(key, value);
+  }
+  document.head.appendChild(el);
+  addedHeadElements.push(el);
+  return el;
+};
+
 describe('DocumentLoad Instrumentation', () => {
   let plugin: DocumentLoadInstrumentation;
   let contextManager: StackContextManager;
@@ -214,6 +244,10 @@ describe('DocumentLoad Instrumentation', () => {
       value: 'complete',
     });
     plugin.disable();
+    for (const el of addedHeadElements) {
+      el.remove();
+    }
+    addedHeadElements.length = 0;
   });
 
   before(() => {
@@ -1002,6 +1036,203 @@ describe('DocumentLoad Instrumentation', () => {
         );
         done();
       });
+    });
+  });
+  describe('head-blocking resource detection', () => {
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      PerformanceResourceTiming.prototype,
+      'renderBlockingStatus',
+    );
+
+    beforeEach(() => {
+      // Remove native renderBlockingStatus so the DOM fallback path is exercised
+      if (originalDescriptor) {
+        // @ts-expect-error deleting from prototype for test purposes
+        delete PerformanceResourceTiming.prototype.renderBlockingStatus;
+      }
+    });
+
+    afterEach(() => {
+      if (spyEntries) {
+        spyEntries.restore();
+      }
+      if (originalDescriptor) {
+        Object.defineProperty(
+          PerformanceResourceTiming.prototype,
+          'renderBlockingStatus',
+          originalDescriptor,
+        );
+      }
+    });
+
+    it('should set render_blocking_status fallback from head script without async/defer', (done) => {
+      const scriptEl = addHeadScript(
+        'http://localhost:8090/embrace-web-sdk.js',
+      );
+      const resolvedUrl = scriptEl.src;
+
+      const resourcesWithoutNativeBlocking = [
+        { ...resources[0], name: resolvedUrl },
+      ];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesWithoutNativeBlocking);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+          'blocking',
+        );
+        done();
+      });
+    });
+
+    it('should not override native renderBlockingStatus with head fallback', (done) => {
+      addHeadScript('http://localhost:8090/embrace-web-sdk.js');
+
+      const resourcesWithNativeStatus = [
+        {
+          ...resources[0],
+          renderBlockingStatus: 'non-blocking',
+        },
+      ];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesWithNativeStatus);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+          'non-blocking',
+        );
+        done();
+      });
+    });
+
+    it('should set render_blocking_status to non-blocking for async scripts', (done) => {
+      const scriptEl = addHeadScript(
+        'http://localhost:8090/embrace-web-sdk.js',
+        { async: true },
+      );
+      const resolvedUrl = scriptEl.src;
+
+      const resourcesForAsync = [{ ...resources[0], name: resolvedUrl }];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resourcesForAsync);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+          'non-blocking',
+        );
+        done();
+      });
+    });
+
+    it('should set render_blocking_status fallback for stylesheet links', (done) => {
+      const linkEl = addHeadLink('http://localhost:8090/style.css', {
+        rel: 'stylesheet',
+      });
+      const resolvedUrl = linkEl.href;
+
+      const stylesheetResource = [
+        {
+          ...resources[0],
+          name: resolvedUrl,
+          initiatorType: 'link',
+        },
+      ];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(stylesheetResource);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+          'blocking',
+        );
+        done();
+      });
+    });
+
+    it('should not set render_blocking_status for resources not in head', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(resources);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.request.render_blocking_status'],
+        );
+        done();
+      });
+    });
+  });
+
+  describe('buildHeadBlockingMap', () => {
+    it('should detect blocking script (no async/defer)', () => {
+      const el = addHeadScript('http://example.com/app.js');
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.get(el.src), 'blocking');
+    });
+
+    it('should detect async script as non-blocking', () => {
+      const el = addHeadScript('http://example.com/app.js', { async: true });
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.get(el.src), 'non-blocking');
+    });
+
+    it('should detect deferred script as non-blocking', () => {
+      const el = addHeadScript('http://example.com/app.js', { defer: true });
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.get(el.src), 'non-blocking');
+    });
+
+    it('should detect stylesheet as blocking', () => {
+      const el = addHeadLink('http://example.com/style.css', {
+        rel: 'stylesheet',
+      });
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.get(el.href), 'blocking');
+    });
+
+    it('should detect blocking="render" as blocking', () => {
+      const el = addHeadLink('http://example.com/font.woff2', {
+        rel: 'preload',
+        blocking: 'render',
+      });
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.get(el.href), 'blocking');
+    });
+
+    it('should not include inline scripts (no src)', () => {
+      const el = document.createElement('script');
+      document.head.appendChild(el);
+      addedHeadElements.push(el);
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.size, 0);
+    });
+
+    it('should return empty map when no matching elements in head', () => {
+      const map = buildHeadBlockingMap();
+      assert.strictEqual(map.size, 0);
     });
   });
 });
