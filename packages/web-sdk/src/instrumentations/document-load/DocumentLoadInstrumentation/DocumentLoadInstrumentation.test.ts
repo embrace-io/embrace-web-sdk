@@ -859,6 +859,457 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    function createTimingResource(overrides: Record<string, number | string>) {
+      return [
+        {
+          ...resources[0],
+          startTime: 0,
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          connectEnd: 0,
+          secureConnectionStart: 0,
+          requestStart: 10,
+          responseStart: 20,
+          responseEnd: 30,
+          fetchStart: 0,
+          transferSize: 1000,
+          encodedBodySize: 900,
+          decodedBodySize: 900,
+          ...overrides,
+        },
+      ];
+    }
+
+    it('should add timing duration attributes for resources with valid timing data', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 5,
+          domainLookupStart: 10,
+          domainLookupEnd: 25,
+          connectStart: 25,
+          connectEnd: 45,
+          secureConnectionStart: 35,
+          requestStart: 45,
+          responseStart: 80,
+          responseEnd: 120,
+          fetchStart: 5,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // redirect: 0 - 0 = 0
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+          0,
+        );
+        // dns: 25 - 10 = 15
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.dns_duration'],
+          15,
+        );
+        // tcp: 35 (secureConnectionStart) - 25 (connectStart) = 10
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+          10,
+        );
+        // tls: 45 (connectEnd) - 35 (secureConnectionStart) = 10
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.tls_duration'],
+          10,
+        );
+        // server: 80 (responseStart) - 45 (requestStart) = 35
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+          35,
+        );
+        // other: 120 - 5 - 0 - 15 - 10 - 10 - 35 = 45
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          45,
+        );
+        done();
+      });
+    });
+
+    it('should calculate tcp duration without tls when secureConnectionStart is 0', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 5,
+          redirectStart: 5,
+          redirectEnd: 10,
+          domainLookupStart: 10,
+          domainLookupEnd: 20,
+          connectStart: 20,
+          connectEnd: 40,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 60,
+          responseEnd: 100,
+          fetchStart: 5,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // redirect: 10 - 5 = 5
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+          5,
+        );
+        // dns: 20 - 10 = 10
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.dns_duration'],
+          10,
+        );
+        // tcp: 40 (connectEnd) - 20 (connectStart) = 20 (no TLS)
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+          20,
+        );
+        // tls: 0 (no secureConnectionStart)
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.tls_duration'],
+          0,
+        );
+        // server: 60 - 40 = 20
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+          20,
+        );
+        // other: 100 - 5 - 5 - 10 - 20 - 0 - 20 = 40
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          40,
+        );
+        done();
+      });
+    });
+
+    it('should use finalResponseHeadersStart for server duration when greater than responseStart', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 0,
+          fetchStart: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          connectEnd: 0,
+          secureConnectionStart: 0,
+          requestStart: 50,
+          responseStart: 60,
+          finalResponseHeadersStart: 80,
+          responseEnd: 100,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // server: max(80, 60) - 50 = 30
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+          30,
+        );
+        // other: 100 - 0 - 0 - 0 - 0 - 0 - 30 = 70
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          70,
+        );
+        done();
+      });
+    });
+
+    it('should fall back to responseStart when finalResponseHeadersStart is less than responseStart', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 0,
+          fetchStart: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          connectEnd: 0,
+          secureConnectionStart: 0,
+          requestStart: 50,
+          responseStart: 80,
+          finalResponseHeadersStart: 60,
+          responseEnd: 100,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // server: max(60, 80) - 50 = 30
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+          30,
+        );
+        // other: 100 - 0 - 0 - 0 - 0 - 0 - 30 = 70
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          70,
+        );
+        done();
+      });
+    });
+
+    it('should round fractional timing values to nearest millisecond', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 5.123,
+          domainLookupStart: 10.2,
+          domainLookupEnd: 10.6,
+          connectStart: 10.6,
+          connectEnd: 11.1,
+          secureConnectionStart: 0,
+          requestStart: 11.1,
+          responseStart: 11.8,
+          responseEnd: 12.3,
+          fetchStart: 5.123,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // dns: 10.6 - 10.2 = 0.4 -> rounds to 0
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.dns_duration'],
+          0,
+        );
+        // tcp: 11.1 - 10.6 = 0.5 -> rounds to 1 (banker's rounding: Math.round(0.5) = 1)
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+          1,
+        );
+        // server: 11.8 - 11.1 = 0.7 -> rounds to 1
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+          1,
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+          0,
+        );
+        // other: 12.3 - 5.123 - 0 - 0.4 - 0.5 - 0 - 0.7 = 5.577 -> rounds to 6
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          6,
+        );
+        done();
+      });
+    });
+
+    it('should clamp other duration to 0 when sub-parts exceed total duration', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      // startTime deliberately close to responseEnd so sub-parts exceed total
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          startTime: 95,
+          domainLookupStart: 10,
+          domainLookupEnd: 30,
+          connectStart: 30,
+          connectEnd: 50,
+          secureConnectionStart: 0,
+          requestStart: 50,
+          responseStart: 80,
+          responseEnd: 100,
+          fetchStart: 95,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        // total: 100 - 95 = 5, sub-parts: 0 + 20 + 20 + 0 + 30 = 70 >> 5
+        assert.strictEqual(
+          resourceSpan.attributes['http.connection.other_duration'],
+          0,
+        );
+        done();
+      });
+    });
+
+    it('should not add timing duration attributes when requestStart is 0', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns(
+        createTimingResource({
+          requestStart: 0,
+          responseStart: 20,
+          responseEnd: 50,
+        }),
+      );
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.dns_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tls_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.other_duration'],
+        );
+        done();
+      });
+    });
+
+    it('should not add timing duration attributes for CORS-opaque resources', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 111.935,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.dns_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tls_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.other_duration'],
+        );
+        done();
+      });
+    });
+
+    it('should not add timing duration attributes for incomplete resources', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 20.985,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.dns_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tls_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.other_duration'],
+        );
+        done();
+      });
+    });
+
+    it('should not add timing duration attributes for prevented resources', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+          fetchStart: 0,
+          responseEnd: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.dns_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tcp_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.tls_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.server_response_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.redirect_duration'],
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.connection.other_duration'],
+        );
+        done();
+      });
+    });
+
     it('should not add diagnostic attributes for normal resources', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);

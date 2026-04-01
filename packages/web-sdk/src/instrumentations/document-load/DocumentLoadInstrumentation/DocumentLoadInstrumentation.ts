@@ -55,6 +55,7 @@ import {
 type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
   deliveryType?: 'cache' | '';
   renderBlockingStatus?: 'blocking' | 'non-blocking';
+  finalResponseHeadersStart?: number;
 };
 
 // PerformanceResourceTiming attribute names
@@ -63,6 +64,16 @@ const ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE = 'http.response.decoded_body_size';
 const ATTR_HTTP_REQUEST_INITIATOR_TYPE = 'http.request.initiator_type';
 const ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS =
   'http.request.render_blocking_status';
+
+// Timing duration attribute names (milliseconds, derived from PerformanceResourceTiming)
+const ATTR_HTTP_CONNECTION_REDIRECT_DURATION =
+  'http.connection.redirect_duration';
+const ATTR_HTTP_CONNECTION_DNS_DURATION = 'http.connection.dns_duration';
+const ATTR_HTTP_CONNECTION_TCP_DURATION = 'http.connection.tcp_duration';
+const ATTR_HTTP_CONNECTION_TLS_DURATION = 'http.connection.tls_duration';
+const ATTR_HTTP_CONNECTION_SERVER_RESPONSE_DURATION =
+  'http.connection.server_response_duration';
+const ATTR_HTTP_CONNECTION_OTHER_DURATION = 'http.connection.other_duration';
 
 // Diagnostic attribute names
 const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-restricted resource (opaque response)
@@ -341,6 +352,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
 
     this._addResourceDiagnosticAttributes(span, resource);
+    this._addResourceTimingDurations(span, resource);
 
     this._addCustomAttributesOnResourceSpan(
       span,
@@ -536,6 +548,69 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
     if (this._isCacheValidated(resource)) {
       span.setAttribute(ATTR_HTTP_RESPONSE_CACHE_REVALIDATED, true);
+    }
+  }
+
+  private _addResourceTimingDurations(
+    span: Span,
+    resource: EmbracePerformanceResourceTiming,
+  ): void {
+    if (
+      resource.requestStart === 0 ||
+      this._isCorsRestricted(resource) ||
+      this._isFetchIncomplete(resource) ||
+      this._isFetchPrevented(resource)
+    ) {
+      return;
+    }
+
+    const redirect = Math.max(0, resource.redirectEnd - resource.redirectStart);
+    const dns = Math.max(
+      0,
+      resource.domainLookupEnd - resource.domainLookupStart,
+    );
+    const tcp = Math.max(
+      0,
+      resource.secureConnectionStart > 0
+        ? resource.secureConnectionStart - resource.connectStart
+        : resource.connectEnd - resource.connectStart,
+    );
+    const tls = Math.max(
+      0,
+      resource.secureConnectionStart > 0
+        ? resource.connectEnd - resource.secureConnectionStart
+        : 0,
+    );
+    const effectiveResponseStart = Math.max(
+      resource.finalResponseHeadersStart ?? 0,
+      resource.responseStart,
+    );
+    const serverResponse = Math.max(
+      0,
+      effectiveResponseStart - resource.requestStart,
+    );
+    const other = Math.max(
+      0,
+      resource.responseEnd -
+        resource.startTime -
+        redirect -
+        dns -
+        tcp -
+        tls -
+        serverResponse,
+    );
+
+    const durations: [string, number][] = [
+      [ATTR_HTTP_CONNECTION_REDIRECT_DURATION, redirect],
+      [ATTR_HTTP_CONNECTION_DNS_DURATION, dns],
+      [ATTR_HTTP_CONNECTION_TCP_DURATION, tcp],
+      [ATTR_HTTP_CONNECTION_TLS_DURATION, tls],
+      [ATTR_HTTP_CONNECTION_SERVER_RESPONSE_DURATION, serverResponse],
+      [ATTR_HTTP_CONNECTION_OTHER_DURATION, other],
+    ];
+
+    for (const [attr, value] of durations) {
+      span.setAttribute(attr, Math.round(value));
     }
   }
 
