@@ -11,7 +11,7 @@ const getLastRoute = (
   matchedComponent: RoutesFunctionalComponentReturn,
   lastRoute: Route | null,
 ): Route | null => {
-  if (!matchedComponent.props.match || !matchedComponent.props.match.route) {
+  if (!matchedComponent.props.match?.route) {
     return null;
   }
 
