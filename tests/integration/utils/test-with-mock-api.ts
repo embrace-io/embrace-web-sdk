@@ -261,7 +261,10 @@ const expect = testWithMockApi.expect.extend({
     for (const [index, receivedAttr] of sortedReceived.entries()) {
       const expectedAttr = sortedExpected[index];
 
-      if (IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key)) {
+      if (
+        IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key) ||
+        IGNORED_ATTRIBUTES_LIST.includes(expectedAttr.key)
+      ) {
         if (receivedAttr.key !== expectedAttr.key) {
           return {
             pass: false,
