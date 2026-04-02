@@ -259,12 +259,18 @@ const expect = testWithMockApi.expect.extend({
 
     // Compare each attribute
     for (const [index, receivedAttr] of sortedReceived.entries()) {
+      const expectedAttr = sortedExpected[index];
+
       if (IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key)) {
-        // If the attribute is in the ignored list, skip it
+        if (receivedAttr.key !== expectedAttr.key) {
+          return {
+            pass: false,
+            message: () =>
+              `${extraMessage}Attribute key mismatch at index ${index.toString()}: expected key ${chalk.green(expectedAttr.key)}, but got ${chalk.red(receivedAttr.key)}`,
+          };
+        }
         continue;
       }
-
-      const expectedAttr = sortedExpected[index];
 
       const receivedValue = getAttributeValue(receivedAttr);
       const expectedValue = getAttributeValue(expectedAttr);
