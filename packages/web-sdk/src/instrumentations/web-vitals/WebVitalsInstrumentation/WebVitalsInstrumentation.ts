@@ -33,10 +33,6 @@ import type {
   WebVitalsInstrumentationArgs,
 } from './types.ts';
 
-type NavigationTimingWithEarlyHints = PerformanceNavigationTiming & {
-  finalResponseHeadersStart?: number;
-};
-
 type AttributedPage = {
   fullURL: string;
   path?: string;
@@ -175,7 +171,7 @@ const webVitalAttributionToReport = (
     // https://github.com/GoogleChrome/web-vitals#ttfbattribution
     const attribution = metric.attribution as TTFBAttribution;
     const entry = attribution.navigationEntry as
-      | NavigationTimingWithEarlyHints
+      | PerformanceNavigationTiming
       | undefined;
     if (entry) {
       try {
@@ -197,6 +193,8 @@ const webVitalAttributionToReport = (
             : 0,
         );
         const effectiveResponseStart = Math.max(
+          // @ts-expect-error 103 Early hints are not supported in all browsers
+          // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/finalResponseHeadersStart
           entry.finalResponseHeadersStart ?? 0,
           entry.responseStart,
         );
