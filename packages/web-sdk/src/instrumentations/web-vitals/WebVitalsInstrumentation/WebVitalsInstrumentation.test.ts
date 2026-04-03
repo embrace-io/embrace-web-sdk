@@ -978,6 +978,67 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
+  it('should clamp negative TTFB sub-part durations to 0', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 50,
+      rating: 'good',
+      delta: 50,
+      id: 'm8',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 10,
+          redirectEnd: 5,
+          domainLookupStart: 20,
+          domainLookupEnd: 15,
+          connectStart: 30,
+          connectEnd: 25,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 35,
+          responseEnd: 50,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // redirect: 5 - 10 = -5 -> clamped to 0
+    // dns: 15 - 20 = -5 -> clamped to 0
+    // tcp: 25 - 30 = -5 -> clamped to 0
+    // tls: 0 (no secure connection)
+    // server: 35 - 40 = -5 -> clamped to 0
+    // other: 50 - 0 - 0 - 0 - 0 - 0 - 0 = 50
+    expect(ttfbEvent.attributes).to.deep.include({
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 0,
+      'emb.web_vital.attribution.unattributed': 50,
+    });
+  });
+
   it('should compute TTFB other correctly with non-zero startTime', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
