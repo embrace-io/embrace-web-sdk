@@ -40,6 +40,8 @@ type AttributedPage = {
   label?: string;
 };
 
+const clampToZero = (value: number): number => Math.max(0, value);
+
 const webVitalAttributionToReport = (
   name: Metric['name'],
   metric: MetricWithAttribution,
@@ -175,19 +177,16 @@ const webVitalAttributionToReport = (
       | undefined;
     if (entry) {
       try {
-        const redirect = Math.max(0, entry.redirectEnd - entry.redirectStart);
-        const domainLookup = Math.max(
-          0,
+        const redirect = clampToZero(entry.redirectEnd - entry.redirectStart);
+        const domainLookup = clampToZero(
           entry.domainLookupEnd - entry.domainLookupStart,
         );
-        const tcpConnection = Math.max(
-          0,
+        const tcpConnection = clampToZero(
           entry.secureConnectionStart > 0
             ? entry.secureConnectionStart - entry.connectStart
             : entry.connectEnd - entry.connectStart,
         );
-        const tlsNegotiation = Math.max(
-          0,
+        const tlsNegotiation = clampToZero(
           entry.secureConnectionStart > 0
             ? entry.connectEnd - entry.secureConnectionStart
             : 0,
@@ -198,12 +197,10 @@ const webVitalAttributionToReport = (
           entry.finalResponseHeadersStart ?? 0,
           entry.responseStart,
         );
-        const serverResponse = Math.max(
-          0,
+        const serverResponse = clampToZero(
           effectiveResponseStart - entry.requestStart,
         );
-        const unattributed = Math.max(
-          0,
+        const unattributed = clampToZero(
           entry.responseEnd -
             entry.startTime -
             redirect -
