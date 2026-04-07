@@ -964,17 +964,18 @@ describe('WebVitalsInstrumentation', () => {
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
-    // dns: 5.6 - 5.2 = 0.4 -> rounds to 0
-    // tcp: 6.1 - 5.6 = 0.5 -> rounds to 1
-    // server: 6.8 - 6.1 = 0.7 -> rounds to 1
-    // other: 7.3 - 5.123 - 0 - 0.4 - 0.5 - 0 - 0.7 = 0.577 -> rounds to 1
+    // total: round(7.3 - 5.123) = round(2.177) = 2
+    // dns: round(5.6 - 5.2) = round(0.4) = 0
+    // tcp: round(6.1 - 5.6) = round(0.5) = 1
+    // server: round(6.8 - 6.1) = round(0.7) = 1
+    // unattributed: 2 - 0 - 0 - 1 - 0 - 1 = 0
     expect(ttfbEvent.attributes).to.deep.include({
       'emb.web_vital.attribution.redirect': 0,
       'emb.web_vital.attribution.domainLookup': 0,
       'emb.web_vital.attribution.tcpConnection': 1,
       'emb.web_vital.attribution.tlsNegotiation': 0,
       'emb.web_vital.attribution.serverResponse': 1,
-      'emb.web_vital.attribution.unattributed': 1,
+      'emb.web_vital.attribution.unattributed': 0,
     });
   });
 
@@ -1037,6 +1038,83 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 0,
       'emb.web_vital.attribution.unattributed': 50,
     });
+  });
+
+  it('should ensure TTFB sub-parts sum to rounded total', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    // Fractional values chosen so independent rounding would overshoot the total
+    metricReportFunc({
+      name: 'TTFB',
+      value: 10,
+      rating: 'good',
+      delta: 10,
+      id: 'm-sum',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 1.1,
+          domainLookupEnd: 1.6,
+          connectStart: 1.6,
+          connectEnd: 3.8,
+          secureConnectionStart: 2.1,
+          requestStart: 3.8,
+          responseStart: 6.3,
+          responseEnd: 8.7,
+          startTime: 0.2,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    const attrs = ttfbEvent.attributes as Record<string, number>;
+    const redirect = attrs['emb.web_vital.attribution.redirect'];
+    const domainLookup = attrs['emb.web_vital.attribution.domainLookup'];
+    const tcpConnection = attrs['emb.web_vital.attribution.tcpConnection'];
+    const tlsNegotiation = attrs['emb.web_vital.attribution.tlsNegotiation'];
+    const serverResponse = attrs['emb.web_vital.attribution.serverResponse'];
+    const unattributed = attrs['emb.web_vital.attribution.unattributed'];
+
+    // total: round(8.7 - 0.2) = round(8.5) = 9
+    // dns: round(1.6 - 1.1) = round(0.5) = 1
+    // tcp: round(2.1 - 1.6) = round(0.5) = 1
+    // tls: round(3.8 - 2.1) = round(1.7) = 2
+    // server: round(6.3 - 3.8) = round(2.5) = 3
+    // unattributed: 9 - 0 - 1 - 1 - 2 - 3 = 2
+    expect(redirect).to.equal(0);
+    expect(domainLookup).to.equal(1);
+    expect(tcpConnection).to.equal(1);
+    expect(tlsNegotiation).to.equal(2);
+    expect(serverResponse).to.equal(3);
+    expect(unattributed).to.equal(2);
+
+    const sum =
+      redirect +
+      domainLookup +
+      tcpConnection +
+      tlsNegotiation +
+      serverResponse +
+      unattributed;
+    expect(sum).to.equal(Math.round(8.7 - 0.2));
   });
 
   it('should compute TTFB other correctly with non-zero startTime', () => {

@@ -177,19 +177,25 @@ const webVitalAttributionToReport = (
       | undefined;
     if (entry) {
       try {
-        const redirect = clampToZero(entry.redirectEnd - entry.redirectStart);
-        const domainLookup = clampToZero(
-          entry.domainLookupEnd - entry.domainLookupStart,
+        const redirect = Math.round(
+          clampToZero(entry.redirectEnd - entry.redirectStart),
         );
-        const tcpConnection = clampToZero(
-          entry.secureConnectionStart > 0
-            ? entry.secureConnectionStart - entry.connectStart
-            : entry.connectEnd - entry.connectStart,
+        const domainLookup = Math.round(
+          clampToZero(entry.domainLookupEnd - entry.domainLookupStart),
         );
-        const tlsNegotiation = clampToZero(
-          entry.secureConnectionStart > 0
-            ? entry.connectEnd - entry.secureConnectionStart
-            : 0,
+        const tcpConnection = Math.round(
+          clampToZero(
+            entry.secureConnectionStart > 0
+              ? entry.secureConnectionStart - entry.connectStart
+              : entry.connectEnd - entry.connectStart,
+          ),
+        );
+        const tlsNegotiation = Math.round(
+          clampToZero(
+            entry.secureConnectionStart > 0
+              ? entry.connectEnd - entry.secureConnectionStart
+              : 0,
+          ),
         );
         const effectiveResponseStart = Math.max(
           // @ts-expect-error 103 Early hints are not supported in all browsers
@@ -197,12 +203,12 @@ const webVitalAttributionToReport = (
           entry.finalResponseHeadersStart ?? 0,
           entry.responseStart,
         );
-        const serverResponse = clampToZero(
-          effectiveResponseStart - entry.requestStart,
+        const serverResponse = Math.round(
+          clampToZero(effectiveResponseStart - entry.requestStart),
         );
+        const total = Math.round(entry.responseEnd - entry.startTime);
         const unattributed = clampToZero(
-          entry.responseEnd -
-            entry.startTime -
+          total -
             redirect -
             domainLookup -
             tcpConnection -
@@ -210,12 +216,12 @@ const webVitalAttributionToReport = (
             serverResponse,
         );
         toReport.push(
-          { key: 'redirect', value: Math.round(redirect) },
-          { key: 'domainLookup', value: Math.round(domainLookup) },
-          { key: 'tcpConnection', value: Math.round(tcpConnection) },
-          { key: 'tlsNegotiation', value: Math.round(tlsNegotiation) },
-          { key: 'serverResponse', value: Math.round(serverResponse) },
-          { key: 'unattributed', value: Math.round(unattributed) },
+          { key: 'redirect', value: redirect },
+          { key: 'domainLookup', value: domainLookup },
+          { key: 'tcpConnection', value: tcpConnection },
+          { key: 'tlsNegotiation', value: tlsNegotiation },
+          { key: 'serverResponse', value: serverResponse },
+          { key: 'unattributed', value: unattributed },
         );
       } catch (e) {
         diag.error('error computing TTFB timing breakdown', e);
