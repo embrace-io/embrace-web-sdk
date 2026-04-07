@@ -24,16 +24,9 @@ export type SessionEndedListener = () => void;
 
 // Tab tracking types
 
-// Tab activity stored in localStorage
-export type TabActivity = {
-  tabId: string;
-  lastActivityMs: number;
-};
-
 // Tab identity stored in session storage
 export type Tab = {
   tabId: string;
-  sourceTabId?: string;
 };
 
 // Navigation source types (determined fresh each session)

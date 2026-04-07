@@ -13,7 +13,6 @@ export const KEY_EMB_EXCEPTION_CAUSE = 'emb.exception_cause';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
 export const KEY_EMB_TAB_ID = 'emb.tab_id';
-export const KEY_EMB_SOURCE_TAB_ID = 'emb.source_tab_id';
 export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
 export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
 export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =

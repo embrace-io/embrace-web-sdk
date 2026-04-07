@@ -37,14 +37,12 @@ const App = () => {
 
   // Tab tracking data
   const [tabId, setTabId] = useState<string | null>(null);
-  const [sourceTabId, setSourceTabId] = useState<string | null>(null);
   const [navigationSource, setNavigationSource] = useState<string | null>(null);
   const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
   const updateCrossTabData = useCallback(() => {
     const attrs = getSessionAttributes();
     setTabId(attrs?.['emb.tab_id'] ?? null);
-    setSourceTabId(attrs?.['emb.source_tab_id'] ?? null);
     setNavigationSource(attrs?.['emb.navigation_source'] ?? null);
     setReferrerUrl(attrs?.['emb.referrer_url'] ?? null);
   }, []);
@@ -286,7 +284,6 @@ const App = () => {
         <dl className="info-list info-list-horizontal">
           <InfoItem label="Session ID" value={currentSession} truncate />
           <InfoItem label="Tab ID" value={tabId} truncate />
-          <InfoItem label="Source Tab ID" value={sourceTabId} truncate />
           <InfoItem label="Navigation Source" value={navigationSource} />
           <InfoItem label="Referrer URL" value={referrerUrl} />
         </dl>
