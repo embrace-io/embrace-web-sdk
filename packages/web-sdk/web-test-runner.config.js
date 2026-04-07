@@ -28,6 +28,7 @@ const filterBrowserLogs = ({ args, type }) => {
  */
 export default {
   nodeResolve: true,
+  testsFinishTimeout: 5000,
   files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   plugins: [
     vitePlugin({
