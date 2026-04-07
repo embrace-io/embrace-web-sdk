@@ -40,7 +40,7 @@ type AttributedPage = {
   label?: string;
 };
 
-const clampToZero = (value: number): number => Math.max(0, value);
+const roundClamp = (value: number): number => Math.round(Math.max(0, value));
 
 const webVitalAttributionToReport = (
   name: Metric['name'],
@@ -177,25 +177,19 @@ const webVitalAttributionToReport = (
       | undefined;
     if (entry) {
       try {
-        const redirect = Math.round(
-          clampToZero(entry.redirectEnd - entry.redirectStart),
+        const redirect = roundClamp(entry.redirectEnd - entry.redirectStart);
+        const domainLookup = roundClamp(
+          entry.domainLookupEnd - entry.domainLookupStart,
         );
-        const domainLookup = Math.round(
-          clampToZero(entry.domainLookupEnd - entry.domainLookupStart),
+        const tcpConnection = roundClamp(
+          entry.secureConnectionStart > 0
+            ? entry.secureConnectionStart - entry.connectStart
+            : entry.connectEnd - entry.connectStart,
         );
-        const tcpConnection = Math.round(
-          clampToZero(
-            entry.secureConnectionStart > 0
-              ? entry.secureConnectionStart - entry.connectStart
-              : entry.connectEnd - entry.connectStart,
-          ),
-        );
-        const tlsNegotiation = Math.round(
-          clampToZero(
-            entry.secureConnectionStart > 0
-              ? entry.connectEnd - entry.secureConnectionStart
-              : 0,
-          ),
+        const tlsNegotiation = roundClamp(
+          entry.secureConnectionStart > 0
+            ? entry.connectEnd - entry.secureConnectionStart
+            : 0,
         );
         const effectiveResponseStart = Math.max(
           // @ts-expect-error 103 Early hints are not supported in all browsers
@@ -203,11 +197,11 @@ const webVitalAttributionToReport = (
           entry.finalResponseHeadersStart ?? 0,
           entry.responseStart,
         );
-        const serverResponse = Math.round(
-          clampToZero(effectiveResponseStart - entry.requestStart),
+        const serverResponse = roundClamp(
+          effectiveResponseStart - entry.requestStart,
         );
         const total = Math.round(entry.responseEnd - entry.startTime);
-        const unattributed = clampToZero(
+        const unattributed = roundClamp(
           total -
             redirect -
             domainLookup -
