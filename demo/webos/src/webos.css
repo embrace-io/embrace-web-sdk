@@ -1,0 +1,139 @@
+/* biome-ignore-all lint/complexity/noImportantStyles: TV UI requires style overrides to ensure 10-foot viewing experience */
+/* webOS TV-optimized styles */
+
+:root {
+  /* 10-foot UI: optimized for TV viewing */
+  --tv-font-base: 2rem;
+  --tv-font-h1: 4.5rem;
+  --tv-font-legend: 1.6rem;
+  --tv-font-button: 1.85rem;
+  --tv-font-label: 1.85rem;
+  --tv-font-value: 1.7rem;
+
+  --tv-spacing: 2.5rem;
+  --tv-button-padding: 1rem 2rem;
+  --tv-border-radius: 14px;
+
+  /* Focus indicator for remote control */
+  --tv-focus-outline: 5px solid #c7f000;
+  --tv-focus-shadow: 0 0 0 10px rgba(199, 240, 0, 0.35);
+}
+
+/* Override base typography for TV */
+body {
+  font-size: var(--tv-font-base);
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: var(--tv-font-h1) !important;
+  margin-bottom: 3rem !important;
+}
+
+/* Horizontal TV layout */
+#root {
+  max-width: 100% !important;
+  padding: 3rem 4rem !important;
+}
+
+.container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2rem !important;
+}
+
+/* Fieldsets in horizontal rows */
+fieldset {
+  padding: 2rem !important;
+  margin: 0 !important;
+  border-width: 2px !important;
+  border-radius: var(--tv-border-radius) !important;
+}
+
+legend {
+  font-size: var(--tv-font-legend) !important;
+  padding: 0.5rem 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+/* Session info - horizontal layout */
+/* Target CSS module classes by attribute selector */
+[class*="sessionInfo"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 2rem !important;
+  padding: 2rem !important;
+  border-width: 2px !important;
+  margin-bottom: 2rem !important;
+}
+
+[class*="sessionRow"] {
+  font-size: var(--tv-font-label) !important;
+  gap: 1rem !important;
+  min-width: 450px;
+}
+
+[class*="sessionLabel"] {
+  font-size: var(--tv-font-label) !important;
+  font-weight: 600 !important;
+}
+
+[class*="sessionValue"] {
+  font-size: var(--tv-font-value) !important;
+  font-weight: 700 !important;
+}
+
+/* Button styling for remote navigation */
+button,
+a {
+  font-size: var(--tv-font-button) !important;
+  padding: var(--tv-button-padding) !important;
+  margin: 0.75rem !important;
+  border-width: 2px !important;
+  border-radius: var(--tv-border-radius) !important;
+  min-width: 200px;
+  transition: all 0.2s ease !important;
+}
+
+/* Enhanced focus for remote control */
+button:focus,
+button:focus-visible,
+a:focus,
+a:focus-visible {
+  outline: var(--tv-focus-outline) !important;
+  outline-offset: 4px !important;
+  box-shadow: var(--tv-focus-shadow) !important;
+  background: rgba(199, 240, 0, 0.25) !important;
+  border-color: #c7f000 !important;
+  transform: scale(1.05) !important;
+  z-index: 10;
+}
+
+/* Actions in horizontal rows */
+.actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+  margin: 1rem 0 !important;
+}
+
+/* Ensure all interactive elements are focusable */
+button:not(:disabled),
+a {
+  outline: none;
+}
+
+button:disabled {
+  opacity: 0.3 !important;
+}
+
+/* Spans section */
+.spans {
+  gap: 1.5rem !important;
+}
+
+.span {
+  font-size: 1.5rem !important;
+  gap: 1.5rem !important;
+  padding: 1rem !important;
+}

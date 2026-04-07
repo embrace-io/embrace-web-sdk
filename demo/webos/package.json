@@ -1,0 +1,30 @@
+{
+  "name": "webos-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "preview": "npm run build && vite preview",
+    "demo": "npm run build && npm run launch",
+    "clean": "npx -y rimraf dist",
+    "build": "npm run build --prefix ../.. && npm i && npm run clean && vite build",
+    "launch": "bash ./scripts/launch.sh",
+    "debug": "ares-inspect --app com.embrace.demo.webos -d ktv --open"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "*",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.214.0",
+    "@opentelemetry/sdk-logs": "^0.214.0",
+    "@opentelemetry/sdk-trace-web": "^2.6.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-router-domv4v5": "npm:react-router-dom@^5.3.3",
+    "react-router-domv6plus": "npm:react-router-dom@^7.6.1"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "*",
+    "@types/react-router-domv4v5": "npm:@types/react-router-dom@^5.3.3",
+    "@webos-tools/cli": "3.2.1"
+  }
+}
