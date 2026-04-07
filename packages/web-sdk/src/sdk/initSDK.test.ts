@@ -1414,9 +1414,12 @@ describe('initSDK', () => {
     let consoleInfoStub: SinonStub;
 
     beforeEach(() => {
-      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error' as never);
-      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn' as never);
-      consoleInfoStub = sinon.stub(_originalConsoleMethods, 'info' as never);
+      expect(_originalConsoleMethods.error).to.be.a('function');
+      expect(_originalConsoleMethods.warn).to.be.a('function');
+      expect(_originalConsoleMethods.info).to.be.a('function');
+      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
+      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
+      consoleInfoStub = sinon.stub(_originalConsoleMethods, 'info');
     });
 
     afterEach(() => {
@@ -1480,6 +1483,8 @@ describe('initSDK', () => {
     let consoleWarnStub: SinonStub;
 
     beforeEach(() => {
+      expect(_originalConsoleMethods.error).to.be.a('function');
+      expect(_originalConsoleMethods.warn).to.be.a('function');
       consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
       consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
     });
