@@ -16,6 +16,8 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
+// deep import needed to stub the cached console refs used by DiagConsoleLogger
+import { _originalConsoleMethods } from '../../../../node_modules/@opentelemetry/api/build/esm/diag/consoleLogger.js';
 import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
@@ -1412,9 +1414,9 @@ describe('initSDK', () => {
     let consoleInfoStub: SinonStub;
 
     beforeEach(() => {
-      consoleErrorStub = sinon.stub(console, 'error');
-      consoleWarnStub = sinon.stub(console, 'warn');
-      consoleInfoStub = sinon.stub(console, 'info');
+      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error' as never);
+      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn' as never);
+      consoleInfoStub = sinon.stub(_originalConsoleMethods, 'info' as never);
     });
 
     afterEach(() => {
@@ -1478,8 +1480,8 @@ describe('initSDK', () => {
     let consoleWarnStub: SinonStub;
 
     beforeEach(() => {
-      consoleErrorStub = sinon.stub(console, 'error');
-      consoleWarnStub = sinon.stub(console, 'warn');
+      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
+      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
     });
 
     afterEach(() => {
@@ -1757,7 +1759,7 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.213.0',
+            version: '0.214.0',
           },
         );
         expect(exportedSpans).to.have.lengthOf(1);
