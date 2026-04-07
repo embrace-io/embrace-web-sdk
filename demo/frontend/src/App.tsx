@@ -57,13 +57,11 @@ const App = () => {
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
     setCurrentSession(sessionProvider.getSessionId());
-    updateCrossTabData();
   };
 
   const handleEndSessionSpan = () => {
     sessionProvider.endSessionSpan();
     setCurrentSession(sessionProvider.getSessionId());
-    updateCrossTabData();
   };
 
   const handleStartSpan = () => {
