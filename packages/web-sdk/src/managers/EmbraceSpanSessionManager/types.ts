@@ -10,7 +10,6 @@ export interface EmbraceSpanSessionManagerArgs {
   visibilityDoc?: VisibilityStateDocument;
   storage?: Storage;
   limitManager: LimitManagerInternal;
-  referrer?: string;
 }
 
 export interface SpanSessionManagerInternal extends SpanSessionManager {
@@ -20,11 +19,3 @@ export interface SpanSessionManagerInternal extends SpanSessionManager {
 
 export type SessionStartedListener = () => void;
 export type SessionEndedListener = () => void;
-
-// Navigation source types (determined fresh each session)
-export type NavigationSource =
-  | 'same_origin' // User clicked same-origin link
-  | 'external' // User clicked external link
-  | 'direct' // User opened new tab, typed URL, or used bookmark (no referrer)
-  | 'reload' // Page refresh
-  | 'back_forward'; // Browser back/forward navigation

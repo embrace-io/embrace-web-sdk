@@ -19,8 +19,6 @@ import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
   KEY_EMB_FROM_STORAGE,
-  KEY_EMB_NAVIGATION_SOURCE,
-  KEY_EMB_REFERRER_URL,
   KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
@@ -42,7 +40,6 @@ import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.
 import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.ts';
 import type {
   EmbraceSpanSessionManagerArgs,
-  NavigationSource,
   SessionEndedListener,
   SessionStartedListener,
   SpanSessionManagerInternal,
@@ -59,13 +56,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _sdkStartupDuration = 0;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
-  private readonly _navigationSource: NavigationSource;
-  private readonly _referrerInfo: {
-    isValid: boolean;
-    isSameOrigin: boolean;
-    scrubbedUrl?: string;
-  };
-
   private _tracer: Tracer;
   private readonly _noExportTracer: Tracer;
   private readonly _diag: DiagLogger;
@@ -73,7 +63,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
   private readonly _limitManager: LimitManagerInternal;
-  private readonly _referrer: string;
 
   public constructor({
     diag: diagParam,
@@ -81,7 +70,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     visibilityDoc = window.document,
     storage = window.localStorage,
     limitManager,
-    referrer = document.referrer,
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -92,16 +80,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
-    this._referrer = referrer;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
     this._noExportTracer = new BasicTracerProvider().getTracer(
       'embrace-web-sdk-sessions',
     );
-
-    // Process referrer once at initialization
-    this._referrerInfo = this._processReferrer();
-
-    this._navigationSource = this._determineNavigationSource();
   }
 
   // Collects all permanent session properties from localStorage
@@ -314,14 +296,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         EMBRACE_SESSION_NUMBER_STORAGE_KEY,
         this._diag,
       ),
-      [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
       ...previouslyRecordedCounts,
     };
-
-    // Add scrubbed referrer URL if available
-    if (this._referrerInfo.isValid && this._referrerInfo.scrubbedUrl) {
-      attributes[KEY_EMB_REFERRER_URL] = this._referrerInfo.scrubbedUrl;
-    }
 
     if (options?.reason) {
       attributes[KEY_EMB_SESSION_REASON_STARTED] = options.reason;
@@ -384,52 +360,5 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   public setTracerProvider(tracerProvider: TracerProvider) {
     this._tracer = tracerProvider.getTracer('embrace-web-sdk-sessions');
-  }
-
-  private _determineNavigationSource(): NavigationSource {
-    // Check Navigation Timing API first
-    try {
-      const navEntries = window.performance.getEntriesByType('navigation');
-      if (navEntries.length > 0 && navEntries[0]) {
-        const navEntry = navEntries[0];
-        if (navEntry.type === 'reload') {
-          return 'reload';
-        } else if (navEntry.type === 'back_forward') {
-          return 'back_forward';
-        }
-      }
-    } catch (error) {
-      this._diag.warn('Failed to get navigation type', error);
-    }
-
-    // If not reload/back_forward, analyze referrer
-    if (this._referrerInfo.isValid) {
-      return this._referrerInfo.isSameOrigin ? 'same_origin' : 'external';
-    }
-
-    return 'direct';
-  }
-
-  private _processReferrer(): {
-    isValid: boolean;
-    isSameOrigin: boolean;
-    scrubbedUrl?: string;
-  } {
-    if (!this._referrer) {
-      return { isValid: false, isSameOrigin: false };
-    }
-
-    try {
-      const referrerUrl = new URL(this._referrer);
-      const currentOrigin = window.location.origin;
-
-      return {
-        isValid: true,
-        isSameOrigin: referrerUrl.origin === currentOrigin,
-        scrubbedUrl: referrerUrl.origin + referrerUrl.pathname,
-      };
-    } catch {
-      return { isValid: false, isSameOrigin: false };
-    }
   }
 }

@@ -2,9 +2,8 @@ import { log, session, trace } from '@embrace-io/web-sdk';
 import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
 
 import type { Span } from '@opentelemetry/api';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender.tsx';
-import { getSessionAttributes } from './utils.ts';
 
 const formatValue = (value: string | null, truncate?: boolean): string => {
   if (!value) return '—';
@@ -35,20 +34,9 @@ const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
   const [currentSession, setCurrentSession] = useState<string | null>(null);
 
-  // Tab tracking data
-  const [navigationSource, setNavigationSource] = useState<string | null>(null);
-  const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
-
-  const updateCrossTabData = useCallback(() => {
-    const attrs = getSessionAttributes();
-    setNavigationSource(attrs?.['emb.navigation_source'] ?? null);
-    setReferrerUrl(attrs?.['emb.referrer_url'] ?? null);
-  }, []);
-
   useEffect(() => {
     const updateSession = () => {
       setCurrentSession(sessionProvider.getSessionId());
-      updateCrossTabData();
     };
 
     // Set initial values
@@ -64,7 +52,7 @@ const App = () => {
       unsubscribeStart();
       unsubscribeEnd();
     };
-  }, [updateCrossTabData]);
+  }, []);
 
   const handleStartSessionSpan = () => {
     sessionProvider.startSessionSpan();
@@ -281,8 +269,6 @@ const App = () => {
         <legend>Experience</legend>
         <dl className="info-list info-list-horizontal">
           <InfoItem label="Session ID" value={currentSession} truncate />
-          <InfoItem label="Navigation Source" value={navigationSource} />
-          <InfoItem label="Referrer URL" value={referrerUrl} />
         </dl>
       </fieldset>
 

@@ -1,7 +1,6 @@
 import { session } from '@embrace-io/web-sdk';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { getSessionAttributes } from './utils.ts';
 
 const sessionProvider = session.getSpanSessionManager();
 const navEntry = window.performance.getEntriesByType('navigation')[0] as
@@ -18,14 +17,9 @@ const NavPage = ({
   children?: ReactNode;
 }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [navigationSource, setNavigationSource] = useState<string | null>(null);
-  const [referrerUrl, setReferrerUrl] = useState<string | null>(null);
 
   const updateSession = useCallback(() => {
     setSessionId(sessionProvider.getSessionId());
-    const attrs = getSessionAttributes();
-    setNavigationSource(attrs?.['emb.navigation_source'] ?? null);
-    setReferrerUrl(attrs?.['emb.referrer_url'] ?? null);
   }, []);
 
   useEffect(() => {
@@ -54,10 +48,6 @@ const NavPage = ({
           <dd>{navEntry?.type ?? '—'}</dd>
           <dt>document.referrer</dt>
           <dd>{document.referrer || '—'}</dd>
-          <dt>emb.navigation_source</dt>
-          <dd>{navigationSource ?? '—'}</dd>
-          <dt>emb.referrer_url</dt>
-          <dd>{referrerUrl ?? '—'}</dd>
         </dl>
       </fieldset>
       <fieldset>
