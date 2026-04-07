@@ -79,7 +79,6 @@ const IGNORED_ATTRIBUTES_LIST = [
   'user_agent.original',
   'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
-  'emb.tab_id',
   'emb.web_vital.attribution.elementRenderDelay',
   'emb.web_vital.attribution.timeToFirstByte',
   'emb.web_vital.attribution.redirect',

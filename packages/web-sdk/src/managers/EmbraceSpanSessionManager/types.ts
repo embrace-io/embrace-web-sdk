@@ -9,7 +9,6 @@ export interface EmbraceSpanSessionManagerArgs {
   perf?: PerformanceManager;
   visibilityDoc?: VisibilityStateDocument;
   storage?: Storage;
-  sessionStorage?: Storage;
   limitManager: LimitManagerInternal;
   referrer?: string;
 }
@@ -21,13 +20,6 @@ export interface SpanSessionManagerInternal extends SpanSessionManager {
 
 export type SessionStartedListener = () => void;
 export type SessionEndedListener = () => void;
-
-// Tab tracking types
-
-// Tab identity stored in session storage
-export type Tab = {
-  tabId: string;
-};
 
 // Navigation source types (determined fresh each session)
 export type NavigationSource =

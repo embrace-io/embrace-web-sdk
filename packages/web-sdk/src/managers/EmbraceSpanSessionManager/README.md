@@ -13,13 +13,12 @@ Manages browser session spans with lifecycle tracking, properties, and breadcrum
 
 ### Storage Strategy
 
-- Current tab identity stored in sessionStorage (persists through page reloads)
+- Tab ID stored in sessionStorage (persists through page reloads)
 - Session number stored in localStorage under `embrace_session_number` key
 
 ### Span Attributes
 
 ```
-emb.tab_id              - This tab's unique ID
 emb.navigation_source   - How the user arrived at this page
 emb.referrer_url        - Scrubbed referrer URL (if valid)
 ```

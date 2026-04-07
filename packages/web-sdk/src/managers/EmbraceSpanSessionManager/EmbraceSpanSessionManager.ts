@@ -26,12 +26,10 @@ import {
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_EMB_STATE,
-  KEY_EMB_TAB_ID,
   KEY_EMB_TYPE,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
-import { getAppInstanceId } from '../../resources/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import {
   generateUUID,
@@ -41,17 +39,13 @@ import {
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
-import {
-  EMBRACE_SESSION_NUMBER_STORAGE_KEY,
-  EMBRACE_TAB_STORAGE_KEY,
-} from './constants.ts';
+import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.ts';
 import type {
   EmbraceSpanSessionManagerArgs,
   NavigationSource,
   SessionEndedListener,
   SessionStartedListener,
   SpanSessionManagerInternal,
-  Tab,
 } from './types.ts';
 
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
@@ -65,7 +59,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _sdkStartupDuration = 0;
   private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
   private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
-  private readonly _tab: Tab;
   private readonly _navigationSource: NavigationSource;
   private readonly _referrerInfo: {
     isValid: boolean;
@@ -79,7 +72,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _perf: PerformanceManager;
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
-  private readonly _sessionStorage: Storage;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _referrer: string;
 
@@ -88,7 +80,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     perf,
     visibilityDoc = window.document,
     storage = window.localStorage,
-    sessionStorage = window.sessionStorage,
     limitManager,
     referrer = document.referrer,
   }: EmbraceSpanSessionManagerArgs) {
@@ -100,7 +91,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._perf = perf ?? new OTelPerformanceManager();
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
-    this._sessionStorage = sessionStorage;
     this._limitManager = limitManager;
     this._referrer = referrer;
     this._tracer = trace.getTracer('embrace-web-sdk-sessions');
@@ -111,10 +101,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     // Process referrer once at initialization
     this._referrerInfo = this._processReferrer();
 
-    // Initialize tab tracking and navigation source
-    const initResult = this._initTab();
-    this._tab = initResult.tab;
-    this._navigationSource = initResult.navigationSource;
+    this._navigationSource = this._determineNavigationSource();
   }
 
   // Collects all permanent session properties from localStorage
@@ -327,7 +314,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         EMBRACE_SESSION_NUMBER_STORAGE_KEY,
         this._diag,
       ),
-      [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
       ...previouslyRecordedCounts,
     };
@@ -445,39 +431,5 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     } catch {
       return { isValid: false, isSameOrigin: false };
     }
-  }
-
-  private _initTab(): { tab: Tab; navigationSource: NavigationSource } {
-    // Determine navigation source once at startup
-    const navigationSource = this._determineNavigationSource();
-
-    // On page reload, preserve the same tab IDs
-    try {
-      const stored = this._sessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
-      if (stored) {
-        return {
-          tab: JSON.parse(stored) as Tab,
-          navigationSource,
-        };
-      }
-    } catch (e) {
-      this._diag.warn('Failed to retrieve tab data', e);
-    }
-
-    const tab: Tab = {
-      tabId: getAppInstanceId(this._sessionStorage, this._diag),
-    };
-
-    // Persist tab data for page reloads
-    try {
-      this._sessionStorage.setItem(
-        EMBRACE_TAB_STORAGE_KEY,
-        JSON.stringify(tab),
-      );
-    } catch (e) {
-      this._diag.warn('Failed to store tab data', e);
-    }
-
-    return { tab, navigationSource };
   }
 }

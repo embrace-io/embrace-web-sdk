@@ -22,16 +22,13 @@ import {
   KEY_EMB_REFERRER_URL,
   KEY_EMB_SESSION_REASON_ENDED,
   KEY_EMB_SESSION_REASON_STARTED,
-  KEY_EMB_TAB_ID,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
-import { EMBRACE_TAB_STORAGE_KEY } from './constants.ts';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
-import type { Tab } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -790,7 +787,6 @@ describe('EmbraceSpanSessionManager', () => {
   describe('Tab tracking', () => {
     let sandbox: SinonSandbox;
     let mockStorage: InMemoryStorage;
-    let mockSessionStorage: InMemoryStorage;
     let visibilityDoc: VisibilityStateDocument;
     let mockPerf: MockPerformanceManager;
     let clock: sinon.SinonFakeTimers;
@@ -800,7 +796,6 @@ describe('EmbraceSpanSessionManager', () => {
       sandbox = sinon.createSandbox();
       clock = sandbox.useFakeTimers();
       mockStorage = new InMemoryStorage();
-      mockSessionStorage = new InMemoryStorage();
       mockPerf = new MockPerformanceManager(clock);
 
       // Create visibility doc for testing
@@ -817,62 +812,6 @@ describe('EmbraceSpanSessionManager', () => {
       sandbox.restore();
     });
 
-    describe('Tab initialization', () => {
-      it('should create new tab with unique ID when no existing tab data', () => {
-        // Create manager - initialization happens in constructor
-        new EmbraceSpanSessionManager({
-          diag,
-          storage: mockStorage,
-          sessionStorage: mockSessionStorage,
-          limitManager,
-          visibilityDoc,
-          perf: mockPerf,
-          referrer: '', // No referrer for basic tab creation test
-        });
-
-        // Check that tab data was stored in sessionStorage
-        const storedTab = mockSessionStorage.getItem(EMBRACE_TAB_STORAGE_KEY);
-        void expect(storedTab).to.not.be.null;
-
-        const tab = JSON.parse(storedTab ?? '{}') as Tab;
-        void expect(tab).to.have.property('tabId');
-        expect(tab.tabId).to.be.of.length(32);
-      });
-
-      it('should add tab attributes to session span', () => {
-        const existingTab = {
-          tabId: 'test-tab-123',
-        };
-
-        mockSessionStorage.setItem(
-          EMBRACE_TAB_STORAGE_KEY,
-          JSON.stringify(existingTab),
-        );
-
-        const manager = new EmbraceSpanSessionManager({
-          diag,
-          storage: mockStorage,
-          sessionStorage: mockSessionStorage,
-          limitManager,
-          visibilityDoc,
-          perf: mockPerf,
-          referrer: '', // No referrer for attributes test
-        });
-
-        manager.startSessionSpan();
-        manager.endSessionSpan();
-
-        const finishedSpans = memoryExporter.getFinishedSpans();
-        void expect(finishedSpans).to.have.lengthOf(1);
-        const sessionSpan = finishedSpans[0];
-
-        void expect(sessionSpan.attributes).to.have.property(
-          KEY_EMB_TAB_ID,
-          'test-tab-123',
-        );
-      });
-    });
-
     describe('Navigation context detection', () => {
       // Helper to create manager and get session span attributes
       const createManagerAndGetSessionAttributes = (
@@ -886,7 +825,6 @@ describe('EmbraceSpanSessionManager', () => {
         const manager = new EmbraceSpanSessionManager({
           diag,
           storage: mockStorage,
-          sessionStorage: mockSessionStorage,
           limitManager,
           visibilityDoc,
           perf: mockPerf,
