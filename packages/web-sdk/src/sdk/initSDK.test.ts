@@ -706,12 +706,6 @@ describe('initSDK', () => {
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
-      const experienceId = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.experience_id',
-      )?.value.stringValue;
-      void expect(experienceId).to.be.a('string');
-      void expect(experienceId).to.have.lengthOf(32);
-
       const tabId = sessionSpan['attributes'].find(
         (attr) => attr.key === 'emb.tab_id',
       )?.value.stringValue;
@@ -732,7 +726,6 @@ describe('initSDK', () => {
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
         sessionNumber,
-        { key: 'emb.experience_id', value: { stringValue: experienceId } },
         { key: 'emb.tab_id', value: { stringValue: tabId } },
         { key: 'emb.navigation_source', value: { stringValue: 'direct' } },
         { key: 'emb.session_start_type', value: { stringValue: 'init' } },

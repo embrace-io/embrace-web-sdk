@@ -36,7 +36,6 @@ const App = () => {
   const [currentSession, setCurrentSession] = useState<string | null>(null);
 
   // Tab tracking data
-  const [experienceId, setExperienceId] = useState<string | null>(null);
   const [tabId, setTabId] = useState<string | null>(null);
   const [sourceTabId, setSourceTabId] = useState<string | null>(null);
   const [navigationSource, setNavigationSource] = useState<string | null>(null);
@@ -44,7 +43,6 @@ const App = () => {
 
   const updateCrossTabData = useCallback(() => {
     const attrs = getSessionAttributes();
-    setExperienceId(attrs?.['emb.experience_id'] ?? null);
     setTabId(attrs?.['emb.tab_id'] ?? null);
     setSourceTabId(attrs?.['emb.source_tab_id'] ?? null);
     setNavigationSource(attrs?.['emb.navigation_source'] ?? null);
@@ -289,7 +287,6 @@ const App = () => {
           <InfoItem label="Session ID" value={currentSession} truncate />
           <InfoItem label="Tab ID" value={tabId} truncate />
           <InfoItem label="Source Tab ID" value={sourceTabId} truncate />
-          <InfoItem label="Experience ID" value={experienceId} truncate />
           <InfoItem label="Navigation Source" value={navigationSource} />
           <InfoItem label="Referrer URL" value={referrerUrl} />
         </dl>

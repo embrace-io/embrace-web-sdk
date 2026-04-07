@@ -18,7 +18,6 @@ import {
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
-  KEY_EMB_EXPERIENCE_ID,
   KEY_EMB_NAVIGATION_SOURCE,
   KEY_EMB_REFERRER_URL,
   KEY_EMB_SESSION_REASON_ENDED,
@@ -842,15 +841,12 @@ describe('EmbraceSpanSessionManager', () => {
         const tab = JSON.parse(storedTab ?? '{}') as Tab;
         void expect(tab).to.have.property('tabId');
         expect(tab.tabId).to.be.of.length(32);
-        void expect(tab).to.have.property('experienceId');
-        expect(tab.experienceId).to.be.of.length(32);
         void expect(tab.sourceTabId).to.be.undefined;
       });
 
       it('should add tab attributes to session span', () => {
         const existingTab = {
           tabId: 'test-tab-123',
-          experienceId: 'test-exp-456',
           sourceTabId: 'source-789',
         };
 
@@ -881,10 +877,6 @@ describe('EmbraceSpanSessionManager', () => {
           'test-tab-123',
         );
         void expect(sessionSpan.attributes).to.have.property(
-          KEY_EMB_EXPERIENCE_ID,
-          'test-exp-456',
-        );
-        void expect(sessionSpan.attributes).to.have.property(
           KEY_EMB_SOURCE_TAB_ID,
           'source-789',
         );
@@ -896,7 +888,6 @@ describe('EmbraceSpanSessionManager', () => {
         const now = clock.now;
         const sourceTabActivity: TabActivity = {
           tabId: 'source-tab-123',
-          experienceId: 'source-exp-456',
           lastActivityMs: now - 5000, // 5 seconds ago (within 10s window)
         };
 
@@ -921,14 +912,12 @@ describe('EmbraceSpanSessionManager', () => {
         const tab = JSON.parse(storedTab ?? '{}') as Tab;
 
         void expect(tab.sourceTabId).to.equal('source-tab-123');
-        void expect(tab.experienceId).to.equal('source-exp-456');
       });
 
       it('should NOT detect source when referrer is missing (even with recent activity)', () => {
         // Even if there's recent activity, without a referrer we can't determine source
         const recentActivity: TabActivity = {
           tabId: 'recent-tab-123',
-          experienceId: 'recent-exp-456',
           lastActivityMs: Date.now() - 1000, // 1 second ago
         };
 
@@ -961,7 +950,6 @@ describe('EmbraceSpanSessionManager', () => {
         // Create manager with existing tab
         const existingTab = {
           tabId: 'test-tab-123',
-          experienceId: 'test-exp-456',
           sourceTabId: 'source-789',
         };
 
@@ -1007,7 +995,6 @@ describe('EmbraceSpanSessionManager', () => {
         // Even with recent activity, cross-origin referrer shouldn't link tabs
         const recentActivity: TabActivity = {
           tabId: 'recent-tab-123',
-          experienceId: 'recent-exp-456',
           lastActivityMs: Date.now() - 1000, // 1 second ago
         };
 
@@ -1219,7 +1206,6 @@ describe('EmbraceSpanSessionManager', () => {
       it('should integrate navigation source with tab tracking', () => {
         // Set up source tab that was active recently
         const sourceTab: TabActivity = {
-          experienceId: 'source-exp-123',
           tabId: 'source-tab-456',
           lastActivityMs: Date.now(),
         };

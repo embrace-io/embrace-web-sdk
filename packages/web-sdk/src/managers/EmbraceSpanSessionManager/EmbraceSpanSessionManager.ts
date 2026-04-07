@@ -18,7 +18,6 @@ import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
-  KEY_EMB_EXPERIENCE_ID,
   KEY_EMB_FROM_STORAGE,
   KEY_EMB_NAVIGATION_SOURCE,
   KEY_EMB_REFERRER_URL,
@@ -332,7 +331,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         EMBRACE_SESSION_NUMBER_STORAGE_KEY,
         this._diag,
       ),
-      [KEY_EMB_EXPERIENCE_ID]: this._tab.experienceId,
       [KEY_EMB_TAB_ID]: this._tab.tabId,
       [KEY_EMB_NAVIGATION_SOURCE]: this._navigationSource,
       ...previouslyRecordedCounts,
@@ -459,7 +457,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   private _getTabContext(navigationSource: NavigationSource): {
     sourceTabId?: string;
-    experienceId: string;
     tabId: string;
   } {
     // Always use getAppInstanceId to ensure consistent tab ID
@@ -467,7 +464,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     // Look for source tab only if navigation is from same origin
     let sourceTabId: string | undefined;
-    let experienceId: string | undefined;
 
     if (navigationSource === 'same_origin') {
       const lastActivity = this._getTabActivity();
@@ -477,17 +473,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         // tab relationships while avoiding false positives from stale activity
         if (age <= 10_000) {
           sourceTabId = lastActivity.tabId;
-          experienceId = lastActivity.experienceId;
         }
       }
     }
 
-    // Only generate new UUID if we didn't inherit one from source tab
-    experienceId ??= generateUUID();
-
     return {
       sourceTabId,
-      experienceId,
       tabId,
     };
   }
@@ -512,7 +503,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     // Get complete navigation context for new tab
     const tabContext = this._getTabContext(navigationSource);
     const tab: Tab = {
-      experienceId: tabContext.experienceId,
       sourceTabId: tabContext.sourceTabId,
       tabId: tabContext.tabId,
     };
@@ -558,7 +548,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _storeCurrentTabAsSource(): void {
     const activity: TabActivity = {
       tabId: this._tab.tabId,
-      experienceId: this._tab.experienceId,
       lastActivityMs: Date.now(),
     };
 

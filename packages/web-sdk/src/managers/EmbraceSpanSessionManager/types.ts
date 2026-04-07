@@ -26,14 +26,12 @@ export type SessionEndedListener = () => void;
 
 // Tab activity stored in localStorage
 export type TabActivity = {
-  experienceId: string;
   tabId: string;
   lastActivityMs: number;
 };
 
 // Tab identity stored in session storage
 export type Tab = {
-  experienceId: string;
   tabId: string;
   sourceTabId?: string;
 };
