@@ -1040,6 +1040,67 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
+  it('should round fractional negative TTFB sub-part durations to 0', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 50,
+      rating: 'good',
+      delta: 50,
+      id: 'm8b',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 10,
+          redirectEnd: 9.7,
+          domainLookupStart: 20,
+          domainLookupEnd: 19.4,
+          connectStart: 30,
+          connectEnd: 29.8,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 39.3,
+          responseEnd: 50,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // redirect: 9.7 - 10 = -0.3 -> clamped to 0
+    // dns: 19.4 - 20 = -0.6 -> clamped to 0
+    // tcp: 29.8 - 30 = -0.2 -> clamped to 0
+    // tls: 0 (no secure connection)
+    // server: 39.3 - 40 = -0.7 -> clamped to 0
+    // unattributed: 50 - 0 - 0 - 0 - 0 - 0 = 50
+    expect(ttfbEvent.attributes).to.deep.include({
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 0,
+      'emb.web_vital.attribution.unattributed': 50,
+    });
+  });
+
   it('should ensure TTFB sub-parts sum to rounded total', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
