@@ -79,11 +79,14 @@ const IGNORED_ATTRIBUTES_LIST = [
   'user_agent.original',
   'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
-  'emb.tab_id',
-  'emb.parent_tab_id',
-  'emb.experience_id',
   'emb.web_vital.attribution.elementRenderDelay',
   'emb.web_vital.attribution.timeToFirstByte',
+  'emb.web_vital.attribution.redirect',
+  'emb.web_vital.attribution.domainLookup',
+  'emb.web_vital.attribution.tcpConnection',
+  'emb.web_vital.attribution.tlsNegotiation',
+  'emb.web_vital.attribution.serverResponse',
+  'emb.web_vital.attribution.unattributed',
   'emb.web_vital.delta',
   'emb.web_vital.id',
   'emb.web_vital.value',
@@ -259,12 +262,21 @@ const expect = testWithMockApi.expect.extend({
 
     // Compare each attribute
     for (const [index, receivedAttr] of sortedReceived.entries()) {
-      if (IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key)) {
-        // If the attribute is in the ignored list, skip it
+      const expectedAttr = sortedExpected[index];
+
+      if (
+        IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key) ||
+        IGNORED_ATTRIBUTES_LIST.includes(expectedAttr.key)
+      ) {
+        if (receivedAttr.key !== expectedAttr.key) {
+          return {
+            pass: false,
+            message: () =>
+              `${extraMessage}Attribute key mismatch at index ${index.toString()}: expected key ${chalk.green(expectedAttr.key)}, but got ${chalk.red(receivedAttr.key)}`,
+          };
+        }
         continue;
       }
-
-      const expectedAttr = sortedExpected[index];
 
       const receivedValue = getAttributeValue(receivedAttr);
       const expectedValue = getAttributeValue(expectedAttr);

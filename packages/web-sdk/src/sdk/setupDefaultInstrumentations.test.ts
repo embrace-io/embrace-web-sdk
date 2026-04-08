@@ -1,0 +1,118 @@
+import * as chai from 'chai';
+import {
+  SAMPLED_UUID,
+  TEST_DYNAMIC_CONFIG_MANAGER,
+} from '../../tests/utils/index.ts';
+import {
+  EmbraceFetchInstrumentation,
+  EmbraceXHRInstrumentation,
+} from '../instrumentations/index.ts';
+import { EmbraceSDKFeaturesManager } from '../managers/index.ts';
+import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
+
+const { expect } = chai;
+
+type DefaultInstrumentations = ReturnType<typeof setupDefaultInstrumentations>;
+
+const makeSetupArgs = () => ({
+  featureManager: new EmbraceSDKFeaturesManager({
+    dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+    deviceId: SAMPLED_UUID,
+    blockNetworkSpanForwarding: false,
+  }),
+});
+
+const getFetch = (instrumentations: DefaultInstrumentations) =>
+  instrumentations.find(
+    (i) => i instanceof EmbraceFetchInstrumentation,
+  ) as EmbraceFetchInstrumentation;
+
+const getXHR = (instrumentations: DefaultInstrumentations) =>
+  instrumentations.find(
+    (i) => i instanceof EmbraceXHRInstrumentation,
+  ) as EmbraceXHRInstrumentation;
+
+describe('setupDefaultInstrumentations', () => {
+  describe('ignoreUrls merging', () => {
+    it('merges network.ignoreUrls and fetch ignoreUrls', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        {
+          network: { ignoreUrls: [/network-pattern/] },
+          '@opentelemetry/instrumentation-fetch': {
+            ignoreUrls: [/fetch-pattern/],
+          },
+        },
+        makeSetupArgs(),
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-pattern/,
+        /fetch-pattern/,
+      ]);
+    });
+
+    it('merges network.ignoreUrls and xhr ignoreUrls', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        {
+          network: { ignoreUrls: [/network-pattern/] },
+          '@opentelemetry/instrumentation-xml-http-request': {
+            ignoreUrls: [/xhr-pattern/],
+          },
+        },
+        makeSetupArgs(),
+      );
+
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-pattern/,
+        /xhr-pattern/,
+      ]);
+    });
+
+    it('uses only network.ignoreUrls when no instrumentation ignoreUrls are set', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        { network: { ignoreUrls: [/network-only/] } },
+        makeSetupArgs(),
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-only/,
+      ]);
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-only/,
+      ]);
+    });
+
+    it('uses only instrumentation ignoreUrls when no network.ignoreUrls are set', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        {
+          '@opentelemetry/instrumentation-fetch': {
+            ignoreUrls: [/fetch-only/],
+          },
+          '@opentelemetry/instrumentation-xml-http-request': {
+            ignoreUrls: [/xhr-only/],
+          },
+        },
+        makeSetupArgs(),
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /fetch-only/,
+      ]);
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /xhr-only/,
+      ]);
+    });
+
+    it('produces an empty ignoreUrls when no ignoreUrls are set', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        {},
+        makeSetupArgs(),
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal(
+        [],
+      );
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([]);
+    });
+  });
+});

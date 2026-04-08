@@ -5,6 +5,7 @@ import sinonChai from 'sinon-chai';
 import type {
   CLSMetricWithAttribution,
   FCPMetricWithAttribution,
+  INPMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
 import {
@@ -362,6 +363,169 @@ describe('WebVitalsInstrumentation', () => {
     expect(inpEvent.time).to.deep.equal([19, 0]);
   });
 
+  describe('loaf_scripts attribution', () => {
+    let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+    beforeEach(() => {
+      originalPerformanceObserver = globalThis.PerformanceObserver;
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = ['long-animation-frame'];
+      };
+    });
+
+    afterEach(() => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        originalPerformanceObserver;
+    });
+
+    const fireINP = (
+      metricReportFunc: WebVitalOnReport,
+      loafEntries: PerformanceLongAnimationFrameTiming[],
+    ) => {
+      metricReportFunc({
+        name: 'INP',
+        value: 200,
+        rating: 'needs-improvement',
+        delta: 200,
+        id: 'm2',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          interactionTarget: 'button',
+          interactionTargetElement: undefined,
+          interactionTime: 1000,
+          nextPaintTime: 1200,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: loafEntries,
+          inputDelay: 10,
+          processingDuration: 150,
+          presentationDelay: 40,
+          loadState: 'complete',
+        },
+      } as INPMetricWithAttribution);
+    };
+
+    it('should include loaf_scripts in INP event', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      void expect(inpStub.calledTwice).to.be.true;
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, [
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 100,
+              forcedStyleAndLayoutDuration: 10,
+            },
+            {
+              sourceURL: '',
+              duration: 50,
+              forcedStyleAndLayoutDuration: 5,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      expect(sessionSpan.events).to.have.lengthOf(1);
+      const loafScripts = JSON.parse(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ] as string,
+      ) as Record<string, unknown>;
+
+      expect(loafScripts['https://example.com/app.js']).to.deep.equal({
+        total_duration: 100,
+        style_and_layout_duration: 10,
+        count: 1,
+      });
+      expect(loafScripts['(inline)']).to.deep.equal({
+        total_duration: 50,
+        style_and_layout_duration: 5,
+        count: 1,
+      });
+    });
+
+    it('should aggregate scripts across multiple loaf entries', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, [
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 60,
+              forcedStyleAndLayoutDuration: 10,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+        {
+          scripts: [
+            {
+              sourceURL: 'https://example.com/app.js',
+              duration: 40,
+              forcedStyleAndLayoutDuration: 20,
+            },
+          ],
+        } as PerformanceLongAnimationFrameTiming,
+      ]);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      const loafScripts = JSON.parse(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ] as string,
+      ) as Record<string, unknown>;
+
+      expect(loafScripts['https://example.com/app.js']).to.deep.equal({
+        total_duration: 100,
+        style_and_layout_duration: 30,
+        count: 2,
+      });
+    });
+
+    it('should not include loaf_scripts when no LoAF entries are reported', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        urlDocument,
+        listeners: mockWebVitalListeners,
+      });
+
+      const { args } = inpStub.callsArg(0);
+      const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+      fireINP(metricReportFunc, []);
+
+      spanSessionManager.endSessionSpan();
+      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      expect(
+        sessionSpan.events[0].attributes?.[
+          'emb.web_vital.attribution.loaf_scripts'
+        ],
+      ).to.be.undefined;
+    });
+  });
+
   it('should report TTFB metrics', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
@@ -390,6 +554,19 @@ describe('WebVitalsInstrumentation', () => {
         dnsDuration: 60,
         connectionDuration: 80,
         requestDuration: 100,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 10,
+          domainLookupEnd: 20,
+          connectStart: 20,
+          connectEnd: 30,
+          secureConnectionStart: 0,
+          requestStart: 30,
+          responseStart: 50,
+          responseEnd: 60,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
       },
     } as MetricWithAttribution);
 
@@ -412,9 +589,661 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.value': 33,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 10,
+      'emb.web_vital.attribution.tcpConnection': 10,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 20,
+      'emb.web_vital.attribution.unattributed': 20,
     });
 
     expect(ttfbEvent.time).to.deep.equal([5, 0]);
+  });
+
+  it('should omit TTFB sub-parts when navigationEntry is absent', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 33,
+      rating: 'good',
+      delta: 33,
+      id: 'm2',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 20,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 33,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    expect(ttfbEvent.attributes).to.not.have.any.keys([
+      'emb.web_vital.attribution.redirect',
+      'emb.web_vital.attribution.domainLookup',
+      'emb.web_vital.attribution.tcpConnection',
+      'emb.web_vital.attribution.tlsNegotiation',
+      'emb.web_vital.attribution.serverResponse',
+      'emb.web_vital.attribution.unattributed',
+    ]);
+  });
+
+  it('should compute TTFB sub-parts correctly with TLS', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 80,
+      rating: 'good',
+      delta: 80,
+      id: 'm3',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 10,
+        connectionDuration: 20,
+        requestDuration: 30,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 10,
+          domainLookupEnd: 20,
+          connectStart: 20,
+          connectEnd: 50,
+          secureConnectionStart: 40,
+          requestStart: 50,
+          responseStart: 70,
+          responseEnd: 90,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // TLS: tcpConnection = secureConnectionStart - connectStart = 40 - 20 = 20
+    //      tlsNegotiation = connectEnd - secureConnectionStart = 50 - 40 = 10
+    // serverResponse = responseStart - requestStart = 70 - 50 = 20
+    // other = 90 - 0 - 0 - 10 - 20 - 10 - 20 = 30
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 80,
+      'emb.web_vital.id': 'm3',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 80,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 10,
+      'emb.web_vital.attribution.tcpConnection': 20,
+      'emb.web_vital.attribution.tlsNegotiation': 10,
+      'emb.web_vital.attribution.serverResponse': 20,
+      'emb.web_vital.attribution.unattributed': 30,
+    });
+  });
+
+  it('should use finalResponseHeadersStart for serverResponse when greater than responseStart', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 80,
+      rating: 'good',
+      delta: 80,
+      id: 'm4',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 50,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          connectEnd: 0,
+          secureConnectionStart: 0,
+          requestStart: 10,
+          responseStart: 50,
+          finalResponseHeadersStart: 70,
+          responseEnd: 80,
+          startTime: 0,
+        } as PerformanceNavigationTiming & {
+          finalResponseHeadersStart?: number;
+        },
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // finalResponseHeadersStart (70) > responseStart (50), so serverResponse = 70 - 10 = 60
+    // other = max(0, 80 - 0 - 0 - 0 - 0 - 0 - 60) = 20
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 80,
+      'emb.web_vital.id': 'm4',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 80,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 60,
+      'emb.web_vital.attribution.unattributed': 20,
+    });
+  });
+
+  it('should fall back to responseStart when finalResponseHeadersStart is less than responseStart', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 80,
+      rating: 'good',
+      delta: 80,
+      id: 'm4',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 40,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          connectEnd: 0,
+          secureConnectionStart: 0,
+          requestStart: 10,
+          responseStart: 50,
+          finalResponseHeadersStart: 30,
+          responseEnd: 80,
+          startTime: 0,
+        } as PerformanceNavigationTiming & {
+          finalResponseHeadersStart?: number;
+        },
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // finalResponseHeadersStart (30) < responseStart (50), falls back to responseStart
+    // serverResponse = responseStart - requestStart = 50 - 10 = 40
+    // other = max(0, 80 - 0 - 0 - 0 - 0 - 0 - 40) = 40
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 80,
+      'emb.web_vital.id': 'm4',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 80,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 40,
+      'emb.web_vital.attribution.unattributed': 40,
+    });
+  });
+
+  it('should compute TTFB sub-parts correctly with non-zero redirect', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 100,
+      rating: 'needs-improvement',
+      delta: 100,
+      id: 'm5',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 10,
+        connectionDuration: 10,
+        requestDuration: 30,
+        navigationEntry: {
+          redirectStart: 5,
+          redirectEnd: 25,
+          domainLookupStart: 25,
+          domainLookupEnd: 35,
+          connectStart: 35,
+          connectEnd: 45,
+          secureConnectionStart: 0,
+          requestStart: 45,
+          responseStart: 75,
+          responseEnd: 100,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // redirect: 25 - 5 = 20
+    // dns: 35 - 25 = 10
+    // tcp: 45 - 35 = 10 (no TLS)
+    // tls: 0
+    // server: 75 - 45 = 30
+    // other: 100 - 0 - 20 - 10 - 10 - 0 - 30 = 30
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 100,
+      'emb.web_vital.id': 'm5',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'needs-improvement',
+      'emb.web_vital.value': 100,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 20,
+      'emb.web_vital.attribution.domainLookup': 10,
+      'emb.web_vital.attribution.tcpConnection': 10,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 30,
+      'emb.web_vital.attribution.unattributed': 30,
+    });
+  });
+
+  it('should round fractional TTFB sub-part values to nearest millisecond', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 12,
+      rating: 'good',
+      delta: 12,
+      id: 'm6',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 1,
+        requestDuration: 1,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 5.2,
+          domainLookupEnd: 5.6,
+          connectStart: 5.6,
+          connectEnd: 6.1,
+          secureConnectionStart: 0,
+          requestStart: 6.1,
+          responseStart: 6.8,
+          responseEnd: 7.3,
+          startTime: 5.123,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // total: round(7.3 - 5.123) = round(2.177) = 2
+    // dns: round(5.6 - 5.2) = round(0.4) = 0
+    // tcp: round(6.1 - 5.6) = round(0.5) = 1
+    // server: round(6.8 - 6.1) = round(0.7) = 1
+    // unattributed: 2 - 0 - 0 - 1 - 0 - 1 = 0
+    expect(ttfbEvent.attributes).to.deep.include({
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 1,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 1,
+      'emb.web_vital.attribution.unattributed': 0,
+    });
+  });
+
+  it('should clamp negative TTFB sub-part durations to 0', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 50,
+      rating: 'good',
+      delta: 50,
+      id: 'm8',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 10,
+          redirectEnd: 5,
+          domainLookupStart: 20,
+          domainLookupEnd: 15,
+          connectStart: 30,
+          connectEnd: 25,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 35,
+          responseEnd: 50,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // redirect: 5 - 10 = -5 -> clamped to 0
+    // dns: 15 - 20 = -5 -> clamped to 0
+    // tcp: 25 - 30 = -5 -> clamped to 0
+    // tls: 0 (no secure connection)
+    // server: 35 - 40 = -5 -> clamped to 0
+    // other: 50 - 0 - 0 - 0 - 0 - 0 - 0 = 50
+    expect(ttfbEvent.attributes).to.deep.include({
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 0,
+      'emb.web_vital.attribution.unattributed': 50,
+    });
+  });
+
+  it('should round fractional negative TTFB sub-part durations to 0', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 50,
+      rating: 'good',
+      delta: 50,
+      id: 'm8b',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 10,
+          redirectEnd: 9.7,
+          domainLookupStart: 20,
+          domainLookupEnd: 19.4,
+          connectStart: 30,
+          connectEnd: 29.8,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 39.3,
+          responseEnd: 50,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // redirect: 9.7 - 10 = -0.3 -> clamped to 0
+    // dns: 19.4 - 20 = -0.6 -> clamped to 0
+    // tcp: 29.8 - 30 = -0.2 -> clamped to 0
+    // tls: 0 (no secure connection)
+    // server: 39.3 - 40 = -0.7 -> clamped to 0
+    // unattributed: 50 - 0 - 0 - 0 - 0 - 0 = 50
+    expect(ttfbEvent.attributes).to.deep.include({
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 0,
+      'emb.web_vital.attribution.tcpConnection': 0,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 0,
+      'emb.web_vital.attribution.unattributed': 50,
+    });
+  });
+
+  it('should ensure TTFB sub-parts sum to rounded total', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    // Fractional values chosen so independent rounding would overshoot the total
+    metricReportFunc({
+      name: 'TTFB',
+      value: 10,
+      rating: 'good',
+      delta: 10,
+      id: 'm-sum',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 0,
+        connectionDuration: 0,
+        requestDuration: 0,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 1.1,
+          domainLookupEnd: 1.6,
+          connectStart: 1.6,
+          connectEnd: 3.8,
+          secureConnectionStart: 2.1,
+          requestStart: 3.8,
+          responseStart: 6.3,
+          responseEnd: 8.7,
+          startTime: 0.2,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    const attrs = ttfbEvent.attributes as Record<string, number>;
+    const redirect = attrs['emb.web_vital.attribution.redirect'];
+    const domainLookup = attrs['emb.web_vital.attribution.domainLookup'];
+    const tcpConnection = attrs['emb.web_vital.attribution.tcpConnection'];
+    const tlsNegotiation = attrs['emb.web_vital.attribution.tlsNegotiation'];
+    const serverResponse = attrs['emb.web_vital.attribution.serverResponse'];
+    const unattributed = attrs['emb.web_vital.attribution.unattributed'];
+
+    // total: round(8.7 - 0.2) = round(8.5) = 9
+    // dns: round(1.6 - 1.1) = round(0.5) = 1
+    // tcp: round(2.1 - 1.6) = round(0.5) = 1
+    // tls: round(3.8 - 2.1) = round(1.7) = 2
+    // server: round(6.3 - 3.8) = round(2.5) = 3
+    // unattributed: 9 - 0 - 1 - 1 - 2 - 3 = 2
+    expect(redirect).to.equal(0);
+    expect(domainLookup).to.equal(1);
+    expect(tcpConnection).to.equal(1);
+    expect(tlsNegotiation).to.equal(2);
+    expect(serverResponse).to.equal(3);
+    expect(unattributed).to.equal(2);
+
+    const sum =
+      redirect +
+      domainLookup +
+      tcpConnection +
+      tlsNegotiation +
+      serverResponse +
+      unattributed;
+    expect(sum).to.equal(Math.round(8.7 - 0.2));
+  });
+
+  it('should compute TTFB other correctly with non-zero startTime', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = ttfbStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'TTFB',
+      value: 80,
+      rating: 'good',
+      delta: 80,
+      id: 'm7',
+      entries: [],
+      navigationType: 'back-forward',
+      attribution: {
+        waitingDuration: 0,
+        cacheDuration: 0,
+        dnsDuration: 10,
+        connectionDuration: 10,
+        requestDuration: 20,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 20,
+          domainLookupEnd: 30,
+          connectStart: 30,
+          connectEnd: 40,
+          secureConnectionStart: 0,
+          requestStart: 40,
+          responseStart: 60,
+          responseEnd: 80,
+          startTime: 10,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const sessionSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionSpan.events[0];
+
+    // dns: 30 - 20 = 10
+    // tcp: 40 - 30 = 10
+    // server: 60 - 40 = 20
+    // other: 80 - 10 - 0 - 10 - 10 - 0 - 20 = 30
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 80,
+      'emb.web_vital.id': 'm7',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'back-forward',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 80,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 10,
+      'emb.web_vital.attribution.tcpConnection': 10,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 20,
+      'emb.web_vital.attribution.unattributed': 30,
+    });
   });
 
   it('should be able to report multiple metrics', () => {
@@ -828,6 +1657,19 @@ describe('WebVitalsInstrumentation', () => {
         dnsDuration: 60,
         connectionDuration: 80,
         requestDuration: 100,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 10,
+          domainLookupEnd: 20,
+          connectStart: 20,
+          connectEnd: 30,
+          secureConnectionStart: 0,
+          requestStart: 30,
+          responseStart: 50,
+          responseEnd: 60,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
       },
     } as MetricWithAttribution;
 

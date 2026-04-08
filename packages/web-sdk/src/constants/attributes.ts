@@ -12,9 +12,6 @@ export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
 export const KEY_EMB_EXCEPTION_CAUSE = 'emb.exception_cause';
 export const KEY_EMB_ERROR_CODE = 'emb.error_code';
 export const KEY_EMB_APP_INSTANCE_ID = 'emb.app_instance_id';
-export const KEY_EMB_TAB_ID = 'emb.tab_id';
-export const KEY_EMB_SOURCE_TAB_ID = 'emb.source_tab_id';
-export const KEY_EMB_EXPERIENCE_ID = 'emb.experience_id';
 export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
 export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
 export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
@@ -22,8 +19,6 @@ export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
 export const KEY_EMB_FROM_STORAGE = 'emb.from_storage';
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
-export const KEY_EMB_NAVIGATION_SOURCE = 'emb.navigation_source';
-export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
 export const KEY_BROWSER_URL_FULL = 'browser.url.full';
 export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
   'emb.max_pending_spans_reached';
@@ -40,6 +35,7 @@ export enum EMB_TYPES {
   SystemLog = 'sys.log', // SystemLog is a log emb type that tells the Embrace BE to treat this as an Embrace Log to be shown in the dashboard.
   SystemException = 'sys.exception',
   WebVital = 'ux.web_vital',
+  LoafScripts = 'ux.loaf_scripts',
   ResourceFetch = 'ux.resource_fetch',
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',

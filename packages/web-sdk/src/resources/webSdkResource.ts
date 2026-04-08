@@ -16,13 +16,26 @@ import {
 } from './constants/index.ts';
 import type { GetWebSDKResourceArgs } from './types.ts';
 
+/**
+ * Returns resource attributes that users are allowed to override via the `resource` option in `initSDK`.
+ * These defaults are applied first in the merge chain so user-provided values take precedence.
+ */
+export const getWebSDKOverridableResource = (): Resource => {
+  return resourceFromAttributes({
+    [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
+  });
+};
+
+/**
+ * Returns SDK resource attributes that must not be overridden by user-provided resources.
+ * These are applied last in the merge chain so they always take precedence.
+ */
 export const getWebSDKResource = ({
   diagLogger,
   appVersion,
   pageSessionStorage,
 }: GetWebSDKResourceArgs): Resource => {
   return resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: EMBRACE_SERVICE_NAME,
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
     // NOTE: `appVersion` may originate from TEMPLATE_APP_VERSION, which is padded
     // with whitespace by the CLI to keep sourcemap offsets stable. The padding is

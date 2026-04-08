@@ -16,6 +16,8 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
+// deep import needed to stub the cached console refs used by DiagConsoleLogger
+import { _originalConsoleMethods } from '../../../../node_modules/@opentelemetry/api/build/esm/diag/consoleLogger.js';
 import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
@@ -704,18 +706,6 @@ describe('initSDK', () => {
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
-      const experienceId = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.experience_id',
-      )?.value.stringValue;
-      void expect(experienceId).to.be.a('string');
-      void expect(experienceId).to.have.lengthOf(32);
-
-      const tabId = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.tab_id',
-      )?.value.stringValue;
-      void expect(tabId).to.be.a('string');
-      void expect(tabId).to.have.lengthOf(32);
-
       const browserUrlFull = sessionSpan['attributes'].find(
         (attr) => attr.key === 'browser.url.full',
       )?.value.stringValue;
@@ -730,14 +720,65 @@ describe('initSDK', () => {
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
         sessionNumber,
-        { key: 'emb.experience_id', value: { stringValue: experienceId } },
-        { key: 'emb.tab_id', value: { stringValue: tabId } },
-        { key: 'emb.navigation_source', value: { stringValue: 'direct' } },
         { key: 'emb.session_start_type', value: { stringValue: 'init' } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,
         { key: 'browser.url.full', value: { stringValue: browserUrlFull } },
       ]);
+    });
+
+    it('should allow user resource to override service.name but not other SDK attributes', async () => {
+      fakeFetchRespondWith('');
+
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        resource: resourceFromAttributes({
+          'service.name': 'my-custom-service',
+          // Attempt to override non-overridable SDK attributes
+          'telemetry.sdk.name': 'my-custom-sdk',
+          app_framework: 99,
+          sdk_platform: 'my-custom-platform',
+        }),
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            '@opentelemetry/instrumentation-fetch',
+            'document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise((r) => setTimeout(r, 1));
+
+      session.endSessionSpan();
+
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise((r) => setTimeout(r, 1));
+
+      const body = fakeFetchGetBody(1);
+      void expect(body).not.to.be.null;
+      const decompressedStream = new Response(body).body?.pipeThrough(
+        new DecompressionStream('gzip'),
+      );
+      const text = await new Response(decompressedStream).text();
+      const parsed = JSON.parse(text) as never;
+
+      const resource = parsed['resourceSpans'][0]['resource'];
+      expect(resource).to.containSubset({
+        attributes: [
+          // service.name is overridable — user value wins
+          { key: 'service.name', value: { stringValue: 'my-custom-service' } },
+          // All other SDK attributes are not overridable — SDK values win
+          {
+            key: 'telemetry.sdk.name',
+            value: { stringValue: 'embrace-web-sdk' },
+          },
+          { key: 'app_framework', value: { intValue: 1 } },
+          { key: 'sdk_platform', value: { stringValue: 'web' } },
+        ],
+      });
     });
 
     it('should not include unfinished spans ', async () => {
@@ -1412,9 +1453,12 @@ describe('initSDK', () => {
     let consoleInfoStub: SinonStub;
 
     beforeEach(() => {
-      consoleErrorStub = sinon.stub(console, 'error');
-      consoleWarnStub = sinon.stub(console, 'warn');
-      consoleInfoStub = sinon.stub(console, 'info');
+      expect(_originalConsoleMethods.error).to.be.a('function');
+      expect(_originalConsoleMethods.warn).to.be.a('function');
+      expect(_originalConsoleMethods.info).to.be.a('function');
+      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
+      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
+      consoleInfoStub = sinon.stub(_originalConsoleMethods, 'info');
     });
 
     afterEach(() => {
@@ -1478,8 +1522,10 @@ describe('initSDK', () => {
     let consoleWarnStub: SinonStub;
 
     beforeEach(() => {
-      consoleErrorStub = sinon.stub(console, 'error');
-      consoleWarnStub = sinon.stub(console, 'warn');
+      expect(_originalConsoleMethods.error).to.be.a('function');
+      expect(_originalConsoleMethods.warn).to.be.a('function');
+      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
+      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
     });
 
     afterEach(() => {
@@ -1757,7 +1803,7 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.213.0',
+            version: '0.214.0',
           },
         );
         expect(exportedSpans).to.have.lengthOf(1);
@@ -2004,11 +2050,6 @@ describe('isolated instances', () => {
       true,
       'first app did not store app instance id',
     );
-    expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(
-      true,
-      'first app did not store embrace tab',
-    );
-
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
       true,
@@ -2022,11 +2063,6 @@ describe('isolated instances', () => {
       true,
       'second app did not store app instance id',
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(
-      true,
-      'second app did not store embrace tab',
-    );
-
     // Nothing using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(
       false,
@@ -2039,10 +2075,6 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(
       false,
       'found globally stored app instance id',
-    );
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(
-      false,
-      'found globally stored tab',
     );
   });
 
@@ -2079,12 +2111,9 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
-
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
   });
 
   it('should not namespace the storage when registering globally', async () => {
@@ -2122,12 +2151,9 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
-
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
     expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
   });
 });

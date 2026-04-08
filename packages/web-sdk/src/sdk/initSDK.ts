@@ -50,7 +50,10 @@ import {
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
-import { getWebSDKResource } from '../resources/index.ts';
+import {
+  getWebSDKOverridableResource,
+  getWebSDKResource,
+} from '../resources/index.ts';
 import {
   NamespacedStorage,
   nsfConfigValidation,
@@ -154,13 +157,15 @@ export const initSDK = (
       ? new NamespacedStorage(appID, window.sessionStorage)
       : window.sessionStorage;
 
-    const resourceWithWebSDKAttributes = resource.merge(
-      getWebSDKResource({
-        diagLogger,
-        appVersion: validatedAppVersion,
-        pageSessionStorage: sdkSessionStorage,
-      }),
-    );
+    const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
+      .merge(resource)
+      .merge(
+        getWebSDKResource({
+          diagLogger,
+          appVersion: validatedAppVersion,
+          pageSessionStorage: sdkSessionStorage,
+        }),
+      );
 
     const userManager = setupUser({ registerGlobally, sdkLocalStorage });
     const enduserPseudoID = userManager.getEmbraceUserId();
@@ -213,7 +218,6 @@ export const initSDK = (
       limitManager,
       registerGlobally,
       sdkLocalStorage,
-      sdkSessionStorage,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -360,12 +364,10 @@ const setupSession = ({
   limitManager,
   registerGlobally,
   sdkLocalStorage,
-  sdkSessionStorage,
 }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
     storage: sdkLocalStorage,
-    sessionStorage: sdkSessionStorage,
   });
 
   if (registerGlobally) {
