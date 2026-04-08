@@ -727,6 +727,60 @@ describe('initSDK', () => {
       ]);
     });
 
+    it('should allow user resource to override service.name but not other SDK attributes', async () => {
+      fakeFetchRespondWith('');
+
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        resource: resourceFromAttributes({
+          'service.name': 'my-custom-service',
+          // Attempt to override non-overridable SDK attributes
+          'telemetry.sdk.name': 'my-custom-sdk',
+          app_framework: 99,
+          sdk_platform: 'my-custom-platform',
+        }),
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            '@opentelemetry/instrumentation-fetch',
+            'document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      // Needed to allow the browser detector resources to be grabbed
+      await new Promise((r) => setTimeout(r, 1));
+
+      session.endSessionSpan();
+
+      // Needed to allow the transport to actually send its data off to fetch
+      await new Promise((r) => setTimeout(r, 1));
+
+      const body = fakeFetchGetBody(1);
+      void expect(body).not.to.be.null;
+      const decompressedStream = new Response(body).body?.pipeThrough(
+        new DecompressionStream('gzip'),
+      );
+      const text = await new Response(decompressedStream).text();
+      const parsed = JSON.parse(text) as never;
+
+      const resource = parsed['resourceSpans'][0]['resource'];
+      expect(resource).to.containSubset({
+        attributes: [
+          // service.name is overridable — user value wins
+          { key: 'service.name', value: { stringValue: 'my-custom-service' } },
+          // All other SDK attributes are not overridable — SDK values win
+          {
+            key: 'telemetry.sdk.name',
+            value: { stringValue: 'embrace-web-sdk' },
+          },
+          { key: 'app_framework', value: { intValue: 1 } },
+          { key: 'sdk_platform', value: { stringValue: 'web' } },
+        ],
+      });
+    });
+
     it('should not include unfinished spans ', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
