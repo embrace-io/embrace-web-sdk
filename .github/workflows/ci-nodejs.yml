@@ -523,14 +523,14 @@ jobs:
 
       - name: Create build results section
         run: |
-          GZIP_SIZE=$(grep 'vite-7 - es2015' ./build-test-results/vite-7/build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
+          GZIP_SIZE=$(grep 'vite-7 - es2015' ./build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
           GZIP_SIZE="${GZIP_SIZE:-N/A}"
           {
             echo '<!-- build-section -->'
             echo "<details>"
             echo "<summary><strong>Platform Tests</strong> (vite-7 es2015 gzip: ${GZIP_SIZE})</summary>"
             echo ""
-            for file in ./build-test-results/*/build-test-results/*.md; do
+            for file in ./build-test-results/*.md; do
               cat "$file"
             done
             echo ""
