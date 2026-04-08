@@ -218,7 +218,6 @@ export const initSDK = (
       limitManager,
       registerGlobally,
       sdkLocalStorage,
-      sdkSessionStorage,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -365,12 +364,10 @@ const setupSession = ({
   limitManager,
   registerGlobally,
   sdkLocalStorage,
-  sdkSessionStorage,
 }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
     storage: sdkLocalStorage,
-    sessionStorage: sdkSessionStorage,
   });
 
   if (registerGlobally) {

@@ -7,6 +7,7 @@ import type {
   LCPAttribution,
   Metric,
   MetricWithAttribution,
+  TTFBAttribution,
 } from 'web-vitals/attribution';
 import type { PageManager } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
@@ -39,6 +40,8 @@ type AttributedPage = {
   label?: string;
 };
 
+const roundClamp = (value: number): number => Math.round(Math.max(0, value));
+
 const webVitalAttributionToReport = (
   name: Metric['name'],
   metric: MetricWithAttribution,
@@ -51,7 +54,7 @@ const webVitalAttributionToReport = (
   }[] = [];
 
   if (name === 'CLS') {
-    // https://www.npmjs.com/package/web-vitals#CLSAttribution
+    // https://github.com/GoogleChrome/web-vitals#CLSAttribution
     const attribution = metric.attribution as CLSAttribution;
     toReport.push(
       ...[
@@ -66,7 +69,7 @@ const webVitalAttributionToReport = (
       ],
     );
   } else if (name === 'INP') {
-    // https://www.npmjs.com/package/web-vitals#inpattribution
+    // https://github.com/GoogleChrome/web-vitals#inpattribution
     const attribution = metric.attribution as INPAttribution;
     toReport.push(
       ...[
@@ -151,7 +154,7 @@ const webVitalAttributionToReport = (
       diag.error('error building loaf scripts for INP', e);
     }
   } else if (name === 'LCP') {
-    // https://www.npmjs.com/package/web-vitals#lcpattribution
+    // https://github.com/GoogleChrome/web-vitals#lcpattribution
     const attribution = metric.attribution as LCPAttribution;
     toReport.push(
       ...[
@@ -166,6 +169,60 @@ const webVitalAttributionToReport = (
         { key: 'elementRenderDelay', value: attribution.elementRenderDelay },
       ],
     );
+  } else if (name === 'TTFB') {
+    // https://github.com/GoogleChrome/web-vitals#ttfbattribution
+    const attribution = metric.attribution as TTFBAttribution;
+    const entry = attribution.navigationEntry as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (entry) {
+      try {
+        const redirect = roundClamp(entry.redirectEnd - entry.redirectStart);
+        const domainLookup = roundClamp(
+          entry.domainLookupEnd - entry.domainLookupStart,
+        );
+        const tcpConnection = roundClamp(
+          entry.secureConnectionStart > 0
+            ? entry.secureConnectionStart - entry.connectStart
+            : entry.connectEnd - entry.connectStart,
+        );
+        const tlsNegotiation = roundClamp(
+          entry.secureConnectionStart > 0
+            ? entry.connectEnd - entry.secureConnectionStart
+            : 0,
+        );
+        const effectiveResponseStart = Math.max(
+          // @ts-expect-error 103 Early hints are not supported in all browsers
+          // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/finalResponseHeadersStart
+          entry.finalResponseHeadersStart ?? 0,
+          entry.responseStart,
+        );
+        const serverResponse = roundClamp(
+          effectiveResponseStart - entry.requestStart,
+        );
+        const total = Math.round(entry.responseEnd - entry.startTime);
+        const unattributed = roundClamp(
+          total -
+            redirect -
+            domainLookup -
+            tcpConnection -
+            tlsNegotiation -
+            serverResponse,
+        );
+        toReport.push(
+          { key: 'redirect', value: redirect },
+          { key: 'domainLookup', value: domainLookup },
+          { key: 'tcpConnection', value: tcpConnection },
+          { key: 'tlsNegotiation', value: tlsNegotiation },
+          { key: 'serverResponse', value: serverResponse },
+          { key: 'unattributed', value: unattributed },
+        );
+      } catch (e) {
+        diag.error('error computing TTFB timing breakdown', e);
+      }
+    } else {
+      diag.debug('TTFB navigationEntry unavailable, skipping timing breakdown');
+    }
   }
 
   toReport.forEach((report) => {
