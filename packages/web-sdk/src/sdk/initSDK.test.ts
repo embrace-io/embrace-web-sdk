@@ -742,7 +742,7 @@ describe('initSDK', () => {
       ]);
     });
 
-    it('should allow user resource to override service.name', async () => {
+    it('should allow user resource to override service.name but not other SDK attributes', async () => {
       fakeFetchRespondWith('');
 
       const result = initSDK({
@@ -750,6 +750,10 @@ describe('initSDK', () => {
         appVersion: 'my-app-version',
         resource: resourceFromAttributes({
           'service.name': 'my-custom-service',
+          // Attempt to override non-overridable SDK attributes
+          'telemetry.sdk.name': 'my-custom-sdk',
+          app_framework: 99,
+          sdk_platform: 'my-custom-platform',
         }),
         defaultInstrumentationConfig: {
           omit: new Set([
@@ -779,7 +783,15 @@ describe('initSDK', () => {
       const resource = parsed['resourceSpans'][0]['resource'];
       expect(resource).to.containSubset({
         attributes: [
+          // service.name is overridable — user value wins
           { key: 'service.name', value: { stringValue: 'my-custom-service' } },
+          // All other SDK attributes are not overridable — SDK values win
+          {
+            key: 'telemetry.sdk.name',
+            value: { stringValue: 'embrace-web-sdk' },
+          },
+          { key: 'app_framework', value: { intValue: 1 } },
+          { key: 'sdk_platform', value: { stringValue: 'web' } },
         ],
       });
     });
