@@ -7,7 +7,8 @@
     "build:clean": "npx rimraf .next",
     "build:es2020": "next build --turbopack",
     "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./.next/static/chunks --no-upload",
-    "start": "next start"
+    "start": "next start",
+    "test": "npx tsx --test ../../utils/platform-smoke-test.ts --test-timeout=20000"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",

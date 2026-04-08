@@ -388,18 +388,32 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.59.1-noble@sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53
-    permissions:
-      pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          [
+            vite-6,
+            vite-7,
+            webpack-4,
+            webpack-5,
+            next-15-turbopack-app,
+            next-15-turbopack-pages,
+            next-15-webpack-app,
+            next-15-webpack-pages,
+            next-16-app,
+            next-16-pages,
+          ]
     steps:
       - name: Restore previous test results
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
-          key: test.${{ github.job }}.sha-${{ github.sha }}.txt
+          key: test.test-integration-${{ matrix.platform }}.sha-${{ github.sha }}.txt
 
       - name: Check if test previously succeeded
         run: |
@@ -428,21 +442,41 @@ jobs:
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
           chown root:root /github/home
 
-      - name: Install GitHub CLI and jq
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          apt-get update && apt-get install -y jq
-          curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
-
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
           npm ci
 
-      - name: Test Integration
+      - name: Build SDK and CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          npm run test:integration
+          npx turbo run build --filter=tests-integration^...
+
+      - name: Install platform dependencies
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: npm install -w ${{ matrix.platform }}
+        working-directory: tests/integration/platforms
+
+      - name: Build and smoke test platform
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
+        run: npm run test -w ${{ matrix.platform }}
+        working-directory: tests/integration/platforms
+
+      # webpack-4 has no E2E tests (build smoke test only, no playwright spec file)
+      - name: Run E2E tests
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && matrix.platform != 'webpack-4' }}
+        working-directory: tests/integration
+        run: npx playwright test tests/e2e/${{ matrix.platform }}-tests.spec.ts
+        env:
+          PLATFORM: ${{ matrix.platform }}
+
+      # CDN tests only need the api server; pinned to vite-7 shard arbitrarily
+      - name: Run CDN E2E tests
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && matrix.platform == 'vite-7' }}
+        working-directory: tests/integration
+        run: npx playwright test tests/e2e/cdn-tests.spec.ts
+        env:
+          PLATFORM: ''
 
       - name: Cache successful test results
         if: ${{ success() }}
@@ -454,16 +488,49 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
-      - name: Create build results section
+      - name: Upload build test results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: build-test-results-${{ matrix.platform }}
+          path: tests/integration/platforms/${{ matrix.platform }}/build-test-results/*.md
+
+      - name: Upload sonda results
+        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          include-hidden-files: true
+          name: build-results-${{ matrix.platform }}
+          path: tests/integration/platforms/${{ matrix.platform }}/.sonda/**/*.html
+          if-no-files-found: ignore
+
+  test-integration-results:
+    needs:
+      - environment
+      - test-integration
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: ${{ needs.environment.outputs.name == 'development' && !cancelled() && needs.test-integration.result == 'success' }}
+    timeout-minutes: 5
+    steps:
+      - name: Download build test results
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        with:
+          pattern: build-test-results-*
+          merge-multiple: true
+          path: build-test-results
+
+      - name: Create build results section
         run: |
-          GZIP_SIZE=$(grep 'vite-7 - es2015' ./tests/integration/build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
+          GZIP_SIZE=$(grep 'vite-7 - es2015' ./build-test-results/vite-7/build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
+          GZIP_SIZE="${GZIP_SIZE:-N/A}"
           {
             echo '<!-- build-section -->'
             echo "<details>"
             echo "<summary><strong>Platform Tests</strong> (vite-7 es2015 gzip: ${GZIP_SIZE})</summary>"
             echo ""
-            for file in ./tests/integration/build-test-results/*.md; do
+            for file in ./build-test-results/*/build-test-results/*.md; do
               cat "$file"
             done
             echo ""
@@ -472,7 +539,6 @@ jobs:
           } > build-section.md
 
       - name: Post or update PR comment with build results
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         shell: bash
         run: |
           SECTION="$(cat build-section.md)"
@@ -494,14 +560,6 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update artifact with build results
-        if: ${{ needs.environment.outputs.name == 'development' }}
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          include-hidden-files: true
-          name: build-results
-          path: tests/integration/platforms/*/.sonda/**/*.html
 
   commitlint:
     timeout-minutes: 5
