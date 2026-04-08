@@ -470,7 +470,8 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
 
-      # CDN tests only need the api server; pinned to vite-7 shard arbitrarily
+      # CDN tests only need the api server; pinned to vite-7 shard arbitrarily.
+      # PLATFORM='' means "no platform servers", only the API server starts.
       - name: Run CDN E2E tests
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && matrix.platform == 'vite-7' }}
         working-directory: tests/integration
@@ -488,12 +489,14 @@ jobs:
         run: |
           rm -f ${{ env.TEST_STATUS_FILE }}
 
+      # Only sonda-enabled platforms produce build-test-results and sonda HTML
       - name: Upload build test results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: build-test-results-${{ matrix.platform }}
           path: tests/integration/platforms/${{ matrix.platform }}/build-test-results/*.md
+          if-no-files-found: ignore
 
       - name: Upload sonda results
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && success() && needs.environment.outputs.name == 'development' }}
@@ -523,8 +526,11 @@ jobs:
 
       - name: Create build results section
         run: |
-          GZIP_SIZE=$(grep 'vite-7 - es2015' ./build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +')
-          GZIP_SIZE="${GZIP_SIZE:-N/A}"
+          GZIP_SIZE=$(grep 'vite-7 - es2015' ./build-test-results/vite-7-tests.md | awk -F'|' '{print $4}' | tr -d ' +') || true
+          if [[ -z "$GZIP_SIZE" ]]; then
+            echo "::warning::Could not extract gzip size from vite-7-tests.md"
+            GZIP_SIZE="N/A"
+          fi
           {
             echo '<!-- build-section -->'
             echo "<details>"
@@ -556,7 +562,7 @@ jobs:
             gh api --method PATCH "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" -f body="$BODY"
           else
             BODY="$MARKER"$'\n\n'"$SECTION"
-            gh pr comment "${{ github.event.pull_request.number }}" --body "$BODY"
+            gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body "$BODY"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

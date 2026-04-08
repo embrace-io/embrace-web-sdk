@@ -46,6 +46,12 @@ const platformServers = [
   },
 ];
 
+// PLATFORM env var controls which platform servers start:
+//   undefined  -> all servers (local dev default)
+//   'name'     -> only matching servers (CI shards)
+//   ''         -> no platform servers, only the API server (CDN tests)
+// Vite/webpack platforms are served as static files by the API server, so they
+// don't appear in platformServers and need no filtering.
 const platformEnv = process.env.PLATFORM;
 const filteredPlatforms =
   platformEnv === undefined
