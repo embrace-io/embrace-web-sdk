@@ -303,7 +303,6 @@ export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
   registerGlobally?: boolean;
   sdkLocalStorage: Storage;
-  sdkSessionStorage: Storage;
 }
 
 export interface SetupTracesArgs {

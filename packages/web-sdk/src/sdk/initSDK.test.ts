@@ -706,18 +706,6 @@ describe('initSDK', () => {
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
-      const experienceId = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.experience_id',
-      )?.value.stringValue;
-      void expect(experienceId).to.be.a('string');
-      void expect(experienceId).to.have.lengthOf(32);
-
-      const tabId = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.tab_id',
-      )?.value.stringValue;
-      void expect(tabId).to.be.a('string');
-      void expect(tabId).to.have.lengthOf(32);
-
       const browserUrlFull = sessionSpan['attributes'].find(
         (attr) => attr.key === 'browser.url.full',
       )?.value.stringValue;
@@ -732,9 +720,6 @@ describe('initSDK', () => {
         },
         { key: 'emb.cold_start', value: { boolValue: true } },
         sessionNumber,
-        { key: 'emb.experience_id', value: { stringValue: experienceId } },
-        { key: 'emb.tab_id', value: { stringValue: tabId } },
-        { key: 'emb.navigation_source', value: { stringValue: 'direct' } },
         { key: 'emb.session_start_type', value: { stringValue: 'init' } },
         { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
         startupDuration,
@@ -2011,11 +1996,6 @@ describe('isolated instances', () => {
       true,
       'first app did not store app instance id',
     );
-    expect(!!sessionStorage.getItem('app11_embrace_tab')).to.equal(
-      true,
-      'first app did not store embrace tab',
-    );
-
     // Second instance using namespaced storage
     expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
       true,
@@ -2029,11 +2009,6 @@ describe('isolated instances', () => {
       true,
       'second app did not store app instance id',
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(
-      true,
-      'second app did not store embrace tab',
-    );
-
     // Nothing using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(
       false,
@@ -2046,10 +2021,6 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(
       false,
       'found globally stored app instance id',
-    );
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(
-      false,
-      'found globally stored tab',
     );
   });
 
@@ -2086,12 +2057,9 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
-
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
   });
 
   it('should not namespace the storage when registering globally', async () => {
@@ -2129,12 +2097,9 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_tab')).to.equal(true);
-
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
     expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_tab')).to.equal(true);
   });
 });
