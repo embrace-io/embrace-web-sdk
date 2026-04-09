@@ -415,11 +415,9 @@ const setupTraces = ({
       // Session properties are stored as attributes on the session span, add a
       // buffer here so that there is room for our internal attributes
       attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
-      attributePerEventCountLimit: 20,
       // Breadcrumbs are stored as events on the session span, add a
       // buffer here so that there is room for our internal events
       eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
-      attributeValueLengthLimit: 1024,
     },
   });
 
