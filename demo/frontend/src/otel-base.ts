@@ -22,6 +22,12 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
       'empty-root': {
         rootNode: document.getElementById('root'),
       },
+      // To exclude specific instrumentations use the `omit` field:
+      // omit: new Set([
+      //   '@opentelemetry/instrumentation-fetch',
+      //   '@opentelemetry/instrumentation-xml-http-request',
+      //   'document-load',
+      // ]),
     },
     ...(instrumentations ? { instrumentations } : {}),
     embraceDataURL: DATA_URL ?? undefined,

@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 // To send telemetry to it, set VITE_DATA_URL=http://localhost:3001 in .env.
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE_URL || '/',
+  base: process.env.GITHUB_ACTIONS ? '/embrace-web-sdk/' : '/',
   plugins: [Sonda({ enabled: false })],
   build: {
     sourcemap: true,

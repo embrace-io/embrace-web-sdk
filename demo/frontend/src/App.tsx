@@ -208,13 +208,15 @@ const App = () => {
     }, 100);
   };
 
+  const loafDurations = [200, 400, 600, 800];
+
   const handleLoadLoafScripts = () => {
-    for (let i = 1; i <= 4; i++) {
+    for (const duration of loafDurations) {
       const script = document.createElement('script');
       script.type = 'module';
-      script.src = `http://localhost:3001/loaf/${i}`;
+      script.src = `${import.meta.env.BASE_URL}loaf${duration}.js`;
       script.onerror = () => {
-        console.error(`failed to load loaf script ${i}`);
+        console.error(`failed to load loaf script ${duration}`);
       };
       document.body.appendChild(script);
     }

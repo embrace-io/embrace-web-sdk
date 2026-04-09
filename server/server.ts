@@ -162,29 +162,6 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname.startsWith('/loaf/')) {
-    res.writeHead(200, { 'Content-Type': 'application/javascript' });
-    const duration = Math.floor(Math.random() * 901) + 100;
-    res.end(
-      `
-const count = Math.floor(Math.random() * 4) + 2;
-for (let i = 0; i < count; i++) {
-  setTimeout(() => {
-    const start = Date.now();
-    while (Date.now() - start < ${duration}) {}
-  }, Math.random() * 2000);
-}
-    `.trim(),
-    );
-    return;
-  }
-
-  if (req.method === 'GET' && pathname.startsWith('/script/')) {
-    res.writeHead(200, { 'Content-Type': 'application/javascript' });
-    res.end(`console.log('script loaded', '${JSON.stringify(pathname)}')`);
-    return;
-  }
-
   if (pathname === '/embrace-web-sdk.js') {
     serveFile(res, join(sdkDistDir, 'embrace-web-sdk.js'));
     return;

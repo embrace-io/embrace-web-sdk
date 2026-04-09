@@ -3,11 +3,6 @@ name: Publish Frontend Demo to GitHub Pages
 on:
   push:
     branches: [main]
-    paths:
-      - demo/**
-      - package*.json
-      - packages/web-sdk/src/**
-      - .nvmrc
   workflow_dispatch:
 
 permissions:
