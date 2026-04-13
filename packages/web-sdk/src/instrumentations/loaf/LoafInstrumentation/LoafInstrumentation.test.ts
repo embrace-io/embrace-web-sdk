@@ -165,6 +165,9 @@ describe('LoafInstrumentation', () => {
     expect(report?.eventName).to.equal('emb-loaf-report');
     expect(report?.severityNumber).to.equal(SeverityNumber.INFO);
     expect(report?.attributes['emb.type']).to.equal('ux.web_vital');
+    expect(report?.attributes['emb.web_vital.id'])
+      .to.be.a('string')
+      .and.to.have.length.greaterThan(0);
     expect(report?.attributes['emb.web_vital.name']).to.equal('TBD');
     expect(report?.attributes['emb.tbd.loaf_total_duration']).to.equal(180);
     expect(report?.attributes['emb.tbd.loaf_count']).to.equal(2);
@@ -172,7 +175,7 @@ describe('LoafInstrumentation', () => {
     expect(
       report?.attributes['emb.tbd.loaf_longest_duration_excluding_first'],
     ).to.equal(80);
-    expect(Object.keys(report?.attributes ?? {})).to.have.lengthOf(10);
+    expect(Object.keys(report?.attributes ?? {})).to.have.lengthOf(11);
 
     instrumentation.disable();
   });
@@ -515,6 +518,35 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'emb-loaf-report');
     expect(reports).to.have.lengthOf(0);
+  });
+
+  it('should generate a unique web vital id per session', () => {
+    const instrumentation = new LoafInstrumentation({ perf });
+    instrumentation.setSessionManager(spanSessionManager);
+
+    triggerEntries([makeEntry({ duration: 100 })]);
+    spanSessionManager.endSessionSpan();
+
+    const firstReport = memoryExporter
+      .getFinishedLogRecords()
+      .find((l) => l.eventName === 'emb-loaf-report');
+    const firstId = firstReport?.attributes['emb.web_vital.id'];
+    expect(firstId).to.be.a('string').and.to.have.length.greaterThan(0);
+
+    memoryExporter.reset();
+    spanSessionManager.startSessionSpan();
+
+    triggerEntries([makeEntry({ duration: 80 })]);
+    spanSessionManager.endSessionSpan();
+
+    const secondReport = memoryExporter
+      .getFinishedLogRecords()
+      .find((l) => l.eventName === 'emb-loaf-report');
+    const secondId = secondReport?.attributes['emb.web_vital.id'];
+    expect(secondId).to.be.a('string').and.to.have.length.greaterThan(0);
+    expect(secondId).to.not.equal(firstId);
+
+    instrumentation.disable();
   });
 
   it('should not bleed accumulated data across sessions', () => {
