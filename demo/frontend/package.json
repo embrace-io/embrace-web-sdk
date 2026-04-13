@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "tsc",
+    "check": "tsc --build",
     "clean": "npx -y rimraf .sonda dist",
     "dev": "vite --open",
     "build": "vite build",
