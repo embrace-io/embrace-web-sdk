@@ -16,6 +16,10 @@
       "with": ["//#server"],
       "cache": false,
       "persistent": true
+    },
+    "check": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }
