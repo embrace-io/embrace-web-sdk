@@ -1,0 +1,374 @@
+import { SeverityNumber } from '@opentelemetry/api-logs';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
+import {
+  InMemoryDiagLogger,
+  MockPerformanceManager,
+  setupTestLogExporter,
+  setupTestTraceExporter,
+} from '../../../../tests/utils/index.ts';
+import { log } from '../../../api-logs/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceLogManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.ts';
+import { MARK_CAP, MEASURE_CAP } from './constants.ts';
+import { UserTimingInstrumentation } from './UserTimingInstrumentation.ts';
+
+const { expect } = chai;
+
+type ObserverCallback = (list: {
+  getEntries: () => PerformanceEntry[];
+}) => void;
+
+let markObserverCallback: ObserverCallback | null = null;
+let measureObserverCallback: ObserverCallback | null = null;
+let markObserverDisconnected = false;
+let measureObserverDisconnected = false;
+let markObserveOptions: { type: string; buffered: boolean } | null = null;
+let measureObserveOptions: { type: string; buffered: boolean } | null = null;
+
+class MockPerformanceObserver {
+  public static supportedEntryTypes = ['mark', 'measure'];
+  private _callback: ObserverCallback;
+  private _type: string | null = null;
+
+  public constructor(callback: ObserverCallback) {
+    this._callback = callback;
+  }
+
+  public observe(options: { type: string; buffered: boolean }): void {
+    this._type = options.type;
+    if (options.type === 'mark') {
+      markObserverCallback = this._callback;
+      markObserveOptions = options;
+      markObserverDisconnected = false;
+    } else if (options.type === 'measure') {
+      measureObserverCallback = this._callback;
+      measureObserveOptions = options;
+      measureObserverDisconnected = false;
+    }
+  }
+
+  public disconnect(): void {
+    if (this._type === 'mark') {
+      markObserverDisconnected = true;
+    } else if (this._type === 'measure') {
+      measureObserverDisconnected = true;
+    }
+  }
+}
+
+const triggerMarkEntries = (entries: PerformanceMark[]) => {
+  markObserverCallback?.({ getEntries: () => entries });
+};
+
+const triggerMeasureEntries = (entries: PerformanceMeasure[]) => {
+  measureObserverCallback?.({ getEntries: () => entries });
+};
+
+const makeMark = (
+  overrides: Partial<PerformanceMark> = {},
+): PerformanceMark => ({
+  name: 'test-mark',
+  entryType: 'mark',
+  startTime: 100,
+  duration: 0,
+  detail: null,
+  toJSON: () => ({}),
+  ...overrides,
+});
+
+const makeMeasure = (
+  overrides: Partial<PerformanceMeasure> = {},
+): PerformanceMeasure => ({
+  name: 'test-measure',
+  entryType: 'measure',
+  startTime: 50,
+  duration: 200,
+  detail: null,
+  toJSON: () => ({}),
+  ...overrides,
+});
+
+describe('UserTimingInstrumentation', () => {
+  let memoryExporter: InMemoryLogRecordExporter;
+  let clock: sinon.SinonFakeTimers;
+  let perf: MockPerformanceManager;
+  let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+  before(() => {
+    setupTestTraceExporter();
+    memoryExporter = setupTestLogExporter();
+  });
+
+  beforeEach(() => {
+    memoryExporter.reset();
+    clock = sinon.useFakeTimers();
+    perf = new MockPerformanceManager(clock);
+
+    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
+    spanSessionManager.startSessionSpan();
+    const logManager = new EmbraceLogManager({
+      spanSessionManager,
+      limitManager,
+    });
+    log.setGlobalLogManager(logManager);
+
+    originalPerformanceObserver = globalThis.PerformanceObserver;
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+      MockPerformanceObserver;
+
+    markObserverCallback = null;
+    measureObserverCallback = null;
+    markObserverDisconnected = false;
+    measureObserverDisconnected = false;
+    markObserveOptions = null;
+    measureObserveOptions = null;
+  });
+
+  afterEach(() => {
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+      originalPerformanceObserver;
+    MockPerformanceObserver.supportedEntryTypes = ['mark', 'measure'];
+    clock.restore();
+  });
+
+  it('should create two buffered observers for mark and measure', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    expect(markObserveOptions).to.deep.equal({ type: 'mark', buffered: true });
+    expect(measureObserveOptions).to.deep.equal({
+      type: 'measure',
+      buffered: true,
+    });
+
+    instrumentation.disable();
+  });
+
+  it('should not create observers when mark is unsupported', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    MockPerformanceObserver.supportedEntryTypes = [];
+
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+
+    expect(markObserveOptions).to.be.null;
+    expect(measureObserveOptions).to.be.null;
+    expect(diagLogger.getDebugLogs()).to.have.length.greaterThan(0);
+
+    instrumentation.disable();
+  });
+
+  it('should emit a log for a mark entry', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMarkEntries([
+      makeMark({ name: 'my-mark', startTime: 150, duration: 0 }),
+    ]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+    const record = logs[0];
+    expect(record.eventName).to.equal('emb-user-timing');
+    expect(record.severityNumber).to.equal(SeverityNumber.INFO);
+    expect(record.attributes['emb.type']).to.equal('ux.user_timing');
+    expect(record.attributes['emb.user_timing.name']).to.equal('my-mark');
+    expect(record.attributes['emb.user_timing.start_time']).to.equal(150);
+    expect(record.attributes['emb.user_timing.duration']).to.equal(0);
+    expect(record.attributes['emb.user_timing.entry_type']).to.equal('mark');
+
+    instrumentation.disable();
+  });
+
+  it('should emit a log for a measure entry', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMeasureEntries([
+      makeMeasure({ name: 'my-measure', startTime: 50, duration: 300 }),
+    ]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+    const record = logs[0];
+    expect(record.attributes['emb.user_timing.name']).to.equal('my-measure');
+    expect(record.attributes['emb.user_timing.duration']).to.equal(300);
+    expect(record.attributes['emb.user_timing.entry_type']).to.equal('measure');
+
+    instrumentation.disable();
+  });
+
+  it('should deduplicate entries with the same name on the same URL', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMarkEntries([
+      makeMark({ name: 'auth-start' }),
+      makeMark({ name: 'auth-start' }),
+    ]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+
+    instrumentation.disable();
+  });
+
+  it('should allow the same name after URL changes', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+    const originalHref = location.href;
+
+    triggerMarkEntries([makeMark({ name: 'page-load' })]);
+
+    history.pushState({}, '', '/other-page');
+    triggerMarkEntries([makeMark({ name: 'page-load' })]);
+    history.pushState({}, '', originalHref);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(2);
+
+    instrumentation.disable();
+  });
+
+  it('should apply the mark volume cap and drop entries silently', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    const entries: PerformanceMark[] = Array.from(
+      { length: MARK_CAP + 5 },
+      (_, i) => makeMark({ name: `mark-${i}` }),
+    );
+    triggerMarkEntries(entries);
+
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MARK_CAP);
+
+    instrumentation.disable();
+  });
+
+  it('should apply the measure volume cap and drop entries silently', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    const entries: PerformanceMeasure[] = Array.from(
+      { length: MEASURE_CAP + 5 },
+      (_, i) => makeMeasure({ name: `measure-${i}` }),
+    );
+    triggerMeasureEntries(entries);
+
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MEASURE_CAP);
+
+    instrumentation.disable();
+  });
+
+  it('should reset caps after disable and re-enable', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    const entries: PerformanceMark[] = Array.from(
+      { length: MARK_CAP },
+      (_, i) => makeMark({ name: `mark-${i}` }),
+    );
+    triggerMarkEntries(entries);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MARK_CAP);
+
+    instrumentation.disable();
+    memoryExporter.reset();
+    instrumentation.enable();
+
+    triggerMarkEntries([makeMark({ name: 'mark-after-reset' })]);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+    instrumentation.disable();
+  });
+
+  it('should not emit after disable', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+    instrumentation.disable();
+
+    triggerMarkEntries([makeMark({ name: 'late-mark' })]);
+    triggerMeasureEntries([makeMeasure({ name: 'late-measure' })]);
+
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
+  });
+
+  it('should serialize detail as JSON string in log body', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMarkEntries([
+      makeMark({ name: 'auth', detail: { phase: 'login', attempt: 2 } }),
+    ]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+    expect(logs[0].body).to.equal(
+      JSON.stringify({ phase: 'login', attempt: 2 }),
+    );
+
+    instrumentation.disable();
+  });
+
+  it('should not set body when detail is null', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMarkEntries([makeMark({ name: 'no-detail', detail: null })]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+    expect(logs[0].body).to.be.undefined;
+
+    instrumentation.disable();
+  });
+
+  it('should not set body when detail is undefined', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    const entry = makeMark({ name: 'no-detail-undef' });
+    (entry as unknown as Record<string, unknown>)['detail'] = undefined;
+    triggerMarkEntries([entry]);
+
+    const logs = memoryExporter.getFinishedLogRecords();
+    expect(logs).to.have.length(1);
+    expect(logs[0].body).to.be.undefined;
+
+    instrumentation.disable();
+  });
+
+  it('should disconnect both observers on disable', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    expect(markObserverDisconnected).to.be.false;
+    expect(measureObserverDisconnected).to.be.false;
+
+    instrumentation.disable();
+
+    expect(markObserverDisconnected).to.be.true;
+    expect(measureObserverDisconnected).to.be.true;
+  });
+
+  it('should reset deduplication state after disable and re-enable', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMarkEntries([makeMark({ name: 'once' })]);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+    instrumentation.disable();
+    memoryExporter.reset();
+    instrumentation.enable();
+
+    triggerMarkEntries([makeMark({ name: 'once' })]);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+    instrumentation.disable();
+  });
+
+  it('should not double-enable when enable is called twice', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+    instrumentation.enable();
+
+    triggerMarkEntries([makeMark({ name: 'x' })]);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+    instrumentation.disable();
+  });
+});

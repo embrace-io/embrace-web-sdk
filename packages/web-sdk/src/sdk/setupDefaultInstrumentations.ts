@@ -12,6 +12,7 @@ import {
   SpanSessionOnLoadInstrumentation,
   SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
+  UserTimingInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.ts';
 import type {
@@ -61,6 +62,10 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('loaf')) {
     instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
+  }
+
+  if (!config.omit?.has('user-timing')) {
+    instrumentations.push(new UserTimingInstrumentation(config['user-timing']));
   }
 
   if (!config.omit?.has('document-load')) {

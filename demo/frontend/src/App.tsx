@@ -514,6 +514,29 @@ const App = () => {
           <ComponentWithErrorInRender />
         </div>
       </fieldset>
+
+      <fieldset>
+        <legend>Browser Timing</legend>
+        <div className="actions">
+          <button
+            type="button"
+            onClick={() =>
+              performance.mark('demo-mark', { detail: { source: 'demo' } })
+            }
+          >
+            Trigger Mark
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              performance.mark('demo-measure-start');
+              performance.measure('demo-measure', 'demo-measure-start');
+            }}
+          >
+            Trigger Measure
+          </button>
+        </div>
+      </fieldset>
     </>
   );
 };
