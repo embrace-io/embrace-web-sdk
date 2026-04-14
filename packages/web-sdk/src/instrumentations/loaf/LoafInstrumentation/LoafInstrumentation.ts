@@ -7,7 +7,7 @@ import {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from '../../../utils/index.ts';
-import { generateUUID } from '../../../utils/generateUUID.ts';
+import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_TBD_LOAF_COUNT,
@@ -47,7 +47,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _longestDurationExcludingFirst = 0;
   private _totalBlockingDuration = 0;
   private _scriptSummaries: ScriptSummaries = new Map();
-  private _id: string = generateUUID();
+  private _id: string = generateWebVitalID();
 
   public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
@@ -279,6 +279,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
     this._scriptSummaries = new Map();
-    this._id = generateUUID(); 
+    this._id = generateWebVitalID();
   }
 }
