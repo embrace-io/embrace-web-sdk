@@ -1,17 +1,12 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
-import {
-  createPerformanceObserver,
-  isEntryTypeSupported,
-} from '../../../utils/index.ts';
+import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_USER_TIMING_DURATION,
   ATTR_USER_TIMING_ENTRY_TYPE,
   ATTR_USER_TIMING_NAME,
   ATTR_USER_TIMING_START_TIME,
-  MARK_CAP,
-  MEASURE_CAP,
   USER_TIMING_EVENT_NAME,
 } from './constants.ts';
 import type { UserTimingInstrumentationArgs } from './types.ts';
@@ -20,16 +15,19 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _markObserver: PerformanceObserver | null = null;
   private _measureObserver: PerformanceObserver | null = null;
   private _seenEntries: Set<string> = new Set();
-  private _markCount = 0;
-  private _measureCount = 0;
   private _isEnabled = false;
 
-  public constructor({ diag, perf }: UserTimingInstrumentationArgs = {}) {
+  public constructor({
+    diag,
+    perf,
+    limitManager,
+  }: UserTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'UserTimingInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
+      limitManager,
       config: {},
     });
 
@@ -43,15 +41,8 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    if (!isEntryTypeSupported('mark')) {
-      this._diag.debug('mark/measure not supported, skipping');
-      return;
-    }
-
     this._isEnabled = true;
     this._seenEntries = new Set();
-    this._markCount = 0;
-    this._measureCount = 0;
 
     if (this._markObserver) {
       this._markObserver.disconnect();
@@ -62,28 +53,14 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
 
     this._markObserver = createPerformanceObserver<PerformanceMark>(
       'mark',
-      (entries) => {
-        for (const entry of entries) {
-          try {
-            this._processEntry(entry);
-          } catch (e) {
-            this._diag.error('error processing mark entry', e);
-          }
-        }
-      },
+      (entry) => this._processEntry(entry),
+      { diag: this._diag },
     );
 
     this._measureObserver = createPerformanceObserver<PerformanceMeasure>(
       'measure',
-      (entries) => {
-        for (const entry of entries) {
-          try {
-            this._processEntry(entry);
-          } catch (e) {
-            this._diag.error('error processing measure entry', e);
-          }
-        }
-      },
+      (entry) => this._processEntry(entry),
+      { diag: this._diag },
     );
   }
 
@@ -101,8 +78,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     this._seenEntries = new Set();
-    this._markCount = 0;
-    this._measureCount = 0;
   }
 
   private _processEntry(entry: PerformanceMark | PerformanceMeasure): void {
@@ -111,21 +86,18 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     const key = `${location.href}::${entry.name}`;
+    // De-duplicate entries by name and page URL, only processing the first occurrence of each unique name on each page URL
     if (this._seenEntries.has(key)) {
       return;
     }
     this._seenEntries.add(key);
 
-    if (entry.entryType === 'mark') {
-      if (this._markCount >= MARK_CAP) {
-        return;
-      }
-      this._markCount++;
-    } else {
-      if (this._measureCount >= MEASURE_CAP) {
-        return;
-      }
-      this._measureCount++;
+    if (
+      this.limitManager?.limitUserTimingEntry(
+        entry.entryType as 'mark' | 'measure',
+      )
+    ) {
+      return;
     }
 
     const attributes: Record<string, string | number> = {
@@ -142,10 +114,10 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     const body = detail != null ? JSON.stringify(detail) : undefined;
 
     this.logger.emit({
-      ...(body !== undefined ? { body } : {}),
       eventName: USER_TIMING_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,
+      body,
     });
   }
 }

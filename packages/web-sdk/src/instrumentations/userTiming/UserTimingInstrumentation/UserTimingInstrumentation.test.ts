@@ -15,7 +15,6 @@ import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
-import { MARK_CAP, MEASURE_CAP } from './constants.ts';
 import { UserTimingInstrumentation } from './UserTimingInstrumentation.ts';
 
 const { expect } = chai;
@@ -98,6 +97,7 @@ describe('UserTimingInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let clock: sinon.SinonFakeTimers;
   let perf: MockPerformanceManager;
+  let limitManager: EmbraceLimitManager;
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
@@ -110,7 +110,7 @@ describe('UserTimingInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
 
-    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
     spanSessionManager.startSessionSpan();
     const logManager = new EmbraceLogManager({
@@ -150,7 +150,41 @@ describe('UserTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should not create observers when mark is unsupported', () => {
+  it('should skip mark observer when mark is unsupported', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    MockPerformanceObserver.supportedEntryTypes = ['measure'];
+
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+
+    expect(markObserveOptions).to.be.null;
+    expect(measureObserveOptions).to.not.be.null;
+    expect(diagLogger.getDebugLogs().some((m) => m.includes('mark'))).to.be
+      .true;
+
+    instrumentation.disable();
+  });
+
+  it('should skip measure observer when measure is unsupported', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    MockPerformanceObserver.supportedEntryTypes = ['mark'];
+
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      diag: diagLogger,
+    });
+
+    expect(markObserveOptions).to.not.be.null;
+    expect(measureObserveOptions).to.be.null;
+    expect(diagLogger.getDebugLogs().some((m) => m.includes('measure'))).to.be
+      .true;
+
+    instrumentation.disable();
+  });
+
+  it('should skip both observers when neither type is supported', () => {
     const diagLogger = new InMemoryDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = [];
 
@@ -161,7 +195,7 @@ describe('UserTimingInstrumentation', () => {
 
     expect(markObserveOptions).to.be.null;
     expect(measureObserveOptions).to.be.null;
-    expect(diagLogger.getDebugLogs()).to.have.length.greaterThan(0);
+    expect(diagLogger.getDebugLogs()).to.have.length(2);
 
     instrumentation.disable();
   });
@@ -234,50 +268,89 @@ describe('UserTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should apply the mark volume cap and drop entries silently', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
+  it('should apply the mark volume cap from limitManager and drop entries silently', () => {
+    const markCap = 3;
+    const capLimitManager = new EmbraceLimitManager({
+      ...DEFAULT_LIMITS,
+      maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, user_timing_mark: markCap },
+    });
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      limitManager: capLimitManager,
+    });
 
-    const entries: PerformanceMark[] = Array.from(
-      { length: MARK_CAP + 5 },
-      (_, i) => makeMark({ name: `mark-${i}` }),
+    triggerMarkEntries(
+      Array.from({ length: markCap + 2 }, (_, i) =>
+        makeMark({ name: `mark-${i}` }),
+      ),
     );
-    triggerMarkEntries(entries);
 
-    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MARK_CAP);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(markCap);
 
     instrumentation.disable();
   });
 
-  it('should apply the measure volume cap and drop entries silently', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
+  it('should apply the measure volume cap from limitManager and drop entries silently', () => {
+    const measureCap = 2;
+    const capLimitManager = new EmbraceLimitManager({
+      ...DEFAULT_LIMITS,
+      maxAllowed: {
+        ...DEFAULT_LIMITS.maxAllowed,
+        user_timing_measure: measureCap,
+      },
+    });
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      limitManager: capLimitManager,
+    });
 
-    const entries: PerformanceMeasure[] = Array.from(
-      { length: MEASURE_CAP + 5 },
-      (_, i) => makeMeasure({ name: `measure-${i}` }),
+    triggerMeasureEntries(
+      Array.from({ length: measureCap + 2 }, (_, i) =>
+        makeMeasure({ name: `measure-${i}` }),
+      ),
     );
-    triggerMeasureEntries(entries);
 
-    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MEASURE_CAP);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(measureCap);
 
     instrumentation.disable();
   });
 
-  it('should reset caps after disable and re-enable', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
+  it('should reset caps after limitManager.reset()', () => {
+    const markCap = 3;
+    const capLimitManager = new EmbraceLimitManager({
+      ...DEFAULT_LIMITS,
+      maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, user_timing_mark: markCap },
+    });
+    const instrumentation = new UserTimingInstrumentation({
+      perf,
+      limitManager: capLimitManager,
+    });
 
-    const entries: PerformanceMark[] = Array.from(
-      { length: MARK_CAP },
-      (_, i) => makeMark({ name: `mark-${i}` }),
+    triggerMarkEntries(
+      Array.from({ length: markCap }, (_, i) =>
+        makeMark({ name: `mark-${i}` }),
+      ),
     );
-    triggerMarkEntries(entries);
-    expect(memoryExporter.getFinishedLogRecords()).to.have.length(MARK_CAP);
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(markCap);
 
-    instrumentation.disable();
+    capLimitManager.reset();
     memoryExporter.reset();
-    instrumentation.enable();
 
     triggerMarkEntries([makeMark({ name: 'mark-after-reset' })]);
     expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+    instrumentation.disable();
+  });
+
+  it('should not enforce cap when no limitManager is provided', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    // Without a limitManager, all entries should be emitted
+    triggerMarkEntries(
+      Array.from({ length: 5 }, (_, i) => makeMark({ name: `mark-${i}` })),
+    );
+
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(5);
 
     instrumentation.disable();
   });

@@ -263,6 +263,20 @@ const App = () => {
     });
   };
 
+  const handleTriggerMark = () => {
+    performance.mark('demo-mark', { detail: { source: 'demo' } });
+  };
+
+  const handleTriggerMeasure = () => {
+    performance.mark('demo-measure-start');
+    setTimeout(
+      () => {
+        performance.measure('demo-measure', 'demo-measure-start');
+      },
+      Math.floor(Math.random() * 500) + 100,
+    );
+  };
+
   return (
     <>
       <fieldset style={{ gridColumn: '1 / -1' }}>
@@ -518,21 +532,10 @@ const App = () => {
       <fieldset>
         <legend>Browser Timing</legend>
         <div className="actions">
-          <button
-            type="button"
-            onClick={() =>
-              performance.mark('demo-mark', { detail: { source: 'demo' } })
-            }
-          >
+          <button type="button" onClick={handleTriggerMark}>
             Trigger Mark
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              performance.mark('demo-measure-start');
-              performance.measure('demo-measure', 'demo-measure-start');
-            }}
-          >
+          <button type="button" onClick={handleTriggerMeasure}>
             Trigger Measure
           </button>
         </div>

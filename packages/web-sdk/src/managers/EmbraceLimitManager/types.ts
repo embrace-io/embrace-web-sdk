@@ -17,7 +17,9 @@ export type MaxLimitedType =
   | 'span'
   | 'network_request'
   | 'breadcrumb'
-  | 'session_property';
+  | 'session_property'
+  | 'user_timing_mark'
+  | 'user_timing_measure';
 
 export type LengthLimitedType =
   | LogLimitedType
@@ -74,6 +76,7 @@ export interface LimitManagerInternal {
     value: string,
   ) => LimitedSessionProperty | 'dropped';
   limitBreadcrumb: (name: string) => LimitedBreadcrumb | 'dropped';
+  limitUserTimingEntry: (entryType: 'mark' | 'measure') => boolean;
   reset: () => void;
   getDiagnosticCounts: () => Record<string, number>;
   truncateString: (type: LengthLimitedType, body: string) => string;

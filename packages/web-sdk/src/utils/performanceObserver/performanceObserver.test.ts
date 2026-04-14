@@ -120,17 +120,51 @@ describe('performanceObserver utils', () => {
       });
     });
 
-    it('should invoke callback with entries from the observer list', () => {
-      const received: PerformanceEntry[][] = [];
-      createPerformanceObserver('mark', (entries) => {
-        received.push(entries);
+    it('should invoke processEntry once per entry', () => {
+      const received: PerformanceEntry[] = [];
+      createPerformanceObserver('mark', (entry) => {
+        received.push(entry);
       });
 
-      const entry = { name: 'my-mark', entryType: 'mark' } as PerformanceEntry;
+      const a = { name: 'mark-a', entryType: 'mark' } as PerformanceEntry;
+      const b = { name: 'mark-b', entryType: 'mark' } as PerformanceEntry;
+      lastObserverInstance?.trigger([a, b]);
+
+      expect(received).to.deep.equal([a, b]);
+    });
+
+    it('should catch processEntry errors and log them via diag', () => {
+      const errors: unknown[] = [];
+      const diag = {
+        error: (_msg: string, err: unknown) => errors.push(err),
+        verbose: () => {},
+        debug: () => {},
+        info: () => {},
+        warn: () => {},
+      };
+
+      createPerformanceObserver(
+        'mark',
+        () => {
+          throw new Error('boom');
+        },
+        { diag },
+      );
+
+      const entry = { name: 'bad', entryType: 'mark' } as PerformanceEntry;
       lastObserverInstance?.trigger([entry]);
 
-      expect(received).to.have.length(1);
-      expect(received[0]).to.deep.equal([entry]);
+      expect(errors).to.have.length(1);
+      expect((errors[0] as Error).message).to.equal('boom');
+    });
+
+    it('should not throw when processEntry errors and no diag is provided', () => {
+      createPerformanceObserver('mark', () => {
+        throw new Error('boom');
+      });
+
+      const entry = { name: 'bad', entryType: 'mark' } as PerformanceEntry;
+      expect(() => lastObserverInstance?.trigger([entry])).to.not.throw();
     });
 
     it('should return null when the observer constructor throws', () => {

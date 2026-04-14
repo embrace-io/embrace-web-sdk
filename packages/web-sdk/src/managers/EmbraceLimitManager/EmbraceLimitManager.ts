@@ -37,6 +37,8 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     session_property: 0,
     span: 0,
     network_request: 0,
+    user_timing_mark: 0,
+    user_timing_measure: 0,
   };
   private readonly _maxAllowed: Record<MaxLimitedType, number>;
   private readonly _maxLength: Record<LengthLimitedType, number>;
@@ -112,6 +114,12 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     }
 
     return truncatedAttributes;
+  }
+
+  public limitUserTimingEntry(entryType: 'mark' | 'measure'): boolean {
+    const type =
+      entryType === 'mark' ? 'user_timing_mark' : 'user_timing_measure';
+    return this._dropIfMaxReached(type);
   }
 
   public limitBreadcrumb(name: string): LimitedBreadcrumb | 'dropped' {
@@ -199,6 +207,8 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       session_property: 0,
       span: 0,
       network_request: 0,
+      user_timing_mark: 0,
+      user_timing_measure: 0,
     };
   }
 

@@ -360,6 +360,7 @@ export interface SetupDefaultInstrumentationsArgs {
   spanSessionManager?: SpanSessionManager;
   embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   pageManager?: PageManager;
+  limitManager?: LimitManagerInternal;
 }
 
 export interface DefaultInstrumentationConfig {

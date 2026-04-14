@@ -28,6 +28,7 @@ export const setupDefaultInstrumentations = (
     spanSessionManager,
     embraceSpanProcessor,
     pageManager,
+    limitManager,
   }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
   /*
@@ -113,6 +114,10 @@ export const setupDefaultInstrumentations = (
 
       if (logManager) {
         instrumentation.setLogManager(logManager);
+      }
+
+      if (limitManager) {
+        instrumentation.setLimitManager(limitManager);
       }
     }
   }

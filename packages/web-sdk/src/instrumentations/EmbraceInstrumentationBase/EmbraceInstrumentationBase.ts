@@ -7,6 +7,7 @@ import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
 import type { SpanSessionManager } from '../../api-sessions/index.ts';
 import { session } from '../../api-sessions/index.ts';
+import type { LimitManagerInternal } from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
 import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
@@ -21,6 +22,7 @@ export abstract class EmbraceInstrumentationBase<
   private _sessionManager: SpanSessionManager;
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
+  private _limitManager: LimitManagerInternal | undefined;
 
   protected constructor({
     instrumentationName,
@@ -28,6 +30,7 @@ export abstract class EmbraceInstrumentationBase<
     config,
     diag,
     perf,
+    limitManager,
   }: EmbraceInstrumentationBaseArgs<ConfigType>) {
     super(instrumentationName, instrumentationVersion, config);
     // optionally override the diag logger from the base class
@@ -35,6 +38,7 @@ export abstract class EmbraceInstrumentationBase<
       this._diag = diag;
     }
     this._perf = perf ?? new OTelPerformanceManager();
+    this._limitManager = limitManager;
     this._sessionManager = session.getSpanSessionManager();
     this._logManager = log.getLogManager();
   }
@@ -52,6 +56,15 @@ export abstract class EmbraceInstrumentationBase<
   /* Returns the performance manager */
   protected get perf(): PerformanceManager {
     return this._perf;
+  }
+
+  /* Returns the limit manager */
+  protected get limitManager(): LimitManagerInternal | undefined {
+    return this._limitManager;
+  }
+
+  public setLimitManager(limitManager: LimitManagerInternal): void {
+    this._limitManager = limitManager;
   }
 
   // no-op

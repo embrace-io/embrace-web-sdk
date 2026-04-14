@@ -80,15 +80,8 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._observer =
       createPerformanceObserver<PerformanceLongAnimationFrameTiming>(
         'long-animation-frame',
-        (entries) => {
-          for (const entry of entries) {
-            try {
-              this._processEntry(entry);
-            } catch (e) {
-              this._diag.error('error processing entry', e);
-            }
-          }
-        },
+        (entry) => this._processEntry(entry),
+        { diag: this._diag },
       );
 
     if (!this._observer) {
