@@ -47,7 +47,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _longestDurationExcludingFirst = 0;
   private _totalBlockingDuration = 0;
   private _scriptSummaries: ScriptSummaries = new Map();
-  private _id: string = generateWebVitalID();
 
   public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
     super({
@@ -212,7 +211,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
-      ['emb.web_vital.id']: this._id,
+      ['emb.web_vital.id']: generateWebVitalID(),
       ['emb.web_vital.name']: 'TBD',
       ['emb.web_vital.value']: Math.round(this._totalBlockingDuration),
       ['emb.web_vital.rating']: rating,
@@ -279,6 +278,5 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._longestDurationExcludingFirst = 0;
     this._totalBlockingDuration = 0;
     this._scriptSummaries = new Map();
-    this._id = generateWebVitalID();
   }
 }

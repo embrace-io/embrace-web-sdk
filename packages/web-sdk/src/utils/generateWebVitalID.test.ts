@@ -4,9 +4,9 @@ import { generateWebVitalID } from './generateWebVitalID.ts';
 const { expect } = chai;
 
 describe('generateWebVitalID', () => {
-  it('should generate an id with the v5 prefix', () => {
+  it('should generate an id with the embracev1 prefix', () => {
     const id = generateWebVitalID();
-    expect(id).to.match(/^v5-/);
+    expect(id).to.match(/^embracev1-/);
   });
 
   it('should generate different ids on subsequent calls', () => {
