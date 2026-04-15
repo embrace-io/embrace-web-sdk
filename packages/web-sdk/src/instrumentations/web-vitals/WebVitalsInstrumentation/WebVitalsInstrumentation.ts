@@ -52,11 +52,8 @@ type AttributedPage = {
 };
 
 const isPrimitiveValue = (value: unknown): value is AttributeValue => {
-  if (value === undefined || value === null) {
-    return false;
-  }
   const type = typeof value;
-  return type === 'string' || type === 'number' || type === 'boolean';
+  return type === 'number' || type === 'string' || type === 'boolean';
 };
 
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
