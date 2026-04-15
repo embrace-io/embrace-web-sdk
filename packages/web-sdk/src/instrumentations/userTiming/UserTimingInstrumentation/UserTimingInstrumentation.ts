@@ -3,10 +3,10 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
-  ATTR_USER_TIMING_DURATION,
-  ATTR_USER_TIMING_ENTRY_TYPE,
-  ATTR_USER_TIMING_NAME,
-  ATTR_USER_TIMING_START_TIME,
+  KEY_EMB_USER_TIMING_DURATION,
+  KEY_EMB_USER_TIMING_ENTRY_TYPE,
+  KEY_EMB_USER_TIMING_NAME,
+  KEY_EMB_USER_TIMING_START_TIME,
   USER_TIMING_EVENT_NAME,
 } from './constants.ts';
 import type {
@@ -117,12 +117,12 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
 
     const attributes: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
-      [ATTR_USER_TIMING_NAME]: entry.name,
-      [ATTR_USER_TIMING_START_TIME]: this.perf.epochMillisFromOriginOffset(
+      [KEY_EMB_USER_TIMING_NAME]: entry.name,
+      [KEY_EMB_USER_TIMING_START_TIME]: this.perf.epochMillisFromOriginOffset(
         entry.startTime,
       ),
-      [ATTR_USER_TIMING_DURATION]: entry.duration,
-      [ATTR_USER_TIMING_ENTRY_TYPE]: entry.entryType,
+      [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
+      [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
     };
 
     const detail = (entry as PerformanceMark).detail;
