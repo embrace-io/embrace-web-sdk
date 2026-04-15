@@ -9,18 +9,23 @@ import {
   ATTR_USER_TIMING_START_TIME,
   USER_TIMING_EVENT_NAME,
 } from './constants.ts';
-import type { UserTimingInstrumentationArgs } from './types.ts';
+import type {
+  UserTimingEntryFilter,
+  UserTimingInstrumentationArgs,
+} from './types.ts';
 
 export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _markObserver: PerformanceObserver | null = null;
   private _measureObserver: PerformanceObserver | null = null;
   private _seenEntries: Set<string> = new Set();
   private _isEnabled = false;
+  private readonly _allowedEntries: UserTimingEntryFilter | undefined;
 
   public constructor({
     diag,
     perf,
     limitManager,
+    allowedEntries,
   }: UserTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'UserTimingInstrumentation',
@@ -30,6 +35,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       limitManager,
       config: {},
     });
+    this._allowedEntries = allowedEntries;
 
     if (this._config.enabled) {
       this.enable();
@@ -83,6 +89,15 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _processEntry(entry: PerformanceMark | PerformanceMeasure): void {
     if (!this._isEnabled) {
       return;
+    }
+
+    if (this._allowedEntries !== undefined) {
+      const allowed = Array.isArray(this._allowedEntries)
+        ? this._allowedEntries.includes(entry.name)
+        : this._allowedEntries(entry);
+      if (!allowed) {
+        return;
+      }
     }
 
     const key = `${location.href}::${entry.name}`;

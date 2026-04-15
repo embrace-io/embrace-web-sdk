@@ -444,4 +444,126 @@ describe('UserTimingInstrumentation', () => {
 
     instrumentation.disable();
   });
+
+  describe('allowedEntries filter', () => {
+    it('should capture all entries when no filter is provided', () => {
+      const instrumentation = new UserTimingInstrumentation({ perf });
+
+      triggerMarkEntries([
+        makeMark({ name: 'app-start' }),
+        makeMark({ name: 'vendor-init' }),
+      ]);
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(2);
+      instrumentation.disable();
+    });
+
+    it('should only capture entries whose name is in the string array', () => {
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: ['app-start', 'app-ready'],
+      });
+
+      triggerMarkEntries([
+        makeMark({ name: 'app-start' }),
+        makeMark({ name: 'vendor-init' }),
+        makeMark({ name: 'app-ready' }),
+      ]);
+
+      const logs = memoryExporter.getFinishedLogRecords();
+      expect(logs).to.have.length(2);
+      expect(
+        logs.map((l) => l.attributes['emb.user_timing.name']),
+      ).to.deep.equal(['app-start', 'app-ready']);
+
+      instrumentation.disable();
+    });
+
+    it('should ignore all entries when the string array is empty', () => {
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: [],
+      });
+
+      triggerMarkEntries([makeMark({ name: 'app-start' })]);
+      triggerMeasureEntries([makeMeasure({ name: 'render' })]);
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
+      instrumentation.disable();
+    });
+
+    it('should capture entries for which the callback returns true', () => {
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: (entry) => entry.name.startsWith('app-'),
+      });
+
+      triggerMarkEntries([
+        makeMark({ name: 'app-start' }),
+        makeMark({ name: 'vendor-boot' }),
+        makeMark({ name: 'app-ready' }),
+      ]);
+
+      const logs = memoryExporter.getFinishedLogRecords();
+      expect(logs).to.have.length(2);
+      expect(
+        logs.map((l) => l.attributes['emb.user_timing.name']),
+      ).to.deep.equal(['app-start', 'app-ready']);
+
+      instrumentation.disable();
+    });
+
+    it('should pass the full entry to the callback', () => {
+      const received: Array<PerformanceMark | PerformanceMeasure> = [];
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: (entry) => {
+          received.push(entry);
+          return true;
+        },
+      });
+
+      const mark = makeMark({ name: 'app-start', startTime: 42 });
+      triggerMarkEntries([mark]);
+
+      expect(received).to.have.length(1);
+      expect(received[0].name).to.equal('app-start');
+      expect(received[0].startTime).to.equal(42);
+
+      instrumentation.disable();
+    });
+
+    it('should apply the filter before deduplication', () => {
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: ['app-start'],
+      });
+
+      // 'vendor' is filtered out — should not consume a dedup slot
+      triggerMarkEntries([
+        makeMark({ name: 'vendor-init' }),
+        makeMark({ name: 'app-start' }),
+        makeMark({ name: 'app-start' }), // duplicate — deduped
+      ]);
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+      instrumentation.disable();
+    });
+
+    it('should apply the filter to measures', () => {
+      const instrumentation = new UserTimingInstrumentation({
+        perf,
+        allowedEntries: (entry) => entry.entryType === 'mark',
+      });
+
+      triggerMarkEntries([makeMark({ name: 'app-start' })]);
+      triggerMeasureEntries([makeMeasure({ name: 'render' })]);
+
+      const logs = memoryExporter.getFinishedLogRecords();
+      expect(logs).to.have.length(1);
+      expect(logs[0].attributes['emb.user_timing.entry_type']).to.equal('mark');
+
+      instrumentation.disable();
+    });
+  });
 });

@@ -28,6 +28,12 @@ build_integration_image() {
     echo "Image '${IMAGE_TAG}' already exists (use e2e-reset-deps.sh to force rebuild)"
     return 0
   fi
+  # Podman/Buildah validates symlinks during build context preparation, before
+  # .dockerignore is applied. Locally-built .next dirs contain symlinks pointing
+  # back to the host monorepo root, which are invalid in the container context.
+  echo "Cleaning locally-built platform artifacts before image build..."
+  find "${WORKSPACE}/tests/integration/platforms" -maxdepth 2 -name ".next" -type d \
+    -exec rm -rf {} + 2>/dev/null || true
   echo "Building integration image (${IMAGE_TAG})..."
   if ! podman build --platform "${PLATFORM}" \
     -t "${IMAGE_TAG}" \

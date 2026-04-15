@@ -11,7 +11,10 @@ const sdkControl = initSDK({
   embraceDataURL: 'http://localhost:3001',
   embraceConfigURL: 'http://localhost:3001',
   useDocumentTitleAsPageLabel: true,
-  defaultInstrumentationConfig: { omit: new Set(['loaf']) },
+  defaultInstrumentationConfig: {
+    omit: new Set(['loaf']),
+    'user-timing': { allowedEntries: [] },
+  },
 });
 
 declare global {
