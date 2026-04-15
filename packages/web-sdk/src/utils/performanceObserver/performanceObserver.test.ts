@@ -76,6 +76,15 @@ describe('performanceObserver utils', () => {
       expect(isEntryTypeSupported('mark')).to.be.false;
     });
 
+    it('should return false when supportedEntryTypes is undefined', () => {
+      (
+        globalThis.PerformanceObserver as unknown as {
+          supportedEntryTypes: undefined;
+        }
+      ).supportedEntryTypes = undefined;
+      expect(isEntryTypeSupported('mark')).to.be.false;
+    });
+
     it('should return false when PerformanceObserver is undefined', () => {
       (globalThis as Record<string, unknown>)['PerformanceObserver'] =
         undefined;
@@ -90,6 +99,25 @@ describe('performanceObserver utils', () => {
         () => {},
       );
       expect(result).to.be.null;
+    });
+
+    it('should call diag.debug when type is unsupported and diag is provided', () => {
+      const debugMessages: string[] = [];
+      const diag = {
+        debug: (msg: string) => debugMessages.push(msg),
+        verbose: () => {},
+        info: () => {},
+        warn: () => {},
+        error: () => {},
+      };
+      const result = createPerformanceObserver(
+        'long-animation-frame',
+        () => {},
+        { diag },
+      );
+      expect(result).to.be.null;
+      expect(debugMessages).to.have.length(1);
+      expect(debugMessages[0]).to.include('long-animation-frame');
     });
 
     it('should return null when PerformanceObserver is undefined', () => {
