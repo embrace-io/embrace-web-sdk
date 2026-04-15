@@ -5,27 +5,27 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 ## Behavior Guidelines
 
 **NEVER**:
+
 - Choose cleverness over clarity and readability
 - Create files when editing existing ones works
 - Use temporal words ("new", "updated", "legacy", "old") in code/commits
 
 **ALWAYS**:
+
 - Review existing code patterns before creating files
 - After committing, update PR body if one exists
 
 ## Quick Reference
 
 ```bash
-# Build
-npm run build                    # Build all packages (turbo)
+# Build all packages (turbo)
+npm run build
 
-# Test
-npm run test                     # Run unit tests (turbo)
-npm run test:integration         # Integration tests (requires build first)
+# Auto-fix with Biome
+npm run lint:fix
 
-# Lint & Check
-npm run lint                     # Auto-fix with Biome
-npm run validate                 # All checks (tsc + eslint baseline)
+# All checks (tsc + eslint baseline)
+npm run validate
 ```
 
 ## Architecture
@@ -52,10 +52,10 @@ transport/      HTTP transport with retry logic
 
 ### Distribution
 
-| Format | Target | Use Case |
-|--------|--------|----------|
-| ESM    | ES2022 | npm package (import) |
-| CJS    | ES2022 | npm package (require) |
+| Format | Target | Use Case                                |
+| ------ | ------ | --------------------------------------- |
+| ESM    | ES2022 | npm package (import)                    |
+| CJS    | ES2022 | npm package (require)                   |
 | IIFE   | ES6    | CDN script tag (`window.EmbraceWebSdk`) |
 
 ## Code Conventions
@@ -64,15 +64,13 @@ transport/      HTTP transport with retry logic
 
 - **Import extensions required**: Always use `.ts` extension in imports
 - **Type imports**: Use `import type` for type-only imports
-- **Single quotes**: Enforced by Biome
 - **No re-exports**: `export * from` forbidden (use explicit exports)
-- **No import cycles**: Biome `noImportCycles` enforced
 
 ### Naming
 
 - **Classes**: PascalCase with `Embrace` prefix for implementations
 - **Static-only classes**: Used for API singletons (OTel convention)
-- **Attributes**: `emb.` prefix for Embrace-specific, `app.surface.*` for pages
+- **Attributes**: `emb.` prefix for Embrace-specific
 
 ### File Organization
 
@@ -108,17 +106,6 @@ npm run test:integration:update-golden    # Update golden files
 
 - Baseline Widely Available APIs only (eslint-plugin-baseline-js enforced)
 - CDN bundle targets ES6
-- Requires `CompressionStream` for Embrace backend
-
-### OpenTelemetry
-
-- API: `@opentelemetry/api` ^1.9.0
-- Attribute values must be strings when exporting to Embrace
-
-### Sensitive Data
-
-- Default scrubbers remove auth tokens, passwords from URLs/attributes
-- Configure with `attributeScrubbers` in `initSDK`
 
 ### Error Handling
 
@@ -155,6 +142,7 @@ npm run test:integration:update-golden    # Update golden files
 **Format**: `(type)[(scope)]: imperative-subject`
 
 **Examples**:
+
 - `feat(fetch): add custom span attributes`
 - `fix(sdk): handle missing window object`
 - `EMBR-1234 refactor(processors): simplify scrubbing logic`
@@ -162,6 +150,7 @@ npm run test:integration:update-golden    # Update golden files
 **Types**: `release|deploy|build|ci|feat|fix|docs|style|refactor|perf|test|chore|revert|breaking`
 
 **Rules**:
+
 - Max 150 characters
 - Title only, no body, no credits
 - Optional EMBR-XXXX ticket prefix
@@ -171,6 +160,7 @@ npm run test:integration:update-golden    # Update golden files
 **Format**: `EMBR-(ticket) (type)[(scope)]: subject`
 
 **Body template**:
+
 ```
 ## What problem is this solving?
 [Impact statement]
@@ -181,16 +171,3 @@ npm run test:integration:update-golden    # Update golden files
 ## Testing
 - [Verification steps]
 ```
-
-## Troubleshooting
-
-### SDK Not Initializing
-
-- Check for `window` (server-side rendering guard)
-- Verify `CompressionStream` support
-- Check `restrictedProtocols` (default blocks `file:`)
-
-### Tests Flaky
-
-- Ensure `npm run build` before integration tests
-- Use `npm run test:manual` for debugging (from `packages/web-sdk/`)
