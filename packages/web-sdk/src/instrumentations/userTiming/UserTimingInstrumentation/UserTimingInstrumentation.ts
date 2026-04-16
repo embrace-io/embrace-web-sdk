@@ -129,6 +129,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     const body = detail != null ? JSON.stringify(detail) : undefined;
 
     this.logger.emit({
+      timestamp: this.perf.epochMillisFromOriginOffset(entry.startTime),
       eventName: USER_TIMING_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,

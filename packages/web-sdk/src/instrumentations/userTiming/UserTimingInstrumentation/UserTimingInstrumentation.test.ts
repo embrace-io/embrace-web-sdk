@@ -1,4 +1,5 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -217,6 +218,23 @@ describe('UserTimingInstrumentation', () => {
     expect(record.attributes['emb.user_timing.start_time']).to.equal(150);
     expect(record.attributes['emb.user_timing.duration']).to.equal(0);
     expect(record.attributes['emb.user_timing.entry_type']).to.equal('mark');
+
+    instrumentation.disable();
+  });
+
+  it('should set log timestamp to epochMillis of entry startTime', () => {
+    clock.tick(1000);
+    const timeOriginPerf = new MockPerformanceManager(clock);
+    const instrumentation = new UserTimingInstrumentation({
+      perf: timeOriginPerf,
+    });
+
+    triggerMarkEntries([
+      makeMark({ name: 'timed-mark', startTime: 150, duration: 0 }),
+    ]);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal(timeInputToHrTime(1000 + 150));
 
     instrumentation.disable();
   });
