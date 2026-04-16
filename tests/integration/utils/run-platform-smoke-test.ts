@@ -110,13 +110,7 @@ const runPlatformBuildSmokeTest = async (
         return acc;
       }, {});
 
-      // Creat folder if it doesn't exist
-      const resultsDir = './build-test-results';
-      if (!fs.existsSync(resultsDir)) {
-        // Override existing directory if it exists
-        fs.rmSync(resultsDir, { recursive: true, force: true });
-        fs.mkdirSync(resultsDir, { recursive: true });
-      }
+      fs.mkdirSync('./build-test-results', { recursive: true });
 
       fs.writeFileSync(
         `./build-test-results/${platformName}-tests.md`,

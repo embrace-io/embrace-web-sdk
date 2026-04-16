@@ -5,7 +5,8 @@
     "build": "npm run build:clean && npm run build:es2015",
     "build:es2015": "webpack && npm run process-sourcemaps",
     "build:clean": "npx rimraf dist",
-    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist --no-upload"
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist --no-upload",
+    "test": "npx tsx --test ../../utils/platform-smoke-test.ts --test-timeout=20000"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",

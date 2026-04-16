@@ -3,10 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh",
-    "build-platforms": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000 --test-concurrency=1",
-    "test": "npx playwright test",
-    "update-golden": "UPDATE_GOLDEN=1 npm run test"
+    "prepare-platforms": "npm install --prefix platforms && npm run build --prefix platforms",
+    "test": "npm run prepare-platforms && npm run test --prefix platforms && npx playwright test",
+    "update-golden": "npm run prepare-platforms && UPDATE_GOLDEN=1 npx playwright test"
   },
   "dependencies": {
     "@embrace-io/web-sdk": "*",

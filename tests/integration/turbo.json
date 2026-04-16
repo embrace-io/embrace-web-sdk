@@ -2,21 +2,12 @@
   "$schema": "https://turbo.build/schema.json",
   "extends": ["//"],
   "tasks": {
-    "install-dependencies": {
-      "dependsOn": ["^build"],
-      "inputs": ["platforms/*/package.json", "../../package-lock.json"],
-      "outputs": ["platforms/*/node_modules/**"]
-    },
-    "build-platforms": {
-      "dependsOn": ["^build", "install-dependencies"],
-      "outputs": ["platforms/**/.next", "platforms/**/dist/**"]
-    },
     "test": {
-      "dependsOn": ["^build", "install-dependencies", "build-platforms"],
+      "dependsOn": ["^build"],
       "cache": false
     },
     "update-golden": {
-      "dependsOn": ["^build", "install-dependencies", "build-platforms"],
+      "dependsOn": ["^build"],
       "cache": false
     }
   }
