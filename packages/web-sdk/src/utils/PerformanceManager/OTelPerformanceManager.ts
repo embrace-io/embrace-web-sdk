@@ -19,4 +19,9 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   public millisSinceHRTime = (time: HrTime) =>
     this.getNowMillis() - hrTimeToMilliseconds(time);
+
+  // Returns milliseconds elapsed since the SDK's zero time (currently navigation
+  // start). When soft-navigation support is added, this method will subtract the
+  // reset point so timings remain relative to the soft navigation.
+  public millisFromZeroTime = (originOffset: number) => originOffset;
 }

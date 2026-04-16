@@ -46,4 +46,9 @@ describe('OTelPerformanceManager', () => {
     const startTime: HrTime = [1, 100000000];
     expect(performanceManager.millisSinceHRTime(startTime)).to.equal(400);
   });
+
+  it('should return originOffset unchanged from millisFromZeroTime', () => {
+    expect(performanceManager.millisFromZeroTime(300)).to.equal(300);
+    expect(performanceManager.millisFromZeroTime(0)).to.equal(0);
+  });
 });

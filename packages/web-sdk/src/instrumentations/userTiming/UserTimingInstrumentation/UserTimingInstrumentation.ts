@@ -118,7 +118,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     const attributes: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
       [KEY_EMB_USER_TIMING_NAME]: entry.name,
-      [KEY_EMB_USER_TIMING_START_TIME]: this.perf.epochMillisFromOriginOffset(
+      [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
         entry.startTime,
       ),
       [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
