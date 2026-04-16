@@ -7,6 +7,7 @@ import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   CLSMetricWithAttribution,
   INPAttribution,
+  LCPAttribution,
   Metric,
   MetricWithAttribution,
   TTFBAttribution,
@@ -223,6 +224,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     TTFB: undefined,
   };
   private _largestShiftTargetForCLS: string | undefined;
+  // The primary LCP listener only processes the final entry (entries.slice(-1)
+  // in web-vitals/onLCP.ts), which is typically flushed via takeRecords() after
+  // user input. By then the LCP element may be detached and entry.element
+  // returns null, so the selector is lost. The reportAllChanges listener below
+  // runs on every candidate as it dispatches, while the node is still attached,
+  // and caches the target so we can back-fill the final report.
+  private _lcpTarget: { metricId: string; target: string } | undefined;
   private _listenersRegistered = false;
   private _isEnabled = false;
 
@@ -299,6 +307,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           [KEY_EMB_WEB_VITAL_DELTA]: metric.delta,
           [KEY_EMB_WEB_VITAL_VALUE]: metric.value,
           ...webVitalAttributionToReport(metric),
+          ...this._backfillTargetAttribution(metric),
           ...(name === 'INP' ? loafScriptsAttribution(metric, this._diag) : {}),
           ...(name === 'TTFB'
             ? ttfbSubPartsAttribution(metric, this._diag)
@@ -352,8 +361,15 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         },
       );
       this._listeners.LCP?.(
-        () => {
+        (metric: MetricWithAttribution) => {
           this._attributedPage.LCP = this._currentAttributedPage();
+          const attribution = metric.attribution as LCPAttribution;
+          if (attribution.target) {
+            this._lcpTarget = {
+              metricId: metric.id,
+              target: attribution.target,
+            };
+          }
         },
         {
           reportAllChanges: true,
@@ -379,6 +395,22 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         },
       );
     }
+  }
+
+  private _backfillTargetAttribution(
+    metric: MetricWithAttribution,
+  ): Attributes {
+    const attrs: Attributes = {};
+    const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+
+    if (metric.name === 'LCP') {
+      const attribution = metric.attribution as LCPAttribution;
+      if (!attribution.target && this._lcpTarget?.metricId === metric.id) {
+        attrs[`${prefix}target`] = this._lcpTarget.target;
+      }
+    }
+
+    return attrs;
   }
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
