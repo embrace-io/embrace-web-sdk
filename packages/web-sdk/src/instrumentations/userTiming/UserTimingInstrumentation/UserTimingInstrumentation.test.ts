@@ -1,6 +1,7 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -96,18 +97,20 @@ const makeMeasure = (
 
 describe('UserTimingInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
+  let spanExporter: InMemorySpanExporter;
   let clock: sinon.SinonFakeTimers;
   let perf: MockPerformanceManager;
   let limitManager: EmbraceLimitManager;
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
-    setupTestTraceExporter();
+    spanExporter = setupTestTraceExporter();
     memoryExporter = setupTestLogExporter();
   });
 
   beforeEach(() => {
     memoryExporter.reset();
+    spanExporter.reset();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
 
@@ -239,19 +242,21 @@ describe('UserTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should emit a log for a measure entry', () => {
+  it('should create a span for a measure entry', () => {
     const instrumentation = new UserTimingInstrumentation({ perf });
 
     triggerMeasureEntries([
       makeMeasure({ name: 'my-measure', startTime: 50, duration: 300 }),
     ]);
 
-    const logs = memoryExporter.getFinishedLogRecords();
-    expect(logs).to.have.length(1);
-    const record = logs[0];
-    expect(record.attributes['emb.user_timing.name']).to.equal('my-measure');
-    expect(record.attributes['emb.user_timing.duration']).to.equal(300);
-    expect(record.attributes['emb.user_timing.entry_type']).to.equal('measure');
+    expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
+    const spans = spanExporter.getFinishedSpans();
+    expect(spans).to.have.length(1);
+    const span = spans[0];
+    expect(span.name).to.equal('my-measure');
+    expect(span.attributes['emb.type']).to.equal('perf');
+    expect(span.attributes['emb.instrumentation']).to.equal('user_timing');
+    expect(span.attributes['emb.user_timing.entry_type']).to.equal('measure');
 
     instrumentation.disable();
   });
@@ -328,7 +333,7 @@ describe('UserTimingInstrumentation', () => {
       ),
     );
 
-    expect(memoryExporter.getFinishedLogRecords()).to.have.length(measureCap);
+    expect(spanExporter.getFinishedSpans()).to.have.length(measureCap);
 
     instrumentation.disable();
   });

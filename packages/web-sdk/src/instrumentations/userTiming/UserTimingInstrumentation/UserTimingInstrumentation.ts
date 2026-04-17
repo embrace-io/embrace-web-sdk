@@ -1,5 +1,10 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { EMB_PERFORMANCE_INSTRUMENTATIONS } from '../../../constants/attributes.ts';
+import {
+  EMB_TYPES,
+  KEY_EMB_INSTRUMENTATION,
+  KEY_EMB_TYPE,
+} from '../../../constants/index.ts';
 import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
@@ -59,7 +64,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
 
     this._markObserver = createPerformanceObserver<PerformanceMark>(
       'mark',
-      (entry) => this._processEntry(entry),
+      this._processEntry.bind(this),
       { diag: this._diag },
     );
 
@@ -115,15 +120,23 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    const attributes: Record<string, string | number> = {
-      [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
-      [KEY_EMB_USER_TIMING_NAME]: entry.name,
-      [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
-        entry.startTime,
-      ),
-      [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
-      [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
-    };
+    if (entry.entryType === 'measure') {
+      const span = this.tracer.startSpan(entry.name, {
+        startTime: this.perf.epochMillisFromOriginOffset(entry.startTime),
+        attributes: {
+          // Until we decided if we want to create a new pipeline for Measures,
+          // make sure we add Perf as emb type to use the existing spans pipeline for these entries
+          [KEY_EMB_TYPE]: EMB_TYPES.Perf,
+          [KEY_EMB_INSTRUMENTATION]:
+            EMB_PERFORMANCE_INSTRUMENTATIONS.UserTiming,
+          [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
+        },
+      });
+      span.end(
+        this.perf.epochMillisFromOriginOffset(entry.startTime + entry.duration),
+      );
+      return;
+    }
 
     const detail = (entry as PerformanceMark).detail;
     const body = detail != null ? JSON.stringify(detail) : undefined;
@@ -132,7 +145,15 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       timestamp: this.perf.epochMillisFromOriginOffset(entry.startTime),
       eventName: USER_TIMING_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
-      attributes,
+      attributes: {
+        [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
+        [KEY_EMB_USER_TIMING_NAME]: entry.name,
+        [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+          entry.startTime,
+        ),
+        [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
+        [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
+      },
       body,
     });
   }
