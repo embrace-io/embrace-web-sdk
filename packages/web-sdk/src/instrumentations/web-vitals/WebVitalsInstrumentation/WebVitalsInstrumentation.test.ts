@@ -129,7 +129,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsEvent.time).to.deep.equal([5, 0]);
   });
 
-  it('should report CLS metrics with largest shift time', () => {
+  it('should report CLS metrics with largest shift time and loadState', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
       perf,
@@ -153,6 +153,7 @@ describe('WebVitalsInstrumentation', () => {
         largestShiftTime: 3000,
         largestShiftValue: 3.0,
         largestShiftTarget: 'some-target',
+        loadState: 'complete',
       },
     } as MetricWithAttribution);
 
@@ -174,7 +175,9 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 22,
       'emb.web_vital.attribution.largestShiftTarget': 'some-target',
+      'emb.web_vital.attribution.largestShiftTime': 3000,
       'emb.web_vital.attribution.largestShiftValue': 3.0,
+      'emb.web_vital.attribution.loadState': 'complete',
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
     });
@@ -229,6 +232,9 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'needs-improvement',
       'emb.web_vital.value': 33,
+      'emb.web_vital.attribution.timeToFirstByte': 20,
+      'emb.web_vital.attribution.firstByteToFCP': 40,
+      'emb.web_vital.attribution.loadState': 'complete',
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
     });
@@ -350,6 +356,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.value': 22,
       'emb.web_vital.attribution.inputDelay': 1000,
       'emb.web_vital.attribution.interactionTarget': 'some-target',
+      'emb.web_vital.attribution.interactionTime': 19000,
       'emb.web_vital.attribution.interactionType': 'pointer',
       'emb.web_vital.attribution.loadState': 'complete',
       'emb.web_vital.attribution.nextPaintTime': 18000,
@@ -587,6 +594,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'poor',
       'emb.web_vital.value': 33,
+      'emb.web_vital.attribution.waitingDuration': 20,
+      'emb.web_vital.attribution.cacheDuration': 40,
+      'emb.web_vital.attribution.dnsDuration': 60,
+      'emb.web_vital.attribution.connectionDuration': 80,
+      'emb.web_vital.attribution.requestDuration': 100,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
@@ -632,14 +644,22 @@ describe('WebVitalsInstrumentation', () => {
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
-    expect(ttfbEvent.attributes).to.not.have.any.keys([
-      'emb.web_vital.attribution.redirect',
-      'emb.web_vital.attribution.domainLookup',
-      'emb.web_vital.attribution.tcpConnection',
-      'emb.web_vital.attribution.tlsNegotiation',
-      'emb.web_vital.attribution.serverResponse',
-      'emb.web_vital.attribution.unattributed',
-    ]);
+    expect(ttfbEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 33,
+      'emb.web_vital.id': 'm2',
+      'emb.web_vital.name': 'TTFB',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 33,
+      'emb.web_vital.attribution.waitingDuration': 20,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 0,
+      'emb.web_vital.attribution.connectionDuration': 0,
+      'emb.web_vital.attribution.requestDuration': 33,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+    });
   });
 
   it('should compute TTFB sub-parts correctly with TLS', () => {
@@ -699,6 +719,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 80,
+      'emb.web_vital.attribution.waitingDuration': 0,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 10,
+      'emb.web_vital.attribution.connectionDuration': 20,
+      'emb.web_vital.attribution.requestDuration': 30,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
@@ -768,6 +793,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 80,
+      'emb.web_vital.attribution.waitingDuration': 0,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.connectionDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 0,
+      'emb.web_vital.attribution.requestDuration': 50,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
@@ -838,6 +868,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 80,
+      'emb.web_vital.attribution.waitingDuration': 0,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.connectionDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 0,
+      'emb.web_vital.attribution.requestDuration': 40,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
@@ -908,6 +943,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'navigate',
       'emb.web_vital.rating': 'needs-improvement',
       'emb.web_vital.value': 100,
+      'emb.web_vital.attribution.waitingDuration': 0,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 10,
+      'emb.web_vital.attribution.connectionDuration': 10,
+      'emb.web_vital.attribution.requestDuration': 30,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 20,
@@ -1235,6 +1275,11 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.navigation_type': 'back-forward',
       'emb.web_vital.rating': 'good',
       'emb.web_vital.value': 80,
+      'emb.web_vital.attribution.waitingDuration': 0,
+      'emb.web_vital.attribution.cacheDuration': 0,
+      'emb.web_vital.attribution.dnsDuration': 10,
+      'emb.web_vital.attribution.connectionDuration': 10,
+      'emb.web_vital.attribution.requestDuration': 20,
       'url.full': 'https://example.com',
       'browser.url.full': 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
@@ -1991,5 +2036,207 @@ describe('WebVitalsInstrumentation', () => {
     expect(diag.getDebugLogs()).to.include(
       'WebVitalsInstrumentation disabled, pausing emission',
     );
+  });
+
+  it('should filter out non-primitive attribution values', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = inpStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'INP',
+      value: 100,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        interactionTarget: 'some-target',
+        interactionTime: 19000,
+        loadState: 'complete',
+        interactionTargetElement: document.createElement('div'),
+        processedEventEntries: [{ name: 'click' }],
+        longAnimationFrameEntries: [],
+      },
+    } as unknown as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+    const inpEvent = sessionSpan.events[0];
+
+    expect(inpEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'INP',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 100,
+      'emb.web_vital.attribution.interactionTarget': 'some-target',
+      'emb.web_vital.attribution.interactionTime': 19000,
+      'emb.web_vital.attribution.loadState': 'complete',
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+    });
+  });
+
+  it('should preserve falsy primitive attribution values', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftValue: 0,
+        loadState: '',
+      },
+    } as unknown as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'CLS',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 0,
+      'emb.web_vital.attribution.largestShiftValue': 0,
+      'emb.web_vital.attribution.loadState': '',
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+    });
+  });
+
+  it('should handle null attribution gracefully', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = fcpStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'FCP',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: null,
+    } as unknown as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+    const fcpEvent = sessionSpan.events[0];
+
+    expect(fcpEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'FCP',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 0,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+    });
+  });
+
+  it('should include boolean attribution values', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+    });
+
+    const { args } = clsStub.callsArg(0);
+    const metricReportFunc = args[0][0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftValue: 0,
+        hadRecentInput: false,
+      },
+    } as unknown as MetricWithAttribution);
+
+    spanSessionManager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const sessionSpan = finishedSpans[0];
+    const clsEvent = sessionSpan.events[0];
+
+    expect(clsEvent.attributes).to.deep.equal({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.delta': 0,
+      'emb.web_vital.id': 'm1',
+      'emb.web_vital.name': 'CLS',
+      'emb.web_vital.navigation_type': 'navigate',
+      'emb.web_vital.rating': 'good',
+      'emb.web_vital.value': 0,
+      'emb.web_vital.attribution.largestShiftValue': 0,
+      'emb.web_vital.attribution.hadRecentInput': false,
+      'url.full': 'https://example.com',
+      'browser.url.full': 'https://example.com',
+    });
+  });
+
+  it('should not register reportAllChanges listeners when urlAttribution is false', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      urlDocument,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    expect(inpStub.callCount).to.equal(1);
+    expect(lcpStub.callCount).to.equal(1);
+    expect(clsStub.callCount).to.equal(1);
   });
 });
