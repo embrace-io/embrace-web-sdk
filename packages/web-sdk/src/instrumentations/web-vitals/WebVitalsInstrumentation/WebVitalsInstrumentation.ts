@@ -1,10 +1,12 @@
-import type { Attributes, DiagLogger } from '@opentelemetry/api';
+import type {
+  Attributes,
+  AttributeValue,
+  DiagLogger,
+} from '@opentelemetry/api';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
-  CLSAttribution,
   CLSMetricWithAttribution,
   INPAttribution,
-  LCPAttribution,
   Metric,
   MetricWithAttribution,
   TTFBAttribution,
@@ -21,6 +23,15 @@ import {
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import {
+  KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX,
+  KEY_EMB_WEB_VITAL_DELTA,
+  KEY_EMB_WEB_VITAL_ID,
+  KEY_EMB_WEB_VITAL_NAME,
+  KEY_EMB_WEB_VITAL_NAVIGATION_TYPE,
+  KEY_EMB_WEB_VITAL_RATING,
+  KEY_EMB_WEB_VITAL_VALUE,
+} from './attributes.ts';
 import {
   ALL_WEB_VITALS,
   EMB_WEB_VITALS_PREFIX,
@@ -40,196 +51,158 @@ type AttributedPage = {
   label?: string;
 };
 
+const isPrimitiveValue = (value: unknown): value is AttributeValue => {
+  const type = typeof value;
+  return type === 'number' || type === 'string' || type === 'boolean';
+};
+
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
 
 const webVitalAttributionToReport = (
-  name: Metric['name'],
   metric: MetricWithAttribution,
-  diag: DiagLogger,
-) => {
+): Attributes => {
   const attributes: Attributes = {};
-  const toReport: {
-    key: string;
-    value: string | boolean | number | undefined;
-  }[] = [];
+  const attribution = metric.attribution;
 
-  if (name === 'CLS') {
-    // https://github.com/GoogleChrome/web-vitals#CLSAttribution
-    const attribution = metric.attribution as CLSAttribution;
-    toReport.push(
-      ...[
-        {
-          key: 'largestShiftTarget',
-          value: attribution.largestShiftTarget,
-        },
-        {
-          key: 'largestShiftValue',
-          value: attribution.largestShiftValue,
-        },
-      ],
-    );
-  } else if (name === 'INP') {
-    // https://github.com/GoogleChrome/web-vitals#inpattribution
-    const attribution = metric.attribution as INPAttribution;
-    toReport.push(
-      ...[
-        { key: 'interactionTarget', value: attribution.interactionTarget },
-        { key: 'interactionType', value: attribution.interactionType },
-        { key: 'nextPaintTime', value: attribution.nextPaintTime },
-        { key: 'inputDelay', value: attribution.inputDelay },
-        { key: 'processingDuration', value: attribution.processingDuration },
-        { key: 'presentationDelay', value: attribution.presentationDelay },
-        { key: 'totalScriptDuration', value: attribution.totalScriptDuration },
-        {
-          key: 'totalStyleAndLayoutDuration',
-          value: attribution.totalStyleAndLayoutDuration,
-        },
-        { key: 'totalPaintDuration', value: attribution.totalPaintDuration },
-        {
-          key: 'totalUnattributedDuration',
-          value: attribution.totalUnattributedDuration,
-        },
-        { key: 'loadState', value: attribution.loadState },
-      ],
-    );
+  if (!attribution || typeof attribution !== 'object') {
+    return attributes;
+  }
 
-    try {
-      // suppress LoAF baseline errors
-      /* eslint-disable baseline-js/use-baseline */
-      if (attribution.longAnimationFrameEntries.length > 0) {
-        const scripts = new Map<
-          string,
-          {
-            totalDuration: number;
-            styleAndLayoutDuration: number;
-            count: number;
-          }
-        >();
-        for (const entry of attribution.longAnimationFrameEntries) {
-          for (const script of entry.scripts) {
-            let url = script.sourceURL || '(inline)';
-            if (url.length > MAX_LOAF_SCRIPT_URL_LENGTH) {
-              url = `${url.substring(0, MAX_LOAF_SCRIPT_URL_LENGTH)}...`;
-            }
-            const existing = scripts.get(url);
-            if (existing) {
-              existing.totalDuration += script.duration;
-              existing.styleAndLayoutDuration +=
-                script.forcedStyleAndLayoutDuration;
-              existing.count++;
-            } else {
-              scripts.set(url, {
-                totalDuration: script.duration,
-                styleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
-                count: 1,
-              });
-            }
-          }
-        }
-        if (scripts.size > 0) {
-          toReport.push({
-            key: 'loaf_scripts',
-            value: JSON.stringify(
-              Object.fromEntries(
-                [...scripts]
-                  .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
-                  .slice(0, MAX_LOAF_SCRIPT_ENTRIES)
-                  .map(([url, script]) => [
-                    url,
-                    {
-                      total_duration: Math.round(script.totalDuration),
-                      style_and_layout_duration: Math.round(
-                        script.styleAndLayoutDuration,
-                      ),
-                      count: script.count,
-                    },
-                  ]),
-              ),
-            ),
-          });
-        }
-      }
-      /* eslint-enable baseline-js/use-baseline */
-    } catch (e) {
-      diag.error('error building loaf scripts for INP', e);
-    }
-  } else if (name === 'LCP') {
-    // https://github.com/GoogleChrome/web-vitals#lcpattribution
-    const attribution = metric.attribution as LCPAttribution;
-    toReport.push(
-      ...[
-        { key: 'target', value: attribution.target },
-        { key: 'url', value: attribution.url },
-        { key: 'timeToFirstByte', value: attribution.timeToFirstByte },
-        { key: 'resourceLoadDelay', value: attribution.resourceLoadDelay },
-        {
-          key: 'resourceLoadDuration',
-          value: attribution.resourceLoadDuration,
-        },
-        { key: 'elementRenderDelay', value: attribution.elementRenderDelay },
-      ],
-    );
-  } else if (name === 'TTFB') {
-    // https://github.com/GoogleChrome/web-vitals#ttfbattribution
-    const attribution = metric.attribution as TTFBAttribution;
-    const entry = attribution.navigationEntry as
-      | PerformanceNavigationTiming
-      | undefined;
-    if (entry) {
-      try {
-        const redirect = roundClamp(entry.redirectEnd - entry.redirectStart);
-        const domainLookup = roundClamp(
-          entry.domainLookupEnd - entry.domainLookupStart,
-        );
-        const tcpConnection = roundClamp(
-          entry.secureConnectionStart > 0
-            ? entry.secureConnectionStart - entry.connectStart
-            : entry.connectEnd - entry.connectStart,
-        );
-        const tlsNegotiation = roundClamp(
-          entry.secureConnectionStart > 0
-            ? entry.connectEnd - entry.secureConnectionStart
-            : 0,
-        );
-        const effectiveResponseStart = Math.max(
-          // @ts-expect-error 103 Early hints are not supported in all browsers
-          // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/finalResponseHeadersStart
-          entry.finalResponseHeadersStart ?? 0,
-          entry.responseStart,
-        );
-        const serverResponse = roundClamp(
-          effectiveResponseStart - entry.requestStart,
-        );
-        const total = Math.round(entry.responseEnd - entry.startTime);
-        const unattributed = roundClamp(
-          total -
-            redirect -
-            domainLookup -
-            tcpConnection -
-            tlsNegotiation -
-            serverResponse,
-        );
-        toReport.push(
-          { key: 'redirect', value: redirect },
-          { key: 'domainLookup', value: domainLookup },
-          { key: 'tcpConnection', value: tcpConnection },
-          { key: 'tlsNegotiation', value: tlsNegotiation },
-          { key: 'serverResponse', value: serverResponse },
-          { key: 'unattributed', value: unattributed },
-        );
-      } catch (e) {
-        diag.error('error computing TTFB timing breakdown', e);
-      }
-    } else {
-      diag.debug('TTFB navigationEntry unavailable, skipping timing breakdown');
+  for (const [key, value] of Object.entries(attribution)) {
+    if (isPrimitiveValue(value)) {
+      attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}${key}`] = value;
     }
   }
 
-  toReport.forEach((report) => {
-    if (report.value !== undefined) {
-      attributes[`emb.web_vital.attribution.${report.key}`] = report.value;
+  return attributes;
+};
+
+const loafScriptsAttribution = (
+  metric: MetricWithAttribution,
+  diag: DiagLogger,
+): Attributes => {
+  const attributes: Attributes = {};
+  const attribution = metric.attribution as INPAttribution;
+
+  try {
+    // suppress LoAF baseline errors
+    /* eslint-disable baseline-js/use-baseline */
+    if (attribution.longAnimationFrameEntries.length > 0) {
+      const scripts = new Map<
+        string,
+        {
+          totalDuration: number;
+          styleAndLayoutDuration: number;
+          count: number;
+        }
+      >();
+      for (const entry of attribution.longAnimationFrameEntries) {
+        for (const script of entry.scripts) {
+          let url = script.sourceURL || '(inline)';
+          if (url.length > MAX_LOAF_SCRIPT_URL_LENGTH) {
+            url = `${url.substring(0, MAX_LOAF_SCRIPT_URL_LENGTH)}...`;
+          }
+          const existing = scripts.get(url);
+          if (existing) {
+            existing.totalDuration += script.duration;
+            existing.styleAndLayoutDuration +=
+              script.forcedStyleAndLayoutDuration;
+            existing.count++;
+          } else {
+            scripts.set(url, {
+              totalDuration: script.duration,
+              styleAndLayoutDuration: script.forcedStyleAndLayoutDuration,
+              count: 1,
+            });
+          }
+        }
+      }
+      if (scripts.size > 0) {
+        attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}loaf_scripts`] =
+          JSON.stringify(
+            Object.fromEntries(
+              [...scripts]
+                .sort((a, b) => b[1].totalDuration - a[1].totalDuration)
+                .slice(0, MAX_LOAF_SCRIPT_ENTRIES)
+                .map(([url, script]) => [
+                  url,
+                  {
+                    total_duration: Math.round(script.totalDuration),
+                    style_and_layout_duration: Math.round(
+                      script.styleAndLayoutDuration,
+                    ),
+                    count: script.count,
+                  },
+                ]),
+            ),
+          );
+      }
     }
-  });
+    /* eslint-enable baseline-js/use-baseline */
+  } catch (e) {
+    diag.error('error building loaf scripts for INP', e);
+  }
+
+  return attributes;
+};
+
+const ttfbSubPartsAttribution = (
+  metric: MetricWithAttribution,
+  diag: DiagLogger,
+): Attributes => {
+  const attributes: Attributes = {};
+  const attribution = metric.attribution as TTFBAttribution;
+  const entry = attribution.navigationEntry as
+    | PerformanceNavigationTiming
+    | undefined;
+
+  if (entry) {
+    try {
+      const redirect = roundClamp(entry.redirectEnd - entry.redirectStart);
+      const domainLookup = roundClamp(
+        entry.domainLookupEnd - entry.domainLookupStart,
+      );
+      const tcpConnection = roundClamp(
+        entry.secureConnectionStart > 0
+          ? entry.secureConnectionStart - entry.connectStart
+          : entry.connectEnd - entry.connectStart,
+      );
+      const tlsNegotiation = roundClamp(
+        entry.secureConnectionStart > 0
+          ? entry.connectEnd - entry.secureConnectionStart
+          : 0,
+      );
+      const effectiveResponseStart = Math.max(
+        // @ts-expect-error 103 Early hints are not supported in all browsers
+        // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/finalResponseHeadersStart
+        entry.finalResponseHeadersStart ?? 0,
+        entry.responseStart,
+      );
+      const serverResponse = roundClamp(
+        effectiveResponseStart - entry.requestStart,
+      );
+      const total = Math.round(entry.responseEnd - entry.startTime);
+      const unattributed = roundClamp(
+        total -
+          redirect -
+          domainLookup -
+          tcpConnection -
+          tlsNegotiation -
+          serverResponse,
+      );
+      const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+      attributes[`${prefix}redirect`] = redirect;
+      attributes[`${prefix}domainLookup`] = domainLookup;
+      attributes[`${prefix}tcpConnection`] = tcpConnection;
+      attributes[`${prefix}tlsNegotiation`] = tlsNegotiation;
+      attributes[`${prefix}serverResponse`] = serverResponse;
+      attributes[`${prefix}unattributed`] = unattributed;
+    } catch (e) {
+      diag.error('error computing TTFB timing breakdown', e);
+    }
+  } else {
+    diag.debug('TTFB navigationEntry unavailable, skipping timing breakdown');
+  }
 
   return attributes;
 };
@@ -319,13 +292,17 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
           [ATTR_URL_FULL]: attributedPage.fullURL,
           [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
-          'emb.web_vital.navigation_type': metric.navigationType,
-          'emb.web_vital.name': metric.name,
-          'emb.web_vital.rating': metric.rating,
-          'emb.web_vital.id': metric.id,
-          'emb.web_vital.delta': metric.delta,
-          'emb.web_vital.value': metric.value,
-          ...webVitalAttributionToReport(name, metric, this._diag),
+          [KEY_EMB_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
+          [KEY_EMB_WEB_VITAL_NAME]: metric.name,
+          [KEY_EMB_WEB_VITAL_RATING]: metric.rating,
+          [KEY_EMB_WEB_VITAL_ID]: metric.id,
+          [KEY_EMB_WEB_VITAL_DELTA]: metric.delta,
+          [KEY_EMB_WEB_VITAL_VALUE]: metric.value,
+          ...webVitalAttributionToReport(metric),
+          ...(name === 'INP' ? loafScriptsAttribution(metric, this._diag) : {}),
+          ...(name === 'TTFB'
+            ? ttfbSubPartsAttribution(metric, this._diag)
+            : {}),
         };
 
         // Add page attributes if route and page ID exist
