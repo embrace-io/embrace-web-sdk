@@ -268,10 +268,13 @@ const App = () => {
   };
 
   const handleTriggerMeasure = () => {
-    performance.mark('demo-measure-start');
+    const mark = performance.mark('demo-measure-start');
     setTimeout(
       () => {
-        performance.measure('demo-measure', 'demo-measure-start');
+        performance.measure('demo-measure', {
+          start: mark.startTime,
+          detail: { source: 'demo' },
+        });
       },
       Math.floor(Math.random() * 500) + 100,
     );

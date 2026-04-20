@@ -12,6 +12,7 @@ import {
   KEY_EMB_USER_TIMING_ENTRY_TYPE,
   KEY_EMB_USER_TIMING_NAME,
   KEY_EMB_USER_TIMING_START_TIME,
+  KEY_USER_TIMING_DETAIL,
   USER_TIMING_EVENT_NAME,
 } from './constants.ts';
 import type {
@@ -121,15 +122,16 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     if (entry.entryType === 'measure') {
+      const measureDetail = (entry as PerformanceMeasure).detail;
       const span = this.tracer.startSpan(entry.name, {
         startTime: this.perf.epochMillisFromOriginOffset(entry.startTime),
         attributes: {
-          // Until we decided if we want to create a new pipeline for Measures,
-          // make sure we add Perf as emb type to use the existing spans pipeline for these entries
-          [KEY_EMB_TYPE]: EMB_TYPES.Perf,
           [KEY_EMB_INSTRUMENTATION]:
             EMB_PERFORMANCE_INSTRUMENTATIONS.UserTiming,
           [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
+          ...(measureDetail != null && {
+            [KEY_USER_TIMING_DETAIL]: JSON.stringify(measureDetail),
+          }),
         },
       });
       span.end(

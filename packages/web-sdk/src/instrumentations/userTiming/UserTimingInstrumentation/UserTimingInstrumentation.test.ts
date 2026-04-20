@@ -257,6 +257,25 @@ describe('UserTimingInstrumentation', () => {
     expect(span.attributes['emb.type']).to.equal('perf');
     expect(span.attributes['emb.instrumentation']).to.equal('user_timing');
     expect(span.attributes['emb.user_timing.entry_type']).to.equal('measure');
+    expect(span.attributes['user_timing.detail']).to.be.undefined;
+
+    instrumentation.disable();
+  });
+
+  it('should set detail as a span attribute for measure entries with detail', () => {
+    const instrumentation = new UserTimingInstrumentation({ perf });
+
+    triggerMeasureEntries([
+      makeMeasure({
+        name: 'my-measure',
+        detail: { component: 'nav', phase: 'render' },
+      }),
+    ]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes['user_timing.detail']).to.equal(
+      JSON.stringify({ component: 'nav', phase: 'render' }),
+    );
 
     instrumentation.disable();
   });
