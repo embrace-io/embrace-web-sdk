@@ -16,5 +16,9 @@ export {
   OTelPerformanceManager,
   type PerformanceManager,
 } from './PerformanceManager/index.ts';
+export {
+  createPerformanceObserver,
+  isEntryTypeSupported,
+} from './performanceObserver/index.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';

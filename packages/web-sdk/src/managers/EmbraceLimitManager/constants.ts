@@ -14,6 +14,8 @@ export const DEFAULT_LIMITS: EmbraceLimitManagerArgs = {
     session_property: 100,
     span: 1_000,
     network_request: 10_000,
+    user_timing_mark: 200,
+    user_timing_measure: 100,
   },
   maxLength: {
     error_log: 128,

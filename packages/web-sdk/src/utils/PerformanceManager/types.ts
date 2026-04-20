@@ -5,6 +5,7 @@ export interface PerformanceManager {
   epochMillisFromOriginOffset: (originOffset: number) => number;
   getNowMillis: () => number;
   millisSinceHRTime: (time: HrTime) => number;
+  millisFromZeroTime: (originOffset: number) => number;
 }
 
 export interface PerformanceClock {

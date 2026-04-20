@@ -30,6 +30,7 @@ import type {
   SpanSessionOnLoadInstrumentationArgs,
   SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentationArgs,
+  UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.ts';
 import type {
@@ -344,6 +345,7 @@ type OptionalInstrumentations =
   | 'click'
   | 'web-vital'
   | 'loaf'
+  | 'user-timing'
   | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
@@ -358,6 +360,7 @@ export interface SetupDefaultInstrumentationsArgs {
   spanSessionManager?: SpanSessionManager;
   embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   pageManager?: PageManager;
+  limitManager?: LimitManagerInternal;
 }
 
 export interface DefaultInstrumentationConfig {
@@ -370,6 +373,7 @@ export interface DefaultInstrumentationConfig {
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
+  'user-timing'?: UserTimingInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and

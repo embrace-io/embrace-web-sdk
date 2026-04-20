@@ -32,6 +32,10 @@ export {
   type SpanSessionVisibilityInstrumentationArgs,
 } from './session/index.ts';
 export {
+  UserTimingInstrumentation,
+  type UserTimingInstrumentationArgs,
+} from './userTiming/index.ts';
+export {
   type WebVitalOnReport,
   WebVitalsInstrumentation,
   type WebVitalsInstrumentationArgs,

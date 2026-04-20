@@ -392,7 +392,8 @@ jobs:
       pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
-    timeout-minutes: 10
+    # Temporarily increase timeout until github issues are solved
+    timeout-minutes: 20
     steps:
       - name: Restore previous test results
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4

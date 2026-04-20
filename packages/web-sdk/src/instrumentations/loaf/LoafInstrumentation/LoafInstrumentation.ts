@@ -3,6 +3,10 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import {
+  createPerformanceObserver,
+  isEntryTypeSupported,
+} from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_TBD_LOAF_COUNT,
@@ -62,43 +66,31 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    try {
-      if (
-        typeof PerformanceObserver === 'undefined' ||
-        !PerformanceObserver.supportedEntryTypes?.includes(
-          'long-animation-frame',
-        )
-      ) {
-        this._diag.debug('long-animation-frame not supported, skipping');
-        return;
-      }
-
-      this._isEnabled = true;
-
-      if (this._observer) {
-        this._observer.disconnect();
-      }
-
-      this._observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          try {
-            this._processEntry(entry as PerformanceLongAnimationFrameTiming);
-          } catch (e) {
-            this._diag.error('error processing entry', e);
-          }
-        }
-      });
-
-      this._observer.observe({
-        type: 'long-animation-frame',
-        buffered: true,
-      });
-
-      this._registerSessionEndListener();
-    } catch (e) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable', e);
+    if (!isEntryTypeSupported('long-animation-frame')) {
+      this._diag.debug('long-animation-frame not supported, skipping');
+      return;
     }
+
+    this._isEnabled = true;
+
+    if (this._observer) {
+      this._observer.disconnect();
+    }
+
+    this._observer =
+      createPerformanceObserver<PerformanceLongAnimationFrameTiming>(
+        'long-animation-frame',
+        (entry) => this._processEntry(entry),
+        { diag: this._diag },
+      );
+
+    if (!this._observer) {
+      this._isEnabled = false;
+      this._diag.error('failed to enable');
+      return;
+    }
+
+    this._registerSessionEndListener();
   }
 
   private _registerSessionEndListener(): void {

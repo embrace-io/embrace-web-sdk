@@ -39,6 +39,7 @@ export enum EMB_TYPES {
   ResourceFetch = 'ux.resource_fetch',
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',
+  UserTiming = 'ux.user_timing',
 }
 
 export enum EMB_STATES {
@@ -57,6 +58,11 @@ export enum EMB_ERROR_INSTRUMENTATIONS {
   ReactErrorBoundary = 'react_error_boundary',
 }
 
+export enum EMB_PERFORMANCE_INSTRUMENTATIONS {
+  UserTiming = 'user_timing',
+}
+
 export type EMB_INSTRUMENTATIONS =
   | EMB_NAVIGATION_INSTRUMENTATIONS
-  | EMB_ERROR_INSTRUMENTATIONS;
+  | EMB_ERROR_INSTRUMENTATIONS
+  | EMB_PERFORMANCE_INSTRUMENTATIONS;

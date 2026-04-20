@@ -263,6 +263,23 @@ const App = () => {
     });
   };
 
+  const handleTriggerMark = () => {
+    performance.mark('demo-mark', { detail: { source: 'demo' } });
+  };
+
+  const handleTriggerMeasure = () => {
+    const mark = performance.mark('demo-measure-start');
+    setTimeout(
+      () => {
+        performance.measure('demo-measure', {
+          start: mark.startTime,
+          detail: { source: 'demo' },
+        });
+      },
+      Math.floor(Math.random() * 500) + 100,
+    );
+  };
+
   return (
     <>
       <fieldset style={{ gridColumn: '1 / -1' }}>
@@ -512,6 +529,18 @@ const App = () => {
         <div>
           <p>Outside an error boundary:</p>
           <ComponentWithErrorInRender />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Browser Timing</legend>
+        <div className="actions">
+          <button type="button" onClick={handleTriggerMark}>
+            Trigger Mark
+          </button>
+          <button type="button" onClick={handleTriggerMeasure}>
+            Trigger Measure
+          </button>
         </div>
       </fieldset>
     </>
