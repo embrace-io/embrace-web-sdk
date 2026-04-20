@@ -1,0 +1,108 @@
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import {
+  createPerformanceObserver,
+  isEntryTypeSupported,
+} from '../../../utils/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import {
+  KEY_EMB_ELEMENT_TIMING_ELEMENT,
+  KEY_EMB_ELEMENT_TIMING_IDENTIFIER,
+  KEY_EMB_ELEMENT_TIMING_LOAD_TIME,
+  KEY_EMB_ELEMENT_TIMING_NATURAL_HEIGHT,
+  KEY_EMB_ELEMENT_TIMING_NATURAL_WIDTH,
+  KEY_EMB_ELEMENT_TIMING_RENDER_TIME,
+  KEY_EMB_ELEMENT_TIMING_START_TIME,
+  KEY_EMB_ELEMENT_TIMING_URL,
+} from './constants.ts';
+import type {
+  ElementTimingInstrumentationArgs,
+  PerformanceElementTiming,
+} from './types.ts';
+
+export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
+  private _observer: PerformanceObserver | null = null;
+  private _isEnabled = false;
+
+  public constructor({ diag, perf }: ElementTimingInstrumentationArgs = {}) {
+    super({
+      instrumentationName: 'ElementTimingInstrumentation',
+      instrumentationVersion: '1.0.0',
+      diag,
+      perf,
+      config: {},
+    });
+
+    if (this._config.enabled) {
+      this.enable();
+    }
+  }
+
+  public enable(): void {
+    if (this._isEnabled) {
+      return;
+    }
+
+    if (!isEntryTypeSupported('element')) {
+      this._diag.debug('element not supported, skipping');
+      return;
+    }
+
+    this._isEnabled = true;
+
+    if (this._observer) {
+      this._observer.disconnect();
+    }
+
+    this._observer = createPerformanceObserver<PerformanceElementTiming>(
+      'element',
+      (entry) => this._processEntry(entry),
+      { diag: this._diag },
+    );
+
+    if (!this._observer) {
+      this._isEnabled = false;
+      this._diag.error('failed to enable');
+      return;
+    }
+  }
+
+  public disable(): void {
+    this._isEnabled = false;
+
+    if (this._observer) {
+      this._observer.disconnect();
+      this._observer = null;
+    }
+  }
+
+  private _processEntry(entry: PerformanceElementTiming): void {
+    if (!this._isEnabled) {
+      return;
+    }
+
+    const span = this.tracer.startSpan(entry.identifier, {
+      // Span start anchors to navigation start so the span duration equals "time from navigation
+      // until the element was rendered" — useful for analyzing page-load render timing.
+      startTime: this.perf.epochMillisFromOriginOffset(0),
+      attributes: {
+        [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
+        [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,
+        [KEY_EMB_ELEMENT_TIMING_ELEMENT]: entry.element?.tagName?.toLowerCase(),
+        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: entry.renderTime,
+        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: entry.loadTime,
+        [KEY_EMB_ELEMENT_TIMING_START_TIME]: entry.startTime,
+        [KEY_EMB_ELEMENT_TIMING_URL]: entry.url,
+        [KEY_EMB_ELEMENT_TIMING_NATURAL_WIDTH]: entry.naturalWidth,
+        [KEY_EMB_ELEMENT_TIMING_NATURAL_HEIGHT]: entry.naturalHeight,
+      },
+    });
+    if (entry.loadTime > 0) {
+      span.addEvent(
+        'load',
+        this.perf.epochMillisFromOriginOffset(entry.loadTime),
+      );
+    }
+    // entry.startTime = renderTime if non-zero, else loadTime
+    span.end(this.perf.epochMillisFromOriginOffset(entry.startTime));
+  }
+}

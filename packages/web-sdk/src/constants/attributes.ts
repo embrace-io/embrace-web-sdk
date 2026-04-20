@@ -40,6 +40,7 @@ export enum EMB_TYPES {
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',
   UserTiming = 'ux.user_timing',
+  ElementTiming = 'ux.element_timing',
 }
 
 export enum EMB_STATES {

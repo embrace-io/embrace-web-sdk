@@ -8,6 +8,10 @@ export {
 } from './clicks/index.ts';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
 export {
+  ElementTimingInstrumentation,
+  type ElementTimingInstrumentationArgs,
+} from './elementTiming/index.ts';
+export {
   GlobalExceptionInstrumentation,
   type GlobalExceptionInstrumentationArgs,
 } from './exceptions/index.ts';

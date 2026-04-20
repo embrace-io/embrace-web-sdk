@@ -21,6 +21,7 @@ import type { AttributeScrubber } from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
+  ElementTimingInstrumentationArgs,
   EmbraceFetchInstrumentationArgs,
   EmbraceXHRInstrumentationArgs,
   EmptyRootInstrumentationArgs,
@@ -346,6 +347,7 @@ type OptionalInstrumentations =
   | 'web-vital'
   | 'loaf'
   | 'user-timing'
+  | 'element-timing'
   | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
@@ -374,6 +376,7 @@ export interface DefaultInstrumentationConfig {
   'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
+  'element-timing'?: ElementTimingInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
