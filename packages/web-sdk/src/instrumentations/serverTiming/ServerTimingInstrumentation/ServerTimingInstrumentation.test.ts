@@ -57,14 +57,14 @@ describe('ServerTimingInstrumentation', () => {
     });
     log.setGlobalLogManager(logManager);
 
-    // Make getEntriesByType an own property on the instance so sinon can stub it
-    // (host objects in some Chromium builds don't have hasOwnProperty, which sinon requires)
+    // Install a standalone stub directly via Object.defineProperty — avoids sinon.stub(object, method)
+    // which calls object.hasOwnProperty(), unavailable on host objects in some Chromium builds.
+    getEntriesByTypeStub = sinon.stub();
     Object.defineProperty(window.performance, 'getEntriesByType', {
-      value: Performance.prototype.getEntriesByType.bind(window.performance),
+      value: getEntriesByTypeStub,
       writable: true,
       configurable: true,
     });
-    getEntriesByTypeStub = sinon.stub(window.performance, 'getEntriesByType');
     addEventListenerSpy = sinon.spy(window, 'addEventListener');
 
     Object.defineProperty(window.document, 'readyState', {
@@ -75,6 +75,11 @@ describe('ServerTimingInstrumentation', () => {
 
   afterEach(() => {
     sinon.restore();
+    Object.defineProperty(window.performance, 'getEntriesByType', {
+      value: Performance.prototype.getEntriesByType,
+      writable: true,
+      configurable: true,
+    });
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',
