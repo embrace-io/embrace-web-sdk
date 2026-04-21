@@ -3,11 +3,11 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from '../../../utils/index.ts';
-import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_TBD_LOAF_COUNT,
