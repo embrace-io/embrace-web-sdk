@@ -57,7 +57,7 @@ describe('ServerTimingInstrumentation', () => {
     });
     log.setGlobalLogManager(logManager);
 
-    getEntriesByTypeStub = sinon.stub(performance, 'getEntriesByType');
+    getEntriesByTypeStub = sinon.stub(window.performance, 'getEntriesByType');
     addEventListenerSpy = sinon.spy(window, 'addEventListener');
 
     Object.defineProperty(window.document, 'readyState', {
