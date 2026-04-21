@@ -70,9 +70,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     );
 
     if (!this._markObserver) {
-      this._isEnabled = false;
       this._diag.error('failed to enable mark observer');
-      return;
     }
 
     this._measureObserver = createPerformanceObserver<PerformanceMeasure>(
@@ -82,9 +80,11 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     );
 
     if (!this._measureObserver) {
-      this._isEnabled = false;
       this._diag.error('failed to enable measure observer');
-      return;
+    }
+
+    if (!this._markObserver && !this._measureObserver) {
+      this._isEnabled = false;
     }
   }
 
