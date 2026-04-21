@@ -3,6 +3,7 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
@@ -210,6 +211,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      ['emb.web_vital.id']: generateWebVitalID(),
       ['emb.web_vital.name']: 'TBD',
       ['emb.web_vital.value']: Math.round(this._totalBlockingDuration),
       ['emb.web_vital.rating']: rating,

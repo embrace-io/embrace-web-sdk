@@ -6,6 +6,7 @@ export {
   type SpanStorageOptions,
 } from './EmbraceSpanStorage/index.ts';
 export { generateUUID } from './generateUUID.ts';
+export { generateWebVitalID } from './generateWebVitalID.ts';
 export { getIncrementedCount } from './getIncrementedCount.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';
