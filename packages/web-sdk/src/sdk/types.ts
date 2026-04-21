@@ -27,6 +27,7 @@ import type {
   EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
+  ServerTimingInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
   SpanSessionTimeoutInstrumentationArgs,
@@ -348,6 +349,7 @@ type OptionalInstrumentations =
   | 'loaf'
   | 'user-timing'
   | 'element-timing'
+  | 'server-timing'
   | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
@@ -377,6 +379,7 @@ export interface DefaultInstrumentationConfig {
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;
+  'server-timing'?: ServerTimingInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
