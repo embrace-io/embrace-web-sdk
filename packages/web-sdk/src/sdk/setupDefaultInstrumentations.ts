@@ -88,7 +88,10 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('server-timing')) {
     instrumentations.push(
-      new ServerTimingInstrumentation(config['server-timing']),
+      new ServerTimingInstrumentation({
+        ...config['server-timing'],
+        limitManager,
+      }),
     );
   }
 

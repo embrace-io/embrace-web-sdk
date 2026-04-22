@@ -12,12 +12,17 @@ import type { ServerTimingInstrumentationArgs } from './types.ts';
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
 
-  public constructor({ diag, perf }: ServerTimingInstrumentationArgs = {}) {
+  public constructor({
+    diag,
+    perf,
+    limitManager,
+  }: ServerTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'ServerTimingInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
+      limitManager,
       config: {},
     });
 
@@ -56,6 +61,10 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     for (const entry of serverTiming) {
+      if (this.limitManager?.limitServerTimingEntry()) {
+        return;
+      }
+
       this.logger.emit({
         eventName: SERVER_TIMING_EVENT_NAME,
         severityNumber: SeverityNumber.INFO,

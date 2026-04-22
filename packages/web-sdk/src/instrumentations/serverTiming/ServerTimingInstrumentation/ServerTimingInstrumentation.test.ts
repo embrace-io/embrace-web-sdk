@@ -38,6 +38,7 @@ describe('ServerTimingInstrumentation', () => {
   let clock: sinon.SinonFakeTimers;
   let getEntriesByTypeStub: sinon.SinonStub;
   let addEventListenerSpy: sinon.SinonSpy;
+  let limitManager: EmbraceLimitManager;
 
   before(() => {
     memoryExporter = setupTestLogExporter();
@@ -48,7 +49,7 @@ describe('ServerTimingInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
 
-    const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
     spanSessionManager.startSessionSpan();
     const logManager = new EmbraceLogManager({
@@ -99,7 +100,10 @@ describe('ServerTimingInstrumentation', () => {
         ]),
       ]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
 
       const logs = memoryExporter.getFinishedLogRecords();
       expect(logs).to.have.length(2);
@@ -125,7 +129,10 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
 
       const loadListenerAdded = addEventListenerSpy.args.some(
         ([event]) => event === 'load',
@@ -155,7 +162,10 @@ describe('ServerTimingInstrumentation', () => {
         ]),
       ]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
@@ -178,12 +188,39 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
       instrumentation.disable();
 
       window.dispatchEvent(new Event('load'));
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
+    });
+  });
+
+  describe('limit manager', () => {
+    it('stops emitting once the server_timing limit is reached', () => {
+      const entries = Array.from({ length: 3 }, (_, i) =>
+        makeServerTimingEntry({ name: `svc${i.toString()}`, duration: i }),
+      );
+      getEntriesByTypeStub
+        .withArgs('navigation')
+        .returns([makeNavigationEntry(entries)]);
+
+      const customLimitManager = new EmbraceLimitManager({
+        ...DEFAULT_LIMITS,
+        maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, server_timing: 2 },
+      });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager: customLimitManager,
+      });
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(2);
+
+      instrumentation.disable();
     });
   });
 
@@ -193,7 +230,10 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([])]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
@@ -203,7 +243,10 @@ describe('ServerTimingInstrumentation', () => {
     it('emits nothing when no navigation entry exists', () => {
       getEntriesByTypeStub.withArgs('navigation').returns([]);
 
-      const instrumentation = new ServerTimingInstrumentation({ perf });
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 

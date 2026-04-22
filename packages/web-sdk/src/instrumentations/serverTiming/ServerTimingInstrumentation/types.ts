@@ -2,5 +2,5 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type ServerTimingInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf'
+  'diag' | 'perf' | 'limitManager'
 >;
