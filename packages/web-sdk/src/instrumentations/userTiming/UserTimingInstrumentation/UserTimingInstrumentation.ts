@@ -8,11 +8,11 @@ import {
 import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
+  KEY_EMB_USER_TIMING_DETAIL,
   KEY_EMB_USER_TIMING_DURATION,
   KEY_EMB_USER_TIMING_ENTRY_TYPE,
   KEY_EMB_USER_TIMING_NAME,
   KEY_EMB_USER_TIMING_START_TIME,
-  KEY_USER_TIMING_DETAIL,
   USER_TIMING_EVENT_NAME,
 } from './constants.ts';
 import type {
@@ -126,6 +126,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       const span = this.tracer.startSpan(entry.name, {
         startTime: this.perf.epochMillisFromOriginOffset(entry.startTime),
         attributes: {
+          [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
           [KEY_EMB_INSTRUMENTATION]:
             EMB_PERFORMANCE_INSTRUMENTATIONS.UserTiming,
           [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
@@ -134,7 +135,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
           ),
           [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
           ...(measureDetail != null && {
-            [KEY_USER_TIMING_DETAIL]: JSON.stringify(measureDetail),
+            [KEY_EMB_USER_TIMING_DETAIL]: JSON.stringify(measureDetail),
           }),
         },
       });

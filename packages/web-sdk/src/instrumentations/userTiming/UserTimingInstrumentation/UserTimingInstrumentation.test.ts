@@ -265,7 +265,7 @@ describe('UserTimingInstrumentation', () => {
     expect(span.attributes['emb.user_timing.duration']).to.equal(
       spanDurationMs,
     );
-    expect(span.attributes['user_timing.detail']).to.be.undefined;
+    expect(span.attributes['emb.user_timing.detail']).to.be.undefined;
 
     instrumentation.disable();
   });
@@ -281,7 +281,7 @@ describe('UserTimingInstrumentation', () => {
     ]);
 
     const span = spanExporter.getFinishedSpans()[0];
-    expect(span.attributes['user_timing.detail']).to.equal(
+    expect(span.attributes['emb.user_timing.detail']).to.equal(
       JSON.stringify({ component: 'nav', phase: 'render' }),
     );
 
