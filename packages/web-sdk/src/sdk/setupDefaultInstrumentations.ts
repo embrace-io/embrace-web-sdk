@@ -72,7 +72,10 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('element-timing')) {
     instrumentations.push(
-      new ElementTimingInstrumentation(config['element-timing']),
+      new ElementTimingInstrumentation({
+        ...config['element-timing'],
+        limitManager,
+      }),
     );
   }
 

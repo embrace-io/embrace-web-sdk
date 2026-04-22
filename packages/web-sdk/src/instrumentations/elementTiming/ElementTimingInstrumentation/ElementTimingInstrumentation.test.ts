@@ -7,6 +7,10 @@ import {
   MockPerformanceManager,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+} from '../../../managers/index.ts';
 import { ElementTimingInstrumentation } from './ElementTimingInstrumentation.ts';
 import type { PerformanceElementTiming } from './types.ts';
 
@@ -63,6 +67,7 @@ describe('ElementTimingInstrumentation', () => {
   let spanExporter: InMemorySpanExporter;
   let clock: sinon.SinonFakeTimers;
   let perf: MockPerformanceManager;
+  let limitManager: EmbraceLimitManager;
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
@@ -73,6 +78,7 @@ describe('ElementTimingInstrumentation', () => {
     spanExporter.reset();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
+    limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
 
     originalPerformanceObserver = globalThis.PerformanceObserver;
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
@@ -90,7 +96,10 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should observe element entries with buffered: true', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
 
     expect(observeOptions).to.deep.equal({ type: 'element', buffered: true });
 
@@ -98,7 +107,10 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should emit a span for an element timing entry', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
 
     triggerEntries([
       makeEntry({
@@ -138,7 +150,10 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not add a load event when loadTime is 0', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
 
     triggerEntries([
       makeEntry({ loadTime: 0, renderTime: 200, startTime: 200 }),
@@ -155,6 +170,7 @@ describe('ElementTimingInstrumentation', () => {
     const timeOriginPerf = new MockPerformanceManager(clock);
     const instrumentation = new ElementTimingInstrumentation({
       perf: timeOriginPerf,
+      limitManager,
     });
 
     triggerEntries([makeEntry({ startTime: 250 })]);
@@ -168,7 +184,10 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should set element attribute to undefined when entry.element is null', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
 
     triggerEntries([makeEntry({ element: null })]);
 
@@ -189,6 +208,7 @@ describe('ElementTimingInstrumentation', () => {
     const instrumentation = new ElementTimingInstrumentation({
       perf,
       diag: diagLogger,
+      limitManager,
     });
 
     expect(observerCallback).to.be.null;
@@ -199,7 +219,10 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not emit spans after disable', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
 
     instrumentation.disable();
 
@@ -210,8 +233,32 @@ describe('ElementTimingInstrumentation', () => {
     expect(spanExporter.getFinishedSpans()).to.have.length(0);
   });
 
+  it('stops emitting once the element_timing limit is reached', () => {
+    const customLimitManager = new EmbraceLimitManager({
+      ...DEFAULT_LIMITS,
+      maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, element_timing: 2 },
+    });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager: customLimitManager,
+    });
+
+    triggerEntries([
+      makeEntry({ identifier: 'el-0' }),
+      makeEntry({ identifier: 'el-1' }),
+      makeEntry({ identifier: 'el-2' }),
+    ]);
+
+    expect(spanExporter.getFinishedSpans()).to.have.length(2);
+
+    instrumentation.disable();
+  });
+
   it('should not enable twice', () => {
-    const instrumentation = new ElementTimingInstrumentation({ perf });
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
     const firstCallback = observerCallback;
 
     instrumentation.enable();

@@ -23,12 +23,17 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isEnabled = false;
 
-  public constructor({ diag, perf }: ElementTimingInstrumentationArgs = {}) {
+  public constructor({
+    diag,
+    perf,
+    limitManager,
+  }: ElementTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'ElementTimingInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
+      limitManager,
       config: {},
     });
 
@@ -77,6 +82,10 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
 
   private _processEntry(entry: PerformanceElementTiming): void {
     if (!this._isEnabled) {
+      return;
+    }
+
+    if (this.limitManager?.limitElementTimingEntry()) {
       return;
     }
 
