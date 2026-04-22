@@ -256,6 +256,15 @@ describe('UserTimingInstrumentation', () => {
     expect(span.name).to.equal('my-measure');
     expect(span.attributes['emb.instrumentation']).to.equal('user_timing');
     expect(span.attributes['emb.user_timing.entry_type']).to.equal('measure');
+    expect(span.attributes['emb.user_timing.start_time']).to.equal(50);
+    expect(span.attributes['emb.user_timing.duration']).to.equal(300);
+    // duration attribute must equal the span's own end-start delta
+    const spanDurationMs =
+      (span.endTime[0] - span.startTime[0]) * 1000 +
+      (span.endTime[1] - span.startTime[1]) / 1e6;
+    expect(span.attributes['emb.user_timing.duration']).to.equal(
+      spanDurationMs,
+    );
     expect(span.attributes['user_timing.detail']).to.be.undefined;
 
     instrumentation.disable();

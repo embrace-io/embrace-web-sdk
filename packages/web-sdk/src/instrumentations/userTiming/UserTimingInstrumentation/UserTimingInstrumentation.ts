@@ -129,6 +129,10 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
           [KEY_EMB_INSTRUMENTATION]:
             EMB_PERFORMANCE_INSTRUMENTATIONS.UserTiming,
           [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
+          [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+            entry.startTime,
+          ),
+          [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
           ...(measureDetail != null && {
             [KEY_USER_TIMING_DETAIL]: JSON.stringify(measureDetail),
           }),
