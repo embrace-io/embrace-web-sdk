@@ -27,7 +27,7 @@ export { getNavigationInstrumentation } from './navigation/index.ts';
 export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
-} from './serverTiming/index.ts';
+} from './server-timing/index.ts';
 export type { SessionSpan } from './session/index.ts';
 export {
   SpanSessionBrowserActivityInstrumentation,
