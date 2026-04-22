@@ -11,6 +11,7 @@ import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
+  private _performanceCollected = false;
 
   public constructor({
     diag,
@@ -51,6 +52,11 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _readServerTiming(): void {
+    if (this._performanceCollected) {
+      return;
+    }
+    this._performanceCollected = true;
+
     const navEntries = performance.getEntriesByType(
       'navigation',
     ) as PerformanceNavigationTiming[];

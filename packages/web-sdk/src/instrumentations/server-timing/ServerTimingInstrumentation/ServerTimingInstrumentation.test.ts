@@ -224,6 +224,27 @@ describe('ServerTimingInstrumentation', () => {
     });
   });
 
+  describe('duplicate collection guard', () => {
+    it('does not emit logs a second time when enable() is called again', () => {
+      getEntriesByTypeStub
+        .withArgs('navigation')
+        .returns([makeNavigationEntry([makeServerTimingEntry()])]);
+
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+      instrumentation.enable();
+
+      expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
+
+      instrumentation.disable();
+    });
+  });
+
   describe('no-op cases', () => {
     it('emits nothing when serverTiming array is empty', () => {
       getEntriesByTypeStub
