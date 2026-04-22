@@ -10,7 +10,7 @@ export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.t
 export {
   ElementTimingInstrumentation,
   type ElementTimingInstrumentationArgs,
-} from './elementTiming/index.ts';
+} from './element-timing/index.ts';
 export {
   GlobalExceptionInstrumentation,
   type GlobalExceptionInstrumentationArgs,
@@ -38,7 +38,7 @@ export {
 export {
   UserTimingInstrumentation,
   type UserTimingInstrumentationArgs,
-} from './userTiming/index.ts';
+} from './user-timing/index.ts';
 export {
   type WebVitalOnReport,
   WebVitalsInstrumentation,
