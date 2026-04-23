@@ -69,11 +69,23 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       { diag: this._diag },
     );
 
+    if (!this._markObserver) {
+      this._diag.error('failed to enable mark observer');
+    }
+
     this._measureObserver = createPerformanceObserver<PerformanceMeasure>(
       'measure',
       (entry) => this._processEntry(entry),
       { diag: this._diag },
     );
+
+    if (!this._measureObserver) {
+      this._diag.error('failed to enable measure observer');
+    }
+
+    if (!this._markObserver && !this._measureObserver) {
+      this._isEnabled = false;
+    }
   }
 
   public disable(): void {

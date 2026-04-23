@@ -4,6 +4,7 @@ import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation'
 import type { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';
 import ComponentWithErrorInRender from './ComponentWithErrorInRender.tsx';
+import logo from './logo.png';
 
 const formatValue = (value: string | null, truncate?: boolean): string => {
   if (!value) return '—';
@@ -542,6 +543,24 @@ const App = () => {
             Trigger Measure
           </button>
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Element Timing</legend>
+        <p>
+          Elements below are tagged with the <code>elementtiming</code>{' '}
+          attribute. The instrumentation captures a span for each when it is
+          first painted.
+        </p>
+        <img
+          src={logo}
+          alt="Element timing demo"
+          width={80}
+          {...({ elementtiming: 'demo-image' } as object)}
+        />
+        <p {...({ elementtiming: 'demo-text' } as object)}>
+          This text element is tracked with element timing.
+        </p>
       </fieldset>
     </>
   );

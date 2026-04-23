@@ -254,6 +254,7 @@ describe('UserTimingInstrumentation', () => {
     expect(spans).to.have.length(1);
     const span = spans[0];
     expect(span.name).to.equal('my-measure');
+    expect(span.attributes['emb.type']).to.equal('ux.user_timing');
     expect(span.attributes['emb.instrumentation']).to.equal('user_timing');
     expect(span.attributes['emb.user_timing.entry_type']).to.equal('measure');
     expect(span.attributes['emb.user_timing.start_time']).to.equal(50);

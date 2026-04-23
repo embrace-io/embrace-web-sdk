@@ -8,6 +8,10 @@ export {
 } from './clicks/index.ts';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
 export {
+  ElementTimingInstrumentation,
+  type ElementTimingInstrumentationArgs,
+} from './element-timing/index.ts';
+export {
   GlobalExceptionInstrumentation,
   type GlobalExceptionInstrumentationArgs,
 } from './exceptions/index.ts';
@@ -34,7 +38,7 @@ export {
 export {
   UserTimingInstrumentation,
   type UserTimingInstrumentationArgs,
-} from './userTiming/index.ts';
+} from './user-timing/index.ts';
 export {
   type WebVitalOnReport,
   WebVitalsInstrumentation,

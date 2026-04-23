@@ -2,6 +2,7 @@ import type { Instrumentation } from '@opentelemetry/instrumentation';
 import {
   ClicksInstrumentation,
   DocumentLoadInstrumentation,
+  ElementTimingInstrumentation,
   EmbraceFetchInstrumentation,
   EmbraceInstrumentationBase,
   EmbraceXHRInstrumentation,
@@ -67,6 +68,15 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('user-timing')) {
     instrumentations.push(new UserTimingInstrumentation(config['user-timing']));
+  }
+
+  if (!config.omit?.has('element-timing')) {
+    instrumentations.push(
+      new ElementTimingInstrumentation({
+        ...config['element-timing'],
+        limitManager,
+      }),
+    );
   }
 
   if (!config.omit?.has('document-load')) {
