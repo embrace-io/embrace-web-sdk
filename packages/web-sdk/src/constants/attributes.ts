@@ -41,6 +41,7 @@ export enum EMB_TYPES {
   Surface = 'ux.surface',
   UserTiming = 'ux.user_timing',
   ElementTiming = 'ux.element_timing',
+  ServerTiming = 'ux.server_timing',
 }
 
 export enum EMB_STATES {

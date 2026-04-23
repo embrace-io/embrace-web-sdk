@@ -8,6 +8,11 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/embrace-web-sdk/' : '/',
   plugins: [Sonda({ enabled: false })],
+  server: {
+    headers: {
+      'Server-Timing': 'db;dur=78,cache;dur=0;desc="HIT",render;dur=163',
+    },
+  },
   build: {
     sourcemap: true,
     rollupOptions: {

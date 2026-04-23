@@ -17,6 +17,7 @@ export const DEFAULT_LIMITS: EmbraceLimitManagerArgs = {
     user_timing_mark: 200,
     user_timing_measure: 100,
     element_timing: 100,
+    server_timing: 50,
   },
   maxLength: {
     error_log: 128,

@@ -24,6 +24,10 @@ export {
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';
 export { getNavigationInstrumentation } from './navigation/index.ts';
+export {
+  ServerTimingInstrumentation,
+  type ServerTimingInstrumentationArgs,
+} from './server-timing/index.ts';
 export type { SessionSpan } from './session/index.ts';
 export {
   SpanSessionBrowserActivityInstrumentation,
