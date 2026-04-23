@@ -127,7 +127,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   public limitElementTimingEntry(): boolean {
     return this._dropIfMaxReached('element_timing');
   }
-  
+
   public limitServerTimingEntry(): boolean {
     return this._dropIfMaxReached('server_timing');
   }
