@@ -10,10 +10,7 @@ import {
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
   ServerTimingInstrumentation,
-  SpanSessionBrowserActivityInstrumentation,
-  SpanSessionOnLoadInstrumentation,
-  SpanSessionTimeoutInstrumentation,
-  SpanSessionVisibilityInstrumentation,
+  SessionPartActivityInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.ts';
@@ -25,26 +22,17 @@ import type {
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
   {
-    featureManager,
     logManager,
-    spanSessionManager,
-    embraceSpanProcessor,
+    sessionPartManager,
     pageManager,
     limitManager,
   }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
   /*
-    These instrumentations are core to managing the session lifecycle and so are not optional
+    These instrumentations are core to managing the session part lifecycle and so are not optional
    */
   const instrumentations: Instrumentation[] = [
-    new SpanSessionOnLoadInstrumentation(config['session-on-load']),
-    new SpanSessionVisibilityInstrumentation(
-      config['session-visibility'],
-      featureManager,
-      embraceSpanProcessor,
-    ),
-    new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
-    new SpanSessionTimeoutInstrumentation(config['session-timeout']),
+    new SessionPartActivityInstrumentation(),
   ];
 
   if (!config.omit?.has('exception')) {
@@ -128,8 +116,8 @@ export const setupDefaultInstrumentations = (
 
   for (const instrumentation of instrumentations) {
     if (instrumentation instanceof EmbraceInstrumentationBase) {
-      if (spanSessionManager) {
-        instrumentation.setSessionManager(spanSessionManager);
+      if (sessionPartManager) {
+        instrumentation.setSessionPartManager(sessionPartManager);
       }
 
       if (logManager) {

@@ -3,11 +3,11 @@ import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import type { SessionPartManager } from '../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../managers/index.ts';
 import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
 
@@ -15,16 +15,16 @@ const { expect } = chai;
 
 describe('IdentifiableSessionLogRecordProcessor', () => {
   let memoryExporter: InMemoryLogRecordExporter;
-  let spanSessionManager: SpanSessionManager;
+  let sessionPartManager: SessionPartManager;
   let logger: Logger;
 
   beforeEach(() => {
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
     memoryExporter = setupTestLogExporter([
       new IdentifiableSessionLogRecordProcessor({
-        spanSessionManager,
+        sessionPartManager,
       }),
     ]);
     logger = logs.getLogger('test-logger');
@@ -34,9 +34,9 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     logs.disable();
   });
 
-  it('should attach a log UUID and session ID when available', () => {
-    spanSessionManager.startSessionSpan();
-    const sessionID = spanSessionManager.getSessionId();
+  it('should attach a log UUID and session part ID when available', () => {
+    sessionPartManager.startSessionPart();
+    const sessionID = sessionPartManager.getSessionPartId();
 
     logger.emit({
       body: 'some log',
@@ -47,11 +47,10 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     const log = finishedLogs[0];
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    expect(log.attributes['session.id']).to.be.equal(sessionID);
-    void expect(log.attributes['session.previous_id']).to.be.null;
+    expect(log.attributes['emb.session_part_id']).to.be.equal(sessionID);
   });
 
-  it('should handle a session ID not being available', () => {
+  it('should handle a session part ID not being available', () => {
     logger.emit({
       body: 'some log',
     });
@@ -61,14 +60,15 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     const log = finishedLogs[0];
 
     expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    void expect(log.attributes['session.id']).to.be.null;
-    void expect(log.attributes['session.previous_id']).to.be.null;
+    // Spec §2.1: events without a part id must not have a session id; the
+    // processor therefore leaves `emb.session_part_id` unset (not empty string).
+    void expect(log.attributes).to.not.have.property('emb.session_part_id');
   });
 
-  it('should attach a previous session ID when available', () => {
-    spanSessionManager.startSessionSpan();
-    const sessionID = spanSessionManager.getSessionId();
-    spanSessionManager.endSessionSpan();
+  it('should only tag the active session part ID, never the previous one', () => {
+    sessionPartManager.startSessionPart();
+    sessionPartManager.startSessionPart();
+    const currentPartID = sessionPartManager.getSessionPartId();
 
     logger.emit({
       body: 'some log',
@@ -78,27 +78,6 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(1);
     const log = finishedLogs[0];
 
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    void expect(log.attributes['session.id']).to.be.null;
-    expect(log.attributes['session.previous_id']).to.be.equal(sessionID);
-  });
-
-  it('should attach a session ID and a previous session ID when both are available', () => {
-    spanSessionManager.startSessionSpan();
-    const session1ID = spanSessionManager.getSessionId();
-    spanSessionManager.startSessionSpan();
-    const session2ID = spanSessionManager.getSessionId();
-
-    logger.emit({
-      body: 'some log',
-    });
-
-    const finishedLogs = memoryExporter.getFinishedLogRecords();
-    expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
-
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    expect(log.attributes['session.id']).to.be.equal(session2ID);
-    expect(log.attributes['session.previous_id']).to.be.equal(session1ID);
+    expect(log.attributes['emb.session_part_id']).to.be.equal(currentPartID);
   });
 });

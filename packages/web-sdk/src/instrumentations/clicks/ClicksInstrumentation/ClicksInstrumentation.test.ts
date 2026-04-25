@@ -4,12 +4,12 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import type { SessionPartManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import { ClicksInstrumentation } from './ClicksInstrumentation.ts';
 
@@ -19,7 +19,7 @@ describe('ClicksInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: ClicksInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManager;
+  let sessionPartManager: SessionPartManager;
   let testContainer: HTMLElement;
 
   before(() => {
@@ -29,11 +29,11 @@ describe('ClicksInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionSpan();
+    session.setGlobalManagers(sessionPartManager);
+    sessionPartManager.startSessionPart();
     testContainer = document.createElement('div');
     document.body.append(testContainer);
   });
@@ -52,14 +52,14 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -78,12 +78,12 @@ describe('ClicksInstrumentation', () => {
     target.disabled = true;
     testContainer.append(target);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
   });
 
   it("should include the target's className if available", () => {
@@ -96,14 +96,14 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -123,14 +123,14 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -157,15 +157,15 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     t1.click();
     t2.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(3);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(3);
 
     void expect(
-      sessionSpan.events.map((e) => ({
+      sessionPartSpan.events.map((e) => ({
         name: e.name,
         attributes: e.attributes,
       })),
@@ -213,13 +213,13 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     instrumentation.disable();
     t1.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clickEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -244,14 +244,14 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(t2);
 
     t2.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     t1.click();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clickEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -278,14 +278,14 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionPartSpan.events[0];
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -315,22 +315,22 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(2);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(2);
 
-    void expect(sessionSpan.events[0].name).to.be.equal('click');
-    void expect(sessionSpan.events[0].attributes).to.deep.equal({
+    void expect(sessionPartSpan.events[0].name).to.be.equal('click');
+    void expect(sessionPartSpan.events[0].attributes).to.deep.equal({
       'emb.type': 'ux.tap',
       'tap.coords': '0,0',
       'view.name': '<div>[REDACTED]</div>',
     });
 
-    void expect(sessionSpan.events[1].name).to.be.equal('click');
-    void expect(sessionSpan.events[1].attributes).to.deep.equal({
+    void expect(sessionPartSpan.events[1].name).to.be.equal('click');
+    void expect(sessionPartSpan.events[1].attributes).to.deep.equal({
       'emb.type': 'ux.tap',
       'tap.coords': '0,0',
       'view.name': '<div>should track</div>',

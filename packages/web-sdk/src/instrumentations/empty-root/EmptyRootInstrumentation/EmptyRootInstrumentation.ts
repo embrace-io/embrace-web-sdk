@@ -84,9 +84,9 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     if (this._rootNode?.childNodes.length === 0) {
       this._diag.debug('root node was found to be empty');
 
-      const currentSessionSpan = this.sessionManager.getSessionSpan();
-      if (currentSessionSpan) {
-        currentSessionSpan.addEvent('empty-root-node', {
+      const sessionPartSpan = this.sessionPartManager.getSessionPartSpan();
+      if (sessionPartSpan) {
+        sessionPartSpan.addEvent('empty-root-node', {
           'emb.type': 'ux.empty_root_node',
         });
       } else {

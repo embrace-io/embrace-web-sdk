@@ -1,11 +1,17 @@
 export type {
   PropertyOptions,
-  ReasonSessionEnded,
+  SessionPartEndReason,
+  SessionPartManager,
+  SessionPartStartReason,
   SpanSessionManager,
-  StartSessionOptions,
+  UserSessionManager,
 } from './manager/index.ts';
 export {
+  NoOpSessionPartManager,
   NoOpSpanSessionManager,
+  NoOpUserSessionManager,
+  ProxySessionPartManager,
   ProxySpanSessionManager,
+  ProxyUserSessionManager,
 } from './manager/index.ts';
 export { session } from './sessionAPI.ts';

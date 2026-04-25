@@ -1,26 +1,15 @@
 import * as chai from 'chai';
 import {
-  SAMPLED_UUID,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../tests/utils/index.ts';
-import {
   EmbraceFetchInstrumentation,
   EmbraceXHRInstrumentation,
 } from '../instrumentations/index.ts';
-import { EmbraceSDKFeaturesManager } from '../managers/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 
 const { expect } = chai;
 
 type DefaultInstrumentations = ReturnType<typeof setupDefaultInstrumentations>;
 
-const makeSetupArgs = () => ({
-  featureManager: new EmbraceSDKFeaturesManager({
-    dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-    deviceId: SAMPLED_UUID,
-    blockNetworkSpanForwarding: false,
-  }),
-});
+const makeSetupArgs = () => ({});
 
 const getFetch = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(

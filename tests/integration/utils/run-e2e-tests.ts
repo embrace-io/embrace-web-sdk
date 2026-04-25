@@ -4,7 +4,7 @@ import testWithMockApi, {
 } from './test-with-mock-api.ts';
 
 const EXPECTED_SPAN_ENDED_TEXT =
-  'EmbraceSessionBatchedSpanProcessor non-session span ended';
+  'EmbraceSessionBatchedSpanProcessor non-session-part span ended';
 
 type E2ETestFixture = {
   getCurrentSessionId: () => Promise<string>;
@@ -62,7 +62,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
     await use(async (url: string, numberOfExpectedSpans: number) => {
       let autoInstrumentedSpansCount = 0;
       // This depends on the SDK logging
-      // "EmbraceSessionBatchedSpanProcessor non-session span ended"
+      // "EmbraceSessionBatchedSpanProcessor non-session-part span ended"
       // when a span ends, and it is waiting for a fixed number of auto-instrumented spans to be created on page load
       // Adding more spans or changing the number of spans may require adjusting the test expectations
       // But it's better than waiting a random amount of time for everything to settle

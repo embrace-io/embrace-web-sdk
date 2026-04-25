@@ -4,12 +4,12 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { setupTestTraceExporter } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import type { SessionPartManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import { EmbraceXHRInstrumentation } from './EmbraceXHRInstrumentation.ts';
 
@@ -18,7 +18,7 @@ const { expect } = chai;
 
 describe('EmbraceXHRInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManager;
+  let sessionPartManager: SessionPartManager;
   let clock: sinon.SinonFakeTimers;
   let sendStub: SinonStub;
 
@@ -30,10 +30,10 @@ describe('EmbraceXHRInstrumentation', () => {
     sendStub = sinon.stub(window.XMLHttpRequest.prototype, 'send');
     clock = sinon.useFakeTimers();
     memoryExporter.reset();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalManagers(sessionPartManager);
   });
 
   afterEach(() => {
@@ -52,7 +52,7 @@ describe('EmbraceXHRInstrumentation', () => {
     // Advance the clock since the XHR instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-xml-http-request/src/xhr.ts#L72C7-L72C28
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -90,7 +90,7 @@ describe('EmbraceXHRInstrumentation', () => {
     // Advance the clock since the XHR instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-xml-http-request/src/xhr.ts#L72C7-L72C28
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -133,7 +133,7 @@ describe('EmbraceXHRInstrumentation', () => {
     // Advance the clock since the XHR instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-xml-http-request/src/xhr.ts#L72C7-L72C28
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);

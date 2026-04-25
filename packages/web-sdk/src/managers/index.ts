@@ -10,10 +10,14 @@ export { EmbracePageManager } from './EmbracePageManager/index.ts';
 export type { EmbracePageManagerArgs } from './EmbracePageManager/types.ts';
 export type { SDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.ts';
 export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.ts';
-export type { SpanSessionManagerInternal } from './EmbraceSpanSessionManager/index.ts';
-export { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager/index.ts';
+export { EmbraceSessionPartManager } from './EmbraceSessionPartManager/index.ts';
 export {
   EmbraceExtendedSpan,
   EmbraceTraceManager,
 } from './EmbraceTraceManager/index.ts';
 export { EmbraceUserManager } from './EmbraceUserManager/index.ts';
+export type {
+  UserSessionConfig,
+  UserSessionLifecycleManager,
+} from './EmbraceUserSessionManager/index.ts';
+export { EmbraceUserSessionManager } from './EmbraceUserSessionManager/index.ts';

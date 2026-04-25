@@ -1,10 +1,6 @@
 export { bulkAddEventListener } from './bulkAddEventListener/index.ts';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.ts';
 export { createSafeProxy } from './createSafeProxy/index.ts';
-export {
-  EmbraceSpanStorage,
-  type SpanStorageOptions,
-} from './EmbraceSpanStorage/index.ts';
 export { generateUUID } from './generateUUID.ts';
 export { generateWebVitalID } from './generateWebVitalID.ts';
 export { getIncrementedCount } from './getIncrementedCount.ts';
