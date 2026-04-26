@@ -67,18 +67,25 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
         `Visibility change detected: ${visibilityDoc.visibilityState}`,
       );
 
-      this.sessionManager.endSessionSpanInternal('state_changed');
+      try {
+        this.sessionManager.endSessionSpanInternal('state_changed');
 
-      if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
-        this._diag.debug(
-          'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled',
+        if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
+          this._diag.debug(
+            'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled',
+          );
+          this.sessionManager.startSessionSpan({ reason: 'hidden' });
+        } else if (visibilityDoc.visibilityState === 'visible') {
+          this._diag.debug(
+            'Starting a session since document visibility switched to visible',
+          );
+          this.sessionManager.startSessionSpan({ reason: 'visible' });
+        }
+      } catch (error) {
+        this._diag.error(
+          `Failed to rotate session on visibility change to ${visibilityDoc.visibilityState}`,
+          error,
         );
-        this.sessionManager.startSessionSpan({ reason: 'hidden' });
-      } else if (visibilityDoc.visibilityState === 'visible') {
-        this._diag.debug(
-          'Starting a session since document visibility switched to visible',
-        );
-        this.sessionManager.startSessionSpan({ reason: 'visible' });
       }
     };
 
