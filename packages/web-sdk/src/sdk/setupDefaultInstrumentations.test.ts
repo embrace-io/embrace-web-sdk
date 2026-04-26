@@ -2,6 +2,7 @@ import * as chai from 'chai';
 import {
   EmbraceFetchInstrumentation,
   EmbraceXHRInstrumentation,
+  SpanSessionVisibilityInstrumentation,
 } from '../instrumentations/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 
@@ -22,6 +23,15 @@ const getXHR = (instrumentations: DefaultInstrumentations) =>
   ) as EmbraceXHRInstrumentation;
 
 describe('setupDefaultInstrumentations', () => {
+  it('wires the visibility instrumentation', () => {
+    const instrumentations = setupDefaultInstrumentations({}, makeSetupArgs());
+    expect(
+      instrumentations.find(
+        (i) => i instanceof SpanSessionVisibilityInstrumentation,
+      ),
+    ).to.not.equal(undefined);
+  });
+
   describe('ignoreUrls merging', () => {
     it('merges network.ignoreUrls and fetch ignoreUrls', () => {
       const instrumentations = setupDefaultInstrumentations(

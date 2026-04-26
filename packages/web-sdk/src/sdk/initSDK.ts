@@ -231,7 +231,6 @@ export const initSDK = (
           userID: enduserPseudoID,
         }),
         limitManager,
-        storage: sdkLocalStorage,
         spanSessionManager,
       });
 

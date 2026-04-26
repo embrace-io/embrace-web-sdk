@@ -11,7 +11,5 @@ export type EmbraceSessionBatchedSpanProcessorArgs = {
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
   spanSessionManager: SpanSessionManagerInternal;
-  storage?: Storage;
-  storedSpansExpireTimeoutMS?: number;
   diag?: DiagLogger;
 };
