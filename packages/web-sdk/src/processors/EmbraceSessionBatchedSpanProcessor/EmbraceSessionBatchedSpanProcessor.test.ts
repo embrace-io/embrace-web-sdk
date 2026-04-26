@@ -1,7 +1,6 @@
 import { trace } from '@opentelemetry/api';
 import type { ExportResult } from '@opentelemetry/core';
 import { ExportResultCode } from '@opentelemetry/core';
-import { emptyResource } from '@opentelemetry/resources';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
@@ -71,7 +70,6 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     });
 
     processor = new EmbraceSessionBatchedSpanProcessor({
-      resource: emptyResource(),
       exporter: memoryExporter,
       limitManager,
       spanSessionManager,
@@ -154,7 +152,6 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       spanSessionManager.startSessionSpan();
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
-        resource: emptyResource(),
         exporter: new FailingSpanExporter(
           test.errorMessage ? new Error(test.errorMessage) : undefined,
         ),
