@@ -18,7 +18,6 @@ import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_EMB_COLD_START,
-  KEY_EMB_FROM_STORAGE,
   KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_NUMBER,
   KEY_EMB_SESSION_REASON_ENDED,
@@ -250,7 +249,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         // Copy all current attributes from the original session span, plus the ending attributes
         ...this._sessionSpan.attributes,
         ...this._endSessionSpanAttributes(reason),
-        [KEY_EMB_FROM_STORAGE]: true,
       },
     });
     span.end();
