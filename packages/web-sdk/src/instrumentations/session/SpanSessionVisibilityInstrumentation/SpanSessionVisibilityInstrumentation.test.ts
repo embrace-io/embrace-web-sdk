@@ -138,6 +138,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should synchronously end a session on hidden with default config and not start a new one', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation({
