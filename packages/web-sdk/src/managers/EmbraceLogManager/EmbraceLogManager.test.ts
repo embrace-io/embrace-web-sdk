@@ -1273,7 +1273,7 @@ describe('EmbraceLogManager', () => {
       );
     });
 
-    it('should default to exception number 1 when storage is failing', () => {
+    it('should default to exception number 0 when storage is failing', () => {
       manager = new EmbraceLogManager({
         perf,
         spanSessionManager,
@@ -1286,13 +1286,15 @@ describe('EmbraceLogManager', () => {
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(2);
 
+      // getIncrementedCount returns 0 as a sentinel when storage can't be read;
+      // both exceptions report 0 so downstream analytics can detect the case.
       expect(finishedLogs[0].attributes).to.have.property(
         'emb.exception_number',
-        1,
+        0,
       );
       expect(finishedLogs[1].attributes).to.have.property(
         'emb.exception_number',
-        1,
+        0,
       );
     });
   });
