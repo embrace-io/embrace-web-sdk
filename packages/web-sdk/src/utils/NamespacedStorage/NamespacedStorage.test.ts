@@ -88,4 +88,11 @@ describe('NamespacedStorage', () => {
     expect(inMemoryStorage.key(0)).to.equal('key3');
     expect(inMemoryStorage.key(1)).to.equal('key4');
   });
+
+  it('should expose the underlying storage event key for namespaced keys', () => {
+    const storage = new NamespacedStorage('app123', inMemoryStorage);
+    expect(storage.getStorageEventKey('embrace_user_session_state')).to.equal(
+      'app123_embrace_user_session_state',
+    );
+  });
 });

@@ -72,14 +72,25 @@ const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
 const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
+  'session.previous_id',
   'log.record.uid',
   'emb.sdk_startup_duration',
   'emb.app_instance_id',
+  // UUIDs and timestamps regenerated on every run; compare key presence only.
+  'emb.session_part_id',
+  'emb.user_session_id',
+  'emb.user_session_previous_id',
+  'emb.user_session_start_ts',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
   'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
   'emb.web_vital.attribution.elementRenderDelay',
+  // FCP is reported when the browser delivers the PerformanceObserver entry,
+  // which can fire before or after document.readyState reaches 'complete'
+  // depending on render timing. The value oscillates between 'dom-interactive'
+  // and 'complete' across CI runs.
+  'emb.web_vital.attribution.loadState',
   'emb.web_vital.attribution.timeToFirstByte',
   'emb.web_vital.attribution.redirect',
   'emb.web_vital.attribution.domainLookup',

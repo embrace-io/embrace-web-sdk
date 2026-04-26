@@ -285,7 +285,7 @@ const App = () => {
     <>
       <fieldset style={{ gridColumn: '1 / -1' }}>
         <legend>Experience</legend>
-        <dl className="info-list info-list-horizontal">
+        <dl className="info-list info-list-grid">
           <InfoItem label="Session ID" value={currentSession} truncate />
         </dl>
       </fieldset>

@@ -44,4 +44,15 @@ export class NamespacedStorage implements Storage {
   public setItem(key: string, value: string): void {
     this._storage.setItem(`${this._keyPrefix}${key}`, value);
   }
+
+  /**
+   * Returns the namespaced underlying-storage key for a logical key. Browser
+   * `storage` events fire with the underlying key, so callers that filter
+   * those events need to compare against this value rather than the logical
+   * key. Plain `Storage` instances do not expose this method; callers should
+   * fall back to the logical key in that case.
+   */
+  public getStorageEventKey(logicalKey: string): string {
+    return `${this._keyPrefix}${logicalKey}`;
+  }
 }
