@@ -135,6 +135,32 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
   });
 
+  it('should synchronously end a session on hidden with default config and not start a new one', () => {
+    const visibilityDoc: VisibilityStateDocument = {
+      visibilityState: 'visible',
+    };
+
+    instrumentation = new SpanSessionVisibilityInstrumentation({
+      visibilityDoc,
+    });
+
+    spanSessionManager.startSessionSpan();
+    void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
+
+    visibilityDoc.visibilityState = 'hidden';
+    window.dispatchEvent(new Event('visibilitychange'));
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_ENDED,
+      'state_changed',
+    );
+
+    void expect(spanSessionManager.getSessionSpan()).to.be.null;
+  });
+
   it('should end a session when visibility changes to hidden and start a new one when background sessions are enabled and no visibility wait time configured', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
