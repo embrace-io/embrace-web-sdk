@@ -11,7 +11,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import { ServerTimingInstrumentation } from './ServerTimingInstrumentation.ts';
 
@@ -50,10 +50,10 @@ describe('ServerTimingInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    const sessionPartManager = new EmbraceSessionPartManager({ limitManager });
+    sessionPartManager.startSessionPart();
     const logManager = new EmbraceLogManager({
-      spanSessionManager,
+      sessionPartManager,
       limitManager,
     });
     log.setGlobalLogManager(logManager);

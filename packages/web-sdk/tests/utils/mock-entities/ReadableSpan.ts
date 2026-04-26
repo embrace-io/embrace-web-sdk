@@ -34,10 +34,10 @@ export const mockNetworkRequestSpan: ReadableSpan = {
   },
 };
 
-export const mockSessionSpan: ReadableSpan = {
+export const mockSessionPartSpan: ReadableSpan = {
   ...mockSpan,
-  name: 'mock session span',
+  name: 'mock session part span',
   attributes: {
-    [KEY_EMB_TYPE]: EMB_TYPES.Session,
+    [KEY_EMB_TYPE]: EMB_TYPES.SessionPart,
   },
 };

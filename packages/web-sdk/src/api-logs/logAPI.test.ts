@@ -3,7 +3,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../managers/index.ts';
 import { log } from './logAPI.ts';
 
@@ -33,7 +33,9 @@ describe('logAPI', () => {
     beforeEach(() => {
       const limitManager = new EmbraceLimitManager({ ...DEFAULT_LIMITS });
       manager = new EmbraceLogManager({
-        spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+        sessionPartManager: new EmbraceSessionPartManager({
+          limitManager,
+        }),
         limitManager,
       });
       log.setGlobalLogManager(manager);

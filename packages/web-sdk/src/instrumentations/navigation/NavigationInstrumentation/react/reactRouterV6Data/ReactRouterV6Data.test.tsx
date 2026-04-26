@@ -18,13 +18,13 @@ import {
   ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
-import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
+import type { SessionPartManager } from '../../../../../api-sessions/index.ts';
 import { session } from '../../../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
 import { listenToRouterChanges } from './listenToRouterChanges.ts';
@@ -103,14 +103,14 @@ const renderReactApp = () => {
 describe('ReactRouterV6Data', () => {
   let pageManager: EmbracePageManager;
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManager;
+  let sessionPartManager: SessionPartManager;
 
   before(() => {
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
 
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalManagers(sessionPartManager);
 
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
@@ -123,7 +123,7 @@ describe('ReactRouterV6Data', () => {
   });
 
   it('create route spans', async () => {
-    spanSessionManager.startSessionSpan();
+    sessionPartManager.startSessionPart();
 
     expect(pageManager.getCurrentPageId()).to.be.null;
     expect(pageManager.getCurrentRoute()).to.be.null;
@@ -135,7 +135,7 @@ describe('ReactRouterV6Data', () => {
       rootElement: container,
     });
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     tearDown();
 
     const routeSpans = memoryExporter

@@ -28,16 +28,10 @@ export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
 } from './server-timing/index.ts';
-export type { SessionSpan } from './session/index.ts';
+export type { SessionPartSpan } from './session/index.ts';
 export {
-  SpanSessionBrowserActivityInstrumentation,
-  type SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionOnLoadInstrumentation,
-  type SpanSessionOnLoadInstrumentationArgs,
-  SpanSessionTimeoutInstrumentation,
-  type SpanSessionTimeoutInstrumentationArgs,
-  SpanSessionVisibilityInstrumentation,
-  type SpanSessionVisibilityInstrumentationArgs,
+  SessionPartActivityInstrumentation,
+  type SessionPartActivityInstrumentationArgs,
 } from './session/index.ts';
 export {
   UserTimingInstrumentation,

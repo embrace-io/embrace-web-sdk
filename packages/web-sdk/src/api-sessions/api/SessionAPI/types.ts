@@ -1,5 +1,5 @@
-import type { ProxySpanSessionManager } from '../../manager/index.ts';
+import type { ProxySessionPartManager } from '../../manager/index.ts';
 
 export interface SessionAPIArgs {
-  proxySpanSessionManager: ProxySpanSessionManager;
+  proxySessionPartManager: ProxySessionPartManager;
 }

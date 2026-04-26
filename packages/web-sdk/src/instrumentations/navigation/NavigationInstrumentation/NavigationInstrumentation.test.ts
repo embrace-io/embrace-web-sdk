@@ -11,7 +11,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import { NavigationInstrumentation } from './NavigationInstrumentation.ts';
 
@@ -21,7 +21,7 @@ describe('NavigationInstrumentation', () => {
   let navigationInstrumentation: NavigationInstrumentation;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let sessionPartManager: EmbraceSessionPartManager;
   let pageManager: EmbracePageManager;
 
   before(() => {
@@ -32,10 +32,10 @@ describe('NavigationInstrumentation', () => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
 
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalManagers(sessionPartManager);
 
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
@@ -195,8 +195,8 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     // Start and end session to test that listeners are cleaned up
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.startSessionPart();
+    sessionPartManager.endSessionPart();
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
@@ -213,7 +213,7 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should start and end route span when session ends', () => {
-    spanSessionManager.startSessionSpan();
+    sessionPartManager.startSessionPart();
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -223,7 +223,7 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // Session span and route span
@@ -248,7 +248,7 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should start the route span when the session starts if it was previously ended', () => {
-    spanSessionManager.startSessionSpan();
+    sessionPartManager.startSessionPart();
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -258,14 +258,14 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     // At this point we should have two spans: one for the session and one for the route
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
 
     // Start and finish another session without changing the route
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.startSessionPart();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // 2 sessions and 2 route spans
@@ -305,7 +305,7 @@ describe('NavigationInstrumentation', () => {
 
   it('should work correctly after disable() then enable()', () => {
     navigationInstrumentation = new NavigationInstrumentation({ diag });
-    spanSessionManager.startSessionSpan();
+    sessionPartManager.startSessionPart();
 
     navigationInstrumentation.setCurrentRoute({
       path: '/first',
@@ -320,7 +320,7 @@ describe('NavigationInstrumentation', () => {
       url: '/second',
     });
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     const navigationSpans = finishedSpans.filter(

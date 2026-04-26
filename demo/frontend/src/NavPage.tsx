@@ -2,7 +2,7 @@ import { session } from '@embrace-io/web-sdk';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
-const sessionProvider = session.getSpanSessionManager();
+const sessionPartManager = session.getSessionPartManager();
 const navEntry = window.performance.getEntriesByType('navigation')[0] as
   | PerformanceNavigationTiming
   | undefined;
@@ -16,23 +16,33 @@ const NavPage = ({
   nav?: ReactNode;
   children?: ReactNode;
 }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionPartId, setSessionPartId] = useState<string | null>(null);
 
-  const updateSession = useCallback(() => {
-    setSessionId(sessionProvider.getSessionId());
+  const updateSessionPart = useCallback(() => {
+    setSessionPartId(sessionPartManager.getSessionPartId());
   }, []);
 
   useEffect(() => {
-    updateSession();
+    updateSessionPart();
     const unsubscribeStart =
-      sessionProvider.addSessionStartedListener(updateSession);
+      sessionPartManager.addSessionPartStartedListener(updateSessionPart);
     const unsubscribeEnd =
-      sessionProvider.addSessionEndedListener(updateSession);
+      sessionPartManager.addSessionPartEndedListener(updateSessionPart);
+    // Keep the part-id display live across cross-tab storage events and
+    // focus/visibility changes, matching App.tsx.
+    const pollInterval = setInterval(updateSessionPart, 500);
+    window.addEventListener('focus', updateSessionPart);
+    document.addEventListener('visibilitychange', updateSessionPart);
+    window.addEventListener('storage', updateSessionPart);
     return () => {
       unsubscribeStart();
       unsubscribeEnd();
+      clearInterval(pollInterval);
+      window.removeEventListener('focus', updateSessionPart);
+      document.removeEventListener('visibilitychange', updateSessionPart);
+      window.removeEventListener('storage', updateSessionPart);
     };
-  }, [updateSession]);
+  }, [updateSessionPart]);
 
   return (
     <>
@@ -51,10 +61,10 @@ const NavPage = ({
         </dl>
       </fieldset>
       <fieldset>
-        <legend>Session</legend>
+        <legend>Session Part</legend>
         <dl className="info-list">
-          <dt>Session ID</dt>
-          <dd>{sessionId ?? '—'}</dd>
+          <dt>Session Part ID</dt>
+          <dd>{sessionPartId ?? '—'}</dd>
         </dl>
       </fieldset>
     </>

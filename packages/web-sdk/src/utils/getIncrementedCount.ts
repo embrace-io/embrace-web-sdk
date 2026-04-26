@@ -10,11 +10,17 @@ export const getIncrementedCount = (
   try {
     const value = storage.getItem(key);
     let number = value ? parseInt(value, 10) : 0;
+    if (Number.isNaN(number)) {
+      diag.warn(
+        `Non-numeric value stored at ${key} (${String(value)}); resetting counter.`,
+      );
+      number = 0;
+    }
     number++;
     storage.setItem(key, number.toString());
     return number;
   } catch (e) {
     diag.warn(`Failed to retrieve ${key} from storage: `, e);
-    return 1;
+    return 0;
   }
 };

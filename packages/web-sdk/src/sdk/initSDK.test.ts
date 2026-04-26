@@ -35,8 +35,8 @@ import {
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
 import {
-  NoOpSpanSessionManager,
-  ProxySpanSessionManager,
+  NoOpSessionPartManager,
+  ProxySessionPartManager,
   session,
 } from '../api-sessions/index.ts';
 import {
@@ -48,7 +48,7 @@ import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import {
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
   EmbraceTraceManager,
   EmbraceUserManager,
 } from '../managers/index.ts';
@@ -395,16 +395,16 @@ describe('initSDK', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    session.getSpanSessionManager().endSessionSpan();
+    session.getSessionPartManager().endSessionPart();
     if (result) {
       await result.flush();
     }
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionPartSpan.events[0];
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
   });
 
@@ -437,14 +437,14 @@ describe('initSDK', () => {
       (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
 
-    expect(session.getSpanSessionManager()).to.be.instanceOf(
-      ProxySpanSessionManager,
+    expect(session.getSessionPartManager()).to.be.instanceOf(
+      ProxySessionPartManager,
     );
     expect(
       (
-        session.getSpanSessionManager() as ProxySpanSessionManager
+        session.getSessionPartManager() as ProxySessionPartManager
       ).getDelegate(),
-    ).to.be.instanceOf(EmbraceSpanSessionManager);
+    ).to.be.instanceOf(EmbraceSessionPartManager);
 
     expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
     expect(
@@ -634,8 +634,8 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
 
-      const sessionID = session.getSessionId();
-      session.endSessionSpan();
+      const sessionPartID = session.getSessionPartId();
+      session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
@@ -689,42 +689,68 @@ describe('initSDK', () => {
         name: 'embrace-web-sdk-sessions',
       });
       expect(scopeSpan['spans']).to.have.lengthOf(1);
-      const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
-      expect(sessionSpan['name']).to.be.equal('emb-session');
+      const sessionPartSpan = scopeSpan['spans'][0] as ExportedSpan;
+      expect(sessionPartSpan['name']).to.be.equal('emb-session');
 
-      const sessionNumber = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.session_number',
-      );
-      void expect(sessionNumber?.value.intValue).not.to.be.undefined;
-      expect(sessionNumber?.value.intValue).to.be.greaterThan(0);
-      expect(sessionNumber?.value.intValue).to.be.lessThan(20);
-
-      const startupDuration = sessionSpan['attributes'].find(
+      const startupDuration = sessionPartSpan['attributes'].find(
         (attr) => attr.key === 'emb.sdk_startup_duration',
       );
       void expect(startupDuration?.value.intValue).not.to.be.undefined;
       expect(startupDuration?.value.intValue).to.be.greaterThan(0);
       expect(startupDuration?.value.intValue).to.be.lessThan(100);
 
-      const browserUrlFull = sessionSpan['attributes'].find(
+      const browserUrlFull = sessionPartSpan['attributes'].find(
         (attr) => attr.key === 'browser.url.full',
       )?.value.stringValue;
       void expect(browserUrlFull).to.be.a('string');
 
-      expect(sessionSpan['attributes']).to.deep.equal([
-        { key: 'emb.type', value: { stringValue: 'ux.session' } },
-        { key: 'emb.state', value: { stringValue: 'foreground' } },
-        {
-          key: 'session.id',
-          value: { stringValue: sessionID },
-        },
-        { key: 'emb.cold_start', value: { boolValue: true } },
-        sessionNumber,
-        { key: 'emb.session_start_type', value: { stringValue: 'init' } },
-        { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
-        startupDuration,
-        { key: 'browser.url.full', value: { stringValue: browserUrlFull } },
-      ]);
+      const userSessionId = sessionPartSpan['attributes'].find(
+        (attr) => attr.key === 'session.id',
+      )?.value.stringValue;
+      void expect(userSessionId).to.be.a('string');
+
+      const userSessionStartTs = sessionPartSpan['attributes'].find(
+        (attr) => attr.key === 'emb.user_session_start_ts',
+      );
+      void expect(userSessionStartTs).not.to.be.undefined;
+
+      const attrKeys = sessionPartSpan['attributes'].map(
+        (a: ExportedSpan['attributes'][0]) => a.key,
+      );
+
+      // Session part attributes
+      expect(attrKeys).to.include('emb.type');
+      expect(attrKeys).to.include('emb.state');
+      expect(attrKeys).to.include('emb.session_part_id');
+      expect(attrKeys).to.include('emb.session_part_end_reason');
+      expect(attrKeys).to.include('emb.sdk_startup_duration');
+      expect(attrKeys).to.include('browser.url.full');
+
+      // User session attributes
+      expect(attrKeys).to.include('session.id');
+      expect(attrKeys).to.include('emb.user_session_id');
+      expect(attrKeys).to.include('emb.user_session_number');
+      expect(attrKeys).to.include('emb.user_session_part_number');
+      expect(attrKeys).to.include('emb.user_session_start_ts');
+      expect(attrKeys).to.include('emb.user_session_max_duration_seconds');
+      expect(attrKeys).to.include(
+        'emb.user_session_inactivity_timeout_seconds',
+      );
+
+      // Verify specific values
+      const findAttr = (key: string) =>
+        sessionPartSpan['attributes'].find(
+          (a: ExportedSpan['attributes'][0]) => a.key === key,
+        );
+      expect(findAttr('emb.type')?.value).to.deep.equal({
+        stringValue: 'ux.session_part',
+      });
+      expect(findAttr('emb.session_part_id')?.value).to.deep.equal({
+        stringValue: sessionPartID,
+      });
+      expect(findAttr('emb.session_part_end_reason')?.value).to.deep.equal({
+        stringValue: 'user_session_ended',
+      });
     });
 
     it('should allow user resource to override service.name but not other SDK attributes', async () => {
@@ -752,7 +778,7 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
 
-      session.endSessionSpan();
+      session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
@@ -804,7 +830,7 @@ describe('initSDK', () => {
       // shouldn't get exported
       embtrace.startSpan('my unfinished performance span');
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
 
@@ -835,7 +861,7 @@ describe('initSDK', () => {
         embtrace.startSpan(`my-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1000);
@@ -845,14 +871,14 @@ describe('initSDK', () => {
 
       fakeFetchResetHistory();
 
-      session.getSpanSessionManager().startSessionSpan();
+      session.getSessionPartManager().startSessionPart();
 
       // Limit should be reset for the next session
       for (let i = 0; i < 100; i++) {
         embtrace.startSpan(`my-next-session-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const nextSessionExportedSpans = await getLastSessionExportedSpans(0);
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
@@ -890,7 +916,7 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -936,22 +962,35 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap. browser.url.full is added by BrowserSpanProcessor.onEnd()
-      // which writes directly to span.attributes, bypassing the cap
-      expect(exportedAttributes).to.have.lengthOf(201);
+      // 200 is the span attribute cap; 3 additional attributes are written
+      // directly to span.attributes by later processors at onEnd, bypassing
+      // the cap:
+      //   - browser.url.full (BrowserSpanProcessor)
+      //   - session.id, session.previous_id (UserSessionSpanProcessor)
+      expect(exportedAttributes).to.have.lengthOf(203);
 
+      // The first four attrs hit the cap via setAttribute at onStart:
+      //   - emb.type from startSpan's attributes option
+      //   - emb.session_part_id from IdentifiableSessionPartSpanProcessor
+      //   - emb.user_session_id, emb.user_session_previous_id from
+      //     UserSessionSpanProcessor (snapshotted at onStart so cross-tab
+      //     termination during the span's lifetime cannot strip them)
+      // Newest attributes are dropped when the limit is reached, so the first
+      // 196 span-attribute-N entries survive.
       expect(exportedAttributes[0].key).to.equal('emb.type');
-      expect(exportedAttributes[1].key).to.equal('session.id');
-      for (let i = 2; i < exportedAttributes.length - 1; i++) {
-        // Newest attributes are dropped when the limit is reached, start counting after
-        // the 2 internal attributes added by our API
-        const expected = i - 2;
+      expect(exportedAttributes[1].key).to.equal('emb.session_part_id');
+      expect(exportedAttributes[2].key).to.equal('emb.user_session_id');
+      expect(exportedAttributes[3].key).to.equal(
+        'emb.user_session_previous_id',
+      );
+      for (let i = 4; i < 200; i++) {
+        const expected = i - 4;
         expect(exportedAttributes[i].key).to.equal(
           `span-attribute-${expected.toString()}`,
         );
@@ -959,7 +998,14 @@ describe('initSDK', () => {
           stringValue: expected.toString(),
         });
       }
-      expect(exportedAttributes[200].key).to.equal('browser.url.full');
+      const bypassKeys = exportedAttributes
+        .slice(200)
+        .map((a: { key: string }) => a.key);
+      expect(bypassKeys).to.have.members([
+        'browser.url.full',
+        'session.id',
+        'session.previous_id',
+      ]);
     });
 
     it('should apply limits on the events of an individual span', async () => {
@@ -989,7 +1035,7 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -1042,7 +1088,7 @@ describe('initSDK', () => {
 
       span.addEvent('span-event', spanEventAttributes);
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -1093,7 +1139,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       if (result) {
         await result.flush();
@@ -1169,7 +1215,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       if (result) {
         await result.flush();
@@ -1248,7 +1294,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getSessionPartManager().endSessionPart();
 
       if (result) {
         await result.flush();
@@ -1339,12 +1385,12 @@ describe('initSDK', () => {
     it('should disable the SDK', () => {
       const noOpLogManager = new NoOpLogManager();
       const noOpTraceManager = new NoOpTraceManager();
-      const noOpSpanSessionManager = new NoOpSpanSessionManager();
+      const noOpSessionPartManager = new NoOpSessionPartManager();
       const noOpUserSessionManager = new NoOpUserManager();
 
       log.setGlobalLogManager(noOpLogManager);
       embtrace.setGlobalTraceManager(noOpTraceManager);
-      session.setGlobalSessionManager(noOpSpanSessionManager);
+      session.setGlobalManagers(noOpSessionPartManager);
       user.setGlobalUserManager(noOpUserSessionManager);
 
       const myCustomConfigManager: DynamicConfigManager = {
@@ -1394,7 +1440,7 @@ describe('initSDK', () => {
         user.clearUserId();
         user.getEmbraceUserId();
 
-        // session
+        // user session (using deprecated method names)
         session.getSessionId();
         session.getSessionSpan();
         session.getSessionStartTime();
@@ -1752,7 +1798,7 @@ describe('initSDK', () => {
           }
         }
 
-        session.getSpanSessionManager().endSessionSpan();
+        session.getSessionPartManager().endSessionPart();
 
         // Need to restore the clock here so that the setTimeout in `getLastSessionExportedSpans` works
         clock.restore();
@@ -1880,7 +1926,6 @@ describe('isolated instances', () => {
 
     expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
 
-    session.startSessionSpan();
     session.endSessionSpan();
 
     await result.flush();
@@ -1932,8 +1977,6 @@ describe('isolated instances', () => {
 
       sdkInstance.log.message('some log', 'info');
       sdkInstance.trace.startSpan('some span').end();
-      sdkInstance.session.startSessionSpan();
-      sdkInstance.session.endSessionSpan();
       instrumentation.emit();
 
       await sdkInstance.flush();
@@ -1946,10 +1989,12 @@ describe('isolated instances', () => {
 
       const finishedSpans = spanExporter.getFinishedSpans();
 
-      expect(finishedSpans).to.have.lengthOf(3);
+      // The initial part span is started by initSDK but remains active (no
+      // end trigger fires during the test), so no emb-session span appears
+      // in finished spans. We assert on the spans the test owns directly.
+      expect(finishedSpans).to.have.lengthOf(2);
       expect(finishedSpans[0].name).to.equal('some span');
-      expect(finishedSpans[1].name).to.equal('emb-session');
-      expect(finishedSpans[2].name).to.equal('my span');
+      expect(finishedSpans[1].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

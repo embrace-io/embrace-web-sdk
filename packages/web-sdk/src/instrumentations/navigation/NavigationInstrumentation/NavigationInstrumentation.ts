@@ -68,7 +68,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _setupSessionListeners = () => {
     if (!this._removeSessionStartedFn) {
       this._removeSessionStartedFn =
-        this.sessionManager.addSessionStartedListener(() => {
+        this.sessionPartManager.addSessionPartStartedListener(() => {
           const currentRoute = page.getCurrentRoute();
 
           if (currentRoute && !this._currentRouteSpan) {
@@ -80,15 +80,14 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
 
     if (!this._removeSessionEndedFn) {
-      this._removeSessionEndedFn = this.sessionManager.addSessionEndedListener(
-        () => {
+      this._removeSessionEndedFn =
+        this.sessionPartManager.addSessionPartEndedListener(() => {
           if (this._currentRouteSpan) {
             this._diag.debug('Session ended, ending route span.');
 
             this._endRouteSpan(page.getCurrentRoute());
           }
-        },
-      );
+        });
     }
   };
 

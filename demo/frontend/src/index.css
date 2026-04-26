@@ -316,6 +316,22 @@ legend {
   margin-top: 0;
 }
 
+.info-list-grid {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr) 110px 80px 110px 70px;
+  gap: 1rem 1.5rem;
+}
+
+.info-list-grid dt {
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .info-list-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .actions {
   display: flex;
   justify-content: flex-start;

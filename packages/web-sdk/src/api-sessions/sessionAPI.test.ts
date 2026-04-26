@@ -2,19 +2,19 @@ import { expect } from 'chai';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../managers/index.ts';
 import { session } from './sessionAPI.ts';
 
 describe('sessionAPI', () => {
   it('should export a session instance with expected methods', () => {
     expect(session).to.have.property('getSessionId');
-    expect(session).to.have.property('setGlobalSessionManager');
+    expect(session).to.have.property('setGlobalManagers');
     expect(session).to.have.property('addBreadcrumb');
   });
 
   describe('incorrect usage', () => {
-    let manager: EmbraceSpanSessionManager;
+    let manager: EmbraceSessionPartManager;
 
     type IncorrectUsageTest = {
       name: string;
@@ -33,16 +33,6 @@ describe('sessionAPI', () => {
         invocation: () => session.addProperty(undefined, undefined),
       },
       {
-        name: 'currentSessionAsReadableSpan',
-        // @ts-expect-error
-        invocation: () => session.currentSessionAsReadableSpan('not_valid'),
-      },
-      {
-        name: 'startSessionSpan',
-        // @ts-expect-error
-        invocation: () => session.startSessionSpan(null),
-      },
-      {
         name: 'addSessionStartedListener',
         // @ts-expect-error
         invocation: () => session.addSessionStartedListener(null),
@@ -55,11 +45,11 @@ describe('sessionAPI', () => {
     ];
 
     beforeEach(() => {
-      manager = new EmbraceSpanSessionManager({
+      manager = new EmbraceSessionPartManager({
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
       });
-      manager.startSessionSpan();
-      session.setGlobalSessionManager(manager);
+      manager.startSessionPart();
+      session.setGlobalManagers(manager);
     });
 
     tests.forEach((test) => {

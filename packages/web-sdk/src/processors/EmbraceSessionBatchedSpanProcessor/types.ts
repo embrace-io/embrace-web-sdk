@@ -1,17 +1,11 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { Resource } from '@opentelemetry/resources';
 import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
-import type {
-  LimitManagerInternal,
-  SpanSessionManagerInternal,
-} from '../../managers/index.ts';
+import type { SessionPartManager } from '../../api-sessions/index.ts';
+import type { LimitManagerInternal } from '../../managers/index.ts';
 
 export type EmbraceSessionBatchedSpanProcessorArgs = {
-  resource: Resource;
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
-  spanSessionManager: SpanSessionManagerInternal;
-  storage?: Storage;
-  storedSpansExpireTimeoutMS?: number;
+  sessionPartManager: SessionPartManager;
   diag?: DiagLogger;
 };

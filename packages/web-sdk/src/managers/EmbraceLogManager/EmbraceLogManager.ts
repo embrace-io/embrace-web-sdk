@@ -13,6 +13,7 @@ import type {
   LogMessageOptions,
 } from '../../api-logs/manager/index.ts';
 import type { ExceptionHandlerType } from '../../api-logs/manager/types.ts';
+import type { SessionPartManager } from '../../api-sessions/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
@@ -36,7 +37,6 @@ import {
   OTelPerformanceManager,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
 import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
@@ -51,7 +51,7 @@ export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
-  private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _sessionPartManager: SessionPartManager;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _storage: Storage;
@@ -59,7 +59,7 @@ export class EmbraceLogManager implements LogManager {
   public constructor({
     diag: diagParam,
     perf,
-    spanSessionManager,
+    sessionPartManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
     visibilityDoc = window.document,
@@ -74,7 +74,7 @@ export class EmbraceLogManager implements LogManager {
       });
     this._perf = perf ?? new OTelPerformanceManager();
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
-    this._spanSessionManager = spanSessionManager;
+    this._sessionPartManager = sessionPartManager;
     this._limitManager = limitManager;
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
@@ -113,7 +113,7 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (!handled) {
-      this._spanSessionManager.incrSessionCountForKey(
+      this._sessionPartManager.incrSessionPartCountForKey(
         KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
       );
     }
@@ -194,7 +194,9 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (severity === 'error') {
-      this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
+      this._sessionPartManager.incrSessionPartCountForKey(
+        KEY_EMB_ERROR_LOG_COUNT,
+      );
     }
 
     let stack = '';

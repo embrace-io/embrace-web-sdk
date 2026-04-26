@@ -13,7 +13,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';
 
@@ -45,7 +45,9 @@ describe('GlobalExceptionInstrumentation', () => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+      sessionPartManager: new EmbraceSessionPartManager({
+        limitManager,
+      }),
       limitManager,
     });
     log.setGlobalLogManager(logManager);

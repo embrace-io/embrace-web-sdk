@@ -14,7 +14,7 @@ import {
   setupTestTraceExporter,
   setupTestWebVitalListeners,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
+import type { SessionPartManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
@@ -26,7 +26,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../managers/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
@@ -41,7 +41,7 @@ describe('WebVitalsInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: WebVitalsInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManager;
+  let sessionPartManager: SessionPartManager;
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
   let mockWebVitalListeners: WebVitalListeners;
@@ -60,11 +60,11 @@ describe('WebVitalsInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    sessionPartManager = new EmbraceSessionPartManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionSpan();
+    session.setGlobalManagers(sessionPartManager);
+    sessionPartManager.startSessionPart();
     const testWebVitalListeners = setupTestWebVitalListeners();
 
     mockWebVitalListeners = testWebVitalListeners.listeners;
@@ -105,12 +105,12 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
 
@@ -157,12 +157,12 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
 
@@ -215,12 +215,12 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const fcpEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const fcpEvent = sessionPartSpan.events[0];
 
     expect(fcpEvent.name).to.be.equal('emb-web-vitals-report-FCP');
 
@@ -272,12 +272,12 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const lcpEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const lcpEvent = sessionPartSpan.events[0];
 
     expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
 
@@ -337,12 +337,12 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const inpEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const inpEvent = sessionPartSpan.events[0];
 
     expect(inpEvent.name).to.be.equal('emb-web-vitals-report-INP');
 
@@ -442,11 +442,11 @@ describe('WebVitalsInstrumentation', () => {
         } as PerformanceLongAnimationFrameTiming,
       ]);
 
-      spanSessionManager.endSessionSpan();
-      const sessionSpan = memoryExporter.getFinishedSpans()[0];
-      expect(sessionSpan.events).to.have.lengthOf(1);
+      sessionPartManager.endSessionPart();
+      const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+      expect(sessionPartSpan.events).to.have.lengthOf(1);
       const loafScripts = JSON.parse(
-        sessionSpan.events[0].attributes?.[
+        sessionPartSpan.events[0].attributes?.[
           'emb.web_vital.attribution.loaf_scripts'
         ] as string,
       ) as Record<string, unknown>;
@@ -495,10 +495,10 @@ describe('WebVitalsInstrumentation', () => {
         } as PerformanceLongAnimationFrameTiming,
       ]);
 
-      spanSessionManager.endSessionSpan();
-      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      sessionPartManager.endSessionPart();
+      const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
       const loafScripts = JSON.parse(
-        sessionSpan.events[0].attributes?.[
+        sessionPartSpan.events[0].attributes?.[
           'emb.web_vital.attribution.loaf_scripts'
         ] as string,
       ) as Record<string, unknown>;
@@ -523,10 +523,10 @@ describe('WebVitalsInstrumentation', () => {
 
       fireINP(metricReportFunc, []);
 
-      spanSessionManager.endSessionSpan();
-      const sessionSpan = memoryExporter.getFinishedSpans()[0];
+      sessionPartManager.endSessionPart();
+      const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
       expect(
-        sessionSpan.events[0].attributes?.[
+        sessionPartSpan.events[0].attributes?.[
           'emb.web_vital.attribution.loaf_scripts'
         ],
       ).to.be.undefined;
@@ -577,12 +577,12 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const ttfbEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const ttfbEvent = sessionPartSpan.events[0];
 
     expect(ttfbEvent.name).to.be.equal('emb-web-vitals-report-TTFB');
 
@@ -640,9 +640,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     expect(ttfbEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -703,9 +703,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // TLS: tcpConnection = secureConnectionStart - connectStart = 40 - 20 = 20
     //      tlsNegotiation = connectEnd - secureConnectionStart = 50 - 40 = 10
@@ -779,9 +779,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // finalResponseHeadersStart (70) > responseStart (50), so serverResponse = 70 - 10 = 60
     // other = max(0, 80 - 0 - 0 - 0 - 0 - 0 - 60) = 20
@@ -853,9 +853,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // finalResponseHeadersStart (30) < responseStart (50), falls back to responseStart
     // serverResponse = responseStart - requestStart = 50 - 10 = 40
@@ -925,9 +925,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // redirect: 25 - 5 = 20
     // dns: 35 - 25 = 10
@@ -1000,9 +1000,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // total: round(7.3 - 5.123) = round(2.177) = 2
     // dns: round(5.6 - 5.2) = round(0.4) = 0
@@ -1060,9 +1060,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // redirect: 5 - 10 = -5 -> clamped to 0
     // dns: 15 - 20 = -5 -> clamped to 0
@@ -1121,9 +1121,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // redirect: 9.7 - 10 = -0.3 -> clamped to 0
     // dns: 19.4 - 20 = -0.6 -> clamped to 0
@@ -1183,9 +1183,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     const attrs = ttfbEvent.attributes as Record<string, number>;
     const redirect = attrs['emb.web_vital.attribution.redirect'];
@@ -1259,9 +1259,9 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
-    const sessionSpan = memoryExporter.getFinishedSpans()[0];
-    const ttfbEvent = sessionSpan.events[0];
+    sessionPartManager.endSessionPart();
+    const sessionPartSpan = memoryExporter.getFinishedSpans()[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     // dns: 30 - 20 = 10
     // tcp: 40 - 30 = 10
@@ -1336,13 +1336,13 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(2);
-    const clsEvent = sessionSpan.events[0];
-    const lcpEvent = sessionSpan.events[1];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(2);
+    const clsEvent = sessionPartSpan.events[0];
+    const lcpEvent = sessionPartSpan.events[1];
 
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
     expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
@@ -1438,13 +1438,13 @@ describe('WebVitalsInstrumentation', () => {
     });
     inpFinalReportFunc(inpMetric);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const inpEvent = sessionSpan.events[0];
+    const inpEvent = sessionPartSpan.events[0];
 
     expect(inpEvent.name).to.be.equal('emb-web-vitals-report-INP');
     expect(inpEvent.attributes).to.containSubset({
@@ -1508,13 +1508,13 @@ describe('WebVitalsInstrumentation', () => {
     });
     lcpFinalReportFunc(lcpMetric);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const lcpEvent = sessionSpan.events[0];
+    const lcpEvent = sessionPartSpan.events[0];
 
     expect(lcpEvent.name).to.be.equal('emb-web-vitals-report-LCP');
     expect(lcpEvent.attributes).to.containSubset({
@@ -1579,13 +1579,13 @@ describe('WebVitalsInstrumentation', () => {
     clsChangeReportFunc(clsMetric);
     clsFinalReportFunc(clsMetric);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const clsEvent = sessionSpan.events[0];
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
     expect(clsEvent.attributes).to.containSubset({
@@ -1649,13 +1649,13 @@ describe('WebVitalsInstrumentation', () => {
     });
     fcpFinalReportFunc(fcpMetric);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const fcpEvent = sessionSpan.events[0];
+    const fcpEvent = sessionPartSpan.events[0];
 
     expect(fcpEvent.name).to.be.equal('emb-web-vitals-report-FCP');
     expect(fcpEvent.attributes).to.containSubset({
@@ -1734,13 +1734,13 @@ describe('WebVitalsInstrumentation', () => {
     });
     ttfbFinalReportFunc(ttfbMetric);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const ttfbEvent = sessionSpan.events[0];
+    const ttfbEvent = sessionPartSpan.events[0];
 
     expect(ttfbEvent.name).to.be.equal('emb-web-vitals-report-TTFB');
     expect(ttfbEvent.attributes).to.containSubset({
@@ -1782,12 +1782,12 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.attributes).to.containSubset({
       [KEY_EMB_PAGE_PATH]: '/test/:id',
@@ -1826,10 +1826,10 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.attributes).to.containSubset({
       [KEY_APP_SURFACE_LABEL]: 'MyLabel',
@@ -1866,10 +1866,10 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const clsEvent = sessionPartSpan.events[0];
 
     void expect(clsEvent.attributes?.[KEY_APP_SURFACE_LABEL]).to.be.undefined;
   });
@@ -1902,12 +1902,12 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    const clsEvent = sessionPartSpan.events[0];
 
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_PATH]).to.be.undefined;
     void expect(clsEvent.attributes?.[KEY_EMB_PAGE_ID]).to.be.undefined;
@@ -1980,13 +1980,13 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0];
 
     // Only the first metric should be recorded
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    expect(sessionSpan.events[0].attributes?.['emb.web_vital.id']).to.equal(
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
+    expect(sessionPartSpan.events[0].attributes?.['emb.web_vital.id']).to.equal(
       'm1',
     );
   });
@@ -2016,11 +2016,11 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0];
 
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
   });
 
   it('should log debug message when disable() is called', () => {
@@ -2069,10 +2069,10 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const inpEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const inpEvent = sessionPartSpan.events[0];
 
     expect(inpEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -2117,10 +2117,10 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -2161,10 +2161,10 @@ describe('WebVitalsInstrumentation', () => {
       attribution: null,
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const fcpEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const fcpEvent = sessionPartSpan.events[0];
 
     expect(fcpEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',
@@ -2206,10 +2206,10 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    sessionPartManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const sessionSpan = finishedSpans[0];
-    const clsEvent = sessionSpan.events[0];
+    const sessionPartSpan = finishedSpans[0];
+    const clsEvent = sessionPartSpan.events[0];
 
     expect(clsEvent.attributes).to.deep.equal({
       'emb.type': 'ux.web_vital',

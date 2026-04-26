@@ -14,7 +14,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceSessionPartManager,
 } from '../../../../managers/index.ts';
 import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
 
@@ -38,7 +38,9 @@ describe('EmbraceErrorBoundary', () => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+      sessionPartManager: new EmbraceSessionPartManager({
+        limitManager,
+      }),
       limitManager,
     });
     log.setGlobalLogManager(logManager);

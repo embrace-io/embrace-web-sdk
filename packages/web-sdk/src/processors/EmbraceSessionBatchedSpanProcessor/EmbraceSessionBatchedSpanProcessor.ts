@@ -11,17 +11,16 @@ import type {
   SpanExporter,
   SpanProcessor,
 } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
+import type { SessionPartManager } from '../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
-import type { SessionSpan } from '../../instrumentations/index.ts';
-import type {
-  LimitManagerInternal,
-  SpanSessionManagerInternal,
-} from '../../managers/index.ts';
-import { EmbraceSpanStorage } from '../../utils/index.ts';
+import type { SessionPartSpan } from '../../instrumentations/index.ts';
+import type { LimitManagerInternal } from '../../managers/index.ts';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
 
-const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
-  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
+const isSessionPartSpan = (
+  span: ReadableSpan | SessionPartSpan,
+): span is SessionPartSpan =>
+  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.SessionPart;
 
 type ExportFailureReason = 'concurrent_limit' | 'fetch_error' | 'unknown';
 
@@ -36,17 +35,13 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
-  private readonly _spanStorage: EmbraceSpanStorage;
-  private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _sessionPartManager: SessionPartManager;
   private readonly _diag: DiagLogger;
 
   public constructor({
-    resource,
     exporter,
     limitManager,
-    spanSessionManager,
-    storage = window.localStorage,
-    storedSpansExpireTimeoutMS,
+    sessionPartManager,
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSessionBatchedSpanProcessor',
     }),
@@ -55,17 +50,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
-    this._spanSessionManager = spanSessionManager;
-    this._spanStorage = new EmbraceSpanStorage({
-      resource,
-      storage,
-      diag: diagParam,
-      onExpiredSpansExport: (spans: ReadableSpan[]) => {
-        this._exportSpans(spans);
-      },
-      storedSpansExpireTimeoutMS,
-      spanSessionManager,
-    });
+    this._sessionPartManager = sessionPartManager;
   }
 
   public forceFlush(): Promise<void> {
@@ -81,16 +66,16 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
       return;
     }
 
-    if (!isSessionSpan(span)) {
+    if (!isSessionPartSpan(span)) {
       this._diag.debug(
-        'non-session span ended. Adding to pending spans queue.',
+        'non-session-part span ended. Adding to pending spans queue.',
       );
       if (this._limitManager.dropReadableSpan(span)) {
         return;
       }
       this._pendingSpans.push(span);
     } else {
-      this._diag.debug('session span ended. Exporting all pending spans.');
+      this._diag.debug('session part span ended. Exporting all pending spans.');
       this._exportSpans([span, ...this._pendingSpans]);
       this._pendingSpans = [];
     }
@@ -110,10 +95,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
             failureReason = 'fetch_error';
           }
 
-          this._spanSessionManager.incrSessionCountForKey(
+          this._sessionPartManager.incrSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'current'),
           );
-          this._spanSessionManager.incrNextSessionCountForKey(
+          this._sessionPartManager.incrNextSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'previous'),
           );
           this._diag.error(`spans failed to export: ${errorMessage}`);
@@ -130,10 +115,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
           msg = reason;
         }
 
-        this._spanSessionManager.incrSessionCountForKey(
+        this._sessionPartManager.incrSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'current'),
         );
-        this._spanSessionManager.incrNextSessionCountForKey(
+        this._sessionPartManager.incrNextSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'previous'),
         );
         this._diag.error(`spans failed to export: ${msg}`);
@@ -144,28 +129,11 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     // do nothing.
   }
 
-  public getPendingSpansCount(): number {
-    return this._pendingSpans.length;
-  }
-
-  public storePendingSpans(sessionId: string, sessionSpan: ReadableSpan): void {
-    this._spanStorage.storePendingSpans(
-      sessionId,
-      sessionSpan,
-      this._pendingSpans,
-    );
-  }
-
-  public clearStoredSpans(sessionId: string): void {
-    this._spanStorage.clearStoredSpans(sessionId);
-  }
-
   public shutdown(): Promise<void> {
     return this._shutdownOnce.call();
   }
 
   private readonly _shutdown = () => {
-    this._spanStorage.destroy();
     return this._exporter.shutdown();
   };
 }
