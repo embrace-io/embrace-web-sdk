@@ -16,9 +16,6 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     defaultInstrumentationConfig: {
-      'session-visibility': {
-        limitedSessionMaxDurationMs: 3000,
-      },
       'empty-root': {
         rootNode: document.getElementById('root'),
       },

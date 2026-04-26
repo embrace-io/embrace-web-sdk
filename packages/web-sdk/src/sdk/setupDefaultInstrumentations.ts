@@ -25,10 +25,8 @@ import type {
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
   {
-    featureManager,
     logManager,
     spanSessionManager,
-    embraceSpanProcessor,
     pageManager,
     limitManager,
   }: SetupDefaultInstrumentationsArgs,
@@ -38,11 +36,7 @@ export const setupDefaultInstrumentations = (
    */
   const instrumentations: Instrumentation[] = [
     new SpanSessionOnLoadInstrumentation(config['session-on-load']),
-    new SpanSessionVisibilityInstrumentation(
-      config['session-visibility'],
-      featureManager,
-      embraceSpanProcessor,
-    ),
+    new SpanSessionVisibilityInstrumentation(config['session-visibility']),
     new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
     new SpanSessionTimeoutInstrumentation(config['session-timeout']),
   ];

@@ -37,10 +37,8 @@ import type {
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
-  SDKFeaturesManager,
   SpanSessionManagerInternal,
 } from '../managers/index.ts';
-import type { EmbraceSessionBatchedSpanProcessor } from '../processors/index.ts';
 
 export interface DynamicSDKConfig {
   /**
@@ -56,13 +54,6 @@ export interface DynamicSDKConfig {
    * **default**: 0
    */
   networkSpansForwardingThreshold?: number;
-
-  /**
-   * Pct of users that should have the "empty session avoidance" feature enabled.
-   *
-   * **default**: 0
-   */
-  emptySessionAvoidanceEnabledPct?: number;
 }
 
 export interface DynamicConfigManager {
@@ -359,10 +350,8 @@ interface NetworkInstrumentationArgs {
 }
 
 export interface SetupDefaultInstrumentationsArgs {
-  featureManager: SDKFeaturesManager;
   logManager?: LogManager;
   spanSessionManager?: SpanSessionManager;
-  embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
 }
