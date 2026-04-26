@@ -34,8 +34,6 @@ export {
   type SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentation,
   type SpanSessionOnLoadInstrumentationArgs,
-  SpanSessionTimeoutInstrumentation,
-  type SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentation,
   type SpanSessionVisibilityInstrumentationArgs,
 } from './session/index.ts';

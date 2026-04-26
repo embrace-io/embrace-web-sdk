@@ -10,10 +10,6 @@ export {
   type SpanSessionOnLoadInstrumentationArgs,
 } from './SpanSessionOnLoadInstrumentation/index.ts';
 export {
-  SpanSessionTimeoutInstrumentation,
-  type SpanSessionTimeoutInstrumentationArgs,
-} from './SpanSessionTimeoutInstrumentation/index.ts';
-export {
   SpanSessionVisibilityInstrumentation,
   type SpanSessionVisibilityInstrumentationArgs,
 } from './SpanSessionVisibilityInstrumentation/index.ts';

@@ -30,7 +30,6 @@ import type {
   ServerTimingInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
   SpanSessionOnLoadInstrumentationArgs,
-  SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
@@ -369,7 +368,6 @@ export interface DefaultInstrumentationConfig {
   'session-on-load'?: SpanSessionOnLoadInstrumentationArgs;
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
-  'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;

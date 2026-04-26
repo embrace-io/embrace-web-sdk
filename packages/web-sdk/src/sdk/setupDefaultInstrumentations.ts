@@ -12,7 +12,6 @@ import {
   ServerTimingInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
   SpanSessionOnLoadInstrumentation,
-  SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
@@ -38,7 +37,6 @@ export const setupDefaultInstrumentations = (
     new SpanSessionOnLoadInstrumentation(config['session-on-load']),
     new SpanSessionVisibilityInstrumentation(config['session-visibility']),
     new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
-    new SpanSessionTimeoutInstrumentation(config['session-timeout']),
   ];
 
   if (!config.omit?.has('exception')) {
