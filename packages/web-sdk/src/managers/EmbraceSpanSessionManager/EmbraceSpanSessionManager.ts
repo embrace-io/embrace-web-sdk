@@ -6,6 +6,7 @@ import type {
   TracerProvider,
 } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
@@ -221,6 +222,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       ...this._limitManager.getDiagnosticCounts(),
       [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
     };
+  }
+
+  /**
+   * @deprecated Always returns null. Will be removed in a future major version.
+   */
+  public currentSessionAsReadableSpan(
+    _reason: ReasonSessionEnded,
+  ): ReadableSpan | null {
+    return null;
   }
 
   public getSessionId(): string | null {

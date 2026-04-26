@@ -33,6 +33,11 @@ describe('sessionAPI', () => {
         invocation: () => session.addProperty(undefined, undefined),
       },
       {
+        name: 'currentSessionAsReadableSpan',
+        // @ts-expect-error
+        invocation: () => session.currentSessionAsReadableSpan('not_valid'),
+      },
+      {
         name: 'startSessionSpan',
         // @ts-expect-error
         invocation: () => session.startSessionSpan(null),

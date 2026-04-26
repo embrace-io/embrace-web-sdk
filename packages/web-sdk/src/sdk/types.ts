@@ -54,6 +54,11 @@ export interface DynamicSDKConfig {
    * **default**: 0
    */
   networkSpansForwardingThreshold?: number;
+
+  /**
+   * @deprecated The empty session avoidance feature has been removed. This field is ignored and will be removed in a future major version.
+   */
+  emptySessionAvoidanceEnabledPct?: number;
 }
 
 export interface DynamicConfigManager {

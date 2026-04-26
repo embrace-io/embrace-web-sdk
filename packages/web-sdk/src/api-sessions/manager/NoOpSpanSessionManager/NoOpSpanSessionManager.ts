@@ -1,4 +1,5 @@
 import type { HrTime } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   PropertyOptions,
@@ -29,6 +30,12 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
 
   public endSessionSpanInternal(_reason: ReasonSessionEnded): void {
     // do nothing.
+  }
+
+  public currentSessionAsReadableSpan(
+    _reason: ReasonSessionEnded,
+  ): ReadableSpan | null {
+    return null;
   }
 
   public getSessionId = () => null;
