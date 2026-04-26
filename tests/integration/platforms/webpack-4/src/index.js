@@ -21,7 +21,7 @@ registerInstrumentations({
 });
 
 initSDK({
-  appID: '',
+  appID: '11111',
   appVersion: 'YOUR_APP_VERSION',
   logLevel: DiagLogLevel.INFO,
   spanExporters: [new ConsoleSpanExporter()],
