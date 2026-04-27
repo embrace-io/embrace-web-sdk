@@ -1,17 +1,13 @@
-import type { TimeoutRef } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.ts';
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
-  private _currentVisibilityState: DocumentVisibilityState;
-  private _checkVisibilityTimeout: TimeoutRef | null;
   private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
 
   public constructor({
     diag,
     perf,
-    visibilityWaitTimeMs = 0,
     backgroundSessions = false,
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
@@ -23,43 +19,8 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       config: {},
     });
 
-    this._currentVisibilityState = visibilityDoc.visibilityState;
-    this._checkVisibilityTimeout = null;
-
     this._checkVisibilityChange = () => {
-      if (visibilityWaitTimeMs <= 0) {
-        // If no timeout configured, events are forwarded directly.
-        this._currentVisibilityState = visibilityDoc.visibilityState;
-        this._onVisibilityChange();
-        return;
-      }
-      if (this._checkVisibilityTimeout) {
-        clearTimeout(this._checkVisibilityTimeout);
-      }
-
-      // When switching to visible, we want to trigger the event immediately
-      if (
-        visibilityDoc.visibilityState === 'visible' &&
-        this._currentVisibilityState !== visibilityDoc.visibilityState
-      ) {
-        this._currentVisibilityState = visibilityDoc.visibilityState;
-        this._onVisibilityChange();
-        return;
-      }
-
-      this._diag.debug(
-        `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`,
-      );
-      this._checkVisibilityTimeout = setTimeout(() => {
-        if (this._currentVisibilityState !== visibilityDoc.visibilityState) {
-          this._currentVisibilityState = visibilityDoc.visibilityState;
-          this._onVisibilityChange();
-        } else {
-          this._diag.debug(
-            `Visibility was not changed after timeout happened: ${visibilityDoc.visibilityState}`,
-          );
-        }
-      }, visibilityWaitTimeMs);
+      this._onVisibilityChange();
     };
 
     this._onVisibilityChange = () => {
