@@ -1946,9 +1946,12 @@ describe('isolated instances', () => {
 
       const finishedSpans = spanExporter.getFinishedSpans();
 
-      // initSDK starts an init session per instance; the manual
-      // startSessionSpan ends it and starts another which endSessionSpan
-      // closes - so two emb-session spans are expected.
+      // Two emb-session spans are expected per instance:
+      //   1. initSDK starts an init session; the startSessionSpan() call
+      //      above ends that one (emitting #1) and opens a fresh session.
+      //   2. The endSessionSpan() call closes the fresh session (emitting #2).
+      // Each instance has its own spanSessionManager, so sessions are not
+      // shared across instances.
       expect(finishedSpans).to.have.lengthOf(4);
       expect(finishedSpans[0].name).to.equal('some span');
       expect(finishedSpans[1].name).to.equal('emb-session');
