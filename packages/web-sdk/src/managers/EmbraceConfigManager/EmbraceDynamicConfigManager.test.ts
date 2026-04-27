@@ -153,6 +153,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 80,
+      networkSpansForwardingThreshold: 0,
     });
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-test-app.config.emb-api.com/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device',
@@ -255,6 +256,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 80,
+      networkSpansForwardingThreshold: 0,
     });
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
@@ -338,6 +340,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
     expect(config).to.deep.equal({
       samplingPct: 90,
+      networkSpansForwardingThreshold: 0,
     });
     expect(fakeFetchGetUrl()).to.equal(
       `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`,

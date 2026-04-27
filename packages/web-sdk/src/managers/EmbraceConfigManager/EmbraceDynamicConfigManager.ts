@@ -33,6 +33,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   private readonly _remoteConfigURL: string | null = null;
   private readonly _diag: DiagLogger;
   private readonly _storage: Storage;
+  private readonly _baseConfig: DynamicSDKConfig;
 
   private _sdkConfig: DynamicSDKConfig;
   private _etag: string | null = null;
@@ -71,11 +72,15 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
       this._etag = storedRemoteConfig.etag;
     }
 
-    this._sdkConfig = {
-      // Merge the default config with any user-provided defaults
-      // making sure user-provided values take precedence
+    // Default config merged with any user-provided defaults; user-provided values take precedence.
+    // Kept around so refreshRemoteConfig can re-merge against it instead of dropping defaults.
+    this._baseConfig = {
       ...DEFAULT_CONFIG,
       ...defaultConfig,
+    };
+
+    this._sdkConfig = {
+      ...this._baseConfig,
       // Stored remote config values will override both defaults and user-provided defaults
       ...(storedRemoteConfig
         ? parseRemoteConfig(storedRemoteConfig.config)
@@ -119,7 +124,10 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
         } as StoredRemoteConfig),
       );
 
-      this._sdkConfig = parseRemoteConfig(remoteConfig);
+      this._sdkConfig = {
+        ...this._baseConfig,
+        ...parseRemoteConfig(remoteConfig),
+      };
       this._etag = etag;
     } catch (error: unknown) {
       this._diag.warn(
