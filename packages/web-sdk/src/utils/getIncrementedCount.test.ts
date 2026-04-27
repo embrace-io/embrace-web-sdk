@@ -26,7 +26,7 @@ describe('getIncrementedCount', () => {
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);
   });
 
-  it('should return 1 if the counter could not be retrieved', () => {
+  it('should return 1 when storage is unavailable', () => {
     const storage = new FailingStorage();
 
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);

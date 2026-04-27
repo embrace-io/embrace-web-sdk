@@ -1,26 +1,16 @@
 import * as chai from 'chai';
 import {
-  SAMPLED_UUID,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../tests/utils/index.ts';
-import {
   EmbraceFetchInstrumentation,
   EmbraceXHRInstrumentation,
+  SpanSessionVisibilityInstrumentation,
 } from '../instrumentations/index.ts';
-import { EmbraceSDKFeaturesManager } from '../managers/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 
 const { expect } = chai;
 
 type DefaultInstrumentations = ReturnType<typeof setupDefaultInstrumentations>;
 
-const makeSetupArgs = () => ({
-  featureManager: new EmbraceSDKFeaturesManager({
-    dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-    deviceId: SAMPLED_UUID,
-    blockNetworkSpanForwarding: false,
-  }),
-});
+const makeSetupArgs = () => ({});
 
 const getFetch = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(
@@ -33,6 +23,15 @@ const getXHR = (instrumentations: DefaultInstrumentations) =>
   ) as EmbraceXHRInstrumentation;
 
 describe('setupDefaultInstrumentations', () => {
+  it('wires the visibility instrumentation', () => {
+    const instrumentations = setupDefaultInstrumentations({}, makeSetupArgs());
+    expect(
+      instrumentations.find(
+        (i) => i instanceof SpanSessionVisibilityInstrumentation,
+      ),
+    ).to.not.equal(undefined);
+  });
+
   describe('ignoreUrls merging', () => {
     it('merges network.ignoreUrls and fetch ignoreUrls', () => {
       const instrumentations = setupDefaultInstrumentations(

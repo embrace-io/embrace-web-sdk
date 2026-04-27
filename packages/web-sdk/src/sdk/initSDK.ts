@@ -224,17 +224,12 @@ export const initSDK = (
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
     if (sendingToEmbrace) {
       embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
-        resource: resourceWithWebSDKAttributes,
         exporter: new EmbraceTraceExporter({
           appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
         limitManager,
-        storedSpansExpireTimeoutMS:
-          defaultInstrumentationConfig?.['session-visibility']
-            ?.storedSpansExpireTimeoutMS,
-        storage: sdkLocalStorage,
         spanSessionManager,
       });
 
@@ -293,10 +288,8 @@ export const initSDK = (
         loggerProvider,
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
-            featureManager: sdkFeaturesManager,
             logManager: embraceLogManager,
             spanSessionManager,
-            embraceSpanProcessor,
             pageManager,
             limitManager,
           }),
@@ -307,8 +300,6 @@ export const initSDK = (
       registerInstrumentations({
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
-            featureManager: sdkFeaturesManager,
-            embraceSpanProcessor,
             pageManager,
             limitManager,
           }),
