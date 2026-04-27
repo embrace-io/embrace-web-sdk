@@ -21,6 +21,6 @@ export const getIncrementedCount = (
     return number;
   } catch (e) {
     diag.warn(`Failed to retrieve ${key} from storage: `, e);
-    return 0;
+    return 1;
   }
 };

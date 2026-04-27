@@ -679,7 +679,7 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
-  it('should default to session number 0 when storage is failing', () => {
+  it('should default to session number 1 when storage is failing', () => {
     manager = new EmbraceSpanSessionManager({
       diag,
       limitManager,
@@ -692,9 +692,7 @@ describe('EmbraceSpanSessionManager', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
-    // getIncrementedCount returns 0 as a sentinel when storage is unavailable
-    // so downstream analytics can detect the case.
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 0);
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
 
     const warningLogs = diag.getWarnLogs();
     expect(warningLogs).to.include(
