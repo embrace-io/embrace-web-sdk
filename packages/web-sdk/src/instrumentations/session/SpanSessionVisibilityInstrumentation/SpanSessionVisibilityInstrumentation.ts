@@ -2,7 +2,6 @@ import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/ind
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.ts';
 
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
 
   public constructor({
@@ -18,10 +17,6 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       perf,
       config: {},
     });
-
-    this._checkVisibilityChange = () => {
-      this._onVisibilityChange();
-    };
 
     this._onVisibilityChange = () => {
       this._diag.debug(
@@ -56,10 +51,10 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   }
 
   public disable(): void {
-    window.removeEventListener('visibilitychange', this._checkVisibilityChange);
+    window.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   public enable(): void {
-    window.addEventListener('visibilitychange', this._checkVisibilityChange);
+    window.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 }
