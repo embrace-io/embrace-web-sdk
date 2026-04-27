@@ -16,12 +16,9 @@ export const KEY_EMB_ERROR_LOG_COUNT = 'emb.error_log_count';
 export const KEY_EMB_INSTRUMENTATION = 'emb.instrumentation';
 export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
   'emb.unhandled_exceptions_count';
-export const KEY_EMB_FROM_STORAGE = 'emb.from_storage';
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_BROWSER_URL_FULL = 'browser.url.full';
-export const KEY_EMB_MAX_PENDING_SPANS_REACHED =
-  'emb.max_pending_spans_reached';
 // In the backend we use 'app.surface.name' and 'app.surface.id' for the page name and id
 // to be consistent with mobile where we use 'app.surface.*' for screen names and ids
 export const KEY_EMB_PAGE_PATH = 'app.surface.name';

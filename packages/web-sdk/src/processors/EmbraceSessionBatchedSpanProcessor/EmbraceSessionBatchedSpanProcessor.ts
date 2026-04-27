@@ -17,7 +17,6 @@ import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.ts';
-import { EmbraceSpanStorage } from '../../utils/index.ts';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
 
 const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
@@ -36,17 +35,13 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
-  private readonly _spanStorage: EmbraceSpanStorage;
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _diag: DiagLogger;
 
   public constructor({
-    resource,
     exporter,
     limitManager,
     spanSessionManager,
-    storage = window.localStorage,
-    storedSpansExpireTimeoutMS,
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSessionBatchedSpanProcessor',
     }),
@@ -56,16 +51,6 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
     this._spanSessionManager = spanSessionManager;
-    this._spanStorage = new EmbraceSpanStorage({
-      resource,
-      storage,
-      diag: diagParam,
-      onExpiredSpansExport: (spans: ReadableSpan[]) => {
-        this._exportSpans(spans);
-      },
-      storedSpansExpireTimeoutMS,
-      spanSessionManager,
-    });
   }
 
   public forceFlush(): Promise<void> {
@@ -144,28 +129,11 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     // do nothing.
   }
 
-  public getPendingSpansCount(): number {
-    return this._pendingSpans.length;
-  }
-
-  public storePendingSpans(sessionId: string, sessionSpan: ReadableSpan): void {
-    this._spanStorage.storePendingSpans(
-      sessionId,
-      sessionSpan,
-      this._pendingSpans,
-    );
-  }
-
-  public clearStoredSpans(sessionId: string): void {
-    this._spanStorage.clearStoredSpans(sessionId);
-  }
-
   public shutdown(): Promise<void> {
     return this._shutdownOnce.call();
   }
 
   private readonly _shutdown = () => {
-    this._spanStorage.destroy();
     return this._exporter.shutdown();
   };
 }

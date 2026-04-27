@@ -1,4 +1,3 @@
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -712,73 +711,5 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
-  });
-
-  describe('currentSessionAsReadableSpan', () => {
-    it('should return null when no session is active', () => {
-      // No session started
-      const spanCopy = manager.currentSessionAsReadableSpan('manual');
-      expect(spanCopy).to.equal(null);
-
-      const debugLogs = diag.getDebugLogs();
-      expect(debugLogs).to.include(
-        'trying to end a session, but there is no session in progress. This is a no-op.',
-      );
-    });
-
-    it('should include all the same attributes as endSessionSpanInternal would add', () => {
-      manager.startSessionSpan();
-      manager.addProperty('session-prop', 'session-value');
-      manager.recordSDKStartupDuration(250);
-
-      // Create copy before ending session
-      const sessionSpanNotExported = manager.currentSessionAsReadableSpan(
-        'manual',
-      ) as unknown as ReadableSpan;
-      expect(sessionSpanNotExported).to.not.equal(null);
-
-      // Session manager still has the active session
-      expect(manager.getSessionId()).to.not.equal(null);
-      expect(manager.getSessionSpan()).to.not.equal(null);
-
-      // End the original session with different reason
-      manager.endSessionSpanInternal('timer');
-
-      // Session manager now has no active session
-      expect(manager.getSessionId()).to.equal(null);
-      expect(manager.getSessionSpan()).to.equal(null);
-
-      const finishedSpans = memoryExporter.getFinishedSpans();
-      expect(finishedSpans).to.have.lengthOf(1);
-
-      const sessionSpan = finishedSpans[0];
-      expect(sessionSpan).to.not.equal(undefined);
-
-      // Both should have the same key attributes
-      expect(sessionSpanNotExported.attributes).to.have.property(
-        KEY_EMB_SESSION_REASON_ENDED,
-        'manual',
-      );
-      expect(sessionSpan.attributes).to.have.property(
-        KEY_EMB_SESSION_REASON_ENDED,
-        'timer',
-      );
-      expect(sessionSpanNotExported.attributes).to.have.property(
-        'emb.properties.session-prop',
-        'session-value',
-      );
-      expect(sessionSpan.attributes).to.have.property(
-        'emb.properties.session-prop',
-        'session-value',
-      );
-      expect(sessionSpanNotExported.attributes).to.have.property(
-        'emb.sdk_startup_duration',
-        250,
-      );
-      expect(sessionSpan.attributes).to.have.property(
-        'emb.sdk_startup_duration',
-        250,
-      );
-    });
   });
 });

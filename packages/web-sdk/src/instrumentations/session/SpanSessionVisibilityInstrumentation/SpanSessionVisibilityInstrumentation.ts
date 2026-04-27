@@ -1,39 +1,15 @@
-import type { SDKFeaturesManager } from '../../../managers/index.ts';
-import type { EmbraceSessionBatchedSpanProcessor } from '../../../processors/index.ts';
-import type { TimeoutRef } from '../../../utils/index.ts';
-import {
-  bulkAddEventListener,
-  bulkRemoveEventListener,
-  throttle,
-} from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { SpanSessionVisibilityInstrumentationArgs } from './types.ts';
 
-const SESSION_INTERACTION_EVENTS = ['mousedown'];
-
 export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentationBase {
-  private _currentVisibilityState: DocumentVisibilityState;
-  private _checkVisibilityTimeout: TimeoutRef | null;
-  private _interactionSinceLastVisibilityChange: boolean;
-  private readonly _avoidEndingLimitedSessions: boolean;
-  private readonly _embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor;
-  private readonly _checkVisibilityChange: () => void;
   private readonly _onVisibilityChange: () => void;
-  private readonly _onInteractionThrottled: () => void;
 
-  public constructor(
-    {
-      diag,
-      perf,
-      visibilityWaitTimeMs = 0,
-      limitedSessionMaxDurationMs = 5000,
-      backgroundSessions = false,
-      maxPendingSpanCount = 5,
-      visibilityDoc = window.document,
-    }: SpanSessionVisibilityInstrumentationArgs = {},
-    featureManager: SDKFeaturesManager,
-    embraceSpanProcessor?: EmbraceSessionBatchedSpanProcessor,
-  ) {
+  public constructor({
+    diag,
+    perf,
+    backgroundSessions = false,
+    visibilityDoc = window.document,
+  }: SpanSessionVisibilityInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SpanSessionVisibilityInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -42,98 +18,12 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       config: {},
     });
 
-    this._currentVisibilityState = visibilityDoc.visibilityState;
-    this._checkVisibilityTimeout = null;
-    this._interactionSinceLastVisibilityChange = false;
-    this._avoidEndingLimitedSessions =
-      limitedSessionMaxDurationMs > 0 &&
-      featureManager.isEmptySessionAvoidanceEnabled();
-    this._embraceSpanProcessor = embraceSpanProcessor;
-
-    this._checkVisibilityChange = () => {
-      if (visibilityWaitTimeMs <= 0) {
-        // If no timeout configured, events are forwarded directly.
-        this._currentVisibilityState = visibilityDoc.visibilityState;
-        this._onVisibilityChange();
-        return;
-      }
-      if (this._checkVisibilityTimeout) {
-        clearTimeout(this._checkVisibilityTimeout);
-      }
-
-      // When switching to visible, we want to trigger the event immediately
-      if (
-        visibilityDoc.visibilityState === 'visible' &&
-        this._currentVisibilityState !== visibilityDoc.visibilityState
-      ) {
-        this._currentVisibilityState = visibilityDoc.visibilityState;
-        this._onVisibilityChange();
-        return;
-      }
-
-      this._diag.debug(
-        `Visibility changed to ${visibilityDoc.visibilityState}. Will wait ${(visibilityWaitTimeMs / 1000).toString()}s, and check if visibility changed`,
-      );
-      this._checkVisibilityTimeout = setTimeout(() => {
-        if (this._currentVisibilityState !== visibilityDoc.visibilityState) {
-          this._currentVisibilityState = visibilityDoc.visibilityState;
-          this._onVisibilityChange();
-        } else {
-          this._diag.debug(
-            `Visibility was not changed after timeout happened: ${visibilityDoc.visibilityState}`,
-          );
-        }
-      }, visibilityWaitTimeMs);
-    };
-
     this._onVisibilityChange = () => {
       this._diag.debug(
         `Visibility change detected: ${visibilityDoc.visibilityState}`,
       );
 
-      const currentSessionStartTime = this.sessionManager.getSessionStartTime();
-
-      // A limited session is one that is:
-      // - shorter than a specified duration threshold
-      // - contains no user interactions
-      // - Embrace is enabled and the amount of pending spans is less than MAX_PENDING_SPAN_COUNT
-      const isLimitedSession =
-        this._avoidEndingLimitedSessions &&
-        currentSessionStartTime !== null &&
-        this.perf.millisSinceHRTime(currentSessionStartTime) <
-          limitedSessionMaxDurationMs &&
-        !this._interactionSinceLastVisibilityChange &&
-        !!this._embraceSpanProcessor &&
-        this._embraceSpanProcessor.getPendingSpansCount() < maxPendingSpanCount;
-
-      if (isLimitedSession) {
-        this._diag.debug(
-          'Not ending the session since it is considered limited',
-        );
-        // If this session still meets the definition of a limited session don't yet end it but instead just record
-        // the visibility change as a breadcrumb
-        this.sessionManager.addBreadcrumb(
-          `Tab visibility changed to ${visibilityDoc.visibilityState}`,
-        );
-
-        const sessionId = this.sessionManager.getSessionId();
-        if (sessionId) {
-          const sessionSpan =
-            this.sessionManager.currentSessionAsReadableSpan('state_changed');
-          if (sessionSpan) {
-            this._embraceSpanProcessor.storePendingSpans(
-              sessionId,
-              sessionSpan,
-            );
-          }
-        }
-      } else {
-        // If there was a session in progress that we didn't end because we considered it limited, then drop the stored spans in storage:
-        const sessionId = this.sessionManager.getSessionId();
-        if (this._embraceSpanProcessor && sessionId) {
-          this._embraceSpanProcessor.clearStoredSpans(sessionId);
-        }
-
+      try {
         this.sessionManager.endSessionSpanInternal('state_changed');
 
         if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
@@ -147,14 +37,13 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
           );
           this.sessionManager.startSessionSpan({ reason: 'visible' });
         }
+      } catch (error) {
+        this._diag.error(
+          `Failed to rotate session on visibility change to ${visibilityDoc.visibilityState}`,
+          error,
+        );
       }
-
-      this._interactionSinceLastVisibilityChange = false;
     };
-
-    this._onInteractionThrottled = throttle(() => {
-      this._interactionSinceLastVisibilityChange = true;
-    }, 1000);
 
     if (this._config.enabled) {
       this.enable();
@@ -162,26 +51,10 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   }
 
   public disable(): void {
-    window.removeEventListener('visibilitychange', this._checkVisibilityChange);
-
-    if (this._avoidEndingLimitedSessions) {
-      bulkRemoveEventListener({
-        target: window,
-        events: SESSION_INTERACTION_EVENTS,
-        callback: this._onInteractionThrottled,
-      });
-    }
+    window.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   public enable(): void {
-    window.addEventListener('visibilitychange', this._checkVisibilityChange);
-
-    if (this._avoidEndingLimitedSessions) {
-      bulkAddEventListener({
-        target: window,
-        events: SESSION_INTERACTION_EVENTS,
-        callback: this._onInteractionThrottled,
-      });
-    }
+    window.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 }
