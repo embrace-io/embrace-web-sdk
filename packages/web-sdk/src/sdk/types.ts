@@ -29,8 +29,6 @@ import type {
   LoafInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionOnLoadInstrumentationArgs,
-  SpanSessionTimeoutInstrumentationArgs,
   SpanSessionVisibilityInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
@@ -366,10 +364,8 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;
-  'session-on-load'?: SpanSessionOnLoadInstrumentationArgs;
   'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
   'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
-  'session-timeout'?: SpanSessionTimeoutInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;

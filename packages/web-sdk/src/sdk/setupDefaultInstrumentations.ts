@@ -11,8 +11,6 @@ import {
   LoafInstrumentation,
   ServerTimingInstrumentation,
   SpanSessionBrowserActivityInstrumentation,
-  SpanSessionOnLoadInstrumentation,
-  SpanSessionTimeoutInstrumentation,
   SpanSessionVisibilityInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
@@ -35,10 +33,8 @@ export const setupDefaultInstrumentations = (
     These instrumentations are core to managing the session lifecycle and so are not optional
    */
   const instrumentations: Instrumentation[] = [
-    new SpanSessionOnLoadInstrumentation(config['session-on-load']),
     new SpanSessionVisibilityInstrumentation(config['session-visibility']),
     new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
-    new SpanSessionTimeoutInstrumentation(config['session-timeout']),
   ];
 
   if (!config.omit?.has('exception')) {
