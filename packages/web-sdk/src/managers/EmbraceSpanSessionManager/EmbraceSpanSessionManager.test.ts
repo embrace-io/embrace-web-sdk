@@ -210,6 +210,7 @@ describe('EmbraceSpanSessionManager', () => {
   it('should start a foreground session when the document is visible', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
     const manager = new EmbraceSpanSessionManager({
       visibilityDoc,
@@ -227,6 +228,7 @@ describe('EmbraceSpanSessionManager', () => {
   it('should start a background session when the document is hidden', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
+      hasFocus: () => false,
     };
     const manager = new EmbraceSpanSessionManager({
       visibilityDoc,

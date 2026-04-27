@@ -82,6 +82,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should start a session when visibility changes to visible', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
+      hasFocus: () => false,
     };
     instrumentation = new SpanSessionVisibilityInstrumentation(
       {
@@ -110,6 +111,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should end the previous a session and start a new one when visibility changes to visible', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
+      hasFocus: () => false,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
@@ -138,6 +140,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should end a session when visibility changes to hidden and not start a new one by default', async () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
@@ -170,6 +173,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should end a session when visibility changes to hidden and start a new one when background sessions are enabled and no visibility wait time configured', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
@@ -200,6 +204,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should end a session when visibility changes to hidden and start a new one when background sessions are enabled', async () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
@@ -243,6 +248,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should not end a session when visibility changes to hidden and visible within less than visibilityWaitTimeMs', async () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     instrumentation = new SpanSessionVisibilityInstrumentation(
@@ -276,6 +282,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should not end a session when its duration is less than limitedSessionMaxDurationMs', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     // Mock implementation of EmbraceProcessor
@@ -339,6 +346,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
   it('should end a session when its duration is less than limitedSessionMaxDurationMs if there has been user interactions', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'visible',
+      hasFocus: () => true,
     };
 
     // Mock implementation of EmbraceProcessor
