@@ -1962,7 +1962,6 @@ describe('isolated instances', () => {
       expect(finishedSpans[2].attributes['emb.session_start_type']).to.equal(
         'manual',
       );
-
       expect(finishedSpans[3].name).to.equal('my span');
     };
 
