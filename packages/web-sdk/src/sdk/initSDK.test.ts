@@ -1932,7 +1932,7 @@ describe('isolated instances', () => {
 
       sdkInstance.log.message('some log', 'info');
       sdkInstance.trace.startSpan('some span').end();
-      sdkInstance.session.startSessionSpan();
+      sdkInstance.session.startSessionSpan({ reason: 'manual' });
       sdkInstance.session.endSessionSpan();
       instrumentation.emit();
 
@@ -1955,7 +1955,13 @@ describe('isolated instances', () => {
       expect(finishedSpans).to.have.lengthOf(4);
       expect(finishedSpans[0].name).to.equal('some span');
       expect(finishedSpans[1].name).to.equal('emb-session');
+      expect(finishedSpans[1].attributes['emb.session_start_type']).to.equal(
+        'init',
+      );
       expect(finishedSpans[2].name).to.equal('emb-session');
+      expect(finishedSpans[2].attributes['emb.session_start_type']).to.equal(
+        'manual',
+      );
       expect(finishedSpans[3].name).to.equal('my span');
     };
 
