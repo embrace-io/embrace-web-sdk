@@ -679,6 +679,18 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
+  it('should default session_start_type to manual when options are provided without a reason', () => {
+    manager.startSessionSpan({});
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'manual',
+    );
+  });
+
   it('should default to session number 1 when storage is failing', () => {
     manager = new EmbraceSpanSessionManager({
       diag,
