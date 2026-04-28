@@ -667,7 +667,7 @@ describe('EmbraceSpanSessionManager', () => {
     memoryExporter.reset();
   });
 
-  it('should allow starting a session with a reason', () => {
+  it('should use the provided reason as session_start_type', () => {
     manager.startSessionSpan({ reason: 'start reason' });
     manager.endSessionSpan();
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -676,6 +676,18 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_STARTED,
       'start reason',
+    );
+  });
+
+  it('should default session_start_type to manual when no options are provided', () => {
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'manual',
     );
   });
 
