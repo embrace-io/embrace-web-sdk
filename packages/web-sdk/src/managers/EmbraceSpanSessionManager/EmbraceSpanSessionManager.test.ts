@@ -614,7 +614,7 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
-  it('should have the right internal diagnostic attributes', () => {
+  it('should set cold_start, session_number, and default session_start_type to manual', () => {
     manager.startSessionSpan();
     manager.endSessionSpan();
 
@@ -624,8 +624,9 @@ describe('EmbraceSpanSessionManager', () => {
     // First session should have emb.cold_start = true, and number be one.
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
-    expect(sessionSpan.attributes).not.to.have.property(
+    expect(sessionSpan.attributes).to.have.property(
       'emb.session_start_type',
+      'manual',
     );
     memoryExporter.reset();
 

@@ -1932,7 +1932,7 @@ describe('isolated instances', () => {
 
       sdkInstance.log.message('some log', 'info');
       sdkInstance.trace.startSpan('some span').end();
-      sdkInstance.session.startSessionSpan({ reason: 'manual' });
+      sdkInstance.session.startSessionSpan();
       sdkInstance.session.endSessionSpan();
       instrumentation.emit();
 
