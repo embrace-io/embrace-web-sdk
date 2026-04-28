@@ -275,9 +275,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       ...previouslyRecordedCounts,
     };
 
-    if (options?.reason) {
-      attributes[KEY_EMB_SESSION_REASON_STARTED] = options.reason;
-    }
+    attributes[KEY_EMB_SESSION_REASON_STARTED] = options?.reason ?? 'manual';
 
     this._sessionSpan = new EmbraceExtendedSpan(
       this._tracer.startSpan('emb-session', {

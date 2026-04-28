@@ -1946,10 +1946,23 @@ describe('isolated instances', () => {
 
       const finishedSpans = spanExporter.getFinishedSpans();
 
-      expect(finishedSpans).to.have.lengthOf(3);
+      // Two emb-session spans are expected per instance:
+      //   1. initSDK starts an init session; the startSessionSpan() call
+      //      above ends that one (emitting #1) and opens a fresh session.
+      //   2. The endSessionSpan() call closes the fresh session (emitting #2).
+      // Each instance has its own spanSessionManager, so sessions are not
+      // shared across instances.
+      expect(finishedSpans).to.have.lengthOf(4);
       expect(finishedSpans[0].name).to.equal('some span');
       expect(finishedSpans[1].name).to.equal('emb-session');
-      expect(finishedSpans[2].name).to.equal('my span');
+      expect(finishedSpans[1].attributes['emb.session_start_type']).to.equal(
+        'init',
+      );
+      expect(finishedSpans[2].name).to.equal('emb-session');
+      expect(finishedSpans[2].attributes['emb.session_start_type']).to.equal(
+        'manual',
+      );
+      expect(finishedSpans[3].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

@@ -614,7 +614,7 @@ describe('EmbraceSpanSessionManager', () => {
     );
   });
 
-  it('should have the right internal diagnostic attributes', () => {
+  it('should set cold_start, session_number, and default session_start_type to manual', () => {
     manager.startSessionSpan();
     manager.endSessionSpan();
 
@@ -624,8 +624,9 @@ describe('EmbraceSpanSessionManager', () => {
     // First session should have emb.cold_start = true, and number be one.
     expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
     expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
-    expect(sessionSpan.attributes).not.to.have.property(
+    expect(sessionSpan.attributes).to.have.property(
       'emb.session_start_type',
+      'manual',
     );
     memoryExporter.reset();
 
@@ -666,7 +667,7 @@ describe('EmbraceSpanSessionManager', () => {
     memoryExporter.reset();
   });
 
-  it('should allow starting a session with a reason', () => {
+  it('should use the provided reason as session_start_type', () => {
     manager.startSessionSpan({ reason: 'start reason' });
     manager.endSessionSpan();
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -675,6 +676,30 @@ describe('EmbraceSpanSessionManager', () => {
     expect(sessionSpan.attributes).to.have.property(
       KEY_EMB_SESSION_REASON_STARTED,
       'start reason',
+    );
+  });
+
+  it('should default session_start_type to manual when no options are provided', () => {
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'manual',
+    );
+  });
+
+  it('should default session_start_type to manual when options are provided without a reason', () => {
+    manager.startSessionSpan({});
+    manager.endSessionSpan();
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property(
+      KEY_EMB_SESSION_REASON_STARTED,
+      'manual',
     );
   });
 
