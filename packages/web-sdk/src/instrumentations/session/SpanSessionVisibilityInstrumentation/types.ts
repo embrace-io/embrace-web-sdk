@@ -5,6 +5,5 @@ export type SpanSessionVisibilityInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
   'diag' | 'perf'
 > & {
-  backgroundSessions?: boolean;
   visibilityDoc?: VisibilityStateDocument;
 };

@@ -7,7 +7,6 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   public constructor({
     diag,
     perf,
-    backgroundSessions = false,
     visibilityDoc = window.document,
   }: SpanSessionVisibilityInstrumentationArgs = {}) {
     super({
@@ -26,12 +25,7 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
       try {
         this.sessionManager.endSessionSpanInternal('state_changed');
 
-        if (visibilityDoc.visibilityState === 'hidden' && backgroundSessions) {
-          this._diag.debug(
-            'Starting a session since document visibility switched to hidden and `backgroundSessions` is enabled',
-          );
-          this.sessionManager.startSessionSpan({ reason: 'hidden' });
-        } else if (visibilityDoc.visibilityState === 'visible') {
+        if (visibilityDoc.visibilityState === 'visible') {
           this._diag.debug(
             'Starting a session since document visibility switched to visible',
           );
