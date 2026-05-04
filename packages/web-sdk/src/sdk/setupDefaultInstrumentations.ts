@@ -1,11 +1,11 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import {
   ClicksInstrumentation,
   DocumentLoadInstrumentation,
   ElementTimingInstrumentation,
-  EmbraceFetchInstrumentation,
   EmbraceInstrumentationBase,
-  EmbraceXHRInstrumentation,
   EmptyRootInstrumentation,
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
@@ -87,7 +87,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
-      new EmbraceFetchInstrumentation({
+      new FetchInstrumentation({
         ...config['@opentelemetry/instrumentation-fetch'],
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
@@ -99,7 +99,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('@opentelemetry/instrumentation-xml-http-request')) {
     instrumentations.push(
-      new EmbraceXHRInstrumentation({
+      new XMLHttpRequestInstrumentation({
         ...config['@opentelemetry/instrumentation-xml-http-request'],
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),

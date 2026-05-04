@@ -1763,7 +1763,7 @@ describe('initSDK', () => {
               test.networkType === 'fetch'
                 ? '@opentelemetry/instrumentation-fetch'
                 : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.214.0',
+            version: '0.216.0',
           },
         );
         expect(exportedSpans).to.have.lengthOf(1);

@@ -16,10 +16,6 @@ export {
   type GlobalExceptionInstrumentationArgs,
 } from './exceptions/index.ts';
 export {
-  EmbraceFetchInstrumentation,
-  type EmbraceFetchInstrumentationArgs,
-} from './fetch/index.ts';
-export {
   LoafInstrumentation,
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';
@@ -44,7 +40,3 @@ export {
   WebVitalsInstrumentation,
   type WebVitalsInstrumentationArgs,
 } from './web-vitals/index.ts';
-export {
-  EmbraceXHRInstrumentation,
-  type EmbraceXHRInstrumentationArgs,
-} from './xhr/index.ts';

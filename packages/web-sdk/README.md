@@ -429,10 +429,9 @@ log.message('This is a log message', 'info');
 
 Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
 
-* Fetch and XHR instrumentations are registered globally, so by default the last SDK to register will override the
-  previous instance's configuration and only the last instance will be able to capture network requests. If you don't
-  want the last instance to be the one that captures network request you can set `omitIfAlreadyPatched` to true when
-  configuring the network instrumentations to allow a different instance to control the capturing.
+* Fetch and XHR instrumentations patch global functions (`globalThis.fetch` and `XMLHttpRequest.prototype`). When
+  multiple SDK instances run on the same page each one installs its own wrapper and every instance produces spans for
+  every network request.
 * Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that
   are not caught.
 
