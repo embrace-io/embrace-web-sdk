@@ -55,7 +55,7 @@ import {
   getWebSDKResource,
 } from '../resources/index.ts';
 import {
-  NamespacedStorage,
+  EmbraceStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
 } from '../utils/index.ts';
@@ -149,13 +149,17 @@ export const initSDK = (
       );
     }
 
-    const useNamespace = !registerGlobally && appID;
-    const sdkLocalStorage = useNamespace
-      ? new NamespacedStorage(appID, window.localStorage)
-      : window.localStorage;
-    const sdkSessionStorage = useNamespace
-      ? new NamespacedStorage(appID, window.sessionStorage)
-      : window.sessionStorage;
+    const namespace = !registerGlobally && appID ? appID : undefined;
+    const sdkLocalStorage = new EmbraceStorage(
+      window.localStorage,
+      diagLogger,
+      namespace,
+    );
+    const sdkSessionStorage = new EmbraceStorage(
+      window.sessionStorage,
+      diagLogger,
+      namespace,
+    );
 
     const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
       .merge(resource)
