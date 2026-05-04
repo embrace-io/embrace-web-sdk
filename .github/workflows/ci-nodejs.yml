@@ -245,7 +245,7 @@ jobs:
       - name: Install GitHub CLI and jq
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          apt-get install -y jq
+          apt-get update && apt-get install -y jq
           curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
 
       - name: Install npm dependencies
@@ -432,7 +432,7 @@ jobs:
       - name: Install GitHub CLI and jq
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          apt-get install -y jq
+          apt-get update && apt-get install -y jq
           curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
 
       - name: Install npm dependencies
