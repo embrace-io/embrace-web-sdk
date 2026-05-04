@@ -1,9 +1,7 @@
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as chai from 'chai';
-import {
-  EmbraceFetchInstrumentation,
-  EmbraceXHRInstrumentation,
-  SpanSessionVisibilityInstrumentation,
-} from '../instrumentations/index.ts';
+import { SpanSessionVisibilityInstrumentation } from '../instrumentations/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 
 const { expect } = chai;
@@ -14,13 +12,13 @@ const makeSetupArgs = () => ({});
 
 const getFetch = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(
-    (i) => i instanceof EmbraceFetchInstrumentation,
-  ) as EmbraceFetchInstrumentation;
+    (i) => i instanceof FetchInstrumentation,
+  ) as FetchInstrumentation;
 
 const getXHR = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(
-    (i) => i instanceof EmbraceXHRInstrumentation,
-  ) as EmbraceXHRInstrumentation;
+    (i) => i instanceof XMLHttpRequestInstrumentation,
+  ) as XMLHttpRequestInstrumentation;
 
 describe('setupDefaultInstrumentations', () => {
   it('wires the visibility instrumentation', () => {

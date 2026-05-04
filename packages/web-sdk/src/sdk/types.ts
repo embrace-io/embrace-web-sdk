@@ -5,6 +5,8 @@ import type {
   TextMapPropagator,
 } from '@opentelemetry/api';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
+import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
+import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type { Resource } from '@opentelemetry/resources';
 import type {
   BatchLogRecordProcessor,
@@ -22,8 +24,6 @@ import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
   ElementTimingInstrumentationArgs,
-  EmbraceFetchInstrumentationArgs,
-  EmbraceXHRInstrumentationArgs,
   EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
@@ -382,11 +382,11 @@ export interface DefaultInstrumentationConfig {
     config has enabled=false. Instead, use `omit` to specify which default instrumentations should be turned off.
    */
   '@opentelemetry/instrumentation-fetch'?: Omit<
-    EmbraceFetchInstrumentationArgs,
+    FetchInstrumentationConfig,
     'enabled'
   >;
   '@opentelemetry/instrumentation-xml-http-request'?: Omit<
-    EmbraceXHRInstrumentationArgs,
+    XMLHttpRequestInstrumentationConfig,
     'enabled'
   >;
 
