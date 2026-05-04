@@ -13,10 +13,11 @@ import {
   StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
+import type { UserSessionManager } from '../api-sessions/index.ts';
 import { session } from '../api-sessions/index.ts';
+import { ProxyUserSessionManager } from '../api-sessions/manager/ProxyUserSessionManager/index.ts';
 import { trace } from '../api-traces/index.ts';
 import { user } from '../api-users/index.ts';
 import type { AttributeScrubber } from '../common/index.ts';
@@ -31,9 +32,9 @@ import {
   EmbraceLogManager,
   EmbracePageManager,
   EmbraceSDKFeaturesManager,
-  EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import {
   BrowserLogRecordProcessor,
@@ -42,11 +43,14 @@ import {
   EmbraceNetworkSpanProcessor,
   EmbraceSessionBatchedSpanProcessor,
   IdentifiableSessionLogRecordProcessor,
+  IdentifiableSessionPartSpanProcessor,
   LogRecordScrubProcessor,
   PageLogRecordProcessor,
   PageSpanProcessor,
   SpanScrubProcessor,
   UserLogRecordProcessor,
+  UserSessionLogRecordProcessor,
+  UserSessionSpanProcessor,
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
@@ -58,6 +62,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
+  SafeStorage,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -102,6 +107,7 @@ export const initSDK = (
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
     useDocumentTitleAsPageLabel = true,
+    userSessionConfig,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -150,12 +156,21 @@ export const initSDK = (
     }
 
     const useNamespace = !registerGlobally && appID;
-    const sdkLocalStorage = useNamespace
-      ? new NamespacedStorage(appID, window.localStorage)
-      : window.localStorage;
-    const sdkSessionStorage = useNamespace
-      ? new NamespacedStorage(appID, window.sessionStorage)
-      : window.sessionStorage;
+    const storageDiag = diag.createComponentLogger({
+      namespace: 'embrace-storage',
+    });
+    const sdkLocalStorage = new SafeStorage(
+      useNamespace
+        ? new NamespacedStorage(appID, window.localStorage)
+        : window.localStorage,
+      storageDiag,
+    );
+    const sdkSessionStorage = new SafeStorage(
+      useNamespace
+        ? new NamespacedStorage(appID, window.sessionStorage)
+        : window.sessionStorage,
+      storageDiag,
+    );
 
     const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
       .merge(resource)
@@ -214,10 +229,11 @@ export const initSDK = (
       ...attributeScrubbers,
     ];
 
-    const spanSessionManager = setupSession({
+    const userSessionManager = setupSession({
       limitManager,
       registerGlobally,
       sdkLocalStorage,
+      userSessionConfig,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -230,7 +246,7 @@ export const initSDK = (
           userID: enduserPseudoID,
         }),
         limitManager,
-        spanSessionManager,
+        userSessionManager,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
@@ -249,8 +265,8 @@ export const initSDK = (
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
-      spanSessionManager,
       userManager,
+      userSessionManager,
       spanExporters,
       spanProcessors,
       propagator: nsfValid
@@ -263,14 +279,15 @@ export const initSDK = (
       pageManager,
     });
 
-    spanSessionManager.setTracerProvider(tracerProvider);
+    userSessionManager.setTracerProvider(tracerProvider);
+    userSessionManager.startSessionPart('init');
 
     const { loggerProvider, embraceLogManager } = setupLogs({
       resource: resourceWithWebSDKAttributes,
       userManager,
+      userSessionManager,
       logExporters,
       logProcessors,
-      spanSessionManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
@@ -278,8 +295,6 @@ export const initSDK = (
       sdkLocalStorage,
       pageManager,
     });
-
-    spanSessionManager.startSessionSpan({ reason: 'init' });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
@@ -291,7 +306,7 @@ export const initSDK = (
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
             logManager: embraceLogManager,
-            spanSessionManager,
+            userSessionManager,
             pageManager,
             limitManager,
           }),
@@ -312,6 +327,18 @@ export const initSDK = (
 
     diagLogger.info('successfully initialized the SDK');
 
+    // SDKControl.session is always a ProxyUserSessionManager so deprecated
+    // forwarders are exposed alongside the live methods. When
+    // registerGlobally is true the global `session` singleton is reused.
+    const sdkUserSessionAPI: UserSessionManager = (() => {
+      if (registerGlobally) {
+        return session;
+      }
+      const proxyManager = new ProxyUserSessionManager();
+      proxyManager.setUserSessionManager(userSessionManager);
+      return proxyManager;
+    })();
+
     const sdkControl: SDKControl = {
       setDynamicConfig: (config: Partial<DynamicSDKConfig>) => {
         dynamicConfigManager.setConfig(config);
@@ -322,7 +349,7 @@ export const initSDK = (
       },
       log: embraceLogManager,
       trace: embraceTraceManager,
-      session: spanSessionManager,
+      session: sdkUserSessionAPI,
       user: userManager,
       page: pageManager,
     };
@@ -331,7 +358,7 @@ export const initSDK = (
       registry.register(sdkControl);
     }
 
-    spanSessionManager.recordSDKStartupDuration(
+    userSessionManager.recordSDKStartupDuration(
       perf.getNowMillis() - initSDKStart,
     );
 
@@ -359,23 +386,25 @@ const setupSession = ({
   limitManager,
   registerGlobally,
   sdkLocalStorage,
+  userSessionConfig,
 }: SetupSessionArgs) => {
-  const embraceSpanSessionManager = new EmbraceSpanSessionManager({
+  const userSessionManager = new EmbraceUserSessionManager({
     limitManager,
     storage: sdkLocalStorage,
+    config: userSessionConfig,
   });
 
   if (registerGlobally) {
-    session.setGlobalSessionManager(embraceSpanSessionManager);
+    session.setGlobalUserSessionManager(userSessionManager);
   }
 
-  return embraceSpanSessionManager;
+  return userSessionManager;
 };
 
 const setupTraces = ({
   resource,
-  spanSessionManager,
   userManager,
+  userSessionManager,
   spanExporters,
   spanProcessors = [],
   propagator = null,
@@ -387,7 +416,8 @@ const setupTraces = ({
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(spanSessionManager),
+    new IdentifiableSessionPartSpanProcessor({ userSessionManager }),
+    new UserSessionSpanProcessor({ userSessionManager }),
     new BrowserSpanProcessor(),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
@@ -407,10 +437,10 @@ const setupTraces = ({
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
-      // Session properties are stored as attributes on the session span, add a
-      // buffer here so that there is room for our internal attributes
+      // Session properties are stored as attributes on the session part span,
+      // add a buffer here so that there is room for our internal attributes
       attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
-      // Breadcrumbs are stored as events on the session span, add a
+      // Breadcrumbs are stored as events on the session part span, add a
       // buffer here so that there is room for our internal events
       eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
     },
@@ -418,6 +448,7 @@ const setupTraces = ({
 
   const embraceTraceManager = new EmbraceTraceManager({
     tracerProvider: registerGlobally ? undefined : tracerProvider,
+    userSessionManager,
   });
 
   if (registerGlobally) {
@@ -438,9 +469,9 @@ const setupTraces = ({
 const setupLogs = ({
   resource,
   userManager,
+  userSessionManager,
   logExporters,
   logProcessors,
-  spanSessionManager,
   limitManager,
   attributeScrubbers,
   registerGlobally,
@@ -450,9 +481,8 @@ const setupLogs = ({
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor({
-      spanSessionManager,
-    }),
+    new IdentifiableSessionLogRecordProcessor({ userSessionManager }),
+    new UserSessionLogRecordProcessor({ userSessionManager }),
     new BrowserLogRecordProcessor(),
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
@@ -474,7 +504,7 @@ const setupLogs = ({
   });
 
   const embraceLogManager = new EmbraceLogManager({
-    spanSessionManager,
+    userSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
     storage: sdkLocalStorage,

@@ -95,4 +95,13 @@ describe('NamespacedStorage', () => {
       'app123_embrace_user_session_state',
     );
   });
+
+  it('should return all logical keys via keys() in a single pass', () => {
+    const storage = new NamespacedStorage('prefix', inMemoryStorage);
+    storage.setItem('key1', 'foo');
+    inMemoryStorage.setItem('unrelated', 'baz');
+    storage.setItem('key2', 'bar');
+
+    expect(storage.keys()).to.deep.equal(['key1', 'key2']);
+  });
 });

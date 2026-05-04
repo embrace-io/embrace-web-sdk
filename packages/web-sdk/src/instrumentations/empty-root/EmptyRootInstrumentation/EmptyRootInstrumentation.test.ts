@@ -4,12 +4,11 @@ import {
   InMemoryDiagLogger,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { EmptyRootInstrumentation } from './EmptyRootInstrumentation.ts';
 
@@ -19,7 +18,7 @@ describe('EmptyInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: EmptyRootInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManager;
+  let userSessionManager: EmbraceUserSessionManager;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -28,11 +27,11 @@ describe('EmptyInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionSpan();
+    session.setGlobalUserSessionManager(userSessionManager);
+    userSessionManager.startSessionPart();
   });
 
   afterEach(() => {
@@ -60,26 +59,26 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 1));
 
     // The instrumentation shouldn't immediately emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    let sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    let sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
     memoryExporter.reset();
 
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPart();
 
     await new Promise((r) => setTimeout(r, 20));
 
     // Should now emit if the node is still empty after the timeout
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
+    sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    const event = sessionSpan.events[0];
+    const event = sessionPartSpan.events[0];
     expect(event.name).to.be.equal('empty-root-node');
     expect(event.attributes).to.deep.equal({
       'emb.type': 'ux.empty_root_node',
@@ -108,11 +107,11 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
   });
 
   it('should not emit if the root node was populated after being emptied', async () => {
@@ -140,11 +139,11 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
   });
 
   it('should handle root node being removed after init', async () => {
@@ -168,11 +167,11 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
   });
 
   it('should handle supplied root node being null', async () => {
@@ -193,10 +192,10 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(0);
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.events).to.have.lengthOf(0);
   });
 });

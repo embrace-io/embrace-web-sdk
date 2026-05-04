@@ -1,4 +1,23 @@
-export class NamespacedStorage implements Storage {
+/**
+ * Marker interface for a `Storage` that prefixes keys with a per-instance
+ * namespace and exposes the prefixed (underlying) key for cross-tab
+ * `storage` event matching.
+ *
+ * Use the `isNamespacedStorageLike` helper below when accepting a `Storage`
+ * that may or may not be namespaced; do not use a structural cast.
+ */
+export interface NamespacedStorageLike {
+  getStorageEventKey(logicalKey: string): string;
+  keys(): string[];
+}
+
+export const isNamespacedStorageLike = (
+  storage: Storage,
+): storage is Storage & NamespacedStorageLike =>
+  typeof (storage as Partial<NamespacedStorageLike>).getStorageEventKey ===
+  'function';
+
+export class NamespacedStorage implements Storage, NamespacedStorageLike {
   private readonly _keyPrefix: string;
   private readonly _storage: Storage;
 
@@ -7,26 +26,37 @@ export class NamespacedStorage implements Storage {
     this._storage = storage;
   }
 
-  protected getNamespacedKeys(): string[] {
-    const keys = [];
+  private _getNamespacedKeys(): string[] {
+    const result: string[] = [];
     for (let i = 0; i < this._storage.length; i++) {
       const key = this._storage.key(i);
       if (key?.startsWith(this._keyPrefix)) {
-        keys.push(key.substring(this._keyPrefix.length));
+        result.push(key.substring(this._keyPrefix.length));
       }
     }
+    return result;
+  }
 
-    return keys;
+  public keys(): string[] {
+    return this._getNamespacedKeys();
   }
 
   public get length(): number {
-    return this.getNamespacedKeys().length;
+    return this._getNamespacedKeys().length;
   }
 
   public clear(): void {
-    this.getNamespacedKeys().forEach((key) => {
-      this._storage.removeItem(`${this._keyPrefix}${key}`);
-    });
+    // Snapshot before removal: removeItem shifts indices mid-iteration.
+    const toRemove: string[] = [];
+    for (let i = 0; i < this._storage.length; i++) {
+      const key = this._storage.key(i);
+      if (key?.startsWith(this._keyPrefix)) {
+        toRemove.push(key);
+      }
+    }
+    for (const key of toRemove) {
+      this._storage.removeItem(key);
+    }
   }
 
   public getItem(key: string): string | null {
@@ -34,7 +64,7 @@ export class NamespacedStorage implements Storage {
   }
 
   public key(index: number): string | null {
-    return this.getNamespacedKeys()[index] || null;
+    return this._getNamespacedKeys()[index] ?? null;
   }
 
   public removeItem(key: string): void {
@@ -45,13 +75,6 @@ export class NamespacedStorage implements Storage {
     this._storage.setItem(`${this._keyPrefix}${key}`, value);
   }
 
-  /**
-   * Returns the namespaced underlying-storage key for a logical key. Browser
-   * `storage` events fire with the underlying key, so callers that filter
-   * those events need to compare against this value rather than the logical
-   * key. Plain `Storage` instances do not expose this method; callers should
-   * fall back to the logical key in that case.
-   */
   public getStorageEventKey(logicalKey: string): string {
     return `${this._keyPrefix}${logicalKey}`;
   }

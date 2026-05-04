@@ -226,7 +226,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _listenersRegistered = false;
   private _isEnabled = false;
 
-  // instrumentation that adds an event to the session span for each web vital report
   public constructor({
     diag,
     perf,
@@ -277,9 +276,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           return;
         }
 
-        const currentSessionSpan = this.sessionManager.getSessionSpan();
+        const sessionPartSpan = this.userSessionManager.getSessionPartSpan();
 
-        if (!currentSessionSpan) {
+        if (!sessionPartSpan) {
           return;
         }
 
@@ -315,7 +314,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           attrs[KEY_APP_SURFACE_LABEL] = attributedPage.label;
         }
 
-        currentSessionSpan.addEvent(
+        sessionPartSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
           attrs,
           metricTime,

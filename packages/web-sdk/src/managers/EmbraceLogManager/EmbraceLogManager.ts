@@ -28,15 +28,16 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
+import type { PerformanceManager, SafeStorageLike } from '../../utils/index.ts';
 import {
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
   OTelPerformanceManager,
+  SafeStorage,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
+import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
@@ -51,19 +52,19 @@ export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
-  private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _userSessionManager: UserSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
-  private readonly _storage: Storage;
+  private readonly _storage: SafeStorageLike;
 
   public constructor({
     diag: diagParam,
     perf,
-    spanSessionManager,
+    userSessionManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
     visibilityDoc = window.document,
-    storage = window.localStorage,
+    storage,
   }: EmbraceLogManagerArgs) {
     const loggerProvider = globalLoggerProviderOverride ?? logs;
 
@@ -74,10 +75,10 @@ export class EmbraceLogManager implements LogManager {
       });
     this._perf = perf ?? new OTelPerformanceManager();
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
-    this._spanSessionManager = spanSessionManager;
+    this._userSessionManager = userSessionManager;
     this._limitManager = limitManager;
     this._visibilityDoc = visibilityDoc;
-    this._storage = storage;
+    this._storage = storage ?? new SafeStorage(window.localStorage, this._diag);
   }
 
   private _validateAttributes(attributes: unknown): Attributes {
@@ -113,7 +114,7 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (!handled) {
-      this._spanSessionManager.incrSessionCountForKey(
+      this._userSessionManager.incrSessionPartCountForKey(
         KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
       );
     }
@@ -194,7 +195,9 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (severity === 'error') {
-      this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
+      this._userSessionManager.incrSessionPartCountForKey(
+        KEY_EMB_ERROR_LOG_COUNT,
+      );
     }
 
     let stack = '';

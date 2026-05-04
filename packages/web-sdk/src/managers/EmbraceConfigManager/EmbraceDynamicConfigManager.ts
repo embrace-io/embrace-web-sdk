@@ -4,6 +4,8 @@ import type {
   DynamicConfigManager,
   DynamicSDKConfig,
 } from '../../sdk/index.ts';
+import type { SafeStorageLike } from '../../utils/index.ts';
+import { SafeStorage } from '../../utils/index.ts';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
@@ -32,7 +34,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   // Set to null if appID is not provided, in that case only rely on local config
   private readonly _remoteConfigURL: string | null = null;
   private readonly _diag: DiagLogger;
-  private readonly _storage: Storage;
+  private readonly _storage: SafeStorageLike;
   private readonly _baseConfig: DynamicSDKConfig;
 
   private _sdkConfig: DynamicSDKConfig;
@@ -45,7 +47,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'embrace-config-manager',
     }),
-    storage = window.localStorage,
+    storage,
     // Allow users to provide a default config
     defaultConfig = {},
     embraceConfigURL,
@@ -64,7 +66,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     }
 
     this._diag = diagParam;
-    this._storage = storage;
+    this._storage = storage ?? new SafeStorage(window.localStorage, this._diag);
 
     const storedRemoteConfig = this._getRemoteConfigFromStorage();
 
@@ -116,7 +118,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
       }
 
       const [remoteConfig, etag] = remoteConfigResponse;
-      this._storage.setItem(
+      this._storage.write(
         LOCAL_STORAGE_REMOTE_CONFIG_KEY,
         JSON.stringify({
           config: remoteConfig,
@@ -137,21 +139,16 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   }
 
   private _getRemoteConfigFromStorage(): StoredRemoteConfig | null {
-    try {
-      const configString = this._storage.getItem(
-        LOCAL_STORAGE_REMOTE_CONFIG_KEY,
-      );
-
-      if (configString) {
-        return JSON.parse(configString) as StoredRemoteConfig;
-      }
-
+    const configString = this._storage.read(LOCAL_STORAGE_REMOTE_CONFIG_KEY);
+    if (!configString) {
       return null;
+    }
+    try {
+      return JSON.parse(configString) as StoredRemoteConfig;
     } catch (error) {
       this._diag.warn(
         `Failed to parse remote config from storage: ${error instanceof Error ? error.message : String(error)}`,
       );
-
       return null;
     }
   }

@@ -1,29 +1,20 @@
 import type { DiagLogger } from '@opentelemetry/api';
+import type { SafeStorageLike } from '../utils/index.ts';
 import { generateUUID } from '../utils/index.ts';
 import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.ts';
 
 export const getAppInstanceId = (
-  pageSessionStorage: Storage,
+  pageSessionStorage: SafeStorageLike,
   diag: DiagLogger,
 ): string => {
-  let id = null;
-  try {
-    id = pageSessionStorage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY);
-  } catch (e) {
-    diag.warn('Failed to retrieve app instance ID from session storage', e);
+  const existing = pageSessionStorage.read(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY);
+  if (existing) {
+    return existing;
   }
-
-  if (!id) {
-    diag.debug(
-      'No existing app instance ID found in session storage, creating a new one',
-    );
-    id = generateUUID();
-    try {
-      pageSessionStorage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, id);
-    } catch (e) {
-      diag.warn('Failed to persist app instance ID to session storage', e);
-    }
-  }
-
+  diag.debug(
+    'No existing app instance ID found in session storage, creating a new one',
+  );
+  const id = generateUUID();
+  pageSessionStorage.write(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, id);
   return id;
 };

@@ -3,11 +3,13 @@ import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
+  InMemoryDiagLogger,
   InMemoryStorage,
   setupTestLogExporter,
 } from '../../../tests/utils/index.ts';
 import type { UserManager } from '../../api-users/index.ts';
 import { EmbraceUserManager } from '../../managers/index.ts';
+import { SafeStorage } from '../../utils/SafeStorage/SafeStorage.ts';
 import { UserLogRecordProcessor } from './UserLogRecordProcessor.ts';
 
 const { expect } = chai;
@@ -19,7 +21,7 @@ describe('UserLogRecordProcessor', () => {
 
   before(() => {
     userManager = new EmbraceUserManager({
-      storage: new InMemoryStorage(),
+      storage: new SafeStorage(new InMemoryStorage(), new InMemoryDiagLogger()),
     });
     memoryExporter = setupTestLogExporter([
       new UserLogRecordProcessor({

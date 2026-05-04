@@ -7,7 +7,11 @@ export { getIncrementedCount } from './getIncrementedCount.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';
 export { isDeviceIdEnabled } from './isDeviceIdEnabled.ts';
-export { NamespacedStorage } from './NamespacedStorage/index.ts';
+export type { NamespacedStorageLike } from './NamespacedStorage/index.ts';
+export {
+  isNamespacedStorageLike,
+  NamespacedStorage,
+} from './NamespacedStorage/index.ts';
 export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
   OTelPerformanceManager,
@@ -17,5 +21,7 @@ export {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from './performanceObserver/index.ts';
+export type { SafeStorageLike } from './SafeStorage/index.ts';
+export { SafeStorage } from './SafeStorage/index.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';

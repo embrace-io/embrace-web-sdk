@@ -4,12 +4,6 @@
       "resource": {
         "attributes": [
           {
-            "key": "service.name",
-            "value": {
-              "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
@@ -30,13 +24,13 @@
           {
             "key": "sdk_version",
             "value": {
-              "stringValue": "2.20.0"
+              "stringValue": "2.21.0-beta.3671f4df"
             }
           },
           {
             "key": "telemetry.sdk.version",
             "value": {
-              "stringValue": "2.20.0"
+              "stringValue": "2.21.0-beta.3671f4df"
             }
           },
           {
@@ -60,7 +54,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "433875C7630907ACE86E3CAB875B890B"
+              "stringValue": "4A0AFA5237E144E240315493F2B11591"
             }
           },
           {
@@ -74,6 +68,12 @@
             "value": {
               "stringValue": "1280x720"
             }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
           }
         ],
         "droppedAttributesCount": 0
@@ -85,8 +85,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1775548372731000000",
-              "observedTimeUnixNano": "1775548372731000000",
+              "timeUnixNano": "1777329411382000000",
+              "observedTimeUnixNano": "1777329411383000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -102,13 +102,13 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "message@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:79323\nmessage@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:38001\nH1</Ps/get/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:37542\nH1</z1/a/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:219639\nZt/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:1:967\nZt@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:1:787\na@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:219613\nF_@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:127511\nH1</oE/Ko/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:132565\ned@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:15162\nKo@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:128746\nlc@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:28581\nYb@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:28401\nEventListener.handleEvent*Z_@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:128307\nXo@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:127707\nH1</oE/Qo/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:127873\nQo@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:127818\nH1</oE/Ls.createRoot@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:36448\nH1<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:220224\ntE/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:1:681\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:220278\n"
+                    "stringValue": "message@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:92153\nmessage@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:38002\nh1</Fs/get/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:37543\nh1</f1/i/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:230774\nJt/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:1:966\nJt@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:1:786\ni@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:230748\neg@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:127516\nh1</hy/ec/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:132570\nud@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:15162\nec@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:128751\ngc@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:28582\nkb@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:28402\nEventListener.handleEvent*ng@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:128312\nWo@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:127712\nh1</hy/tc/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:127878\ntc@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:8:127823\nh1</hy/zs.createRoot@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:36449\nh1<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:231359\nay/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:1:680\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:9:231413\n"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:11:33\\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:11:126\\n\":\"3d9bf9584dd68a94fe0fe5b0deec00f5\"}"
+                    "stringValue": "{\"@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:11:33\\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-taG6uN-c.js:11:126\\n\":\"1402184c535f0801acc4789359b31099\"}"
                   }
                 },
                 {
@@ -120,18 +120,38 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "982254D8A3A41F58B90BF3A38EEB4D20"
+                    "stringValue": "F41DD03FA9A714B445BC19AC85FDFF70"
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "B7E33B0D4181A5E36BD3D8A77AA70F0C"
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "8E217070C8C0144694D04010495174C3"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "3E6B586C27F1E1B0E4C74B00404AA75A"
+                    "stringValue": "8E217070C8C0144694D04010495174C3"
                   }
                 },
                 {
                   "key": "session.previous_id",
-                  "value": {}
+                  "value": {
+                    "stringValue": ""
+                  }
                 },
                 {
                   "key": "browser.url.full",

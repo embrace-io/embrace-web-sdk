@@ -13,7 +13,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { LoafInstrumentation } from './LoafInstrumentation.ts';
 
@@ -86,7 +86,7 @@ describe('LoafInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let clock: sinon.SinonFakeTimers;
   let perf: MockPerformanceManager;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let userSessionManager: EmbraceUserSessionManager;
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
@@ -99,10 +99,12 @@ describe('LoafInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    userSessionManager = new EmbraceUserSessionManager({
+      limitManager,
+    });
+    userSessionManager.startSessionPart();
     const logManager = new EmbraceLogManager({
-      spanSessionManager,
+      userSessionManager,
       limitManager,
     });
     log.setGlobalLogManager(logManager);
@@ -126,7 +128,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     expect(observeOptions).to.deep.equal({
       type: 'long-animation-frame',
@@ -140,7 +142,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({
@@ -157,7 +159,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const logs = memoryExporter.getFinishedLogRecords();
     const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -184,7 +186,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     // renderStart present: work = renderStart - startTime = 150 - 100 = 50
     // renderStart = 0 (falsy): work = duration = 80
@@ -193,7 +195,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, renderStart: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -207,7 +209,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     // styleAndLayoutStart present: startTime + duration - styleAndLayoutStart = 100 + 100 - 180 = 20
     // styleAndLayoutStart = 0: contributes 0
@@ -216,7 +218,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, styleAndLayoutStart: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -232,7 +234,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 100, firstUIEventTimestamp: 0 }),
@@ -240,7 +242,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -255,7 +257,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 100, firstUIEventTimestamp: 0 }),
@@ -263,7 +265,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 12345 }), // interaction-driven
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -278,9 +280,9 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const logs = memoryExporter.getFinishedLogRecords();
     const reports = logs.filter((l) => l.eventName === 'emb-loaf-report');
@@ -301,7 +303,7 @@ describe('LoafInstrumentation', () => {
       perf,
       diag: diagLogger,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     expect(diagLogger.getDebugLogs().length).to.be.greaterThan(0);
     expect(observerCallback).to.be.null;
@@ -313,15 +315,15 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     instrumentation.disable();
 
     triggerEntries([makeEntry()]);
 
     // Re-create a session to trigger end
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    userSessionManager.startSessionPart();
+    userSessionManager.endSessionPart();
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -333,7 +335,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     instrumentation.disable();
     expect(observerDisconnected).to.be.true;
@@ -343,10 +345,10 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -363,14 +365,14 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
       makeEntry({ blockingDuration: 200 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -385,14 +387,14 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
       makeEntry({ blockingDuration: 201 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -409,14 +411,14 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
       makeEntry({ blockingDuration: 600 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -433,14 +435,14 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
       makeEntry({ blockingDuration: 601 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -455,13 +457,13 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     // enable() was already called in constructor; call again
     instrumentation.enable();
 
     triggerEntries([makeEntry({ duration: 60 })]);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -471,29 +473,29 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should re-register session end listener when setSessionManager is called', () => {
+  it('should re-register session end listener when setUserSessionManager is called', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 60 })]);
 
     // Create a second session manager and switch to it
     const limitManager2 = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager2 = new EmbraceSpanSessionManager({
+    const userSessionManager2 = new EmbraceUserSessionManager({
       limitManager: limitManager2,
     });
-    spanSessionManager2.startSessionSpan();
+    userSessionManager2.startSessionPart();
     const logManager2 = new EmbraceLogManager({
-      spanSessionManager: spanSessionManager2,
+      userSessionManager: userSessionManager2,
       limitManager: limitManager2,
     });
     log.setGlobalLogManager(logManager2);
-    instrumentation.setSessionManager(spanSessionManager2);
+    instrumentation.setUserSessionManager(userSessionManager2);
 
     triggerEntries([makeEntry({ duration: 90 })]);
-    spanSessionManager2.endSessionSpan();
+    userSessionManager2.endSessionPart();
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -508,7 +510,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
@@ -522,10 +524,10 @@ describe('LoafInstrumentation', () => {
 
   it('should generate a unique web vital id per session', () => {
     const instrumentation = new LoafInstrumentation({ perf });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -534,10 +536,10 @@ describe('LoafInstrumentation', () => {
     expect(firstId).to.be.a('string').and.to.have.length.greaterThan(0);
 
     memoryExporter.reset();
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPart();
 
     triggerEntries([makeEntry({ duration: 80 })]);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -553,11 +555,11 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -570,11 +572,11 @@ describe('LoafInstrumentation', () => {
 
     memoryExporter.reset();
 
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPart();
 
     triggerEntries([makeEntry({ duration: 60 }), makeEntry({ duration: 40 })]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -595,7 +597,7 @@ describe('LoafInstrumentation', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     // styleAndLayoutStart > startTime + duration would produce negative value
     triggerEntries([
@@ -606,7 +608,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -624,7 +626,7 @@ describe('LoafInstrumentation', () => {
       perf,
       diag: diagLogger,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     // Trigger an entry that will cause an error by passing a broken object
     triggerEntries([
@@ -646,7 +648,7 @@ describe('LoafInstrumentation', () => {
       perf,
       diag: diagLogger,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry()]);
 
@@ -656,7 +658,7 @@ describe('LoafInstrumentation', () => {
       throw new Error('emit failed');
     };
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
 
@@ -679,7 +681,7 @@ describe('LoafInstrumentation', () => {
       perf,
       diag: diagLogger,
     });
-    instrumentation.setSessionManager(spanSessionManager);
+    instrumentation.setUserSessionManager(userSessionManager);
 
     expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
 
@@ -690,7 +692,7 @@ describe('LoafInstrumentation', () => {
   describe('script summary', () => {
     it('should emit script summary log with correct aggregated data', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([
         makeEntry({
@@ -709,7 +711,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const logs = memoryExporter.getFinishedLogRecords();
       const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
@@ -734,7 +736,7 @@ describe('LoafInstrumentation', () => {
 
     it('should group scripts by sourceURL across multiple LoAF entries', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([
         makeEntry({
@@ -757,7 +759,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -774,7 +776,7 @@ describe('LoafInstrumentation', () => {
 
     it('should limit script entries to 250', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       // 251 scripts with unique URLs and incrementing durations (script 0 has lowest duration)
       const scripts = Array.from({ length: 251 }, (_, i) =>
@@ -786,7 +788,7 @@ describe('LoafInstrumentation', () => {
       ) as unknown as PerformanceLongAnimationFrameTiming['scripts'];
 
       triggerEntries([makeEntry({ scripts })]);
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -801,11 +803,11 @@ describe('LoafInstrumentation', () => {
 
     it('should not emit script summary log when no scripts present', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([makeEntry({ scripts: [] })]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summaries = memoryExporter
         .getFinishedLogRecords()
@@ -817,7 +819,7 @@ describe('LoafInstrumentation', () => {
 
     it('should reset script summaries between sessions', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([
         makeEntry({
@@ -831,10 +833,10 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
       memoryExporter.reset();
 
-      spanSessionManager.startSessionSpan();
+      userSessionManager.startSessionPart();
 
       triggerEntries([
         makeEntry({
@@ -848,7 +850,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -865,7 +867,7 @@ describe('LoafInstrumentation', () => {
 
     it('should group scripts with empty sourceURL under (inline)', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([
         makeEntry({
@@ -884,7 +886,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -901,7 +903,7 @@ describe('LoafInstrumentation', () => {
 
     it('should round float durations to integers in script summary', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       triggerEntries([
         makeEntry({ duration: 80 }),
@@ -918,7 +920,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const logs = memoryExporter.getFinishedLogRecords();
       const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -938,7 +940,7 @@ describe('LoafInstrumentation', () => {
 
     it('should truncate script URLs longer than 2048 characters with ellipsis', () => {
       const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setSessionManager(spanSessionManager);
+      instrumentation.setUserSessionManager(userSessionManager);
 
       const longURL = `https://example.com/${'a'.repeat(2100)}`;
       const truncatedURL = `https://example.com/${'a'.repeat(2028)}...`;
@@ -955,7 +957,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
       const summary = memoryExporter
         .getFinishedLogRecords()

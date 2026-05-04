@@ -71,6 +71,7 @@ transport/      HTTP transport with retry logic
 - **Classes**: PascalCase with `Embrace` prefix for implementations
 - **Static-only classes**: Used for API singletons (OTel convention)
 - **Attributes**: `emb.` prefix for Embrace-specific
+- **Session terms**: never use bare `Session`/`session` in identifiers (vars, params, fields, methods, classes, types, attribute keys). Always qualify as `UserSession`/`userSession` (top-level, cross-tab, max-duration-bounded) or `SessionPart`/`sessionPart` (foreground-only intervals within a user session). Examples: `oldUserSessionId`, `endSessionPart()`, `UserSessionManager`. Exception: the OTel-standard `session.id` / `session.previous_id` attribute keys come from `@opentelemetry/semantic-conventions` and cannot be renamed.
 
 ### File Organization
 

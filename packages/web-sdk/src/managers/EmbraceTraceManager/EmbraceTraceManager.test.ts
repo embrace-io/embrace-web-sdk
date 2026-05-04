@@ -9,6 +9,7 @@ import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
 import { EmbraceTraceManager } from './EmbraceTraceManager.ts';
 
@@ -212,5 +213,65 @@ describe('EmbraceTraceManager', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
+  });
+
+  it('should default the parent to the active session-part span when one exists', () => {
+    const partSpan = manager.startSpan('emb-session');
+    const userSessionManager = {
+      getSessionPartSpan: () => partSpan,
+    } as UserSessionManagerInternal;
+
+    const managerWithSession = new EmbraceTraceManager({ userSessionManager });
+
+    const childSpan = managerWithSession.startSpan('demo-span');
+    childSpan.end();
+    partSpan.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finishedChild = finishedSpans.find((s) => s.name === 'demo-span');
+    const finishedPart = finishedSpans.find((s) => s.name === 'emb-session');
+    void expect(finishedChild).to.not.be.undefined;
+    void expect(finishedPart).to.not.be.undefined;
+    expect(finishedChild?.parentSpanContext?.spanId).to.equal(
+      finishedPart?.spanContext().spanId,
+    );
+  });
+
+  it('should not parent to the part span when an explicit parentSpan is provided', () => {
+    const partSpan = manager.startSpan('emb-session');
+    const explicitParent = manager.startSpan('explicit-parent');
+    const userSessionManager = {
+      getSessionPartSpan: () => partSpan,
+    } as UserSessionManagerInternal;
+
+    const managerWithSession = new EmbraceTraceManager({ userSessionManager });
+
+    const childSpan = managerWithSession.startSpan('demo-span', {
+      parentSpan: explicitParent,
+    });
+    childSpan.end();
+    explicitParent.end();
+    partSpan.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finishedChild = finishedSpans.find((s) => s.name === 'demo-span');
+    expect(finishedChild?.parentSpanContext?.spanId).to.equal(
+      explicitParent.spanContext().spanId,
+    );
+  });
+
+  it('should leave the span un-parented when no part span is active', () => {
+    const userSessionManager = {
+      getSessionPartSpan: () => null,
+    } as UserSessionManagerInternal;
+
+    const managerWithSession = new EmbraceTraceManager({ userSessionManager });
+
+    const span = managerWithSession.startSpan('demo-span');
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finished = finishedSpans.find((s) => s.name === 'demo-span');
+    void expect(finished?.parentSpanContext?.spanId).to.be.undefined;
   });
 });

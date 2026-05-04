@@ -11,13 +11,13 @@ import {
 } from '../../../tests/utils/index.ts';
 import {
   mockNetworkRequestSpan,
-  mockSessionSpan,
+  mockSessionPartSpan,
   mockSpan,
 } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../managers/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
 
@@ -48,9 +48,11 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let userSessionManager: EmbraceUserSessionManager;
 
   beforeEach(() => {
+    // Clear localStorage to ensure clean test state
+    localStorage.clear();
     clock = sinon.useFakeTimers(1756138004000);
     memoryExporter = setupTestTraceExporter();
 
@@ -65,14 +67,14 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       },
     });
 
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager,
     });
 
     processor = new EmbraceSessionBatchedSpanProcessor({
       exporter: memoryExporter,
       limitManager,
-      spanSessionManager,
+      userSessionManager,
     });
   });
 
@@ -82,45 +84,51 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     trace.disable();
   });
 
-  it('should not export non-session spans immediately', () => {
+  it('should not export non-session-part spans immediately', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
 
-  it('should export session span immediately', () => {
-    processor.onEnd(mockSessionSpan);
+  it('should export session part span immediately', () => {
+    processor.onEnd(mockSessionPartSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
+    const sessionPartSpan = finishedSpans[0];
+    expect(sessionPartSpan.attributes).to.have.property(
+      'emb.type',
+      'ux.session_part',
+    );
   });
 
-  it('should batch non-session spans with session span', () => {
+  it('should batch non-session-part spans with session part span', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const sessionSpan = finishedSpans[0];
-    const nonSessionSpan = finishedSpans[1];
-    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
-    expect(nonSessionSpan).to.have.property('name', 'mock span');
+    const sessionPartSpan = finishedSpans[0];
+    const nonSessionPartSpan = finishedSpans[1];
+    expect(sessionPartSpan.attributes).to.have.property(
+      'emb.type',
+      'ux.session_part',
+    );
+    expect(nonSessionPartSpan).to.have.property('name', 'mock span');
   });
 
   it('should not export spans after shutdown', async () => {
     await processor.shutdown();
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
 
   it('should clear the pending spans after exporting', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
     memoryExporter.reset();
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
 
@@ -149,7 +157,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
   exportFailedTests.forEach((test) => {
     it(test.name, async () => {
-      spanSessionManager.startSessionSpan();
+      userSessionManager.startSessionPart();
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
@@ -157,34 +165,34 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         ),
         diag: diagLogger,
         limitManager,
-        spanSessionManager,
+        userSessionManager,
       });
 
-      processor.onEnd(mockSessionSpan);
+      processor.onEnd(mockSessionPartSpan);
 
       await Promise.resolve();
 
-      spanSessionManager.endSessionSpan();
+      userSessionManager.endSessionPart();
 
-      spanSessionManager.startSessionSpan();
-      spanSessionManager.endSessionSpan();
+      userSessionManager.startSessionPart();
+      userSessionManager.endSessionPart();
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      const sessionSpan = finishedSpans[0];
-      expect(sessionSpan.attributes).to.have.property(
+      const sessionPartSpan = finishedSpans[0];
+      expect(sessionPartSpan.attributes).to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`,
         1,
       );
-      expect(sessionSpan.attributes).not.to.have.property(
+      expect(sessionPartSpan.attributes).not.to.have.property(
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
       );
 
-      const nextSessionSpan = finishedSpans[1];
-      expect(nextSessionSpan.attributes).not.to.have.property(
+      const nextSessionPartSpan = finishedSpans[1];
+      expect(nextSessionPartSpan.attributes).not.to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`,
       );
-      expect(nextSessionSpan.attributes).to.have.property(
+      expect(nextSessionPartSpan.attributes).to.have.property(
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
         1,
       );
@@ -200,7 +208,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     for (let i = 0; i < 10; i++) {
       processor.onEnd(mockSpan);
     }
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(3);
 
@@ -220,7 +228,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     limitManager.reset();
     memoryExporter.reset();
     processor.onEnd(mockSpan);
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const nextFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextFinishedSpans).to.have.lengthOf(2);
   });
@@ -229,7 +237,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     for (let i = 0; i < 10; i++) {
       processor.onEnd(mockNetworkRequestSpan);
     }
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(4);
 
@@ -249,7 +257,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     limitManager.reset();
     memoryExporter.reset();
     processor.onEnd(mockNetworkRequestSpan);
-    processor.onEnd(mockSessionSpan);
+    processor.onEnd(mockSessionPartSpan);
     const nextFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextFinishedSpans).to.have.lengthOf(2);
   });

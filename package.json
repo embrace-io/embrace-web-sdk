@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "_version:beta": "node -e \"const fs=require('fs'),cp=require('child_process'),sha=cp.execFileSync('git',['rev-parse','--short','HEAD']).toString().trim(),pkgPath='packages/web-sdk/package.json',p=JSON.parse(fs.readFileSync(pkgPath,'utf8'));p.version=p.version.replace(/-beta\\..*$/,'')+'-beta.'+sha;fs.writeFileSync(pkgPath,JSON.stringify(p,null,2)+'\\n');console.log('version:',p.version);\" && node scripts/validate-versions.js --fix && npm i",
     "prepare": "npx -y lefthook install -f",
     "clean": "npx -y rimraf -g \"**/.turbo\" \"**/.next\" \"**/dist\" \"**/node_modules\"",
     "build": "turbo run build",

@@ -7,12 +7,11 @@ import {
   fakeFetchRestore,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { EmbraceFetchInstrumentation } from './EmbraceFetchInstrumentation.ts';
 
@@ -21,7 +20,7 @@ const { expect } = chai;
 
 describe('EmbraceFetchInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManager;
+  let userSessionManager: EmbraceUserSessionManager;
   let clock: sinon.SinonFakeTimers;
 
   before(() => {
@@ -32,10 +31,10 @@ describe('EmbraceFetchInstrumentation', () => {
     fakeFetchInstall();
     clock = sinon.useFakeTimers();
     memoryExporter.reset();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalUserSessionManager(userSessionManager);
   });
 
   afterEach(() => {
@@ -50,7 +49,7 @@ describe('EmbraceFetchInstrumentation', () => {
     // Advance the clock since the fetch instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-fetch/src/fetch.ts#L61
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -85,7 +84,7 @@ describe('EmbraceFetchInstrumentation', () => {
     // Advance the clock since the fetch instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-fetch/src/fetch.ts#L61
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -125,7 +124,7 @@ describe('EmbraceFetchInstrumentation', () => {
     // Advance the clock since the fetch instrumentation has this additional wait:
     // https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.203.0/experimental/packages/opentelemetry-instrumentation-fetch/src/fetch.ts#L61
     clock.tick(1000);
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPart();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);

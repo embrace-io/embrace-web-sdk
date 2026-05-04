@@ -11,7 +11,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { ServerTimingInstrumentation } from './ServerTimingInstrumentation.ts';
 
@@ -50,15 +50,15 @@ describe('ServerTimingInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    const userSessionManager = new EmbraceUserSessionManager({ limitManager });
+    userSessionManager.startSessionPart();
     const logManager = new EmbraceLogManager({
-      spanSessionManager,
+      userSessionManager,
       limitManager,
     });
     log.setGlobalLogManager(logManager);
 
-    // Install a standalone stub directly via Object.defineProperty — avoids sinon.stub(object, method)
+    // Install a standalone stub directly via Object.defineProperty; avoids sinon.stub(object, method)
     // which calls object.hasOwnProperty(), unavailable on host objects in some Chromium builds.
     getEntriesByTypeStub = sinon.stub();
     Object.defineProperty(window.performance, 'getEntriesByType', {

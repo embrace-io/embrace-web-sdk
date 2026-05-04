@@ -8,47 +8,44 @@ const ASYNC_MODE = import.meta.env.VITE_ASYNC_MODE === 'true';
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 const getLazyLogger = () => logs.getLogger('embrace-web-sdk-demo-lazy-logger');
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
-let sessionProvider = ASYNC_MODE
+let userSessionManager = ASYNC_MODE
   ? null
-  : // @ts-ignore
-    window.EmbraceWebSdk.session.getSpanSessionManager();
+  : // @ts-expect-error
+    window.EmbraceWebSdk.session.getUserSessionManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
-  const [currentSession, setCurrentSession] = useState<string | null>(null);
-  const [sessionRefresher, setSessionRefresher] = useState<
-    number | undefined
-  >();
+  const [userSessionId, setUserSessionId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(!ASYNC_MODE);
 
   useEffect(() => {
     if (!initialized) {
       // @ts-expect-error
       window.EmbraceWebSdkOnReady.onReady(() => {
-        // @ts-expect-error
-        sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
+        userSessionManager =
+          // @ts-expect-error
+          window.EmbraceWebSdk.session.getUserSessionManager();
         setInitialized(true);
       });
     }
   }, [initialized]);
 
   useEffect(() => {
-    setSessionRefresher(
-      window.setInterval(() => {
-        if (sessionProvider) {
-          setCurrentSession(sessionProvider.getSessionId());
-        }
-      }, 1000),
-    );
-    return () => window.clearInterval(sessionRefresher);
-  }, [sessionRefresher]);
+    const intervalId = window.setInterval(() => {
+      if (userSessionManager) {
+        // @ts-expect-error
+        setUserSessionId(window.EmbraceWebSdk.session.getUserSessionId());
+      }
+    }, 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
 
-  const handleStartSessionSpan = () => {
-    sessionProvider.startSessionSpan();
+  const handleStartSessionPart = () => {
+    userSessionManager.startSessionPart();
   };
 
-  const handleEndSessionSpan = () => {
-    sessionProvider.endSessionSpan();
+  const handleEndSessionPart = () => {
+    userSessionManager.endSessionPart();
   };
 
   const handleStartSpan = () => {
@@ -87,9 +84,9 @@ const App = () => {
   }, [counter]);
 
   const handleRecordException = () => {
-    const sessionSpan = sessionProvider.getSessionSpan();
-    if (sessionSpan) {
-      sessionSpan.recordException({
+    const sessionPartSpan = userSessionManager.getSessionPartSpan();
+    if (sessionPartSpan) {
+      sessionPartSpan.recordException({
         name: 'Error',
         message: 'This is an error',
         stack: 'Error: This is an error',
@@ -174,70 +171,70 @@ const App = () => {
     return null;
   }
 
-  const isSessionSpanStarted = sessionProvider.getSessionSpan() !== null;
+  const isSessionPartStarted = userSessionManager.getSessionPartSpan() !== null;
 
   return (
     <div className={styles.container}>
       Demo
-      <div>current session: {currentSession}</div>
+      <div>user session ID: {userSessionId}</div>
       <div className={styles.actions}>
         <button
           type="button"
-          onClick={handleStartSessionSpan}
-          disabled={isSessionSpanStarted}
+          onClick={handleStartSessionPart}
+          disabled={isSessionPartStarted}
         >
-          Start Session span
+          Start Session Part
         </button>
         <button
           type="button"
-          onClick={handleStartSessionSpan}
-          disabled={!isSessionSpanStarted}
+          onClick={handleStartSessionPart}
+          disabled={!isSessionPartStarted}
         >
-          Override Session span
+          Override Session Part
         </button>
-        <button type="button" onClick={handleEndSessionSpan}>
-          End Session Span
+        <button type="button" onClick={handleEndSessionPart}>
+          End Session Part
         </button>
       </div>
       <button
         type="button"
         onClick={handleStartSpan}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Start Span
       </button>
       <button
         type="button"
         onClick={handleSendLog}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Send Log
       </button>
       <button
         type="button"
         onClick={handleSendErrorLog}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Send Error Log
       </button>
       <button
         type="button"
         onClick={handleRecordException}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Record Exception
       </button>
       <button
         type="button"
         onClick={handleThrowError}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Throw Error
       </button>
       <button
         type="button"
         onClick={handleRejectPromise}
-        disabled={sessionProvider.getSessionSpan() === null}
+        disabled={userSessionManager.getSessionPartSpan() === null}
       >
         Reject Promise
       </button>

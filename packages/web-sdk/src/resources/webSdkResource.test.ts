@@ -10,6 +10,7 @@ import {
   getWebSDKResource,
   SDK_VERSION,
 } from '../resources/index.ts';
+import { SafeStorage } from '../utils/index.ts';
 import {
   EMBRACE_APP_INSTANCE_ID_STORAGE_KEY,
   EMBRACE_SERVICE_NAME,
@@ -20,12 +21,14 @@ const { expect } = chai;
 const VALID_UUID = 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH';
 
 describe('webSdkResource', () => {
-  let storage: InMemoryStorage;
+  let inMemoryStorage: InMemoryStorage;
+  let storage: SafeStorage;
   let diagLogger: InMemoryDiagLogger;
 
   beforeEach(() => {
-    storage = new InMemoryStorage();
+    inMemoryStorage = new InMemoryStorage();
     diagLogger = new InMemoryDiagLogger();
+    storage = new SafeStorage(inMemoryStorage, diagLogger);
   });
 
   describe('getWebSDKResource', () => {
@@ -63,7 +66,7 @@ describe('webSdkResource', () => {
     });
 
     it('should restore an app instance id if there is one in storage', () => {
-      storage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, VALID_UUID);
+      inMemoryStorage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, VALID_UUID);
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
@@ -84,42 +87,28 @@ describe('webSdkResource', () => {
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
       void expect(appInstanceId).to.have.lengthOf(32);
-      expect(storage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY)).to.equal(
-        appInstanceId,
-      );
-    });
-
-    it('should handle being setup with a non-functional storage', () => {
-      const resource = getWebSDKResource({
-        diagLogger,
-        appVersion: '1.0.0',
-        // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
-        pageSessionStorage: null,
-      });
-
-      const appInstanceId = resource.attributes['emb.app_instance_id'];
-      void expect(appInstanceId).to.have.lengthOf(32);
-
-      expect(diagLogger.getWarnLogs()).to.deep.equal([
-        'Failed to retrieve app instance ID from session storage',
-        'Failed to persist app instance ID to session storage',
-      ]);
+      expect(
+        inMemoryStorage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY),
+      ).to.equal(appInstanceId);
     });
 
     it('should handle its storage throwing errors', () => {
+      const failingStorage = new SafeStorage(new FailingStorage(), diagLogger);
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
-        pageSessionStorage: new FailingStorage(),
+        pageSessionStorage: failingStorage,
       });
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
       void expect(appInstanceId).to.have.lengthOf(32);
 
-      expect(diagLogger.getWarnLogs()).to.deep.equal([
-        'Failed to retrieve app instance ID from session storage',
-        'Failed to persist app instance ID to session storage',
-      ]);
+      // Read fails: SafeStorage warns. Write fails: SafeStorage flips disabled
+      // and emits one error.
+      expect(diagLogger.getWarnLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getWarnLogs()[0]).to.contain('Failed to read');
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.contain('Storage write failed');
     });
   });
 

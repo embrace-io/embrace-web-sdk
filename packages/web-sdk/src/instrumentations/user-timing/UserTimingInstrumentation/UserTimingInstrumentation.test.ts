@@ -15,7 +15,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { UserTimingInstrumentation } from './UserTimingInstrumentation.ts';
 
@@ -115,10 +115,10 @@ describe('UserTimingInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    const userSessionManager = new EmbraceUserSessionManager({ limitManager });
+    userSessionManager.startSessionPart();
     const logManager = new EmbraceLogManager({
-      spanSessionManager,
+      userSessionManager,
       limitManager,
     });
     log.setGlobalLogManager(logManager);
@@ -590,11 +590,11 @@ describe('UserTimingInstrumentation', () => {
         allowedEntries: ['app-start'],
       });
 
-      // 'vendor' is filtered out — should not consume a dedup slot
+      // 'vendor' is filtered out; should not consume a dedup slot
       triggerMarkEntries([
         makeMark({ name: 'vendor-init' }),
         makeMark({ name: 'app-start' }),
-        makeMark({ name: 'app-start' }), // duplicate — deduped
+        makeMark({ name: 'app-start' }), // duplicate; deduped
       ]);
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);

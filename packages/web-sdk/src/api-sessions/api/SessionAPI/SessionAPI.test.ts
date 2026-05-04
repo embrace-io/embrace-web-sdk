@@ -2,8 +2,7 @@ import type { HrTime, Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManager } from '../../manager/index.ts';
-import { ProxySpanSessionManager } from '../../manager/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type { SessionAPIInstance } from './SessionAPI.ts';
 import { SessionAPI } from './SessionAPI.ts';
 
@@ -13,6 +12,48 @@ const { expect } = chai;
 afterEach(() => {
   sinon.restore();
   SessionAPI.resetInstance();
+});
+
+const createMockUserSessionManager = (): UserSessionManagerInternal => ({
+  // Part identity
+  getSessionPartId: sinon.stub().returns('partId'),
+  getSessionPartStartTime: sinon.stub().returns([0, 0] as HrTime),
+  getSessionPartSpan: sinon.stub().returns({} as Span),
+  // Part lifecycle
+  startSessionPart: sinon.stub(),
+  endSessionPart: sinon.stub(),
+  endSessionPartInternal: sinon.stub(),
+  // Properties / breadcrumbs
+  addBreadcrumb: sinon.stub(),
+  addProperty: sinon.stub(),
+  removeProperty: sinon.stub(),
+  // Counters
+  incrSessionPartCountForKey: sinon.stub(),
+  incrNextSessionPartCountForKey: sinon.stub(),
+  // Part listeners
+  addSessionPartStartedListener: sinon.stub().returns(() => {}),
+  addSessionPartEndedListener: sinon.stub().returns(() => {}),
+  // User-session identity
+  getUserSessionId: sinon.stub().returns('userSessionId'),
+  getPreviousUserSessionId: sinon.stub().returns('prevUserSessionId'),
+  getUserSessionStartTime: sinon.stub().returns(1000),
+  getUserSessionAttributes: sinon.stub().returns(null),
+  getUserSessionIdOverride: sinon.stub().returns(null),
+  // User-session lifecycle
+  endUserSession: sinon.stub(),
+  setSessionId: sinon.stub(),
+  addUserSessionStartedListener: sinon.stub().returns(() => {}),
+  addUserSessionEndedListener: sinon.stub().returns(() => {}),
+  // Deprecated forwarders
+  getSessionId: sinon.stub().returns('userSessionId'),
+  getPreviousSessionId: sinon.stub().returns('prevUserSessionId'),
+  getSessionStartTime: sinon.stub().returns([1, 0] as HrTime),
+  endSessionSpan: sinon.stub(),
+  getSessionSpan: sinon.stub().returns(null),
+  addSessionStartedListener: sinon.stub().returns(() => {}),
+  addSessionEndedListener: sinon.stub().returns(() => {}),
+  // Tracer wiring
+  setTracerProvider: sinon.stub(),
 });
 
 describe('SessionAPI', () => {
@@ -28,98 +69,92 @@ describe('SessionAPI', () => {
     expect(instance1).to.equal(instance2);
   });
 
-  it('should return the global session manager', () => {
-    const sessionAPI = SessionAPI.getInstance();
-    const sessionManager: SpanSessionManager = {
-      // Mock implementation of SpanSessionManager
-      getSessionId: sinon.stub().returns('mockSessionId'),
-      getPreviousSessionId: sinon.stub().returns('mockPreviousSessionId'),
-      getSessionStartTime: sinon.stub().returns(1234567890),
-      getSessionSpan: sinon.stub().returns('mockSpanId'),
-      startSessionSpan: sinon.stub(),
-      endSessionSpan: sinon.stub(),
-      endSessionSpanInternal: sinon.stub(),
-      currentSessionAsReadableSpan: sinon.stub(),
-      addBreadcrumb: sinon.stub(),
-      addProperty: sinon.stub(),
-      removeProperty: sinon.stub(),
-      addSessionEndedListener: sinon.stub(),
-      addSessionStartedListener: sinon.stub(),
-    };
-    sessionAPI.setGlobalSessionManager(sessionManager);
-    const result = sessionAPI.getSpanSessionManager();
-    expect(result).to.be.instanceOf(ProxySpanSessionManager);
-    expect((result as ProxySpanSessionManager).getDelegate()).to.equal(
-      sessionManager,
+  it('should return the registered session manager from getSessionManager', () => {
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
+    expect(sessionAPI.getUserSessionManager()).to.equal(userSessionManager);
+  });
+
+  it('should forward user session methods to the manager', () => {
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
+
+    expect(sessionAPI.getUserSessionId()).to.equal('userSessionId');
+    void expect(userSessionManager.getUserSessionId).to.have.been.calledOnce;
+
+    expect(sessionAPI.getPreviousUserSessionId()).to.equal('prevUserSessionId');
+    void expect(userSessionManager.getPreviousUserSessionId).to.have.been
+      .calledOnce;
+
+    expect(sessionAPI.getUserSessionStartTime()).to.equal(1000);
+    void expect(userSessionManager.getUserSessionStartTime).to.have.been
+      .calledOnce;
+
+    sessionAPI.endUserSession();
+    void expect(userSessionManager.endUserSession).to.have.been.calledOnce;
+
+    sessionAPI.addUserSessionStartedListener(() => {});
+    void expect(userSessionManager.addUserSessionStartedListener).to.have.been
+      .calledOnce;
+
+    sessionAPI.addUserSessionEndedListener(() => {});
+    void expect(userSessionManager.addUserSessionEndedListener).to.have.been
+      .calledOnce;
+
+    sessionAPI.setSessionId('custom-id');
+    void expect(userSessionManager.setSessionId).to.have.been.calledOnceWith(
+      'custom-id',
+    );
+
+    sessionAPI.setSessionId(null);
+    void expect(userSessionManager.setSessionId).to.have.been.calledTwice;
+  });
+
+  it('should forward property and breadcrumb methods to the manager', () => {
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
+
+    sessionAPI.addBreadcrumb('br-name');
+    void expect(userSessionManager.addBreadcrumb).to.have.been.calledOnceWith(
+      'br-name',
+    );
+
+    sessionAPI.addProperty('key', 'value');
+    void expect(userSessionManager.addProperty).to.have.been.calledOnceWith(
+      'key',
+      'value',
+    );
+
+    sessionAPI.removeProperty('key');
+    void expect(userSessionManager.removeProperty).to.have.been.calledOnceWith(
+      'key',
     );
   });
 
-  it('should forward calls to the session manager', () => {
-    const mockSpanSessionManager: SpanSessionManager = {
-      getSessionId: sinon.stub().returns('mockSessionId'),
-      getPreviousSessionId: sinon.stub().returns('mockPreviousSessionId'),
-      getSessionSpan: sinon.stub().returns({} as Span),
-      getSessionStartTime: sinon.stub().returns([0, 0] as HrTime),
-      startSessionSpan: sinon.stub(),
-      endSessionSpan: sinon.stub(),
-      endSessionSpanInternal: sinon.stub(),
-      currentSessionAsReadableSpan: sinon.stub(),
-      addBreadcrumb: sinon.stub(),
-      addProperty: sinon.stub(),
-      removeProperty: sinon.stub(),
-      addSessionEndedListener: sinon.stub(),
-      addSessionStartedListener: sinon.stub(),
-    };
-    sessionAPI.setGlobalSessionManager(mockSpanSessionManager);
+  it('should forward deprecated methods to user session equivalents', () => {
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
-    void expect(sessionAPI.getSessionId()).to.not.be.null;
-    void expect(mockSpanSessionManager.getSessionId).to.have.been.calledOnce;
+    expect(sessionAPI.getSessionId()).to.equal('userSessionId');
+    void expect(userSessionManager.getUserSessionId).to.have.been.calledOnce;
 
-    void expect(sessionAPI.getPreviousSessionId()).to.not.be.null;
-    void expect(mockSpanSessionManager.getPreviousSessionId).to.have.been
+    expect(sessionAPI.getPreviousSessionId()).to.equal('prevUserSessionId');
+    void expect(userSessionManager.getPreviousUserSessionId).to.have.been
       .calledOnce;
-
-    void expect(sessionAPI.getSessionSpan()).to.not.be.null;
-    void expect(mockSpanSessionManager.getSessionSpan).to.have.been.calledOnce;
 
     void expect(sessionAPI.getSessionStartTime()).to.not.be.null;
-    void expect(mockSpanSessionManager.getSessionStartTime).to.have.been
+    void expect(userSessionManager.getUserSessionStartTime).to.have.been
       .calledOnce;
-
-    sessionAPI.startSessionSpan();
-    void expect(mockSpanSessionManager.startSessionSpan).to.have.been
-      .calledOnce;
-
-    sessionAPI.startSessionSpan({ reason: 'start reason' });
-    expect(mockSpanSessionManager.startSessionSpan).to.have.been.calledWith({
-      reason: 'start reason',
-    });
 
     sessionAPI.endSessionSpan();
-    void expect(mockSpanSessionManager.endSessionSpan).to.have.been.calledOnce;
-
-    sessionAPI.endSessionSpanInternal('timer');
-    void expect(
-      mockSpanSessionManager.endSessionSpanInternal,
-    ).to.have.been.calledOnceWith('timer');
-
-    sessionAPI.addBreadcrumb('br-name');
-    void expect(
-      mockSpanSessionManager.addBreadcrumb,
-    ).to.have.been.calledOnceWith('br-name');
-
-    sessionAPI.addProperty('custom-key', 'custom value');
-    void expect(mockSpanSessionManager.addProperty).to.have.been.calledOnceWith(
-      'custom-key',
-      'custom value',
-    );
-
-    sessionAPI.addSessionEndedListener(() => {});
-    void expect(mockSpanSessionManager.addSessionEndedListener).to.have.been
-      .calledOnce;
+    void expect(userSessionManager.endUserSession).to.have.been.calledOnce;
 
     sessionAPI.addSessionStartedListener(() => {});
-    void expect(mockSpanSessionManager.addSessionStartedListener).to.have.been
+    void expect(userSessionManager.addUserSessionStartedListener).to.have.been
+      .calledOnce;
+
+    sessionAPI.addSessionEndedListener(() => {});
+    void expect(userSessionManager.addUserSessionEndedListener).to.have.been
       .calledOnce;
   });
 });

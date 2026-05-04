@@ -1,39 +1,45 @@
+import type { DiagLogger } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import {
-  ATTR_LOG_RECORD_UID,
-  ATTR_SESSION_ID,
-  ATTR_SESSION_PREVIOUS_ID,
-} from '@opentelemetry/semantic-conventions/incubating';
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
+import { KEY_EMB_SESSION_PART_ID } from '../../constants/index.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 import { generateUUID } from '../../utils/index.ts';
 import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
 
 export class IdentifiableSessionLogRecordProcessor
   implements LogRecordProcessor
 {
-  private readonly _spanSessionManager: SpanSessionManager;
+  private readonly _userSessionManager: UserSessionManagerInternal;
+  private readonly _diag: DiagLogger;
 
   public constructor({
-    spanSessionManager,
+    userSessionManager,
   }: IdentifiableSessionLogRecordProcessorArgs) {
-    this._spanSessionManager = spanSessionManager;
+    this._userSessionManager = userSessionManager;
+    this._diag = diag.createComponentLogger({
+      namespace: 'IdentifiableSessionLogRecordProcessor',
+    });
   }
 
-  // no-op
   public forceFlush(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
   public onEmit(logRecord: SdkLogRecord) {
-    logRecord.setAttributes({
-      [ATTR_LOG_RECORD_UID]: generateUUID(),
-      [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),
-      [ATTR_SESSION_PREVIOUS_ID]:
-        this._spanSessionManager.getPreviousSessionId(),
-    });
+    try {
+      logRecord.setAttributes({
+        [ATTR_LOG_RECORD_UID]: generateUUID(),
+      });
+      const partId = this._userSessionManager.getSessionPartId() ?? '';
+      logRecord.setAttributes({
+        [KEY_EMB_SESSION_PART_ID]: partId,
+      });
+    } catch (e) {
+      this._diag.warn('Error stamping session part id on log record', e);
+    }
   }
 
-  // no-op
   public shutdown(): Promise<void> {
     return Promise.resolve(undefined);
   }
