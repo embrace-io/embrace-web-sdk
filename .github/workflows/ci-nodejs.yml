@@ -242,10 +242,9 @@ jobs:
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
           chown root:root /github/home
 
-      - name: Install GitHub CLI and jq
+      - name: Install GitHub CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          apt-get update && apt-get install -y jq
           curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
 
       - name: Install npm dependencies
@@ -300,8 +299,7 @@ jobs:
         run: |
           SECTION="$(cat perf-section.md)"
           MARKER="<!-- ci-results -->"
-          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("'"$MARKER"'"))| .id' comments.json)
+          COMMENT_ID=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id")
 
           if [[ -n "$COMMENT_ID" ]]; then
             EXISTING=$(gh api "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" --jq '.body')
@@ -429,10 +427,9 @@ jobs:
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
           chown root:root /github/home
 
-      - name: Install GitHub CLI and jq
+      - name: Install GitHub CLI
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
-          apt-get update && apt-get install -y jq
           curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
 
       - name: Install npm dependencies
@@ -478,8 +475,7 @@ jobs:
         run: |
           SECTION="$(cat build-section.md)"
           MARKER="<!-- ci-results -->"
-          gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate > comments.json
-          COMMENT_ID=$(jq -r '.[]| select(.body | contains("'"$MARKER"'"))| .id' comments.json)
+          COMMENT_ID=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id")
 
           if [[ -n "$COMMENT_ID" ]]; then
             EXISTING=$(gh api "/repos/${{ github.repository }}/issues/comments/${COMMENT_ID}" --jq '.body')
@@ -771,7 +767,7 @@ jobs:
     steps:
       - name: "Send to #mission-web Slack channel/workflow"
         continue-on-error: true
-        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c # v3.0.2
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           webhook-type: webhook-trigger
           webhook: ${{ secrets.SLACK_WEB_SDK_RELEASE_WEBHOOK_URL }}
