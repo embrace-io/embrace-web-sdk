@@ -179,6 +179,37 @@ describe('EmbraceStorage', () => {
       expect(diag.getErrorLogs()).to.have.lengthOf(1);
     });
 
+    it('disables writes when setItem throws a non-Error value', () => {
+      const nonErrorThrowingStorage: Storage = {
+        get length() {
+          return 0;
+        },
+        clear() {
+          return;
+        },
+        getItem() {
+          return null;
+        },
+        key() {
+          return null;
+        },
+        removeItem() {
+          return;
+        },
+        setItem() {
+          // eslint-disable-next-line no-throw-literal
+          throw 'quota exceeded';
+        },
+      };
+      const storage = new EmbraceStorage(nonErrorThrowingStorage, diag);
+
+      expect(storage.setItem('a', '1')).to.equal(false);
+
+      expect(storage.isWriteDisabled()).to.equal(true);
+      expect(diag.getErrorLogs()).to.have.lengthOf(1);
+      expect(diag.getErrorLogs()[0]).to.contain('Storage write failed');
+    });
+
     it('propagates TypeError from setItem without disabling writes', () => {
       const typeErrorStorage: Storage = {
         get length() {
