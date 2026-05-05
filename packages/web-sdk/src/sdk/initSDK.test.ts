@@ -342,6 +342,7 @@ describe('initSDK', () => {
       logExporters: [logExporter],
       spanExporters: [spanExporter],
       instrumentations: [instrumentation],
+      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
     });
     void expect(result).not.to.be.false;
 
@@ -368,6 +369,7 @@ describe('initSDK', () => {
       logProcessors: [new FakeLogRecordProcessor()],
       spanProcessors: [new FakeSpanProcessor()],
       instrumentations: [instrumentation],
+      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
     });
     void expect(result).not.to.be.false;
 
@@ -401,12 +403,14 @@ describe('initSDK', () => {
       },
     });
     void expect(result).not.to.be.false;
-    // Called twice, one for the actual reports and one for the urlAttribution
+    // Called twice: first for urlAttribution (reportAllChanges), second for emission
     void expect(testWebVitalListeners.clsStub.calledTwice).to.be.true;
-    const { args } = testWebVitalListeners.clsStub.callsArg(0);
-    const metricReportFunc = args[0][0] as WebVitalOnReport;
+    const pageTrackFunc = testWebVitalListeners.clsStub.getCall(0)
+      .args[0] as WebVitalOnReport;
+    const emitFunc = testWebVitalListeners.clsStub.getCall(1)
+      .args[0] as WebVitalOnReport;
 
-    metricReportFunc({
+    const clsMetric = {
       name: 'CLS',
       value: 22,
       rating: 'good',
@@ -415,19 +419,21 @@ describe('initSDK', () => {
       entries: [],
       navigationType: 'navigate',
       attribution: {},
-    } as MetricWithAttribution);
+    } as MetricWithAttribution;
 
-    session.getUserSessionManager().endSessionPartInternal('inactivity');
+    pageTrackFunc(clsMetric);
+    emitFunc(clsMetric);
+
     if (result) {
-      await result.flush();
+      await logExporter.forceFlush();
     }
 
-    const finishedSpans = spanExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-    const clsEvent = sessionSpan.events[0];
-    expect(clsEvent.name).to.be.equal('emb-web-vitals-report-CLS');
+    const finishedLogRecords = logExporter.getFinishedLogRecords();
+    const clsRecord = finishedLogRecords.find(
+      (r) => r.attributes['browser.web_vital.name'] === 'cls',
+    );
+    void expect(clsRecord).not.to.be.undefined;
+    void expect(clsRecord?.eventName).to.equal('browser.web_vital');
   });
 
   it('should allow omitting optional instrumentations', () => {
@@ -451,6 +457,7 @@ describe('initSDK', () => {
       appID: 'abc12',
       logExporters: [logExporter],
       spanExporters: [spanExporter],
+      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
     });
     void expect(result).not.to.be.false;
 
@@ -1062,6 +1069,7 @@ describe('initSDK', () => {
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
+            'web-vital',
           ]),
         },
       });
@@ -1138,6 +1146,7 @@ describe('initSDK', () => {
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
+            'web-vital',
           ]),
         },
       });
@@ -1217,6 +1226,7 @@ describe('initSDK', () => {
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
             'loaf',
+            'web-vital',
           ]),
         },
       });
@@ -1897,7 +1907,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load', 'loaf']),
+        omit: new Set(['document-load', 'loaf', 'web-vital']),
       },
     });
 
@@ -1910,7 +1920,7 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load', 'loaf']),
+        omit: new Set(['document-load', 'loaf', 'web-vital']),
       },
     });
 

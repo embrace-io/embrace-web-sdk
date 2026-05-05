@@ -1,8 +1,8 @@
-import type {
-  Attributes,
-  AttributeValue,
-  DiagLogger,
-} from '@opentelemetry/api';
+import type { Attributes, DiagLogger } from '@opentelemetry/api';
+import type { LogRecord } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api-logs';
+import { millisToHrTime } from '@opentelemetry/core';
+import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   CLSMetricWithAttribution,
@@ -15,33 +15,31 @@ import type { PageManager } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
-  EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
   KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
-  KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
+  KEY_BROWSER_WEB_VITAL_DELTA,
+  KEY_BROWSER_WEB_VITAL_ID,
+  KEY_BROWSER_WEB_VITAL_NAME,
+  KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE,
+  KEY_BROWSER_WEB_VITAL_RATING,
+  KEY_BROWSER_WEB_VITAL_VALUE,
   KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX,
-  KEY_EMB_WEB_VITAL_DELTA,
-  KEY_EMB_WEB_VITAL_ID,
-  KEY_EMB_WEB_VITAL_NAME,
-  KEY_EMB_WEB_VITAL_NAVIGATION_TYPE,
-  KEY_EMB_WEB_VITAL_RATING,
-  KEY_EMB_WEB_VITAL_VALUE,
 } from './attributes.ts';
 import {
   ALL_WEB_VITALS,
-  EMB_WEB_VITALS_PREFIX,
   MAX_LOAF_SCRIPT_ENTRIES,
   MAX_LOAF_SCRIPT_URL_LENGTH,
+  WEB_VITAL_EVENT_NAME,
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.ts';
 import type {
   WebVitalListeners,
-  WebVitalsInstrumentationArgs,
+  WebVitalsInstrumentationConfig,
 } from './types.ts';
 
 type AttributedPage = {
@@ -51,31 +49,7 @@ type AttributedPage = {
   label?: string;
 };
 
-const isPrimitiveValue = (value: unknown): value is AttributeValue => {
-  const type = typeof value;
-  return type === 'number' || type === 'string' || type === 'boolean';
-};
-
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
-
-const webVitalAttributionToReport = (
-  metric: MetricWithAttribution,
-): Attributes => {
-  const attributes: Attributes = {};
-  const attribution = metric.attribution;
-
-  if (!attribution || typeof attribution !== 'object') {
-    return attributes;
-  }
-
-  for (const [key, value] of Object.entries(attribution)) {
-    if (isPrimitiveValue(value)) {
-      attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}${key}`] = value;
-    }
-  }
-
-  return attributes;
-};
 
 const loafScriptsAttribution = (
   metric: MetricWithAttribution,
@@ -222,32 +196,35 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     FCP: undefined,
     TTFB: undefined,
   };
-  private _largestShiftTargetForCLS: string | undefined;
+  private _largestShiftTargetForCLS: string | undefined | null = null;
+  private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
   private _listenersRegistered = false;
   private _isEnabled = false;
 
-  // instrumentation that adds an event to the session span for each web vital report
   public constructor({
     diag,
     perf,
     listeners = WEB_VITALS_ID_TO_LISTENER,
-    urlDocument = window.document,
+    urlDocument,
     urlAttribution = true,
     pageManager,
-  }: WebVitalsInstrumentationArgs = {}) {
+    applyCustomLogRecordData,
+    ...config
+  }: WebVitalsInstrumentationConfig = {}) {
     super({
-      instrumentationName: 'WebVitalsInstrumentation',
+      instrumentationName: '@opentelemetry/browser-instrumentation/web-vitals',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config: {},
+      config,
     });
     this._listeners = listeners;
-    this._urlDocument = urlDocument;
+    this._urlDocument = urlDocument ?? window.document;
     this._urlAttribution = urlAttribution;
     this._pageManager = pageManager ?? page.getPageManager();
+    this._applyCustomLogRecordData = applyCustomLogRecordData;
 
-    if (this._config.enabled) {
+    if (this._config.enabled !== false) {
       this.enable();
     }
   }
@@ -259,7 +236,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
 
-  public enable(): void {
+  public override enable(): void {
+    if (typeof PerformanceObserver === 'undefined') {
+      this._diag.debug(
+        'PerformanceObserver not supported, web vitals will not be collected',
+      );
+      return;
+    }
+
     this._isEnabled = true;
 
     // web-vitals library doesn't support removing listeners, so only register once
@@ -272,114 +256,49 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._listenersRegistered = true;
 
     ALL_WEB_VITALS.forEach((name) => {
+      if (this._urlAttribution) {
+        this._listeners[name]?.(
+          (metric) => {
+            if (!this._isEnabled) {
+              return;
+            }
+            if (metric.name === 'CLS') {
+              const clsMetric = metric as CLSMetricWithAttribution;
+              // CLS is cumulative — the rating can update without the shift target changing pages.
+              // Only update the attributed page when largestShiftTarget changes so the URL reflects
+              // the page where the dominant shift element actually appeared.
+              if (
+                this._largestShiftTargetForCLS !==
+                clsMetric.attribution.largestShiftTarget
+              ) {
+                this._largestShiftTargetForCLS =
+                  clsMetric.attribution.largestShiftTarget;
+                this._attributedPage.CLS = this._currentAttributedPage();
+              }
+            } else {
+              this._attributedPage[metric.name] = this._currentAttributedPage();
+            }
+          },
+          { reportAllChanges: true },
+        );
+      }
+
       this._listeners[name]?.((metric) => {
         if (!this._isEnabled) {
           return;
         }
-
-        const currentSessionPartSpan =
-          this.userSessionManager.getSessionPartSpan();
-
-        if (!currentSessionPartSpan) {
-          return;
-        }
-
-        // first thing record the time when this cb was invoked
-        const metricTime = this._getTimeForMetric(metric);
-
-        const attributedPage = this._getAttributedPageForMetric(metric);
-
-        const attrs: Attributes = {
-          [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
-          [ATTR_URL_FULL]: attributedPage.fullURL,
-          [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
-          [KEY_EMB_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
-          [KEY_EMB_WEB_VITAL_NAME]: metric.name,
-          [KEY_EMB_WEB_VITAL_RATING]: metric.rating,
-          [KEY_EMB_WEB_VITAL_ID]: metric.id,
-          [KEY_EMB_WEB_VITAL_DELTA]: metric.delta,
-          [KEY_EMB_WEB_VITAL_VALUE]: metric.value,
-          ...webVitalAttributionToReport(metric),
-          ...(name === 'INP' ? loafScriptsAttribution(metric, this._diag) : {}),
-          ...(name === 'TTFB'
-            ? ttfbSubPartsAttribution(metric, this._diag)
-            : {}),
-        };
-
-        // Add page attributes if route and page ID exist
-        if (attributedPage.path && attributedPage.pageID) {
-          attrs[KEY_EMB_PAGE_PATH] = attributedPage.path;
-          attrs[KEY_EMB_PAGE_ID] = attributedPage.pageID;
-        }
-
-        if (attributedPage.label) {
-          attrs[KEY_APP_SURFACE_LABEL] = attributedPage.label;
-        }
-
-        currentSessionPartSpan.addEvent(
-          `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
-          attrs,
-          metricTime,
-        );
+        this._emitWebVital(metric);
       });
     });
+  }
 
-    if (this._urlAttribution) {
-      // When these web vitals make their final report (e.g. when the listeners w/ reportAllChanges=false trigger) the
-      // document's URL at that time may not match what it was at the time the scores were last updated. Instead, listen
-      // for updates to the scores and keep track of the Page information to attribute for each
-      this._listeners.TTFB?.(
-        () => {
-          this._attributedPage.TTFB = this._currentAttributedPage();
-        },
-        {
-          reportAllChanges: true,
-        },
-      );
-      this._listeners.FCP?.(
-        () => {
-          this._attributedPage.FCP = this._currentAttributedPage();
-        },
-        {
-          reportAllChanges: true,
-        },
-      );
-      this._listeners.INP?.(
-        () => {
-          this._attributedPage.INP = this._currentAttributedPage();
-        },
-        {
-          reportAllChanges: true,
-        },
-      );
-      this._listeners.LCP?.(
-        () => {
-          this._attributedPage.LCP = this._currentAttributedPage();
-        },
-        {
-          reportAllChanges: true,
-        },
-      );
-      this._listeners.CLS?.(
-        (metric: MetricWithAttribution) => {
-          const clsMetric = metric as CLSMetricWithAttribution;
-          // A layout shift could cause CLS to change its rating but because the score is cumulative this might not
-          // correspond with an updated `largestShiftTarget`. Since we want to tie the attributed URL to the page that
-          // the `largestShiftTarget` was on we only update the attributed URL if that target has changed
-          if (
-            this._largestShiftTargetForCLS !==
-            clsMetric.attribution.largestShiftTarget
-          ) {
-            this._largestShiftTargetForCLS =
-              clsMetric.attribution.largestShiftTarget;
-            this._attributedPage.CLS = this._currentAttributedPage();
-          }
-        },
-        {
-          reportAllChanges: true,
-        },
-      );
-    }
+  private _currentAttributedPage(): AttributedPage {
+    return {
+      fullURL: this._urlDocument.URL,
+      path: this._pageManager.getCurrentRoute()?.path,
+      pageID: this._pageManager.getCurrentPageId() ?? undefined,
+      label: this._pageManager.getPageLabel() ?? undefined,
+    };
   }
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
@@ -398,53 +317,50 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     return this.perf.getNowMillis();
   }
 
-  private _currentAttributedPage(): AttributedPage {
-    const attributed: AttributedPage = {
-      fullURL: this._urlDocument.URL,
+  private _emitWebVital(metric: MetricWithAttribution): void {
+    const attributedPage = this._attributedPage[metric.name];
+    const logRecord: LogRecord = {
+      eventName: WEB_VITAL_EVENT_NAME,
+      severityNumber: SeverityNumber.INFO,
+      attributes: {
+        [KEY_BROWSER_WEB_VITAL_NAME]: metric.name.toLowerCase(),
+        [KEY_BROWSER_WEB_VITAL_VALUE]: metric.value,
+        [KEY_BROWSER_WEB_VITAL_DELTA]: metric.delta,
+        [KEY_BROWSER_WEB_VITAL_RATING]: metric.rating,
+        [KEY_BROWSER_WEB_VITAL_ID]: metric.id,
+        [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
+        ...(attributedPage
+          ? {
+              [ATTR_URL_FULL]: attributedPage.fullURL,
+              [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
+              [KEY_EMB_PAGE_PATH]: attributedPage.path,
+              [KEY_EMB_PAGE_ID]: attributedPage.pageID,
+              [KEY_APP_SURFACE_LABEL]: attributedPage.label,
+            }
+          : {}),
+        ...(metric.name === 'INP'
+          ? loafScriptsAttribution(metric, this._diag)
+          : {}),
+        ...(metric.name === 'TTFB'
+          ? ttfbSubPartsAttribution(metric, this._diag)
+          : {}),
+      },
+      body: JSON.stringify(metric.attribution),
+      timestamp: millisToHrTime(this._getTimeForMetric(metric)),
     };
 
-    const currentRoute = this._pageManager.getCurrentRoute();
-    const currentPageId = this._pageManager.getCurrentPageId();
-    if (currentRoute && currentPageId) {
-      attributed.path = currentRoute.path;
-      attributed.pageID = currentPageId;
+    if (this._applyCustomLogRecordData) {
+      safeExecuteInTheMiddle(
+        () => this._applyCustomLogRecordData?.(logRecord),
+        (error) => {
+          if (error) {
+            this._diag.error('applyCustomLogRecordData hook failed', error);
+          }
+        },
+        true,
+      );
     }
 
-    const pageLabel = this._pageManager.getPageLabel();
-    if (pageLabel) {
-      attributed.label = pageLabel;
-    }
-
-    return attributed;
-  }
-
-  private _getAttributedPageForMetric(
-    metric: MetricWithAttribution,
-  ): AttributedPage {
-    if (metric.name === 'FCP' && this._attributedPage.FCP) {
-      return this._attributedPage.FCP;
-    }
-
-    if (metric.name === 'TTFB' && this._attributedPage.TTFB) {
-      return this._attributedPage.TTFB;
-    }
-
-    if (metric.name === 'INP' && this._attributedPage.INP) {
-      return this._attributedPage.INP;
-    }
-
-    if (metric.name === 'LCP' && this._attributedPage.LCP) {
-      return this._attributedPage.LCP;
-    }
-
-    if (
-      metric.name === 'CLS' &&
-      this._attributedPage.CLS &&
-      metric.attribution.largestShiftTarget === this._largestShiftTargetForCLS
-    ) {
-      return this._attributedPage.CLS;
-    }
-
-    return this._currentAttributedPage();
+    this.logger.emit(logRecord);
   }
 }

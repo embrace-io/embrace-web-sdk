@@ -33,4 +33,5 @@ export {
   type WebVitalOnReport,
   WebVitalsInstrumentation,
   type WebVitalsInstrumentationArgs,
+  type WebVitalsInstrumentationConfig,
 } from './web-vitals/index.ts';

@@ -1,3 +1,6 @@
+import type { DiagLogger } from '@opentelemetry/api';
+import type { LogRecord } from '@opentelemetry/api-logs';
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type {
   Metric,
   MetricWithAttribution,
@@ -5,9 +8,7 @@ import type {
 } from 'web-vitals/attribution';
 import type { PageManager } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
-
-export type TrackingLevel = 'core' | 'all';
+import type { PerformanceManager } from '../../../utils/index.ts';
 
 export type WebVitalOnReport = (metric: MetricWithAttribution) => void;
 
@@ -16,11 +17,18 @@ export type WebVitalListeners = Record<
   ((onReport: WebVitalOnReport, opts?: ReportOpts) => void) | undefined
 >;
 
-export type WebVitalsInstrumentationArgs = {
-  /** @deprecated All vitals metrics are tracked by default */
-  trackingLevel?: TrackingLevel;
+export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
+  // OTel upstream options
+  applyCustomLogRecordData?: (logRecord: LogRecord) => void;
+
+  // Embrace-specific (testability + SPA page attribution)
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;
   urlAttribution?: boolean;
   pageManager?: PageManager;
-} & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
+  diag?: DiagLogger;
+  perf?: PerformanceManager;
+}
+
+// Backward-compat alias
+export type WebVitalsInstrumentationArgs = WebVitalsInstrumentationConfig;
