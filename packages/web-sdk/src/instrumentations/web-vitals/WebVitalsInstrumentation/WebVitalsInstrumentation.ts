@@ -185,6 +185,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
+  private readonly _includeRawAttribution: boolean;
   private readonly _pageManager: PageManager;
   private readonly _attributedPage: Record<
     Metric['name'],
@@ -207,12 +208,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument,
     urlAttribution = true,
+    includeRawAttribution = true,
     pageManager,
     applyCustomLogRecordData,
     ...config
   }: WebVitalsInstrumentationConfig = {}) {
     super({
-      instrumentationName: '@opentelemetry/browser-instrumentation/web-vitals',
+      instrumentationName: 'WebVitalsInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
@@ -221,6 +223,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._listeners = listeners;
     this._urlDocument = urlDocument ?? window.document;
     this._urlAttribution = urlAttribution;
+    this._includeRawAttribution = includeRawAttribution;
     this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
 
@@ -345,7 +348,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ? ttfbSubPartsAttribution(metric, this._diag)
           : {}),
       },
-      body: JSON.stringify(metric.attribution),
+      body: this._includeRawAttribution
+        ? JSON.stringify(metric.attribution)
+        : undefined,
       timestamp: millisToHrTime(this._getTimeForMetric(metric)),
     };
 

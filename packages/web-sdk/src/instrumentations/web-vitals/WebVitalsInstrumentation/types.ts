@@ -10,6 +10,8 @@ import type { PageManager } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import type { PerformanceManager } from '../../../utils/index.ts';
 
+export type TrackingLevel = 'core' | 'all';
+
 export type WebVitalOnReport = (metric: MetricWithAttribution) => void;
 
 export type WebVitalListeners = Record<
@@ -19,6 +21,15 @@ export type WebVitalListeners = Record<
 
 export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
   // OTel upstream options
+  /**
+   * @experimental
+   * When true, sets the log record body to the JSON-stringified
+   * `web-vitals` attribution object for the metric.
+   *
+   * Note: `applyCustomLogRecordData` runs after the body is set.
+   * If the hook assigns a new `body`, it will overwrite the attribution data.
+   */
+  includeRawAttribution?: boolean;
   applyCustomLogRecordData?: (logRecord: LogRecord) => void;
 
   // Embrace-specific (testability + SPA page attribution)
@@ -28,7 +39,7 @@ export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
   pageManager?: PageManager;
   diag?: DiagLogger;
   perf?: PerformanceManager;
-}
 
-// Backward-compat alias
-export type WebVitalsInstrumentationArgs = WebVitalsInstrumentationConfig;
+  /** @deprecated All vitals metrics are tracked by default */
+  trackingLevel?: TrackingLevel;
+}

@@ -68,9 +68,7 @@ const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
 ];
 // Scopes on this list have their entities sorted by a stable key before
 // comparison because the order they are emitted is non-deterministic.
-const SCOPES_WITH_SORTED_COMPARISON = new Set([
-  '@opentelemetry/browser-instrumentation/web-vitals',
-]);
+const SCOPES_WITH_SORTED_COMPARISON = new Set(['WebVitalsInstrumentation']);
 // If a log record has any of these attribute keys, its body is excluded from
 // comparison because the content (e.g. raw attribution timing values) changes every run.
 const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
