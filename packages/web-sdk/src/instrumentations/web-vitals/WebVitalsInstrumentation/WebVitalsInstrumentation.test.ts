@@ -153,6 +153,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['largestShiftTime']).to.equal(3000);
     expect(body['largestShiftValue']).to.equal(3.0);
     expect(body['largestShiftTarget']).to.equal('some-target');
+    expect(body['loadState']).to.equal('complete');
   });
 
   it('should report FCP metrics as a log record', () => {
@@ -200,6 +201,7 @@ describe('WebVitalsInstrumentation', () => {
     const body = JSON.parse(record.body as string) as Record<string, unknown>;
     expect(body['timeToFirstByte']).to.equal(20);
     expect(body['firstByteToFCP']).to.equal(40);
+    expect(body['loadState']).to.equal('complete');
   });
 
   it('should report LCP metrics as a log record', () => {
@@ -244,6 +246,11 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.value': 22,
     });
     expect(record.hrTime).to.deep.equal([5, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['timeToFirstByte']).to.equal(999);
+    expect(body['resourceLoadDelay']).to.equal(1000);
+    expect(body['resourceLoadDuration']).to.equal(2000);
+    expect(body['elementRenderDelay']).to.equal(3000);
   });
 
   it('should report INP metrics as a log record', () => {
@@ -296,6 +303,15 @@ describe('WebVitalsInstrumentation', () => {
     });
     // Time should be based on interactionTime from attribution
     expect(record.hrTime).to.deep.equal([19, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['interactionTarget']).to.equal('some-target');
+    expect(body['interactionTime']).to.equal(19000);
+    expect(body['nextPaintTime']).to.equal(18000);
+    expect(body['interactionType']).to.equal('pointer');
+    expect(body['inputDelay']).to.equal(1000);
+    expect(body['processingDuration']).to.equal(2000);
+    expect(body['presentationDelay']).to.equal(3000);
+    expect(body['loadState']).to.equal('complete');
   });
 
   describe('loaf_scripts attribution', () => {
@@ -513,6 +529,15 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.unattributed': 20,
     });
     expect(record.hrTime).to.deep.equal([5, 0]);
+    const ttfbBody = JSON.parse(record.body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(ttfbBody['waitingDuration']).to.equal(20);
+    expect(ttfbBody['cacheDuration']).to.equal(40);
+    expect(ttfbBody['dnsDuration']).to.equal(60);
+    expect(ttfbBody['connectionDuration']).to.equal(80);
+    expect(ttfbBody['requestDuration']).to.equal(100);
   });
 
   it('should omit TTFB sub-parts when navigationEntry is absent', () => {
@@ -520,12 +545,13 @@ describe('WebVitalsInstrumentation', () => {
       diag,
       perf,
       listeners: mockWebVitalListeners,
-      urlAttribution: false,
+      urlDocument,
     });
 
-    const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
+    const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
 
-    metricReportFunc({
+    const metric = {
       name: 'TTFB',
       value: 33,
       rating: 'good',
@@ -540,19 +566,38 @@ describe('WebVitalsInstrumentation', () => {
         connectionDuration: 0,
         requestDuration: 33,
       },
-    } as MetricWithAttribution);
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
 
     const records = memoryExporter.getFinishedLogRecords();
     const record = records[0];
 
-    expect(record.attributes).to.deep.equal({
+    expect(record.attributes).to.deep.include({
       'browser.web_vital.delta': 33,
       'browser.web_vital.id': 'm2',
       'browser.web_vital.name': 'ttfb',
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'good',
       'browser.web_vital.value': 33,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
+    expect(record.attributes).to.not.have.any.keys([
+      'emb.web_vital.attribution.redirect',
+      'emb.web_vital.attribution.domainLookup',
+      'emb.web_vital.attribution.tcpConnection',
+      'emb.web_vital.attribution.tlsNegotiation',
+      'emb.web_vital.attribution.serverResponse',
+      'emb.web_vital.attribution.unattributed',
+    ]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(20);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(33);
   });
 
   it('should compute TTFB sub-parts correctly with TLS', () => {
@@ -609,6 +654,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 20,
       'emb.web_vital.attribution.unattributed': 30,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(10);
+    expect(body['connectionDuration']).to.equal(20);
+    expect(body['requestDuration']).to.equal(30);
   });
 
   it('should use finalResponseHeadersStart for serverResponse when greater than responseStart', () => {
@@ -662,6 +713,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 60,
       'emb.web_vital.attribution.unattributed': 20,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(50);
   });
 
   it('should fall back to responseStart when finalResponseHeadersStart is less than responseStart', () => {
@@ -715,6 +772,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 40,
       'emb.web_vital.attribution.unattributed': 40,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(40);
   });
 
   it('should compute TTFB sub-parts correctly with non-zero redirect', () => {
@@ -768,6 +831,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 30,
       'emb.web_vital.attribution.unattributed': 30,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(10);
+    expect(body['connectionDuration']).to.equal(10);
+    expect(body['requestDuration']).to.equal(30);
   });
 
   it('should round fractional TTFB sub-part values to nearest millisecond', () => {
@@ -825,6 +894,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 1,
       'emb.web_vital.attribution.unattributed': 0,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(1);
+    expect(body['requestDuration']).to.equal(1);
   });
 
   it('should clamp negative TTFB sub-part durations to 0', () => {
@@ -877,6 +952,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 0,
       'emb.web_vital.attribution.unattributed': 50,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(0);
   });
 
   it('should round fractional negative TTFB sub-part durations to 0', () => {
@@ -929,6 +1010,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 0,
       'emb.web_vital.attribution.unattributed': 50,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(0);
   });
 
   it('should ensure TTFB sub-parts sum to rounded total', () => {
@@ -997,6 +1084,15 @@ describe('WebVitalsInstrumentation', () => {
       serverResponse +
       unattributed;
     expect(sum).to.equal(Math.round(8.7 - 0.2));
+
+    const body = JSON.parse(
+      memoryExporter.getFinishedLogRecords()[0].body as string,
+    ) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(0);
+    expect(body['connectionDuration']).to.equal(0);
+    expect(body['requestDuration']).to.equal(0);
   });
 
   it('should compute TTFB other correctly with non-zero startTime', () => {
@@ -1050,6 +1146,12 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 20,
       'emb.web_vital.attribution.unattributed': 30,
     });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(0);
+    expect(body['cacheDuration']).to.equal(0);
+    expect(body['dnsDuration']).to.equal(10);
+    expect(body['connectionDuration']).to.equal(10);
+    expect(body['requestDuration']).to.equal(20);
   });
 
   it('should report multiple metrics as separate log records', () => {
@@ -1870,6 +1972,16 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+      const inpBody = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(inpBody['interactionTarget']).to.equal('some-target');
+      expect(inpBody['interactionTime']).to.equal(19000);
+      expect(inpBody['inputDelay']).to.equal(1000);
+      expect(inpBody['processingDuration']).to.equal(2000);
+      expect(inpBody['presentationDelay']).to.equal(3000);
+      expect(inpBody['loadState']).to.equal('complete');
     });
 
     it('should attribute the correct URL for LCP metrics', () => {
@@ -1921,6 +2033,14 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+      const lcpBody = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(lcpBody['timeToFirstByte']).to.equal(999);
+      expect(lcpBody['resourceLoadDelay']).to.equal(1000);
+      expect(lcpBody['resourceLoadDuration']).to.equal(2000);
+      expect(lcpBody['elementRenderDelay']).to.equal(3000);
     });
 
     it('should attribute the correct URL for CLS metrics based on largestShiftTarget changes', () => {
@@ -1969,6 +2089,11 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+      const clsBody = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(clsBody['largestShiftTarget']).to.equal('some-target-2');
     });
 
     it('should attribute the correct URL for FCP metrics', () => {
@@ -2019,6 +2144,13 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+      const fcpBody = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(fcpBody['timeToFirstByte']).to.equal(0);
+      expect(fcpBody['firstByteToFCP']).to.equal(0);
+      expect(fcpBody['loadState']).to.equal('complete');
     });
 
     it('should attribute the correct URL for TTFB metrics', () => {
@@ -2084,6 +2216,15 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+      const ttfbBody = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(ttfbBody['waitingDuration']).to.equal(20);
+      expect(ttfbBody['cacheDuration']).to.equal(40);
+      expect(ttfbBody['dnsDuration']).to.equal(60);
+      expect(ttfbBody['connectionDuration']).to.equal(80);
+      expect(ttfbBody['requestDuration']).to.equal(100);
     });
   });
 
