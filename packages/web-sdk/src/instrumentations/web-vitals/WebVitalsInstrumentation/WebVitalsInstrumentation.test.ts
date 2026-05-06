@@ -4,6 +4,8 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type {
+  CLSMetricWithAttribution,
+  FCPMetricWithAttribution,
   INPMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
@@ -19,11 +21,14 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
 } from '../../../constants/index.ts';
+import { EmbracePageManager } from '../../../managers/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
+
+const urlDocument = { URL: 'https://example.com' };
 
 describe('WebVitalsInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
@@ -1212,6 +1217,1027 @@ describe('WebVitalsInstrumentation', () => {
     expect(diag.getDebugLogs()).to.include(
       'WebVitalsInstrumentation disabled, pausing emission',
     );
+  });
+
+  it('should report CLS metrics with url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    void expect(clsStub.calledTwice).to.be.true;
+    const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const metric = {
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.eventName).to.equal('browser.web_vital');
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'cls',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'good',
+      'browser.web_vital.value': 22,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+    });
+    expect(record.hrTime).to.deep.equal([5, 0]);
+    expect(record.body).to.equal('{}');
+  });
+
+  it('should report CLS metrics with largest shift time, loadState and url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+    const metric = {
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftTime: 3000,
+        largestShiftValue: 3.0,
+        largestShiftTarget: 'some-target',
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'cls',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'good',
+      'browser.web_vital.value': 22,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+    });
+    expect(record.hrTime).to.deep.equal([3, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['largestShiftTime']).to.equal(3000);
+    expect(body['largestShiftValue']).to.equal(3.0);
+    expect(body['largestShiftTarget']).to.equal('some-target');
+    expect(body['loadState']).to.equal('complete');
+  });
+
+  it('should report FCP metrics with url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    void expect(fcpStub.calledTwice).to.be.true;
+    const pageTrackFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = fcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const metric = {
+      name: 'FCP',
+      value: 33,
+      rating: 'needs-improvement',
+      delta: 99,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 20,
+        firstByteToFCP: 40,
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.eventName).to.equal('browser.web_vital');
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 99,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'fcp',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'needs-improvement',
+      'browser.web_vital.value': 33,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+    });
+    expect(record.hrTime).to.deep.equal([5, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['timeToFirstByte']).to.equal(20);
+    expect(body['firstByteToFCP']).to.equal(40);
+    expect(body['loadState']).to.equal('complete');
+  });
+
+  it('should report LCP metrics with url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    void expect(lcpStub.calledTwice).to.be.true;
+    const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const metric = {
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+      },
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.eventName).to.equal('browser.web_vital');
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'lcp',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'poor',
+      'browser.web_vital.value': 22,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+    });
+    expect(record.hrTime).to.deep.equal([5, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['timeToFirstByte']).to.equal(999);
+    expect(body['resourceLoadDelay']).to.equal(1000);
+    expect(body['resourceLoadDuration']).to.equal(2000);
+    expect(body['elementRenderDelay']).to.equal(3000);
+  });
+
+  it('should report INP metrics with url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    void expect(inpStub.calledTwice).to.be.true;
+    const pageTrackFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = inpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const metric = {
+      name: 'INP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        interactionTarget: 'some-target',
+        interactionTargetElement: undefined,
+        interactionTime: 19000,
+        nextPaintTime: 18000,
+        interactionType: 'pointer',
+        processedEventEntries: [],
+        longAnimationFrameEntries: [],
+        inputDelay: 1000,
+        processingDuration: 2000,
+        presentationDelay: 3000,
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.eventName).to.equal('browser.web_vital');
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'inp',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'poor',
+      'browser.web_vital.value': 22,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+    });
+    expect(record.hrTime).to.deep.equal([19, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['interactionTarget']).to.equal('some-target');
+    expect(body['interactionTime']).to.equal(19000);
+    expect(body['nextPaintTime']).to.equal(18000);
+    expect(body['interactionType']).to.equal('pointer');
+    expect(body['inputDelay']).to.equal(1000);
+    expect(body['processingDuration']).to.equal(2000);
+    expect(body['presentationDelay']).to.equal(3000);
+    expect(body['loadState']).to.equal('complete');
+  });
+
+  it('should report TTFB metrics with url attribution and raw attribution in body', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    void expect(ttfbStub.calledTwice).to.be.true;
+    const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const metric = {
+      name: 'TTFB',
+      value: 33,
+      rating: 'poor',
+      delta: 99,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        waitingDuration: 20,
+        cacheDuration: 40,
+        dnsDuration: 60,
+        connectionDuration: 80,
+        requestDuration: 100,
+        navigationEntry: {
+          redirectStart: 0,
+          redirectEnd: 0,
+          domainLookupStart: 10,
+          domainLookupEnd: 20,
+          connectStart: 20,
+          connectEnd: 30,
+          secureConnectionStart: 0,
+          requestStart: 30,
+          responseStart: 50,
+          responseEnd: 60,
+          startTime: 0,
+        } as PerformanceNavigationTiming,
+      },
+    } as MetricWithAttribution;
+
+    pageTrackFunc(metric);
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const record = records[0];
+
+    expect(record.eventName).to.equal('browser.web_vital');
+    expect(record.attributes).to.deep.include({
+      'browser.web_vital.delta': 99,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'ttfb',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'poor',
+      'browser.web_vital.value': 33,
+      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
+      'emb.web_vital.attribution.redirect': 0,
+      'emb.web_vital.attribution.domainLookup': 10,
+      'emb.web_vital.attribution.tcpConnection': 10,
+      'emb.web_vital.attribution.tlsNegotiation': 0,
+      'emb.web_vital.attribution.serverResponse': 20,
+      'emb.web_vital.attribution.unattributed': 20,
+    });
+    expect(record.hrTime).to.deep.equal([5, 0]);
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['waitingDuration']).to.equal(20);
+    expect(body['cacheDuration']).to.equal(40);
+    expect(body['dnsDuration']).to.equal(60);
+    expect(body['connectionDuration']).to.equal(80);
+    expect(body['requestDuration']).to.equal(100);
+  });
+
+  it('should report multiple metrics with url attribution', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    const clsPageTrack = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    const clsEmit = clsStub.getCall(1).args[0] as WebVitalOnReport;
+    const lcpPageTrack = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    const lcpEmit = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    const clsMetric = {
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {},
+    } as MetricWithAttribution;
+
+    const lcpMetric = {
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+      },
+    } as MetricWithAttribution;
+
+    clsPageTrack(clsMetric);
+    clsEmit(clsMetric);
+    lcpPageTrack(lcpMetric);
+    lcpEmit(lcpMetric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(2);
+
+    const clsRecord = records.find(
+      (r) => r.attributes['browser.web_vital.name'] === 'cls',
+    );
+    const lcpRecord = records.find(
+      (r) => r.attributes['browser.web_vital.name'] === 'lcp',
+    );
+
+    expect(clsRecord?.eventName).to.equal('browser.web_vital');
+    expect(lcpRecord?.eventName).to.equal('browser.web_vital');
+    expect(clsRecord?.attributes).to.deep.include({
+      [ATTR_URL_FULL]: 'https://example.com',
+    });
+    expect(lcpRecord?.attributes).to.deep.include({
+      [ATTR_URL_FULL]: 'https://example.com',
+    });
+    const lcpBody = JSON.parse(lcpRecord?.body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(lcpBody['timeToFirstByte']).to.equal(999);
+    expect(lcpBody['resourceLoadDelay']).to.equal(1000);
+    expect(lcpBody['resourceLoadDuration']).to.equal(2000);
+    expect(lcpBody['elementRenderDelay']).to.equal(3000);
+  });
+
+  it('should omit non-serializable attribution values from body', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'INP',
+      value: 100,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        interactionTarget: 'some-target',
+        interactionTime: 19000,
+        loadState: 'complete',
+        interactionTargetElement: document.createElement('div'),
+        processedEventEntries: [{ name: 'click' }],
+        longAnimationFrameEntries: [],
+      },
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    const record = records[0];
+
+    expect(record.attributes).to.deep.equal({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'inp',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'good',
+      'browser.web_vital.value': 100,
+    });
+    const body = JSON.parse(record.body as string) as Record<string, unknown>;
+    expect(body['interactionTarget']).to.equal('some-target');
+    expect(body['interactionTime']).to.equal(19000);
+    expect(body['loadState']).to.equal('complete');
+  });
+
+  it('should preserve falsy primitive attribution values in body', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftValue: 0,
+        loadState: '',
+      },
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    const body = JSON.parse(records[0].body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body['largestShiftValue']).to.equal(0);
+    expect(body['loadState']).to.equal('');
+  });
+
+  it('should handle null attribution gracefully', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'FCP',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: null,
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    const record = records[0];
+
+    expect(record.attributes).to.deep.equal({
+      'browser.web_vital.delta': 0,
+      'browser.web_vital.id': 'm1',
+      'browser.web_vital.name': 'fcp',
+      'browser.web_vital.navigation_type': 'navigate',
+      'browser.web_vital.rating': 'good',
+      'browser.web_vital.value': 0,
+    });
+    expect(record.body).to.equal('null');
+  });
+
+  it('should include boolean attribution values in body', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 0,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: {
+        largestShiftValue: 0,
+        hadRecentInput: false,
+      },
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    const body = JSON.parse(records[0].body as string) as Record<
+      string,
+      unknown
+    >;
+    expect(body['largestShiftValue']).to.equal(0);
+    expect(body['hadRecentInput']).to.equal(false);
+  });
+
+  it('should not register reportAllChanges listeners when urlAttribution is false', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    expect(inpStub.callCount).to.equal(1);
+    expect(lcpStub.callCount).to.equal(1);
+    expect(clsStub.callCount).to.equal(1);
+  });
+
+  describe('SPA url attribution', () => {
+    it('should attribute the correct URL for INP metrics', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      void expect(inpStub.callCount).to.equal(2);
+      const changeFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = inpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const inpMetric = {
+        name: 'INP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          interactionTarget: 'some-target',
+          interactionTime: 19000,
+          nextPaintTime: 18000,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: [],
+          inputDelay: 1000,
+          processingDuration: 2000,
+          presentationDelay: 3000,
+          loadState: 'complete',
+        },
+      } as MetricWithAttribution;
+
+      changeFunc(inpMetric);
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(inpMetric);
+      testDocument.URL = 'https://third.com';
+      pageManager.setCurrentRoute({ path: '/third/:id', url: '/third/123' });
+      finalFunc(inpMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [ATTR_URL_FULL]: 'https://second.com',
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+    });
+
+    it('should attribute the correct URL for LCP metrics', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      void expect(lcpStub.callCount).to.equal(2);
+      const changeFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const lcpMetric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          timeToFirstByte: 999,
+          resourceLoadDelay: 1000,
+          resourceLoadDuration: 2000,
+          elementRenderDelay: 3000,
+        },
+      } as MetricWithAttribution;
+
+      changeFunc(lcpMetric);
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(lcpMetric);
+      testDocument.URL = 'https://third.com';
+      pageManager.setCurrentRoute({ path: '/third/:id', url: '/third/123' });
+      finalFunc(lcpMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [ATTR_URL_FULL]: 'https://second.com',
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+    });
+
+    it('should attribute the correct URL for CLS metrics based on largestShiftTarget changes', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      void expect(clsStub.callCount).to.equal(2);
+      const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const clsMetric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: { largestShiftTarget: 'some-target-1' },
+      } as CLSMetricWithAttribution;
+
+      changeFunc(clsMetric);
+      clsMetric.attribution.largestShiftTarget = 'some-target-2';
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(clsMetric);
+      testDocument.URL = 'https://third.com';
+      pageManager.setCurrentRoute({ path: '/third/:id', url: '/third/123' });
+      changeFunc(clsMetric);
+      finalFunc(clsMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [ATTR_URL_FULL]: 'https://second.com',
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+    });
+
+    it('should attribute the correct URL for FCP metrics', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      void expect(fcpStub.callCount).to.equal(2);
+      const changeFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = fcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const fcpMetric = {
+        name: 'FCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          timeToFirstByte: 0,
+          firstByteToFCP: 0,
+          loadState: 'complete',
+        },
+      } as FCPMetricWithAttribution;
+
+      changeFunc(fcpMetric);
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(fcpMetric);
+      testDocument.URL = 'https://third.com';
+      pageManager.setCurrentRoute({ path: '/third/:id', url: '/third/123' });
+      finalFunc(fcpMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [ATTR_URL_FULL]: 'https://second.com',
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+    });
+
+    it('should attribute the correct URL for TTFB metrics', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      void expect(ttfbStub.callCount).to.equal(2);
+      const changeFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const ttfbMetric = {
+        name: 'TTFB',
+        value: 33,
+        rating: 'poor',
+        delta: 99,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {
+          waitingDuration: 20,
+          cacheDuration: 40,
+          dnsDuration: 60,
+          connectionDuration: 80,
+          requestDuration: 100,
+          navigationEntry: {
+            redirectStart: 0,
+            redirectEnd: 0,
+            domainLookupStart: 10,
+            domainLookupEnd: 20,
+            connectStart: 20,
+            connectEnd: 30,
+            secureConnectionStart: 0,
+            requestStart: 30,
+            responseStart: 50,
+            responseEnd: 60,
+            startTime: 0,
+          } as PerformanceNavigationTiming,
+        },
+      } as MetricWithAttribution;
+
+      changeFunc(ttfbMetric);
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(ttfbMetric);
+      testDocument.URL = 'https://third.com';
+      pageManager.setCurrentRoute({ path: '/third/:id', url: '/third/123' });
+      finalFunc(ttfbMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [ATTR_URL_FULL]: 'https://second.com',
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+    });
+  });
+
+  describe('page manager', () => {
+    it('should attach page attributes when route is set', () => {
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+
+      void expect(clsStub.calledTwice).to.be.true;
+      const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      clock.tick(5000);
+
+      const metric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [KEY_EMB_PAGE_PATH]: '/test/:id',
+        [KEY_EMB_PAGE_ID]: pageManager.getCurrentPageId(),
+      });
+    });
+
+    it('should attach page label when label is set', () => {
+      const pageManager = new EmbracePageManager({
+        useDocumentTitleAsPageLabel: false,
+      });
+      pageManager.setPageLabel('MyLabel');
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+
+      const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      clock.tick(5000);
+
+      const metric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[0].attributes).to.deep.include({
+        [KEY_APP_SURFACE_LABEL]: 'MyLabel',
+      });
+    });
+
+    it('should not attach page label when label is not set', () => {
+      const pageManager = new EmbracePageManager({
+        useDocumentTitleAsPageLabel: false,
+      });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+
+      const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      clock.tick(5000);
+
+      const metric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      void expect(records[0].attributes[KEY_APP_SURFACE_LABEL]).to.be.undefined;
+    });
+
+    it('should not attach page attributes when route is not set', () => {
+      const pageManager = new EmbracePageManager();
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+
+      const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      clock.tick(5000);
+
+      const metric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      void expect(records[0].attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
+      void expect(records[0].attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
+    });
   });
 
   describe('page attribution', () => {
