@@ -1,5 +1,4 @@
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -581,7 +580,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'good',
       'browser.web_vital.value': 33,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.attributes).to.not.have.any.keys([
@@ -1361,7 +1359,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'good',
       'browser.web_vital.value': 22,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.hrTime).to.deep.equal([5, 0]);
@@ -1409,7 +1406,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'good',
       'browser.web_vital.value': 22,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.hrTime).to.deep.equal([3, 0]);
@@ -1464,7 +1460,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'needs-improvement',
       'browser.web_vital.value': 33,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.hrTime).to.deep.equal([5, 0]);
@@ -1519,7 +1514,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'poor',
       'browser.web_vital.value': 22,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.hrTime).to.deep.equal([5, 0]);
@@ -1582,7 +1576,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'poor',
       'browser.web_vital.value': 22,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(record.hrTime).to.deep.equal([19, 0]);
@@ -1656,7 +1649,6 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.navigation_type': 'navigate',
       'browser.web_vital.rating': 'poor',
       'browser.web_vital.value': 33,
-      [ATTR_URL_FULL]: 'https://example.com',
       [KEY_BROWSER_URL_FULL]: 'https://example.com',
       'emb.web_vital.attribution.redirect': 0,
       'emb.web_vital.attribution.domainLookup': 10,
@@ -1734,10 +1726,10 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsRecord?.eventName).to.equal('browser.web_vital');
     expect(lcpRecord?.eventName).to.equal('browser.web_vital');
     expect(clsRecord?.attributes).to.deep.include({
-      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     expect(lcpRecord?.attributes).to.deep.include({
-      [ATTR_URL_FULL]: 'https://example.com',
+      [KEY_BROWSER_URL_FULL]: 'https://example.com',
     });
     const lcpBody = JSON.parse(lcpRecord?.body as string) as Record<
       string,
@@ -1968,7 +1960,6 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes).to.deep.include({
-        [ATTR_URL_FULL]: 'https://second.com',
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -2029,7 +2020,6 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes).to.deep.include({
-        [ATTR_URL_FULL]: 'https://second.com',
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -2085,7 +2075,6 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes).to.deep.include({
-        [ATTR_URL_FULL]: 'https://second.com',
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -2140,7 +2129,6 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes).to.deep.include({
-        [ATTR_URL_FULL]: 'https://second.com',
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -2212,7 +2200,6 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes).to.deep.include({
-        [ATTR_URL_FULL]: 'https://second.com',
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -2411,9 +2398,6 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[ATTR_URL_FULL]).to.equal(
-        'https://example.com/page-a',
-      );
       expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
@@ -2454,7 +2438,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[ATTR_URL_FULL]).to.equal(
+      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
     });
@@ -2532,7 +2516,6 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[ATTR_URL_FULL]).to.be.undefined;
       expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
     });
 
@@ -2561,7 +2544,7 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       // No _attributedPage set yet → no page attrs
-      expect(records[0].attributes[ATTR_URL_FULL]).to.be.undefined;
+      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
     });
   });
 });

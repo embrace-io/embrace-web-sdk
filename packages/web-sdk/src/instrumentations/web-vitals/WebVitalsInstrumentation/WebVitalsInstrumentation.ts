@@ -3,7 +3,6 @@ import type { LogRecord } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { millisToHrTime } from '@opentelemetry/core';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   CLSMetricWithAttribution,
   INPAttribution,
@@ -334,7 +333,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
         ...(attributedPage
           ? {
-              [ATTR_URL_FULL]: attributedPage.fullURL,
               [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
               [KEY_EMB_PAGE_PATH]: attributedPage.path,
               [KEY_EMB_PAGE_ID]: attributedPage.pageID,
