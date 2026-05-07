@@ -58,9 +58,11 @@ import {
   getWebSDKResource,
 } from '../resources/index.ts';
 import {
+  installSoftNavigationObserver,
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
+  SOFT_NAVIGATION_ENTRY_TYPE,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -299,6 +301,21 @@ export const initSDK = (
       pageManager,
       visibilityDoc: window.document,
     });
+
+    installSoftNavigationObserver();
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        const softNavObserver = new PerformanceObserver(() => {
+          if (userSessionManager.getSessionPartId() !== null) {
+            userSessionManager.endSessionPartInternal('web_soft_navigation');
+          }
+          userSessionManager.startSessionPartInternal('web_soft_navigation');
+        });
+        softNavObserver.observe({ type: SOFT_NAVIGATION_ENTRY_TYPE });
+      } catch (error) {
+        diagLogger.debug('Failed to observe soft-navigation entries', error);
+      }
+    }
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be

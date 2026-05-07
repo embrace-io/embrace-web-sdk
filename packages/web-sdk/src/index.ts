@@ -10,3 +10,9 @@ export { attributes } from './common/index.ts';
 export { getNavigationInstrumentation } from './instrumentations/index.ts';
 export type { DynamicConfigManager, DynamicSDKConfig } from './sdk/index.ts';
 export { initSDK } from './sdk/index.ts';
+export {
+  installSoftNavigationObserver,
+  SOFT_NAVIGATION_ENTRY_TYPE,
+  type SoftNavigationObserverOptions,
+  type SoftNavigationPerformanceEntry,
+} from './utils/index.ts';

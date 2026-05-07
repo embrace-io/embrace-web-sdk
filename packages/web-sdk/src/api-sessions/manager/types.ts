@@ -112,17 +112,19 @@ export type StartSessionOptions = {
 // `manual`, `inactivity`, `max_duration_reached`, `user_session_rollover`,
 // `user_session_ended`) are emitted unprefixed so the backend can correlate
 // them across platforms. Reasons that describe behaviour specific to the web
-// environment (`web_foreground`, `web_background`, `web_activity`) are
-// stamped with a `web_` prefix.
+// environment (`web_foreground`, `web_background`, `web_activity`,
+// `web_soft_navigation`) are stamped with a `web_` prefix.
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
   | 'web_foreground' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
   | 'web_activity' // user input resumed after an inactivity-killed part
+  | 'web_soft_navigation' // SPA route change detected via the soft-navigation PerformanceObserver entry type
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
 export type SessionPartEndReason =
   | 'web_background' // tab became disengaged via visibilitychange (hidden), blur, or pagehide; covers the hard-nav unload side
+  | 'web_soft_navigation' // closed because an SPA route change rotated the part; the user session continues
   | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 

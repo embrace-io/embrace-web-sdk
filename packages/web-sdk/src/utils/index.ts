@@ -18,5 +18,11 @@ export {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from './performanceObserver/index.ts';
+export {
+  installSoftNavigationObserver,
+  SOFT_NAVIGATION_ENTRY_TYPE,
+  type SoftNavigationObserverOptions,
+  type SoftNavigationPerformanceEntry,
+} from './softNavigationObserver/index.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';
