@@ -58,9 +58,11 @@ import {
   getWebSDKResource,
 } from '../resources/index.ts';
 import {
+  installSoftNavigationEvent,
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
+  SOFT_NAVIGATION_EVENT,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -299,6 +301,15 @@ export const initSDK = (
       pageManager,
       visibilityDoc: window.document,
     });
+
+    installSoftNavigationEvent();
+    window.addEventListener(SOFT_NAVIGATION_EVENT, () => {
+      if (userSessionManager.getSessionPartId() !== null) {
+        userSessionManager.endSessionPartInternal('web_soft_navigation');
+      }
+      userSessionManager.startSessionPartInternal('web_soft_navigation');
+    });
+
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be

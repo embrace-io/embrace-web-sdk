@@ -1,4 +1,6 @@
 /// <reference types="vite/client" />
+import type { SoftNavigationDetail } from '@embrace-io/web-sdk';
+import { SOFT_NAVIGATION_EVENT } from '@embrace-io/web-sdk';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../src/index.css';
@@ -46,6 +48,9 @@ const base = import.meta.env.BASE_URL;
 
 const App = () => {
   const [route, setRoute] = useState<Route>(getRoute);
+  const [lastSoftNav, setLastSoftNav] = useState<SoftNavigationDetail | null>(
+    null,
+  );
 
   const navigate = (target: Route) => {
     history.pushState(null, '', `${base}${PAGES[target].path}`);
@@ -58,6 +63,14 @@ const App = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  useEffect(() => {
+    const onSoftNav = (event: CustomEvent<SoftNavigationDetail>) => {
+      setLastSoftNav(event.detail);
+    };
+    window.addEventListener(SOFT_NAVIGATION_EVENT, onSoftNav);
+    return () => window.removeEventListener(SOFT_NAVIGATION_EVENT, onSoftNav);
+  }, []);
+
   const page = PAGES[route];
   const nav = (Object.keys(PAGES) as Route[]).map((r) => (
     <button key={r} type="button" onClick={() => navigate(r)}>
@@ -68,6 +81,25 @@ const App = () => {
   return (
     <NavPage title={page.title} nav={nav}>
       <p>{page.description}</p>
+      <fieldset>
+        <legend>Last soft navigation</legend>
+        {lastSoftNav ? (
+          <dl className="info-list">
+            <dt>URL</dt>
+            <dd>{lastSoftNav.url}</dd>
+            <dt>Previous URL</dt>
+            <dd>{lastSoftNav.previousUrl}</dd>
+            <dt>Start time</dt>
+            <dd>{lastSoftNav.startTime.toFixed(2)} ms</dd>
+            <dt>Paint time</dt>
+            <dd>{lastSoftNav.paintTime.toFixed(2)} ms</dd>
+            <dt>Navigation ID</dt>
+            <dd>{lastSoftNav.navigationId}</dd>
+          </dl>
+        ) : (
+          <p>Click a navigation button to trigger a soft navigation.</p>
+        )}
+      </fieldset>
     </NavPage>
   );
 };
