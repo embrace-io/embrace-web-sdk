@@ -1895,6 +1895,32 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['hadRecentInput']).to.equal(false);
   });
 
+  it('should omit body when includeRawAttribution is false', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+      includeRawAttribution: false,
+    });
+
+    const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: { largestShiftValue: 1.5 },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.body).to.be.undefined;
+  });
+
   it('should not register reportAllChanges listeners when urlAttribution is false', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
