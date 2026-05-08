@@ -1,5 +1,6 @@
 import * as chai from 'chai';
 import {
+  FailingStorage,
   fakeFetchGetRequestHeaders,
   fakeFetchGetUrl,
   fakeFetchInstall,
@@ -8,6 +9,7 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
 } from '../../../tests/utils/index.ts';
+import { EmbraceStorage } from '../../utils/index.ts';
 import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.ts';
 import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';
 
@@ -15,18 +17,20 @@ const { expect } = chai;
 
 describe('EmbraceDynamicConfigManager', () => {
   let diag: InMemoryDiagLogger;
-  let storage: InMemoryStorage;
+  let inMemoryStorage: InMemoryStorage;
+  let storage: EmbraceStorage;
 
   before(() => {
     fakeFetchInstall();
   });
 
   beforeEach(() => {
-    storage = new InMemoryStorage();
+    inMemoryStorage = new InMemoryStorage();
     diag = new InMemoryDiagLogger();
+    storage = new EmbraceStorage(inMemoryStorage, diag);
 
     fakeFetchResetHistory();
-    storage.clear();
+    inMemoryStorage.clear();
   });
 
   it('should set the config using setConfig method', () => {
@@ -73,7 +77,7 @@ describe('EmbraceDynamicConfigManager', () => {
   });
 
   it('should get the remote stored config for an app connected to Embrace', () => {
-    storage.setItem(
+    inMemoryStorage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
         etag: null,
@@ -99,9 +103,9 @@ describe('EmbraceDynamicConfigManager', () => {
   });
 
   it('should not fail if storage is not available', () => {
+    const failingStorage = new EmbraceStorage(new FailingStorage(), diag);
     const configManager = new EmbraceDynamicConfigManager({
-      // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
-      storage: null,
+      storage: failingStorage,
       diag,
     });
 
@@ -111,9 +115,9 @@ describe('EmbraceDynamicConfigManager', () => {
       samplingPct: 100,
       networkSpansForwardingThreshold: 0,
     });
-    expect(diag.getWarnLogs()[0]).to.contain(
-      'Failed to parse remote config from storage',
-    );
+    // EmbraceStorage emits a "Failed to read" warning when the underlying read
+    // throws.
+    expect(diag.getWarnLogs()[0]).to.contain('Failed to read');
   });
 
   it('should not fetch the remote config if is not connected to Embrace', async () => {
@@ -221,7 +225,7 @@ describe('EmbraceDynamicConfigManager', () => {
   });
 
   it('should use the stored etag in the request headers, and update if it changes', async () => {
-    storage.setItem(
+    inMemoryStorage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
         etag: 'stored-etag',
@@ -261,13 +265,13 @@ describe('EmbraceDynamicConfigManager', () => {
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
     });
-    expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
+    expect(inMemoryStorage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
       JSON.stringify({ config: { threshold: 80 }, etag: 'new-etag' }),
     );
   });
 
   it('should not update the config if the remote config has not changed', async () => {
-    storage.setItem(
+    inMemoryStorage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
         config: {
@@ -309,7 +313,7 @@ describe('EmbraceDynamicConfigManager', () => {
     expect(fakeFetchGetRequestHeaders()).to.deep.equal({
       'If-None-Match': 'stored-etag',
     });
-    expect(storage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
+    expect(inMemoryStorage.getItem(LOCAL_STORAGE_REMOTE_CONFIG_KEY)).to.equal(
       JSON.stringify({ config: { threshold: 75 }, etag: 'stored-etag' }),
     );
   });

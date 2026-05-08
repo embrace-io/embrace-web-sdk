@@ -213,4 +213,13 @@ describe('EmbraceTraceManager', () => {
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
   });
+
+  it('should leave a span un-parented when no explicit parent or context is provided', () => {
+    const span = manager.startSpan('demo-span');
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finished = finishedSpans.find((s) => s.name === 'demo-span');
+    void expect(finished?.parentSpanContext?.spanId).to.be.undefined;
+  });
 });

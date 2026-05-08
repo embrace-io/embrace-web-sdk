@@ -30,6 +30,7 @@ import {
 } from '../../constants/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import {
+  EmbraceStorage,
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
@@ -54,7 +55,7 @@ export class EmbraceLogManager implements LogManager {
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
-  private readonly _storage: Storage;
+  private readonly _storage: EmbraceStorage;
 
   public constructor({
     diag: diagParam,
@@ -63,7 +64,7 @@ export class EmbraceLogManager implements LogManager {
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
     visibilityDoc = window.document,
-    storage = window.localStorage,
+    storage,
   }: EmbraceLogManagerArgs) {
     const loggerProvider = globalLoggerProviderOverride ?? logs;
 
@@ -77,7 +78,8 @@ export class EmbraceLogManager implements LogManager {
     this._spanSessionManager = spanSessionManager;
     this._limitManager = limitManager;
     this._visibilityDoc = visibilityDoc;
-    this._storage = storage;
+    this._storage =
+      storage ?? new EmbraceStorage(window.localStorage, this._diag);
   }
 
   private _validateAttributes(attributes: unknown): Attributes {
@@ -113,7 +115,7 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (!handled) {
-      this._spanSessionManager.incrSessionCountForKey(
+      this._spanSessionManager.incrSessionPartCountForKey(
         KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
       );
     }
@@ -194,7 +196,9 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (severity === 'error') {
-      this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
+      this._spanSessionManager.incrSessionPartCountForKey(
+        KEY_EMB_ERROR_LOG_COUNT,
+      );
     }
 
     let stack = '';

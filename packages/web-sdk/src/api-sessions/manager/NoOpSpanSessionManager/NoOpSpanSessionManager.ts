@@ -1,13 +1,16 @@
-import type { HrTime } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
+  SpanSessionManagerInternal,
+  UserSessionAttributes,
+} from '../../../managers/EmbraceSpanSessionManager/types.ts';
+import type {
   PropertyOptions,
-  ReasonSessionEnded,
-  SpanSessionManager,
+  SessionPartEndReason,
+  SessionPartStartReason,
+  UserSessionEndReason,
 } from '../index.ts';
 
-export class NoOpSpanSessionManager implements SpanSessionManager {
+export class NoOpSpanSessionManager implements SpanSessionManagerInternal {
   public addBreadcrumb(_name: string): void {
     // do nothing.
   }
@@ -28,13 +31,7 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
     // do nothing.
   }
 
-  public endSessionSpanInternal(_reason: ReasonSessionEnded): void {
-    // do nothing.
-  }
-
-  public currentSessionAsReadableSpan(
-    _reason: ReasonSessionEnded,
-  ): ReadableSpan | null {
+  public currentSessionAsReadableSpan(): null {
     return null;
   }
 
@@ -42,11 +39,11 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
 
   public getPreviousSessionId = () => null;
 
-  public getSessionSpan(): ExtendedSpan | null {
+  public getSessionSpan(): null {
     return null;
   }
 
-  public getSessionStartTime(): HrTime | null {
+  public getSessionStartTime(): null {
     return null;
   }
 
@@ -61,4 +58,57 @@ export class NoOpSpanSessionManager implements SpanSessionManager {
   public addSessionEndedListener(_listener: () => void): () => void {
     return () => {};
   }
+
+  public setSessionId(_id: string | null): void {}
+
+  public getUserSessionId(): string | null {
+    return null;
+  }
+
+  public getPreviousUserSessionId(): string | null {
+    return null;
+  }
+
+  public getUserSessionStartTime(): number | null {
+    return null;
+  }
+
+  public getUserSessionAttributes(): UserSessionAttributes | null {
+    return null;
+  }
+
+  public getUserSessionIdOverride(): string | null {
+    return null;
+  }
+
+  public endUserSession(): void {}
+
+  public getSessionPartId(): string | null {
+    return null;
+  }
+
+  public getSessionPartSpan(): ExtendedSpan | null {
+    return null;
+  }
+
+  public startSessionPartInternal(_reason: SessionPartStartReason): void {}
+
+  public endSessionPartInternal(
+    _reason: SessionPartEndReason,
+    _userSessionEndReason?: UserSessionEndReason | null,
+  ): void {}
+
+  public incrSessionPartCountForKey(_key: string): void {}
+
+  public incrNextSessionPartCountForKey(_key: string): void {}
+
+  public addSessionPartStartedListener(_listener: () => void): () => void {
+    return () => {};
+  }
+
+  public addSessionPartEndedListener(_listener: () => void): () => void {
+    return () => {};
+  }
+
+  public setTracerProvider(): void {}
 }

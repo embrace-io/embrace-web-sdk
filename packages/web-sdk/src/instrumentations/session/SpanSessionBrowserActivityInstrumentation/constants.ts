@@ -1,42 +1,13 @@
-/** 30 minutes */
-export const TIMEOUT_TIME = 30 * 60 * 1000; // half an hour in milis = 1.800.000 milis
-/** 30 seconds */
-export const EVENT_THROTTLING_TIME_WINDOW = 30 * 1000; // 30 seconds in milis = 30.000 milis
-// TODO allow users to configure what events they want to listen to, or at list some flavors like "minimal" and "full"
-//  switching from the current list to the full list:
-/*export const WINDOW_USER_EVENTS = [
-  'resize',
-  'copy',
-  'cut',
-  'paste',
-  'focus',
-  'afterprint',
-  'beforeprint',
-  'scrollsnapchange',
-  'auxclick',
-  'click',
-  'dblclick',
-  'drag',
-  'dragend',
-  'dragenter',
-  'drageleave',
-  'dragover',
-  'dragstart',
-  'drop',
-  'keydown',
-  'keyup',
-  'keypress',
-  'mousedown',
-  'mouseenter',
-  'mouseleave',
-  'mousemove',
-  'mouseout',
-  'mouseover',
-  'mouseup',
-]; // list manually generated from the user related event in https://developer.mozilla.org/en-US/docs/Web/API/Window#events, updated on 2025-02-24
-*/
-/** List of events we listen for user interactions*/
-export const WINDOW_USER_EVENTS = [
+/** 30 minutes in ms. After this window of no user input during an active
+ * foreground part, the SDK ends the part with reason `inactivity`. */
+export const PART_INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+
+/** 30 seconds in ms. Upper bound on how often the activity handler runs; prevents
+ * mousemove from calling setTimeout for every sub-second event. */
+export const ACTIVITY_THROTTLE_MS = 30 * 1000;
+
+/** Input events that count as user interaction with a foreground tab. */
+export const ACTIVITY_EVENTS: ReadonlyArray<string> = [
   'keydown',
   'mousedown',
   'mousemove',

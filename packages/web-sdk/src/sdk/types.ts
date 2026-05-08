@@ -28,15 +28,15 @@ import type {
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
   ServerTimingInstrumentationArgs,
-  SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionVisibilityInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
+  UserSessionConfig,
 } from '../managers/index.ts';
+import type { EmbraceStorage } from '../utils/index.ts';
 
 export interface DynamicSDKConfig {
   /**
@@ -228,6 +228,14 @@ type BaseSDKInitConfig = {
    * **default**: true
    */
   useDocumentTitleAsPageLabel?: boolean;
+
+  /**
+   * userSessionConfig overrides default user session lifetime bounds. Values outside the allowed ranges
+   * defined in the user session spec fall back to the defaults; values are not clamped to range edges.
+   *
+   * **default**: undefined (use spec defaults: 12h max duration, 30m inactivity timeout)
+   */
+  userSessionConfig?: UserSessionConfig;
 };
 
 /*
@@ -293,18 +301,19 @@ export interface SDKControl {
 
 export interface SetupUserArgs {
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: EmbraceStorage;
 }
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: EmbraceStorage;
+  userSessionConfig?: UserSessionConfig;
 }
 
 export interface SetupTracesArgs {
   resource: Resource;
-  spanSessionManager: SpanSessionManager;
+  spanSessionManager: SpanSessionManagerInternal;
   userManager: UserManager;
   spanExporters?: SpanExporter[];
   spanProcessors: SpanProcessor[];
@@ -327,7 +336,7 @@ export interface SetupLogsArgs {
   attributeScrubbers: AttributeScrubber[];
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: EmbraceStorage;
   pageManager: PageManager;
 }
 
@@ -354,7 +363,7 @@ interface NetworkInstrumentationArgs {
 
 export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
-  spanSessionManager?: SpanSessionManager;
+  spanSessionManager?: SpanSessionManagerInternal;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
 }
@@ -364,8 +373,6 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;
-  'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
-  'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;

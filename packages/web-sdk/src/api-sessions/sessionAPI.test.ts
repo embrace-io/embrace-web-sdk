@@ -8,7 +8,7 @@ import { session } from './sessionAPI.ts';
 
 describe('sessionAPI', () => {
   it('should export a session instance with expected methods', () => {
-    expect(session).to.have.property('getSessionId');
+    expect(session).to.have.property('getUserSessionId');
     expect(session).to.have.property('setGlobalSessionManager');
     expect(session).to.have.property('addBreadcrumb');
   });
@@ -33,16 +33,6 @@ describe('sessionAPI', () => {
         invocation: () => session.addProperty(undefined, undefined),
       },
       {
-        name: 'currentSessionAsReadableSpan',
-        // @ts-expect-error
-        invocation: () => session.currentSessionAsReadableSpan('not_valid'),
-      },
-      {
-        name: 'startSessionSpan',
-        // @ts-expect-error
-        invocation: () => session.startSessionSpan(null),
-      },
-      {
         name: 'addSessionStartedListener',
         // @ts-expect-error
         invocation: () => session.addSessionStartedListener(null),
@@ -58,7 +48,7 @@ describe('sessionAPI', () => {
       manager = new EmbraceSpanSessionManager({
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
       });
-      manager.startSessionSpan();
+      manager.startSessionPartInternal('init');
       session.setGlobalSessionManager(manager);
     });
 

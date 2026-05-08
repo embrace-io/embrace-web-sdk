@@ -155,7 +155,6 @@ const LOG_RECORD_IGNORED_KEYS = [
   'app.surface.label',
   'log.record.uid',
   'session.id',
-  'session.previous_id',
   'user.id',
 ];
 

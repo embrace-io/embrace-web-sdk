@@ -12,15 +12,17 @@ import type {
   SpanProcessor,
 } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
-import type { SessionSpan } from '../../instrumentations/index.ts';
+import type { SessionPartSpan } from '../../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../../managers/index.ts';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
 
-const isSessionSpan = (span: ReadableSpan | SessionSpan): span is SessionSpan =>
-  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Session;
+const isSessionSpan = (
+  span: ReadableSpan | SessionPartSpan,
+): span is SessionPartSpan =>
+  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.SessionPart;
 
 type ExportFailureReason = 'concurrent_limit' | 'fetch_error' | 'unknown';
 
@@ -75,7 +77,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
       }
       this._pendingSpans.push(span);
     } else {
-      this._diag.debug('session span ended. Exporting all pending spans.');
+      this._diag.debug('session part span ended. Exporting all pending spans.');
       this._exportSpans([span, ...this._pendingSpans]);
       this._pendingSpans = [];
     }
@@ -95,10 +97,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
             failureReason = 'fetch_error';
           }
 
-          this._spanSessionManager.incrSessionCountForKey(
+          this._spanSessionManager.incrSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'current'),
           );
-          this._spanSessionManager.incrNextSessionCountForKey(
+          this._spanSessionManager.incrNextSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'previous'),
           );
           this._diag.error(`spans failed to export: ${errorMessage}`);
@@ -115,10 +117,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
           msg = reason;
         }
 
-        this._spanSessionManager.incrSessionCountForKey(
+        this._spanSessionManager.incrSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'current'),
         );
-        this._spanSessionManager.incrNextSessionCountForKey(
+        this._spanSessionManager.incrNextSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'previous'),
         );
         this._diag.error(`spans failed to export: ${msg}`);

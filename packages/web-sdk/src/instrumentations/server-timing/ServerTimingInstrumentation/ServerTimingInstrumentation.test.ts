@@ -51,7 +51,7 @@ describe('ServerTimingInstrumentation', () => {
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     const logManager = new EmbraceLogManager({
       spanSessionManager,
       limitManager,

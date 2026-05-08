@@ -7,6 +7,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../../tests/utils/index.ts';
 import {
@@ -14,11 +15,13 @@ import {
   mockSessionSpan,
   mockSpan,
 } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
+import type { SpanSessionManagerInternal } from '../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../managers/index.ts';
+import { EmbraceStorage } from '../../utils/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
 
 const { expect } = chai;
@@ -48,13 +51,15 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let spanSessionManager: SpanSessionManagerInternal;
+  let storage: EmbraceStorage;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers(1756138004000);
     memoryExporter = setupTestTraceExporter();
 
     diag = new InMemoryDiagLogger();
+    storage = new EmbraceStorage(new InMemoryStorage(), diag);
     limitManager = new EmbraceLimitManager({
       diag,
       ...DEFAULT_LIMITS,
@@ -66,6 +71,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     });
 
     spanSessionManager = new EmbraceSpanSessionManager({
+      storage,
       limitManager,
     });
 
@@ -92,7 +98,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.type',
+      'ux.session_part',
+    );
   });
 
   it('should batch non-session spans with session span', () => {
@@ -103,7 +112,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     expect(finishedSpans).to.have.lengthOf(2);
     const sessionSpan = finishedSpans[0];
     const nonSessionSpan = finishedSpans[1];
-    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
+    expect(sessionSpan.attributes).to.have.property(
+      'emb.type',
+      'ux.session_part',
+    );
     expect(nonSessionSpan).to.have.property('name', 'mock span');
   });
 
@@ -149,7 +161,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
   exportFailedTests.forEach((test) => {
     it(test.name, async () => {
-      spanSessionManager.startSessionSpan();
+      spanSessionManager.startSessionPartInternal('init');
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
@@ -164,10 +176,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
       await Promise.resolve();
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
-      spanSessionManager.startSessionSpan();
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.startSessionPartInternal('init');
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);

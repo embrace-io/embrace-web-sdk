@@ -9,4 +9,5 @@ export { PageLogRecordProcessor } from './PageLogRecordProcessor/index.ts';
 export { PageSpanProcessor } from './PageSpanProcessor/index.ts';
 export { SpanScrubProcessor } from './SpanScrubProcessor/index.ts';
 export { UserLogRecordProcessor } from './UserLogRecordProcessor/index.ts';
+export { UserSessionSpanProcessor } from './UserSessionSpanProcessor/index.ts';
 export { UserSpanProcessor } from './UserSpanProcessor/index.ts';

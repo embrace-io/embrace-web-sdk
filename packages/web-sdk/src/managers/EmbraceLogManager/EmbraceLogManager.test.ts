@@ -31,11 +31,16 @@ import {
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
-import { GLOBAL_CONFIG, OTelPerformanceManager } from '../../utils/index.ts';
+import {
+  EmbraceStorage,
+  GLOBAL_CONFIG,
+  OTelPerformanceManager,
+} from '../../utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
 import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.ts';
 import { EmbraceLogManager } from './EmbraceLogManager.ts';
 
@@ -54,7 +59,7 @@ describe('EmbraceLogManager', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let spanExporter: InMemorySpanExporter;
   let perf: PerformanceManager;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let spanSessionManager: SpanSessionManagerInternal;
   let limitManager: EmbraceLimitManager;
   let diag: InMemoryDiagLogger;
 
@@ -497,8 +502,8 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property('exception.name', 'Error');
   });
 
-  it('should report counts of logging on the active session span', () => {
-    spanSessionManager.startSessionSpan();
+  it('should report counts of logging on the active session part span', () => {
+    spanSessionManager.startSessionPartInternal('init');
 
     // Error logs should be counted
     manager.message('this is an error log', 'error');
@@ -522,7 +527,7 @@ describe('EmbraceLogManager', () => {
       handled: true,
     });
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -532,7 +537,7 @@ describe('EmbraceLogManager', () => {
     ).to.be.equal(3);
   });
 
-  it('should handle report counts of logging when there is no the active session span', () => {
+  it('should handle report counts of logging when there is no active session part span', () => {
     expect(() => {
       manager.message('this is an error log', 'error');
       manager.logException(new Error('this is an exception'), {
@@ -540,8 +545,8 @@ describe('EmbraceLogManager', () => {
       });
     }).to.not.throw();
 
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -555,7 +560,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should limit the amount of logs per severity per session', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     for (let i = 0; i < 10; i++) {
       manager.message('this is a warning log', 'warning');
@@ -578,7 +583,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an error log');
     }
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -599,7 +604,7 @@ describe('EmbraceLogManager', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     manager.message('this is a warning log', 'warning');
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
@@ -607,7 +612,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate log messages', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.message('this is an info log', 'info');
     manager.message(
@@ -622,7 +627,7 @@ describe('EmbraceLogManager', () => {
       'this is an info log which has a message longer than the allo',
     );
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -639,7 +644,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the number of log attributes', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.message('this is an error log', 'error', {
       attributes: {
@@ -671,7 +676,7 @@ describe('EmbraceLogManager', () => {
     // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
     expect(finishedLogs[1].attributes).not.to.have.property('key3');
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -688,7 +693,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the key and value of a log attribute', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.message('this is an error log', 'error', {
       attributes: {
@@ -704,7 +709,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -729,7 +734,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should limit the amount of exceptions per session', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     for (let i = 0; i < 10; i++) {
       manager.logException(new Error('this is an exception'));
@@ -742,7 +747,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an exception');
     }
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -760,7 +765,7 @@ describe('EmbraceLogManager', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     manager.logException(new Error('this is an exception'));
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
@@ -768,7 +773,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate exception messages', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.logException(
       new Error(
@@ -782,7 +787,7 @@ describe('EmbraceLogManager', () => {
       'this is an exception which has a message longer th',
     );
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -799,7 +804,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the number of exception attributes', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.logException('this is an exception', {
       attributes: {
@@ -834,7 +839,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
     expect(finishedLogs[1].attributes).not.to.have.property('key4');
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -851,7 +856,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the key and value of an exception attribute', () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     manager.logException('this is an exception', {
       attributes: {
@@ -868,7 +873,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1278,7 +1283,10 @@ describe('EmbraceLogManager', () => {
         perf,
         spanSessionManager,
         limitManager,
-        storage: new FailingStorage(),
+        storage: new EmbraceStorage(
+          new FailingStorage(),
+          new InMemoryDiagLogger(),
+        ),
       });
       manager.logException(new Error('exception 1'));
       manager.logException(new Error('exception 2'));

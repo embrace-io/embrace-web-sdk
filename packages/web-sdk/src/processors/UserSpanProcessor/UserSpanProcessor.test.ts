@@ -3,11 +3,13 @@ import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
+  InMemoryDiagLogger,
   InMemoryStorage,
   setupTestTraceExporter,
 } from '../../../tests/utils/index.ts';
 import type { UserManager } from '../../api-users/index.ts';
 import { EmbraceUserManager } from '../../managers/index.ts';
+import { EmbraceStorage } from '../../utils/EmbraceStorage/EmbraceStorage.ts';
 import { UserSpanProcessor } from './UserSpanProcessor.ts';
 
 const { expect } = chai;
@@ -19,7 +21,10 @@ describe('UserSpanProcessor', () => {
 
   before(() => {
     userManager = new EmbraceUserManager({
-      storage: new InMemoryStorage(),
+      storage: new EmbraceStorage(
+        new InMemoryStorage(),
+        new InMemoryDiagLogger(),
+      ),
     });
 
     memoryExporter = setupTestTraceExporter([

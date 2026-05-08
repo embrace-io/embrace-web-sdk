@@ -72,7 +72,6 @@ const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
 const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'session.id',
-  'session.previous_id',
   'log.record.uid',
   'emb.sdk_startup_duration',
   'emb.app_instance_id',

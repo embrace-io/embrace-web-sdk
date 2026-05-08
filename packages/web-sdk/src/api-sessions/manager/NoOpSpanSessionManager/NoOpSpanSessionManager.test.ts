@@ -1,4 +1,3 @@
-import type { HrTime, Span } from '@opentelemetry/api';
 import { expect } from 'chai';
 import { NoOpSpanSessionManager } from './NoOpSpanSessionManager.ts';
 
@@ -9,81 +8,73 @@ describe('NoOpSpanSessionManager', () => {
     noOpSpanSessionManager = new NoOpSpanSessionManager();
   });
 
-  it('should return null for getSessionId', () => {
-    const sessionId = noOpSpanSessionManager.getSessionId();
-    void expect(sessionId).to.be.null;
+  it('should return null for getUserSessionId', () => {
+    void expect(noOpSpanSessionManager.getUserSessionId()).to.be.null;
   });
 
-  it('should return null for getPreviousSessionId', () => {
-    const sessionId = noOpSpanSessionManager.getPreviousSessionId();
-    void expect(sessionId).to.be.null;
+  it('should return null for getPreviousUserSessionId', () => {
+    void expect(noOpSpanSessionManager.getPreviousUserSessionId()).to.be.null;
   });
 
-  it('should return null for getSessionSpan', () => {
-    const sessionSpan: Span | null = noOpSpanSessionManager.getSessionSpan();
-    void expect(sessionSpan).to.be.null;
+  it('should return null for getUserSessionStartTime', () => {
+    void expect(noOpSpanSessionManager.getUserSessionStartTime()).to.be.null;
   });
 
-  it('should return null for getSessionStartTime', () => {
-    const sessionStartTime: HrTime | null =
-      noOpSpanSessionManager.getSessionStartTime();
-    void expect(sessionStartTime).to.be.null;
+  it('should do nothing for endUserSession', () => {
+    expect(() => noOpSpanSessionManager.endUserSession()).to.not.throw();
   });
 
-  it('should do nothing for startSessionSpan', () => {
-    expect(() => {
-      noOpSpanSessionManager.startSessionSpan();
-    }).to.not.throw();
-  });
-
-  it('should do nothing for endSessionSpan', () => {
-    expect(() => {
-      noOpSpanSessionManager.endSessionSpan();
-    }).to.not.throw();
-  });
-
-  it('should do nothing for endSessionSpanInternal', () => {
-    expect(() => {
-      noOpSpanSessionManager.endSessionSpanInternal('manual');
-    }).to.not.throw();
-  });
-
-  it('should return null for currentSessionAsReadableSpan', () => {
-    const result =
-      noOpSpanSessionManager.currentSessionAsReadableSpan('manual');
-    expect(result).to.equal(null);
+  it('should do nothing for setSessionId', () => {
+    expect(() => noOpSpanSessionManager.setSessionId('custom')).to.not.throw();
+    expect(() => noOpSpanSessionManager.setSessionId(null)).to.not.throw();
   });
 
   it('should do nothing for addBreadcrumb', () => {
-    expect(() => {
-      noOpSpanSessionManager.addBreadcrumb('name');
-    }).to.not.throw();
+    expect(() => noOpSpanSessionManager.addBreadcrumb('crumb')).to.not.throw();
   });
 
   it('should do nothing for addProperty', () => {
-    expect(() => {
-      noOpSpanSessionManager.addProperty(
-        'some-custom-key',
-        'some custom value',
-      );
-    }).to.not.throw();
+    expect(() => noOpSpanSessionManager.addProperty('k', 'v')).to.not.throw();
+    expect(() =>
+      noOpSpanSessionManager.addProperty('k', 'v', { lifespan: 'permanent' }),
+    ).to.not.throw();
   });
 
   it('should do nothing for removeProperty', () => {
-    expect(() => {
-      noOpSpanSessionManager.removeProperty('some-custom-key');
-    }).to.not.throw();
+    expect(() => noOpSpanSessionManager.removeProperty('k')).to.not.throw();
   });
 
-  it('should do nothing for addSessionStartedListener', () => {
-    expect(() => {
-      noOpSpanSessionManager.addSessionStartedListener(() => {});
-    }).to.not.throw();
+  it('should return null for deprecated getSessionId', () => {
+    void expect(noOpSpanSessionManager.getSessionId()).to.be.null;
   });
 
-  it('should do nothing for addSessionEndedListener', () => {
-    expect(() => {
-      noOpSpanSessionManager.addSessionEndedListener(() => {});
-    }).to.not.throw();
+  it('should return null for deprecated getPreviousSessionId', () => {
+    void expect(noOpSpanSessionManager.getPreviousSessionId()).to.be.null;
+  });
+
+  it('should return null for deprecated getSessionStartTime', () => {
+    void expect(noOpSpanSessionManager.getSessionStartTime()).to.be.null;
+  });
+
+  it('should do nothing for deprecated endSessionSpan', () => {
+    expect(() => noOpSpanSessionManager.endSessionSpan()).to.not.throw();
+  });
+
+  it('should return null for deprecated getSessionSpan', () => {
+    void expect(noOpSpanSessionManager.getSessionSpan()).to.be.null;
+  });
+
+  it('should return a no-op unsubscribe for deprecated addSessionStartedListener', () => {
+    const unsubscribe = noOpSpanSessionManager.addSessionStartedListener(
+      () => {},
+    );
+    expect(() => unsubscribe()).to.not.throw();
+  });
+
+  it('should return a no-op unsubscribe for deprecated addSessionEndedListener', () => {
+    const unsubscribe = noOpSpanSessionManager.addSessionEndedListener(
+      () => {},
+    );
+    expect(() => unsubscribe()).to.not.throw();
   });
 });

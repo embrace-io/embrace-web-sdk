@@ -13,7 +13,6 @@ import {
   StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
 import { session } from '../api-sessions/index.ts';
@@ -47,6 +46,7 @@ import {
   PageSpanProcessor,
   SpanScrubProcessor,
   UserLogRecordProcessor,
+  UserSessionSpanProcessor,
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
@@ -55,7 +55,7 @@ import {
   getWebSDKResource,
 } from '../resources/index.ts';
 import {
-  NamespacedStorage,
+  EmbraceStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
 } from '../utils/index.ts';
@@ -102,6 +102,7 @@ export const initSDK = (
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
     useDocumentTitleAsPageLabel = true,
+    userSessionConfig,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -149,13 +150,17 @@ export const initSDK = (
       );
     }
 
-    const useNamespace = !registerGlobally && appID;
-    const sdkLocalStorage = useNamespace
-      ? new NamespacedStorage(appID, window.localStorage)
-      : window.localStorage;
-    const sdkSessionStorage = useNamespace
-      ? new NamespacedStorage(appID, window.sessionStorage)
-      : window.sessionStorage;
+    const namespace = !registerGlobally && appID ? appID : undefined;
+    const sdkLocalStorage = new EmbraceStorage(
+      window.localStorage,
+      diagLogger,
+      namespace,
+    );
+    const sdkSessionStorage = new EmbraceStorage(
+      window.sessionStorage,
+      diagLogger,
+      namespace,
+    );
 
     const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
       .merge(resource)
@@ -218,6 +223,7 @@ export const initSDK = (
       limitManager,
       registerGlobally,
       sdkLocalStorage,
+      userSessionConfig,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -264,6 +270,9 @@ export const initSDK = (
     });
 
     spanSessionManager.setTracerProvider(tracerProvider);
+    // No-op if the tab is hidden/unfocused at init; the first part starts
+    // on the next engagement via SpanSessionBrowserActivityInstrumentation.
+    spanSessionManager.startSessionPartInternal('init');
 
     const { loggerProvider, embraceLogManager } = setupLogs({
       resource: resourceWithWebSDKAttributes,
@@ -278,8 +287,6 @@ export const initSDK = (
       sdkLocalStorage,
       pageManager,
     });
-
-    spanSessionManager.startSessionSpan({ reason: 'init' });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
@@ -359,10 +366,12 @@ const setupSession = ({
   limitManager,
   registerGlobally,
   sdkLocalStorage,
+  userSessionConfig,
 }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
     storage: sdkLocalStorage,
+    config: userSessionConfig,
   });
 
   if (registerGlobally) {
@@ -387,7 +396,7 @@ const setupTraces = ({
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(spanSessionManager),
+    new UserSessionSpanProcessor({ spanSessionManager }),
     new BrowserSpanProcessor(),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
@@ -407,10 +416,10 @@ const setupTraces = ({
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
-      // Session properties are stored as attributes on the session span, add a
-      // buffer here so that there is room for our internal attributes
+      // Session properties are stored as attributes on the session part span,
+      // add a buffer here so that there is room for our internal attributes
       attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
-      // Breadcrumbs are stored as events on the session span, add a
+      // Breadcrumbs are stored as events on the session part span, add a
       // buffer here so that there is room for our internal events
       eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
     },

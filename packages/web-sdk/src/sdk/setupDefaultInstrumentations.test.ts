@@ -1,7 +1,7 @@
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as chai from 'chai';
-import { SpanSessionVisibilityInstrumentation } from '../instrumentations/index.ts';
+import { SpanSessionBrowserActivityInstrumentation } from '../instrumentations/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 
 const { expect } = chai;
@@ -25,7 +25,7 @@ describe('setupDefaultInstrumentations', () => {
     const instrumentations = setupDefaultInstrumentations({}, makeSetupArgs());
     expect(
       instrumentations.find(
-        (i) => i instanceof SpanSessionVisibilityInstrumentation,
+        (i) => i instanceof SpanSessionBrowserActivityInstrumentation,
       ),
     ).to.not.equal(undefined);
   });

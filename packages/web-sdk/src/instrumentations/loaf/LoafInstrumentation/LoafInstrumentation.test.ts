@@ -9,6 +9,7 @@ import {
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { log } from '../../../api-logs/index.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -86,7 +87,7 @@ describe('LoafInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let clock: sinon.SinonFakeTimers;
   let perf: MockPerformanceManager;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let spanSessionManager: SpanSessionManagerInternal;
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
@@ -100,7 +101,7 @@ describe('LoafInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     const logManager = new EmbraceLogManager({
       spanSessionManager,
       limitManager,
@@ -157,7 +158,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const logs = memoryExporter.getFinishedLogRecords();
     const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -193,7 +194,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, renderStart: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -216,7 +217,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, styleAndLayoutStart: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -240,7 +241,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 0 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -263,7 +264,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 12345 }), // interaction-driven
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -280,7 +281,7 @@ describe('LoafInstrumentation', () => {
     });
     instrumentation.setSessionManager(spanSessionManager);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const logs = memoryExporter.getFinishedLogRecords();
     const reports = logs.filter((l) => l.eventName === 'emb-loaf-report');
@@ -320,8 +321,8 @@ describe('LoafInstrumentation', () => {
     triggerEntries([makeEntry()]);
 
     // Re-create a session to trigger end
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -346,7 +347,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setSessionManager(spanSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -370,7 +371,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 200 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -392,7 +393,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 201 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -416,7 +417,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 600 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -440,7 +441,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 601 }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -461,7 +462,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.enable();
 
     triggerEntries([makeEntry({ duration: 60 })]);
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -484,7 +485,7 @@ describe('LoafInstrumentation', () => {
     const spanSessionManager2 = new EmbraceSpanSessionManager({
       limitManager: limitManager2,
     });
-    spanSessionManager2.startSessionSpan();
+    spanSessionManager2.startSessionPartInternal('init');
     const logManager2 = new EmbraceLogManager({
       spanSessionManager: spanSessionManager2,
       limitManager: limitManager2,
@@ -493,7 +494,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setSessionManager(spanSessionManager2);
 
     triggerEntries([makeEntry({ duration: 90 })]);
-    spanSessionManager2.endSessionSpan();
+    spanSessionManager2.endSessionPartInternal('inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -525,7 +526,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setSessionManager(spanSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -534,10 +535,10 @@ describe('LoafInstrumentation', () => {
     expect(firstId).to.be.a('string').and.to.have.length.greaterThan(0);
 
     memoryExporter.reset();
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     triggerEntries([makeEntry({ duration: 80 })]);
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -557,7 +558,7 @@ describe('LoafInstrumentation', () => {
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -570,11 +571,11 @@ describe('LoafInstrumentation', () => {
 
     memoryExporter.reset();
 
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     triggerEntries([makeEntry({ duration: 60 }), makeEntry({ duration: 40 })]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -606,7 +607,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -656,7 +657,7 @@ describe('LoafInstrumentation', () => {
       throw new Error('emit failed');
     };
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
 
@@ -709,7 +710,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const logs = memoryExporter.getFinishedLogRecords();
       const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
@@ -757,7 +758,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -786,7 +787,7 @@ describe('LoafInstrumentation', () => {
       ) as unknown as PerformanceLongAnimationFrameTiming['scripts'];
 
       triggerEntries([makeEntry({ scripts })]);
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -805,7 +806,7 @@ describe('LoafInstrumentation', () => {
 
       triggerEntries([makeEntry({ scripts: [] })]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summaries = memoryExporter
         .getFinishedLogRecords()
@@ -831,10 +832,10 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
       memoryExporter.reset();
 
-      spanSessionManager.startSessionSpan();
+      spanSessionManager.startSessionPartInternal('init');
 
       triggerEntries([
         makeEntry({
@@ -848,7 +849,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -884,7 +885,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -918,7 +919,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const logs = memoryExporter.getFinishedLogRecords();
       const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -955,7 +956,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()

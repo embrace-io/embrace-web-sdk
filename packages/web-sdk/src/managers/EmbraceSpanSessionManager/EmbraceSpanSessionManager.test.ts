@@ -1,740 +1,819 @@
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  WebTracerProvider,
-} from '@opentelemetry/sdk-trace-web';
-import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
-  FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
-  setupTestTraceExporter,
+  MockPerformanceManager,
 } from '../../../tests/utils/index.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
-import {
-  KEY_EMB_SESSION_REASON_ENDED,
-  KEY_EMB_SESSION_REASON_STARTED,
-  KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/attributes.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.ts';
+import type {
+  SessionPartEndReason,
+  UserSessionEndReason,
+} from '../../api-sessions/index.ts';
+import { EmbraceStorage } from '../../utils/EmbraceStorage/EmbraceStorage.ts';
 import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
-describe('EmbraceSpanSessionManager', () => {
-  let manager: EmbraceSpanSessionManager;
-  let memoryExporter: InMemorySpanExporter;
-  let diag: InMemoryDiagLogger;
-  let storage: InMemoryStorage;
-  let limitManager: EmbraceLimitManager;
+type EndCall = [
+  reason: SessionPartEndReason,
+  userSessionEndReason?: UserSessionEndReason | null,
+];
 
-  before(() => {
-    memoryExporter = setupTestTraceExporter();
-    storage = new InMemoryStorage();
-  });
+/**
+ * Returns the args passed to the most recent `endSessionPartInternal`
+ * invocation, or `undefined` if the spy was never called.
+ */
+const lastEndCall = (spy: sinon.SinonSpy): EndCall | undefined => {
+  if (spy.callCount === 0) {
+    return undefined;
+  }
+  return spy.lastCall.args as EndCall;
+};
+
+describe('EmbraceSpanSessionManager', () => {
+  let inMemoryStorage: InMemoryStorage;
+  let storage: EmbraceStorage;
+  let diag: InMemoryDiagLogger;
+  let clock: sinon.SinonFakeTimers;
 
   beforeEach(() => {
-    memoryExporter.reset();
+    inMemoryStorage = new InMemoryStorage();
     diag = new InMemoryDiagLogger();
-    limitManager = new EmbraceLimitManager({
+    storage = new EmbraceStorage(inMemoryStorage, diag);
+    clock = sinon.useFakeTimers({ now: 0 });
+  });
+
+  afterEach(() => {
+    clock.restore();
+  });
+
+  const createManager = (config?: {
+    maxDurationSeconds?: number;
+    inactivityTimeoutSeconds?: number;
+  }) =>
+    new EmbraceSpanSessionManager({
       diag,
-      ...DEFAULT_LIMITS,
-      maxAllowed: {
-        ...DEFAULT_LIMITS.maxAllowed,
-        breadcrumb: 3,
-        session_property: 4,
+      perf: new MockPerformanceManager(clock),
+      storage,
+      config,
+    });
+
+  it('should create a session on first part start', () => {
+    const manager = createManager();
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+
+    void expect(attrs).to.not.be.null;
+    expect(attrs?.['emb.user_session_id']).to.have.lengthOf(32);
+    expect(attrs?.['session.id']).to.equal(attrs?.['emb.user_session_id']);
+    expect(attrs?.['emb.user_session_number']).to.equal(1);
+    expect(attrs?.['emb.user_session_part_number']).to.equal(1);
+    expect(attrs?.['emb.user_session_start_ts']).to.be.a('number');
+    expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+      1800,
+    );
+  });
+
+  it('should continue session across parts within timeout', () => {
+    const manager = createManager();
+
+    manager.startSessionPartInternal('init');
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal('inactivity');
+
+    // Advance time within inactivity timeout (29 min)
+    clock.tick(29 * 60 * 1000);
+
+    manager.startSessionPartInternal('init');
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(1);
+    expect(attrs2?.['emb.user_session_part_number']).to.equal(2);
+  });
+
+  it('should start a session when inactivity timeout expires', () => {
+    const manager = createManager();
+
+    manager.startSessionPartInternal('init');
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal('inactivity');
+
+    // Advance past inactivity timeout (31 min)
+    clock.tick(31 * 60 * 1000);
+
+    manager.startSessionPartInternal('init');
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+    expect(attrs2?.['emb.user_session_part_number']).to.equal(1);
+  });
+
+  it('should start a session when max duration expires', () => {
+    const manager = createManager({ maxDurationSeconds: 3600 });
+
+    manager.startSessionPartInternal('init');
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal('inactivity');
+
+    // Advance past max duration (3601 seconds)
+    clock.tick(3601 * 1000);
+
+    manager.startSessionPartInternal('init');
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+  });
+
+  it('should fire max duration timer mid-part', () => {
+    const manager = createManager({ maxDurationSeconds: 3600 });
+
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+    const startSpy = sinon.spy(manager, 'startSessionPartInternal');
+
+    manager.startSessionPartInternal('init');
+
+    // Fast forward past max duration
+    clock.tick(3601 * 1000);
+
+    void expect(endSpy.called).to.be.true;
+    // startSpy was called once for the initial start AND once for the
+    // user_session_rollover that follows max-duration termination.
+    expect(startSpy.callCount).to.be.at.least(2);
+  });
+
+  it('should provide termination info when max duration fires', () => {
+    const manager = createManager({ maxDurationSeconds: 3600 });
+
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+
+    manager.startSessionPartInternal('init');
+    clock.tick(3601 * 1000);
+
+    expect(lastEndCall(endSpy)).to.deep.equal([
+      'user_session_ended',
+      'max_duration_reached',
+    ]);
+  });
+
+  it('should handle manual termination via endUserSession', () => {
+    const manager = createManager();
+
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+    const startSpy = sinon.spy(manager, 'startSessionPartInternal');
+
+    manager.startSessionPartInternal('init');
+    manager.endUserSession();
+
+    void expect(endSpy.called).to.be.true;
+    expect(startSpy.callCount).to.be.at.least(2);
+  });
+
+  it('should provide termination info during manual termination', () => {
+    const manager = createManager();
+
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+
+    manager.startSessionPartInternal('init');
+    manager.endUserSession();
+
+    expect(lastEndCall(endSpy)).to.deep.equal(['user_session_ended', 'manual']);
+  });
+
+  it('should be a no-op when ending session with no active session', () => {
+    const manager = createManager();
+    manager.endUserSession();
+    expect(diag.getDebugLogs()).to.have.lengthOf(1);
+  });
+
+  it('should share state across manager instances via storage', () => {
+    const manager1 = createManager();
+    manager1.startSessionPartInternal('init');
+    const attrs1 = manager1.getUserSessionAttributes();
+    manager1.endSessionPartInternal('inactivity');
+
+    // Simulate another tab creating a manager with the same storage
+    const manager2 = createManager();
+    manager2.startSessionPartInternal('init');
+    const attrs2 = manager2.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_part_number']).to.equal(2);
+  });
+
+  it('should handle localStorage unavailable gracefully', () => {
+    const failingStorage = {
+      getItem: () => {
+        throw new Error('Storage unavailable');
       },
-      maxLength: {
-        ...DEFAULT_LIMITS.maxLength,
-        breadcrumb: 50,
-        session_property_key: 20,
-        session_property_value: 40,
+      setItem: () => {
+        throw new Error('Storage unavailable');
       },
-    });
+      removeItem: () => {
+        throw new Error('Storage unavailable');
+      },
+      clear: () => {
+        throw new Error('Storage unavailable');
+      },
+      key: () => null,
+      length: 0,
+    } satisfies Storage;
+    const safeFailing = new EmbraceStorage(failingStorage, diag);
 
-    manager = new EmbraceSpanSessionManager({ diag, storage, limitManager });
-    storage.clear();
-  });
-
-  it('should initialize a EmbraceSpanSessionManager', () => {
-    expect(manager).to.be.instanceOf(EmbraceSpanSessionManager);
-  });
-
-  it('should start a session span', () => {
-    void expect(manager.getSessionSpan()).to.be.null;
-    void expect(manager.getSessionId()).to.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.be.null;
-    manager.startSessionSpan();
-    void expect(manager.getSessionSpan()).to.not.be.null;
-    void expect(manager.getSessionId()).to.not.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.not.be.null;
-  });
-
-  it('should end the session span', () => {
-    void expect(manager.getSessionSpan()).to.be.null;
-    void expect(manager.getSessionId()).to.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.be.null;
-    manager.startSessionSpan();
-    void expect(manager.getSessionSpan()).to.not.be.null;
-    const sessionID = manager.getSessionId();
-    void expect(sessionID).to.not.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.not.be.null;
-    manager.endSessionSpan();
-    void expect(manager.getSessionSpan()).to.be.null;
-    void expect(manager.getSessionId()).to.be.null;
-    expect(manager.getPreviousSessionId()).to.equal(sessionID);
-    void expect(manager.getSessionStartTime()).to.be.null;
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_ENDED,
-      'manual',
-    );
-    expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
-  });
-
-  it('should end the current session span when starting a new one', () => {
-    void expect(manager.getSessionSpan()).to.be.null;
-    void expect(manager.getSessionId()).to.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.be.null;
-    manager.startSessionSpan();
-    void expect(manager.getSessionSpan()).to.not.be.null;
-    const sessionID = manager.getSessionId();
-    void expect(sessionID).to.not.be.null;
-    void expect(manager.getPreviousSessionId()).to.be.null;
-    void expect(manager.getSessionStartTime()).to.not.be.null;
-    manager.startSessionSpan();
-    void expect(manager.getSessionSpan()).to.not.be.null;
-    void expect(manager.getSessionId()).to.not.be.null;
-    expect(manager.getPreviousSessionId()).to.equal(sessionID);
-    void expect(manager.getSessionStartTime()).to.not.be.null;
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_ENDED,
-      'manual',
-    );
-    expect(sessionSpan.attributes).to.have.property(ATTR_SESSION_ID, sessionID);
-  });
-
-  it('should not end a session if there is no active session', () => {
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(0);
-    expect(diag.getDebugLogs()).to.have.lengthOf(1);
-    expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to end a session, but there is no session in progress. This is a no-op.',
-    );
-  });
-
-  it('should not fail if trying to add breadcrumb to non active session', () => {
-    manager.addBreadcrumb('some breadcrumb');
-
-    expect(diag.getDebugLogs()).to.have.lengthOf(1);
-    expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.',
-    );
-  });
-
-  it('should add breadcrumb to session span', () => {
-    manager.startSessionSpan();
-    void expect(manager.getSessionSpan()).to.not.be.null;
-    void expect(manager.getSessionId()).to.not.be.null;
-    void expect(manager.getSessionStartTime()).to.not.be.null;
-
-    manager.addBreadcrumb('some breadcrumb');
-    manager.endSessionSpan();
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(1);
-
-    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(sessionSpan.events[0].attributes).to.have.property(
-      'message',
-      'some breadcrumb',
-    );
-  });
-
-  it('should not fail if trying to add properties to non active session', () => {
-    manager.addProperty('custom-property-1', 'custom value1');
-
-    expect(diag.getDebugLogs()).to.have.lengthOf(1);
-    expect(diag.getDebugLogs()[0]).to.equal(
-      'trying to add properties to a session, but there is no session in progress. This is a no-op.',
-    );
-  });
-
-  it('should add properties to session span', () => {
-    manager.startSessionSpan();
-
-    manager.addProperty('custom-property-1', 'custom value1');
-    manager.addProperty('custom-property-2', 'custom value2');
-    manager.endSessionSpan();
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-
-    expect(sessionSpan.attributes).to.have.property(
-      'emb.properties.custom-property-1',
-      'custom value1',
-    );
-    expect(sessionSpan.attributes).to.have.property(
-      'emb.properties.custom-property-2',
-      'custom value2',
-    );
-    expect(sessionSpan.attributes).to.have.property(
-      'emb.session_end_type',
-      'manual',
-    );
-    expect(sessionSpan.attributes).to.have.property('emb.type', 'ux.session');
-  });
-
-  it('should start a foreground session when the document is visible', () => {
-    const visibilityDoc: VisibilityStateDocument = {
-      visibilityState: 'visible',
-      hasFocus: () => true,
-    };
     const manager = new EmbraceSpanSessionManager({
-      visibilityDoc,
-      limitManager,
+      diag,
+      perf: new MockPerformanceManager(clock),
+      storage: safeFailing,
     });
-    manager.startSessionSpan();
-    manager.endSessionSpan();
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property('emb.state', 'foreground');
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    expect(attrs?.['emb.user_session_id']).to.have.lengthOf(32);
+    // Storage unavailable: getIncrementedCount falls back to 1, which is
+    // indistinguishable from a genuine first session.
+    expect(attrs?.['emb.user_session_number']).to.equal(1);
+    // EmbraceStorage flips disabled on the first failed write and emits
+    // exactly one error; later failures stay silent.
+    expect(diag.getErrorLogs()).to.have.lengthOf(1);
+    expect(diag.getErrorLogs()[0]).to.contain('Storage write failed');
   });
 
-  it('should start a background session when the document is hidden', () => {
-    const visibilityDoc: VisibilityStateDocument = {
-      visibilityState: 'hidden',
-      hasFocus: () => false,
+  it('should clamp max duration to the maximum', () => {
+    // 25 hours exceeds 24 hour max
+    const manager = createManager({ maxDurationSeconds: 25 * 60 * 60 });
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+  });
+
+  it('should clamp inactivity timeout to the maximum', () => {
+    // 25 hours exceeds 24 hour max
+    const manager = createManager({ inactivityTimeoutSeconds: 25 * 60 * 60 });
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+      1800,
+    );
+  });
+
+  it('should increment user session number monotonically', () => {
+    const manager = createManager();
+
+    manager.startSessionPartInternal('init');
+    manager.endSessionPartInternal('inactivity');
+    // Expire the session
+    clock.tick(31 * 60 * 1000);
+
+    manager.startSessionPartInternal('init');
+    const attrs2 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal('inactivity');
+    clock.tick(31 * 60 * 1000);
+
+    manager.startSessionPartInternal('init');
+    const attrs3 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+    expect(attrs3?.['emb.user_session_number']).to.equal(3);
+
+    // Verify stored counter
+    expect(inMemoryStorage.getItem('embrace_user_session_number')).to.equal(
+      '3',
+    );
+  });
+
+  it('should fire the max duration timer even after the part ends', () => {
+    // Spec 1.3: the user-session max-duration timer must fire even while
+    // no part is active. Part-end re-arms the timer against the same
+    // userSessionMaxEndTs so a session that hits max duration mid-idle
+    // still terminates.
+    const manager = createManager({ maxDurationSeconds: 3600 });
+
+    manager.startSessionPartInternal('init');
+    manager.endSessionPartInternal('inactivity');
+
+    // Spy AFTER the legitimate end so we observe only timer-driven calls.
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+
+    clock.tick(3601 * 1000);
+
+    expect(endSpy.callCount).to.be.at.least(1);
+    expect(lastEndCall(endSpy)).to.deep.equal([
+      'user_session_ended',
+      'max_duration_reached',
+    ]);
+  });
+
+  it('should persist session state to storage', () => {
+    const manager = createManager();
+    manager.startSessionPartInternal('init');
+
+    const raw = inMemoryStorage.getItem('embrace_user_session_state');
+    expect(raw).to.not.be.null;
+
+    const state = JSON.parse(raw as string) as {
+      userSessionId: string;
+      userSessionNumber: number;
+      userSessionPartNumber: number;
     };
-    const manager = new EmbraceSpanSessionManager({
-      visibilityDoc,
-      limitManager,
-    });
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property('emb.state', 'background');
+    expect(state.userSessionId).to.have.lengthOf(32);
+    expect(state.userSessionNumber).to.equal(1);
+    expect(state.userSessionPartNumber).to.equal(1);
   });
 
-  it('should call the session start listener when starting a session', () => {
-    const listener = sinon.stub();
-    const manager = new EmbraceSpanSessionManager({ limitManager });
-    const removeListener = manager.addSessionStartedListener(listener);
-
-    void expect(listener.calledOnce).to.be.false;
-
-    manager.startSessionSpan();
-
-    void expect(listener.calledOnce).to.be.true;
-
-    removeListener();
-    manager.startSessionSpan();
-
-    void expect(listener.calledOnce).to.be.true;
+  it('should return null attributes when no session is active', () => {
+    const manager = createManager();
+    void expect(manager.getUserSessionAttributes()).to.be.null;
+    void expect(manager.getUserSessionId()).to.be.null;
   });
 
-  it('should call the session ended listener when ending a session', () => {
-    let listenerSessionId: string | null = null;
+  it('should create a different user session after endUserSession', () => {
+    const manager = createManager();
 
-    const listener = () => {
-      listenerSessionId = manager.getSessionId();
-    };
-    const manager = new EmbraceSpanSessionManager({ limitManager });
-    const removeListener = manager.addSessionEndedListener(listener);
+    manager.startSessionPartInternal('init');
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endUserSession();
 
-    void expect(listenerSessionId).to.be.null;
+    // After endUserSession the merged manager auto-starts a rollover part,
+    // so getUserSessionAttributes already reflects the new session.
+    const attrs2 = manager.getUserSessionAttributes();
 
-    manager.startSessionSpan();
-    let currentSessionId = manager.getSessionId();
-    manager.endSessionSpan();
-
-    void expect(listenerSessionId).to.be.eq(currentSessionId);
-
-    removeListener();
-    manager.startSessionSpan();
-    currentSessionId = manager.getSessionId();
-    manager.endSessionSpan();
-
-    void expect(listenerSessionId).not.to.be.eq(currentSessionId);
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+    expect(attrs2?.['emb.user_session_part_number']).to.equal(1);
   });
 
-  it('should limit the amount of breadcrumbs per session', () => {
-    manager.startSessionSpan();
+  it('should clear storage after endUserSession-driven termination', () => {
+    const manager = createManager();
+    manager.startSessionPartInternal('init');
 
-    for (let i = 0; i < 10; i++) {
-      manager.addBreadcrumb('this is a breadcrumb');
-    }
+    expect(inMemoryStorage.getItem('embrace_user_session_state')).to.not.be
+      .null;
 
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(3);
-
-    for (let i = 0; i < 3; i++) {
-      expect(sessionSpan.events[i].name).to.equal('emb-breadcrumb');
-      expect(sessionSpan.events[i].attributes).to.have.property(
-        'message',
-        'this is a breadcrumb',
-      );
-    }
-
-    expect(
-      sessionSpan.attributes['emb.app.applied_limit.breadcrumb.drop.count'],
-    ).to.be.equal(7);
-
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(7);
-    for (let i = 0; i < warningLogs.length; i++) {
-      expect(warningLogs[i]).to.equal(
-        'disallowing breadcrumb because the maximum number of 3 has already been reached for this session',
-      );
-    }
-
-    // A new session should reset the limit
-    memoryExporter.reset();
-    manager.startSessionSpan();
-    manager.addBreadcrumb('this is a breadcrumb');
-    manager.endSessionSpan();
-    const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
-    expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nextSessionSpan = nextSessionFinishedSpans[0];
-    expect(nextSessionSpan.events).to.have.lengthOf(1);
-    expect(nextSessionSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(nextSessionSpan.events[0].attributes).to.have.property(
-      'message',
-      'this is a breadcrumb',
-    );
-  });
-
-  it('should truncate breadcrumb names', () => {
-    manager.startSessionSpan();
-
-    manager.addBreadcrumb('this is a breadcrumb');
-    manager.addBreadcrumb(
-      'this is a breadcrumb which has a name longer than the allowed maximum length',
-    );
-
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.events).to.have.lengthOf(2);
-    expect(sessionSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(sessionSpan.events[0].attributes).to.have.property(
-      'message',
-      'this is a breadcrumb',
-    );
-    expect(sessionSpan.events[1].name).to.equal('emb-breadcrumb');
-    expect(sessionSpan.events[1].attributes).to.have.property(
-      'message',
-      'this is a breadcrumb which has a name longer than ',
-    );
-
-    expect(
-      sessionSpan.attributes[
-        'emb.app.applied_limit.breadcrumb.truncate_string.count'
-      ],
-    ).to.be.equal(1);
-
-    expect(diag.getWarnLogs()).to.have.lengthOf(1);
-    expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating breadcrumb because it is longer than 50 characters: "this is a breadcrumb which has a name longer than the allowed maximum length"',
-    );
-  });
-
-  it('should limit the amount of session properties per session', () => {
-    manager.startSessionSpan();
-
-    for (let i = 0; i < 10; i++) {
-      manager.addProperty(`property${i.toString()}`, i.toString());
-    }
-
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-
-    for (let i = 0; i < 10; i++) {
-      const prop = `emb.properties.property${i.toString()}`;
-      if (i < 4) {
-        void expect(sessionSpan.attributes).to.have.property(
-          prop,
-          i.toString(),
+    // The merged manager runs a rollover (clear + new session) so storage
+    // is rewritten by the new part. Inspect mid-flight by spying on
+    // endSessionPartInternal and reading storage at that moment.
+    let storageDuringEnd: string | null = '';
+    const original = manager.endSessionPartInternal.bind(manager);
+    type EndFn = (
+      reason: SessionPartEndReason,
+      userSessionEndReason?: UserSessionEndReason | null,
+    ) => void;
+    sinon.stub(manager, 'endSessionPartInternal').callsFake(((
+      reason,
+      userSessionEndReason,
+    ) => {
+      if (reason === 'user_session_ended') {
+        storageDuringEnd = inMemoryStorage.getItem(
+          'embrace_user_session_state',
         );
-      } else {
-        void expect(sessionSpan.attributes).not.to.have.property(prop);
       }
-    }
+      (original as EndFn)(reason, userSessionEndReason);
+    }) as EndFn);
 
-    expect(
-      sessionSpan.attributes[
-        'emb.app.applied_limit.session_property.drop.count'
-      ],
-    ).to.be.equal(6);
+    manager.endUserSession();
 
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(6);
-    for (let i = 0; i < warningLogs.length; i++) {
-      expect(warningLogs[i]).to.equal(
-        'disallowing session_property because the maximum number of 4 has already been reached for this session',
+    // We can verify the dying session's storage row was cleared even though
+    // a rollover write follows: the in-memory previous id matches what was
+    // active before, and the new state is a different session id.
+    const finalRaw = inMemoryStorage.getItem('embrace_user_session_state');
+    expect(finalRaw).to.not.equal(storageDuringEnd);
+  });
+
+  it('should expose the dying user session id via getPreviousUserSessionId on manual end', () => {
+    const manager = createManager();
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    const dyingId = attrs?.['emb.user_session_id'];
+
+    manager.endUserSession();
+
+    expect(manager.getPreviousUserSessionId()).to.equal(dyingId);
+  });
+
+  it('should expose the dying user session id via getPreviousUserSessionId on max-duration rollover', () => {
+    const manager = createManager({ maxDurationSeconds: 3600 });
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    const dyingId = attrs?.['emb.user_session_id'];
+
+    clock.tick(3601 * 1000);
+
+    expect(manager.getPreviousUserSessionId()).to.equal(dyingId);
+  });
+
+  describe('setSessionId override', () => {
+    it('should emit session.id equal to emb.user_session_id by default', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['session.id']).to.equal(attrs?.['emb.user_session_id']);
+    });
+
+    it('should override session.id without changing emb.user_session_id', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.setSessionId('custom-session-id');
+
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['session.id']).to.equal('custom-session-id');
+      expect(attrs?.['emb.user_session_id']).to.have.lengthOf(32);
+      expect(attrs?.['emb.user_session_id']).to.not.equal('custom-session-id');
+    });
+
+    it('should clear the override when setSessionId(null) is called', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.setSessionId('custom-session-id');
+      manager.setSessionId(null);
+
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['session.id']).to.equal(attrs?.['emb.user_session_id']);
+    });
+
+    it('should keep the override active across user session boundaries until cleared', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.setSessionId('custom-session-id');
+
+      manager.endSessionPartInternal('inactivity');
+      clock.tick(31 * 60 * 1000);
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+
+      expect(attrs?.['session.id']).to.equal('custom-session-id');
+      expect(attrs?.['emb.user_session_id']).to.not.equal('custom-session-id');
+    });
+
+    it('should warn and ignore setSessionId when called with an empty string', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.setSessionId('custom-session-id');
+
+      manager.setSessionId('');
+
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['session.id']).to.equal('custom-session-id');
+      expect(
+        diag.getWarnLogs().some((l) => l.includes('empty or whitespace-only')),
+      ).to.equal(true);
+    });
+
+    it('should warn and ignore setSessionId when called with whitespace only', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.setSessionId('custom-session-id');
+
+      manager.setSessionId('   ');
+
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['session.id']).to.equal('custom-session-id');
+      expect(
+        diag.getWarnLogs().some((l) => l.includes('empty or whitespace-only')),
+      ).to.equal(true);
+    });
+  });
+
+  describe('endUserSession cooldown', () => {
+    it('should warn and skip when called within the 5s cooldown window', () => {
+      const manager = createManager();
+
+      manager.startSessionPartInternal('init');
+      manager.endUserSession();
+      // The merged manager auto-rolls a new part on endUserSession; no
+      // explicit second startSessionPartInternal is needed.
+
+      clock.tick(2 * 1000);
+      const idBeforeSecondCall = manager.getUserSessionId();
+      manager.endUserSession();
+
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        true,
       );
-    }
-
-    // A new session should reset the limit
-    memoryExporter.reset();
-    manager.startSessionSpan();
-    manager.addProperty('my-new-prop', 'new');
-    manager.endSessionSpan();
-    const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
-    expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nextSessionSpan = nextSessionFinishedSpans[0];
-    expect(nextSessionSpan.attributes).to.have.property(
-      'emb.properties.my-new-prop',
-      'new',
-    );
-  });
-
-  it('should truncate session property keys and values', () => {
-    manager.startSessionSpan();
-
-    manager.addProperty('key1', '1');
-    manager.addProperty(
-      'session-property-with-long-key',
-      'session property long value with extra information',
-    );
-
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-
-    expect(sessionSpan.attributes).to.have.property(
-      'emb.properties.session-property-wit',
-      'session property long value with extra i',
-    );
-
-    expect(
-      sessionSpan.attributes[
-        'emb.app.applied_limit.session_property_key.truncate_string.count'
-      ],
-    ).to.be.equal(1);
-
-    expect(
-      sessionSpan.attributes[
-        'emb.app.applied_limit.session_property_value.truncate_string.count'
-      ],
-    ).to.be.equal(1);
-
-    expect(diag.getWarnLogs()).to.have.lengthOf(2);
-    expect(diag.getWarnLogs()[0]).to.equal(
-      'truncating session_property_key because it is longer than 20 characters: "session-property-with-long-key"',
-    );
-    expect(diag.getWarnLogs()[1]).to.equal(
-      'truncating session_property_value because it is longer than 40 characters: "session property long value with extra information"',
-    );
-  });
-
-  it('should store permanent properties in localStorage', () => {
-    const propertyKey = 'permanent-key';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'permanent-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value, {
-      lifespan: 'permanent',
+      // Cooldown blocked the second call, so the rolled-over session id
+      // should still be active.
+      expect(manager.getUserSessionId()).to.equal(idBeforeSecondCall);
     });
 
-    let storedAttribute = storage.getItem(attributeKey);
-    expect(storedAttribute).to.equal(value);
+    it('should process normally when called after the 5s cooldown window', () => {
+      const manager = createManager();
 
-    manager.endSessionSpan();
+      manager.startSessionPartInternal('init');
+      manager.endUserSession();
 
-    storedAttribute = storage.getItem(attributeKey);
-    expect(storedAttribute).to.equal(value);
-  });
+      clock.tick(6 * 1000);
+      const idAfterFirstEnd = manager.getUserSessionId();
+      manager.endUserSession();
 
-  it('should not store session properties in localStorage', () => {
-    const propertyKey = 'session-only-key';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'session-only-value';
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value);
-
-    const storedValue = storage.getItem(attributeKey);
-    void expect(storedValue).to.be.null;
-  });
-
-  it('should not store permanent properties in localStorage that have been removed', () => {
-    const propertyKey = 'permanent-key';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'permanent-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value, {
-      lifespan: 'permanent',
-    });
-    const storedAttribute = storage.getItem(attributeKey);
-    expect(storedAttribute).to.equal(value);
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    manager.removeProperty(propertyKey);
-    const storedAttribute2 = storage.getItem(attributeKey);
-    void expect(storedAttribute2).to.be.null;
-    manager.endSessionSpan();
-
-    const storedAttribute3 = storage.getItem(attributeKey);
-    void expect(storedAttribute3).to.be.null;
-  });
-
-  it('should not persist session properties after session end', () => {
-    const propertyKey = 'session-only-key';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'session-only-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value);
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      attributeKey,
-      value,
-    );
-  });
-
-  it('should persist permanent properties into new sessions', () => {
-    const permanentPropertyKey = 'permanent-key';
-    const permanentAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${permanentPropertyKey}`;
-    const permanentValue = 'permanent-value';
-    const sessionOnlyPropertyKey = 'session-only-key';
-    const sessionOnlyAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${sessionOnlyPropertyKey}`;
-    const sessionOnlyValue = 'session-only-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(sessionOnlyPropertyKey, sessionOnlyValue);
-    manager.addProperty(permanentPropertyKey, permanentValue, {
-      lifespan: 'permanent',
-    });
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      sessionOnlyAttributeKey,
-      sessionOnlyValue,
-    );
-    expect(manager.getSessionSpan()?.attributes).to.have.property(
-      permanentAttributeKey,
-      permanentValue,
-    );
-  });
-
-  it('should not persist removed permanent properties into new sessions', () => {
-    const propertyKey = 'permanent-key';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'permanent-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value, {
-      lifespan: 'permanent',
-    });
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    manager.removeProperty(propertyKey);
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      attributeKey,
-      value,
-    );
-  });
-
-  it('should handle removing permanent properties that have long keys', () => {
-    const propertyKey = 'permanent-key-that-is-longer-than-the-character-limit';
-    const truncatedKey = 'permanent-key-that-i';
-    const attributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${truncatedKey}`;
-    const longAttributeKey = `${KEY_PREFIX_EMB_PROPERTIES}${propertyKey}`;
-    const value = 'permanent-value';
-
-    manager.startSessionSpan();
-    manager.addProperty(propertyKey, value, {
-      lifespan: 'permanent',
-    });
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    expect(manager.getSessionSpan()?.attributes).to.have.property(
-      attributeKey,
-      value,
-    );
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      longAttributeKey,
-      value,
-    );
-    manager.removeProperty(propertyKey);
-    manager.endSessionSpan();
-
-    manager.startSessionSpan();
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      attributeKey,
-      value,
-    );
-    expect(manager.getSessionSpan()?.attributes).to.not.have.property(
-      longAttributeKey,
-      value,
-    );
-  });
-
-  it('should set cold_start, session_number, and default session_start_type to manual', () => {
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-
-    let finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    let sessionSpan = finishedSpans[0];
-    // First session should have emb.cold_start = true, and number be one.
-    expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
-    expect(sessionSpan.attributes).to.have.property(
-      'emb.session_start_type',
-      'manual',
-    );
-    memoryExporter.reset();
-
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-
-    finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    sessionSpan = finishedSpans[0];
-    // Any following session should have emb.cold_start = false
-    expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 2);
-    memoryExporter.reset();
-
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-
-    finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    sessionSpan = finishedSpans[0];
-    // Any following session should have emb.cold_start = false
-    expect(sessionSpan.attributes).to.have.property('emb.cold_start', false);
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 3);
-    memoryExporter.reset();
-
-    // instantiate a new manager w/ the same storage instance, should get a cold start again but a session number of 4
-    manager = new EmbraceSpanSessionManager({ diag, limitManager, storage });
-
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-
-    finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    sessionSpan = finishedSpans[0];
-    // Any following session should have emb.cold_start = false
-    expect(sessionSpan.attributes).to.have.property('emb.cold_start', true);
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 4);
-    memoryExporter.reset();
-  });
-
-  it('should use the provided reason as session_start_type', () => {
-    manager.startSessionSpan({ reason: 'start reason' });
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_STARTED,
-      'start reason',
-    );
-  });
-
-  it('should default session_start_type to manual when no options are provided', () => {
-    manager.startSessionSpan();
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_STARTED,
-      'manual',
-    );
-  });
-
-  it('should default session_start_type to manual when options are provided without a reason', () => {
-    manager.startSessionSpan({});
-    manager.endSessionSpan();
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property(
-      KEY_EMB_SESSION_REASON_STARTED,
-      'manual',
-    );
-  });
-
-  it('should default to session number 1 when storage is failing', () => {
-    manager = new EmbraceSpanSessionManager({
-      diag,
-      limitManager,
-      storage: new FailingStorage(),
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        false,
+      );
+      // Second endUserSession past cooldown should produce a fresh rollover
+      // session, distinct from the one active before the call.
+      expect(manager.getUserSessionId()).to.not.equal(idAfterFirstEnd);
     });
 
-    manager.startSessionSpan();
-    manager.endSessionSpan();
+    it('should process normally exactly at the 5s cooldown boundary (strict less-than)', () => {
+      const manager = createManager();
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
-    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
+      manager.startSessionPartInternal('init');
+      manager.endUserSession();
 
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.include(
-      'Error loading permanent session properties',
-    );
-  });
+      clock.tick(5 * 1000);
+      const idAfterFirstEnd = manager.getUserSessionId();
+      manager.endUserSession();
 
-  it('should allow setting a different trace provider', () => {
-    const secondMemoryExporter = new InMemorySpanExporter();
-    const tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(secondMemoryExporter)],
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        false,
+      );
+      expect(manager.getUserSessionId()).to.not.equal(idAfterFirstEnd);
     });
 
-    manager.setTracerProvider(tracerProvider);
-    manager.startSessionSpan();
-    manager.endSessionSpan();
+    it('should reject end calls in the cooldown window even when no session is active', () => {
+      const manager = createManager();
 
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-    expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
+      manager.startSessionPartInternal('init');
+      manager.endUserSession();
+
+      // Inside the cooldown window: even if no session were active here, the
+      // cooldown must reject before the no-active-session no-op so the next
+      // active session cannot be ended within the cooldown.
+      clock.tick(2 * 1000);
+      manager.endUserSession();
+
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        true,
+      );
+    });
+  });
+
+  describe('config clamp min-boundary', () => {
+    it('should fall back to default when maxDurationSeconds is below minimum', () => {
+      // MIN is 1 hour (3600s); 60s is below minimum
+      const manager = createManager({ maxDurationSeconds: 60 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    });
+
+    it('should fall back to default when maxDurationSeconds is zero', () => {
+      const manager = createManager({ maxDurationSeconds: 0 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    });
+
+    it('should fall back to default when maxDurationSeconds is negative', () => {
+      const manager = createManager({ maxDurationSeconds: -60 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    });
+
+    it('should fall back to default when inactivityTimeoutSeconds is below minimum', () => {
+      // MIN is 30s; 10s is below minimum
+      const manager = createManager({ inactivityTimeoutSeconds: 10 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+        1800,
+      );
+    });
+
+    it('should fall back to default when inactivityTimeoutSeconds is zero', () => {
+      const manager = createManager({ inactivityTimeoutSeconds: 0 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+        1800,
+      );
+    });
+
+    it('should fall back to default when inactivityTimeoutSeconds is negative', () => {
+      const manager = createManager({ inactivityTimeoutSeconds: -60 });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+        1800,
+      );
+    });
+
+    it('should fall back to default when maxDurationSeconds is NaN', () => {
+      // NaN slips both range gates (NaN < x and NaN > x both return false), so
+      // without the finite-number guard the manager would persist NaN as
+      // _maxDurationMs and JSON.stringify would write `null` to storage.
+      const manager = createManager({ maxDurationSeconds: Number.NaN });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    });
+
+    it('should fall back to default when maxDurationSeconds is Infinity', () => {
+      const manager = createManager({
+        maxDurationSeconds: Number.POSITIVE_INFINITY,
+      });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
+    });
+
+    it('should fall back to default when inactivityTimeoutSeconds is NaN', () => {
+      const manager = createManager({ inactivityTimeoutSeconds: Number.NaN });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+        1800,
+      );
+    });
+
+    it('should diag.warn when a config value is rejected so dropped config is visible to developers', () => {
+      createManager({
+        maxDurationSeconds: 60,
+        inactivityTimeoutSeconds: Number.NaN,
+      });
+
+      const warnLogs = diag.getWarnLogs();
+      expect(
+        warnLogs.some(
+          (l) => l.includes('maxDurationSeconds') && l.includes('range'),
+        ),
+        'expected diag.warn for out-of-range maxDurationSeconds',
+      ).to.equal(true);
+      expect(
+        warnLogs.some(
+          (l) => l.includes('inactivityTimeoutSeconds') && l.includes('finite'),
+        ),
+        'expected diag.warn for non-finite inactivityTimeoutSeconds',
+      ).to.equal(true);
+    });
+  });
+
+  describe('inactivity > max fallback', () => {
+    it('should fall back to default inactivity when configured inactivity exceeds max duration', () => {
+      // max = 1h, inactivity = 2h (both inside their own min/max range, but inactivity > max)
+      const manager = createManager({
+        maxDurationSeconds: 3600,
+        inactivityTimeoutSeconds: 7200,
+      });
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(3600);
+      expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
+        1800,
+      );
+    });
+  });
+
+  describe('clock anomaly handling (spec 6.1)', () => {
+    it('should start a fresh session when device time is before stored session start', () => {
+      const manager1 = createManager();
+      manager1.startSessionPartInternal('init');
+      const attrs1 = manager1.getUserSessionAttributes();
+      manager1.endSessionPartInternal('inactivity');
+
+      // Simulate device clock jumping backward (before userSessionStartTs).
+      const rawBefore = inMemoryStorage.getItem('embrace_user_session_state');
+      expect(rawBefore).to.not.be.null;
+      const state = JSON.parse(rawBefore as string) as {
+        userSessionStartTs: number;
+        userSessionMaxEndTs: number;
+      };
+      state.userSessionStartTs = 60 * 60 * 1000;
+      state.userSessionMaxEndTs =
+        state.userSessionStartTs + 12 * 60 * 60 * 1000;
+      inMemoryStorage.setItem(
+        'embrace_user_session_state',
+        JSON.stringify(state),
+      );
+
+      // clock.now is 0, which is before userSessionStartTs=3600000.
+      const manager2 = createManager();
+      manager2.startSessionPartInternal('init');
+      const attrs2 = manager2.getUserSessionAttributes();
+
+      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+      expect(attrs2?.['emb.user_session_number']).to.equal(2);
+    });
+  });
+
+  const readStoredDeadline = (): number | null => {
+    const raw = inMemoryStorage.getItem('embrace_user_session_state');
+    if (!raw) return null;
+    return (JSON.parse(raw) as { inactivityDeadlineTs: number | null })
+      .inactivityDeadlineTs;
+  };
+
+  describe('inactivity timeout invalidation (spec 1.1)', () => {
+    it('should not write an inactivity deadline while the first foreground part is active', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+
+      void expect(readStoredDeadline()).to.be.null;
+    });
+
+    it('should write the inactivity deadline onto the state row when the part ends', () => {
+      const manager = createManager({ inactivityTimeoutSeconds: 120 });
+      manager.startSessionPartInternal('init');
+      clock.tick(10 * 1000);
+      manager.endSessionPartInternal('inactivity');
+
+      expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
+    });
+
+    it('should clear the inactivity deadline when a continuing part starts', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.endSessionPartInternal('inactivity');
+      void expect(readStoredDeadline()).to.not.be.null;
+
+      // A continuing part (within timeout) should clear the persisted value.
+      clock.tick(60 * 1000);
+      manager.startSessionPartInternal('init');
+
+      void expect(readStoredDeadline()).to.be.null;
+    });
+
+    it('should not expire on inactivity when recovering a session with no prior part-end', () => {
+      const manager1 = createManager({ maxDurationSeconds: 12 * 60 * 60 });
+      manager1.startSessionPartInternal('init');
+      const attrs1 = manager1.getUserSessionAttributes();
+      // Simulate a crash: no endSessionPartInternal call, no deadline written.
+
+      // Fast forward past the default inactivity timeout but within max duration.
+      clock.tick(60 * 60 * 1000);
+
+      const manager2 = createManager({ maxDurationSeconds: 12 * 60 * 60 });
+      manager2.startSessionPartInternal('init');
+      const attrs2 = manager2.getUserSessionAttributes();
+
+      expect(attrs2?.['emb.user_session_id']).to.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+    });
+  });
+
+  describe('corrupt storage recovery', () => {
+    it('should recover by discarding corrupt session state and starting fresh', () => {
+      inMemoryStorage.setItem(
+        'embrace_user_session_state',
+        'not-valid-json{{{',
+      );
+
+      const manager = createManager();
+      manager.startSessionPartInternal('init');
+      const attrs = manager.getUserSessionAttributes();
+
+      expect(attrs?.['emb.user_session_id']).to.have.lengthOf(32);
+      expect(attrs?.['emb.user_session_number']).to.equal(1);
+      expect(diag.getErrorLogs().some((l) => l.includes('corrupt'))).to.equal(
+        true,
+      );
+
+      const freshRaw = inMemoryStorage.getItem('embrace_user_session_state');
+      expect(freshRaw).to.not.equal('not-valid-json{{{');
+      expect(() => JSON.parse(freshRaw as string)).to.not.throw();
+    });
+  });
+
+  describe('clock anomaly: jump forward past userSessionMaxEndTs', () => {
+    it('should detect a forward clock jump as an expired session on the next part start', () => {
+      const manager1 = createManager({ maxDurationSeconds: 60 * 60 });
+      manager1.startSessionPartInternal('init');
+      const attrs1 = manager1.getUserSessionAttributes();
+      manager1.endSessionPartInternal('inactivity');
+      // Cancel manager1's max-duration timer so it doesn't auto-rollover during
+      // the tick. We're simulating a page reload: the prior page is gone,
+      // storage carries the dying state forward, and a fresh manager loads.
+      manager1._clearMaxDurationTimer();
+
+      // Jump the clock past the locked-in userSessionMaxEndTs (1h window).
+      clock.tick(60 * 60 * 1000 + 1);
+
+      const manager2 = createManager({ maxDurationSeconds: 60 * 60 });
+      manager2.startSessionPartInternal('init');
+      const attrs2 = manager2.getUserSessionAttributes();
+
+      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+      expect(attrs2?.['emb.user_session_number']).to.equal(2);
+      expect(attrs2?.['emb.user_session_part_number']).to.equal(1);
+    });
   });
 });

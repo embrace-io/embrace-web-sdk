@@ -4,6 +4,7 @@ import type {
   DynamicConfigManager,
   DynamicSDKConfig,
 } from '../../sdk/index.ts';
+import { EmbraceStorage } from '../../utils/index.ts';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,
@@ -32,7 +33,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
   // Set to null if appID is not provided, in that case only rely on local config
   private readonly _remoteConfigURL: string | null = null;
   private readonly _diag: DiagLogger;
-  private readonly _storage: Storage;
+  private readonly _storage: EmbraceStorage;
   private readonly _baseConfig: DynamicSDKConfig;
 
   private _sdkConfig: DynamicSDKConfig;
@@ -45,7 +46,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'embrace-config-manager',
     }),
-    storage = window.localStorage,
+    storage,
     // Allow users to provide a default config
     defaultConfig = {},
     embraceConfigURL,
@@ -64,7 +65,8 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     }
 
     this._diag = diagParam;
-    this._storage = storage;
+    this._storage =
+      storage ?? new EmbraceStorage(window.localStorage, this._diag);
 
     const storedRemoteConfig = this._getRemoteConfigFromStorage();
 

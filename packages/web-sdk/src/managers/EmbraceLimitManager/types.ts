@@ -27,6 +27,7 @@ export type LengthLimitedType =
   | LogLimitedType
   | 'exception'
   | 'breadcrumb'
+  | 'session_id'
   | 'session_property_key'
   | 'session_property_value'
   | 'log_attribute_key'

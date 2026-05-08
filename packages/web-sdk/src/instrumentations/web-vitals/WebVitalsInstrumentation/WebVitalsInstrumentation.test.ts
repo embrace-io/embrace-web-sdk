@@ -14,7 +14,6 @@ import {
   setupTestTraceExporter,
   setupTestWebVitalListeners,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
@@ -22,6 +21,7 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
 } from '../../../constants/index.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -41,7 +41,7 @@ describe('WebVitalsInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: WebVitalsInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManager;
+  let spanSessionManager: SpanSessionManagerInternal;
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
   let mockWebVitalListeners: WebVitalListeners;
@@ -64,7 +64,7 @@ describe('WebVitalsInstrumentation', () => {
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
     });
     session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     const testWebVitalListeners = setupTestWebVitalListeners();
 
     mockWebVitalListeners = testWebVitalListeners.listeners;
@@ -105,7 +105,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -157,7 +157,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -215,7 +215,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -272,7 +272,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -337,7 +337,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -442,7 +442,7 @@ describe('WebVitalsInstrumentation', () => {
         } as PerformanceLongAnimationFrameTiming,
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
       const sessionSpan = memoryExporter.getFinishedSpans()[0];
       expect(sessionSpan.events).to.have.lengthOf(1);
       const loafScripts = JSON.parse(
@@ -495,7 +495,7 @@ describe('WebVitalsInstrumentation', () => {
         } as PerformanceLongAnimationFrameTiming,
       ]);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
       const sessionSpan = memoryExporter.getFinishedSpans()[0];
       const loafScripts = JSON.parse(
         sessionSpan.events[0].attributes?.[
@@ -523,7 +523,7 @@ describe('WebVitalsInstrumentation', () => {
 
       fireINP(metricReportFunc, []);
 
-      spanSessionManager.endSessionSpan();
+      spanSessionManager.endSessionPartInternal('inactivity');
       const sessionSpan = memoryExporter.getFinishedSpans()[0];
       expect(
         sessionSpan.events[0].attributes?.[
@@ -577,7 +577,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -640,7 +640,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -703,7 +703,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -779,7 +779,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -853,7 +853,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -925,7 +925,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1000,7 +1000,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1060,7 +1060,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1121,7 +1121,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1183,7 +1183,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1259,7 +1259,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const sessionSpan = memoryExporter.getFinishedSpans()[0];
     const ttfbEvent = sessionSpan.events[0];
 
@@ -1336,7 +1336,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1438,7 +1438,7 @@ describe('WebVitalsInstrumentation', () => {
     });
     inpFinalReportFunc(inpMetric);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1508,7 +1508,7 @@ describe('WebVitalsInstrumentation', () => {
     });
     lcpFinalReportFunc(lcpMetric);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1579,7 +1579,7 @@ describe('WebVitalsInstrumentation', () => {
     clsChangeReportFunc(clsMetric);
     clsFinalReportFunc(clsMetric);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1649,7 +1649,7 @@ describe('WebVitalsInstrumentation', () => {
     });
     fcpFinalReportFunc(fcpMetric);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1734,7 +1734,7 @@ describe('WebVitalsInstrumentation', () => {
     });
     ttfbFinalReportFunc(ttfbMetric);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1782,7 +1782,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1826,7 +1826,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const clsEvent = sessionSpan.events[0];
@@ -1866,7 +1866,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const clsEvent = sessionSpan.events[0];
@@ -1902,7 +1902,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -1980,7 +1980,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
 
@@ -2016,7 +2016,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
 
@@ -2069,7 +2069,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const inpEvent = sessionSpan.events[0];
@@ -2117,7 +2117,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const clsEvent = sessionSpan.events[0];
@@ -2161,7 +2161,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: null,
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const fcpEvent = sessionSpan.events[0];
@@ -2206,7 +2206,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as unknown as MetricWithAttribution);
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     const sessionSpan = finishedSpans[0];
     const clsEvent = sessionSpan.events[0];

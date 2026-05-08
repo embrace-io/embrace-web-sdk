@@ -1,5 +1,5 @@
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
 
 export interface IdentifiableSessionLogRecordProcessorArgs {
-  spanSessionManager: SpanSessionManager;
+  spanSessionManager: SpanSessionManagerInternal;
 }

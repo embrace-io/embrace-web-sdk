@@ -294,7 +294,7 @@ const runE2ETests = ({
             value: 'hidden',
             writable: true,
           });
-          window.dispatchEvent(new Event('visibilitychange'));
+          document.dispatchEvent(new Event('visibilitychange'));
         });
 
         await validateThatSessionEnded();
