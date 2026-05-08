@@ -2,7 +2,6 @@ import { session } from '@embrace-io/web-sdk';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
-const sessionProvider = session.getSpanSessionManager();
 const navEntry = window.performance.getEntriesByType('navigation')[0] as
   | PerformanceNavigationTiming
   | undefined;
@@ -16,23 +15,32 @@ const NavPage = ({
   nav?: ReactNode;
   children?: ReactNode;
 }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  // Resolve at render time, not module load: the proxy's getSpanSessionManager()
+  // returns the underlying manager directly, and at module load that's still
+  // the no-op stand-in (setupSDK runs after this module's imports resolve).
+  const userSessionManager = session.getSpanSessionManager();
+  const [sessionPartId, setSessionPartId] = useState<string | null>(null);
+  const [userSessionPartNumber, setUserSessionPartNumber] = useState<
+    number | null
+  >(null);
 
-  const updateSession = useCallback(() => {
-    setSessionId(sessionProvider.getSessionId());
-  }, []);
+  const updateSessionPart = useCallback(() => {
+    setSessionPartId(userSessionManager.getSessionPartId());
+    const attrs = userSessionManager.getUserSessionAttributes();
+    setUserSessionPartNumber(attrs?.['emb.user_session_part_number'] ?? null);
+  }, [userSessionManager]);
 
   useEffect(() => {
-    updateSession();
+    updateSessionPart();
     const unsubscribeStart =
-      sessionProvider.addSessionStartedListener(updateSession);
+      userSessionManager.addSessionPartStartedListener(updateSessionPart);
     const unsubscribeEnd =
-      sessionProvider.addSessionEndedListener(updateSession);
+      userSessionManager.addSessionPartEndedListener(updateSessionPart);
     return () => {
       unsubscribeStart();
       unsubscribeEnd();
     };
-  }, [updateSession]);
+  }, [userSessionManager, updateSessionPart]);
 
   return (
     <>
@@ -51,10 +59,12 @@ const NavPage = ({
         </dl>
       </fieldset>
       <fieldset>
-        <legend>Session</legend>
+        <legend>Session Part</legend>
         <dl className="info-list">
-          <dt>Session ID</dt>
-          <dd>{sessionId ?? '—'}</dd>
+          <dt>Part #</dt>
+          <dd>{userSessionPartNumber?.toString() ?? '—'}</dd>
+          <dt>Session Part ID</dt>
+          <dd>{sessionPartId ?? '—'}</dd>
         </dl>
       </fieldset>
     </>
