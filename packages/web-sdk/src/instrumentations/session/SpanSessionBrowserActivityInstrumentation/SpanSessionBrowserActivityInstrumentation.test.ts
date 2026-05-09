@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
@@ -17,6 +18,7 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
+import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { TIMEOUT_TIME, WINDOW_USER_EVENTS } from './constants.ts';
 import { SpanSessionBrowserActivityInstrumentation } from './SpanSessionBrowserActivityInstrumentation.ts';
 
@@ -39,6 +41,9 @@ describe('SpanSessionBrowserActivityInstrumentation', () => {
     diag = new InMemoryDiagLogger();
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
     session.setGlobalSessionManager(spanSessionManager);
   });

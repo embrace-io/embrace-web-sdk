@@ -8,7 +8,10 @@ import {
   RouterProvider,
   useNavigate,
 } from 'react-router-domv6plus';
-import { setupTestTraceExporter } from '../../../../../../tests/utils/index.ts';
+import {
+  InMemoryStorage,
+  setupTestTraceExporter,
+} from '../../../../../../tests/utils/index.ts';
 import { render } from '../../../../../../tests/utils/react/reactTestUtils.ts';
 import { runReactRouterTest } from '../../../../../../tests/utils/react/sharedTests.ts';
 import {
@@ -27,6 +30,7 @@ import {
   EmbraceSpanSessionManager,
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
+import { OTelPerformanceManager } from '../../../../../utils/index.ts';
 import { listenToRouterChanges } from './listenToRouterChanges.ts';
 
 const { expect } = chai;
@@ -108,6 +112,9 @@ describe('ReactRouterV6Data', () => {
   before(() => {
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
 
     session.setGlobalSessionManager(spanSessionManager);

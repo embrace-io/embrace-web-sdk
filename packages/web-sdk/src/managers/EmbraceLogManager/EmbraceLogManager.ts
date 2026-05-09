@@ -33,7 +33,6 @@ import {
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
-  OTelPerformanceManager,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
@@ -62,8 +61,8 @@ export class EmbraceLogManager implements LogManager {
     spanSessionManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
-    visibilityDoc = window.document,
-    storage = window.localStorage,
+    visibilityDoc,
+    storage,
   }: EmbraceLogManagerArgs) {
     const loggerProvider = globalLoggerProviderOverride ?? logs;
 
@@ -72,7 +71,7 @@ export class EmbraceLogManager implements LogManager {
       diag.createComponentLogger({
         namespace: 'EmbraceLogManager',
       });
-    this._perf = perf ?? new OTelPerformanceManager();
+    this._perf = perf;
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
     this._spanSessionManager = spanSessionManager;
     this._limitManager = limitManager;

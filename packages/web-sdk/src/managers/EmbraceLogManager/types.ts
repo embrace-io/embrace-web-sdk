@@ -7,10 +7,10 @@ import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/in
 
 export interface EmbraceLogManagerArgs {
   diag?: DiagLogger;
-  perf?: PerformanceManager;
+  perf: PerformanceManager;
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   loggerProvider?: LoggerProvider;
-  visibilityDoc?: VisibilityStateDocument;
-  storage?: Storage;
+  visibilityDoc: VisibilityStateDocument;
+  storage: Storage;
 }

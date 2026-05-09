@@ -7,6 +7,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../../tests/utils/index.ts';
 import {
@@ -19,6 +20,7 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../managers/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
 
 const { expect } = chai;
@@ -67,6 +69,9 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager,
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
 
     processor = new EmbraceSessionBatchedSpanProcessor({

@@ -1,9 +1,11 @@
 import { expect } from 'chai';
+import { InMemoryStorage } from '../../tests/utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../managers/index.ts';
+import { OTelPerformanceManager } from '../utils/index.ts';
 import { session } from './sessionAPI.ts';
 
 describe('sessionAPI', () => {
@@ -57,6 +59,9 @@ describe('sessionAPI', () => {
     beforeEach(() => {
       manager = new EmbraceSpanSessionManager({
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
+        perf: new OTelPerformanceManager(),
+        storage: new InMemoryStorage(),
+        visibilityDoc: window.document,
       });
       manager.startSessionSpan();
       session.setGlobalSessionManager(manager);

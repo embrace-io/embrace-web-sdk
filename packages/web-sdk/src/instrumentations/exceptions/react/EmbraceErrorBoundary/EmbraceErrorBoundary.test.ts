@@ -2,7 +2,10 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
-import { setupTestLogExporter } from '../../../../../tests/utils/index.ts';
+import {
+  InMemoryStorage,
+  setupTestLogExporter,
+} from '../../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../../api-logs/index.ts';
 import { log } from '../../../../api-logs/index.ts';
 import {
@@ -16,6 +19,7 @@ import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,
 } from '../../../../managers/index.ts';
+import { OTelPerformanceManager } from '../../../../utils/index.ts';
 import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
 
 const { expect } = chai;
@@ -37,9 +41,19 @@ describe('EmbraceErrorBoundary', () => {
   beforeEach(() => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+    const storage = new InMemoryStorage();
+    const perf = new OTelPerformanceManager();
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
+      spanSessionManager: new EmbraceSpanSessionManager({
+        limitManager,
+        perf,
+        storage,
+        visibilityDoc: window.document,
+      }),
       limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
     });
     log.setGlobalLogManager(logManager);
 
@@ -47,8 +61,6 @@ describe('EmbraceErrorBoundary', () => {
       fallback: () => 'fallback',
       children: 'children',
     });
-
-    localStorage.clear();
   });
 
   it('should catch an error and log an exception', () => {

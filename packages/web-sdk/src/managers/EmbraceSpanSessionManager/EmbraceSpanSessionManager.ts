@@ -31,7 +31,6 @@ import {
   generateUUID,
   getIncrementedCount,
   getVisibilityState,
-  OTelPerformanceManager,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
@@ -64,8 +63,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public constructor({
     diag: diagParam,
     perf,
-    visibilityDoc = window.document,
-    storage = window.localStorage,
+    visibilityDoc,
+    storage,
     limitManager,
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
@@ -73,7 +72,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       diag.createComponentLogger({
         namespace: 'EmbraceSpanSessionManager',
       });
-    this._perf = perf ?? new OTelPerformanceManager();
+    this._perf = perf;
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { InMemoryStorage } from '../../tests/utils/index.ts';
 import { EmbraceUserManager } from '../managers/index.ts';
 import { UserAPI } from './api/index.ts';
 import { user } from './userAPI.ts';
@@ -33,7 +34,7 @@ describe('userAPI', () => {
     ];
 
     beforeEach(() => {
-      manager = new EmbraceUserManager();
+      manager = new EmbraceUserManager({ storage: new InMemoryStorage() });
       user.setGlobalUserManager(manager);
     });
 

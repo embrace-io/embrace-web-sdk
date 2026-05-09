@@ -10,6 +10,7 @@ import type {
 } from 'web-vitals/attribution';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   MockPerformanceManager,
   setupTestTraceExporter,
   setupTestWebVitalListeners,
@@ -62,6 +63,9 @@ describe('WebVitalsInstrumentation', () => {
     diag = new InMemoryDiagLogger();
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf,
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();

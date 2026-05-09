@@ -2,13 +2,17 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { setupTestLogExporter } from '../../../tests/utils/index.ts';
+import {
+  InMemoryStorage,
+  setupTestLogExporter,
+} from '../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../api-sessions/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../managers/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
 
 const { expect } = chai;
@@ -21,6 +25,9 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   beforeEach(() => {
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
     memoryExporter = setupTestLogExporter([
       new IdentifiableSessionLogRecordProcessor({

@@ -3,6 +3,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
@@ -12,6 +13,7 @@ import {
   EmbraceLimitManager,
   EmbraceSpanSessionManager,
 } from '../../../managers/index.ts';
+import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { ClicksInstrumentation } from './ClicksInstrumentation.ts';
 
 const { expect } = chai;
@@ -32,6 +34,9 @@ describe('ClicksInstrumentation', () => {
     diag = new InMemoryDiagLogger();
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
     session.setGlobalSessionManager(spanSessionManager);
     spanSessionManager.startSessionSpan();

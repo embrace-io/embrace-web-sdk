@@ -19,6 +19,7 @@ import {
   KEY_EMB_SESSION_REASON_STARTED,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/attributes.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -59,7 +60,13 @@ describe('EmbraceSpanSessionManager', () => {
       },
     });
 
-    manager = new EmbraceSpanSessionManager({ diag, storage, limitManager });
+    manager = new EmbraceSpanSessionManager({
+      diag,
+      storage,
+      limitManager,
+      perf: new OTelPerformanceManager(),
+      visibilityDoc: window.document,
+    });
     storage.clear();
   });
 
@@ -214,6 +221,8 @@ describe('EmbraceSpanSessionManager', () => {
     const manager = new EmbraceSpanSessionManager({
       visibilityDoc,
       limitManager,
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
     });
     manager.startSessionSpan();
     manager.endSessionSpan();
@@ -232,6 +241,8 @@ describe('EmbraceSpanSessionManager', () => {
     const manager = new EmbraceSpanSessionManager({
       visibilityDoc,
       limitManager,
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
     });
     manager.startSessionSpan();
     manager.endSessionSpan();
@@ -244,7 +255,12 @@ describe('EmbraceSpanSessionManager', () => {
 
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
-    const manager = new EmbraceSpanSessionManager({ limitManager });
+    const manager = new EmbraceSpanSessionManager({
+      limitManager,
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
+    });
     const removeListener = manager.addSessionStartedListener(listener);
 
     void expect(listener.calledOnce).to.be.false;
@@ -265,7 +281,12 @@ describe('EmbraceSpanSessionManager', () => {
     const listener = () => {
       listenerSessionId = manager.getSessionId();
     };
-    const manager = new EmbraceSpanSessionManager({ limitManager });
+    const manager = new EmbraceSpanSessionManager({
+      limitManager,
+      perf: new OTelPerformanceManager(),
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
+    });
     const removeListener = manager.addSessionEndedListener(listener);
 
     void expect(listenerSessionId).to.be.null;
@@ -653,7 +674,13 @@ describe('EmbraceSpanSessionManager', () => {
     memoryExporter.reset();
 
     // instantiate a new manager w/ the same storage instance, should get a cold start again but a session number of 4
-    manager = new EmbraceSpanSessionManager({ diag, limitManager, storage });
+    manager = new EmbraceSpanSessionManager({
+      diag,
+      limitManager,
+      storage,
+      perf: new OTelPerformanceManager(),
+      visibilityDoc: window.document,
+    });
 
     manager.startSessionSpan();
     manager.endSessionSpan();
@@ -708,6 +735,32 @@ describe('EmbraceSpanSessionManager', () => {
       diag,
       limitManager,
       storage: new FailingStorage(),
+      perf: new OTelPerformanceManager(),
+      visibilityDoc: window.document,
+    });
+
+    manager.startSessionSpan();
+    manager.endSessionSpan();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.attributes).to.have.property('emb.session_number', 1);
+
+    const warningLogs = diag.getWarnLogs();
+    expect(warningLogs).to.include(
+      'Error loading permanent session properties',
+    );
+  });
+
+  it('should handle being setup with a non-functional storage', () => {
+    manager = new EmbraceSpanSessionManager({
+      diag,
+      limitManager,
+      // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
+      storage: null,
+      perf: new OTelPerformanceManager(),
+      visibilityDoc: window.document,
     });
 
     manager.startSessionSpan();
