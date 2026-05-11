@@ -2,110 +2,149 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import {
-  InMemoryStorage,
-  setupTestLogExporter,
-} from '../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceSpanSessionManager,
-} from '../../managers/index.ts';
-import { OTelPerformanceManager } from '../../utils/index.ts';
+import { setupTestLogExporter } from '../../../tests/utils/index.ts';
+import { NoOpSpanSessionManager } from '../../api-sessions/manager/NoOpSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
+import type { UserSessionAttributes } from '../../managers/EmbraceSpanSessionManager/types.ts';
 import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
 
 const { expect } = chai;
 
+const mockAttributes: UserSessionAttributes = {
+  'emb.user_session_id': 'USER_SESSION_ABC',
+  'session.id': 'USER_SESSION_ABC',
+  'emb.user_session_previous_id': '',
+  'session.previous_id': '',
+  'emb.user_session_number': 1,
+  'emb.user_session_part_index': 3,
+  'emb.session_part_number': 7,
+  'emb.user_session_start_ts': 1000,
+  'emb.user_session_max_duration_seconds': 43200,
+  'emb.user_session_inactivity_timeout_seconds': 1800,
+};
+
+// Stub built on top of NoOpSpanSessionManager so we satisfy the full
+// SpanSessionManagerInternal surface without listing every method. A non-null
+// `attrs` models an active user session, which implies an active part; a null
+// `attrs` models neither.
+const createMockSpanSessionManager = (
+  attrs: UserSessionAttributes | null = mockAttributes,
+  overrides: Partial<SpanSessionManagerInternal> = {},
+): SpanSessionManagerInternal => {
+  const base = new NoOpSpanSessionManager();
+  return Object.assign(base, {
+    getUserSessionId: () => (attrs ? attrs['emb.user_session_id'] : null),
+    getSessionPartId: () => (attrs ? 'PART_XYZ' : null),
+    getUserSessionAttributes: () => attrs,
+    ...overrides,
+  });
+};
+
+const setup = (manager: SpanSessionManagerInternal) => {
+  const memoryExporter = setupTestLogExporter([
+    new IdentifiableSessionLogRecordProcessor({ spanSessionManager: manager }),
+  ]);
+  const logger = logs.getLogger('test-logger');
+  return { memoryExporter, logger };
+};
+
 describe('IdentifiableSessionLogRecordProcessor', () => {
   let memoryExporter: InMemoryLogRecordExporter;
-  let spanSessionManager: SpanSessionManager;
   let logger: Logger;
-
-  beforeEach(() => {
-    spanSessionManager = new EmbraceSpanSessionManager({
-      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-      perf: new OTelPerformanceManager(),
-      storage: new InMemoryStorage(),
-      visibilityDoc: window.document,
-    });
-    memoryExporter = setupTestLogExporter([
-      new IdentifiableSessionLogRecordProcessor({
-        spanSessionManager,
-      }),
-    ]);
-    logger = logs.getLogger('test-logger');
-  });
 
   afterEach(() => {
     logs.disable();
   });
 
-  it('should attach a log UUID and session ID when available', () => {
-    spanSessionManager.startSessionSpan();
-    const sessionID = spanSessionManager.getSessionId();
+  it('should stamp a 32-char log uid and the active part id on every record', () => {
+    ({ memoryExporter, logger } = setup(createMockSpanSessionManager()));
 
-    logger.emit({
-      body: 'some log',
-    });
+    logger.emit({ body: 'test log' });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
-
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    expect(log.attributes['session.id']).to.be.equal(sessionID);
-    void expect(log.attributes['session.previous_id']).to.be.null;
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['log.record.uid']).to.have.lengthOf(32);
+    expect(logRecord.attributes['emb.session_part_id']).to.equal('PART_XYZ');
   });
 
-  it('should handle a session ID not being available', () => {
-    logger.emit({
-      body: 'some log',
-    });
+  it('should stamp empty session ids when the manager has no user session at all', () => {
+    ({ memoryExporter, logger } = setup(createMockSpanSessionManager(null)));
+
+    logger.emit({ body: 'test log' });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
-
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    void expect(log.attributes['session.id']).to.be.null;
-    void expect(log.attributes['session.previous_id']).to.be.null;
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['log.record.uid']).to.have.lengthOf(32);
+    expect(logRecord.attributes['emb.session_part_id']).to.equal('');
+    expect(logRecord.attributes['emb.user_session_id']).to.equal('');
+    expect(logRecord.attributes['emb.user_session_previous_id']).to.equal('');
   });
 
-  it('should attach a previous session ID when available', () => {
-    spanSessionManager.startSessionSpan();
-    const sessionID = spanSessionManager.getSessionId();
-    spanSessionManager.endSessionSpan();
+  it('should stamp the user-session id (and empty part id) when no part is active but a user session exists', () => {
+    // Invariant: emb.user_session_id is never blank when the manager has a
+    // user session, even if no part is currently active.
+    ({ memoryExporter, logger } = setup(
+      createMockSpanSessionManager(mockAttributes, {
+        getSessionPartId: () => null,
+      }),
+    ));
 
-    logger.emit({
-      body: 'some log',
-    });
+    logger.emit({ body: 'test log' });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
-
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    void expect(log.attributes['session.id']).to.be.null;
-    expect(log.attributes['session.previous_id']).to.be.equal(sessionID);
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['emb.session_part_id']).to.equal('');
+    expect(logRecord.attributes['emb.user_session_id']).to.equal(
+      'USER_SESSION_ABC',
+    );
   });
 
-  it('should attach a session ID and a previous session ID when both are available', () => {
-    spanSessionManager.startSessionSpan();
-    const session1ID = spanSessionManager.getSessionId();
-    spanSessionManager.startSessionSpan();
-    const session2ID = spanSessionManager.getSessionId();
+  it('should stamp the 3 session ids on logs emitted during an active part', () => {
+    ({ memoryExporter, logger } = setup(createMockSpanSessionManager()));
 
-    logger.emit({
-      body: 'some log',
-    });
+    logger.emit({ body: 'test log' });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['emb.user_session_id']).to.equal(
+      'USER_SESSION_ABC',
+    );
+    expect(logRecord.attributes['emb.user_session_previous_id']).to.equal('');
 
-    expect(log.attributes['log.record.uid']).to.have.lengthOf(32);
-    expect(log.attributes['session.id']).to.be.equal(session2ID);
-    expect(log.attributes['session.previous_id']).to.be.equal(session1ID);
+    // Session-part-only keys must not appear on logs.
+    void expect(logRecord.attributes['emb.user_session_number']).to.be
+      .undefined;
+    void expect(logRecord.attributes['emb.user_session_part_index']).to.be
+      .undefined;
+    void expect(logRecord.attributes['emb.session_part_number']).to.be
+      .undefined;
+    void expect(logRecord.attributes['emb.user_session_start_ts']).to.be
+      .undefined;
+    void expect(logRecord.attributes['emb.user_session_max_duration_seconds'])
+      .to.be.undefined;
+    void expect(
+      logRecord.attributes['emb.user_session_inactivity_timeout_seconds'],
+    ).to.be.undefined;
+  });
+
+  it('should emit the previous user session id on emb.user_session_previous_id when available', () => {
+    ({ memoryExporter, logger } = setup(
+      createMockSpanSessionManager(mockAttributes, {
+        getPreviousUserSessionId: () => 'PREVIOUS_USER_SESSION',
+      }),
+    ));
+
+    logger.emit({ body: 'test log' });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['emb.user_session_previous_id']).to.equal(
+      'PREVIOUS_USER_SESSION',
+    );
   });
 });

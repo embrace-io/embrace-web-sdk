@@ -28,7 +28,10 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
+import type {
+  NamespacedStorage,
+  PerformanceManager,
+} from '../../utils/index.ts';
 import {
   GLOBAL_CONFIG,
   getIncrementedCount,
@@ -53,7 +56,7 @@ export class EmbraceLogManager implements LogManager {
   private readonly _spanSessionManager: SpanSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
-  private readonly _storage: Storage;
+  private readonly _storage: NamespacedStorage;
 
   public constructor({
     diag: diagParam,
@@ -112,7 +115,7 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (!handled) {
-      this._spanSessionManager.incrSessionCountForKey(
+      this._spanSessionManager.incrSessionPartCountForKey(
         KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
       );
     }
@@ -193,7 +196,9 @@ export class EmbraceLogManager implements LogManager {
     const validAttrs = this._validateAttributes(attributes);
 
     if (severity === 'error') {
-      this._spanSessionManager.incrSessionCountForKey(KEY_EMB_ERROR_LOG_COUNT);
+      this._spanSessionManager.incrSessionPartCountForKey(
+        KEY_EMB_ERROR_LOG_COUNT,
+      );
     }
 
     let stack = '';

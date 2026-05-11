@@ -1,8 +1,8 @@
 /* eslint-disable baseline-js/use-baseline */
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/index.ts';
 import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
@@ -104,7 +104,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
 
     this._removeSessionEndListener =
-      this.sessionManager.addSessionEndedListener(() => {
+      this.sessionManager.addSessionPartEndedListener(() => {
         try {
           this._flushReport();
         } catch (e) {
@@ -113,7 +113,9 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       });
   }
 
-  public override setSessionManager(sessionManager: SpanSessionManager): void {
+  public override setSessionManager(
+    sessionManager: SpanSessionManagerInternal,
+  ): void {
     super.setSessionManager(sessionManager);
     this._registerSessionEndListener();
   }

@@ -1,6 +1,7 @@
 import type { DiagLogger } from '@opentelemetry/api';
 
 import type { DynamicSDKConfig } from '../../sdk/index.ts';
+import type { NamespacedStorage } from '../../utils/index.ts';
 
 export type RemoteConfigURLParams = {
   osVersion: string;
@@ -27,7 +28,7 @@ export interface EmbraceDynamicConfigManagerArgs {
   appVersion?: string;
   deviceId?: string;
   diag?: DiagLogger;
-  storage: Storage;
+  storage: NamespacedStorage;
   defaultConfig?: Partial<DynamicSDKConfig>;
   embraceConfigURL?: string;
 }

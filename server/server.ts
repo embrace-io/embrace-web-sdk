@@ -137,8 +137,7 @@ const server = createServer((req, res) => {
         logReceivedSpans(resourceSpans);
 
         const sessionSpan = resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-          (span) =>
-            span.name === 'emb-session-part' || span.name === 'emb-session',
+          (span) => span.name === 'emb-session-part',
         );
         const sessionId = sessionSpan?.attributes.find(
           (attr) => attr.key === 'session.id',

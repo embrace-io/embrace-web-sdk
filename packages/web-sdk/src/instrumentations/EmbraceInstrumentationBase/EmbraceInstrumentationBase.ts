@@ -5,9 +5,11 @@ import type {
 } from '@opentelemetry/instrumentation';
 import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
 import { session } from '../../api-sessions/index.ts';
-import type { LimitManagerInternal } from '../../managers/index.ts';
+import type {
+  LimitManagerInternal,
+  SpanSessionManagerInternal,
+} from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
 import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
@@ -19,7 +21,7 @@ export abstract class EmbraceInstrumentationBase<
   extends InstrumentationAbstract<ConfigType>
   implements Instrumentation<ConfigType>
 {
-  private _sessionManager: SpanSessionManager;
+  private _sessionManager: SpanSessionManagerInternal;
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
@@ -44,7 +46,7 @@ export abstract class EmbraceInstrumentationBase<
   }
 
   /* Returns session provider */
-  protected get sessionManager(): SpanSessionManager {
+  protected get sessionManager(): SpanSessionManagerInternal {
     return this._sessionManager;
   }
 
@@ -82,7 +84,7 @@ export abstract class EmbraceInstrumentationBase<
     this._logManager = logManager;
   }
 
-  public setSessionManager(sessionManager: SpanSessionManager): void {
+  public setSessionManager(sessionManager: SpanSessionManagerInternal): void {
     this._sessionManager = sessionManager;
   }
 }

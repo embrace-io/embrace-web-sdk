@@ -13,7 +13,6 @@ import {
   StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { createSessionSpanProcessor } from '@opentelemetry/web-common';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
 import { session } from '../api-sessions/index.ts';
@@ -102,6 +101,8 @@ export const initSDK = (
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
     useDocumentTitleAsPageLabel = true,
+    maxUserSessionDurationSeconds = 43200,
+    inactivityTimeoutSeconds = 1800,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -149,14 +150,16 @@ export const initSDK = (
       );
     }
 
-    const namespace = !registerGlobally && appID ? appID : '';
+    const namespace = appID ?? undefined;
     const sdkLocalStorage = new NamespacedStorage({
       namespace,
       storage: window.localStorage,
+      diag: diagLogger,
     });
     const sdkSessionStorage = new NamespacedStorage({
       namespace,
       storage: window.sessionStorage,
+      diag: diagLogger,
     });
 
     const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
@@ -222,6 +225,10 @@ export const initSDK = (
       registerGlobally,
       sdkLocalStorage,
       visibilityDoc: window.document,
+      userSessionConfig: {
+        maxUserSessionDurationSeconds,
+        inactivityTimeoutSeconds,
+      },
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -253,7 +260,6 @@ export const initSDK = (
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
-      spanSessionManager,
       userManager,
       spanExporters,
       spanProcessors,
@@ -268,6 +274,9 @@ export const initSDK = (
     });
 
     spanSessionManager.setTracerProvider(tracerProvider);
+    // No-op if the tab is hidden/unfocused at init; the first part starts
+    // on the next engagement via the manager's browser-activity listeners.
+    spanSessionManager.startSessionPartInternal('init');
 
     const { loggerProvider, embraceLogManager } = setupLogs({
       resource: resourceWithWebSDKAttributes,
@@ -284,8 +293,6 @@ export const initSDK = (
       pageManager,
       visibilityDoc: window.document,
     });
-
-    spanSessionManager.startSessionSpan({ reason: 'init' });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
@@ -367,12 +374,14 @@ const setupSession = ({
   registerGlobally,
   sdkLocalStorage,
   visibilityDoc,
+  userSessionConfig,
 }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
     perf,
     storage: sdkLocalStorage,
     visibilityDoc,
+    config: userSessionConfig,
   });
 
   if (registerGlobally) {
@@ -384,7 +393,6 @@ const setupSession = ({
 
 const setupTraces = ({
   resource,
-  spanSessionManager,
   userManager,
   spanExporters,
   spanProcessors = [],
@@ -397,7 +405,6 @@ const setupTraces = ({
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
-    createSessionSpanProcessor(spanSessionManager),
     new BrowserSpanProcessor(),
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
@@ -417,10 +424,10 @@ const setupTraces = ({
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
-      // Session properties are stored as attributes on the session span, add a
-      // buffer here so that there is room for our internal attributes
+      // Session properties are stored as attributes on the session part span,
+      // add a buffer here so that there is room for our internal attributes
       attributeCountLimit: DEFAULT_LIMITS.maxAllowed.session_property * 2,
-      // Breadcrumbs are stored as events on the session span, add a
+      // Breadcrumbs are stored as events on the session part span, add a
       // buffer here so that there is room for our internal events
       eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
     },

@@ -1,12 +1,3 @@
-export { EmbraceSpanSessionManager } from '../../managers/index.ts';
 export type { EmbraceInstrumentationBaseArgs } from '../EmbraceInstrumentationBase/index.ts';
 export { EmbraceInstrumentationBase } from '../EmbraceInstrumentationBase/index.ts';
-export {
-  SpanSessionBrowserActivityInstrumentation,
-  type SpanSessionBrowserActivityInstrumentationArgs,
-} from './SpanSessionBrowserActivityInstrumentation/index.ts';
-export {
-  SpanSessionVisibilityInstrumentation,
-  type SpanSessionVisibilityInstrumentationArgs,
-} from './SpanSessionVisibilityInstrumentation/index.ts';
-export type { SessionSpan } from './types.ts';
+export type { SessionPartSpan } from './types.ts';

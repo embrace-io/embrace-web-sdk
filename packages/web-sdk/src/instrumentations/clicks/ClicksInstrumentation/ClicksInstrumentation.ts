@@ -48,7 +48,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
       }
 
       try {
-        const currentSessionSpan = this.sessionManager.getSessionSpan();
+        const currentSessionSpan = this.sessionManager.getSessionPartSpan();
         if (currentSessionSpan) {
           currentSessionSpan.addEvent(
             'click',

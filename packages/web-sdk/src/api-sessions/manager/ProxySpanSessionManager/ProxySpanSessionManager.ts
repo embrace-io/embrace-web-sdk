@@ -1,23 +1,29 @@
-import type { HrTime } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { TracerProvider } from '@opentelemetry/api';
+import type { ExtendedSpan } from '../../../index.ts';
+import type {
+  SpanSessionManagerInternal,
+  UserSessionAttributes,
+} from '../../../managers/EmbraceSpanSessionManager/types.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
-  SpanSessionManager,
+  SessionPartEndReason,
+  SessionPartStartReason,
   StartSessionOptions,
+  UserSessionEndReason,
 } from '../index.ts';
 import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.ts';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 
-export class ProxySpanSessionManager implements SpanSessionManager {
-  private _delegate?: SpanSessionManager;
+export class ProxySpanSessionManager implements SpanSessionManagerInternal {
+  private _delegate?: SpanSessionManagerInternal;
 
-  public getDelegate(): SpanSessionManager {
+  public getDelegate(): SpanSessionManagerInternal {
     return this._delegate ?? NOOP_SPAN_SESSION_MANAGER;
   }
 
-  public setDelegate(delegate: SpanSessionManager): void {
+  public setDelegate(delegate: SpanSessionManagerInternal): void {
     this._delegate = delegate;
   }
 
@@ -41,41 +47,104 @@ export class ProxySpanSessionManager implements SpanSessionManager {
     this.getDelegate().endSessionSpan();
   }
 
-  public endSessionSpanInternal(reason: ReasonSessionEnded) {
-    this.getDelegate().endSessionSpanInternal(reason);
-  }
-
-  public currentSessionAsReadableSpan(
-    reason: ReasonSessionEnded,
-  ): ReadableSpan | null {
+  /** @deprecated Will be removed in a future major version, always returns null. */
+  public currentSessionAsReadableSpan(reason: ReasonSessionEnded): null {
     return this.getDelegate().currentSessionAsReadableSpan(reason);
   }
 
+  /** @deprecated Will be removed in a future version, use getUserSessionId(); returns null when no user session is active. */
   public getSessionId(): string | null {
     return this.getDelegate().getSessionId();
   }
 
-  public getPreviousSessionId(): string | null {
-    return this.getDelegate().getPreviousSessionId();
+  /** @deprecated Will be removed in a future version, always returns null. Use getPreviousUserSessionId(). */
+  public getPreviousSessionId(): null {
+    return null;
   }
 
+  /** @deprecated Will be removed in a future version, use getSessionPartSpan(); returns null when no part is active. */
   public getSessionSpan() {
     return this.getDelegate().getSessionSpan();
   }
 
-  public getSessionStartTime(): HrTime | null {
+  /** @deprecated Will be removed in a future version, use getUserSessionStartTime(); returns null when no user session is active. */
+  public getSessionStartTime(): number | null {
     return this.getDelegate().getSessionStartTime();
   }
 
-  public startSessionSpan(options?: StartSessionOptions) {
-    this.getDelegate().startSessionSpan(options);
+  /** @deprecated Will be removed in a future version, no-op. */
+  public startSessionSpan(_options?: StartSessionOptions) {}
+
+  /** @deprecated Will be removed in a future version, the returned unsubscribe is a no-op. */
+  public addSessionStartedListener(_listener: () => void): () => void {
+    return () => {};
   }
 
-  public addSessionStartedListener(listener: () => void): () => void {
-    return this.getDelegate().addSessionStartedListener(listener);
+  /** @deprecated Will be removed in a future version, the returned unsubscribe is a no-op. */
+  public addSessionEndedListener(_listener: () => void): () => void {
+    return () => {};
   }
 
-  public addSessionEndedListener(listener: () => void): () => void {
-    return this.getDelegate().addSessionEndedListener(listener);
+  public getUserSessionId(): string | null {
+    return this.getDelegate().getUserSessionId();
+  }
+
+  public getPreviousUserSessionId(): string | null {
+    return this.getDelegate().getPreviousUserSessionId();
+  }
+
+  public getUserSessionStartTime(): number | null {
+    return this.getDelegate().getUserSessionStartTime();
+  }
+
+  public endUserSession(): void {
+    this.getDelegate().endUserSession();
+  }
+
+  public getUserSessionAttributes(): UserSessionAttributes | null {
+    return this.getDelegate().getUserSessionAttributes();
+  }
+
+  public getSessionPartProperties(): Record<string, string> {
+    return this.getDelegate().getSessionPartProperties();
+  }
+
+  public getSessionPartId(): string | null {
+    return this.getDelegate().getSessionPartId();
+  }
+
+  public getSessionPartSpan(): ExtendedSpan | null {
+    return this.getDelegate().getSessionPartSpan();
+  }
+
+  public startSessionPartInternal(reason: SessionPartStartReason): void {
+    this.getDelegate().startSessionPartInternal(reason);
+  }
+
+  public endSessionPartInternal(
+    reason: SessionPartEndReason,
+    userSessionEndReason?: UserSessionEndReason,
+  ): void {
+    this.getDelegate().endSessionPartInternal(reason, userSessionEndReason);
+  }
+
+  public incrSessionPartCountForKey(key: string): void {
+    this.getDelegate().incrSessionPartCountForKey(key);
+  }
+
+  public incrNextSessionPartCountForKey(key: string): void {
+    this.getDelegate().incrNextSessionPartCountForKey(key);
+  }
+
+  public addSessionPartStartedListener(listener: () => void): () => void {
+    return this.getDelegate().addSessionPartStartedListener(listener);
+  }
+
+  public addSessionPartEndedListener(listener: () => void): () => void {
+    return this.getDelegate().addSessionPartEndedListener(listener);
+  }
+
+  public setTracerProvider(tracerProvider: TracerProvider): void {
+    this.getDelegate().setTracerProvider(tracerProvider);
   }
 }

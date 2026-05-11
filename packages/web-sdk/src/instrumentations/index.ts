@@ -24,13 +24,7 @@ export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
 } from './server-timing/index.ts';
-export type { SessionSpan } from './session/index.ts';
-export {
-  SpanSessionBrowserActivityInstrumentation,
-  type SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionVisibilityInstrumentation,
-  type SpanSessionVisibilityInstrumentationArgs,
-} from './session/index.ts';
+export type { SessionPartSpan } from './session/index.ts';
 export {
   UserTimingInstrumentation,
   type UserTimingInstrumentationArgs,

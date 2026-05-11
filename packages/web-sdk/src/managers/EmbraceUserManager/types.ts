@@ -1,8 +1,9 @@
 import type { DiagLogger } from '@opentelemetry/api';
+import type { NamespacedStorage } from '../../utils/index.ts';
 
 export interface EmbraceUserManagerArgs {
   diag?: DiagLogger;
-  storage: Storage;
+  storage: NamespacedStorage;
 }
 
 export const isUserId = (userId: unknown): userId is string =>

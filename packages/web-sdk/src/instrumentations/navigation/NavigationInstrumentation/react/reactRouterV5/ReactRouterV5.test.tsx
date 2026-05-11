@@ -3,7 +3,7 @@ import * as chai from 'chai';
 import { createBrowserHistory } from 'history';
 import { Route, Router, Switch, useHistory } from 'react-router-domv4v5';
 import {
-  InMemoryStorage,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../../../../tests/utils/index.ts';
 import { render } from '../../../../../../tests/utils/react/reactTestUtils.ts';
@@ -15,8 +15,8 @@ import {
   ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
-import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
 import { session } from '../../../../../api-sessions/index.ts';
+import type { SpanSessionManagerInternal } from '../../../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -70,13 +70,13 @@ const renderReactApp = () => {
 describe('ReactRouterV5Legacy', () => {
   let pageManager: EmbracePageManager;
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManager;
+  let spanSessionManager: SpanSessionManagerInternal;
 
   before(() => {
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
-      storage: new InMemoryStorage(),
+      storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
 
@@ -93,7 +93,7 @@ describe('ReactRouterV5Legacy', () => {
   });
 
   it('create route spans', async () => {
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
 
     expect(pageManager.getCurrentPageId()).to.be.null;
     expect(pageManager.getCurrentRoute()).to.be.null;
@@ -105,12 +105,12 @@ describe('ReactRouterV5Legacy', () => {
       rootElement: container,
     });
 
-    spanSessionManager.endSessionSpan();
+    spanSessionManager.endSessionPartInternal('user_session_ended', 'manual');
     tearDown();
 
     const routeSpans = memoryExporter
       .getFinishedSpans()
-      .filter((span) => span.name !== 'emb-session');
+      .filter((span) => span.name !== 'emb-session-part');
     expect(routeSpans.length).to.equal(4);
     expect(routeSpans[0].name).to.equal('/');
     expect(routeSpans[1].name).to.equal('/product/:id');

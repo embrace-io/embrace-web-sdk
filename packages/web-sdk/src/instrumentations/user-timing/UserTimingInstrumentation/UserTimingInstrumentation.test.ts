@@ -6,9 +6,9 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
-  InMemoryStorage,
   MockPerformanceManager,
   setupTestLogExporter,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { log } from '../../../api-logs/index.ts';
@@ -116,14 +116,14 @@ describe('UserTimingInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const storage = new InMemoryStorage();
+    const storage = setupTestStorage();
     const spanSessionManager = new EmbraceSpanSessionManager({
       limitManager,
       perf,
       storage,
       visibilityDoc: window.document,
     });
-    spanSessionManager.startSessionSpan();
+    spanSessionManager.startSessionPartInternal('init');
     const logManager = new EmbraceLogManager({
       spanSessionManager,
       limitManager,

@@ -8,6 +8,7 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
 } from '../../../tests/utils/index.ts';
+import { NamespacedStorage } from '../../utils/index.ts';
 import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.ts';
 import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';
 
@@ -15,15 +16,17 @@ const { expect } = chai;
 
 describe('EmbraceDynamicConfigManager', () => {
   let diag: InMemoryDiagLogger;
-  let storage: InMemoryStorage;
+  let inMemoryStorage: InMemoryStorage;
+  let storage: NamespacedStorage;
 
   before(() => {
     fakeFetchInstall();
   });
 
   beforeEach(() => {
-    storage = new InMemoryStorage();
+    inMemoryStorage = new InMemoryStorage();
     diag = new InMemoryDiagLogger();
+    storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
 
     fakeFetchResetHistory();
     storage.clear();
@@ -102,8 +105,11 @@ describe('EmbraceDynamicConfigManager', () => {
 
   it('should not fail if storage is not available', () => {
     const configManager = new EmbraceDynamicConfigManager({
-      // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
-      storage: null,
+      storage: new NamespacedStorage({
+        // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
+        storage: null,
+        diag,
+      }),
       diag,
     });
 
@@ -113,9 +119,13 @@ describe('EmbraceDynamicConfigManager', () => {
       samplingPct: 100,
       networkSpansForwardingThreshold: 0,
     });
-    expect(diag.getWarnLogs()[0]).to.contain(
-      'Failed to parse remote config from storage',
-    );
+    expect(
+      diag
+        .getWarnLogs()
+        .some((m) =>
+          m.includes(`failed to read ${LOCAL_STORAGE_REMOTE_CONFIG_KEY}`),
+        ),
+    ).to.equal(true);
   });
 
   it('should not fetch the remote config if is not connected to Embrace', async () => {

@@ -42,15 +42,8 @@ describe('NoOpSpanSessionManager', () => {
     }).to.not.throw();
   });
 
-  it('should do nothing for endSessionSpanInternal', () => {
-    expect(() => {
-      noOpSpanSessionManager.endSessionSpanInternal('manual');
-    }).to.not.throw();
-  });
-
   it('should return null for currentSessionAsReadableSpan', () => {
-    const result =
-      noOpSpanSessionManager.currentSessionAsReadableSpan('manual');
+    const result = noOpSpanSessionManager.currentSessionAsReadableSpan();
     expect(result).to.equal(null);
   });
 
@@ -84,6 +77,24 @@ describe('NoOpSpanSessionManager', () => {
   it('should do nothing for addSessionEndedListener', () => {
     expect(() => {
       noOpSpanSessionManager.addSessionEndedListener(() => {});
+    }).to.not.throw();
+  });
+
+  it('should return null for getUserSessionId', () => {
+    void expect(noOpSpanSessionManager.getUserSessionId()).to.be.null;
+  });
+
+  it('should return null for getPreviousUserSessionId', () => {
+    void expect(noOpSpanSessionManager.getPreviousUserSessionId()).to.be.null;
+  });
+
+  it('should return null for getUserSessionStartTime', () => {
+    void expect(noOpSpanSessionManager.getUserSessionStartTime()).to.be.null;
+  });
+
+  it('should do nothing for endUserSession', () => {
+    expect(() => {
+      noOpSpanSessionManager.endUserSession();
     }).to.not.throw();
   });
 });

@@ -2,6 +2,20 @@
 export interface VisibilityStateDocument {
   visibilityState: DocumentVisibilityState;
   hasFocus: () => boolean;
+  // Optional so test fakes that only need visibilityState/hasFocus stay
+  // valid. The real `window.document` always provides these; consumers
+  // that depend on document-level events (e.g., the session manager
+  // listening for `visibilitychange`) guard with optional chaining.
+  addEventListener?: (
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: AddEventListenerOptions | boolean,
+  ) => void;
+  removeEventListener?: (
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: EventListenerOptions | boolean,
+  ) => void;
 }
 
 // Useful for testing so that we can pass in a document-like object and change its URL

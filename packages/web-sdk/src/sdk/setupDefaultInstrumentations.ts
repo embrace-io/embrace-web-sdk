@@ -10,8 +10,6 @@ import {
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
   ServerTimingInstrumentation,
-  SpanSessionBrowserActivityInstrumentation,
-  SpanSessionVisibilityInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.ts';
@@ -29,13 +27,7 @@ export const setupDefaultInstrumentations = (
     limitManager,
   }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
-  /*
-    These instrumentations are core to managing the session lifecycle and so are not optional
-   */
-  const instrumentations: Instrumentation[] = [
-    new SpanSessionVisibilityInstrumentation(config['session-visibility']),
-    new SpanSessionBrowserActivityInstrumentation(config['session-activity']),
-  ];
+  const instrumentations: Instrumentation[] = [];
 
   if (!config.omit?.has('exception')) {
     instrumentations.push(

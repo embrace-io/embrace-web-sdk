@@ -10,6 +10,7 @@ import {
   getWebSDKResource,
   SDK_VERSION,
 } from '../resources/index.ts';
+import { NamespacedStorage } from '../utils/index.ts';
 import {
   EMBRACE_APP_INSTANCE_ID_STORAGE_KEY,
   EMBRACE_SERVICE_NAME,
@@ -20,12 +21,17 @@ const { expect } = chai;
 const VALID_UUID = 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH';
 
 describe('webSdkResource', () => {
-  let storage: InMemoryStorage;
+  let inMemoryStorage: InMemoryStorage;
+  let storage: NamespacedStorage;
   let diagLogger: InMemoryDiagLogger;
 
   beforeEach(() => {
-    storage = new InMemoryStorage();
+    inMemoryStorage = new InMemoryStorage();
     diagLogger = new InMemoryDiagLogger();
+    storage = new NamespacedStorage({
+      storage: inMemoryStorage,
+      diag: diagLogger,
+    });
   });
 
   describe('getWebSDKResource', () => {
@@ -89,37 +95,26 @@ describe('webSdkResource', () => {
       );
     });
 
-    it('should handle being setup with a non-functional storage', () => {
-      const resource = getWebSDKResource({
-        diagLogger,
-        appVersion: '1.0.0',
-        // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
-        pageSessionStorage: null,
-      });
-
-      const appInstanceId = resource.attributes['emb.app_instance_id'];
-      void expect(appInstanceId).to.have.lengthOf(32);
-
-      expect(diagLogger.getWarnLogs()).to.deep.equal([
-        'Failed to retrieve app instance ID from session storage',
-        'Failed to persist app instance ID to session storage',
-      ]);
-    });
-
     it('should handle its storage throwing errors', () => {
+      const failingStorage = new NamespacedStorage({
+        storage: new FailingStorage(),
+        diag: diagLogger,
+      });
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
-        pageSessionStorage: new FailingStorage(),
+        pageSessionStorage: failingStorage,
       });
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
       void expect(appInstanceId).to.have.lengthOf(32);
 
-      expect(diagLogger.getWarnLogs()).to.deep.equal([
-        'Failed to retrieve app instance ID from session storage',
-        'Failed to persist app instance ID to session storage',
-      ]);
+      // Read fails: NamespacedStorage warns.
+      // Write fails: NamespacedStorage flips disabled and emits one error.
+      expect(diagLogger.getWarnLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getWarnLogs()[0]).to.contain('failed to read');
+      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
+      expect(diagLogger.getErrorLogs()[0]).to.contain('writes disabled');
     });
   });
 

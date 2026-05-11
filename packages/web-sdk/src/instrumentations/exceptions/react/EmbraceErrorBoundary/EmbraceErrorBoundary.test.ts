@@ -3,8 +3,8 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
 import {
-  InMemoryStorage,
   setupTestLogExporter,
+  setupTestStorage,
 } from '../../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../../api-logs/index.ts';
 import { log } from '../../../../api-logs/index.ts';
@@ -41,7 +41,7 @@ describe('EmbraceErrorBoundary', () => {
   beforeEach(() => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const storage = new InMemoryStorage();
+    const storage = setupTestStorage();
     const perf = new OTelPerformanceManager();
     logManager = new EmbraceLogManager({
       spanSessionManager: new EmbraceSpanSessionManager({
