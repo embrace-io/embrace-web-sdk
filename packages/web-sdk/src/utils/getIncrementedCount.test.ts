@@ -2,9 +2,10 @@ import * as chai from 'chai';
 import {
   FailingStorage,
   InMemoryDiagLogger,
-  InMemoryStorage,
+  setupTestStorage,
 } from '../../tests/utils/index.ts';
 import { getIncrementedCount } from './getIncrementedCount.ts';
+import { NamespacedStorage } from './NamespacedStorage/index.ts';
 
 const { expect } = chai;
 
@@ -16,7 +17,7 @@ describe('getIncrementedCount', () => {
   });
 
   it('should return an incremented count after each call', () => {
-    const storage = new InMemoryStorage();
+    const storage = setupTestStorage();
 
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(2);
@@ -27,14 +28,21 @@ describe('getIncrementedCount', () => {
   });
 
   it('should return 1 when storage is unavailable', () => {
-    const storage = new FailingStorage();
+    const storage = new NamespacedStorage({
+      storage: new FailingStorage(),
+      diag,
+    });
 
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);
 
-    expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to retrieve my-key from storage: ',
-      'Failed to retrieve my-key from storage: ',
-    ]);
+    // Wrapper warns once per failed read; setItem error logs only once.
+    expect(
+      diag.getWarnLogs().filter((m) => m.includes('failed to read my-key'))
+        .length,
+    ).to.equal(2);
+    expect(
+      diag.getErrorLogs().filter((m) => m.includes('writes disabled')).length,
+    ).to.equal(1);
   });
 });

@@ -38,6 +38,6 @@ export const mockSessionSpan: ReadableSpan = {
   ...mockSpan,
   name: 'mock session span',
   attributes: {
-    [KEY_EMB_TYPE]: EMB_TYPES.Session,
+    [KEY_EMB_TYPE]: EMB_TYPES.SessionPart,
   },
 };

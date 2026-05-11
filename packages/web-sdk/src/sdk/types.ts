@@ -31,16 +31,15 @@ import type {
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
   ServerTimingInstrumentationArgs,
-  SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionVisibilityInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
+  UserSessionConfig,
 } from '../managers/index.ts';
-import type { PerformanceManager } from '../utils/index.ts';
+import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
 
 export interface DynamicSDKConfig {
   /**
@@ -232,6 +231,20 @@ type BaseSDKInitConfig = {
    * **default**: true
    */
   useDocumentTitleAsPageLabel?: boolean;
+
+  /**
+   * maxUserSessionDurationSeconds overrides the default maximum user session duration (12 hours).
+   *
+   * **default**: 43200 seconds (12 hours)
+   */
+  maxUserSessionDurationSeconds?: number;
+
+  /**
+   * inactivityTimeoutSeconds overrides the default inactivity timeout (30 minutes).
+   *
+   * **Default**: 1800 seconds (30 minutes)
+   */
+  inactivityTimeoutSeconds?: number;
 };
 
 /*
@@ -297,20 +310,20 @@ export interface SDKControl {
 
 export interface SetupUserArgs {
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
 }
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
   perf: PerformanceManager;
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
   visibilityDoc: VisibilityStateDocument;
+  userSessionConfig?: UserSessionConfig;
 }
 
 export interface SetupTracesArgs {
   resource: Resource;
-  spanSessionManager: SpanSessionManager;
   userManager: UserManager;
   spanExporters?: SpanExporter[];
   spanProcessors: SpanProcessor[];
@@ -334,7 +347,7 @@ export interface SetupLogsArgs {
   perf: PerformanceManager;
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
   pageManager: PageManager;
   visibilityDoc: VisibilityStateDocument;
 }
@@ -362,7 +375,7 @@ interface NetworkInstrumentationArgs {
 
 export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
-  spanSessionManager?: SpanSessionManager;
+  spanSessionManager?: SpanSessionManagerInternal;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
 }
@@ -372,8 +385,6 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;
-  'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
-  'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;

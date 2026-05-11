@@ -1,71 +1,147 @@
 import type {
   Attributes,
   DiagLogger,
-  HrTime,
   Tracer,
   TracerProvider,
 } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import { ATTR_SESSION_ID } from '@opentelemetry/semantic-conventions/incubating';
+import {
+  ATTR_SESSION_ID,
+  ATTR_SESSION_PREVIOUS_ID,
+} from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
-  ReasonSessionEnded,
-  StartSessionOptions,
-} from '../../api-sessions/index.ts';
+  SessionPartEndReason,
+  SessionPartStartReason,
+  UserSessionEndReason,
+} from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
+  EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
+  KEY_EMB_IS_FINAL_SESSION_PART,
   KEY_EMB_SDK_STARTUP_DURATION,
-  KEY_EMB_SESSION_NUMBER,
-  KEY_EMB_SESSION_REASON_ENDED,
-  KEY_EMB_SESSION_REASON_STARTED,
+  KEY_EMB_SESSION_PART_END_REASON,
+  KEY_EMB_SESSION_PART_ID,
+  KEY_EMB_SESSION_PART_NUMBER,
+  KEY_EMB_SESSION_PART_START_REASON,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
+  KEY_EMB_USER_SESSION_ID,
+  KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+  KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS,
+  KEY_EMB_USER_SESSION_NUMBER,
+  KEY_EMB_USER_SESSION_PART_INDEX,
+  KEY_EMB_USER_SESSION_PREVIOUS_ID,
+  KEY_EMB_USER_SESSION_START_TS,
+  KEY_EMB_USER_SESSION_TERMINATION_REASON,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
+import type {
+  NamespacedStorage,
+  PerformanceManager,
+  TimeoutRef,
+} from '../../utils/index.ts';
 import {
+  clampNumber,
   generateUUID,
   getIncrementedCount,
   getVisibilityState,
+  throttle,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
-import { EMBRACE_SESSION_NUMBER_STORAGE_KEY } from './constants.ts';
+import {
+  DEFAULT_ACTIVITY_EVENTS,
+  DEFAULT_ACTIVITY_THROTTLE_MS,
+  DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+  DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
+  EMBRACE_SESSION_PART_NUMBER_KEY,
+  EMBRACE_USER_SESSION_NUMBER_KEY,
+  EMBRACE_USER_SESSION_STATE_KEY,
+  END_USER_SESSION_COOLDOWN_MS,
+  MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+  MAX_USER_SESSION_MAX_DURATION_SECONDS,
+  MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+  MIN_USER_SESSION_MAX_DURATION_SECONDS,
+  SESSION_PART_SPAN_NAME,
+} from './constants.ts';
 import type {
   EmbraceSpanSessionManagerArgs,
-  SessionEndedListener,
-  SessionStartedListener,
   SpanSessionManagerInternal,
+  UserSessionAttributes,
+  UserSessionState,
 } from './types.ts';
+import {
+  addActivityListeners,
+  createUserSessionState,
+  isTabEngaged,
+  isUserSessionExpired,
+  readPermanentProperties,
+  readUserSessionState,
+  removeActivityListeners,
+  storePermanentProperties,
+} from './utils/index.ts';
 
+/**
+ * Parts are engagement-gated (visible AND focused), so only one part can
+ * be active at a time. That mutex lets us treat storage as a
+ * plain shared row read on engagement and written on changes.
+ */
 export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
-  private _previousSessionId: string | null = null;
-  private _activeSessionId: string | null = null;
-  private _activeSessionStartTime: HrTime | null = null;
-  private _sessionSpan: ExtendedSpan | null = null;
-  private _activeSessionCounts: Record<string, number> | null = null;
-  private _nextSessionCounts: Record<string, number> = {};
-  private _coldStart = true; // Whether the session was started from a new page load or not.
+  private _state: UserSessionState | null = null;
+  private _previousUserSessionId: string | null = null;
+  private readonly _maxUserSessionDurationSeconds: number;
+  private readonly _inactivityTimeoutSeconds: number;
+  private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
+  private _lastEndUserSessionTs: number | null = null;
+  // In-memory mirror of the embrace_permanent_properties blob. Bare keys;
+  // the wire-format prefix is applied by the consumer at stamp time.
+  private _permanentProperties: Record<string, string> = {};
+  // Set to true the first time we successfully store the user-session
+  // state row, so _continueUserSessionAfterPartEnd can distinguish "another
+  // tab wiped storage after we wrote" (drop in-memory state) from "we never
+  // managed to write" (keep in-memory state).
+  private _hasStoredState = false;
+
+  private _activeSessionPartId: string | null = null;
+  // Storage-backed monotonic counter snapshotted at part start so that a
+  // concurrent part start in another tab doesn't shift this part's value
+  // before its span ends.
+  private _currentSessionPartNumber: number | null = null;
+  private _sessionPartSpan: ExtendedSpan | null = null;
+  private _activeSessionPartCounts: Record<string, number> | null = null;
+  // Flipped off once the first part starts within this page lifetime.
+  private _coldStart = true;
+  private _nextSessionPartCounts: Record<string, number> = {};
   private _sdkStartupDuration = 0;
-  private readonly _sessionStartedListeners: Array<SessionStartedListener> = [];
-  private readonly _sessionEndedListeners: Array<SessionEndedListener> = [];
+  private readonly _sessionPartStartedListeners: Array<() => void> = [];
+  private readonly _sessionPartEndedListeners: Array<() => void> = [];
   private _tracer: Tracer;
+
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
+  private readonly _storage: NamespacedStorage;
   private readonly _visibilityDoc: VisibilityStateDocument;
-  private readonly _storage: Storage;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _target: EventTarget;
+  private readonly _activityEvents: ReadonlyArray<string>;
+  private readonly _onActivityThrottled: (event: Event) => void;
+  private _sessionPartInactivityTimer: TimeoutRef | null = null;
+  private _lastActivityTs: number | null = null;
 
   public constructor({
+    config,
     diag: diagParam,
     perf,
     visibilityDoc,
     storage,
     limitManager,
+    target = window,
+    activityThrottleMs = DEFAULT_ACTIVITY_THROTTLE_MS,
+    activityEvents = DEFAULT_ACTIVITY_EVENTS,
   }: EmbraceSpanSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -76,43 +152,301 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
-    this._tracer = trace.getTracer('embrace-web-sdk-sessions');
+    this._permanentProperties = readPermanentProperties(
+      this._storage,
+      this._diag,
+    );
+    this._tracer = trace.getTracer('embrace-web-sdk-session-parts');
+    this._target = target;
+    this._activityEvents = activityEvents;
+    this._onActivityThrottled = throttle(this._onActivity, activityThrottleMs);
+
+    const maxUserSessionDurationSeconds = clampNumber({
+      diag: this._diag,
+      value: config?.maxUserSessionDurationSeconds,
+      defaultValue: DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
+      min: MIN_USER_SESSION_MAX_DURATION_SECONDS,
+      max: MAX_USER_SESSION_MAX_DURATION_SECONDS,
+    });
+    const inactivityTimeoutSeconds = clampNumber({
+      diag: this._diag,
+      value: config?.inactivityTimeoutSeconds,
+      defaultValue: DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+      min: MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+      max: MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+    });
+
+    this._maxUserSessionDurationSeconds = maxUserSessionDurationSeconds;
+    if (inactivityTimeoutSeconds <= maxUserSessionDurationSeconds) {
+      this._inactivityTimeoutSeconds = inactivityTimeoutSeconds;
+    } else {
+      this._diag.warn(
+        `inactivityTimeoutSeconds (${inactivityTimeoutSeconds.toString()}s) ` +
+          `exceeds maxUserSessionDurationSeconds (${maxUserSessionDurationSeconds.toString()}s); ` +
+          `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
+      );
+      this._inactivityTimeoutSeconds =
+        DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS;
+    }
   }
 
-  // Collects all permanent session properties from localStorage
-  private _getPermanentAttributes(): Attributes {
-    const permanentAttributes = new Map();
+  public setTracerProvider(tracerProvider: TracerProvider): void {
+    this._tracer = tracerProvider.getTracer('embrace-web-sdk-session-parts');
+    // Listeners attach here rather than in the constructor so that tests
+    // that construct a manager without going through SDK init don't
+    // pollute window with listeners, and so that browser-activity-driven
+    // parts only start once a real tracer is wired.
+    addActivityListeners({
+      target: this._target,
+      visibilityDoc: this._visibilityDoc,
+      activityEvents: this._activityEvents,
+      onActivity: this._onActivityThrottled,
+      onEngagementChange: this._onEngagementChange,
+    });
+    // Eager state init so getUserSessionId() returns a real id before the
+    // first part starts. If on-disk state is still valid this is a no-op;
+    // if expired (browser closed past the inactivity deadline) we create
+    // a fresh session and store it so other tabs see it before the
+    // first part starts.
+    const { created } = this._loadOrCreateUserSessionState(
+      this._perf.getNowMillis(),
+    );
+    if (created) {
+      this._storeState();
+    }
+  }
+
+  public recordSDKStartupDuration(duration: number): void {
+    this._sdkStartupDuration = Math.ceil(duration);
+  }
+
+  public getUserSessionId(): string | null {
+    return this._state?.userSessionId ?? null;
+  }
+
+  public getPreviousUserSessionId(): string | null {
+    // Fall back to in-memory for the brief window during user-session end
+    // where storage is cleared but the just-ended id is still held.
+    return this._state?.previousUserSessionId ?? this._previousUserSessionId;
+  }
+
+  public getUserSessionStartTime(): number | null {
+    return this._state?.userSessionStartTs ?? null;
+  }
+
+  public getUserSessionAttributes(): UserSessionAttributes | null {
+    if (!this._state) {
+      return null;
+    }
+    const previousUserSessionId = this.getPreviousUserSessionId() ?? '';
+    return {
+      [KEY_EMB_USER_SESSION_ID]: this._state.userSessionId,
+      [ATTR_SESSION_ID]: this._state.userSessionId,
+      [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
+      [ATTR_SESSION_PREVIOUS_ID]: previousUserSessionId,
+      [KEY_EMB_USER_SESSION_NUMBER]: this._state.userSessionNumber,
+      [KEY_EMB_USER_SESSION_PART_INDEX]: this._state.userSessionPartIndex,
+      [KEY_EMB_SESSION_PART_NUMBER]: this._currentSessionPartNumber ?? 0,
+      [KEY_EMB_USER_SESSION_START_TS]: this._state.userSessionStartTs,
+      [KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS]:
+        this._state.maxUserSessionDurationSeconds,
+      [KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS]:
+        this._state.inactivityTimeoutSeconds,
+    };
+  }
+
+  public endUserSession(): void {
+    const now = this._perf.getNowMillis();
+    if (
+      this._lastEndUserSessionTs !== null &&
+      now - this._lastEndUserSessionTs < END_USER_SESSION_COOLDOWN_MS
+    ) {
+      this._diag.warn(
+        'endUserSession called within cooldown period, ignoring.',
+      );
+      return;
+    }
+
+    if (!this._state) {
+      this._diag.debug(
+        'Trying to end user session, but there is no active session. This is a no-op.',
+      );
+      return;
+    }
+    this._lastEndUserSessionTs = now;
+    this._rolloverUserSession('manual');
+  }
+
+  public getSessionPartId(): string | null {
+    return this._activeSessionPartId;
+  }
+
+  public getSessionPartSpan(): ExtendedSpan | null {
+    return this._sessionPartSpan;
+  }
+
+  public startSessionPartInternal(reason: SessionPartStartReason): void {
+    if (this._sessionPartSpan) {
+      this._diag.warn(
+        `startSessionPartInternal called while a part is active (reason: ${reason}); ignoring`,
+      );
+      return;
+    }
+
+    // Parts are foreground-only: a part corresponds to a tab that is both
+    // visible AND focused.
+    if (
+      getVisibilityState(this._visibilityDoc) === EMB_STATES.Background ||
+      !this._visibilityDoc.hasFocus()
+    ) {
+      this._diag.debug(
+        `skipping session part start (reason: ${reason}) because the tab is not engaged`,
+      );
+      return;
+    }
+
+    const activeSessionPartId = generateUUID();
+    const previouslyRecordedCounts = this._nextSessionPartCounts;
+
+    this._beginUserSessionForPartStart();
+
+    const attributes: Attributes = {
+      ...this.getUserSessionAttributes(),
+      [KEY_EMB_TYPE]: EMB_TYPES.SessionPart,
+      [KEY_EMB_STATE]: EMB_STATES.Foreground,
+      [KEY_EMB_SESSION_PART_ID]: activeSessionPartId,
+      [KEY_EMB_SESSION_PART_START_REASON]: reason,
+      [KEY_EMB_COLD_START]: this._coldStart,
+      ...previouslyRecordedCounts,
+    };
+
+    this._activeSessionPartId = activeSessionPartId;
+    let span: EmbraceExtendedSpan;
     try {
-      for (let i = 0; i < this._storage.length; i++) {
-        const key = this._storage.key(i);
-        if (key?.startsWith(KEY_PREFIX_EMB_PROPERTIES)) {
-          const value = this._storage.getItem(key);
-          if (value) {
-            permanentAttributes.set(key, value);
-          }
+      span = new EmbraceExtendedSpan(
+        this._tracer.startSpan(SESSION_PART_SPAN_NAME, { attributes }),
+      );
+    } catch (error) {
+      this._activeSessionPartId = null;
+      this._diag.error('Error starting session part span', error);
+      return;
+    }
+
+    this._activeSessionPartCounts = {};
+    this._nextSessionPartCounts = {};
+    this._sessionPartSpan = span;
+    this._coldStart = false;
+
+    this._lastActivityTs = this._perf.getNowMillis();
+    this._startSessionPartInactivityTimer();
+
+    this._fireListeners(this._sessionPartStartedListeners, 'started');
+  }
+
+  public endSessionPartInternal(
+    reason: SessionPartEndReason,
+    userSessionEndReason?: UserSessionEndReason | null,
+    endTs?: number,
+  ): void {
+    if (!this._sessionPartSpan) {
+      this._diag.debug(
+        'trying to end a session part, but there is no session part in progress. This is a no-op.',
+      );
+      return;
+    }
+
+    this._clearSessionPartInactivityTimer();
+
+    this._fireListeners(this._sessionPartEndedListeners, 'ended');
+
+    // Inactivity ends the user session in one step (the part span end
+    // timestamp is anchored to the last activity, supplied as endTs).
+    const isFinal = reason === 'user_session_ended' || reason === 'inactivity';
+
+    // The inactivity deadline is anchored to the part end, not to when
+    // the SpanProcessor.onEnd chain finishes; processors can run for an
+    // unbounded amount of time and must not push the deadline forward.
+    const partEndTs = endTs ?? this._perf.getNowMillis();
+    const span = this._sessionPartSpan;
+    try {
+      const endAttrs: Attributes = {
+        [KEY_EMB_SESSION_PART_END_REASON]: reason,
+        ...this._activeSessionPartCounts,
+        ...this._limitManager.getDiagnosticCounts(),
+        [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
+      };
+      if (isFinal) {
+        endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;
+        if (userSessionEndReason) {
+          endAttrs[KEY_EMB_USER_SESSION_TERMINATION_REASON] =
+            userSessionEndReason;
         }
       }
+
+      const propertyAttrs: Attributes = {};
+      for (const [bareKey, value] of Object.entries(
+        this.getSessionPartProperties(),
+      )) {
+        propertyAttrs[KEY_PREFIX_EMB_PROPERTIES + bareKey] = value;
+      }
+
+      try {
+        span.setAttributes({
+          ...propertyAttrs,
+          ...endAttrs,
+        });
+      } catch (error) {
+        this._diag.warn(
+          'Error setting end attributes on session part span; ending span without them',
+          error,
+        );
+      }
     } catch (error) {
-      this._diag.warn('Error loading permanent session properties', error);
+      this._diag.warn(
+        'Error building session part end attributes; span will end without them',
+        error,
+      );
+    } finally {
+      try {
+        span.end(partEndTs);
+      } catch (error) {
+        this._diag.warn('Error ending session part span', error);
+      }
+      this._sessionPartSpan = null;
+      this._activeSessionPartId = null;
+      this._activeSessionPartCounts = null;
+      this._lastActivityTs = null;
+      this._limitManager.reset();
     }
-    return Object.fromEntries(permanentAttributes.entries()) as Attributes;
+
+    if (isFinal) {
+      this._previousUserSessionId = this._state?.userSessionId ?? null;
+      this._state = null;
+      this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
+      this._clearMaxDurationTimer();
+    } else {
+      try {
+        this._continueUserSessionAfterPartEnd(partEndTs);
+      } catch (error) {
+        this._diag.warn('Error continuing user session after part end', error);
+      }
+    }
   }
 
-  public addBreadcrumb(name: string) {
-    if (!this._sessionSpan) {
+  public addBreadcrumb(name: string): void {
+    if (!this._sessionPartSpan) {
       this._diag.debug(
-        'trying to add breadcrumb to a session, but there is no session in progress. This is a no-op.',
+        'trying to add breadcrumb, but there is no session part in progress. This is a no-op.',
       );
       return;
     }
 
     const limitedBreadcrumb = this._limitManager.limitBreadcrumb(name);
-
     if (limitedBreadcrumb === 'dropped') {
       return;
     }
 
-    this._sessionSpan.addEvent(
+    this._sessionPartSpan.addEvent(
       'emb-breadcrumb',
       {
         message: limitedBreadcrumb.name,
@@ -125,14 +459,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     propertyKey: string,
     value: string,
     options?: PropertyOptions,
-  ) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to add properties to a session, but there is no session in progress. This is a no-op.',
-      );
-      return;
-    }
-
+  ): void {
     const limitedSessionProperty = this._limitManager.limitSessionProperty(
       propertyKey,
       value,
@@ -142,196 +469,447 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    const attributeKey = KEY_PREFIX_EMB_PROPERTIES + limitedSessionProperty.key;
-    this._sessionSpan.setAttribute(attributeKey, limitedSessionProperty.value);
+    const bareKey = limitedSessionProperty.key;
+    const bareValue = limitedSessionProperty.value;
 
     if (options?.lifespan === 'permanent') {
-      try {
-        this._storage.setItem(attributeKey, value);
-      } catch (error) {
-        this._diag.warn('Failed to set permanent session property', error);
+      const candidate = {
+        ...this._permanentProperties,
+        [bareKey]: bareValue,
+      };
+      // In-memory is the source of truth for getSessionPartProperties.
+      // Persistence is best-effort; on failure the new value is still
+      // visible for this page's lifetime and the session-scoped entry
+      // is stripped so callers don't see two values for the same key.
+      if (!storePermanentProperties(this._storage, candidate)) {
+        this._diag.warn(
+          'Failed to store permanent property; keeping in-memory only.',
+        );
       }
-    }
-  }
-
-  public removeProperty(propertyKey: string) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to remove a session property, but there is no session in progress. This is a no-op.',
-      );
+      this._permanentProperties = candidate;
+      this._removeFromUserSessionProperties(bareKey);
       return;
     }
 
-    // We truncate long session property keys on addProperty so need to apply the same logic here
-    const attributeKey =
-      KEY_PREFIX_EMB_PROPERTIES +
-      this._limitManager.truncateString('session_property_key', propertyKey);
-    this._sessionSpan.removeAttribute(attributeKey);
-
-    try {
-      if (this._storage.getItem(attributeKey)) {
-        this._storage.removeItem(attributeKey);
-      }
-    } catch (error) {
-      this._diag.warn('Error removing permanent session property', error);
-    }
-  }
-
-  // the external api doesn't include a reason, and if a users uses it to end a session, the reason will be 'manual'
-  // note: don't use this internally, this is just for user facing APIs. Use this.endSessionSpanInternal instead.
-  public endSessionSpan() {
-    this.endSessionSpanInternal('manual');
-  }
-
-  // endSessionSpanInternal is not part of the public API, but is used internally to end a session span adding a specific reason
-  public endSessionSpanInternal(reason: ReasonSessionEnded) {
-    if (!this._sessionSpan) {
-      this._diag.debug(
-        'trying to end a session, but there is no session in progress. This is a no-op.',
-      );
-      return;
-    }
-
-    for (const listener of this._sessionEndedListeners) {
-      try {
-        listener();
-      } catch (error) {
-        this._diag.warn('Error while executing session ended listener', error);
-      }
-    }
-
-    this._sessionSpan.setAttributes(this._endSessionSpanAttributes(reason));
-    this._sessionSpan.end();
-    this._sessionSpan = null;
-    this._activeSessionStartTime = null;
-    this._previousSessionId = this._activeSessionId;
-    this._activeSessionId = null;
-    this._activeSessionCounts = null;
-
-    // For the limit manager to add a session ended listener it would need a reference to this
-    // session manager which would create a circular dependency
-    this._limitManager.reset();
-  }
-
-  private _endSessionSpanAttributes(reason: ReasonSessionEnded): Attributes {
-    return {
-      ...this._getPermanentAttributes(),
-      [KEY_EMB_SESSION_REASON_ENDED]: reason,
-      ...this._activeSessionCounts,
-      ...this._limitManager.getDiagnosticCounts(),
-      [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
+    // addProperty can be called before the first part starts (the SDK
+    // init flow eagerly initializes state, but bare manager usage and
+    // tests bypass that path). Ensure a state row exists so the write
+    // has somewhere to land.
+    const state = this._loadOrCreateUserSessionState(
+      this._perf.getNowMillis(),
+    ).state;
+    this._state = {
+      ...state,
+      userSessionProperties: {
+        ...state.userSessionProperties,
+        [bareKey]: bareValue,
+      },
     };
+    this._storeState();
+  }
+
+  public removeProperty(propertyKey: string): void {
+    const bareKey = this._limitManager.truncateString(
+      'session_property_key',
+      propertyKey,
+    );
+
+    // Try both stores so a key that was flipped between scopes doesn't
+    // linger in the other one.
+    this._removeFromPermanentProperties(bareKey);
+    this._removeFromUserSessionProperties(bareKey);
   }
 
   /**
-   * @deprecated Always returns null. Will be removed in a future major version.
+   * Bare-keyed view of properties for the active part. User-session-scoped
+   * entries shadow permanent ones, matching the cross-scope flip rule
+   * enforced in `addProperty`. Callers apply the wire-format prefix at
+   * stamp time.
    */
-  public currentSessionAsReadableSpan(
-    _reason: ReasonSessionEnded,
-  ): ReadableSpan | null {
-    return null;
+  public getSessionPartProperties(): Record<string, string> {
+    return {
+      ...this._permanentProperties,
+      ...(this._state?.userSessionProperties ?? {}),
+    };
+  }
+
+  public incrSessionPartCountForKey(key: string): void {
+    if (!this._sessionPartSpan || !this._activeSessionPartCounts) {
+      this._diag.debug(
+        'trying to increment a count for the active session part, but there is no session part in progress. This is a no-op.',
+      );
+      return;
+    }
+    this._activeSessionPartCounts[key] =
+      (this._activeSessionPartCounts[key] || 0) + 1;
+  }
+
+  public incrNextSessionPartCountForKey(key: string): void {
+    this._nextSessionPartCounts[key] =
+      (this._nextSessionPartCounts[key] || 0) + 1;
+  }
+
+  public addSessionPartStartedListener(listener: () => void): () => void {
+    return this._addListener(this._sessionPartStartedListeners, listener);
+  }
+
+  public addSessionPartEndedListener(listener: () => void): () => void {
+    return this._addListener(this._sessionPartEndedListeners, listener);
   }
 
   public getSessionId(): string | null {
-    return this._activeSessionId;
+    return this.getUserSessionId();
   }
 
-  public getPreviousSessionId(): string | null {
-    return this._previousSessionId;
+  public getPreviousSessionId(): null {
+    return null;
   }
+
+  public getSessionStartTime(): number | null {
+    return this.getUserSessionStartTime();
+  }
+
+  public endSessionSpan(): void {
+    this.endUserSession();
+  }
+
+  public startSessionSpan(): void {}
 
   public getSessionSpan(): ExtendedSpan | null {
-    return this._sessionSpan;
+    return this.getSessionPartSpan();
   }
 
-  public getSessionStartTime(): HrTime | null {
-    return this._activeSessionStartTime;
+  public currentSessionAsReadableSpan(): null {
+    return null;
   }
 
-  public startSessionSpan(options?: StartSessionOptions) {
-    // if there is a session already in progress, end it first
-    if (this._sessionSpan) {
-      this.endSessionSpanInternal('manual');
-    }
+  public addSessionStartedListener(_listener: () => void): () => void {
+    return () => {};
+  }
 
-    this._activeSessionId = generateUUID();
-    this._activeSessionStartTime = this._perf.getNowHRTime();
-    this._activeSessionCounts = {};
-    const previouslyRecordedCounts = this._nextSessionCounts;
-    this._nextSessionCounts = {};
+  public addSessionEndedListener(_listener: () => void): () => void {
+    return () => {};
+  }
 
-    const attributes: Attributes = {
-      ...this._getPermanentAttributes(),
-      [KEY_EMB_TYPE]: EMB_TYPES.Session,
-      [KEY_EMB_STATE]: getVisibilityState(this._visibilityDoc),
-      [ATTR_SESSION_ID]: this._activeSessionId,
-      [KEY_EMB_COLD_START]: this._coldStart,
-      [KEY_EMB_SESSION_NUMBER]: getIncrementedCount(
+  /**
+   * Loads persisted state into _state, rotating if the persisted row is
+   * missing or expired. After this call _state is guaranteed non-null
+   * and reflects a non-expired user session, so getUserSessionId()
+   * returns a real id even before the first part starts.
+   *
+   * Does not persist a freshly created state; the caller is responsible
+   * for writing when persistence matters (eager init writes; part start
+   * persists after its own state mutation).
+   */
+  private _loadOrCreateUserSessionState(now: number): {
+    state: UserSessionState;
+    created: boolean;
+  } {
+    let state = readUserSessionState(this._storage, this._diag);
+    let created = false;
+    if (!state || isUserSessionExpired(state, now)) {
+      if (state) {
+        this._previousUserSessionId = state.userSessionId;
+      }
+      const userSessionNumber = getIncrementedCount(
         this._storage,
-        EMBRACE_SESSION_NUMBER_STORAGE_KEY,
+        EMBRACE_USER_SESSION_NUMBER_KEY,
         this._diag,
-      ),
-      ...previouslyRecordedCounts,
-    };
+      );
+      state = createUserSessionState({
+        now,
+        previousUserSessionId: this._previousUserSessionId,
+        maxUserSessionDurationSeconds: this._maxUserSessionDurationSeconds,
+        inactivityTimeoutSeconds: this._inactivityTimeoutSeconds,
+        userSessionNumber,
+      });
+      created = true;
+    }
+    this._state = state;
+    this._setupMaxDurationTimer(state, now);
+    return { state, created };
+  }
 
-    attributes[KEY_EMB_SESSION_REASON_STARTED] = options?.reason ?? 'manual';
+  /**
+   * Bumps the part counter and arms the max-duration timer. Relies on
+   * `_loadOrCreateUserSessionState` to provide a non-null, non-expired state,
+   * so `getUserSessionAttributes()` is guaranteed non-null after this.
+   */
+  private _beginUserSessionForPartStart(): void {
+    const now = this._perf.getNowMillis();
+    const { state } = this._loadOrCreateUserSessionState(now);
 
-    this._sessionSpan = new EmbraceExtendedSpan(
-      this._tracer.startSpan('emb-session', {
-        attributes,
-      }),
+    this._currentSessionPartNumber = getIncrementedCount(
+      this._storage,
+      EMBRACE_SESSION_PART_NUMBER_KEY,
+      this._diag,
     );
 
-    this._coldStart = false;
+    this._state = {
+      ...state,
+      userSessionPartIndex: state.userSessionPartIndex + 1,
+      // A part is active, so any pending inactivity deadline no longer
+      // applies; it gets re-armed when the part ends.
+      inactivityDeadlineTs: null,
+    };
+    this._storeState();
+  }
 
-    for (const listener of this._sessionStartedListeners) {
+  /**
+   * Records the inactivity deadline on the user-session row so the next
+   * part start can detect lazy expiry. The max-duration timer armed at
+   * part start stays valid here, userSessionMaxEndTs doesn't change.
+   */
+  private _continueUserSessionAfterPartEnd(partEndTs: number): void {
+    if (!this._state) {
+      this._clearMaxDurationTimer();
+      return;
+    }
+
+    // Honor explicit clears: if the state row was in storage when the
+    // part started but is gone now (user wiped site data, quota
+    // eviction, sibling tab cleared), don't quietly resurrect it from
+    // our in-memory copy. Drop the in-memory state so the next part
+    // start creates a fresh user session, while still carrying the
+    // just-ended id forward so the next session's spans/logs can
+    // back-link via emb.user_session_previous_id. _hasStoredState
+    // gates this: when we never managed to persist in the first place,
+    // the in-memory copy stays authoritative.
+    if (
+      this._hasStoredState &&
+      this._storage.getItem(EMBRACE_USER_SESSION_STATE_KEY) === null
+    ) {
+      this._previousUserSessionId = this._state.userSessionId;
+      this._state = null;
+      this._clearMaxDurationTimer();
+      return;
+    }
+
+    this._state = {
+      ...this._state,
+      inactivityDeadlineTs:
+        partEndTs + this._state.inactivityTimeoutSeconds * 1000,
+    };
+    this._storeState();
+  }
+
+  /**
+   * Ends the active part as final and starts a fresh part for the next
+   * user session. State clearing is handled by endSessionPartInternal's
+   * isFinal path. Used by manual endUserSession and max-duration expiry.
+   *
+   * When no part is active (tab disengaged), this is intentionally a
+   * partial no-op: nothing visible is in flight, and the next part start
+   * lazily creates a fresh user session via the inactivity/expiry path.
+   */
+  private _rolloverUserSession(
+    userSessionEndReason: UserSessionEndReason,
+  ): void {
+    try {
+      this.endSessionPartInternal('user_session_ended', userSessionEndReason);
+    } catch (e) {
+      this._diag.error('Error finalizing part during user session end', e);
+    }
+
+    try {
+      this.startSessionPartInternal('user_session_rollover');
+    } catch (e) {
+      this._diag.error('Error starting part during user session end', e);
+    }
+  }
+
+  private _setupMaxDurationTimer(state: UserSessionState, now: number): void {
+    this._clearMaxDurationTimer();
+
+    const remaining = state.userSessionMaxEndTs - now;
+    if (remaining <= 0) {
+      return;
+    }
+
+    this._maxDurationTimeout = setTimeout(() => {
+      this._maxDurationTimeout = null;
+      this._rolloverUserSession('max_duration_reached');
+    }, remaining);
+  }
+
+  /**
+   * @internal Would be private but exposed for tests to simulate a page reload
+   */
+  public _clearMaxDurationTimer(): void {
+    if (this._maxDurationTimeout !== null) {
+      clearTimeout(this._maxDurationTimeout);
+      this._maxDurationTimeout = null;
+    }
+  }
+
+  /**
+   * Detaches browser-activity listeners and clears the part-inactivity
+   * timer. Intended for SDK teardown and tests; in production the manager
+   * lives for the page's lifetime.
+   */
+  public shutdown(): void {
+    removeActivityListeners({
+      target: this._target,
+      visibilityDoc: this._visibilityDoc,
+      activityEvents: this._activityEvents,
+      onActivity: this._onActivityThrottled,
+      onEngagementChange: this._onEngagementChange,
+    });
+    this._clearSessionPartInactivityTimer();
+    this._clearMaxDurationTimer();
+  }
+
+  private readonly _onActivity = (): void => {
+    try {
+      if (!isTabEngaged(this._visibilityDoc)) {
+        return;
+      }
+      if (this._activeSessionPartId === null) {
+        this.startSessionPartInternal('activity');
+        return;
+      }
+      this._lastActivityTs = this._perf.getNowMillis();
+      this._startSessionPartInactivityTimer();
+    } catch (e) {
+      this._diag.warn('Error handling activity event', e);
+    }
+  };
+
+  private readonly _onEngagementChange = (): void => {
+    try {
+      const engaged = isTabEngaged(this._visibilityDoc);
+      const active = this._activeSessionPartId !== null;
+      if (!engaged && active) {
+        this._diag.debug('tab disengaged; ending current part');
+        this.endSessionPartInternal('visibility_change');
+        return;
+      }
+      if (engaged && !active) {
+        this._diag.debug('tab engaged; starting new part');
+        this.startSessionPartInternal('visibility_change');
+        return;
+      }
+      if (engaged && active) {
+        this._lastActivityTs = this._perf.getNowMillis();
+        this._startSessionPartInactivityTimer();
+      }
+    } catch (e) {
+      this._diag.warn('Error handling engagement change', e);
+    }
+  };
+
+  private readonly _onSessionPartInactivity = (): void => {
+    this._sessionPartInactivityTimer = null;
+    try {
+      if (this._activeSessionPartId === null) {
+        return;
+      }
+      this._diag.debug(
+        'inactivity timer fired; ending current part and user session',
+      );
+      this._endUserSessionForInactivity();
+    } catch (e) {
+      this._diag.warn('Error handling inactivity timer', e);
+    }
+  };
+
+  /**
+   * Ends the active part stamped at the last activity timestamp and
+   * terminates the enclosing user session in one step (state clearing
+   * happens inside endSessionPartInternal's isFinal path). The next
+   * user input event lazily starts a fresh user session and part via
+   * `_onActivity` -> `startSessionPartInternal('activity')`.
+   */
+  private _endUserSessionForInactivity(): void {
+    const endTs = this._lastActivityTs ?? this._perf.getNowMillis();
+    try {
+      this.endSessionPartInternal('inactivity', 'inactivity', endTs);
+    } catch (e) {
+      this._diag.error('Error finalizing part during inactivity end', e);
+    }
+  }
+
+  private _startSessionPartInactivityTimer(): void {
+    this._clearSessionPartInactivityTimer();
+    this._sessionPartInactivityTimer = setTimeout(
+      this._onSessionPartInactivity,
+      this._inactivityTimeoutSeconds * 1000,
+    );
+  }
+
+  private _clearSessionPartInactivityTimer(): void {
+    if (this._sessionPartInactivityTimer !== null) {
+      clearTimeout(this._sessionPartInactivityTimer);
+      this._sessionPartInactivityTimer = null;
+    }
+  }
+
+  private _addListener(
+    list: Array<() => void>,
+    listener: () => void,
+  ): () => void {
+    list.push(listener);
+    return () => {
+      const i = list.indexOf(listener);
+      if (i !== -1) {
+        list.splice(i, 1);
+      }
+    };
+  }
+
+  private _fireListeners(list: Array<() => void>, kind: string): void {
+    for (const listener of list) {
       try {
         listener();
       } catch (error) {
         this._diag.warn(
-          'Error while executing session started listener',
+          `Error while executing session part ${kind} listener`,
           error,
         );
       }
     }
   }
 
-  public incrSessionCountForKey(key: string) {
-    if (!this._sessionSpan || !this._activeSessionCounts) {
-      this._diag.debug(
-        'trying to increment a count for the active session, but there is no session in progress. This is a no-op.',
-      );
+  /**
+   * Best-effort store of the current in-memory state. _state is the
+   * local source of truth; callers mutate it first and ignore the
+   * outcome. The return value is only consulted by tests that observe
+   * sticky-disabled storage.
+   */
+  private _storeState(): boolean {
+    if (!this._state) {
+      return false;
+    }
+    const stored = this._storage.setItem(
+      EMBRACE_USER_SESSION_STATE_KEY,
+      JSON.stringify(this._state),
+    );
+    if (stored) {
+      this._hasStoredState = true;
+    }
+    return stored;
+  }
+
+  private _removeFromPermanentProperties(bareKey: string): void {
+    if (!(bareKey in this._permanentProperties)) {
       return;
     }
-
-    this._activeSessionCounts[key] = (this._activeSessionCounts[key] || 0) + 1;
+    const pruned = { ...this._permanentProperties };
+    delete pruned[bareKey];
+    this._permanentProperties = pruned;
+    storePermanentProperties(this._storage, pruned);
   }
 
-  public incrNextSessionCountForKey(key: string) {
-    this._nextSessionCounts[key] = (this._nextSessionCounts[key] || 0) + 1;
-  }
-
-  public addSessionStartedListener(listener: SessionStartedListener) {
-    const listenerIndex = this._sessionStartedListeners.push(listener);
-
-    return () => {
-      this._sessionStartedListeners.splice(listenerIndex - 1, 1);
+  private _removeFromUserSessionProperties(bareKey: string): void {
+    if (!this._state || !(bareKey in this._state.userSessionProperties)) {
+      return;
+    }
+    const pruned = { ...this._state.userSessionProperties };
+    delete pruned[bareKey];
+    this._state = {
+      ...this._state,
+      userSessionProperties: pruned,
     };
-  }
-
-  public addSessionEndedListener(listener: SessionEndedListener) {
-    const listenerIndex = this._sessionEndedListeners.push(listener);
-
-    return () => {
-      this._sessionEndedListeners.splice(listenerIndex - 1, 1);
-    };
-  }
-
-  public recordSDKStartupDuration(duration: number) {
-    this._sdkStartupDuration = Math.ceil(duration);
-  }
-
-  public setTracerProvider(tracerProvider: TracerProvider) {
-    this._tracer = tracerProvider.getTracer('embrace-web-sdk-sessions');
+    this._storeState();
   }
 }

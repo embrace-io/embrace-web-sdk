@@ -4,14 +4,19 @@ import {
   ATTR_SESSION_ID,
   ATTR_SESSION_PREVIOUS_ID,
 } from '@opentelemetry/semantic-conventions/incubating';
-import type { SpanSessionManager } from '../../api-sessions/index.ts';
+import {
+  KEY_EMB_SESSION_PART_ID,
+  KEY_EMB_USER_SESSION_ID,
+  KEY_EMB_USER_SESSION_PREVIOUS_ID,
+} from '../../constants/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
 import { generateUUID } from '../../utils/index.ts';
 import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
 
 export class IdentifiableSessionLogRecordProcessor
   implements LogRecordProcessor
 {
-  private readonly _spanSessionManager: SpanSessionManager;
+  private readonly _spanSessionManager: SpanSessionManagerInternal;
 
   public constructor({
     spanSessionManager,
@@ -25,11 +30,18 @@ export class IdentifiableSessionLogRecordProcessor
   }
 
   public onEmit(logRecord: SdkLogRecord) {
+    const userSessionId = this._spanSessionManager.getUserSessionId() ?? '';
+    const previousUserSessionId =
+      this._spanSessionManager.getPreviousUserSessionId() ?? '';
+
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
-      [ATTR_SESSION_ID]: this._spanSessionManager.getSessionId(),
-      [ATTR_SESSION_PREVIOUS_ID]:
-        this._spanSessionManager.getPreviousSessionId(),
+      [ATTR_SESSION_ID]: userSessionId,
+      [ATTR_SESSION_PREVIOUS_ID]: previousUserSessionId,
+      [KEY_EMB_USER_SESSION_ID]: userSessionId,
+      [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
+      [KEY_EMB_SESSION_PART_ID]:
+        this._spanSessionManager.getSessionPartId() ?? '',
     });
   }
 

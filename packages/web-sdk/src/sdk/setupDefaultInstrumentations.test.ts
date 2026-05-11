@@ -1,14 +1,22 @@
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as chai from 'chai';
-import { SpanSessionVisibilityInstrumentation } from '../instrumentations/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbracePageManager,
+} from '../managers/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
+import type { SetupDefaultInstrumentationsArgs } from './types.ts';
 
 const { expect } = chai;
 
 type DefaultInstrumentations = ReturnType<typeof setupDefaultInstrumentations>;
 
-const makeSetupArgs = () => ({});
+const makeSetupArgs = (): SetupDefaultInstrumentationsArgs => ({
+  pageManager: new EmbracePageManager(),
+  limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+});
 
 const getFetch = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(
@@ -21,15 +29,6 @@ const getXHR = (instrumentations: DefaultInstrumentations) =>
   ) as XMLHttpRequestInstrumentation;
 
 describe('setupDefaultInstrumentations', () => {
-  it('wires the visibility instrumentation', () => {
-    const instrumentations = setupDefaultInstrumentations({}, makeSetupArgs());
-    expect(
-      instrumentations.find(
-        (i) => i instanceof SpanSessionVisibilityInstrumentation,
-      ),
-    ).to.not.equal(undefined);
-  });
-
   describe('ignoreUrls merging', () => {
     it('merges network.ignoreUrls and fetch ignoreUrls', () => {
       const instrumentations = setupDefaultInstrumentations(

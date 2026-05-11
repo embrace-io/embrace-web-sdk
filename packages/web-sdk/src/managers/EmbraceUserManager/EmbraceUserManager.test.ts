@@ -5,6 +5,8 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
 } from '../../../tests/utils/index.ts';
+import { NamespacedStorage } from '../../utils/index.ts';
+
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,
@@ -17,12 +19,14 @@ const { expect } = chai;
 const VALID_UUID = 'aaaaBBBBccccDDDDeeeeFFFFggggHHHH';
 
 describe('EmbraceUserManager', () => {
-  let storage: InMemoryStorage;
+  let inMemoryStorage: InMemoryStorage;
+  let storage: NamespacedStorage;
   let diag: InMemoryDiagLogger;
 
   beforeEach(() => {
-    storage = new InMemoryStorage();
+    inMemoryStorage = new InMemoryStorage();
     diag = new InMemoryDiagLogger();
+    storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
   });
 
   it('should initialize a EmbraceUserManager', () => {
@@ -72,32 +76,25 @@ describe('EmbraceUserManager', () => {
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
   });
 
-  it('should handle being setup with a non-functional storage', () => {
-    // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
-    const manager = new EmbraceUserManager({ diag, storage: null });
-    expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
-    manager.clearEmbraceUserId();
-    expect(diag.getWarnLogs()).to.have.lengthOf(3);
-    expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to get embrace user id from storage, defaulting to a new one',
-      'Failed to persist user object for storage, keeping it in-memory only',
-      'Failed to remove embrace user in storage',
-    ]);
-  });
-
   it('should handle its storage throwing errors', () => {
     const manager = new EmbraceUserManager({
       diag,
-      storage: new FailingStorage(),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
     manager.clearEmbraceUserId();
-    expect(diag.getWarnLogs()).to.have.lengthOf(3);
-    expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to get embrace user id from storage, defaulting to a new one',
-      'Failed to persist user object for storage, keeping it in-memory only',
-      'Failed to remove embrace user in storage',
-    ]);
+    // First write attempt during construction flips the wrapper to disabled
+    // and emits a single error; subsequent writes are silent.
+    expect(diag.getErrorLogs()).to.have.lengthOf(1);
+    expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
+    // Reads still warn each time they fail.
+    expect(
+      diag
+        .getWarnLogs()
+        .every(
+          (m) => m.includes('failed to read') || m.includes('failed to remove'),
+        ),
+    ).to.equal(true);
   });
 
   it('should get an external user id', () => {
@@ -136,22 +133,21 @@ describe('EmbraceUserManager', () => {
   it('should handle getting an external user id when storage is failing', () => {
     const manager = new EmbraceUserManager({
       diag,
-      storage: new FailingStorage(),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
     diag.clear();
 
     expect(manager.getUserId()).to.equal(null);
 
     const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.deep.equal([
-      'Failed to retrieve user id from storage',
-    ]);
+    expect(warningLogs).to.have.lengthOf(1);
+    expect(warningLogs[0]).to.contain('failed to read');
   });
 
   it('should handle setting an external user id when storage is failing', () => {
     const manager = new EmbraceUserManager({
       diag,
-      storage: new FailingStorage(),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
     diag.clear();
 
@@ -159,14 +155,16 @@ describe('EmbraceUserManager', () => {
       manager.setUserId('my-id');
     }).not.to.throw();
 
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.deep.equal(['Failed to store user id']);
+    // The wrapper already flipped disabled during the construction-time write,
+    // so subsequent writes are silent.
+    expect(diag.getWarnLogs()).to.have.lengthOf(0);
+    expect(diag.getErrorLogs()).to.have.lengthOf(0);
   });
 
   it('should handle clearing an external user id when storage is failing', () => {
     const manager = new EmbraceUserManager({
       diag,
-      storage: new FailingStorage(),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
     diag.clear();
 
@@ -175,6 +173,7 @@ describe('EmbraceUserManager', () => {
     }).not.to.throw();
 
     const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.deep.equal(['Failed to clear user id']);
+    expect(warningLogs).to.have.lengthOf(1);
+    expect(warningLogs[0]).to.contain('failed to remove');
   });
 });

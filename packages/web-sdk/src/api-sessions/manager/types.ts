@@ -1,41 +1,97 @@
-import type { HrTime } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import type { ExtendedSpan } from '../../index.ts';
 
 export interface SpanSessionManager {
+  /** @deprecated Will be removed in a future version, use getUserSessionId(); returns null when no user session is active. */
   getSessionId: () => string | null;
 
-  getPreviousSessionId: () => string | null;
-
-  getSessionStartTime: () => HrTime | null;
-
-  getSessionSpan: () => ExtendedSpan | null;
-
-  startSessionSpan: (options?: StartSessionOptions) => void;
-
-  endSessionSpan: () => void;
-
-  addBreadcrumb: (name: string) => void;
-
-  addProperty: (key: string, value: string, options?: PropertyOptions) => void;
-
-  removeProperty: (key: string) => void;
-
-  // todo move this to another class SpanSessionManagerInternal that is only accessible from within our code, but expose the external one without the method to the users.
-  endSessionSpanInternal: (reason: ReasonSessionEnded) => void;
+  /** @deprecated Will be removed in a future version, always returns null. Use getPreviousUserSessionId(). */
+  getPreviousSessionId: () => null;
 
   /**
-   * @deprecated Always returns null. Will be removed in a future major version.
+   * @deprecated Will be removed in a future version, use
+   * getUserSessionStartTime(); returns null when no user session is active,
+   * otherwise milliseconds since the Unix epoch.
    */
-  currentSessionAsReadableSpan: (
-    reason: ReasonSessionEnded,
-  ) => ReadableSpan | null;
+  getSessionStartTime: () => number | null;
 
+  /** @deprecated Will be removed in a future version, use getSessionPartSpan(); returns null when no part is active. */
+  getSessionSpan: () => ExtendedSpan | null;
+
+  /**
+   * @deprecated Will be removed in a future version. No-op: starting a
+   * session part is an internal consequence of foreground engagement
+   * (visibility, focus, input) and is not exposed to callers.
+   */
+  startSessionSpan: (options?: StartSessionOptions) => void;
+
+  /** @deprecated Will be removed in a future version, use endUserSession(). */
+  endSessionSpan: () => void;
+
+  /**
+   * Adds a breadcrumb event to the active session part span. If no part is
+   * active the breadcrumb is dropped.
+   */
+  addBreadcrumb: (name: string) => void;
+
+  /**
+   * Stores a key/value property that travels with every session part within
+   * the current user session. Properties added without `lifespan: 'permanent'`
+   * survive across foreground/background transitions but are cleared when the
+   * user session ends (manual `endUserSession()`, max-duration rollover, or a
+   * cross-tab end). They are persisted alongside the user-session state in
+   * localStorage, so other tabs sharing the same user session pick them up
+   * on their next part start. With `lifespan: 'permanent'` the property is
+   * stored as its own localStorage entry and reapplied across user sessions
+   * until removed via `removeProperty(key)`.
+   *
+   * If localStorage is unavailable the property degrades to in-memory only:
+   * it still travels with parts in the current tab, but other tabs will not
+   * see it. The SDK logs a one-line warning in that case.
+   *
+   * Safe to call before any part is active: the value is queued in memory and
+   * applied on the next part start.
+   */
+  addProperty: (key: string, value: string, options?: PropertyOptions) => void;
+
+  /**
+   * Removes a property regardless of scope: clears it from the in-memory
+   * user-session map and from localStorage if it was permanent. If a part is
+   * currently active, also removes the attribute from the active part span.
+   */
+  removeProperty: (key: string) => void;
+
+  /** @deprecated Will be removed in a future version, always returns null. */
+  currentSessionAsReadableSpan: (reason: ReasonSessionEnded) => null;
+
+  /** @deprecated Will be removed in a future version, the listener is never invoked and the returned unsubscribe is a no-op. */
   addSessionStartedListener: (listener: () => void) => () => void;
 
+  /** @deprecated Will be removed in a future version, the listener is never invoked and the returned unsubscribe is a no-op. */
   addSessionEndedListener: (listener: () => void) => () => void;
+
+  /**
+   * Returns the active user session UUID, or `null` when no user session active
+   */
+  getUserSessionId: () => string | null;
+  getPreviousUserSessionId: () => string | null;
+  getUserSessionStartTime: () => number | null;
+
+  /**
+   * Ends the current user session. The next foreground session part will
+   * begin a new user session; there is no companion public start API,
+   * starting is an internal consequence of the next foreground part.
+   *
+   * Subject to a 5-second cooldown.
+   *
+   * If no part is active when called, the user session is still ended and
+   * the next foreground part begins a new one, but no part span can carry
+   * `emb.user_session_termination_reason='manual'` (the attribute is only
+   * stamped on a final part span).
+   */
+  endUserSession: () => void;
 }
 
+/** @deprecated Will be removed in a future version */
 export type ReasonSessionEnded =
   | 'unknown'
   | 'inactivity' // inactivity timer
@@ -48,6 +104,23 @@ export type PropertyOptions = {
   lifespan?: 'permanent';
 };
 
+/** @deprecated Will be removed in a future version */
 export type StartSessionOptions = {
   reason?: string;
 };
+
+export type SessionPartStartReason =
+  | 'init' // first part on SDK init (page load)
+  | 'visibility_change' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
+  | 'activity' // user input resumed after an inactivity-killed part
+  | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
+
+export type SessionPartEndReason =
+  | 'visibility_change' // tab became disengaged via visibilitychange (hidden), blur, or pagehide
+  | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
+
+export type UserSessionEndReason =
+  | 'manual'
+  | 'max_duration_reached'
+  | 'inactivity';

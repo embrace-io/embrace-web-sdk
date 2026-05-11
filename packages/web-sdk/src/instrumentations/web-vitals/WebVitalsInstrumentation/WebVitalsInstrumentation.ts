@@ -277,7 +277,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           return;
         }
 
-        const currentSessionSpan = this.sessionManager.getSessionSpan();
+        const currentSessionSpan = this.sessionManager.getSessionPartSpan();
 
         if (!currentSessionSpan) {
           return;

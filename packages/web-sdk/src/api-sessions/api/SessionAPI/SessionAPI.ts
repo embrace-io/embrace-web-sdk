@@ -1,4 +1,5 @@
 import { diag } from '@opentelemetry/api';
+import type { SpanSessionManagerInternal } from '../../../managers/EmbraceSpanSessionManager/types.ts';
 import { createSafeProxy } from '../../../utils/index.ts';
 import type { SpanSessionManager } from '../../manager/index.ts';
 import {
@@ -11,9 +12,9 @@ import {
  */
 export interface SessionAPIInstance extends SpanSessionManager {
   /** @internal SDK use only */
-  setGlobalSessionManager(sessionManager: SpanSessionManager): void;
+  setGlobalSessionManager(sessionManager: SpanSessionManagerInternal): void;
   /** @internal SDK use only */
-  getSpanSessionManager(): SpanSessionManager;
+  getSpanSessionManager(): SpanSessionManagerInternal;
 }
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
@@ -35,10 +36,12 @@ export class SessionAPI {
 
       // Combine safe-wrapped manager methods with SDK-internal methods
       SessionAPI._instance = Object.assign(safeManager, {
-        setGlobalSessionManager(sessionManager: SpanSessionManager): void {
+        setGlobalSessionManager(
+          sessionManager: SpanSessionManagerInternal,
+        ): void {
           proxyManager.setDelegate(sessionManager);
         },
-        getSpanSessionManager(): SpanSessionManager {
+        getSpanSessionManager(): SpanSessionManagerInternal {
           return proxyManager;
         },
       }) as SessionAPIInstance;
@@ -47,7 +50,7 @@ export class SessionAPI {
     return SessionAPI._instance;
   }
 
-  // Static method to reset instance for testing
+  /** @internal For testing only. Resets the global singleton between tests. */
   public static resetInstance(): void {
     SessionAPI._instance = undefined;
   }
