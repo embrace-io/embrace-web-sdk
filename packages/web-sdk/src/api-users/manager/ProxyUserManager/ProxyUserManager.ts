@@ -1,13 +1,21 @@
+import { diag } from '@opentelemetry/api';
 import type { UserManager } from '../index.ts';
 import { NoOpUserManager } from '../NoOpUserManager/index.ts';
 
 const NOOP_USER_MANAGER = new NoOpUserManager();
+const PROXY_DIAG = diag.createComponentLogger({
+  namespace: 'ProxyUserManager',
+});
 
 export class ProxyUserManager implements UserManager {
   private _delegate?: UserManager;
 
   public getDelegate(): UserManager {
-    return this._delegate ?? NOOP_USER_MANAGER;
+    if (!this._delegate) {
+      PROXY_DIAG.debug('called before initSDK(); using no-op');
+      return NOOP_USER_MANAGER;
+    }
+    return this._delegate;
   }
 
   public setDelegate(delegate: UserManager): void {

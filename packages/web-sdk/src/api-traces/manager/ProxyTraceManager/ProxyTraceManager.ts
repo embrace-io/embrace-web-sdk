@@ -1,15 +1,23 @@
 import type { Context } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.ts';
 import type { TraceManager } from '../index.ts';
 import { NoOpTraceManager } from '../NoOpTraceManager/index.ts';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
+const PROXY_DIAG = diag.createComponentLogger({
+  namespace: 'ProxyTraceManager',
+});
 
 export class ProxyTraceManager implements TraceManager {
   private _delegate?: TraceManager;
 
   public getDelegate(): TraceManager {
-    return this._delegate ?? NOOP_TRACE_MANAGER;
+    if (!this._delegate) {
+      PROXY_DIAG.debug('called before initSDK(); using no-op');
+      return NOOP_TRACE_MANAGER;
+    }
+    return this._delegate;
   }
 
   public setDelegate(delegate: TraceManager): void {

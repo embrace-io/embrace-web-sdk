@@ -1,4 +1,5 @@
 import type { TracerProvider } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   UserSessionAttributes,
@@ -15,12 +16,19 @@ import type {
 import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
 
 const NOOP_USER_SESSION_MANAGER = new NoOpUserSessionManager();
+const PROXY_DIAG = diag.createComponentLogger({
+  namespace: 'ProxyUserSessionManager',
+});
 
 export class ProxyUserSessionManager implements UserSessionManagerInternal {
   private _delegate?: UserSessionManagerInternal;
 
   public getDelegate(): UserSessionManagerInternal {
-    return this._delegate ?? NOOP_USER_SESSION_MANAGER;
+    if (!this._delegate) {
+      PROXY_DIAG.debug('called before initSDK(); using no-op');
+      return NOOP_USER_SESSION_MANAGER;
+    }
+    return this._delegate;
   }
 
   public setDelegate(delegate: UserSessionManagerInternal): void {

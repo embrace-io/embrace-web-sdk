@@ -1,3 +1,4 @@
+import { diag } from '@opentelemetry/api';
 import type {
   LogExceptionOptions,
   LogManager,
@@ -7,12 +8,19 @@ import type {
 import { NoOpLogManager } from '../NoOpLogManager/index.ts';
 
 const NOOP_LOG_MANAGER = new NoOpLogManager();
+const PROXY_DIAG = diag.createComponentLogger({
+  namespace: 'ProxyLogManager',
+});
 
 export class ProxyLogManager implements LogManager {
   private _delegate?: LogManager;
 
   public getDelegate(): LogManager {
-    return this._delegate ?? NOOP_LOG_MANAGER;
+    if (!this._delegate) {
+      PROXY_DIAG.debug('called before initSDK(); using no-op');
+      return NOOP_LOG_MANAGER;
+    }
+    return this._delegate;
   }
 
   public setDelegate(delegate: LogManager) {

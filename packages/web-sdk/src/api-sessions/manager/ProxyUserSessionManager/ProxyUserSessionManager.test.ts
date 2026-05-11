@@ -1,7 +1,9 @@
 import type { Span } from '@opentelemetry/api';
+import { DiagLogLevel, diag } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
+import { InMemoryDiagLogger } from '../../../../tests/utils/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import { ProxyUserSessionManager } from './ProxyUserSessionManager.ts';
 
@@ -177,6 +179,35 @@ describe('ProxyUserSessionManager', () => {
     it('should return the registered delegate after setDelegate', () => {
       proxyUserSessionManager.setDelegate(mockDelegate);
       expect(proxyUserSessionManager.getDelegate()).to.equal(mockDelegate);
+    });
+  });
+
+  describe('pre-init diagnostics', () => {
+    let diagLogger: InMemoryDiagLogger;
+
+    beforeEach(() => {
+      diagLogger = new InMemoryDiagLogger();
+      diag.setLogger(diagLogger, DiagLogLevel.ALL);
+    });
+
+    afterEach(() => {
+      diag.disable();
+    });
+
+    it('logs a debug message when called before a delegate is set', () => {
+      proxyUserSessionManager.getUserSessionId();
+      const debugLogs = diagLogger.getDebugLogs();
+      expect(debugLogs).to.have.lengthOf.at.least(1);
+      expect(
+        debugLogs.some((m) => m.includes('ProxyUserSessionManager')),
+      ).to.equal(true);
+    });
+
+    it('does not log a debug message when a delegate is set', () => {
+      proxyUserSessionManager.setDelegate(mockDelegate);
+      diagLogger.clear();
+      proxyUserSessionManager.getUserSessionId();
+      expect(diagLogger.getDebugLogs()).to.have.lengthOf(0);
     });
   });
 });
