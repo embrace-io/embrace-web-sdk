@@ -149,13 +149,15 @@ export const initSDK = (
       );
     }
 
-    const useNamespace = !registerGlobally && appID;
-    const sdkLocalStorage = useNamespace
-      ? new NamespacedStorage(appID, window.localStorage)
-      : window.localStorage;
-    const sdkSessionStorage = useNamespace
-      ? new NamespacedStorage(appID, window.sessionStorage)
-      : window.sessionStorage;
+    const namespace = !registerGlobally && appID ? appID : '';
+    const sdkLocalStorage = new NamespacedStorage({
+      namespace,
+      storage: window.localStorage,
+    });
+    const sdkSessionStorage = new NamespacedStorage({
+      namespace,
+      storage: window.sessionStorage,
+    });
 
     const resourceWithWebSDKAttributes = getWebSDKOverridableResource()
       .merge(resource)
