@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/nursery/useDomNodeTextContent: we want to capture what the user sees */
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
