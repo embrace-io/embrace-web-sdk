@@ -1,21 +1,67 @@
+import type { DiagLogger } from '@opentelemetry/api';
+import { diag } from '@opentelemetry/api';
+
+export interface NamespacedStorageArgs {
+  storage: Storage;
+  namespace?: string;
+  diag?: DiagLogger;
+}
+
+/**
+ * `Storage` wrapper that isolates the SDK from storage errors and
+ * optionally namespaces keys with a prefix.
+ *
+ * Read failures (`getItem`, `key`, `length`) log at warn level.
+ *
+ * The first `setItem` failure puts the wrapper into a sticky
+ * write-disabled state and logs once at error level. Subsequent
+ * `setItem` calls become no-ops so a one-time quota error or revoked
+ * permission does not keep throwing on every attempt. Reads, removes,
+ * and clears continue to work.
+ *
+ * An empty namespace skips the key prefix; the wrapper then exposes the
+ * underlying storage's full keyspace with only the safety layer applied.
+ */
 export class NamespacedStorage implements Storage {
+  private readonly _diag: DiagLogger;
   private readonly _keyPrefix: string;
   private readonly _storage: Storage;
+  private _writeDisabled = false;
 
-  public constructor(namespace: string, storage: Storage) {
-    this._keyPrefix = `${namespace}_`;
+  public constructor({
+    namespace,
+    storage,
+    diag: diagParam,
+  }: NamespacedStorageArgs) {
+    this._diag =
+      diagParam ??
+      diag.createComponentLogger({ namespace: 'NamespacedStorage' });
+    this._keyPrefix = namespace ? `${namespace}_` : '';
     this._storage = storage;
   }
 
   protected getNamespacedKeys(): string[] {
-    const keys = [];
-    for (let i = 0; i < this._storage.length; i++) {
-      const key = this._storage.key(i);
-      if (key?.startsWith(this._keyPrefix)) {
-        keys.push(key.substring(this._keyPrefix.length));
+    const keys: string[] = [];
+    let length: number;
+    try {
+      length = this._storage.length;
+    } catch (e) {
+      this._diag.warn('failed to read storage length', String(e));
+      return keys;
+    }
+    for (let i = 0; i < length; i++) {
+      try {
+        const key = this._storage.key(i);
+        if (key?.startsWith(this._keyPrefix)) {
+          keys.push(key.substring(this._keyPrefix.length));
+        }
+      } catch (e) {
+        this._diag.warn(
+          `failed to read storage key at index ${i.toString()}`,
+          String(e),
+        );
       }
     }
-
     return keys;
   }
 
@@ -24,13 +70,18 @@ export class NamespacedStorage implements Storage {
   }
 
   public clear(): void {
-    this.getNamespacedKeys().forEach((key) => {
-      this._storage.removeItem(`${this._keyPrefix}${key}`);
-    });
+    for (const key of this.getNamespacedKeys()) {
+      this._safeRemove(`${this._keyPrefix}${key}`);
+    }
   }
 
   public getItem(key: string): string | null {
-    return this._storage.getItem(`${this._keyPrefix}${key}`);
+    try {
+      return this._storage.getItem(`${this._keyPrefix}${key}`);
+    } catch (e) {
+      this._diag.warn(`failed to read ${key}`, String(e));
+      return null;
+    }
   }
 
   public key(index: number): string | null {
@@ -38,21 +89,38 @@ export class NamespacedStorage implements Storage {
   }
 
   public removeItem(key: string): void {
-    this._storage.removeItem(`${this._keyPrefix}${key}`);
+    this._safeRemove(`${this._keyPrefix}${key}`);
   }
 
   public setItem(key: string, value: string): void {
-    this._storage.setItem(`${this._keyPrefix}${key}`, value);
+    if (this._writeDisabled) {
+      return;
+    }
+    try {
+      this._storage.setItem(`${this._keyPrefix}${key}`, value);
+    } catch (e) {
+      this._disableWrites(e);
+    }
   }
 
-  /**
-   * Returns the namespaced underlying-storage key for a logical key. Browser
-   * `storage` events fire with the underlying key, so callers that filter
-   * those events need to compare against this value rather than the logical
-   * key. Plain `Storage` instances do not expose this method; callers should
-   * fall back to the logical key in that case.
-   */
-  public getStorageEventKey(logicalKey: string): string {
-    return `${this._keyPrefix}${logicalKey}`;
+  private _safeRemove(namespacedKey: string): void {
+    try {
+      this._storage.removeItem(namespacedKey);
+    } catch (e) {
+      this._diag.warn(`failed to remove ${namespacedKey}`, String(e));
+    }
+  }
+
+  // Log only error.name: error.message can leak the value on some browsers.
+  private _disableWrites(error: unknown): void {
+    if (this._writeDisabled) {
+      return;
+    }
+    this._writeDisabled = true;
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    this._diag.error(
+      'writes disabled after failure; continuing in-memory only',
+      errorName,
+    );
   }
 }
