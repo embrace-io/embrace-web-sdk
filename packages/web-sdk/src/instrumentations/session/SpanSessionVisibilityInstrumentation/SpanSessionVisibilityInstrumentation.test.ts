@@ -65,7 +65,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     void expect(spanSessionManager.getSessionSpan()).to.be.null;
 
     visibilityDoc.visibilityState = 'visible';
-    window.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
 
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
 
@@ -92,7 +92,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
 
     visibilityDoc.visibilityState = 'visible';
-    window.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -119,7 +119,7 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     void expect(spanSessionManager.getSessionSpan()).to.not.be.null;
 
     visibilityDoc.visibilityState = 'hidden';
-    window.dispatchEvent(new Event('visibilitychange'));
+    document.dispatchEvent(new Event('visibilitychange'));
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);

@@ -332,6 +332,47 @@ legend {
   }
 }
 
+.session-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.session-table th,
+.session-table td {
+  padding: 0.4rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #27272a;
+}
+
+.session-table thead th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+.session-table tbody th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a1a1aa;
+  font-weight: 500;
+  width: 150px;
+}
+
+.session-table tbody td {
+  font-family: monospace;
+  color: #e4e4e7;
+  overflow-wrap: break-word;
+}
+
+.session-table tbody tr:last-child th,
+.session-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .actions {
   display: flex;
   justify-content: flex-start;

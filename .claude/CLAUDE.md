@@ -26,6 +26,9 @@ npm run lint:fix
 
 # All checks (tsc + eslint baseline)
 npm run validate
+
+# Run demo dev server (http://localhost:4847)
+npm run dev
 ```
 
 ## Architecture
@@ -88,6 +91,12 @@ Framework: @web/test-runner + Playwright + Mocha + Chai
 npm run test                  # Headless (from packages/web-sdk/)
 npm run test:manual           # Browser with DevTools
 npm run test:watch            # Watch mode
+```
+
+**Run a single test file** (paths are workspace-relative, i.e. relative to `packages/web-sdk/`):
+
+```bash
+npx turbo run test --filter=@embrace-io/web-sdk -- --files "src/utils/applyUserSessionAttributes.test.ts"
 ```
 
 ### Integration Tests

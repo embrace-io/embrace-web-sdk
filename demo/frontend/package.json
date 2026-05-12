@@ -5,9 +5,9 @@
   "scripts": {
     "check": "tsc --build",
     "clean": "npx -y rimraf .sonda dist",
-    "dev": "vite --open",
+    "dev": "vite --port 4847 --open",
     "build": "vite build",
-    "preview": "vite preview --open",
+    "preview": "vite preview --port 4847 --open",
     "demo": "bash ./scripts/runDemo.sh",
     "upload-sourcemaps": "embrace-web-cli upload --app-version 0.0.1",
     "upload-sourcemaps:dry": "embrace-web-cli upload -d --app-version 0.0.1"

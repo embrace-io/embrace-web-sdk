@@ -45,10 +45,10 @@ export class SpanSessionVisibilityInstrumentation extends EmbraceInstrumentation
   }
 
   public disable(): void {
-    window.removeEventListener('visibilitychange', this._onVisibilityChange);
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   public enable(): void {
-    window.addEventListener('visibilitychange', this._onVisibilityChange);
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 }
