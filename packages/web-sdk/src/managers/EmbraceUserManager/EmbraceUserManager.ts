@@ -1,15 +1,13 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { UserManagerInternal } from '../../api-users/index.ts';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 import { generateUUID } from '../../utils/index.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,
-  EMBRACE_USER_STORAGE_KEY_DEPRECATED,
 } from './constants.ts';
 import type { EmbraceUserManagerArgs } from './types.ts';
-import { isUser, isUserId } from './types.ts';
+import { isUserId } from './types.ts';
 
 export class EmbraceUserManager implements UserManagerInternal {
   private readonly _diag: DiagLogger;
@@ -26,7 +24,6 @@ export class EmbraceUserManager implements UserManagerInternal {
         namespace: 'EmbraceUserManager',
       });
     this._storage = storage;
-    this._migrateOldLocalStorageKey();
     this._initialSetup();
   }
 
@@ -56,36 +53,6 @@ export class EmbraceUserManager implements UserManagerInternal {
       this._storage.removeItem(EMBRACE_USER_ID_STORAGE_KEY);
     } catch (e) {
       this._diag.warn('Failed to remove embrace user in storage', e);
-    }
-  }
-
-  // TODO: remove this by 01/08/2025. Two months should be enough time for users to migrate to the new storage key.
-  private _migrateOldLocalStorageKey() {
-    // Since we migrated from storing a User in localStorage to just the user id,
-    // we need to check if the old storage key exists and migrate it.
-    try {
-      const oldUserStorage = this._storage.getItem(
-        EMBRACE_USER_STORAGE_KEY_DEPRECATED,
-      );
-
-      if (oldUserStorage) {
-        const user: unknown = JSON.parse(oldUserStorage);
-        if (isUser(user)) {
-          this._diag.debug('Migrating old user data from storage');
-          this._storage.setItem(
-            EMBRACE_USER_ID_STORAGE_KEY,
-            user[KEY_ENDUSER_PSEUDO_ID],
-          );
-          this._storage.removeItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED);
-        } else {
-          this._diag.warn(
-            'Invalid user data found in storage, clearing old user data',
-          );
-          this._storage.removeItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED);
-        }
-      }
-    } catch (e) {
-      this._diag.warn('Failed to get old user data from storage', e);
     }
   }
 

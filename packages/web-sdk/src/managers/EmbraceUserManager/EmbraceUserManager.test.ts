@@ -5,11 +5,9 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
 } from '../../../tests/utils/index.ts';
-import { KEY_ENDUSER_PSEUDO_ID } from '../../api-users/index.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,
-  EMBRACE_USER_STORAGE_KEY_DEPRECATED,
 } from './constants.ts';
 import { EmbraceUserManager } from './EmbraceUserManager.ts';
 
@@ -102,22 +100,6 @@ describe('EmbraceUserManager', () => {
       'Failed to persist user object for storage, keeping it in-memory only',
       'Failed to remove embrace user in storage',
     ]);
-  });
-
-  it('should migrate old local storage key', () => {
-    storage.setItem(
-      EMBRACE_USER_STORAGE_KEY_DEPRECATED,
-      JSON.stringify({ [KEY_ENDUSER_PSEUDO_ID]: VALID_UUID }),
-    );
-
-    const manager = new EmbraceUserManager({ diag, storage });
-    expect(diag.getDebugLogs()).to.have.lengthOf(1);
-    expect(diag.getDebugLogs()[0]).to.equal(
-      'Migrating old user data from storage',
-    );
-    expect(manager.getEmbraceUserId()).to.equal(VALID_UUID);
-    void expect(storage.getItem(EMBRACE_USER_STORAGE_KEY_DEPRECATED)).to.be
-      .null;
   });
 
   it('should get an external user id', () => {

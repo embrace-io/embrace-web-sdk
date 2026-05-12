@@ -12,6 +12,7 @@ import {
   logInfo,
   logReceivedLogRecords,
   logReceivedSessionSpan,
+  logReceivedSpans,
 } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -131,24 +132,23 @@ const server = createServer((req, res) => {
   if (pathname?.includes('spans')) {
     parseGzip(req)
       .then((request: IExportTraceServiceRequest) => {
-        const sessionSpan =
-          request.resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-            (span) => span.name === 'emb-session',
-          );
+        const resourceSpans = request.resourceSpans ?? [];
+
+        logReceivedSpans(resourceSpans);
+
+        const sessionSpan = resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
+          (span) =>
+            span.name === 'emb-session-part' || span.name === 'emb-session',
+        );
         const sessionId = sessionSpan?.attributes.find(
           (attr) => attr.key === 'session.id',
         )?.value.stringValue;
 
-        if (!sessionId) {
-          res.writeHead(400);
-          res.end('Session ID not found');
-          return;
-        }
-
-        receivedSpans[sessionId] = true;
-
-        if (request.resourceSpans && sessionSpan) {
-          logReceivedSessionSpan(request.resourceSpans, sessionSpan, sessionId);
+        if (sessionId) {
+          receivedSpans[sessionId] = true;
+          if (sessionSpan) {
+            logReceivedSessionSpan(resourceSpans, sessionSpan, sessionId);
+          }
         }
 
         res.writeHead(200);

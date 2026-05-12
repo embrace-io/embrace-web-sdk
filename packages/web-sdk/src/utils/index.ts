@@ -1,5 +1,6 @@
 export { bulkAddEventListener } from './bulkAddEventListener/index.ts';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.ts';
+export { clampNumber } from './clampNumber.ts';
 export { createSafeProxy } from './createSafeProxy/index.ts';
 export { generateUUID } from './generateUUID.ts';
 export { generateWebVitalID } from './generateWebVitalID.ts';

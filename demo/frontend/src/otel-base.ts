@@ -3,6 +3,9 @@ import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
+import { version } from '../../../packages/web-sdk/package.json' with {
+  type: 'json',
+};
 
 const APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
@@ -12,7 +15,7 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
   const result = initSDK({
     logLevel: DiagLogLevel.ALL,
     appID: APP_ID || undefined,
-    appVersion: '1.0.0',
+    appVersion: version,
     spanExporters: [new ConsoleSpanExporter()],
     logExporters: [new ConsoleLogRecordExporter()],
     defaultInstrumentationConfig: {
@@ -32,7 +35,7 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
   });
 
   if (result) {
-    console.log('Successfully initialized the Embrace SDK', APP_ID);
+    console.log('Successfully initialized the Embrace SDK', APP_ID, version);
   } else {
     console.error('Failed to initialize the Embrace SDK', APP_ID);
   }

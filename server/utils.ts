@@ -184,4 +184,47 @@ const logReceivedLogRecords = (logRecords: ILogRecord[]) => {
   }
 };
 
-export { logInfo, logReceivedLogRecords, logReceivedSessionSpan };
+const formatDurationMs = (
+  startUnixNano: string | number | undefined,
+  endUnixNano: string | number | undefined,
+): string => {
+  if (startUnixNano === undefined || endUnixNano === undefined) return '?';
+  const start = BigInt(startUnixNano);
+  const end = BigInt(endUnixNano);
+  const diffNs = end - start;
+  const ms = Number(diffNs / 1_000_000n);
+  return `${ms}ms`;
+};
+
+const logReceivedSpans = (resourceSpans: IResourceSpans[]) => {
+  let total = 0;
+  for (const resource of resourceSpans) {
+    for (const scopeSpan of resource.scopeSpans) {
+      for (const span of scopeSpan.spans ?? []) {
+        total++;
+        const embType = getEmbType(span) ?? '-';
+        const sessionId =
+          attributeValueFromSpan(span, 'session.id') ?? '<no session.id>';
+        const dur = formatDurationMs(
+          span.startTimeUnixNano as string | number | undefined,
+          span.endTimeUnixNano as string | number | undefined,
+        );
+        logInfo(
+          `Span: ${pc.cyan(span.name)} [emb.type=${embType}] dur=${dur} session.id=${sessionId}`,
+        );
+      }
+    }
+  }
+  if (total === 0) {
+    logInfo('Batch contained 0 spans');
+  } else {
+    logInfo(`Batch contained ${total} span(s)`);
+  }
+};
+
+export {
+  logInfo,
+  logReceivedLogRecords,
+  logReceivedSessionSpan,
+  logReceivedSpans,
+};
