@@ -16,6 +16,7 @@ import sinonChai from 'sinon-chai';
 import {
   FailingStorage,
   InMemoryDiagLogger,
+  InMemoryStorage,
   setupTestLogExporter,
   setupTestTraceExporter,
 } from '../../../tests/utils/index.ts';
@@ -57,6 +58,7 @@ describe('EmbraceLogManager', () => {
   let spanSessionManager: EmbraceSpanSessionManager;
   let limitManager: EmbraceLimitManager;
   let diag: InMemoryDiagLogger;
+  let storage: InMemoryStorage;
 
   before(() => {
     memoryExporter = setupTestLogExporter();
@@ -92,15 +94,20 @@ describe('EmbraceLogManager', () => {
       },
     });
 
+    storage = new InMemoryStorage();
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
     });
     manager = new EmbraceLogManager({
       perf,
       spanSessionManager,
       limitManager,
+      storage,
+      visibilityDoc: window.document,
     });
-    localStorage.clear();
   });
 
   afterEach(() => {
@@ -119,6 +126,8 @@ describe('EmbraceLogManager', () => {
       perf,
       spanSessionManager,
       limitManager,
+      storage,
+      visibilityDoc: window.document,
     });
 
     testManager.message('   ', 'info');
@@ -139,6 +148,8 @@ describe('EmbraceLogManager', () => {
       perf,
       spanSessionManager,
       limitManager,
+      storage,
+      visibilityDoc: window.document,
     });
 
     // @ts-expect-error testing invalid severity
@@ -161,6 +172,8 @@ describe('EmbraceLogManager', () => {
       perf,
       spanSessionManager,
       limitManager,
+      storage,
+      visibilityDoc: window.document,
     });
 
     testManager.message('test message', 'info', {
@@ -187,6 +200,8 @@ describe('EmbraceLogManager', () => {
       perf,
       spanSessionManager,
       limitManager,
+      storage,
+      visibilityDoc: window.document,
     });
 
     testManager.logException(new Error('test'), {
@@ -917,6 +932,7 @@ describe('EmbraceLogManager', () => {
       perf,
       spanSessionManager,
       limitManager,
+      storage,
       visibilityDoc,
     });
 
@@ -1243,6 +1259,8 @@ describe('EmbraceLogManager', () => {
         spanSessionManager,
         limitManager,
         loggerProvider,
+        storage,
+        visibilityDoc: window.document,
       });
 
       manager.message('Test message', 'info');
@@ -1279,6 +1297,32 @@ describe('EmbraceLogManager', () => {
         spanSessionManager,
         limitManager,
         storage: new FailingStorage(),
+        visibilityDoc: window.document,
+      });
+      manager.logException(new Error('exception 1'));
+      manager.logException(new Error('exception 2'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(2);
+
+      expect(finishedLogs[0].attributes).to.have.property(
+        'emb.exception_number',
+        1,
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        'emb.exception_number',
+        1,
+      );
+    });
+
+    it('should handle being setup with a non-functional storage', () => {
+      manager = new EmbraceLogManager({
+        perf,
+        spanSessionManager,
+        limitManager,
+        // @ts-expect-error dealing with potential restricted browser environments where storage APIs are unavailable
+        storage: null,
+        visibilityDoc: window.document,
       });
       manager.logException(new Error('exception 1'));
       manager.logException(new Error('exception 2'));

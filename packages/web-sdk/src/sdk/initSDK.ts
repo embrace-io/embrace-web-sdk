@@ -218,8 +218,10 @@ export const initSDK = (
 
     const spanSessionManager = setupSession({
       limitManager,
+      perf,
       registerGlobally,
       sdkLocalStorage,
+      visibilityDoc: window.document,
     });
 
     let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
@@ -275,10 +277,12 @@ export const initSDK = (
       spanSessionManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
+      perf,
       registerGlobally,
       embraceLogProcessor,
       sdkLocalStorage,
       pageManager,
+      visibilityDoc: window.document,
     });
 
     spanSessionManager.startSessionSpan({ reason: 'init' });
@@ -359,12 +363,16 @@ const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
 
 const setupSession = ({
   limitManager,
+  perf,
   registerGlobally,
   sdkLocalStorage,
+  visibilityDoc,
 }: SetupSessionArgs) => {
   const embraceSpanSessionManager = new EmbraceSpanSessionManager({
     limitManager,
+    perf,
     storage: sdkLocalStorage,
+    visibilityDoc,
   });
 
   if (registerGlobally) {
@@ -445,10 +453,12 @@ const setupLogs = ({
   spanSessionManager,
   limitManager,
   attributeScrubbers,
+  perf,
   registerGlobally,
   embraceLogProcessor,
   sdkLocalStorage,
   pageManager,
+  visibilityDoc,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
@@ -479,7 +489,9 @@ const setupLogs = ({
     spanSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
+    perf,
     storage: sdkLocalStorage,
+    visibilityDoc,
   });
 
   if (registerGlobally) {

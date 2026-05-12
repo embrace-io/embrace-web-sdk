@@ -6,9 +6,9 @@ import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 
 export interface EmbraceSpanSessionManagerArgs {
   diag?: DiagLogger;
-  perf?: PerformanceManager;
-  visibilityDoc?: VisibilityStateDocument;
-  storage?: Storage;
+  perf: PerformanceManager;
+  visibilityDoc: VisibilityStateDocument;
+  storage: Storage;
   limitManager: LimitManagerInternal;
 }
 

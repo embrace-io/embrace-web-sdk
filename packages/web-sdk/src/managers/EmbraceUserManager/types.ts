@@ -2,7 +2,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 
 export interface EmbraceUserManagerArgs {
   diag?: DiagLogger;
-  storage?: Storage;
+  storage: Storage;
 }
 
 export const isUserId = (userId: unknown): userId is string =>

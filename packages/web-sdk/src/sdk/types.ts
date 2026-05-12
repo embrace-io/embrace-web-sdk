@@ -19,7 +19,10 @@ import type { PageManager } from '../api-page/index.ts';
 import type { SpanSessionManager } from '../api-sessions/index.ts';
 import type { TraceManager } from '../api-traces/index.ts';
 import type { UserManager } from '../api-users/index.ts';
-import type { AttributeScrubber } from '../common/index.ts';
+import type {
+  AttributeScrubber,
+  VisibilityStateDocument,
+} from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
@@ -37,6 +40,7 @@ import type {
   LimitManagerInternal,
   SpanSessionManagerInternal,
 } from '../managers/index.ts';
+import type { PerformanceManager } from '../utils/index.ts';
 
 export interface DynamicSDKConfig {
   /**
@@ -298,8 +302,10 @@ export interface SetupUserArgs {
 
 export interface SetupSessionArgs {
   limitManager: LimitManagerInternal;
+  perf: PerformanceManager;
   registerGlobally?: boolean;
   sdkLocalStorage: Storage;
+  visibilityDoc: VisibilityStateDocument;
 }
 
 export interface SetupTracesArgs {
@@ -325,10 +331,12 @@ export interface SetupLogsArgs {
   spanSessionManager: SpanSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
+  perf: PerformanceManager;
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
   sdkLocalStorage: Storage;
   pageManager: PageManager;
+  visibilityDoc: VisibilityStateDocument;
 }
 
 export interface SetupPageArgs {

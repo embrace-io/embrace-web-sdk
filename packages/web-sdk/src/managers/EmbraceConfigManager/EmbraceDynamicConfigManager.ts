@@ -45,11 +45,11 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     diag: diagParam = diag.createComponentLogger({
       namespace: 'embrace-config-manager',
     }),
-    storage = window.localStorage,
+    storage,
     // Allow users to provide a default config
     defaultConfig = {},
     embraceConfigURL,
-  }: EmbraceDynamicConfigManagerArgs = {}) {
+  }: EmbraceDynamicConfigManagerArgs) {
     if (appID && appVersion && deviceId) {
       this._remoteConfigURL = getConfigURL(
         appID,

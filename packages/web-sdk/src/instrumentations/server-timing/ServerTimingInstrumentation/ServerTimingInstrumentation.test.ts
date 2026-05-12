@@ -3,6 +3,7 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
+  InMemoryStorage,
   MockPerformanceManager,
   setupTestLogExporter,
 } from '../../../../tests/utils/index.ts';
@@ -50,11 +51,20 @@ describe('ServerTimingInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
+    const storage = new InMemoryStorage();
+    const spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
+    });
     spanSessionManager.startSessionSpan();
     const logManager = new EmbraceLogManager({
       spanSessionManager,
       limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
     });
     log.setGlobalLogManager(logManager);
 

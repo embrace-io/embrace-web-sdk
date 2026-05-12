@@ -31,6 +31,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
   it('should set the config using setConfig method', () => {
     const configManager = new EmbraceDynamicConfigManager({
+      storage,
       defaultConfig: {
         samplingPct: 50,
       },
@@ -47,7 +48,7 @@ describe('EmbraceDynamicConfigManager', () => {
   });
 
   it('should get the default config for an app not connected to Embrace', () => {
-    const configManager = new EmbraceDynamicConfigManager();
+    const configManager = new EmbraceDynamicConfigManager({ storage });
 
     const config = configManager.getConfig();
 
@@ -59,6 +60,7 @@ describe('EmbraceDynamicConfigManager', () => {
 
   it('should get the user-provided config for an app not connected to Embrace', () => {
     const configManager = new EmbraceDynamicConfigManager({
+      storage,
       defaultConfig: {
         samplingPct: 50,
       },
@@ -117,7 +119,7 @@ describe('EmbraceDynamicConfigManager', () => {
   });
 
   it('should not fetch the remote config if is not connected to Embrace', async () => {
-    const configManager = new EmbraceDynamicConfigManager();
+    const configManager = new EmbraceDynamicConfigManager({ storage });
 
     await configManager.refreshRemoteConfig();
 

@@ -1,7 +1,10 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import sinon from 'sinon';
-import { setupTestTraceExporter } from '../../../../tests/utils/index.ts';
+import {
+  InMemoryStorage,
+  setupTestTraceExporter,
+} from '../../../../tests/utils/index.ts';
 import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { VisibilityStateDocument } from '../../../common/index.ts';
@@ -36,6 +39,8 @@ describe('SpanSessionVisibilityInstrumentation', () => {
     spanSessionManager = new EmbraceSpanSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf,
+      storage: new InMemoryStorage(),
+      visibilityDoc: window.document,
     });
     session.setGlobalSessionManager(spanSessionManager);
   });

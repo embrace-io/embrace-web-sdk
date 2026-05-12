@@ -4,6 +4,7 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
+  InMemoryStorage,
   MockPerformanceManager,
   setupTestLogExporter,
 } from '../../../../tests/utils/index.ts';
@@ -44,13 +45,22 @@ describe('GlobalExceptionInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({ limitManager }),
-      limitManager,
-    });
-    log.setGlobalLogManager(logManager);
+    const storage = new InMemoryStorage();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
+    logManager = new EmbraceLogManager({
+      spanSessionManager: new EmbraceSpanSessionManager({
+        limitManager,
+        perf,
+        storage,
+        visibilityDoc: window.document,
+      }),
+      limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
+    });
+    log.setGlobalLogManager(logManager);
     instrumentation = new GlobalExceptionInstrumentation({
       perf,
     });
@@ -73,7 +83,6 @@ describe('GlobalExceptionInstrumentation', () => {
         existingErrorHandler?.call(window, event, source, lineno, colno, error);
       }
     };
-    localStorage.clear();
   });
 
   afterEach(() => {

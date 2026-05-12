@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemoryStorage,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestTraceExporter,
@@ -99,11 +100,20 @@ describe('LoafInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
-    spanSessionManager = new EmbraceSpanSessionManager({ limitManager });
+    const storage = new InMemoryStorage();
+    spanSessionManager = new EmbraceSpanSessionManager({
+      limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
+    });
     spanSessionManager.startSessionSpan();
     const logManager = new EmbraceLogManager({
       spanSessionManager,
       limitManager,
+      perf,
+      storage,
+      visibilityDoc: window.document,
     });
     log.setGlobalLogManager(logManager);
 
@@ -481,13 +491,20 @@ describe('LoafInstrumentation', () => {
 
     // Create a second session manager and switch to it
     const limitManager2 = new EmbraceLimitManager(DEFAULT_LIMITS);
+    const storage2 = new InMemoryStorage();
     const spanSessionManager2 = new EmbraceSpanSessionManager({
       limitManager: limitManager2,
+      perf,
+      storage: storage2,
+      visibilityDoc: window.document,
     });
     spanSessionManager2.startSessionSpan();
     const logManager2 = new EmbraceLogManager({
       spanSessionManager: spanSessionManager2,
       limitManager: limitManager2,
+      perf,
+      storage: storage2,
+      visibilityDoc: window.document,
     });
     log.setGlobalLogManager(logManager2);
     instrumentation.setSessionManager(spanSessionManager2);
