@@ -15,10 +15,12 @@ import {
   setupTestWebVitalListeners,
 } from '../../../../tests/utils/index.ts';
 import {
+  EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
   KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
+  KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbracePageManager } from '../../../managers/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
@@ -96,6 +98,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'cls',
@@ -138,6 +141,7 @@ describe('WebVitalsInstrumentation', () => {
     const record = records[0];
 
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'cls',
@@ -188,6 +192,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 99,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'fcp',
@@ -237,6 +242,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'lcp',
@@ -293,6 +299,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'inp',
@@ -514,6 +521,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 99,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'ttfb',
@@ -1775,6 +1783,7 @@ describe('WebVitalsInstrumentation', () => {
     const record = records[0];
 
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'inp',
@@ -1850,6 +1859,7 @@ describe('WebVitalsInstrumentation', () => {
     const record = records[0];
 
     expect(record.attributes).to.deep.equal({
+      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'fcp',

@@ -14,10 +14,12 @@ import type { PageManager } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
+  EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
   KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
+  KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
@@ -325,6 +327,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       eventName: WEB_VITAL_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes: {
+        [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
         [KEY_BROWSER_WEB_VITAL_NAME]: metric.name.toLowerCase(),
         [KEY_BROWSER_WEB_VITAL_VALUE]: metric.value,
         [KEY_BROWSER_WEB_VITAL_DELTA]: metric.delta,
