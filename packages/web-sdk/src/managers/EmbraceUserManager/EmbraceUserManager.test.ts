@@ -77,9 +77,8 @@ describe('EmbraceUserManager', () => {
     const manager = new EmbraceUserManager({ diag, storage: null });
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
     manager.clearEmbraceUserId();
-    expect(diag.getWarnLogs()).to.have.lengthOf(4);
+    expect(diag.getWarnLogs()).to.have.lengthOf(3);
     expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to get old user data from storage',
       'Failed to get embrace user id from storage, defaulting to a new one',
       'Failed to persist user object for storage, keeping it in-memory only',
       'Failed to remove embrace user in storage',
@@ -93,9 +92,8 @@ describe('EmbraceUserManager', () => {
     });
     expect(manager.getEmbraceUserId()).to.have.lengthOf(32);
     manager.clearEmbraceUserId();
-    expect(diag.getWarnLogs()).to.have.lengthOf(4);
+    expect(diag.getWarnLogs()).to.have.lengthOf(3);
     expect(diag.getWarnLogs()).to.deep.equal([
-      'Failed to get old user data from storage',
       'Failed to get embrace user id from storage, defaulting to a new one',
       'Failed to persist user object for storage, keeping it in-memory only',
       'Failed to remove embrace user in storage',
