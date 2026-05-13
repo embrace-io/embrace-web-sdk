@@ -2060,33 +2060,33 @@ describe('isolated instances', () => {
 
     // Wait for remote config to be fetched and stored for both instances
     await waitForLocalStorageKeys([
-      'app11_embrace_remote_config',
-      'app22_embrace_remote_config',
+      'app11__embrace_remote_config',
+      'app22__embrace_remote_config',
     ]);
 
     // First instance using namespaced storage
-    expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
+    expect(!!localStorage.getItem('app11__embrace_user_id')).to.equal(
       true,
       'first app did not store embrace user id',
     );
-    expect(!!localStorage.getItem('app11_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app11__embrace_remote_config')).to.equal(
       true,
       'first app did not store remote config',
     );
-    expect(!!sessionStorage.getItem('app11_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app11__embrace_app_instance_id')).to.equal(
       true,
       'first app did not store app instance id',
     );
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(
       true,
       'second app did not store embrace user id',
     );
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
       true,
       'second app did not store remote config',
     );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
       true,
       'second app did not store app instance id',
     );
@@ -2128,14 +2128,14 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance).not.to.be.false;
 
     // Wait for remote config to be fetched and stored (only second instance has appID)
-    await waitForLocalStorageKeys(['app22_embrace_remote_config']);
+    await waitForLocalStorageKeys(['app22__embrace_remote_config']);
 
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
       true,
     );
     // First instance using storage without a prefix
@@ -2143,7 +2143,7 @@ describe('isolated instances', () => {
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
   });
 
-  it('should not namespace the storage when registering globally', async () => {
+  it('should not namespace the storage without appID', async () => {
     fakeFetchRespondWith(
       JSON.stringify({
         threshold: 90,
@@ -2151,8 +2151,9 @@ describe('isolated instances', () => {
     );
 
     const firstSDKInstance = initSDK({
-      appID: 'app11',
       appVersion: 'app-version',
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
     });
 
     const secondSDKInstance = initSDK({
@@ -2164,23 +2165,19 @@ describe('isolated instances', () => {
     void expect(firstSDKInstance).not.to.be.false;
     void expect(secondSDKInstance).not.to.be.false;
 
-    // Wait for remote config to be fetched and stored for both instances
-    await waitForLocalStorageKeys([
-      'embrace_remote_config',
-      'app22_embrace_remote_config',
-    ]);
+    // Wait for remote config to be fetched and stored (only second instance has appID)
+    await waitForLocalStorageKeys(['app22__embrace_remote_config']);
 
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
       true,
     );
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
   });
 });

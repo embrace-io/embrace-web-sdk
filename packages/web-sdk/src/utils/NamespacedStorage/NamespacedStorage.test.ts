@@ -353,8 +353,8 @@ describe('NamespacedStorage', () => {
         getItem: () => null,
         key: (i) => {
           callCount++;
-          if (i === 0) return 'prefix_a';
-          if (i === 2) return 'prefix_b';
+          if (i === 0) return 'prefix__a';
+          if (i === 2) return 'prefix__b';
           throw new Error('reading-prevented');
         },
         removeItem: () => undefined,
