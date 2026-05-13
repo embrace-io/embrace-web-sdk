@@ -482,14 +482,14 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         ...this._permanentProperties,
         [bareKey]: bareValue,
       };
-      // In-memory is the source of truth for getSessionPartProperties.
-      // Persistence is best-effort; on failure the new value is still
-      // visible for this page's lifetime and the session-scoped entry
-      // is stripped so callers don't see two values for the same key.
+      // Reject the write if storage is unavailable: a property that can't
+      // persist would silently diverge from what other tabs (and the next
+      // page load) see, which is worse than no property at all.
       if (!storePermanentProperties(this._storage, candidate)) {
         this._diag.warn(
-          'Failed to store permanent property; keeping in-memory only.',
+          'Storage unavailable; rejecting permanent property write.',
         );
+        return;
       }
       this._permanentProperties = candidate;
       this._removeFromUserSessionProperties(bareKey);
@@ -500,9 +500,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     // init flow eagerly initializes state, but bare manager usage and
     // tests bypass that path). Ensure a state row exists so the write
     // has somewhere to land.
-    const state = this._loadOrCreateUserSessionState(
+    const { state } = this._loadOrCreateUserSessionState(
       this._perf.getNowMillis(),
-    ).state;
+    );
     this._state = {
       ...state,
       userSessionProperties: {
@@ -510,7 +510,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         [bareKey]: bareValue,
       },
     };
-    this._storeState();
+    if (!this._storeState()) {
+      // Reject the property write: roll back to the session-without-the
+      // -property so callers don't observe a value that won't persist.
+      // The session itself stays in memory; only the property is dropped.
+      this._state = state;
+      this._diag.warn(
+        'Storage unavailable; rejecting user-session property write.',
+      );
+    }
   }
 
   public removeProperty(propertyKey: string): void {

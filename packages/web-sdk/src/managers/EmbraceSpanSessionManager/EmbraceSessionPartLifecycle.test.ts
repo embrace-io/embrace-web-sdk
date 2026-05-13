@@ -638,7 +638,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     expect(state.userSessionProperties).to.have.property('cart', '3');
   });
 
-  it('should degrade to in-tab when storage is unavailable for a user-session-scoped property', () => {
+  it('should reject the property write when storage is unavailable for a user-session-scoped property', () => {
     const failingManager = new EmbraceSpanSessionManager({
       diag,
       limitManager,
@@ -653,18 +653,17 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     expect(() => failingManager.addProperty('flag', 'on')).to.not.throw();
 
-    // The property is applied to the in-memory state row even though the
-    // persist failed. The wire-format prefix is added by the manager
-    // onto the part span at end time; the manager exposes the bare
-    // view directly.
-    expect(failingManager.getSessionPartProperties()).to.have.property(
+    // The property is rejected entirely: a value that can't persist would
+    // diverge from what other tabs (and the next page load) see, which is
+    // worse than no property at all.
+    expect(failingManager.getSessionPartProperties()).to.not.have.property(
       'flag',
-      'on',
     );
-    // NamespacedStorage emits one canonical error on first failed write;
-    // subsequent writes are silent. The manager owns no extra warn here.
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
+    expect(diag.getWarnLogs().some((l) => l.includes('rejecting'))).to.equal(
+      true,
+    );
   });
 
   it('should clear permanent properties from the blob when removed', () => {
@@ -825,7 +824,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
   });
 
-  it('should not throw when storage write fails during a permanent property write', () => {
+  it('should reject the property write when storage is unavailable for a permanent property', () => {
     const failingManager = new EmbraceSpanSessionManager({
       diag,
       limitManager,
@@ -842,12 +841,16 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       failingManager.addProperty('flag', 'on', { lifespan: 'permanent' }),
     ).to.not.throw();
 
-    // NamespacedStorage emits one canonical error on the first failed
-    // write. Persistence is best-effort; the value is kept in-memory so it
-    // remains visible for this page's lifetime.
+    // The property is rejected entirely so callers don't see a value that
+    // won't persist to other tabs or survive a reload.
+    expect(failingManager.getSessionPartProperties()).to.not.have.property(
+      'flag',
+    );
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
-    expect(failingManager.getSessionPartProperties()['flag']).to.equal('on');
+    expect(diag.getWarnLogs().some((l) => l.includes('rejecting'))).to.equal(
+      true,
+    );
   });
 
   it('should not throw when storage write fails while removing the last permanent property', () => {
