@@ -150,7 +150,7 @@ export const initSDK = (
       );
     }
 
-    const namespace = !registerGlobally && appID ? appID : undefined;
+    const namespace = appID ?? undefined;
     const sdkLocalStorage = new NamespacedStorage({
       namespace,
       storage: window.localStorage,

@@ -38,7 +38,7 @@ export class NamespacedStorage {
     this._diag =
       diagParam ??
       diag.createComponentLogger({ namespace: 'NamespacedStorage' });
-    this._keyPrefix = namespace ? `${namespace}_` : '';
+    this._keyPrefix = namespace ? `${namespace}__` : '';
     this._storage = storage;
   }
 
