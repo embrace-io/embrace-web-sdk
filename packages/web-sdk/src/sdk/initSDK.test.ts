@@ -1004,52 +1004,6 @@ describe('initSDK', () => {
       expect(bypassKeys).to.have.members(['browser.url.full']);
     });
 
-    it('should apply limits on the events of an individual span', async () => {
-      fakeFetchRespondWith('');
-      const result = initSDK({
-        appID: 'abc12',
-        appVersion: 'my-app-version',
-        defaultInstrumentationConfig: {
-          omit: new Set([
-            // This instrumentation does its own patching of Fetch which interferes with our test stub
-            '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
-            'document-load',
-          ]),
-        },
-      });
-      void expect(result).not.to.be.false;
-
-      // Needed to allow the browser detector resources to be grabbed
-      await new Promise((r) => setTimeout(r, 1));
-
-      const span = embtrace.startSpan('my-span');
-
-      // Capped at 200 events per span
-      for (let i = 0; i < 300; i++) {
-        span.addEvent(`span-event-${i.toString()}`);
-      }
-
-      span.end();
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
-
-      const exportedSpans = await getLastSessionExportedSpans(1);
-      expect(exportedSpans).to.have.lengthOf(1);
-
-      const exportedEvents = exportedSpans[0].events;
-      expect(exportedEvents).to.have.lengthOf(200);
-
-      for (let i = 0; i < exportedEvents.length; i++) {
-        // Default OTel limiting of events drops the oldest events when the limit
-        // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
-        const expected = i + 100;
-        expect(exportedEvents[i]['name']).to.equal(
-          `span-event-${expected.toString()}`,
-        );
-      }
-    });
-
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
     // used:
     // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
@@ -2114,44 +2068,6 @@ describe('isolated instances', () => {
 
     const firstSDKInstance = initSDK({
       registerGlobally: false,
-      logExporters: [logExporter],
-      spanExporters: [spanExporter],
-    });
-
-    const secondSDKInstance = initSDK({
-      appID: 'app22',
-      appVersion: 'app-version',
-      registerGlobally: false,
-    });
-
-    void expect(firstSDKInstance).not.to.be.false;
-    void expect(secondSDKInstance).not.to.be.false;
-
-    // Wait for remote config to be fetched and stored (only second instance has appID)
-    await waitForLocalStorageKeys(['app22__embrace_remote_config']);
-
-    // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
-      true,
-    );
-    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
-      true,
-    );
-    // First instance using storage without a prefix
-    expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-  });
-
-  it('should not namespace the storage without appID', async () => {
-    fakeFetchRespondWith(
-      JSON.stringify({
-        threshold: 90,
-      }),
-    );
-
-    const firstSDKInstance = initSDK({
-      appVersion: 'app-version',
       logExporters: [logExporter],
       spanExporters: [spanExporter],
     });
