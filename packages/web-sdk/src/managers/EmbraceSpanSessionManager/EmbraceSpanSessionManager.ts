@@ -201,7 +201,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       visibilityDoc: this._visibilityDoc,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
-      onEngagementChange: this._onEngagementChange,
+      onVisibilityChange: this._onVisibilityChange,
+      onFocus: this._onFocus,
+      onBlur: this._onBlur,
+      onPageShow: this._onPageShow,
+      onPageHide: this._onPageHide,
     });
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts. If on-disk state is still valid this is a no-op;
@@ -279,7 +283,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._storage.setItem(EMBRACE_LAST_END_USER_SESSION_TS_KEY, String(now));
-    this._rolloverUserSession('web_manual');
+    this._rolloverUserSession('manual');
   }
 
   public getSessionPartId(): string | null {
@@ -366,8 +370,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     // Inactivity ends the user session in one step (the part span end
     // timestamp is anchored to the last activity, supplied as endTs).
-    const isFinal =
-      reason === 'user_session_ended' || reason === 'web_inactivity';
+    const isFinal = reason === 'user_session_ended' || reason === 'inactivity';
 
     // The inactivity deadline is anchored to the part end, not to when
     // the SpanProcessor.onEnd chain finishes; processors can run for an
@@ -742,7 +745,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     this._maxDurationTimeout = setTimeout(() => {
       this._maxDurationTimeout = null;
-      this._rolloverUserSession('web_max_duration_reached');
+      this._rolloverUserSession('max_duration_reached');
     }, remaining);
   }
 
@@ -767,7 +770,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       visibilityDoc: this._visibilityDoc,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
-      onEngagementChange: this._onEngagementChange,
+      onVisibilityChange: this._onVisibilityChange,
+      onFocus: this._onFocus,
+      onBlur: this._onBlur,
+      onPageShow: this._onPageShow,
+      onPageHide: this._onPageHide,
     });
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
@@ -789,18 +796,57 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
   };
 
-  private readonly _onEngagementChange = (): void => {
+  // Tab visibility flipped (switch tabs, minimize, OS app switch). Drives
+  // the engagement transition off the current visibilityState/hasFocus pair.
+  private readonly _onVisibilityChange = (): void => {
+    this._handleEngagementTransition('visibilitychange');
+  };
+
+  // Window focus arrived (alt-tab back, clicked into the document). hasFocus
+  // is now true; engagement transition resolves whether to start a part.
+  private readonly _onFocus = (): void => {
+    this._handleEngagementTransition('focus');
+  };
+
+  // Window focus lost (alt-tab away, clicked into DevTools or another window).
+  // hasFocus is now false; engagement transition ends the active part.
+  private readonly _onBlur = (): void => {
+    this._handleEngagementTransition('blur');
+  };
+
+  // Initial page load OR BFCache restore. event.persisted distinguishes the
+  // two: false = fresh load (init already started the part, transition is a
+  // no-op), true = BFCache restore (the prior pagehide ended the part, this
+  // resumes engagement). Both flow through the same transition because the
+  // outcome is keyed on whether a part is currently active.
+  private readonly _onPageShow = (event: PageTransitionEvent): void => {
+    this._handleEngagementTransition(
+      event.persisted ? 'pageshow-bfcache' : 'pageshow-initial',
+    );
+  };
+
+  // Navigation away (hard nav, tab close) OR BFCache freeze. event.persisted
+  // distinguishes the two: false = real unload, true = entering BFCache. Both
+  // disengage the page; the part ends with web_background either way so OTel
+  // can flush its span before the page goes away or gets frozen.
+  private readonly _onPageHide = (event: PageTransitionEvent): void => {
+    this._handleEngagementTransition(
+      event.persisted ? 'pagehide-bfcache' : 'pagehide-unload',
+    );
+  };
+
+  private _handleEngagementTransition(source: string): void {
     try {
       const engaged = isTabEngaged(this._visibilityDoc);
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
-        this._diag.debug('tab disengaged; ending current part');
-        this.endSessionPartInternal('web_visibility_change');
+        this._diag.debug(`tab disengaged via ${source}; ending current part`);
+        this.endSessionPartInternal('web_background');
         return;
       }
       if (engaged && !active) {
-        this._diag.debug('tab engaged; starting new part');
-        this.startSessionPartInternal('web_visibility_change');
+        this._diag.debug(`tab engaged via ${source}; starting new part`);
+        this.startSessionPartInternal('web_foreground');
         return;
       }
       if (engaged && active) {
@@ -810,7 +856,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     } catch (e) {
       this._diag.warn('Error handling engagement change', e);
     }
-  };
+  }
 
   private readonly _onSessionPartInactivity = (): void => {
     this._sessionPartInactivityTimer = null;
@@ -837,7 +883,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private _endUserSessionForInactivity(): void {
     const endTs = this._lastActivityTs ?? this._perf.getNowMillis();
     try {
-      this.endSessionPartInternal('web_inactivity', 'web_inactivity', endTs);
+      this.endSessionPartInternal('inactivity', 'inactivity', endTs);
     } catch (e) {
       this._diag.error('Error finalizing part during inactivity end', e);
     }

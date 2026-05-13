@@ -91,8 +91,8 @@ engagement condition holds, the call is a debug-level no-op.
 | Value | Trigger |
 | --- | --- |
 | `init` | SDK init flow on page load. |
-| `visibility_change` | `visibilitychange` to visible, `focus`, or `pageshow` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
-| `activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
+| `web_foreground` | `visibilitychange` to visible, `focus`, or `pageshow` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
+| `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
 | `user_session_rollover` | Called synchronously by `_terminateUserSession` immediately after a user session ends. |
 
 ### End triggers
@@ -101,7 +101,7 @@ engagement condition holds, the call is a debug-level no-op.
 
 | Value | Trigger |
 | --- | --- |
-| `visibility_change` | `visibilitychange` to hidden, `blur`, or `pagehide` while a session part is active. |
+| `web_background` | `visibilitychange` to hidden, `blur`, or `pagehide` while a session part is active. |
 | `inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
@@ -245,7 +245,7 @@ A storage write failure never terminates the user session.
 
 A session part can only start when the tab is visible and focused. Only the
 focused tab can hold a part. A tab that loses focus ends its part with reason
-`visibility_change`. This makes `localStorage` the single source of truth with
+`web_background`. This makes `localStorage` the single source of truth with
 no write contention during active parts and no need for cross-tab event
 listeners. The class-level doc comment on `EmbraceSpanSessionManager` records
 the choice.
@@ -297,10 +297,10 @@ existing engagement events:
 
 - **Freeze** (entering BFCache). `pagehide` fires.
   `EmbraceSpanSessionManager._onEngagementChange` ends the active part with
-  reason `visibility_change`.
+  reason `web_background`.
 - **Restore** (leaving BFCache). `pageshow` fires. If the document is visible
   and focused and no part is active, a new part starts with reason
-  `visibility_change`. If the document restores hidden, no part starts.
+  `web_foreground`. If the document restores hidden, no part starts.
 
 The in-memory `_state` survives the freeze-restore cycle because BFCache
 preserves the JS heap.

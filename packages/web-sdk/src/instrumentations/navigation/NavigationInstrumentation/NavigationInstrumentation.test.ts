@@ -202,7 +202,7 @@ describe('NavigationInstrumentation', () => {
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     // Start and end session to test that listeners are cleaned up
     spanSessionManager.startSessionPartInternal('init');
-    spanSessionManager.endSessionPartInternal('web_inactivity');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
@@ -229,7 +229,7 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionPartInternal('web_inactivity');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // Session part span and route span
@@ -264,14 +264,14 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionPartInternal('web_inactivity');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     // At this point we should have two spans: one for the session and one for the route
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
 
     // Start and finish another session without changing the route
     spanSessionManager.startSessionPartInternal('init');
-    spanSessionManager.endSessionPartInternal('web_inactivity');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // 2 sessions and 2 route spans
@@ -326,7 +326,7 @@ describe('NavigationInstrumentation', () => {
       url: '/second',
     });
 
-    spanSessionManager.endSessionPartInternal('web_inactivity');
+    spanSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     const navigationSpans = finishedSpans.filter(

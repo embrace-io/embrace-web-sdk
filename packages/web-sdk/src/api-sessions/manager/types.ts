@@ -85,7 +85,7 @@ export interface SpanSessionManager {
    *
    * If no part is active when called, the user session is still ended and
    * the next foreground part begins a new one, but no part span can carry
-   * `emb.user_session_termination_reason='web_manual'` (the attribute is only
+   * `emb.user_session_termination_reason='manual'` (the attribute is only
    * stamped on a final part span).
    */
   endUserSession: () => void;
@@ -110,23 +110,24 @@ export type StartSessionOptions = {
 };
 
 // Reasons that describe SDK-agnostic, cross-platform concepts (`init`,
-// `user_session_rollover`, `user_session_ended`) are emitted unprefixed.
-// Reasons that describe behaviour specific to the web environment are
-// stamped with a `web_` prefix so the backend can tell which platform's
-// flow produced the boundary.
+// `manual`, `inactivity`, `max_duration_reached`, `user_session_rollover`,
+// `user_session_ended`) are emitted unprefixed so the backend can correlate
+// them across platforms. Reasons that describe behaviour specific to the web
+// environment (`web_foreground`, `web_background`, `web_activity`) are
+// stamped with a `web_` prefix.
 
 export type SessionPartStartReason =
-  | 'init' // first part on SDK init (page load)
-  | 'web_visibility_change' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
+  | 'init' // first part on SDK init (page load); covers the hard-nav load side
+  | 'web_foreground' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
   | 'web_activity' // user input resumed after an inactivity-killed part
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
 export type SessionPartEndReason =
-  | 'web_visibility_change' // tab became disengaged via visibilitychange (hidden), blur, or pagehide
-  | 'web_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_background' // tab became disengaged via visibilitychange (hidden), blur, or pagehide; covers the hard-nav unload side
+  | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
 export type UserSessionEndReason =
-  | 'web_manual'
-  | 'web_max_duration_reached'
-  | 'web_inactivity';
+  | 'manual'
+  | 'max_duration_reached'
+  | 'inactivity';

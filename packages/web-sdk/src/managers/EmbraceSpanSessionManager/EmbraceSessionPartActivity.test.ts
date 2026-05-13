@@ -133,7 +133,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity']);
   });
 
   it('resets the part-inactivity timer on activity', () => {
@@ -146,7 +146,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity']);
   });
 
   it('throttles activity events within the throttle window', () => {
@@ -159,7 +159,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     clock.tick(SESSION_PART_INACTIVITY_MS - (THROTTLE_MS - 1) - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity']);
   });
 
   it('ends the part with reason inactivity when the part-inactivity window elapses', () => {
@@ -167,7 +167,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
 
     clock.tick(SESSION_PART_INACTIVITY_MS);
 
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -183,7 +183,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
 
     clock.tick(SESSION_PART_INACTIVITY_MS);
-    expect(endReasons()).to.deep.equal(['web_inactivity', 'web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity', 'inactivity']);
   });
 
   it('starts a part with reason activity when input arrives and no part is active', () => {
@@ -196,18 +196,18 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     manager.startSessionPartInternal('init');
 
     clock.tick(SESSION_PART_INACTIVITY_MS / 2);
-    manager.endSessionPartInternal('user_session_ended', 'web_manual');
+    manager.endSessionPartInternal('user_session_ended', 'manual');
 
     clock.tick(SESSION_PART_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['user_session_ended']);
   });
 
-  it('ends the active part with reason visibility_change when the tab hides', () => {
+  it('ends the active part with reason background when the tab hides', () => {
     manager.startSessionPartInternal('init');
 
     fireVisibilityChange('hidden');
 
-    expect(endReasons()).to.deep.equal(['web_visibility_change']);
+    expect(endReasons()).to.deep.equal(['web_background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -218,7 +218,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal([]);
   });
 
-  it('starts a new part with reason visibility_change when the tab returns to visible', () => {
+  it('starts a new part with reason foreground when the tab returns to visible', () => {
     manager.startSessionPartInternal('init');
 
     fireVisibilityChange('hidden');
@@ -226,16 +226,16 @@ describe('EmbraceSpanSessionManager browser activity', () => {
 
     fireVisibilityChange('visible');
 
-    expect(startReasons()).to.deep.equal(['init', 'web_visibility_change']);
+    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ends the active part with reason visibility_change on pagehide', () => {
+  it('ends the active part with reason background on pagehide', () => {
     manager.startSessionPartInternal('init');
 
     firePageHide();
 
-    expect(endReasons()).to.deep.equal(['web_visibility_change']);
+    expect(endReasons()).to.deep.equal(['web_background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -246,16 +246,16 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal([]);
   });
 
-  it('ends the active part with reason visibility_change when the window loses focus', () => {
+  it('ends the active part with reason background when the window loses focus', () => {
     manager.startSessionPartInternal('init');
 
     fireBlur();
 
-    expect(endReasons()).to.deep.equal(['web_visibility_change']);
+    expect(endReasons()).to.deep.equal(['web_background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
-  it('starts a new part with reason visibility_change when focus returns to a visible tab', () => {
+  it('starts a new part with reason foreground when focus returns to a visible tab', () => {
     manager.startSessionPartInternal('init');
 
     fireBlur();
@@ -263,7 +263,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
 
     fireFocus();
 
-    expect(startReasons()).to.deep.equal(['init', 'web_visibility_change']);
+    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -279,7 +279,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal(['init']);
   });
 
-  it('starts a new part with reason visibility_change on pageshow (BFCache restore)', () => {
+  it('starts a new part with reason foreground on pageshow (BFCache restore)', () => {
     manager.startSessionPartInternal('init');
 
     // BFCache restore path: pagehide ended the prior part, then pageshow
@@ -291,7 +291,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     visibilityDoc.visibilityState = 'visible';
     firePageShow();
 
-    expect(startReasons()).to.deep.equal(['init', 'web_visibility_change']);
+    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -316,7 +316,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     // Inactivity expires; the part finalizes. Then user activity resumes;
     // the next event must start a new part with reason 'web_activity'.
     clock.tick(SESSION_PART_INACTIVITY_MS);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['inactivity']);
     void expect(manager.getSessionPartId()).to.be.null;
 
     fireActivity();
@@ -348,7 +348,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(endSpy.callCount).to.equal(endCallsBeforeVisibility);
 
     // The internal part-inactivity timer was cleared on shutdown, so no
-    // further endSessionPartInternal('web_inactivity') calls fire.
+    // further endSessionPartInternal('inactivity') calls fire.
     const endCallsBefore = endSpy.callCount;
     clock.tick(SESSION_PART_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
