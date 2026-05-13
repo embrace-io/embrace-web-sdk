@@ -279,7 +279,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
 
     this._storage.setItem(EMBRACE_LAST_END_USER_SESSION_TS_KEY, String(now));
-    this._rolloverUserSession('manual');
+    this._rolloverUserSession('web_manual');
   }
 
   public getSessionPartId(): string | null {
@@ -366,7 +366,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     // Inactivity ends the user session in one step (the part span end
     // timestamp is anchored to the last activity, supplied as endTs).
-    const isFinal = reason === 'user_session_ended' || reason === 'inactivity';
+    const isFinal =
+      reason === 'user_session_ended' || reason === 'web_inactivity';
 
     // The inactivity deadline is anchored to the part end, not to when
     // the SpanProcessor.onEnd chain finishes; processors can run for an
@@ -741,7 +742,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     this._maxDurationTimeout = setTimeout(() => {
       this._maxDurationTimeout = null;
-      this._rolloverUserSession('max_duration_reached');
+      this._rolloverUserSession('web_max_duration_reached');
     }, remaining);
   }
 
@@ -778,7 +779,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         return;
       }
       if (this._activeSessionPartId === null) {
-        this.startSessionPartInternal('activity');
+        this.startSessionPartInternal('web_activity');
         return;
       }
       this._lastActivityTs = this._perf.getNowMillis();
@@ -794,12 +795,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug('tab disengaged; ending current part');
-        this.endSessionPartInternal('visibility_change');
+        this.endSessionPartInternal('web_visibility_change');
         return;
       }
       if (engaged && !active) {
         this._diag.debug('tab engaged; starting new part');
-        this.startSessionPartInternal('visibility_change');
+        this.startSessionPartInternal('web_visibility_change');
         return;
       }
       if (engaged && active) {
@@ -831,12 +832,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
    * terminates the enclosing user session in one step (state clearing
    * happens inside endSessionPartInternal's isFinal path). The next
    * user input event lazily starts a fresh user session and part via
-   * `_onActivity` -> `startSessionPartInternal('activity')`.
+   * `_onActivity` -> `startSessionPartInternal('web_activity')`.
    */
   private _endUserSessionForInactivity(): void {
     const endTs = this._lastActivityTs ?? this._perf.getNowMillis();
     try {
-      this.endSessionPartInternal('inactivity', 'inactivity', endTs);
+      this.endSessionPartInternal('web_inactivity', 'web_inactivity', endTs);
     } catch (e) {
       this._diag.error('Error finalizing part during inactivity end', e);
     }

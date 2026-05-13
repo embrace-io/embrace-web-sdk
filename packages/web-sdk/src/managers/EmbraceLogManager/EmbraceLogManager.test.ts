@@ -542,7 +542,7 @@ describe('EmbraceLogManager', () => {
       handled: true,
     });
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -561,7 +561,7 @@ describe('EmbraceLogManager', () => {
     }).to.not.throw();
 
     spanSessionManager.startSessionPartInternal('init');
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -598,7 +598,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an error log');
     }
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -642,7 +642,7 @@ describe('EmbraceLogManager', () => {
       'this is an info log which has a message longer than the allo',
     );
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -691,7 +691,7 @@ describe('EmbraceLogManager', () => {
     // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
     expect(finishedLogs[1].attributes).not.to.have.property('key3');
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -724,7 +724,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -762,7 +762,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an exception');
     }
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -802,7 +802,7 @@ describe('EmbraceLogManager', () => {
       'this is an exception which has a message longer th',
     );
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -854,7 +854,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
     expect(finishedLogs[1].attributes).not.to.have.property('key4');
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -888,7 +888,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    spanSessionManager.endSessionPartInternal('web_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

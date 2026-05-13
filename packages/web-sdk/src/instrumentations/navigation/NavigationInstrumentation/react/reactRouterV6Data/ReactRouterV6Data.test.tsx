@@ -142,7 +142,10 @@ describe('ReactRouterV6Data', () => {
       rootElement: container,
     });
 
-    spanSessionManager.endSessionPartInternal('user_session_ended', 'manual');
+    spanSessionManager.endSessionPartInternal(
+      'user_session_ended',
+      'web_manual',
+    );
     tearDown();
 
     const routeSpans = memoryExporter

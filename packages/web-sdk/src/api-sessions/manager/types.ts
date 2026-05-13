@@ -85,7 +85,7 @@ export interface SpanSessionManager {
    *
    * If no part is active when called, the user session is still ended and
    * the next foreground part begins a new one, but no part span can carry
-   * `emb.user_session_termination_reason='manual'` (the attribute is only
+   * `emb.user_session_termination_reason='web_manual'` (the attribute is only
    * stamped on a final part span).
    */
   endUserSession: () => void;
@@ -109,18 +109,24 @@ export type StartSessionOptions = {
   reason?: string;
 };
 
+// Reasons that describe SDK-agnostic, cross-platform concepts (`init`,
+// `user_session_rollover`, `user_session_ended`) are emitted unprefixed.
+// Reasons that describe behaviour specific to the web environment are
+// stamped with a `web_` prefix so the backend can tell which platform's
+// flow produced the boundary.
+
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load)
-  | 'visibility_change' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
-  | 'activity' // user input resumed after an inactivity-killed part
+  | 'web_visibility_change' // tab became engaged via visibilitychange (visible), focus, or pageshow while no part was active
+  | 'web_activity' // user input resumed after an inactivity-killed part
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
 export type SessionPartEndReason =
-  | 'visibility_change' // tab became disengaged via visibilitychange (hidden), blur, or pagehide
-  | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_visibility_change' // tab became disengaged via visibilitychange (hidden), blur, or pagehide
+  | 'web_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
 export type UserSessionEndReason =
-  | 'manual'
-  | 'max_duration_reached'
-  | 'inactivity';
+  | 'web_manual'
+  | 'web_max_duration_reached'
+  | 'web_inactivity';

@@ -89,7 +89,7 @@ describe('EmbraceSpanSessionManager', () => {
     const attrs1 = manager.getUserSessionAttributes();
     // visibility_change ends the part but keeps the user session alive
     // (inactivity now ends both the part and the user session in one step).
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     // Advance time within inactivity timeout (29 min)
     clock.tick(29 * 60 * 1000);
@@ -109,7 +109,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     manager.startSessionPartInternal('init');
     const attrs1 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     // Advance past inactivity timeout (31 min)
     clock.tick(31 * 60 * 1000);
@@ -129,7 +129,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     manager.startSessionPartInternal('init');
     const attrs1 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     // Advance past max duration (3601 seconds)
     clock.tick(3601 * 1000);
@@ -179,7 +179,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     expect(lastEndCall(endSpy)).to.deep.equal([
       'user_session_ended',
-      'max_duration_reached',
+      'web_max_duration_reached',
     ]);
   });
 
@@ -204,7 +204,10 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionPartInternal('init');
     manager.endUserSession();
 
-    expect(lastEndCall(endSpy)).to.deep.equal(['user_session_ended', 'manual']);
+    expect(lastEndCall(endSpy)).to.deep.equal([
+      'user_session_ended',
+      'web_manual',
+    ]);
   });
 
   it('should be a no-op when ending session with no active session', () => {
@@ -219,7 +222,7 @@ describe('EmbraceSpanSessionManager', () => {
     const attrs1 = manager1.getUserSessionAttributes();
     // visibility_change keeps the user session alive; another tab joining
     // should adopt it. (inactivity now ends both part and user session.)
-    manager1.endSessionPartInternal('visibility_change');
+    manager1.endSessionPartInternal('web_visibility_change');
 
     // Simulate another tab creating a manager with the same storage
     const manager2 = createManager();
@@ -298,13 +301,13 @@ describe('EmbraceSpanSessionManager', () => {
     const manager = createManager();
 
     manager.startSessionPartInternal('init');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     // Expire the session
     clock.tick(31 * 60 * 1000);
 
     manager.startSessionPartInternal('init');
     const attrs2 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     clock.tick(31 * 60 * 1000);
 
     manager.startSessionPartInternal('init');
@@ -330,7 +333,7 @@ describe('EmbraceSpanSessionManager', () => {
     manager.startSessionPartInternal('init');
     // visibility_change keeps the user session alive after part end;
     // inactivity would terminate the user session in one step.
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     // Spy AFTER the legitimate end so we observe only timer-driven calls.
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -340,7 +343,7 @@ describe('EmbraceSpanSessionManager', () => {
     expect(endSpy.callCount).to.be.at.least(1);
     expect(lastEndCall(endSpy)).to.deep.equal([
       'user_session_ended',
-      'max_duration_reached',
+      'web_max_duration_reached',
     ]);
   });
 
@@ -400,7 +403,7 @@ describe('EmbraceSpanSessionManager', () => {
     // visibility_change is the non-final part end that triggers the
     // continuation persist; this is the path that previously rewrote
     // the cleared row.
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     void expect(inMemoryStorage.getItem('embrace_user_session_state')).to.be
       .null;
@@ -408,7 +411,7 @@ describe('EmbraceSpanSessionManager', () => {
 
     // Next engagement starts a brand-new user session rather than
     // continuing the cleared one.
-    manager.startSessionPartInternal('activity');
+    manager.startSessionPartInternal('web_activity');
     expect(
       manager.getUserSessionAttributes()?.['emb.user_session_part_index'],
     ).to.equal(1);
@@ -676,7 +679,7 @@ describe('EmbraceSpanSessionManager', () => {
       const attrs1 = manager1.getUserSessionAttributes();
       // visibility_change keeps state on disk for the second manager to
       // read back; the test then mutates the persisted row.
-      manager1.endSessionPartInternal('visibility_change');
+      manager1.endSessionPartInternal('web_visibility_change');
 
       // Simulate device clock jumping backward (before userSessionStartTs).
       const rawBefore = inMemoryStorage.getItem('embrace_user_session_state');
@@ -726,7 +729,7 @@ describe('EmbraceSpanSessionManager', () => {
       clock.tick(10 * 1000);
       // visibility_change keeps the user session alive and writes the
       // deadline; inactivity would terminate the session in one step.
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
     });
@@ -734,7 +737,7 @@ describe('EmbraceSpanSessionManager', () => {
     it('should clear the inactivity deadline when a continuing part starts', () => {
       const manager = createManager();
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
       void expect(readStoredDeadline()).to.not.be.null;
 
       // A continuing part (within timeout) should clear the persisted value.
@@ -801,7 +804,7 @@ describe('EmbraceSpanSessionManager', () => {
       });
       manager1.startSessionPartInternal('init');
       const attrs1 = manager1.getUserSessionAttributes();
-      manager1.endSessionPartInternal('visibility_change');
+      manager1.endSessionPartInternal('web_visibility_change');
       // Cancel manager1's max-duration timer so it doesn't auto-rollover during
       // the tick. We're simulating a page reload: the prior page is gone,
       // storage carries the dying state forward, and a fresh manager loads.

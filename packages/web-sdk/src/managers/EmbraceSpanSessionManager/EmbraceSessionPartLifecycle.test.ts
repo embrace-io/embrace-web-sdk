@@ -99,7 +99,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     void expect(manager.getSessionPartSpan()).to.not.be.null;
     const sessionPartId = manager.getSessionPartId();
     void expect(sessionPartId).to.not.be.null;
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     void expect(manager.getSessionPartSpan()).to.be.null;
     void expect(manager.getSessionPartId()).to.be.null;
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -107,7 +107,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     const sessionPartSpan = finishedSpans[0];
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.session_part_end_reason',
-      'visibility_change',
+      'web_visibility_change',
     );
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.session_part_id',
@@ -120,19 +120,19 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     const sessionPartId = manager.getSessionPartId();
     void expect(sessionPartId).to.not.be.null;
 
-    manager.startSessionPartInternal('activity');
+    manager.startSessionPartInternal('web_activity');
 
     // Active part is unchanged, no part spans were finalized.
     expect(manager.getSessionPartId()).to.equal(sessionPartId);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(diag.getWarnLogs()).to.have.lengthOf(1);
     expect(diag.getWarnLogs()[0]).to.equal(
-      'startSessionPartInternal called while a part is active (reason: activity); ignoring',
+      'startSessionPartInternal called while a part is active (reason: web_activity); ignoring',
     );
   });
 
   it('should not end a session if there is no active session', () => {
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(0);
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
@@ -156,7 +156,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
 
     manager.addBreadcrumb('some breadcrumb');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -177,7 +177,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     // on the part span when it starts.
     manager.addProperty('queued-property', 'queued-value');
     manager.startSessionPartInternal('init');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -192,7 +192,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     manager.addProperty('custom-property-1', 'custom value1');
     manager.addProperty('custom-property-2', 'custom value2');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -208,7 +208,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     );
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.session_part_end_reason',
-      'visibility_change',
+      'web_visibility_change',
     );
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.type',
@@ -228,7 +228,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       storage,
     });
     localManager.startSessionPartInternal('init');
-    localManager.endSessionPartInternal('visibility_change');
+    localManager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -319,14 +319,14 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     localManager.startSessionPartInternal('init');
     let sessionPartId = localManager.getSessionPartId();
-    localManager.endSessionPartInternal('visibility_change');
+    localManager.endSessionPartInternal('web_visibility_change');
 
     void expect(listenerSessionPartId).to.be.eq(sessionPartId);
 
     removeListener();
     localManager.startSessionPartInternal('init');
     sessionPartId = localManager.getSessionPartId();
-    localManager.endSessionPartInternal('visibility_change');
+    localManager.endSessionPartInternal('web_visibility_change');
 
     void expect(listenerSessionPartId).not.to.be.eq(sessionPartId);
   });
@@ -338,7 +338,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       manager.addBreadcrumb('this is a breadcrumb');
     }
 
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -368,7 +368,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     memoryExporter.reset();
     manager.startSessionPartInternal('init');
     manager.addBreadcrumb('this is a breadcrumb');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
     const nextSessionPartSpan = nextSessionFinishedSpans[0];
@@ -388,7 +388,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       'this is a breadcrumb which has a name longer than the allowed maximum length',
     );
 
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -423,7 +423,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       manager.addProperty(`property${i.toString()}`, i.toString());
     }
 
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -458,7 +458,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     memoryExporter.reset();
     manager.startSessionPartInternal('init');
     manager.addProperty('my-new-prop', 'new');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
     const nextSessionPartSpan = nextSessionFinishedSpans[0];
@@ -477,7 +477,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       'session property long value with extra information',
     );
 
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -531,7 +531,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       value,
     );
 
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     // Survives across user-session boundaries.
     expect(blob('embrace_permanent_properties')).to.have.property(
@@ -571,7 +571,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     manager.startSessionPartInternal('init');
     manager.addProperty(propertyKey, value);
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     const secondManager = new EmbraceSpanSessionManager({
       diag,
@@ -581,7 +581,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
     });
     secondManager.startSessionPartInternal('init');
-    secondManager.endSessionPartInternal('visibility_change');
+    secondManager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
@@ -680,12 +680,12 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       lifespan: 'permanent',
     });
     expect(blob()).to.have.property(propertyKey, value);
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     manager.removeProperty(propertyKey);
     void expect(blob()[propertyKey]).to.be.undefined;
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     void expect(blob()[propertyKey]).to.be.undefined;
   });
@@ -706,7 +706,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     manager.addProperty(permanentPropertyKey, permanentValue, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     expect(manager.getSessionPartProperties()).to.have.property(
@@ -753,11 +753,11 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     manager.removeProperty(propertyKey);
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     expect(manager.getSessionPartProperties()).to.not.have.property(
@@ -775,7 +775,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     expect(manager.getSessionPartProperties()).to.have.property(
@@ -787,7 +787,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       value,
     );
     manager.removeProperty(propertyKey);
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     manager.startSessionPartInternal('init');
     expect(manager.getSessionPartProperties()).to.not.have.property(
@@ -813,7 +813,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     failingManager.startSessionPartInternal('init');
-    failingManager.endSessionPartInternal('visibility_change');
+    failingManager.endSessionPartInternal('web_visibility_change');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -907,7 +907,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     manager.setTracerProvider(tracerProvider);
     manager.startSessionPartInternal('init');
-    manager.endSessionPartInternal('visibility_change');
+    manager.endSessionPartInternal('web_visibility_change');
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
@@ -922,7 +922,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       manager.setTracerProvider(tracerProvider);
 
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -974,7 +974,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       );
       expect(endedSpan.attributes).to.have.property(
         'emb.user_session_termination_reason',
-        'manual',
+        'web_manual',
       );
     });
 
@@ -1046,7 +1046,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       );
       expect(endedSpan.attributes).to.have.property(
         'emb.user_session_termination_reason',
-        'max_duration_reached',
+        'web_max_duration_reached',
       );
     });
 
@@ -1107,15 +1107,15 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       );
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.user_session_termination_reason',
-        'max_duration_reached',
+        'web_max_duration_reached',
       );
 
       // Tab becomes engaged again. The manager's _onEngagementChange would
-      // call startSessionPartInternal('visibility_change') in production;
+      // call startSessionPartInternal('web_visibility_change') in production;
       // simulate that here. A new user session is created.
       visibilityState.current = 'visible';
       visibilityState.focused = true;
-      localManager.startSessionPartInternal('visibility_change');
+      localManager.startSessionPartInternal('web_visibility_change');
 
       void expect(localManager.getSessionPartId()).to.not.be.null;
       expect(localManager.getSessionPartId()).to.not.equal(firstPartId);
@@ -1138,7 +1138,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
       localManager.startSessionPartInternal('init');
       const firstUserSessionId = localManager.getUserSessionId();
-      localManager.endSessionPartInternal('visibility_change');
+      localManager.endSessionPartInternal('web_visibility_change');
 
       clock.tick(61 * 1000);
 
@@ -1151,7 +1151,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     it('should keep the same user session id across consecutive parts within inactivity timeout', () => {
       manager.startSessionPartInternal('init');
       const firstUserSessionId = manager.getUserSessionId();
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       manager.startSessionPartInternal('init');
       const secondUserSessionId = manager.getUserSessionId();
@@ -1181,7 +1181,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       // brand new part span. The new part span must carry the previous user
       // session's id on emb.user_session_previous_id.
       localManager.endUserSession();
-      localManager.endSessionPartInternal('visibility_change');
+      localManager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1196,7 +1196,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   describe('emb.session_part_start_reason', () => {
     it('should default to "init" on the part span when no reason is passed', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -1207,14 +1207,14 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "activity" on the part span when started with that reason', () => {
-      manager.startSessionPartInternal('activity');
-      manager.endSessionPartInternal('visibility_change');
+      manager.startSessionPartInternal('web_activity');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.session_part_start_reason',
-        'activity',
+        'web_activity',
       );
     });
 
@@ -1223,7 +1223,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       // Triggers the rollover path inside endUserSession, which restarts a
       // part with reason 'user_session_rollover'.
       manager.endUserSession();
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1254,7 +1254,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
       clock.tick(3601 * 1000);
 
-      localManager.endSessionPartInternal('visibility_change');
+      localManager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1272,32 +1272,32 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   describe('emb.session_part_end_reason', () => {
     it('should stamp "visibility_change" when the part ends on visibility hidden', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.session_part_end_reason',
-        'visibility_change',
+        'web_visibility_change',
       );
     });
 
     it('should stamp "inactivity" when the inactivity timer ends the part', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('inactivity');
+      manager.endSessionPartInternal('web_inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.session_part_end_reason',
-        'inactivity',
+        'web_inactivity',
       );
     });
 
     it('should stamp "user_session_ended" when the user-session manager ends the part on rollover', () => {
       manager.startSessionPartInternal('init');
       manager.endUserSession();
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1307,7 +1307,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       );
       expect(finishedSpans[1].attributes).to.have.property(
         'emb.session_part_end_reason',
-        'visibility_change',
+        'web_visibility_change',
       );
     });
   });
@@ -1315,9 +1315,9 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   describe('emb.session_part_number', () => {
     it('emits a 1-indexed monotonic counter on the part span, persisted across visits', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1351,7 +1351,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       };
 
       localManager.startSessionPartInternal('init');
-      localManager.endSessionPartInternal('visibility_change');
+      localManager.endSessionPartInternal('web_visibility_change');
 
       // End-of-part writes an inactivity deadline onto the state row.
       const deadlineAfterEnd = readDeadline();
@@ -1387,7 +1387,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         .throws(new Error('poisoned attribute value'));
 
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       // The span must still be ended and exported, despite the throw.
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
@@ -1420,7 +1420,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       void expect(manager.getSessionPartSpan()).to.not.be.null;
 
       expect(() =>
-        manager.endSessionPartInternal('visibility_change'),
+        manager.endSessionPartInternal('web_visibility_change'),
       ).to.not.throw();
 
       void expect(manager.getSessionPartSpan()).to.be.null;
@@ -1436,11 +1436,11 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   describe('emb.cold_start', () => {
     it('should stamp true on the first part and false on subsequent parts from the same manager', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(3);
@@ -1460,7 +1460,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
     it('should stamp true again on the first part from a new manager instance sharing storage', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('visibility_change');
+      manager.endSessionPartInternal('web_visibility_change');
 
       const secondManager = new EmbraceSpanSessionManager({
         diag,
@@ -1470,7 +1470,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
       secondManager.startSessionPartInternal('init');
-      secondManager.endSessionPartInternal('visibility_change');
+      secondManager.endSessionPartInternal('web_visibility_change');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);

@@ -176,10 +176,10 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
       await Promise.resolve();
 
-      spanSessionManager.endSessionPartInternal('inactivity');
+      spanSessionManager.endSessionPartInternal('web_inactivity');
 
       spanSessionManager.startSessionPartInternal('init');
-      spanSessionManager.endSessionPartInternal('inactivity');
+      spanSessionManager.endSessionPartInternal('web_inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
