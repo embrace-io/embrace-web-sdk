@@ -58,6 +58,7 @@ import {
   DEFAULT_ACTIVITY_THROTTLE_MS,
   DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
+  EMBRACE_LAST_END_USER_SESSION_TS_KEY,
   EMBRACE_SESSION_PART_NUMBER_KEY,
   EMBRACE_USER_SESSION_NUMBER_KEY,
   EMBRACE_USER_SESSION_STATE_KEY,
@@ -96,7 +97,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _maxUserSessionDurationSeconds: number;
   private readonly _inactivityTimeoutSeconds: number;
   private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
-  private _lastEndUserSessionTs: number | null = null;
   // In-memory mirror of the embrace_permanent_properties blob. Bare keys;
   // the wire-format prefix is applied by the consumer at stamp time.
   private _permanentProperties: Record<string, string> = {};
@@ -256,10 +256,21 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   }
 
   public endUserSession(): void {
+    if (!this._state) {
+      this._diag.debug(
+        'Trying to end user session, but there is no active session. This is a no-op.',
+      );
+      return;
+    }
+
     const now = this._perf.getNowMillis();
+    const lastEndRaw = this._storage.getItem(
+      EMBRACE_LAST_END_USER_SESSION_TS_KEY,
+    );
+    const lastEndTs = lastEndRaw === null ? NaN : Number(lastEndRaw);
     if (
-      this._lastEndUserSessionTs !== null &&
-      now - this._lastEndUserSessionTs < END_USER_SESSION_COOLDOWN_MS
+      Number.isFinite(lastEndTs) &&
+      now - lastEndTs < END_USER_SESSION_COOLDOWN_MS
     ) {
       this._diag.warn(
         'endUserSession called within cooldown period, ignoring.',
@@ -267,13 +278,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    if (!this._state) {
-      this._diag.debug(
-        'Trying to end user session, but there is no active session. This is a no-op.',
-      );
-      return;
-    }
-    this._lastEndUserSessionTs = now;
+    this._storage.setItem(EMBRACE_LAST_END_USER_SESSION_TS_KEY, String(now));
     this._rolloverUserSession('manual');
   }
 

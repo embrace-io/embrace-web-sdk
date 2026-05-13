@@ -474,47 +474,57 @@ describe('EmbraceSpanSessionManager', () => {
   });
 
   describe('endUserSession cooldown', () => {
-    it('should warn and skip when called within the 5s cooldown window', () => {
+    it('should accept the first endUserSession with no prior end on record', () => {
       const manager = createManager();
-
       manager.startSessionPartInternal('init');
-      manager.endUserSession();
-      // The merged manager auto-rolls a new part on endUserSession; no
-      // explicit second startSessionPartInternal is needed.
 
-      clock.tick(2 * 1000);
-      const idBeforeSecondCall = manager.getUserSessionId();
-      manager.endUserSession();
-
-      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
-        true,
-      );
-      // Cooldown blocked the second call, so the rolled-over session id
-      // should still be active.
-      expect(manager.getUserSessionId()).to.equal(idBeforeSecondCall);
-    });
-
-    it('should process normally when called after the 5s cooldown window', () => {
-      const manager = createManager();
-
-      manager.startSessionPartInternal('init');
-      manager.endUserSession();
-
-      clock.tick(6 * 1000);
-      const idAfterFirstEnd = manager.getUserSessionId();
+      const idBefore = manager.getUserSessionId();
       manager.endUserSession();
 
       expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
         false,
       );
-      // Second endUserSession past cooldown should produce a fresh rollover
-      // session, distinct from the one active before the call.
-      expect(manager.getUserSessionId()).to.not.equal(idAfterFirstEnd);
+      expect(manager.getUserSessionId()).to.not.equal(idBefore);
     });
 
-    it('should process normally exactly at the 5s cooldown boundary (strict less-than)', () => {
+    it('should reject a second endUserSession within 5s of a successful end', () => {
       const manager = createManager();
+      manager.startSessionPartInternal('init');
+      manager.endUserSession();
 
+      clock.tick(2 * 1000);
+      const idAfterFirstEnd = manager.getUserSessionId();
+      manager.endUserSession();
+
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        true,
+      );
+      expect(manager.getUserSessionId()).to.equal(idAfterFirstEnd);
+    });
+
+    it('should reject endUserSession after a page refresh when the persisted last-end is younger than 5s', () => {
+      // The cooldown must survive a refresh: a fresh manager (simulating a
+      // new page load) reads the persisted last-end timestamp and still
+      // rejects calls within the 5s window.
+      const first = createManager();
+      first.startSessionPartInternal('init');
+      first.endUserSession();
+
+      clock.tick(1 * 1000);
+
+      const afterRefresh = createManager();
+      afterRefresh.startSessionPartInternal('init');
+      const idBefore = afterRefresh.getUserSessionId();
+      afterRefresh.endUserSession();
+
+      expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
+        true,
+      );
+      expect(afterRefresh.getUserSessionId()).to.equal(idBefore);
+    });
+
+    it('should accept endUserSession exactly at the 5s boundary (strict less-than)', () => {
+      const manager = createManager();
       manager.startSessionPartInternal('init');
       manager.endUserSession();
 
@@ -528,21 +538,19 @@ describe('EmbraceSpanSessionManager', () => {
       expect(manager.getUserSessionId()).to.not.equal(idAfterFirstEnd);
     });
 
-    it('should reject end calls in the cooldown window even when no session is active', () => {
+    it('should accept endUserSession after the cooldown window has elapsed', () => {
       const manager = createManager();
-
       manager.startSessionPartInternal('init');
       manager.endUserSession();
 
-      // Inside the cooldown window: even if no session were active here, the
-      // cooldown must reject before the no-active-session no-op so the next
-      // active session cannot be ended within the cooldown.
-      clock.tick(2 * 1000);
+      clock.tick(6 * 1000);
+      const idAfterFirstEnd = manager.getUserSessionId();
       manager.endUserSession();
 
       expect(diag.getWarnLogs().some((l) => l.includes('cooldown'))).to.equal(
-        true,
+        false,
       );
+      expect(manager.getUserSessionId()).to.not.equal(idAfterFirstEnd);
     });
   });
 

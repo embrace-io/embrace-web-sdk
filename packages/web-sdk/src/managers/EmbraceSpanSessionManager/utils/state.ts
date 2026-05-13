@@ -4,6 +4,7 @@ import { generateUUID } from '../../../utils/index.ts';
 import {
   EMBRACE_PERMANENT_PROPERTIES_KEY,
   EMBRACE_USER_SESSION_STATE_KEY,
+  USER_SESSION_STATE_SCHEMA_VERSION,
 } from '../constants.ts';
 import type { UserSessionState } from '../types.ts';
 
@@ -17,17 +18,10 @@ import type { UserSessionState } from '../types.ts';
 export const isUserSessionExpired = (
   state: UserSessionState,
   now: number,
-): boolean => {
-  if (now < state.userSessionStartTs) {
-    return true;
-  }
-  if (now >= state.userSessionMaxEndTs) {
-    return true;
-  }
-  return (
-    state.inactivityDeadlineTs !== null && now >= state.inactivityDeadlineTs
-  );
-};
+): boolean =>
+  now < state.userSessionStartTs ||
+  now >= state.userSessionMaxEndTs ||
+  (state.inactivityDeadlineTs !== null && now >= state.inactivityDeadlineTs);
 
 export interface CreateUserSessionStateArgs {
   now: number;
@@ -44,62 +38,32 @@ export const createUserSessionState = ({
   inactivityTimeoutSeconds,
   userSessionNumber,
 }: CreateUserSessionStateArgs): UserSessionState => ({
+  schemaVersion: USER_SESSION_STATE_SCHEMA_VERSION,
   userSessionId: generateUUID(),
   previousUserSessionId,
   userSessionStartTs: now,
   userSessionMaxEndTs: now + maxUserSessionDurationSeconds * 1000,
   userSessionNumber,
   userSessionPartIndex: 0,
-  // Snapshot config so a mid-session config change doesn't shift this
-  // user session's expiry bounds.
   maxUserSessionDurationSeconds,
   inactivityTimeoutSeconds,
   inactivityDeadlineTs: null,
   userSessionProperties: {},
 });
 
-const isValidStoredUserSessionState = (state: UserSessionState): boolean => {
-  if (typeof state.userSessionId !== 'string' || state.userSessionId === '') {
-    return false;
-  }
-  if (
-    state.previousUserSessionId !== null &&
-    (typeof state.previousUserSessionId !== 'string' ||
-      state.previousUserSessionId === '')
-  ) {
-    return false;
-  }
-  if (
-    !Number.isFinite(state.userSessionStartTs) ||
-    !Number.isFinite(state.userSessionMaxEndTs) ||
-    !Number.isFinite(state.userSessionNumber) ||
-    !Number.isFinite(state.userSessionPartIndex) ||
-    state.userSessionPartIndex < 0 ||
-    !Number.isFinite(state.maxUserSessionDurationSeconds) ||
-    !Number.isFinite(state.inactivityTimeoutSeconds)
-  ) {
-    return false;
-  }
-  if (
-    state.inactivityDeadlineTs !== null &&
-    !Number.isFinite(state.inactivityDeadlineTs)
-  ) {
-    return false;
-  }
-  if (
-    state.userSessionProperties === null ||
-    typeof state.userSessionProperties !== 'object' ||
-    Array.isArray(state.userSessionProperties)
-  ) {
-    return false;
-  }
-  for (const value of Object.values(state.userSessionProperties)) {
-    if (typeof value !== 'string') {
-      return false;
-    }
-  }
-  return true;
-};
+/**
+ * Treats the schemaVersion stamp as the contract. Every field is written
+ * by createUserSessionState (and userSessionProperties is validated at
+ * addProperty time), so a matching version means the blob came from this
+ * code path and we trust the rest of its shape.
+ */
+const isValidStoredUserSessionState = (
+  state: unknown,
+): state is UserSessionState =>
+  state !== null &&
+  typeof state === 'object' &&
+  (state as { schemaVersion?: unknown }).schemaVersion ===
+    USER_SESSION_STATE_SCHEMA_VERSION;
 
 export const readUserSessionState = (
   storage: NamespacedStorage,
@@ -110,11 +74,11 @@ export const readUserSessionState = (
     return null;
   }
   try {
-    const state = JSON.parse(raw) as UserSessionState;
-    if (!isValidStoredUserSessionState(state)) {
+    const parsed: unknown = JSON.parse(raw);
+    if (!isValidStoredUserSessionState(parsed)) {
       throw new Error('stored user session state failed structural validation');
     }
-    return state;
+    return parsed;
   } catch (e) {
     diag.error('User session state in storage is corrupt; discarding it', e);
     storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);

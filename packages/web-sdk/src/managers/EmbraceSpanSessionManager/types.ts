@@ -14,6 +14,12 @@ import type {
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 
 export interface UserSessionState {
+  /**
+   * Bumped when the shape of this blob changes incompatibly. Stored copies
+   * with a mismatched version are discarded on read instead of being
+   * structurally validated field-by-field.
+   */
+  readonly schemaVersion: number;
   readonly userSessionId: string;
   /**
    * Null on the first user session since the first visit or after a

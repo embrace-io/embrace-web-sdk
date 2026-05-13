@@ -15,7 +15,6 @@ import {
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
-import { OTelPerformanceManager } from '../../utils/PerformanceManager/index.ts';
 import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
 import {
   DEFAULT_LIMITS,
@@ -35,6 +34,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   let storage: NamespacedStorage;
   let limitManager: EmbraceLimitManager;
   let perf: PerformanceManager;
+  let clock: sinon.SinonFakeTimers;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -49,7 +49,8 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     inMemoryStorage.clear();
     diag = new InMemoryDiagLogger();
     storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
-    perf = new OTelPerformanceManager();
+    clock = sinon.useFakeTimers({ now: 0 });
+    perf = new MockPerformanceManager(clock);
     limitManager = new EmbraceLimitManager({
       diag,
       ...DEFAULT_LIMITS,
@@ -73,6 +74,10 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       perf,
       visibilityDoc: window.document,
     });
+  });
+
+  afterEach(() => {
+    clock.restore();
   });
 
   it('should initialize a EmbraceSpanSessionManager', () => {
@@ -1025,26 +1030,21 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      const clock = sinon.useFakeTimers({ now: 0 });
-      try {
-        localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal('init');
 
-        clock.tick(3601 * 1000);
+      clock.tick(3601 * 1000);
 
-        const finishedSpans = memoryExporter.getFinishedSpans();
-        expect(finishedSpans.length).to.be.at.least(1);
-        const endedSpan = finishedSpans[0];
-        expect(endedSpan.attributes).to.have.property(
-          'emb.is_final_session_part',
-          1,
-        );
-        expect(endedSpan.attributes).to.have.property(
-          'emb.user_session_termination_reason',
-          'max_duration_reached',
-        );
-      } finally {
-        clock.restore();
-      }
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans.length).to.be.at.least(1);
+      const endedSpan = finishedSpans[0];
+      expect(endedSpan.attributes).to.have.property(
+        'emb.is_final_session_part',
+        1,
+      );
+      expect(endedSpan.attributes).to.have.property(
+        'emb.user_session_termination_reason',
+        'max_duration_reached',
+      );
     });
 
     it('should defer the rollover part start until the tab becomes engaged when max duration fires while hidden', () => {
@@ -1065,65 +1065,58 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         hasFocus: () => visibilityState.focused,
       };
 
-      const clock = sinon.useFakeTimers({ now: 0 });
-      try {
-        const localManager = new EmbraceSpanSessionManager({
-          diag,
-          perf: new MockPerformanceManager(clock),
-          storage,
-          limitManager,
-          visibilityDoc,
-          // Match inactivity to max so only the max-duration timer fires
-          // first (timers registered earlier fire first when set to the same
-          // delay; max-duration is armed in _ensureUserSessionState before
-          // the inactivity timer is armed by startSessionPartInternal).
-          config: {
-            maxUserSessionDurationSeconds: 3600,
-            inactivityTimeoutSeconds: 3600,
-          },
-        });
+      const localManager = new EmbraceSpanSessionManager({
+        diag,
+        perf,
+        storage,
+        limitManager,
+        visibilityDoc,
+        // Match inactivity to max so only the max-duration timer fires
+        // first (timers registered earlier fire first when set to the same
+        // delay; max-duration is armed in _ensureUserSessionState before
+        // the inactivity timer is armed by startSessionPartInternal).
+        config: {
+          maxUserSessionDurationSeconds: 3600,
+          inactivityTimeoutSeconds: 3600,
+        },
+      });
 
-        localManager.startSessionPartInternal('init');
-        const firstUserSessionId = localManager.getUserSessionId();
-        const firstPartId = localManager.getSessionPartId();
-        void expect(firstPartId).to.not.be.null;
+      localManager.startSessionPartInternal('init');
+      const firstUserSessionId = localManager.getUserSessionId();
+      const firstPartId = localManager.getSessionPartId();
+      void expect(firstPartId).to.not.be.null;
 
-        // Tab is no longer engaged before the max-duration boundary.
-        visibilityState.current = 'hidden';
-        visibilityState.focused = false;
+      // Tab is no longer engaged before the max-duration boundary.
+      visibilityState.current = 'hidden';
+      visibilityState.focused = false;
 
-        clock.tick(3601 * 1000);
+      clock.tick(3601 * 1000);
 
-        // Max-duration ended the old part and cleared the user session, but
-        // the rollover startSessionPartInternal skipped because the tab is hidden.
-        void expect(localManager.getSessionPartSpan()).to.be.null;
-        void expect(localManager.getSessionPartId()).to.be.null;
-        const finishedSpans = memoryExporter.getFinishedSpans();
-        expect(finishedSpans).to.have.lengthOf(1);
-        expect(finishedSpans[0].attributes).to.have.property(
-          'emb.is_final_session_part',
-          1,
-        );
-        expect(finishedSpans[0].attributes).to.have.property(
-          'emb.user_session_termination_reason',
-          'max_duration_reached',
-        );
+      // Max-duration ended the old part and cleared the user session, but
+      // the rollover startSessionPartInternal skipped because the tab is hidden.
+      void expect(localManager.getSessionPartSpan()).to.be.null;
+      void expect(localManager.getSessionPartId()).to.be.null;
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(1);
+      expect(finishedSpans[0].attributes).to.have.property(
+        'emb.is_final_session_part',
+        1,
+      );
+      expect(finishedSpans[0].attributes).to.have.property(
+        'emb.user_session_termination_reason',
+        'max_duration_reached',
+      );
 
-        // Tab becomes engaged again. The manager's _onEngagementChange would
-        // call startSessionPartInternal('visibility_change') in production;
-        // simulate that here. A new user session is created.
-        visibilityState.current = 'visible';
-        visibilityState.focused = true;
-        localManager.startSessionPartInternal('visibility_change');
+      // Tab becomes engaged again. The manager's _onEngagementChange would
+      // call startSessionPartInternal('visibility_change') in production;
+      // simulate that here. A new user session is created.
+      visibilityState.current = 'visible';
+      visibilityState.focused = true;
+      localManager.startSessionPartInternal('visibility_change');
 
-        void expect(localManager.getSessionPartId()).to.not.be.null;
-        expect(localManager.getSessionPartId()).to.not.equal(firstPartId);
-        expect(localManager.getUserSessionId()).to.not.equal(
-          firstUserSessionId,
-        );
-      } finally {
-        clock.restore();
-      }
+      void expect(localManager.getSessionPartId()).to.not.be.null;
+      expect(localManager.getSessionPartId()).to.not.equal(firstPartId);
+      expect(localManager.getUserSessionId()).to.not.equal(firstUserSessionId);
     });
 
     it('should detect inactivity expiry lazily on the next part start and roll a new user session', () => {
@@ -1131,30 +1124,25 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       // part begins. The web SDK does not keep a JS timer for inactivity, so
       // the previous part's span is already exported (without is_final) and
       // the next part starts fresh.
-      const clock = sinon.useFakeTimers({ now: 0 });
-      try {
-        const localManager = new EmbraceSpanSessionManager({
-          diag,
-          perf: new MockPerformanceManager(clock),
-          storage,
-          limitManager,
-          config: { inactivityTimeoutSeconds: 60 },
-          visibilityDoc: window.document,
-        });
+      const localManager = new EmbraceSpanSessionManager({
+        diag,
+        perf,
+        storage,
+        limitManager,
+        config: { inactivityTimeoutSeconds: 60 },
+        visibilityDoc: window.document,
+      });
 
-        localManager.startSessionPartInternal('init');
-        const firstUserSessionId = localManager.getUserSessionId();
-        localManager.endSessionPartInternal('visibility_change');
+      localManager.startSessionPartInternal('init');
+      const firstUserSessionId = localManager.getUserSessionId();
+      localManager.endSessionPartInternal('visibility_change');
 
-        clock.tick(61 * 1000);
+      clock.tick(61 * 1000);
 
-        localManager.startSessionPartInternal('init');
-        const secondUserSessionId = localManager.getUserSessionId();
+      localManager.startSessionPartInternal('init');
+      const secondUserSessionId = localManager.getUserSessionId();
 
-        expect(secondUserSessionId).to.not.equal(firstUserSessionId);
-      } finally {
-        clock.restore();
-      }
+      expect(secondUserSessionId).to.not.equal(firstUserSessionId);
     });
 
     it('should keep the same user session id across consecutive parts within inactivity timeout', () => {
@@ -1173,17 +1161,24 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       const tracerProvider = new WebTracerProvider({
         spanProcessors: [new SimpleSpanProcessor(exporter)],
       });
-      manager.setTracerProvider(tracerProvider);
+      const localManager = new EmbraceSpanSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+      });
+      localManager.setTracerProvider(tracerProvider);
 
-      manager.startSessionPartInternal('init');
-      const firstUserSessionId = manager.getUserSessionId();
+      localManager.startSessionPartInternal('init');
+      const firstUserSessionId = localManager.getUserSessionId();
       void expect(firstUserSessionId).to.not.be.null;
 
       // Triggers endUserSession -> rollover -> a fresh user session and a
       // brand new part span. The new part span must carry the previous user
       // session's id on emb.user_session_previous_id.
-      manager.endUserSession();
-      manager.endSessionPartInternal('visibility_change');
+      localManager.endUserSession();
+      localManager.endSessionPartInternal('visibility_change');
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1252,27 +1247,22 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      const clock = sinon.useFakeTimers({ now: 0 });
-      try {
-        localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal('init');
 
-        clock.tick(3601 * 1000);
+      clock.tick(3601 * 1000);
 
-        localManager.endSessionPartInternal('visibility_change');
+      localManager.endSessionPartInternal('visibility_change');
 
-        const finishedSpans = memoryExporter.getFinishedSpans();
-        expect(finishedSpans).to.have.lengthOf(2);
-        expect(finishedSpans[0].attributes).to.have.property(
-          'emb.session_part_start_reason',
-          'init',
-        );
-        expect(finishedSpans[1].attributes).to.have.property(
-          'emb.session_part_start_reason',
-          'user_session_rollover',
-        );
-      } finally {
-        clock.restore();
-      }
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      expect(finishedSpans[0].attributes).to.have.property(
+        'emb.session_part_start_reason',
+        'init',
+      );
+      expect(finishedSpans[1].attributes).to.have.property(
+        'emb.session_part_start_reason',
+        'user_session_rollover',
+      );
     });
   });
 
@@ -1341,42 +1331,37 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
   describe('continuation inactivity handling', () => {
     it('should clear the persisted inactivity deadline when a part continues an active user session', () => {
-      const clock = sinon.useFakeTimers({ now: 0 });
-      try {
-        const localManager = new EmbraceSpanSessionManager({
-          diag,
-          perf: new MockPerformanceManager(clock),
-          storage,
-          limitManager,
-          config: { inactivityTimeoutSeconds: 60 },
-          visibilityDoc: window.document,
-        });
+      const localManager = new EmbraceSpanSessionManager({
+        diag,
+        perf,
+        storage,
+        limitManager,
+        config: { inactivityTimeoutSeconds: 60 },
+        visibilityDoc: window.document,
+      });
 
-        const readDeadline = (): number | null => {
-          const raw = inMemoryStorage.getItem('embrace_user_session_state');
-          if (!raw) return null;
-          return (JSON.parse(raw) as { inactivityDeadlineTs: number | null })
-            .inactivityDeadlineTs;
-        };
+      const readDeadline = (): number | null => {
+        const raw = inMemoryStorage.getItem('embrace_user_session_state');
+        if (!raw) return null;
+        return (JSON.parse(raw) as { inactivityDeadlineTs: number | null })
+          .inactivityDeadlineTs;
+      };
 
-        localManager.startSessionPartInternal('init');
-        localManager.endSessionPartInternal('visibility_change');
+      localManager.startSessionPartInternal('init');
+      localManager.endSessionPartInternal('visibility_change');
 
-        // End-of-part writes an inactivity deadline onto the state row.
-        const deadlineAfterEnd = readDeadline();
-        void expect(deadlineAfterEnd).to.not.be.null;
-        expect(deadlineAfterEnd).to.be.a('number');
+      // End-of-part writes an inactivity deadline onto the state row.
+      const deadlineAfterEnd = readDeadline();
+      void expect(deadlineAfterEnd).to.not.be.null;
+      expect(deadlineAfterEnd).to.be.a('number');
 
-        clock.tick(1000);
+      clock.tick(1000);
 
-        // A continuing part (still within the inactivity window) must clear
-        // the deadline so a future part-start doesn't read a stale value.
-        localManager.startSessionPartInternal('init');
+      // A continuing part (still within the inactivity window) must clear
+      // the deadline so a future part-start doesn't read a stale value.
+      localManager.startSessionPartInternal('init');
 
-        void expect(readDeadline()).to.be.null;
-      } finally {
-        clock.restore();
-      }
+      void expect(readDeadline()).to.be.null;
     });
   });
 
