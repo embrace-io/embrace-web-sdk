@@ -109,8 +109,8 @@ describe('webSdkResource', () => {
       const appInstanceId = resource.attributes['emb.app_instance_id'];
       void expect(appInstanceId).to.have.lengthOf(32);
 
-      // Read fails: NamespacedStorage warns. Write fails: NamespacedStorage flips disabled
-      // and emits one error.
+      // Read fails: NamespacedStorage warns.
+      // Write fails: NamespacedStorage flips disabled and emits one error.
       expect(diagLogger.getWarnLogs()).to.have.lengthOf(1);
       expect(diagLogger.getWarnLogs()[0]).to.contain('failed to read');
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);

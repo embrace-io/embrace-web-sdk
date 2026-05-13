@@ -51,7 +51,7 @@ new equivalents; others are inert (return `null` or no-op).
 | `endSessionSpan()` | Forwards to `endUserSession()`. |
 | `getPreviousSessionId()` | Always returns `null`. Use `getPreviousUserSessionId()`. |
 | `currentSessionAsReadableSpan()` | Always returns `null`. |
-| `startSessionSpan()` | No-op. Spec 1.4 forbids a public start API. |
+| `startSessionSpan()` | No-op. User sessions start implicitly on first engagement, not via a public API. |
 | `addSessionStartedListener()` | Returns a no-op unsubscribe. The listener is never called. |
 | `addSessionEndedListener()` | Returns a no-op unsubscribe. The listener is never called. |
 
@@ -172,7 +172,7 @@ is called from:
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
 | `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Reserved per spec. | No. Inactivity is detected lazily at next part start, after the prior part span is already exported. |
+| `inactivity` | Reserved value. | No. Inactivity is detected lazily at next part start, after the prior part span is already exported. |
 
 On termination the manager calls
 `endSessionPartInternal('user_session_ended', reason)`, saves

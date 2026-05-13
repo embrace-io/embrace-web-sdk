@@ -672,7 +672,7 @@ describe('EmbraceSpanSessionManager', () => {
     });
   });
 
-  describe('clock anomaly handling (spec 6.1)', () => {
+  describe('clock anomaly handling', () => {
     it('should start a fresh session when device time is before stored session start', () => {
       const manager1 = createManager();
       manager1.startSessionPartInternal('init');
@@ -715,7 +715,7 @@ describe('EmbraceSpanSessionManager', () => {
       .inactivityDeadlineTs;
   };
 
-  describe('inactivity timeout invalidation (spec 1.1)', () => {
+  describe('inactivity timeout invalidation', () => {
     it('should not write an inactivity deadline while the first foreground part is active', () => {
       const manager = createManager();
       manager.startSessionPartInternal('init');

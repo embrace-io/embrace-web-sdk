@@ -1051,12 +1051,12 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should defer the rollover part start until the tab becomes engaged when max duration fires while hidden', () => {
-      // Spec deviation: when max-duration fires while the tab is not
-      // engaged, the old user session is ended and storage is cleared, but
-      // the rollover part's start is no-op because startSessionPartInternal refuses
-      // to begin a part while the tab is hidden / unfocused. The next
-      // engagement event (handled by the manager's browser-activity listeners
-      // in production) is what actually starts the new part.
+      // When max-duration fires while the tab is not engaged, the old user
+      // session is ended and storage is cleared, but the rollover part's start
+      // is no-op because startSessionPartInternal refuses to begin a part
+      // while the tab is hidden / unfocused. The next engagement event
+      // (handled by the manager's browser-activity listeners in production) is
+      // what actually starts the new part.
       const visibilityState: {
         current: 'visible' | 'hidden';
         focused: boolean;
@@ -1123,10 +1123,9 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should detect inactivity expiry lazily on the next part start and roll a new user session', () => {
-      // Spec 1.1: inactivity expiry is detected only when a new foreground
-      // part begins. The web SDK does not keep a JS timer for inactivity, so
-      // the previous part's span is already exported (without is_final) and
-      // the next part starts fresh.
+      // Inactivity expiry is detected only when a new foreground part begins:
+      // no JS timer runs, so the previous part's span is already exported
+      // (without is_final) by the time we notice the gap.
       const localManager = new EmbraceSpanSessionManager({
         diag,
         perf,
