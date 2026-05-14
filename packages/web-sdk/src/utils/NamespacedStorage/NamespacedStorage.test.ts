@@ -107,8 +107,8 @@ describe('NamespacedStorage', () => {
       expect(storage.getItem('key3')).to.equal(null);
 
       expect(inMemoryStorage.getItem('key1')).to.equal('baz');
-      expect(inMemoryStorage.getItem('prefix_key1')).to.equal('foo');
-      expect(inMemoryStorage.getItem('prefix_key2')).to.equal('bar');
+      expect(inMemoryStorage.getItem('prefix__key1')).to.equal('foo');
+      expect(inMemoryStorage.getItem('prefix__key2')).to.equal('bar');
       expect(inMemoryStorage.getItem('key3')).to.equal('bat');
     });
 
@@ -126,7 +126,7 @@ describe('NamespacedStorage', () => {
 
       expect(storage.getItem('key1')).to.equal(null);
       expect(inMemoryStorage.getItem('key1')).to.equal('baz');
-      expect(inMemoryStorage.getItem('prefix_key1')).to.equal(null);
+      expect(inMemoryStorage.getItem('prefix__key1')).to.equal(null);
     });
 
     it('keys(), key(i), and length reflect the namespaced view', () => {
@@ -179,7 +179,7 @@ describe('NamespacedStorage', () => {
 
       storage.setItem('', 'empty-key-value');
 
-      expect(inMemoryStorage.getItem('prefix_')).to.equal('empty-key-value');
+      expect(inMemoryStorage.getItem('prefix__')).to.equal('empty-key-value');
       expect(storage.getItem('')).to.equal('empty-key-value');
       expect(storage.key(0)).to.equal('');
       expect(storage.keys()).to.deep.equal(['']);
@@ -234,9 +234,9 @@ describe('NamespacedStorage', () => {
 
       expect(storage.removeItem('foo')).to.equal(false);
 
-      expect(diag.getWarnLogs().some((m) => m.includes('prefix_foo'))).to.equal(
-        true,
-      );
+      expect(
+        diag.getWarnLogs().some((m) => m.includes('prefix__foo')),
+      ).to.equal(true);
       expect(diag.getErrorLogs()).to.have.lengthOf(0);
     });
 
@@ -297,9 +297,6 @@ describe('NamespacedStorage', () => {
     });
 
     it('keeps reads, removes, and clears working after writes are disabled', () => {
-      inMemoryStorage.setItem('prefix_kept', 'value');
-      inMemoryStorage.setItem('prefix_removed', 'gone');
-
       let allowWrites = true;
       const flakyStorage: Storage = {
         get length() {
@@ -326,6 +323,10 @@ describe('NamespacedStorage', () => {
         diag,
       });
 
+      storage.setItem('kept', 'value');
+      storage.setItem('removed', 'gone');
+      storage.setItem('for_clear', 'value');
+
       allowWrites = false;
       storage.setItem('attempt', 'value');
       storage.setItem('also-attempt', 'value');
@@ -335,7 +336,6 @@ describe('NamespacedStorage', () => {
       storage.removeItem('removed');
       expect(storage.getItem('removed')).to.equal(null);
 
-      inMemoryStorage.setItem('prefix_for_clear', 'value');
       storage.clear();
       expect(storage.length).to.equal(0);
 
@@ -413,8 +413,6 @@ describe('NamespacedStorage', () => {
     });
 
     it('clear() returns false when an underlying remove fails, but continues iterating', () => {
-      inMemoryStorage.setItem('prefix_a', '1');
-      inMemoryStorage.setItem('prefix_b', '2');
       let removeCalls = 0;
       const removeFails: Storage = {
         get length() {
@@ -439,11 +437,14 @@ describe('NamespacedStorage', () => {
         diag,
       });
 
+      storage.setItem('a', '1');
+      storage.setItem('b', '2');
+
       expect(storage.clear()).to.equal(false);
       expect(removeCalls).to.equal(2);
       expect(diag.getErrorLogs()).to.have.lengthOf(0);
       expect(diag.getWarnLogs()).to.have.lengthOf(2);
-      expect(diag.getWarnLogs().every((m) => m.includes('prefix_'))).to.equal(
+      expect(diag.getWarnLogs().every((m) => m.includes('prefix__'))).to.equal(
         true,
       );
     });
