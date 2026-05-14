@@ -310,6 +310,26 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
+  it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
+    manager.startSessionPartInternal('init');
+
+    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    // Redundant focus event while the tab is still engaged and the part is
+    // still active (no blur/hide in between). This is the
+    // browser-quirk path: the engagement handler should re-arm the
+    // inactivity timer rather than start a new part.
+    target.dispatchEvent(new Event('focus'));
+
+    // The timer was re-armed at this tick, so it now needs another full
+    // window before inactivity fires.
+    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    expect(endReasons()).to.deep.equal([]);
+    clock.tick(1);
+    expect(endReasons()).to.deep.equal(['inactivity']);
+    // No additional part starts: still only the initial 'init'.
+    expect(startReasons()).to.deep.equal(['init']);
+  });
+
   it('starts a fresh part when an activity event arrives just after the prior part finalized', () => {
     manager.startSessionPartInternal('init');
 

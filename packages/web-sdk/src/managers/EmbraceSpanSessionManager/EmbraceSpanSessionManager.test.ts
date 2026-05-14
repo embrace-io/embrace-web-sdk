@@ -820,4 +820,16 @@ describe('EmbraceSpanSessionManager', () => {
       expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
     });
   });
+
+  it('should return only permanent properties from getSessionPartProperties when no user session state exists', () => {
+    const manager = createManager();
+    // No startSessionPartInternal call: state is null. The user-session
+    // properties fallback empty so only permanent properties show through.
+    expect(manager.getSessionPartProperties()).to.deep.equal({});
+
+    manager.addProperty('perm', 'value', { lifespan: 'permanent' });
+    // addProperty with permanent lifespan stores into permanent properties
+    // without creating user-session state.
+    expect(manager.getSessionPartProperties()).to.deep.equal({ perm: 'value' });
+  });
 });
