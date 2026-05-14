@@ -2,11 +2,12 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../src/index.css';
+import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
 import { Layout } from '../src/Layout.tsx';
 import { NavPage } from '../src/NavPage.tsx';
 import { setupSDK } from '../src/otel-base.ts';
 
-setupSDK();
+setupSDK([createReactRouterNavigationInstrumentation()]);
 
 type Route = 'home' | 'a' | 'b';
 

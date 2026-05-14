@@ -162,6 +162,7 @@ const App = () => {
   const [partStartReason, setPartStartReason] = useState<string | null>(null);
   const [isColdStart, setIsColdStart] = useState<boolean | null>(null);
   const [partEndTs, setPartEndTs] = useState<number | null>(null);
+  const [partEndReason, setPartEndReason] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [embraceUserId, setEmbraceUserId] = useState<string | null>(null);
   const [pageLabel, setPageLabel] = useState<string | null>(null);
@@ -247,12 +248,18 @@ const App = () => {
 
     const handlePartStart = () => {
       setPartEndTs(null);
+      setPartEndReason(null);
       setPartStartTs(Date.now());
       updateUserSession();
       updateSessionPart();
     };
     const handlePartEnd = () => {
       setPartEndTs(Date.now());
+      const endReason =
+        userSessionManager.getSessionPartSpan()?.attributes?.[
+          'emb.session_part_end_reason'
+        ];
+      setPartEndReason(typeof endReason === 'string' ? endReason : null);
       // End listeners fire before the SDK clears the part span, so defer the
       // re-read until after the SDK finishes cleaning up its state.
       queueMicrotask(updateSessionPart);
@@ -612,6 +619,16 @@ const App = () => {
             <tr>
               <th scope="row">Started</th>
               <td>{formatTimestamp(partStartTs)}</td>
+            </tr>
+            <tr>
+              <th scope="row">Last Ended</th>
+              <td>
+                {partEndTs === null
+                  ? '—'
+                  : `${formatTimestamp(partEndTs)}${
+                      partEndReason ? ` (${partEndReason})` : ''
+                    }`}
+              </td>
             </tr>
             <tr>
               <th scope="row">Start reason</th>
