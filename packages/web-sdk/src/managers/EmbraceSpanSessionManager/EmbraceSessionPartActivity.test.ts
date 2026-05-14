@@ -90,7 +90,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
   });
 
   afterEach(() => {
-    manager.shutdown();
+    manager._shutdown();
     clock.restore();
     sinon.restore();
   });
@@ -332,7 +332,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     expect(target.listenerCount('pagehide')).to.equal(1);
     expect(target.listenerCount('pageshow')).to.equal(1);
 
-    manager.shutdown();
+    manager._shutdown();
 
     expect(target.listenerCount('keydown')).to.equal(0);
     expect(target.listenerCount('mousedown')).to.equal(0);

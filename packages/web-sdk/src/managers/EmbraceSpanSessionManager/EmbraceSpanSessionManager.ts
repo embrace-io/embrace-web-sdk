@@ -742,7 +742,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
    * timer. Intended for SDK teardown and tests; in production the manager
    * lives for the page's lifetime.
    */
-  public shutdown(): void {
+  public _shutdown(): void {
     removeActivityListeners({
       target: this._target,
       visibilityDoc: this._visibilityDoc,

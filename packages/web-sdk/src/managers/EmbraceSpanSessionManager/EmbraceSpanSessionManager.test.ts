@@ -751,7 +751,7 @@ describe('EmbraceSpanSessionManager', () => {
       // shutdown clears manager1's part-inactivity and max-duration timers
       // so the fake clock does not synthesize a clean part-end during the
       // tick below, mimicking a JS engine that died with the page.
-      manager1.shutdown();
+      manager1._shutdown();
 
       // Fast forward past the default inactivity timeout but within max duration.
       clock.tick(60 * 60 * 1000);
