@@ -713,67 +713,59 @@ describe('EmbraceSpanSessionManager', () => {
   };
 
   describe('inactivity timeout invalidation', () => {
-    it('should seed the inactivity deadline at part start so a crash before any activity tick still leaves a current value', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: 120 });
+    it('should not write an inactivity deadline while the first foreground part is active', () => {
+      const manager = createManager();
       manager.startSessionPartInternal('init');
 
-      // Clock starts at 0; part start seeds deadline to now + timeout.
-      expect(readStoredDeadline()).to.equal(120 * 1000);
+      void expect(readStoredDeadline()).to.be.null;
     });
 
-    it('should anchor the inactivity deadline to the last user input when a non-final part ends', () => {
+    it('should write the inactivity deadline onto the state row when a non-final part ends', () => {
       const manager = createManager({ inactivityTimeoutSeconds: 120 });
       manager.startSessionPartInternal('init');
       clock.tick(10 * 1000);
-      // No activity events fired during the tick, so the last-input anchor
-      // stays at part start (clock=0). The deadline is anchored to that,
-      // not to the part-end timestamp (clock=10s).
+      // web_background keeps the user session alive and writes the
+      // deadline; inactivity would terminate the session in one step.
       manager.endSessionPartInternal('web_background');
 
-      expect(readStoredDeadline()).to.equal(120 * 1000);
+      expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
     });
 
-    it('should refresh the inactivity deadline when a continuing part starts', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: 120 });
+    it('should clear the inactivity deadline when a continuing part starts', () => {
+      const manager = createManager();
       manager.startSessionPartInternal('init');
       manager.endSessionPartInternal('web_background');
       void expect(readStoredDeadline()).to.not.be.null;
 
-      // A continuing part reseats the deadline anchored to its own start,
-      // overwriting the previous value rather than clearing it.
+      // A continuing part (within timeout) should clear the persisted value.
       clock.tick(60 * 1000);
       manager.startSessionPartInternal('init');
 
-      expect(readStoredDeadline()).to.equal(60 * 1000 + 120 * 1000);
+      void expect(readStoredDeadline()).to.be.null;
     });
 
-    it('should expire on inactivity when recovering after a crash with no prior part-end', () => {
-      // The deadline is seeded at part start and refreshed on each
-      // throttled activity tick, so a crash mid-part still leaves a
-      // current deadline in storage. Recovery past that deadline rotates
-      // the user session instead of silently resuming a stale one.
+    it('should not expire on inactivity when recovering a session with no prior part-end', () => {
       const manager1 = createManager({
         maxUserSessionDurationSeconds: 12 * 60 * 60,
-        inactivityTimeoutSeconds: 30 * 60,
       });
       manager1.startSessionPartInternal('init');
       const attrs1 = manager1.getUserSessionAttributes();
+      // Simulate a crash: no endSessionPartInternal call, no deadline written.
       // shutdown clears manager1's part-inactivity and max-duration timers
       // so the fake clock does not synthesize a clean part-end during the
       // tick below, mimicking a JS engine that died with the page.
       manager1.shutdown();
 
-      // Fast forward past the inactivity timeout but within max duration.
+      // Fast forward past the default inactivity timeout but within max duration.
       clock.tick(60 * 60 * 1000);
 
       const manager2 = createManager({
         maxUserSessionDurationSeconds: 12 * 60 * 60,
-        inactivityTimeoutSeconds: 30 * 60,
       });
       manager2.startSessionPartInternal('init');
       const attrs2 = manager2.getUserSessionAttributes();
 
-      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      expect(attrs2?.['emb.user_session_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
     });
