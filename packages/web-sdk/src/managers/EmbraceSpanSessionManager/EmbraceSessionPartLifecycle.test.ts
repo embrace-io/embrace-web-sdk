@@ -1332,7 +1332,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   });
 
   describe('continuation inactivity handling', () => {
-    it('should clear the persisted inactivity deadline when a part continues an active user session', () => {
+    it('should refresh the persisted inactivity deadline when a part continues an active user session', () => {
       const localManager = new EmbraceSpanSessionManager({
         diag,
         perf,
@@ -1359,11 +1359,12 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
       clock.tick(1000);
 
-      // A continuing part (still within the inactivity window) must clear
-      // the deadline so a future part-start doesn't read a stale value.
+      // A continuing part overwrites the deadline anchored to its own
+      // start so storage stays current for the live part rather than
+      // holding the previous part's end-anchored value.
       localManager.startSessionPartInternal('init');
 
-      void expect(readDeadline()).to.be.null;
+      expect(readDeadline()).to.equal(1000 + 60 * 1000);
     });
   });
 

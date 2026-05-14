@@ -130,7 +130,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
-  private _lastActivityTs: number | null = null;
 
   public constructor({
     config,
@@ -346,7 +345,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._sessionPartSpan = span;
     this._coldStart = false;
 
-    this._lastActivityTs = this._perf.getNowMillis();
     this._startSessionPartInactivityTimer();
 
     this._fireListeners(this._sessionPartStartedListeners, 'started');
@@ -366,15 +364,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    this._fireListeners(this._sessionPartEndedListeners, 'ended');
-
-    // Inactivity ends the user session in one step (the part span end
-    // timestamp is anchored to the last activity, supplied as endTs).
     const isFinal = reason === 'user_session_ended' || reason === 'inactivity';
 
-    // The inactivity deadline is anchored to the part end, not to when
-    // the SpanProcessor.onEnd chain finishes; processors can run for an
-    // unbounded amount of time and must not push the deadline forward.
+    // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
+    // and must not push it forward.
     const partEndTs = endTs ?? this._perf.getNowMillis();
     const span = this._sessionPartSpan;
     try {
@@ -416,6 +409,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         error,
       );
     } finally {
+      // Fire listeners after end attributes are on the span so subscribers
+      // can read the end reason synchronously, and before span.end() so
+      // anything they emit (LoAF flush, route span close) still happens
+      // while the part is conceptually active.
+      this._fireListeners(this._sessionPartEndedListeners, 'ended');
       try {
         span.end(partEndTs);
       } catch (error) {
@@ -424,7 +422,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._sessionPartSpan = null;
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
-      this._lastActivityTs = null;
       this._limitManager.reset();
     }
 
@@ -789,7 +786,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         this.startSessionPartInternal('web_activity');
         return;
       }
-      this._lastActivityTs = this._perf.getNowMillis();
       this._startSessionPartInactivityTimer();
     } catch (e) {
       this._diag.warn('Error handling activity event', e);
@@ -850,7 +846,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         return;
       }
       if (engaged && active) {
-        this._lastActivityTs = this._perf.getNowMillis();
+        // Defensive: engagement events normally arrive on a transition, so
+        // an engaged+active pair shouldn't occur in steady state. Reachable
+        // when the browser fires a redundant focus/visibility event, or
+        // when a BFCache restore leaves the part flag set. Treat as the
+        // user resuming so the disengaged interval doesn't count toward
+        // inactivity.
         this._startSessionPartInactivityTimer();
       }
     } catch (e) {
@@ -874,16 +875,15 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   };
 
   /**
-   * Ends the active part stamped at the last activity timestamp and
-   * terminates the enclosing user session in one step (state clearing
-   * happens inside endSessionPartInternal's isFinal path). The next
+   * Ends the active part (stamped at now, the timer-fire moment) and
+   * terminates the enclosing user session in one step. State clearing
+   * happens inside endSessionPartInternal's isFinal path. The next
    * user input event lazily starts a fresh user session and part via
    * `_onActivity` -> `startSessionPartInternal('web_activity')`.
    */
   private _endUserSessionForInactivity(): void {
-    const endTs = this._lastActivityTs ?? this._perf.getNowMillis();
     try {
-      this.endSessionPartInternal('inactivity', 'inactivity', endTs);
+      this.endSessionPartInternal('inactivity', 'inactivity');
     } catch (e) {
       this._diag.error('Error finalizing part during inactivity end', e);
     }
