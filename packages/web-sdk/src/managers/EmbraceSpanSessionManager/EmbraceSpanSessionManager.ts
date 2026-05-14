@@ -97,23 +97,21 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   private readonly _maxUserSessionDurationSeconds: number;
   private readonly _inactivityTimeoutSeconds: number;
   private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
-  // In-memory mirror of the embrace_permanent_properties blob. Bare keys;
-  // the wire-format prefix is applied by the consumer at stamp time.
+  // Bare keys; the wire-format prefix is applied at stamp time.
   private _permanentProperties: Record<string, string> = {};
-  // Set to true the first time we successfully store the user-session
-  // state row, so _continueUserSessionAfterPartEnd can distinguish "another
-  // tab wiped storage after we wrote" (drop in-memory state) from "we never
-  // managed to write" (keep in-memory state).
+  // Distinguishes "another tab wiped storage after we wrote" from "we
+  // never managed to write in the first place"; see
+  // _continueUserSessionAfterPartEnd.
   private _hasStoredState = false;
 
   private _activeSessionPartId: string | null = null;
-  // Storage-backed monotonic counter snapshotted at part start so that a
-  // concurrent part start in another tab doesn't shift this part's value
-  // before its span ends.
+  // Snapshotted at part start so a concurrent bump in another tab doesn't
+  // shift this part's value before its span ends.
   private _currentSessionPartNumber: number | null = null;
   private _sessionPartSpan: ExtendedSpan | null = null;
   private _activeSessionPartCounts: Record<string, number> | null = null;
-  // Flipped off once the first part starts within this page lifetime.
+  // Marks the first part of the page lifetime so it can be reported as a
+  // cold start.
   private _coldStart = true;
   private _nextSessionPartCounts: Record<string, number> = {};
   private _sdkStartupDuration = 0;
@@ -207,13 +205,12 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       onPageHide: this._onPageHide,
     });
     // Eager state init so getUserSessionId() returns a real id before the
-    // first part starts. If on-disk state is still valid this is a no-op;
-    // if expired (browser closed past the inactivity deadline) we create
-    // a fresh session and store it so other tabs see it before the
-    // first part starts.
-    const { created } = this._loadOrCreateUserSessionState(
+    // first part starts, and so other tabs see the row when we create a
+    // fresh session here.
+    const { state, created } = this._loadOrCreateUserSessionState(
       this._perf.getNowMillis(),
     );
+    this._state = state;
     if (created) {
       this._storeState();
     }
@@ -281,8 +278,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    this._storage.setItem(EMBRACE_LAST_END_USER_SESSION_TS_KEY, String(now));
     this._rolloverUserSession('manual');
+    this._storage.setItem(EMBRACE_LAST_END_USER_SESSION_TS_KEY, String(now));
   }
 
   public getSessionPartId(): string | null {
@@ -353,7 +350,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   public endSessionPartInternal(
     reason: SessionPartEndReason,
     userSessionEndReason?: UserSessionEndReason | null,
-    endTs?: number,
   ): void {
     if (!this._sessionPartSpan) {
       this._diag.debug(
@@ -368,7 +364,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
     // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
     // and must not push it forward.
-    const partEndTs = endTs ?? this._perf.getNowMillis();
+    const partEndTs = this._perf.getNowMillis();
     const span = this._sessionPartSpan;
     try {
       const endAttrs: Attributes = {
@@ -403,16 +399,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
           error,
         );
       }
-    } catch (error) {
-      this._diag.warn(
-        'Error building session part end attributes; span will end without them',
-        error,
-      );
     } finally {
-      // Fire listeners after end attributes are on the span so subscribers
-      // can read the end reason synchronously, and before span.end() so
-      // anything they emit (LoAF flush, route span close) still happens
-      // while the part is conceptually active.
+      // Fire listeners after end attributes are stamped (so subscribers can
+      // read them) and before span.end() (so anything they emit still
+      // attaches to the part that is conceptually still active).
       this._fireListeners(this._sessionPartEndedListeners, 'ended');
       try {
         span.end(partEndTs);
@@ -422,6 +412,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._sessionPartSpan = null;
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
+      this._currentSessionPartNumber = null;
       this._limitManager.reset();
     }
 
@@ -431,11 +422,7 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
       this._clearMaxDurationTimer();
     } else {
-      try {
-        this._continueUserSessionAfterPartEnd(partEndTs);
-      } catch (error) {
-        this._diag.warn('Error continuing user session after part end', error);
-      }
+      this._continueUserSessionAfterPartEnd(partEndTs);
     }
   }
 
@@ -497,10 +484,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    // addProperty can be called before the first part starts (the SDK
-    // init flow eagerly initializes state, but bare manager usage and
-    // tests bypass that path). Ensure a state row exists so the write
-    // has somewhere to land.
+    // Ensure a state row exists so the write has somewhere to land;
+    // addProperty can fire before any part has started.
     const { state } = this._loadOrCreateUserSessionState(
       this._perf.getNowMillis(),
     );
@@ -512,9 +497,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       },
     };
     if (!this._storeState()) {
-      // Reject the property write: roll back to the session-without-the
-      // -property so callers don't observe a value that won't persist.
-      // The session itself stays in memory; only the property is dropped.
+      // Roll back so callers don't observe a value that won't persist.
+      // The user session itself stays in memory.
       this._state = state;
       this._diag.warn(
         'Storage unavailable; rejecting user-session property write.',
@@ -606,14 +590,10 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   }
 
   /**
-   * Loads persisted state into _state, rotating if the persisted row is
-   * missing or expired. After this call _state is guaranteed non-null
-   * and reflects a non-expired user session, so getUserSessionId()
-   * returns a real id even before the first part starts.
-   *
-   * Does not persist a freshly created state; the caller is responsible
-   * for writing when persistence matters (eager init writes; part start
-   * persists after its own state mutation).
+   * Returns the persisted user-session state, rotating to a fresh one if
+   * the persisted row is missing or expired. Arms the max-duration timer
+   * when needed. The caller is responsible for assigning the result to
+   * `_state` and for persisting (the helper does not write to storage).
    */
   private _loadOrCreateUserSessionState(now: number): {
     state: UserSessionState;
@@ -639,8 +619,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       });
       created = true;
     }
-    this._state = state;
-    this._setupMaxDurationTimer(state, now);
+    // Arm on a freshly created state, and on the page-reload case where a
+    // new manager loads existing state and has no timer running yet.
+    // userSessionMaxEndTs is fixed at creation, so re-arming the same value
+    // on every load/start call is wasteful.
+    if (created || this._maxDurationTimeout === null) {
+      this._setupMaxDurationTimer(state, now);
+    }
     return { state, created };
   }
 
@@ -671,8 +656,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   /**
    * Records the inactivity deadline on the user-session row so the next
-   * part start can detect lazy expiry. The max-duration timer armed at
-   * part start stays valid here, userSessionMaxEndTs doesn't change.
+   * part start can detect lazy expiry. The max-duration timer stays valid
+   * because userSessionMaxEndTs doesn't change between parts.
    */
   private _continueUserSessionAfterPartEnd(partEndTs: number): void {
     if (!this._state) {
@@ -680,15 +665,13 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       return;
     }
 
-    // Honor explicit clears: if the state row was in storage when the
-    // part started but is gone now (user wiped site data, quota
-    // eviction, sibling tab cleared), don't quietly resurrect it from
-    // our in-memory copy. Drop the in-memory state so the next part
-    // start creates a fresh user session, while still carrying the
-    // just-ended id forward so the next session's spans/logs can
-    // back-link via emb.user_session_previous_id. _hasStoredState
-    // gates this: when we never managed to persist in the first place,
-    // the in-memory copy stays authoritative.
+    // If the state row was present at part start but is gone now (user
+    // wiped site data, quota eviction, sibling tab cleared), don't
+    // resurrect it from memory. Drop in-memory state so the next part
+    // start creates a fresh user session; carry the just-ended id
+    // forward so the next session can back-link to it.
+    // _hasStoredState gates this: if we never persisted in the first
+    // place, the in-memory copy stays authoritative.
     if (
       this._hasStoredState &&
       this._storage.getItem(EMBRACE_USER_SESSION_STATE_KEY) === null
@@ -709,27 +692,25 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
 
   /**
    * Ends the active part as final and starts a fresh part for the next
-   * user session. State clearing is handled by endSessionPartInternal's
-   * isFinal path. Used by manual endUserSession and max-duration expiry.
-   *
-   * When no part is active (tab disengaged), this is intentionally a
-   * partial no-op: nothing visible is in flight, and the next part start
-   * lazily creates a fresh user session via the inactivity/expiry path.
+   * user session. State clearing for the engaged path is handled by
+   * endSessionPartInternal's isFinal branch. When no part is active
+   * (tab disengaged), the same state-clearing is performed inline so
+   * the next engagement creates a fresh user session rather than
+   * resuming the just-ended one.
    */
   private _rolloverUserSession(
     userSessionEndReason: UserSessionEndReason,
   ): void {
-    try {
+    if (this._sessionPartSpan) {
       this.endSessionPartInternal('user_session_ended', userSessionEndReason);
-    } catch (e) {
-      this._diag.error('Error finalizing part during user session end', e);
+      this.startSessionPartInternal('user_session_rollover');
+      return;
     }
 
-    try {
-      this.startSessionPartInternal('user_session_rollover');
-    } catch (e) {
-      this._diag.error('Error starting part during user session end', e);
-    }
+    this._previousUserSessionId = this._state?.userSessionId ?? null;
+    this._state = null;
+    this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
+    this._clearMaxDurationTimer();
   }
 
   private _setupMaxDurationTimer(state: UserSessionState, now: number): void {
@@ -810,11 +791,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     this._handleEngagementTransition('blur');
   };
 
-  // Initial page load OR BFCache restore. event.persisted distinguishes the
-  // two: false = fresh load (init already started the part, transition is a
-  // no-op), true = BFCache restore (the prior pagehide ended the part, this
-  // resumes engagement). Both flow through the same transition because the
-  // outcome is keyed on whether a part is currently active.
+  // Initial page load OR BFCache restore. event.persisted only affects the
+  // debug source string; routing is via _handleEngagementTransition, which
+  // keys off engagement state and whether a part is currently active.
   private readonly _onPageShow = (event: PageTransitionEvent): void => {
     this._handleEngagementTransition(
       event.persisted ? 'pageshow-bfcache' : 'pageshow-initial',
@@ -822,9 +801,8 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
   };
 
   // Navigation away (hard nav, tab close) OR BFCache freeze. event.persisted
-  // distinguishes the two: false = real unload, true = entering BFCache. Both
-  // disengage the page; the part ends with web_background either way so OTel
-  // can flush its span before the page goes away or gets frozen.
+  // only affects the debug source string; both disengage the tab, so the
+  // disengage branch of _handleEngagementTransition ends the active part.
   private readonly _onPageHide = (event: PageTransitionEvent): void => {
     this._handleEngagementTransition(
       event.persisted ? 'pagehide-bfcache' : 'pagehide-unload',
@@ -846,12 +824,9 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
         return;
       }
       if (engaged && active) {
-        // Defensive: engagement events normally arrive on a transition, so
-        // an engaged+active pair shouldn't occur in steady state. Reachable
-        // when the browser fires a redundant focus/visibility event, or
-        // when a BFCache restore leaves the part flag set. Treat as the
-        // user resuming so the disengaged interval doesn't count toward
-        // inactivity.
+        // Redundant engagement event while a part is already active (browser
+        // quirk: an extra focus/visibility fire that isn't a real transition).
+        // Re-arm the inactivity timer since the event still implies presence.
         this._startSessionPartInactivityTimer();
       }
     } catch (e) {
@@ -868,26 +843,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
       this._diag.debug(
         'inactivity timer fired; ending current part and user session',
       );
-      this._endUserSessionForInactivity();
+      this.endSessionPartInternal('inactivity', 'inactivity');
     } catch (e) {
       this._diag.warn('Error handling inactivity timer', e);
     }
   };
-
-  /**
-   * Ends the active part (stamped at now, the timer-fire moment) and
-   * terminates the enclosing user session in one step. State clearing
-   * happens inside endSessionPartInternal's isFinal path. The next
-   * user input event lazily starts a fresh user session and part via
-   * `_onActivity` -> `startSessionPartInternal('web_activity')`.
-   */
-  private _endUserSessionForInactivity(): void {
-    try {
-      this.endSessionPartInternal('inactivity', 'inactivity');
-    } catch (e) {
-      this._diag.error('Error finalizing part during inactivity end', e);
-    }
-  }
 
   private _startSessionPartInactivityTimer(): void {
     this._clearSessionPartInactivityTimer();
@@ -930,12 +890,6 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     }
   }
 
-  /**
-   * Best-effort store of the current in-memory state. _state is the
-   * local source of truth; callers mutate it first and ignore the
-   * outcome. The return value is only consulted by tests that observe
-   * sticky-disabled storage.
-   */
   private _storeState(): boolean {
     if (!this._state) {
       return false;

@@ -321,27 +321,24 @@ describe('EmbraceSpanSessionManager', () => {
 
   it('should fire the max duration timer even after the part ends', () => {
     // The user-session max-duration timer must fire even while no part is
-    // active. Part-end re-arms the timer against the same
-    // userSessionMaxEndTs so a session that hits max duration mid-idle
-    // still attempts rollover; the actual user-session teardown happens
-    // lazily on the next part start via the expiry path.
+    // active. When the rollover runs with no active part, state is cleared
+    // directly so the next part start lazily creates a fresh user session.
     const manager = createManager({ maxUserSessionDurationSeconds: 3600 });
 
     manager.startSessionPartInternal('init');
-    // web_background keeps the user session alive after part end;
-    // inactivity would terminate the user session in one step.
-    manager.endSessionPartInternal('web_background');
+    const firstSessionId = manager.getUserSessionId();
+    expect(firstSessionId).to.not.be.null;
 
-    // Spy AFTER the legitimate end so we observe only timer-driven calls.
-    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+    manager.endSessionPartInternal('web_background');
 
     clock.tick(3601 * 1000);
 
-    expect(endSpy.callCount).to.be.at.least(1);
-    expect(lastEndCall(endSpy)).to.deep.equal([
-      'user_session_ended',
-      'max_duration_reached',
-    ]);
+    // After the timer fires with no active part, state is cleared and the
+    // user-session id resets. The next part start rolls a fresh session.
+    expect(manager.getUserSessionId()).to.be.null;
+
+    manager.startSessionPartInternal('web_foreground');
+    expect(manager.getUserSessionId()).to.not.equal(firstSessionId);
   });
 
   it('should persist session state to storage', () => {

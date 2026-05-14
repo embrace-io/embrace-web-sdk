@@ -106,14 +106,11 @@ export interface SpanSessionManagerInternal extends SpanSessionManager {
    * Ends the active part. `reason` is the part-end reason.
    * `userSessionEndReason` is only meaningful when the reason ends the
    * user session (`user_session_ended` or `inactivity`); the implementation
-   * ignores it otherwise. `endTs` overrides the default "now" wall-clock
-   * for the part span's end timestamp; used to anchor an inactivity-driven
-   * end at the last activity time rather than the timer-fire time.
+   * ignores it otherwise.
    */
   endSessionPartInternal: (
     reason: SessionPartEndReason,
     userSessionEndReason?: UserSessionEndReason,
-    endTs?: number,
   ) => void;
 
   incrSessionPartCountForKey: (key: string) => void;
