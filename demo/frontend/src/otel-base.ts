@@ -32,8 +32,9 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
     ...(instrumentations ? { instrumentations } : {}),
     embraceDataURL: DATA_URL ?? undefined,
     embraceConfigURL: CONFIG_URL ?? undefined,
-    maxUserSessionDurationSeconds: 10,
-    inactivityTimeoutSeconds: 5,
+    inactivityTimeoutSeconds: 45,
+    // default is 1 hour
+    // maxUserSessionDurationSeconds: 1 * 60 * 60,
   });
 
   if (result) {
