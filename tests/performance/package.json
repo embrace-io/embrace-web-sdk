@@ -3,14 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "pretest": "npm run build --prefix ../.. && npm install && npx playwright install",
     "test": "npx playwright test"
   },
   "dependencies": {
-    "@embrace-io/web-cli": "*",
-    "@embrace-io/web-sdk": "*"
+    "@embrace-io/web-cli": "file:../../packages/web-cli",
+    "@embrace-io/web-sdk": "file:../../packages/web-sdk"
   },
   "devDependencies": {
+    "@playwright/test": "1.59.1",
     "get-port": "7.2.0",
     "lighthouse": "13.3.0"
+  },
+  "overrides": {
+    "@sentry/node": "file:./stubs/node"
   }
 }
