@@ -24,6 +24,10 @@ import {
   EmbraceTraceExporter,
 } from '../exporters/index.ts';
 import {
+  DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+  DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
+} from '../managers/EmbraceUserSessionManager/index.ts';
+import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
   EmbraceLimitManager,
@@ -101,8 +105,8 @@ export const initSDK = (
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
     useDocumentTitleAsPageLabel = true,
-    maxUserSessionDurationSeconds = 43200,
-    inactivityTimeoutSeconds = 1800,
+    maxUserSessionDurationSeconds = DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
+    inactivityTimeoutSeconds = DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
