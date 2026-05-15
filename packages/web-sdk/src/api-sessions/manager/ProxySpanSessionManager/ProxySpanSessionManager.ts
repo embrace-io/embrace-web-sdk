@@ -6,6 +6,7 @@ import type {
 } from '../../../managers/EmbraceSpanSessionManager/types.ts';
 import type {
   PropertyOptions,
+  ReasonSessionEnded,
   SessionPartEndReason,
   SessionPartStartReason,
   StartSessionOptions,
@@ -47,8 +48,8 @@ export class ProxySpanSessionManager implements SpanSessionManagerInternal {
   }
 
   /** @deprecated Will be removed in a future major version, always returns null. */
-  public currentSessionAsReadableSpan(): null {
-    return null;
+  public currentSessionAsReadableSpan(reason: ReasonSessionEnded): null {
+    return this.getDelegate().currentSessionAsReadableSpan(reason);
   }
 
   /** @deprecated Will be removed in a future version, use getUserSessionId(); returns null when no user session is active. */
