@@ -52,6 +52,13 @@ type AttributedPage = {
 
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
 
+const isPrimitiveValue = (
+  value: unknown,
+): value is string | number | boolean => {
+  const type = typeof value;
+  return type === 'number' || type === 'string' || type === 'boolean';
+};
+
 const loafScriptsAttribution = (
   metric: MetricWithAttribution,
   diag: DiagLogger,
@@ -349,9 +356,16 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ? ttfbSubPartsAttribution(metric, this._diag)
           : {}),
       },
-      body: this._includeRawAttribution
-        ? JSON.stringify(metric.attribution)
-        : undefined,
+      body:
+        this._includeRawAttribution && metric.attribution != null
+          ? JSON.stringify(
+              Object.fromEntries(
+                Object.entries(metric.attribution).filter(([, v]) =>
+                  isPrimitiveValue(v),
+                ),
+              ),
+            )
+          : undefined,
       timestamp: millisToHrTime(this._getTimeForMetric(metric)),
     };
 

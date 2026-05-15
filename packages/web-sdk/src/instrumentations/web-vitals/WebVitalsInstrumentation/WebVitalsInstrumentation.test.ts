@@ -1867,7 +1867,7 @@ describe('WebVitalsInstrumentation', () => {
       'browser.web_vital.rating': 'good',
       'browser.web_vital.value': 0,
     });
-    expect(record.body).to.equal('null');
+    expect(record.body).to.be.undefined;
   });
 
   it('should include boolean attribution values in body', () => {
