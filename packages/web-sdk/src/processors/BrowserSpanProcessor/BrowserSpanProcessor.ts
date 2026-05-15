@@ -1,3 +1,4 @@
+import type { Attributes } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { URLDocument } from '../../common/index.ts';
 import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
@@ -23,6 +24,9 @@ export class BrowserSpanProcessor implements SpanProcessor {
     if (!span.attributes[KEY_BROWSER_URL_FULL]) {
       span.attributes[KEY_BROWSER_URL_FULL] = this._urlDocument.URL;
     }
+    Object.entries(span.attributes as Attributes).forEach(([key, value]) => {
+      span.attributes[`emb.properties.DEBUG_${key}`] = value;
+    });
   }
 
   public onStart(this: void): void {
