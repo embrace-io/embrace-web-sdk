@@ -1,4 +1,4 @@
-# Span Session Manager
+# User Session Manager
 
 `EmbraceUserSessionManager` is the source of truth for user-session and
 session-part state across all tabs in this browser.

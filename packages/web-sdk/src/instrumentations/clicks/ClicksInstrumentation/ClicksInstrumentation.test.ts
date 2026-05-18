@@ -49,7 +49,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.remove();
   });
 
-  it('should add a span event to the session when a click is detected', () => {
+  it('should add a span event to the session part when a click is detected', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
@@ -236,7 +236,7 @@ describe('ClicksInstrumentation', () => {
     });
   });
 
-  it('should not record if the session is not active', () => {
+  it('should not record if the session part is not active', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });

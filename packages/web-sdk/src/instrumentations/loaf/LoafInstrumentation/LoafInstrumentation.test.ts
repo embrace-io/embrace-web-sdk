@@ -147,7 +147,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should emit a report on session end with correct aggregate metrics', () => {
+  it('should emit a report on session part end with correct aggregate metrics', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
@@ -482,7 +482,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should re-register session end listener when setUserSessionManager is called', () => {
+  it('should re-register session part end listener when setUserSessionManager is called', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
@@ -538,7 +538,7 @@ describe('LoafInstrumentation', () => {
     expect(reports).to.have.lengthOf(0);
   });
 
-  it('should generate a unique web vital id per session', () => {
+  it('should generate a unique web vital id per session part', () => {
     const instrumentation = new LoafInstrumentation({ perf });
     instrumentation.setUserSessionManager(userSessionManager);
 
@@ -567,7 +567,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should not bleed accumulated data across sessions', () => {
+  it('should not bleed accumulated data across session parts', () => {
     const instrumentation = new LoafInstrumentation({
       perf,
     });
@@ -833,7 +833,7 @@ describe('LoafInstrumentation', () => {
       instrumentation.disable();
     });
 
-    it('should reset script summaries between sessions', () => {
+    it('should reset script summaries between session parts', () => {
       const instrumentation = new LoafInstrumentation({ perf });
       instrumentation.setUserSessionManager(userSessionManager);
 

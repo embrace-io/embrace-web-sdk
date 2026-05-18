@@ -44,7 +44,7 @@ describe('EmptyInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should add a span event to the session when the root node becomes empty', async () => {
+  it('should add a span event to the session part when the root node becomes empty', async () => {
     const rootNode = document.createElement('div');
     const child1 = document.createElement('div');
     const child2 = document.createElement('div');

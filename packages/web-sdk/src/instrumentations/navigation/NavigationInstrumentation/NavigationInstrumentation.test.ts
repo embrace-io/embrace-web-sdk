@@ -253,7 +253,7 @@ describe('NavigationInstrumentation', () => {
     ]);
   });
 
-  it('should start the route span when the session starts if it was previously ended', () => {
+  it('should start the route span when the session part starts if it was previously ended', () => {
     userSessionManager.startSessionPartInternal('init');
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });

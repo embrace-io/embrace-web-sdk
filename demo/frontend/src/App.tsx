@@ -658,7 +658,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Config</legend>
+        <legend>User Session Config</legend>
         <dl className="info-list info-list-horizontal">
           <InfoItem
             label="Max Duration"
@@ -682,7 +682,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Control</legend>
+        <legend>User Session Control</legend>
         <div className="actions">
           <button
             type="button"
@@ -750,7 +750,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Properties</legend>
+        <legend>User Session Properties</legend>
         <div className="actions">
           <button
             type="button"
