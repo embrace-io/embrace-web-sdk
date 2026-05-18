@@ -111,6 +111,7 @@ test.describe('Lighthouse Performance Tests', () => {
         output: ['json', 'html'],
         onlyCategories: ['performance'],
         pauseAfterLoadMs: 5000,
+        enableErrorReporting: false,
       });
 
       test.expect(result).toBeDefined();
