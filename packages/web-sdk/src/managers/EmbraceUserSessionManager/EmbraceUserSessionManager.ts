@@ -453,7 +453,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     value: string,
     options?: PropertyOptions,
   ): void {
-    const limitedSessionProperty = this._limitManager.limitSessionProperty(
+    const limitedSessionProperty = this._limitManager.limitUserSessionProperty(
       propertyKey,
       value,
     );

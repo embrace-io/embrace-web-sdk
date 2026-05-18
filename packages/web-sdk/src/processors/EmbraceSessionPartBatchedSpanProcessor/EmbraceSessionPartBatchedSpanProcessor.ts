@@ -17,7 +17,7 @@ import type {
   LimitManagerInternal,
   UserSessionManagerInternal,
 } from '../../managers/index.ts';
-import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
+import type { EmbraceSessionPartBatchedSpanProcessorArgs } from './types.ts';
 
 const isSessionPartSpan = (
   span: ReadableSpan | SessionPartSpan,
@@ -32,7 +32,7 @@ const exportFailureAttributeKey = (
 ) =>
   `emb.${session === 'current' ? 'export_failed' : 'previous_export_failed'}.${reason}`;
 
-export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
+export class EmbraceSessionPartBatchedSpanProcessor implements SpanProcessor {
   private readonly _shutdownOnce: BindOnceFuture<void>;
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
@@ -45,9 +45,9 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     limitManager,
     userSessionManager,
     diag: diagParam = diag.createComponentLogger({
-      namespace: 'EmbraceSessionBatchedSpanProcessor',
+      namespace: 'EmbraceSessionPartBatchedSpanProcessor',
     }),
-  }: EmbraceSessionBatchedSpanProcessorArgs) {
+  }: EmbraceSessionPartBatchedSpanProcessorArgs) {
     this._diag = diagParam;
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
@@ -57,7 +57,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
 
   public forceFlush(): Promise<void> {
     this._diag.debug(
-      'forceFlush called for EmbraceSessionBatchedSpanProcessor. This is a no op',
+      'forceFlush called for EmbraceSessionPartBatchedSpanProcessor. This is a no op',
     );
     return Promise.resolve(undefined);
   }
@@ -70,7 +70,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
 
     if (!isSessionPartSpan(span)) {
       this._diag.debug(
-        'non-session span ended. Adding to pending spans queue.',
+        'non-session-part span ended. Adding to pending spans queue.',
       );
       if (this._limitManager.dropReadableSpan(span)) {
         return;

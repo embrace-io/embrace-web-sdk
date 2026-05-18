@@ -5,7 +5,7 @@ import type {
   UserSessionManagerInternal,
 } from '../../managers/index.ts';
 
-export type EmbraceSessionBatchedSpanProcessorArgs = {
+export type EmbraceSessionPartBatchedSpanProcessorArgs = {
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
   userSessionManager: UserSessionManagerInternal;

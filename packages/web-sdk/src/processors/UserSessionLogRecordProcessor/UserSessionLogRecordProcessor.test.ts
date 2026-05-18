@@ -6,7 +6,7 @@ import { setupTestLogExporter } from '../../../tests/utils/index.ts';
 import { NoOpUserSessionManager } from '../../api-sessions/manager/NoOpUserSessionManager/index.ts';
 import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 import type { UserSessionAttributes } from '../../managers/EmbraceUserSessionManager/types.ts';
-import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
+import { UserSessionLogRecordProcessor } from './UserSessionLogRecordProcessor.ts';
 
 const { expect } = chai;
 
@@ -42,13 +42,13 @@ const createMockUserSessionManager = (
 
 const setup = (manager: UserSessionManagerInternal) => {
   const memoryExporter = setupTestLogExporter([
-    new IdentifiableSessionLogRecordProcessor({ userSessionManager: manager }),
+    new UserSessionLogRecordProcessor({ userSessionManager: manager }),
   ]);
   const logger = logs.getLogger('test-logger');
   return { memoryExporter, logger };
 };
 
-describe('IdentifiableSessionLogRecordProcessor', () => {
+describe('UserSessionLogRecordProcessor', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let logger: Logger;
 

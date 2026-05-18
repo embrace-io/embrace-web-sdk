@@ -39,13 +39,13 @@ import {
   BrowserSpanProcessor,
   EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
-  EmbraceSessionBatchedSpanProcessor,
-  IdentifiableSessionLogRecordProcessor,
+  EmbraceSessionPartBatchedSpanProcessor,
   LogRecordScrubProcessor,
   PageLogRecordProcessor,
   PageSpanProcessor,
   SpanScrubProcessor,
   UserLogRecordProcessor,
+  UserSessionLogRecordProcessor,
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
@@ -231,10 +231,12 @@ export const initSDK = (
       },
     });
 
-    let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
+    let embraceSpanProcessor:
+      | EmbraceSessionPartBatchedSpanProcessor
+      | undefined;
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
     if (sendingToEmbrace) {
-      embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
+      embraceSpanProcessor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new EmbraceTraceExporter({
           appID: validatedAppID,
           embraceDataURL,
@@ -469,7 +471,7 @@ const setupLogs = ({
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor({
+    new UserSessionLogRecordProcessor({
       userSessionManager,
     }),
     new BrowserLogRecordProcessor(),

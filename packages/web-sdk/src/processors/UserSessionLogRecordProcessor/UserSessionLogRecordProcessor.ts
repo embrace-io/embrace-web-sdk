@@ -11,16 +11,14 @@ import {
 } from '../../constants/index.ts';
 import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 import { generateUUID } from '../../utils/index.ts';
-import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
+import type { UserSessionLogRecordProcessorArgs } from './types.ts';
 
-export class IdentifiableSessionLogRecordProcessor
-  implements LogRecordProcessor
-{
+export class UserSessionLogRecordProcessor implements LogRecordProcessor {
   private readonly _userSessionManager: UserSessionManagerInternal;
 
   public constructor({
     userSessionManager,
-  }: IdentifiableSessionLogRecordProcessorArgs) {
+  }: UserSessionLogRecordProcessorArgs) {
     this._userSessionManager = userSessionManager;
   }
 

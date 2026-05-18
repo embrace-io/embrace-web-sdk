@@ -1,5 +1,5 @@
 import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 
-export interface IdentifiableSessionLogRecordProcessorArgs {
+export interface UserSessionLogRecordProcessorArgs {
   userSessionManager: UserSessionManagerInternal;
 }

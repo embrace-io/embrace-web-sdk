@@ -340,11 +340,11 @@ preserves the JS heap.
 ### Stamped on every other span
 
 Nothing. Non-part spans are correlated server-side via the batched envelope
-emitted by `EmbraceSessionBatchedSpanProcessor`, not by per-span ID stamping.
+emitted by `EmbraceSessionPartBatchedSpanProcessor`, not by per-span ID stamping.
 
 ### Stamped on log records
 
-`IdentifiableSessionLogRecordProcessor` writes the same set as spans, plus
+`UserSessionLogRecordProcessor` writes the same set as spans, plus
 `log.record.uid` (a fresh UUID per record).
 
 ## Known gaps
@@ -365,7 +365,7 @@ Why it happens:
    (parts are foreground-only by design).
 3. Until the next engagement event fires (`pageshow`/`focus`/
    `visibilitychange`), `_activeSessionPartId === null`. Logs that pass
-   through `IdentifiableSessionLogRecordProcessor` in that window end up
+   through `UserSessionLogRecordProcessor` in that window end up
    with `emb.session_part_id: ''`. Spans are not affected; only the
    session-part span itself carries IDs, and other spans are correlated
    server-side via the batched envelope.

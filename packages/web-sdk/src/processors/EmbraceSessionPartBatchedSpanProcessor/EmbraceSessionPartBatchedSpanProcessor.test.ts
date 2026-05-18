@@ -22,7 +22,7 @@ import {
   EmbraceUserSessionManager,
 } from '../../managers/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
-import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
+import { EmbraceSessionPartBatchedSpanProcessor } from './EmbraceSessionPartBatchedSpanProcessor.ts';
 
 const { expect } = chai;
 
@@ -45,9 +45,9 @@ class FailingSpanExporter extends InMemorySpanExporter {
   }
 }
 
-describe('EmbraceSessionBatchedSpanProcessor', () => {
+describe('EmbraceSessionPartBatchedSpanProcessor', () => {
   let memoryExporter: InMemorySpanExporter;
-  let processor: EmbraceSessionBatchedSpanProcessor;
+  let processor: EmbraceSessionPartBatchedSpanProcessor;
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
@@ -75,7 +75,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       visibilityDoc: window.document,
     });
 
-    processor = new EmbraceSessionBatchedSpanProcessor({
+    processor = new EmbraceSessionPartBatchedSpanProcessor({
       exporter: memoryExporter,
       limitManager,
       userSessionManager,
@@ -88,7 +88,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     trace.disable();
   });
 
-  it('should not export non-session spans immediately', () => {
+  it('should not export non-session-part spans immediately', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
@@ -104,7 +104,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     );
   });
 
-  it('should batch non-session spans with session span', () => {
+  it('should batch non-session-part spans with session-part span', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     processor.onEnd(mockSessionSpan);
@@ -163,7 +163,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     it(test.name, async () => {
       userSessionManager.startSessionPartInternal('init');
       const diagLogger = new InMemoryDiagLogger();
-      processor = new EmbraceSessionBatchedSpanProcessor({
+      processor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
           test.errorMessage ? new Error(test.errorMessage) : undefined,
         ),
