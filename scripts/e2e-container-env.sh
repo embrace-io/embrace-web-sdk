@@ -3,7 +3,7 @@
 #
 #   source "$(dirname "${BASH_SOURCE[0]}")/e2e-container-env.sh"
 
-PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright:v1.59.1-noble@sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53"
+PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948"
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVE_CONTAINER="embrace-integration-servers"
 IMAGE_TAG="embrace-web-sdk-integration"
