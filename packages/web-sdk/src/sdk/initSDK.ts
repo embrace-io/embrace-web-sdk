@@ -67,9 +67,9 @@ import type {
   SDKInitConfig,
   SetupLogsArgs,
   SetupPageArgs,
-  SetupSessionArgs,
   SetupTracesArgs,
   SetupUserArgs,
+  SetupUserSessionArgs,
 } from './types.ts';
 import { validateAppID, validateAppVersion } from './utils.ts';
 
@@ -156,7 +156,7 @@ export const initSDK = (
       storage: window.localStorage,
       diag: diagLogger,
     });
-    const sdkSessionStorage = new NamespacedStorage({
+    const sdkTabStorage = new NamespacedStorage({
       namespace,
       storage: window.sessionStorage,
       diag: diagLogger,
@@ -168,7 +168,7 @@ export const initSDK = (
         getWebSDKResource({
           diagLogger,
           appVersion: validatedAppVersion,
-          pageSessionStorage: sdkSessionStorage,
+          tabStorage: sdkTabStorage,
         }),
       );
 
@@ -219,7 +219,7 @@ export const initSDK = (
       ...attributeScrubbers,
     ];
 
-    const userSessionManager = setupSession({
+    const userSessionManager = setupUserSession({
       limitManager,
       perf,
       registerGlobally,
@@ -370,14 +370,14 @@ const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
   return embraceUserManager;
 };
 
-const setupSession = ({
+const setupUserSession = ({
   limitManager,
   perf,
   registerGlobally,
   sdkLocalStorage,
   visibilityDoc,
   userSessionConfig,
-}: SetupSessionArgs) => {
+}: SetupUserSessionArgs) => {
   const embraceUserSessionManager = new EmbraceUserSessionManager({
     limitManager,
     perf,

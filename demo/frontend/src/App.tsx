@@ -156,7 +156,7 @@ const App = () => {
   const [inactivityTimeoutSeconds, setInactivityTimeoutSeconds] = useState<
     number | null
   >(null);
-  const [sessionDurationMs, setSessionDurationMs] = useState<number>(0);
+  const [userSessionDurationMs, setUserSessionDurationMs] = useState<number>(0);
   const [partStartTs, setPartStartTs] = useState<number | null>(null);
   const [partDurationMs, setPartDurationMs] = useState<number>(0);
   const [partStartReason, setPartStartReason] = useState<string | null>(null);
@@ -298,10 +298,11 @@ const App = () => {
 
   useEffect(() => {
     if (userSessionStartTs === null) {
-      setSessionDurationMs(0);
+      setUserSessionDurationMs(0);
       return;
     }
-    const tick = () => setSessionDurationMs(Date.now() - userSessionStartTs);
+    const tick = () =>
+      setUserSessionDurationMs(Date.now() - userSessionStartTs);
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -576,7 +577,7 @@ const App = () => {
               <td>
                 {userSessionStartTs === null
                   ? '—'
-                  : formatDuration(sessionDurationMs)}
+                  : formatDuration(userSessionDurationMs)}
               </td>
             </tr>
           </tbody>

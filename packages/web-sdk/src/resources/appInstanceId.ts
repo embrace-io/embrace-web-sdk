@@ -4,12 +4,10 @@ import { generateUUID } from '../utils/index.ts';
 import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.ts';
 
 export const getAppInstanceId = (
-  pageSessionStorage: NamespacedStorage,
+  tabStorage: NamespacedStorage,
   diag: DiagLogger,
 ): string => {
-  const existing = pageSessionStorage.getItem(
-    EMBRACE_APP_INSTANCE_ID_STORAGE_KEY,
-  );
+  const existing = tabStorage.getItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY);
   if (existing) {
     return existing;
   }
@@ -17,6 +15,6 @@ export const getAppInstanceId = (
     'No existing app instance ID found in session storage, creating a new one',
   );
   const id = generateUUID();
-  pageSessionStorage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, id);
+  tabStorage.setItem(EMBRACE_APP_INSTANCE_ID_STORAGE_KEY, id);
   return id;
 };

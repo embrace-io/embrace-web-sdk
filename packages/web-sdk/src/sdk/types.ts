@@ -313,7 +313,7 @@ export interface SetupUserArgs {
   sdkLocalStorage: NamespacedStorage;
 }
 
-export interface SetupSessionArgs {
+export interface SetupUserSessionArgs {
   limitManager: LimitManagerInternal;
   perf: PerformanceManager;
   registerGlobally?: boolean;

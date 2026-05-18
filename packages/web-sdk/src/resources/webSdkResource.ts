@@ -33,7 +33,7 @@ export const getWebSDKOverridableResource = (): Resource => {
 export const getWebSDKResource = ({
   diagLogger,
   appVersion,
-  pageSessionStorage,
+  tabStorage,
 }: GetWebSDKResourceArgs): Resource => {
   return resourceFromAttributes({
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
@@ -48,7 +48,7 @@ export const getWebSDKResource = ({
     sdk_simple_version: 1,
     sdk_platform: 'web',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: 'webjs',
-    [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(pageSessionStorage, diagLogger),
+    [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(tabStorage, diagLogger),
     [ATTR_USER_AGENT_ORIGINAL]: window.navigator.userAgent,
     screen_resolution: `${window.screen.width}x${window.screen.height}`,
   });
