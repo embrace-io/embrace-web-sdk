@@ -22,8 +22,8 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _currentRouteSpan: Span | null = null;
   private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS =
     EMB_NAVIGATION_INSTRUMENTATIONS.Manual;
-  private _removeSessionStartedFn: (() => void) | null = null;
-  private _removeSessionEndedFn: (() => void) | null = null;
+  private _removeSessionPartStartedFn: (() => void) | null = null;
+  private _removeSessionPartEndedFn: (() => void) | null = null;
 
   public constructor({
     diag,
@@ -65,10 +65,10 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
-  private readonly _setupSessionListeners = () => {
-    if (!this._removeSessionStartedFn) {
-      this._removeSessionStartedFn =
-        this.sessionManager.addSessionPartStartedListener(() => {
+  private readonly _setupSessionPartListeners = () => {
+    if (!this._removeSessionPartStartedFn) {
+      this._removeSessionPartStartedFn =
+        this.userSessionManager.addSessionPartStartedListener(() => {
           const currentRoute = page.getCurrentRoute();
 
           if (currentRoute && !this._currentRouteSpan) {
@@ -79,9 +79,9 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
         });
     }
 
-    if (!this._removeSessionEndedFn) {
-      this._removeSessionEndedFn =
-        this.sessionManager.addSessionPartEndedListener(() => {
+    if (!this._removeSessionPartEndedFn) {
+      this._removeSessionPartEndedFn =
+        this.userSessionManager.addSessionPartEndedListener(() => {
           if (this._currentRouteSpan) {
             this._diag.debug('Session ended, ending route span.');
 
@@ -91,21 +91,21 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
-  private readonly _cleanUpSessionListeners = () => {
-    if (this._removeSessionStartedFn) {
-      this._removeSessionStartedFn();
-      this._removeSessionStartedFn = null;
+  private readonly _cleanUpSessionPartListeners = () => {
+    if (this._removeSessionPartStartedFn) {
+      this._removeSessionPartStartedFn();
+      this._removeSessionPartStartedFn = null;
     }
 
-    if (this._removeSessionEndedFn) {
-      this._removeSessionEndedFn();
-      this._removeSessionEndedFn = null;
+    if (this._removeSessionPartEndedFn) {
+      this._removeSessionPartEndedFn();
+      this._removeSessionPartEndedFn = null;
     }
   };
 
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
-    this._setupSessionListeners();
+    this._setupSessionPartListeners();
 
     const pathName = this._shouldCleanupPathOptionsFromRouteName
       ? route.path.replace(PATH_OPTIONS_RE, '')
@@ -147,7 +147,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   public disable = () => {
-    this._cleanUpSessionListeners();
+    this._cleanUpSessionPartListeners();
     this.setConfig({
       enabled: false,
     });

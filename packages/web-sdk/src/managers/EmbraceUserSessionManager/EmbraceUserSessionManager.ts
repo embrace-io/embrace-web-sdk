@@ -70,9 +70,9 @@ import {
   SESSION_PART_SPAN_NAME,
 } from './constants.ts';
 import type {
-  EmbraceSpanSessionManagerArgs,
-  SpanSessionManagerInternal,
+  EmbraceUserSessionManagerArgs,
   UserSessionAttributes,
+  UserSessionManagerInternal,
   UserSessionState,
 } from './types.ts';
 import {
@@ -91,7 +91,7 @@ import {
  * be active at a time. That mutex lets us treat storage as a
  * plain shared row read on engagement and written on changes.
  */
-export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
+export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _state: UserSessionState | null = null;
   private _previousUserSessionId: string | null = null;
   private readonly _maxUserSessionDurationSeconds: number;
@@ -139,11 +139,11 @@ export class EmbraceSpanSessionManager implements SpanSessionManagerInternal {
     target = window,
     activityThrottleMs = DEFAULT_ACTIVITY_THROTTLE_MS,
     activityEvents = DEFAULT_ACTIVITY_EVENTS,
-  }: EmbraceSpanSessionManagerArgs) {
+  }: EmbraceUserSessionManagerArgs) {
     this._diag =
       diagParam ??
       diag.createComponentLogger({
-        namespace: 'EmbraceSpanSessionManager',
+        namespace: 'EmbraceUserSessionManager',
       });
     this._perf = perf;
     this._visibilityDoc = visibilityDoc;

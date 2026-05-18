@@ -16,12 +16,12 @@ import {
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
 import { session } from '../../../../../api-sessions/index.ts';
-import type { SpanSessionManagerInternal } from '../../../../../managers/index.ts';
+import type { UserSessionManagerInternal } from '../../../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
 import { OTelPerformanceManager } from '../../../../../utils/index.ts';
@@ -70,17 +70,17 @@ const renderReactApp = () => {
 describe('ReactRouterV5Legacy', () => {
   let pageManager: EmbracePageManager;
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManagerInternal;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
 
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalUserSessionManager(userSessionManager);
 
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
@@ -93,7 +93,7 @@ describe('ReactRouterV5Legacy', () => {
   });
 
   it('create route spans', async () => {
-    spanSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal('init');
 
     expect(pageManager.getCurrentPageId()).to.be.null;
     expect(pageManager.getCurrentRoute()).to.be.null;
@@ -105,7 +105,7 @@ describe('ReactRouterV5Legacy', () => {
       rootElement: container,
     });
 
-    spanSessionManager.endSessionPartInternal('user_session_ended', 'manual');
+    userSessionManager.endSessionPartInternal('user_session_ended', 'manual');
     tearDown();
 
     const routeSpans = memoryExporter

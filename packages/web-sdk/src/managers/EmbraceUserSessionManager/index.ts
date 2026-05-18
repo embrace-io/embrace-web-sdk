@@ -1,5 +1,5 @@
-export { EmbraceSpanSessionManager } from './EmbraceUserSessionManager.ts';
+export { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 export type {
-  SpanSessionManagerInternal,
   UserSessionConfig,
+  UserSessionManagerInternal,
 } from './types.ts';

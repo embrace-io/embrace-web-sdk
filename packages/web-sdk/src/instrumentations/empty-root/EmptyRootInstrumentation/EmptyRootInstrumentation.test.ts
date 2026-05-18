@@ -6,11 +6,11 @@ import {
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { session } from '../../../api-sessions/index.ts';
-import type { SpanSessionManagerInternal } from '../../../managers/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { EmptyRootInstrumentation } from './EmptyRootInstrumentation.ts';
@@ -21,7 +21,7 @@ describe('EmptyInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: EmptyRootInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManagerInternal;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -30,14 +30,14 @@ describe('EmptyInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionPartInternal('init');
+    session.setGlobalUserSessionManager(userSessionManager);
+    userSessionManager.startSessionPartInternal('init');
   });
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 1));
 
     // The instrumentation shouldn't immediately emit the event
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -73,12 +73,12 @@ describe('EmptyInstrumentation', () => {
     expect(sessionSpan.events).to.have.lengthOf(0);
     memoryExporter.reset();
 
-    spanSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal('init');
 
     await new Promise((r) => setTimeout(r, 20));
 
     // Should now emit if the node is still empty after the timeout
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     sessionSpan = finishedSpans[0];
@@ -113,7 +113,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -145,7 +145,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -173,7 +173,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -198,7 +198,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

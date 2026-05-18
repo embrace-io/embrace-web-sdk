@@ -1,1 +1,1 @@
-export { NoOpSpanSessionManager } from './NoOpUserSessionManager.ts';
+export { NoOpUserSessionManager } from './NoOpUserSessionManager.ts';

@@ -16,7 +16,7 @@ import type {
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { LogManager } from '../api-logs/index.ts';
 import type { PageManager } from '../api-page/index.ts';
-import type { SpanSessionManager } from '../api-sessions/index.ts';
+import type { UserSessionManager } from '../api-sessions/index.ts';
 import type { TraceManager } from '../api-traces/index.ts';
 import type { UserManager } from '../api-users/index.ts';
 import type {
@@ -36,8 +36,8 @@ import type {
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
-  SpanSessionManagerInternal,
   UserSessionConfig,
+  UserSessionManagerInternal,
 } from '../managers/index.ts';
 import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
 
@@ -303,7 +303,7 @@ export interface SDKControl {
   setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
   log: LogManager;
   trace: TraceManager;
-  session: SpanSessionManager;
+  session: UserSessionManager;
   user: UserManager;
   page: PageManager;
 }
@@ -341,7 +341,7 @@ export interface SetupLogsArgs {
   userManager: UserManager;
   logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
-  spanSessionManager: SpanSessionManagerInternal;
+  userSessionManager: UserSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   perf: PerformanceManager;
@@ -375,7 +375,7 @@ interface NetworkInstrumentationArgs {
 
 export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
-  spanSessionManager?: SpanSessionManagerInternal;
+  userSessionManager?: UserSessionManagerInternal;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
 }

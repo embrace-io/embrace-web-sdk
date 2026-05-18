@@ -2,18 +2,18 @@ import type { Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
-import { ProxySpanSessionManager } from './ProxyUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import { ProxyUserSessionManager } from './ProxyUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
-describe('ProxySpanSessionManager', () => {
-  let proxySpanSessionManager: ProxySpanSessionManager;
-  let mockDelegate: SpanSessionManagerInternal;
+describe('ProxyUserSessionManager', () => {
+  let proxyUserSessionManager: ProxyUserSessionManager;
+  let mockDelegate: UserSessionManagerInternal;
 
   beforeEach(() => {
-    proxySpanSessionManager = new ProxySpanSessionManager();
+    proxyUserSessionManager = new ProxyUserSessionManager();
     mockDelegate = {
       // Part identity
       getSessionPartId: sinon.stub().returns('part-id'),
@@ -56,48 +56,48 @@ describe('ProxySpanSessionManager', () => {
 
   describe('before setDelegate', () => {
     it('should return null for user session identity', () => {
-      void expect(proxySpanSessionManager.getUserSessionId()).to.be.null;
-      void expect(proxySpanSessionManager.getPreviousUserSessionId()).to.be
+      void expect(proxyUserSessionManager.getUserSessionId()).to.be.null;
+      void expect(proxyUserSessionManager.getPreviousUserSessionId()).to.be
         .null;
-      void expect(proxySpanSessionManager.getUserSessionStartTime()).to.be.null;
+      void expect(proxyUserSessionManager.getUserSessionStartTime()).to.be.null;
     });
 
     it('should not throw for lifecycle methods', () => {
-      expect(() => proxySpanSessionManager.endUserSession()).to.not.throw();
+      expect(() => proxyUserSessionManager.endUserSession()).to.not.throw();
     });
   });
 
   describe('after setDelegate', () => {
     beforeEach(() => {
-      proxySpanSessionManager.setDelegate(mockDelegate);
+      proxyUserSessionManager.setDelegate(mockDelegate);
     });
 
-    it('should delegate user session identity to the spanSessionManager', () => {
-      expect(proxySpanSessionManager.getUserSessionId()).to.equal(
+    it('should delegate user session identity to the userSessionManager', () => {
+      expect(proxyUserSessionManager.getUserSessionId()).to.equal(
         'mockSessionId',
       );
-      expect(proxySpanSessionManager.getPreviousUserSessionId()).to.equal(
+      expect(proxyUserSessionManager.getPreviousUserSessionId()).to.equal(
         'prev-user-id',
       );
-      expect(proxySpanSessionManager.getUserSessionStartTime()).to.equal(
+      expect(proxyUserSessionManager.getUserSessionStartTime()).to.equal(
         123_456,
       );
     });
 
-    it('should delegate endUserSession to the spanSessionManager', () => {
-      proxySpanSessionManager.endUserSession();
+    it('should delegate endUserSession to the userSessionManager', () => {
+      proxyUserSessionManager.endUserSession();
       expect(mockDelegate.endUserSession).to.have.been.calledOnce;
     });
 
-    it('should delegate addBreadcrumb to the spanSessionManager', () => {
-      proxySpanSessionManager.addBreadcrumb('some breadcrumb');
+    it('should delegate addBreadcrumb to the userSessionManager', () => {
+      proxyUserSessionManager.addBreadcrumb('some breadcrumb');
       expect(mockDelegate.addBreadcrumb).to.have.been.calledOnceWith(
         'some breadcrumb',
       );
     });
 
-    it('should delegate addProperty to the spanSessionManager', () => {
-      proxySpanSessionManager.addProperty(
+    it('should delegate addProperty to the userSessionManager', () => {
+      proxyUserSessionManager.addProperty(
         'some-custom-key',
         'some custom value',
       );
@@ -108,8 +108,8 @@ describe('ProxySpanSessionManager', () => {
       );
     });
 
-    it('should delegate addProperty with permanent option to the spanSessionManager', () => {
-      proxySpanSessionManager.addProperty(
+    it('should delegate addProperty with permanent option to the userSessionManager', () => {
+      proxyUserSessionManager.addProperty(
         'some-custom-key',
         'some custom value',
         {
@@ -125,46 +125,46 @@ describe('ProxySpanSessionManager', () => {
       );
     });
 
-    it('should delegate removeProperty to the spanSessionManager', () => {
-      proxySpanSessionManager.removeProperty('some-custom-key');
+    it('should delegate removeProperty to the userSessionManager', () => {
+      proxyUserSessionManager.removeProperty('some-custom-key');
       expect(mockDelegate.removeProperty).to.have.been.calledOnceWith(
         'some-custom-key',
       );
     });
 
-    it('should forward deprecated getSessionId to the spanSessionManager', () => {
-      expect(proxySpanSessionManager.getSessionId()).to.equal('mockSessionId');
+    it('should forward deprecated getSessionId to the userSessionManager', () => {
+      expect(proxyUserSessionManager.getSessionId()).to.equal('mockSessionId');
       void expect(mockDelegate.getSessionId).to.have.been.calledOnce;
     });
 
     it('should return null from deprecated getPreviousSessionId without delegating', () => {
-      void expect(proxySpanSessionManager.getPreviousSessionId()).to.be.null;
+      void expect(proxyUserSessionManager.getPreviousSessionId()).to.be.null;
       void expect(mockDelegate.getPreviousSessionId).to.not.have.been.called;
     });
 
-    it('should forward deprecated getSessionStartTime to the spanSessionManager', () => {
-      expect(proxySpanSessionManager.getSessionStartTime()).to.equal(123_456);
+    it('should forward deprecated getSessionStartTime to the userSessionManager', () => {
+      expect(proxyUserSessionManager.getSessionStartTime()).to.equal(123_456);
       void expect(mockDelegate.getSessionStartTime).to.have.been.calledOnce;
     });
 
-    it('should forward deprecated getSessionSpan to the spanSessionManager', () => {
-      void expect(proxySpanSessionManager.getSessionSpan()).to.not.be.null;
+    it('should forward deprecated getSessionSpan to the userSessionManager', () => {
+      void expect(proxyUserSessionManager.getSessionSpan()).to.not.be.null;
       void expect(mockDelegate.getSessionSpan).to.have.been.calledOnce;
     });
 
-    it('should delegate endSessionSpan to the spanSessionManager', () => {
-      proxySpanSessionManager.endSessionSpan();
+    it('should delegate endSessionSpan to the userSessionManager', () => {
+      proxyUserSessionManager.endSessionSpan();
       expect(mockDelegate.endSessionSpan).to.have.been.calledOnce;
     });
 
     it('should no-op startSessionSpan without delegating', () => {
-      proxySpanSessionManager.startSessionSpan();
+      proxyUserSessionManager.startSessionSpan();
       void expect(mockDelegate.startSessionSpan).to.not.have.been.called;
     });
 
     it('should return a no-op unsubscribe from deprecated session listeners without delegating', () => {
-      const u1 = proxySpanSessionManager.addSessionStartedListener(() => {});
-      const u2 = proxySpanSessionManager.addSessionEndedListener(() => {});
+      const u1 = proxyUserSessionManager.addSessionStartedListener(() => {});
+      const u2 = proxyUserSessionManager.addSessionEndedListener(() => {});
       expect(() => u1()).to.not.throw();
       expect(() => u2()).to.not.throw();
       void expect(mockDelegate.addSessionStartedListener).to.not.have.been
@@ -175,8 +175,8 @@ describe('ProxySpanSessionManager', () => {
 
   describe('getDelegate', () => {
     it('should return the registered delegate after setDelegate', () => {
-      proxySpanSessionManager.setDelegate(mockDelegate);
-      expect(proxySpanSessionManager.getDelegate()).to.equal(mockDelegate);
+      proxyUserSessionManager.setDelegate(mockDelegate);
+      expect(proxyUserSessionManager.getDelegate()).to.equal(mockDelegate);
     });
   });
 });

@@ -9,19 +9,19 @@ import {
   KEY_EMB_USER_SESSION_ID,
   KEY_EMB_USER_SESSION_PREVIOUS_ID,
 } from '../../constants/index.ts';
-import type { SpanSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 import { generateUUID } from '../../utils/index.ts';
 import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
 
 export class IdentifiableSessionLogRecordProcessor
   implements LogRecordProcessor
 {
-  private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _userSessionManager: UserSessionManagerInternal;
 
   public constructor({
-    spanSessionManager,
+    userSessionManager,
   }: IdentifiableSessionLogRecordProcessorArgs) {
-    this._spanSessionManager = spanSessionManager;
+    this._userSessionManager = userSessionManager;
   }
 
   // no-op
@@ -30,9 +30,9 @@ export class IdentifiableSessionLogRecordProcessor
   }
 
   public onEmit(logRecord: SdkLogRecord) {
-    const userSessionId = this._spanSessionManager.getUserSessionId() ?? '';
+    const userSessionId = this._userSessionManager.getUserSessionId() ?? '';
     const previousUserSessionId =
-      this._spanSessionManager.getPreviousUserSessionId() ?? '';
+      this._userSessionManager.getPreviousUserSessionId() ?? '';
 
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
@@ -41,7 +41,7 @@ export class IdentifiableSessionLogRecordProcessor
       [KEY_EMB_USER_SESSION_ID]: userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_SESSION_PART_ID]:
-        this._spanSessionManager.getSessionPartId() ?? '',
+        this._userSessionManager.getSessionPartId() ?? '',
     });
   }
 

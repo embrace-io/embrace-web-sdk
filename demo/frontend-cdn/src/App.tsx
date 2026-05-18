@@ -11,7 +11,7 @@ const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
 let sessionProvider = ASYNC_MODE
   ? null
   : // @ts-ignore
-    window.EmbraceWebSdk.session.getSpanSessionManager();
+    window.EmbraceWebSdk.session.getUserSessionManager();
 
 const App = () => {
   const [spans, setSpans] = useState<Span[]>([]);
@@ -26,7 +26,7 @@ const App = () => {
       // @ts-expect-error
       window.EmbraceWebSdkOnReady.onReady(() => {
         // @ts-expect-error
-        sessionProvider = window.EmbraceWebSdk.session.getSpanSessionManager();
+        sessionProvider = window.EmbraceWebSdk.session.getUserSessionManager();
         setInitialized(true);
       });
     }

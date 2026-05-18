@@ -1,6 +1,6 @@
 import type { ExtendedSpan } from '../../index.ts';
 
-export interface SpanSessionManager {
+export interface UserSessionManager {
   /** @deprecated Will be removed in a future version, use getUserSessionId(); returns null when no user session is active. */
   getSessionId: () => string | null;
 

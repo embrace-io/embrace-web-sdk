@@ -3,7 +3,7 @@ import { setupTestStorage } from '../../tests/utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { OTelPerformanceManager } from '../utils/index.ts';
 import { session } from './sessionAPI.ts';
@@ -11,12 +11,12 @@ import { session } from './sessionAPI.ts';
 describe('sessionAPI', () => {
   it('should export a session instance with expected methods', () => {
     expect(session).to.have.property('getUserSessionId');
-    expect(session).to.have.property('setGlobalSessionManager');
+    expect(session).to.have.property('setGlobalUserSessionManager');
     expect(session).to.have.property('addBreadcrumb');
   });
 
   describe('incorrect usage', () => {
-    let manager: EmbraceSpanSessionManager;
+    let manager: EmbraceUserSessionManager;
 
     type IncorrectUsageTest = {
       name: string;
@@ -47,14 +47,14 @@ describe('sessionAPI', () => {
     ];
 
     beforeEach(() => {
-      manager = new EmbraceSpanSessionManager({
+      manager = new EmbraceUserSessionManager({
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
         perf: new OTelPerformanceManager(),
         storage: setupTestStorage(),
         visibilityDoc: window.document,
       });
       manager.startSessionPartInternal('init');
-      session.setGlobalSessionManager(manager);
+      session.setGlobalUserSessionManager(manager);
     });
 
     tests.forEach((test) => {

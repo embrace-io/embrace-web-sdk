@@ -1,8 +1,8 @@
 import type { TracerProvider } from '@opentelemetry/api';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
-  SpanSessionManagerInternal,
   UserSessionAttributes,
+  UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type {
   PropertyOptions,
@@ -12,18 +12,18 @@ import type {
   StartSessionOptions,
   UserSessionEndReason,
 } from '../index.ts';
-import { NoOpSpanSessionManager } from '../NoOpUserSessionManager/index.ts';
+import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
 
-const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
+const NOOP_USER_SESSION_MANAGER = new NoOpUserSessionManager();
 
-export class ProxySpanSessionManager implements SpanSessionManagerInternal {
-  private _delegate?: SpanSessionManagerInternal;
+export class ProxyUserSessionManager implements UserSessionManagerInternal {
+  private _delegate?: UserSessionManagerInternal;
 
-  public getDelegate(): SpanSessionManagerInternal {
-    return this._delegate ?? NOOP_SPAN_SESSION_MANAGER;
+  public getDelegate(): UserSessionManagerInternal {
+    return this._delegate ?? NOOP_USER_SESSION_MANAGER;
   }
 
-  public setDelegate(delegate: SpanSessionManagerInternal): void {
+  public setDelegate(delegate: UserSessionManagerInternal): void {
     this._delegate = delegate;
   }
 

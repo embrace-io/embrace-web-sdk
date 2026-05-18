@@ -14,7 +14,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';
 
@@ -49,7 +49,7 @@ describe('GlobalExceptionInstrumentation', () => {
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({
+      userSessionManager: new EmbraceUserSessionManager({
         limitManager,
         perf,
         storage,

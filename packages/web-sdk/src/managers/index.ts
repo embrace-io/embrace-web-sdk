@@ -16,7 +16,7 @@ export {
 } from './EmbraceTraceManager/index.ts';
 export { EmbraceUserManager } from './EmbraceUserManager/index.ts';
 export type {
-  SpanSessionManagerInternal,
   UserSessionConfig,
+  UserSessionManagerInternal,
 } from './EmbraceUserSessionManager/index.ts';
-export { EmbraceSpanSessionManager } from './EmbraceUserSessionManager/index.ts';
+export { EmbraceUserSessionManager } from './EmbraceUserSessionManager/index.ts';

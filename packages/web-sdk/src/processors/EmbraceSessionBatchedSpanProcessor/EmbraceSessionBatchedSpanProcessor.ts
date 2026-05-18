@@ -15,7 +15,7 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
 import type { SessionPartSpan } from '../../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
-  SpanSessionManagerInternal,
+  UserSessionManagerInternal,
 } from '../../managers/index.ts';
 import type { EmbraceSessionBatchedSpanProcessorArgs } from './types.ts';
 
@@ -37,13 +37,13 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
   private _pendingSpans: ReadableSpan[] = [];
   private readonly _exporter: SpanExporter;
   private readonly _limitManager: LimitManagerInternal;
-  private readonly _spanSessionManager: SpanSessionManagerInternal;
+  private readonly _userSessionManager: UserSessionManagerInternal;
   private readonly _diag: DiagLogger;
 
   public constructor({
     exporter,
     limitManager,
-    spanSessionManager,
+    userSessionManager,
     diag: diagParam = diag.createComponentLogger({
       namespace: 'EmbraceSessionBatchedSpanProcessor',
     }),
@@ -52,7 +52,7 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
     this._exporter = exporter;
     this._shutdownOnce = new BindOnceFuture(this._shutdown, this);
     this._limitManager = limitManager;
-    this._spanSessionManager = spanSessionManager;
+    this._userSessionManager = userSessionManager;
   }
 
   public forceFlush(): Promise<void> {
@@ -97,10 +97,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
             failureReason = 'fetch_error';
           }
 
-          this._spanSessionManager.incrSessionPartCountForKey(
+          this._userSessionManager.incrSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'current'),
           );
-          this._spanSessionManager.incrNextSessionPartCountForKey(
+          this._userSessionManager.incrNextSessionPartCountForKey(
             exportFailureAttributeKey(failureReason, 'previous'),
           );
           this._diag.error(`spans failed to export: ${errorMessage}`);
@@ -117,10 +117,10 @@ export class EmbraceSessionBatchedSpanProcessor implements SpanProcessor {
           msg = reason;
         }
 
-        this._spanSessionManager.incrSessionPartCountForKey(
+        this._userSessionManager.incrSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'current'),
         );
-        this._spanSessionManager.incrNextSessionPartCountForKey(
+        this._userSessionManager.incrNextSessionPartCountForKey(
           exportFailureAttributeKey('unknown', 'previous'),
         );
         this._diag.error(`spans failed to export: ${msg}`);

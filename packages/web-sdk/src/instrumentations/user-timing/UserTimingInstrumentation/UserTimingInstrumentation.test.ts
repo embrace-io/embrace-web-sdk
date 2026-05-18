@@ -16,7 +16,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { UserTimingInstrumentation } from './UserTimingInstrumentation.ts';
 
@@ -117,15 +117,15 @@ describe('UserTimingInstrumentation', () => {
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
-    const spanSessionManager = new EmbraceSpanSessionManager({
+    const userSessionManager = new EmbraceUserSessionManager({
       limitManager,
       perf,
       storage,
       visibilityDoc: window.document,
     });
-    spanSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal('init');
     const logManager = new EmbraceLogManager({
-      spanSessionManager,
+      userSessionManager,
       limitManager,
       perf,
       storage,

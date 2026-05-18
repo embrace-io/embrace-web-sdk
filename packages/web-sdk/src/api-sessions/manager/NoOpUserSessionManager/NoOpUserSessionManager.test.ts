@@ -1,61 +1,61 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 import { expect } from 'chai';
-import { NoOpSpanSessionManager } from './NoOpUserSessionManager.ts';
+import { NoOpUserSessionManager } from './NoOpUserSessionManager.ts';
 
-describe('NoOpSpanSessionManager', () => {
-  let noOpSpanSessionManager: NoOpSpanSessionManager;
+describe('NoOpUserSessionManager', () => {
+  let noOpUserSessionManager: NoOpUserSessionManager;
 
   beforeEach(() => {
-    noOpSpanSessionManager = new NoOpSpanSessionManager();
+    noOpUserSessionManager = new NoOpUserSessionManager();
   });
 
   it('should return null for getSessionId', () => {
-    const sessionId = noOpSpanSessionManager.getSessionId();
+    const sessionId = noOpUserSessionManager.getSessionId();
     void expect(sessionId).to.be.null;
   });
 
   it('should return null for getPreviousSessionId', () => {
-    const sessionId = noOpSpanSessionManager.getPreviousSessionId();
+    const sessionId = noOpUserSessionManager.getPreviousSessionId();
     void expect(sessionId).to.be.null;
   });
 
   it('should return null for getSessionSpan', () => {
-    const sessionSpan: Span | null = noOpSpanSessionManager.getSessionSpan();
+    const sessionSpan: Span | null = noOpUserSessionManager.getSessionSpan();
     void expect(sessionSpan).to.be.null;
   });
 
   it('should return null for getSessionStartTime', () => {
     const sessionStartTime: HrTime | null =
-      noOpSpanSessionManager.getSessionStartTime();
+      noOpUserSessionManager.getSessionStartTime();
     void expect(sessionStartTime).to.be.null;
   });
 
   it('should do nothing for startSessionSpan', () => {
     expect(() => {
-      noOpSpanSessionManager.startSessionSpan();
+      noOpUserSessionManager.startSessionSpan();
     }).to.not.throw();
   });
 
   it('should do nothing for endSessionSpan', () => {
     expect(() => {
-      noOpSpanSessionManager.endSessionSpan();
+      noOpUserSessionManager.endSessionSpan();
     }).to.not.throw();
   });
 
   it('should return null for currentSessionAsReadableSpan', () => {
-    const result = noOpSpanSessionManager.currentSessionAsReadableSpan();
+    const result = noOpUserSessionManager.currentSessionAsReadableSpan();
     expect(result).to.equal(null);
   });
 
   it('should do nothing for addBreadcrumb', () => {
     expect(() => {
-      noOpSpanSessionManager.addBreadcrumb('name');
+      noOpUserSessionManager.addBreadcrumb('name');
     }).to.not.throw();
   });
 
   it('should do nothing for addProperty', () => {
     expect(() => {
-      noOpSpanSessionManager.addProperty(
+      noOpUserSessionManager.addProperty(
         'some-custom-key',
         'some custom value',
       );
@@ -64,37 +64,37 @@ describe('NoOpSpanSessionManager', () => {
 
   it('should do nothing for removeProperty', () => {
     expect(() => {
-      noOpSpanSessionManager.removeProperty('some-custom-key');
+      noOpUserSessionManager.removeProperty('some-custom-key');
     }).to.not.throw();
   });
 
   it('should do nothing for addSessionStartedListener', () => {
     expect(() => {
-      noOpSpanSessionManager.addSessionStartedListener(() => {});
+      noOpUserSessionManager.addSessionStartedListener(() => {});
     }).to.not.throw();
   });
 
   it('should do nothing for addSessionEndedListener', () => {
     expect(() => {
-      noOpSpanSessionManager.addSessionEndedListener(() => {});
+      noOpUserSessionManager.addSessionEndedListener(() => {});
     }).to.not.throw();
   });
 
   it('should return null for getUserSessionId', () => {
-    void expect(noOpSpanSessionManager.getUserSessionId()).to.be.null;
+    void expect(noOpUserSessionManager.getUserSessionId()).to.be.null;
   });
 
   it('should return null for getPreviousUserSessionId', () => {
-    void expect(noOpSpanSessionManager.getPreviousUserSessionId()).to.be.null;
+    void expect(noOpUserSessionManager.getPreviousUserSessionId()).to.be.null;
   });
 
   it('should return null for getUserSessionStartTime', () => {
-    void expect(noOpSpanSessionManager.getUserSessionStartTime()).to.be.null;
+    void expect(noOpUserSessionManager.getUserSessionStartTime()).to.be.null;
   });
 
   it('should do nothing for endUserSession', () => {
     expect(() => {
-      noOpSpanSessionManager.endUserSession();
+      noOpUserSessionManager.endUserSession();
     }).to.not.throw();
   });
 });

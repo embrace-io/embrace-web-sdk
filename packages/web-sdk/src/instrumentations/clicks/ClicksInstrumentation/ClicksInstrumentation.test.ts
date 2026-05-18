@@ -7,11 +7,11 @@ import {
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { session } from '../../../api-sessions/index.ts';
-import type { SpanSessionManagerInternal } from '../../../managers/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { ClicksInstrumentation } from './ClicksInstrumentation.ts';
@@ -22,7 +22,7 @@ describe('ClicksInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: ClicksInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManagerInternal;
+  let userSessionManager: UserSessionManagerInternal;
   let testContainer: HTMLElement;
 
   before(() => {
@@ -32,14 +32,14 @@ describe('ClicksInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionPartInternal('init');
+    session.setGlobalUserSessionManager(userSessionManager);
+    userSessionManager.startSessionPartInternal('init');
     testContainer = document.createElement('div');
     document.body.append(testContainer);
   });
@@ -58,7 +58,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -84,7 +84,7 @@ describe('ClicksInstrumentation', () => {
     target.disabled = true;
     testContainer.append(target);
 
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -102,7 +102,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -129,7 +129,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -163,7 +163,7 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     t1.click();
     t2.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -219,7 +219,7 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     instrumentation.disable();
     t1.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -250,7 +250,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(t2);
 
     t2.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
     t1.click();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -284,7 +284,7 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -321,7 +321,7 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    spanSessionManager.endSessionPartInternal('inactivity');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);

@@ -14,7 +14,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
-import { EmbraceSpanSessionManager } from './EmbraceUserSessionManager.ts';
+import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -55,10 +55,10 @@ class FakeVisibilityDoc extends EventTarget {
   public hasFocus = (): boolean => true;
 }
 
-describe('EmbraceSpanSessionManager browser activity', () => {
+describe('EmbraceUserSessionManager browser activity', () => {
   let clock: sinon.SinonFakeTimers;
   let target: FakeTarget;
-  let manager: EmbraceSpanSessionManager;
+  let manager: EmbraceUserSessionManager;
   let startSpy: sinon.SinonSpy<[reason: SessionPartStartReason], void>;
   let endSpy: sinon.SinonSpy;
   let visibilityDoc: FakeVisibilityDoc;
@@ -74,7 +74,7 @@ describe('EmbraceSpanSessionManager browser activity', () => {
     clock = sinon.useFakeTimers({ now: 0 });
     target = new FakeTarget();
     visibilityDoc = new FakeVisibilityDoc();
-    manager = new EmbraceSpanSessionManager({
+    manager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new MockPerformanceManager(clock),
       storage: setupTestStorage(),

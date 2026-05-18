@@ -15,11 +15,11 @@ import {
   mockSessionSpan,
   mockSpan,
 } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
-import type { SpanSessionManagerInternal } from '../../managers/index.ts';
+import type { UserSessionManagerInternal } from '../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../managers/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
 import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
@@ -51,7 +51,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
-  let spanSessionManager: SpanSessionManagerInternal;
+  let userSessionManager: UserSessionManagerInternal;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers(1756138004000);
@@ -68,7 +68,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       },
     });
 
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager,
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),
@@ -78,7 +78,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     processor = new EmbraceSessionBatchedSpanProcessor({
       exporter: memoryExporter,
       limitManager,
-      spanSessionManager,
+      userSessionManager,
     });
   });
 
@@ -161,7 +161,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
   exportFailedTests.forEach((test) => {
     it(test.name, async () => {
-      spanSessionManager.startSessionPartInternal('init');
+      userSessionManager.startSessionPartInternal('init');
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
@@ -169,17 +169,17 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
         ),
         diag: diagLogger,
         limitManager,
-        spanSessionManager,
+        userSessionManager,
       });
 
       processor.onEnd(mockSessionSpan);
 
       await Promise.resolve();
 
-      spanSessionManager.endSessionPartInternal('inactivity');
+      userSessionManager.endSessionPartInternal('inactivity');
 
-      spanSessionManager.startSessionPartInternal('init');
-      spanSessionManager.endSessionPartInternal('inactivity');
+      userSessionManager.startSessionPartInternal('init');
+      userSessionManager.endSessionPartInternal('inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);

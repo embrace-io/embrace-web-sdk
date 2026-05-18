@@ -131,7 +131,7 @@ const InfoItem = ({
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 
 const App = () => {
-  const userSessionManager = session.getSpanSessionManager();
+  const userSessionManager = session.getUserSessionManager();
   const logManager = log.getLogManager();
   const [spans, setSpans] = useState<Span[]>([]);
   const [userSessionId, setUserSessionId] = useState<string | null>(null);
