@@ -2,7 +2,7 @@ import type { ExtendedSpan } from '../../../index.ts';
 import type {
   SpanSessionManagerInternal,
   UserSessionAttributes,
-} from '../../../managers/EmbraceSpanSessionManager/types.ts';
+} from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type {
   PropertyOptions,
   SessionPartEndReason,

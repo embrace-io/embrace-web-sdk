@@ -9,7 +9,7 @@ import {
   KEY_EMB_USER_SESSION_ID,
   KEY_EMB_USER_SESSION_PREVIOUS_ID,
 } from '../../constants/index.ts';
-import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
 import { generateUUID } from '../../utils/index.ts';
 import type { IdentifiableSessionLogRecordProcessorArgs } from './types.ts';
 

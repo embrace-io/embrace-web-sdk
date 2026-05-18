@@ -38,7 +38,7 @@ import {
   getVisibilityState,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';

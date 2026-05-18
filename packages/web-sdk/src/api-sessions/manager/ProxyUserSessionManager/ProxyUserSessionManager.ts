@@ -3,7 +3,7 @@ import type { ExtendedSpan } from '../../../index.ts';
 import type {
   SpanSessionManagerInternal,
   UserSessionAttributes,
-} from '../../../managers/EmbraceSpanSessionManager/types.ts';
+} from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
@@ -12,7 +12,7 @@ import type {
   StartSessionOptions,
   UserSessionEndReason,
 } from '../index.ts';
-import { NoOpSpanSessionManager } from '../NoOpSpanSessionManager/index.ts';
+import { NoOpSpanSessionManager } from '../NoOpUserSessionManager/index.ts';
 
 const NOOP_SPAN_SESSION_MANAGER = new NoOpSpanSessionManager();
 

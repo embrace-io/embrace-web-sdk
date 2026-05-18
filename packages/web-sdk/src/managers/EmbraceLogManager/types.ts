@@ -6,7 +6,7 @@ import type {
   PerformanceManager,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 
 export interface EmbraceLogManagerArgs {
   diag?: DiagLogger;

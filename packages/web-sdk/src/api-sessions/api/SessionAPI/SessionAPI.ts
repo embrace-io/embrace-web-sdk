@@ -1,5 +1,5 @@
 import { diag } from '@opentelemetry/api';
-import type { SpanSessionManagerInternal } from '../../../managers/EmbraceSpanSessionManager/types.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import { createSafeProxy } from '../../../utils/index.ts';
 import type { SpanSessionManager } from '../../manager/index.ts';
 import {

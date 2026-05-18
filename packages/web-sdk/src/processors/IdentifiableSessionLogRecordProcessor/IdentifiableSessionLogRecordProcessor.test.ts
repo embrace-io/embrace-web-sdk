@@ -3,9 +3,9 @@ import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import { NoOpSpanSessionManager } from '../../api-sessions/manager/NoOpSpanSessionManager/index.ts';
-import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
-import type { UserSessionAttributes } from '../../managers/EmbraceSpanSessionManager/types.ts';
+import { NoOpSpanSessionManager } from '../../api-sessions/manager/NoOpUserSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
+import type { UserSessionAttributes } from '../../managers/EmbraceUserSessionManager/types.ts';
 import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
 
 const { expect } = chai;

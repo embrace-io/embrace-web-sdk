@@ -21,7 +21,7 @@ import {
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
+import { EmbraceSpanSessionManager } from './EmbraceUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

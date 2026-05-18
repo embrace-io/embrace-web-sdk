@@ -14,7 +14,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
+import { EmbraceSpanSessionManager } from './EmbraceUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

@@ -2,7 +2,7 @@ import type { Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManagerInternal } from '../../../managers/EmbraceSpanSessionManager/types.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type { SessionAPIInstance } from './SessionAPI.ts';
 import { SessionAPI } from './SessionAPI.ts';
 

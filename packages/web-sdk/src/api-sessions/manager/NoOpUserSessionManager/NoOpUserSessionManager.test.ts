@@ -1,6 +1,6 @@
 import type { HrTime, Span } from '@opentelemetry/api';
 import { expect } from 'chai';
-import { NoOpSpanSessionManager } from './NoOpSpanSessionManager.ts';
+import { NoOpSpanSessionManager } from './NoOpUserSessionManager.ts';
 
 describe('NoOpSpanSessionManager', () => {
   let noOpSpanSessionManager: NoOpSpanSessionManager;

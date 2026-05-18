@@ -46,7 +46,7 @@ import {
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
-import type { SpanSessionManagerInternal } from '../managers/EmbraceSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
   EmbraceLogManager,
   EmbraceSpanSessionManager,

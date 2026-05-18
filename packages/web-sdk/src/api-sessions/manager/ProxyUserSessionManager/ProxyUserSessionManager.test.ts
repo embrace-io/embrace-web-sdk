@@ -2,8 +2,8 @@ import type { Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManagerInternal } from '../../../managers/EmbraceSpanSessionManager/types.ts';
-import { ProxySpanSessionManager } from './ProxySpanSessionManager.ts';
+import type { SpanSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import { ProxySpanSessionManager } from './ProxyUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;

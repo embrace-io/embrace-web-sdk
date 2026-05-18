@@ -24,7 +24,7 @@ export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
 } from './server-timing/index.ts';
-export type { SessionPartSpan } from './session/index.ts';
+export type { SessionPartSpan } from './session-part/index.ts';
 export {
   UserTimingInstrumentation,
   type UserTimingInstrumentationArgs,

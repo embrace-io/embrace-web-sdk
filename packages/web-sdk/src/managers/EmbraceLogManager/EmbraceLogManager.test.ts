@@ -41,8 +41,8 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
-import type { SpanSessionManagerInternal } from '../EmbraceSpanSessionManager/index.ts';
-import { EmbraceSpanSessionManager } from '../EmbraceSpanSessionManager/index.ts';
+import type { SpanSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
+import { EmbraceSpanSessionManager } from '../EmbraceUserSessionManager/index.ts';
 import { EmbraceLogManager } from './EmbraceLogManager.ts';
 
 chai.use(sinonChai);

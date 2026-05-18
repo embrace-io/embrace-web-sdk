@@ -1,5 +1,5 @@
-export { NoOpSpanSessionManager } from './NoOpSpanSessionManager/index.ts';
-export { ProxySpanSessionManager } from './ProxySpanSessionManager/index.ts';
+export { NoOpSpanSessionManager } from './NoOpUserSessionManager/index.ts';
+export { ProxySpanSessionManager } from './ProxyUserSessionManager/index.ts';
 export type {
   PropertyOptions,
   ReasonSessionEnded,
