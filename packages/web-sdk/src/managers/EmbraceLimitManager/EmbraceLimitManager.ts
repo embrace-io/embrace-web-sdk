@@ -10,8 +10,8 @@ import type {
   LimitedBreadcrumb,
   LimitedException,
   LimitedLog,
-  LimitedSessionProperty,
   LimitedType,
+  LimitedUserSessionProperty,
   LimitManagerInternal,
   LimitOperation,
   LogLimitedType,
@@ -183,10 +183,10 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     };
   }
 
-  public limitSessionProperty(
+  public limitUserSessionProperty(
     key: string,
     value: string,
-  ): LimitedSessionProperty | 'dropped' {
+  ): LimitedUserSessionProperty | 'dropped' {
     if (this._dropIfMaxReached('session_property')) {
       return 'dropped';
     }

@@ -3,12 +3,12 @@ export type {
   ReasonSessionEnded,
   SessionPartEndReason,
   SessionPartStartReason,
-  SpanSessionManager,
   StartSessionOptions,
   UserSessionEndReason,
+  UserSessionManager,
 } from './manager/index.ts';
 export {
-  NoOpSpanSessionManager,
-  ProxySpanSessionManager,
+  NoOpUserSessionManager,
+  ProxyUserSessionManager,
 } from './manager/index.ts';
 export { session } from './sessionAPI.ts';

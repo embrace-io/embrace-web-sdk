@@ -8,7 +8,7 @@ import { log } from '../../api-logs/index.ts';
 import { session } from '../../api-sessions/index.ts';
 import type {
   LimitManagerInternal,
-  SpanSessionManagerInternal,
+  UserSessionManagerInternal,
 } from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
@@ -21,7 +21,7 @@ export abstract class EmbraceInstrumentationBase<
   extends InstrumentationAbstract<ConfigType>
   implements Instrumentation<ConfigType>
 {
-  private _sessionManager: SpanSessionManagerInternal;
+  private _userSessionManager: UserSessionManagerInternal;
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
@@ -41,13 +41,13 @@ export abstract class EmbraceInstrumentationBase<
     }
     this._perf = perf ?? new OTelPerformanceManager();
     this._limitManager = limitManager;
-    this._sessionManager = session.getSpanSessionManager();
+    this._userSessionManager = session.getUserSessionManager();
     this._logManager = log.getLogManager();
   }
 
   /* Returns session provider */
-  protected get sessionManager(): SpanSessionManagerInternal {
-    return this._sessionManager;
+  protected get userSessionManager(): UserSessionManagerInternal {
+    return this._userSessionManager;
   }
 
   /* Returns log manager */
@@ -84,7 +84,9 @@ export abstract class EmbraceInstrumentationBase<
     this._logManager = logManager;
   }
 
-  public setSessionManager(sessionManager: SpanSessionManagerInternal): void {
-    this._sessionManager = sessionManager;
+  public setUserSessionManager(
+    userSessionManager: UserSessionManagerInternal,
+  ): void {
+    this._userSessionManager = userSessionManager;
   }
 }

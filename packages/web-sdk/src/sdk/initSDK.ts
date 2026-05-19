@@ -30,22 +30,22 @@ import {
   EmbraceLogManager,
   EmbracePageManager,
   EmbraceSDKFeaturesManager,
-  EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import {
   BrowserLogRecordProcessor,
   BrowserSpanProcessor,
   EmbraceLogRecordProcessor,
   EmbraceNetworkSpanProcessor,
-  EmbraceSessionBatchedSpanProcessor,
-  IdentifiableSessionLogRecordProcessor,
+  EmbraceSessionPartBatchedSpanProcessor,
   LogRecordScrubProcessor,
   PageLogRecordProcessor,
   PageSpanProcessor,
   SpanScrubProcessor,
   UserLogRecordProcessor,
+  UserSessionLogRecordProcessor,
   UserSpanProcessor,
 } from '../processors/index.ts';
 import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
@@ -67,9 +67,9 @@ import type {
   SDKInitConfig,
   SetupLogsArgs,
   SetupPageArgs,
-  SetupSessionArgs,
   SetupTracesArgs,
   SetupUserArgs,
+  SetupUserSessionArgs,
 } from './types.ts';
 import { validateAppID, validateAppVersion } from './utils.ts';
 
@@ -156,7 +156,7 @@ export const initSDK = (
       storage: window.localStorage,
       diag: diagLogger,
     });
-    const sdkSessionStorage = new NamespacedStorage({
+    const sdkTabStorage = new NamespacedStorage({
       namespace,
       storage: window.sessionStorage,
       diag: diagLogger,
@@ -168,7 +168,7 @@ export const initSDK = (
         getWebSDKResource({
           diagLogger,
           appVersion: validatedAppVersion,
-          pageSessionStorage: sdkSessionStorage,
+          tabStorage: sdkTabStorage,
         }),
       );
 
@@ -219,7 +219,7 @@ export const initSDK = (
       ...attributeScrubbers,
     ];
 
-    const spanSessionManager = setupSession({
+    const userSessionManager = setupUserSession({
       limitManager,
       perf,
       registerGlobally,
@@ -231,17 +231,19 @@ export const initSDK = (
       },
     });
 
-    let embraceSpanProcessor: EmbraceSessionBatchedSpanProcessor | undefined;
+    let embraceSpanProcessor:
+      | EmbraceSessionPartBatchedSpanProcessor
+      | undefined;
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
     if (sendingToEmbrace) {
-      embraceSpanProcessor = new EmbraceSessionBatchedSpanProcessor({
+      embraceSpanProcessor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new EmbraceTraceExporter({
           appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
         limitManager,
-        spanSessionManager,
+        userSessionManager,
       });
 
       embraceLogProcessor = new BatchLogRecordProcessor(
@@ -273,17 +275,17 @@ export const initSDK = (
       pageManager,
     });
 
-    spanSessionManager.setTracerProvider(tracerProvider);
+    userSessionManager.setTracerProvider(tracerProvider);
     // No-op if the tab is hidden/unfocused at init; the first part starts
     // on the next engagement via the manager's browser-activity listeners.
-    spanSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal('init');
 
     const { loggerProvider, embraceLogManager } = setupLogs({
       resource: resourceWithWebSDKAttributes,
       userManager,
       logExporters,
       logProcessors,
-      spanSessionManager,
+      userSessionManager,
       limitManager,
       attributeScrubbers: finalAttributeScrubbers,
       perf,
@@ -304,7 +306,7 @@ export const initSDK = (
         instrumentations: [
           setupDefaultInstrumentations(defaultInstrumentationConfig, {
             logManager: embraceLogManager,
-            spanSessionManager,
+            userSessionManager,
             pageManager,
             limitManager,
           }),
@@ -335,7 +337,7 @@ export const initSDK = (
       },
       log: embraceLogManager,
       trace: embraceTraceManager,
-      session: spanSessionManager,
+      session: userSessionManager,
       user: userManager,
       page: pageManager,
     };
@@ -344,7 +346,7 @@ export const initSDK = (
       registry.register(sdkControl);
     }
 
-    spanSessionManager.recordSDKStartupDuration(
+    userSessionManager.recordSDKStartupDuration(
       perf.getNowMillis() - initSDKStart,
     );
 
@@ -368,15 +370,15 @@ const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
   return embraceUserManager;
 };
 
-const setupSession = ({
+const setupUserSession = ({
   limitManager,
   perf,
   registerGlobally,
   sdkLocalStorage,
   visibilityDoc,
   userSessionConfig,
-}: SetupSessionArgs) => {
-  const embraceSpanSessionManager = new EmbraceSpanSessionManager({
+}: SetupUserSessionArgs) => {
+  const embraceUserSessionManager = new EmbraceUserSessionManager({
     limitManager,
     perf,
     storage: sdkLocalStorage,
@@ -385,10 +387,10 @@ const setupSession = ({
   });
 
   if (registerGlobally) {
-    session.setGlobalSessionManager(embraceSpanSessionManager);
+    session.setGlobalUserSessionManager(embraceUserSessionManager);
   }
 
-  return embraceSpanSessionManager;
+  return embraceUserSessionManager;
 };
 
 const setupTraces = ({
@@ -457,7 +459,7 @@ const setupLogs = ({
   userManager,
   logExporters,
   logProcessors,
-  spanSessionManager,
+  userSessionManager,
   limitManager,
   attributeScrubbers,
   perf,
@@ -469,8 +471,8 @@ const setupLogs = ({
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
-    new IdentifiableSessionLogRecordProcessor({
-      spanSessionManager,
+    new UserSessionLogRecordProcessor({
+      userSessionManager,
     }),
     new BrowserLogRecordProcessor(),
     new EmbraceLogRecordProcessor(),
@@ -493,7 +495,7 @@ const setupLogs = ({
   });
 
   const embraceLogManager = new EmbraceLogManager({
-    spanSessionManager,
+    userSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
     perf,

@@ -17,7 +17,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../../utils/index.ts';
 import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
@@ -44,7 +44,7 @@ describe('EmbraceErrorBoundary', () => {
     const storage = setupTestStorage();
     const perf = new OTelPerformanceManager();
     logManager = new EmbraceLogManager({
-      spanSessionManager: new EmbraceSpanSessionManager({
+      userSessionManager: new EmbraceUserSessionManager({
         limitManager,
         perf,
         storage,

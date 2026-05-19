@@ -21,13 +21,13 @@ import {
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
+import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
 
-describe('EmbraceSpanSessionManager session part lifecycle', () => {
-  let manager: EmbraceSpanSessionManager;
+describe('EmbraceUserSessionManager session part lifecycle', () => {
+  let manager: EmbraceUserSessionManager;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
   let inMemoryStorage: InMemoryStorage;
@@ -67,7 +67,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       },
     });
 
-    manager = new EmbraceSpanSessionManager({
+    manager = new EmbraceUserSessionManager({
       diag,
       storage,
       limitManager,
@@ -80,8 +80,8 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     clock.restore();
   });
 
-  it('should initialize a EmbraceSpanSessionManager', () => {
-    expect(manager).to.be.instanceOf(EmbraceSpanSessionManager);
+  it('should initialize a EmbraceUserSessionManager', () => {
+    expect(manager).to.be.instanceOf(EmbraceUserSessionManager);
   });
 
   it('should start a session part', () => {
@@ -221,7 +221,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       visibilityState: 'visible',
       hasFocus: () => true,
     };
-    const localManager = new EmbraceSpanSessionManager({
+    const localManager = new EmbraceUserSessionManager({
       visibilityDoc,
       limitManager,
       perf,
@@ -244,7 +244,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       visibilityState: 'hidden',
       hasFocus: () => false,
     };
-    const localManager = new EmbraceSpanSessionManager({
+    const localManager = new EmbraceUserSessionManager({
       visibilityDoc,
       limitManager,
       perf,
@@ -265,7 +265,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       visibilityState: 'visible',
       hasFocus: () => false,
     };
-    const localManager = new EmbraceSpanSessionManager({
+    const localManager = new EmbraceUserSessionManager({
       visibilityDoc,
       limitManager,
       perf,
@@ -281,7 +281,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
-    const localManager = new EmbraceSpanSessionManager({
+    const localManager = new EmbraceUserSessionManager({
       limitManager,
       perf,
       storage,
@@ -303,7 +303,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
   it('should call the session ended listener when ending a session', () => {
     let listenerSessionPartId: string | null = null;
-    const localManager = new EmbraceSpanSessionManager({
+    const localManager = new EmbraceUserSessionManager({
       limitManager,
       perf,
       storage,
@@ -573,7 +573,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     manager.addProperty(propertyKey, value);
     manager.endSessionPartInternal('web_background');
 
-    const secondManager = new EmbraceSpanSessionManager({
+    const secondManager = new EmbraceUserSessionManager({
       diag,
       storage,
       limitManager,
@@ -610,7 +610,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         backing.setItem(k, v);
       },
     };
-    const flipManager = new EmbraceSpanSessionManager({
+    const flipManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
       perf,
@@ -639,7 +639,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   });
 
   it('should reject the property write when storage is unavailable for a user-session-scoped property', () => {
-    const failingManager = new EmbraceSpanSessionManager({
+    const failingManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
       perf,
@@ -801,7 +801,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   });
 
   it('should still emit a session part span when storage is failing', () => {
-    const failingManager = new EmbraceSpanSessionManager({
+    const failingManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
       perf,
@@ -825,7 +825,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
   });
 
   it('should reject the property write when storage is unavailable for a permanent property', () => {
-    const failingManager = new EmbraceSpanSessionManager({
+    const failingManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
       perf,
@@ -875,7 +875,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       },
       clear: () => backing.clear(),
     };
-    const flakyManager = new EmbraceSpanSessionManager({
+    const flakyManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
       perf,
@@ -941,7 +941,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should restart parts after endUserSession via the rollover flow', () => {
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         storage,
         limitManager,
@@ -1001,7 +1001,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         originalRemove(key);
       };
 
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         storage: new NamespacedStorage({ storage: spyBacking, diag }),
         limitManager,
@@ -1021,7 +1021,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should mark part as final when max duration timer fires during active part', () => {
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         storage,
         limitManager,
@@ -1068,7 +1068,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
         hasFocus: () => visibilityState.focused,
       };
 
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         perf,
         storage,
@@ -1126,7 +1126,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       // Inactivity expiry is detected only when a new foreground part begins:
       // no JS timer runs, so the previous part's span is already exported
       // (without is_final) by the time we notice the gap.
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         perf,
         storage,
@@ -1163,7 +1163,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       const tracerProvider = new WebTracerProvider({
         spanProcessors: [new SimpleSpanProcessor(exporter)],
       });
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         storage,
         limitManager,
@@ -1237,7 +1237,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "user_session_rollover" on the part span started by max-duration timer', () => {
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         storage,
         limitManager,
@@ -1333,7 +1333,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
 
   describe('continuation inactivity handling', () => {
     it('should clear the persisted inactivity deadline when a part continues an active user session', () => {
-      const localManager = new EmbraceSpanSessionManager({
+      const localManager = new EmbraceUserSessionManager({
         diag,
         perf,
         storage,
@@ -1461,7 +1461,7 @@ describe('EmbraceSpanSessionManager session part lifecycle', () => {
       manager.startSessionPartInternal('init');
       manager.endSessionPartInternal('web_background');
 
-      const secondManager = new EmbraceSpanSessionManager({
+      const secondManager = new EmbraceUserSessionManager({
         diag,
         storage,
         limitManager,

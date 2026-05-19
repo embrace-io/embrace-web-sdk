@@ -35,8 +35,8 @@ import {
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
 import {
-  NoOpSpanSessionManager,
-  ProxySpanSessionManager,
+  NoOpUserSessionManager,
+  ProxyUserSessionManager,
   session,
 } from '../api-sessions/index.ts';
 import {
@@ -46,12 +46,12 @@ import {
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
-import type { SpanSessionManagerInternal } from '../managers/EmbraceSpanSessionManager/index.ts';
+import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { SDK_VERSION } from '../resources/index.ts';
 import { initSDK } from './initSDK.ts';
@@ -417,7 +417,7 @@ describe('initSDK', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    session.getSpanSessionManager().endSessionPartInternal('inactivity');
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
     if (result) {
       await result.flush();
     }
@@ -459,19 +459,19 @@ describe('initSDK', () => {
       (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
 
-    expect(session.getSpanSessionManager()).to.be.instanceOf(
-      ProxySpanSessionManager,
+    expect(session.getUserSessionManager()).to.be.instanceOf(
+      ProxyUserSessionManager,
     );
     expect(
       (
-        session.getSpanSessionManager() as ProxySpanSessionManager
+        session.getUserSessionManager() as ProxyUserSessionManager
       ).getDelegate(),
-    ).to.be.instanceOf(EmbraceSpanSessionManager);
+    ).to.be.instanceOf(EmbraceUserSessionManager);
     // Calling a public method on `session` must reach the same delegate, which
     // proves the proxy chain is wired up between the API and the registered
     // manager.
     expect(session.getUserSessionId()).to.equal(
-      session.getSpanSessionManager().getUserSessionId(),
+      session.getUserSessionManager().getUserSessionId(),
     );
 
     expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
@@ -662,7 +662,7 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
 
-      const sessionPartId = session.getSpanSessionManager().getSessionPartId();
+      const sessionPartId = session.getUserSessionManager().getSessionPartId();
       session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
@@ -839,7 +839,7 @@ describe('initSDK', () => {
       // shouldn't get exported
       embtrace.startSpan('my unfinished performance span');
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
 
@@ -870,7 +870,7 @@ describe('initSDK', () => {
         embtrace.startSpan(`my-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1000);
@@ -880,14 +880,14 @@ describe('initSDK', () => {
 
       fakeFetchResetHistory();
 
-      session.getSpanSessionManager().startSessionPartInternal('init');
+      session.getUserSessionManager().startSessionPartInternal('init');
 
       // Limit should be reset for the next session
       for (let i = 0; i < 100; i++) {
         embtrace.startSpan(`my-next-session-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const nextSessionExportedSpans = await getLastSessionExportedSpans(0);
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
@@ -925,7 +925,7 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -971,7 +971,7 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -1038,7 +1038,7 @@ describe('initSDK', () => {
 
       span.addEvent('span-event', spanEventAttributes);
       span.end();
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -1089,7 +1089,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1165,7 +1165,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1244,7 +1244,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionPartInternal('inactivity');
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1335,12 +1335,12 @@ describe('initSDK', () => {
     it('should disable the SDK', () => {
       const noOpLogManager = new NoOpLogManager();
       const noOpTraceManager = new NoOpTraceManager();
-      const noOpSpanSessionManager = new NoOpSpanSessionManager();
+      const noOpUserSessionManager = new NoOpUserSessionManager();
       const noOpUserManager = new NoOpUserManager();
 
       log.setGlobalLogManager(noOpLogManager);
       embtrace.setGlobalTraceManager(noOpTraceManager);
-      session.setGlobalSessionManager(noOpSpanSessionManager);
+      session.setGlobalUserSessionManager(noOpUserSessionManager);
       user.setGlobalUserManager(noOpUserManager);
 
       const myCustomConfigManager: DynamicConfigManager = {
@@ -1748,7 +1748,7 @@ describe('initSDK', () => {
           }
         }
 
-        session.getSpanSessionManager().endSessionPartInternal('inactivity');
+        session.getUserSessionManager().endSessionPartInternal('inactivity');
 
         // Need to restore the clock here so that the setTimeout in `getLastSessionExportedSpans` works
         clock.restore();
@@ -1879,9 +1879,9 @@ describe('isolated instances', () => {
     // Deprecated public path — must be a no-op against the unregistered global.
     session.endSessionSpan();
     // New internal path through the proxy's underlying manager — also a no-op.
-    session.getSpanSessionManager().endSessionPartInternal('inactivity');
-    session.getSpanSessionManager().startSessionPartInternal('web_activity');
-    session.getSpanSessionManager().endSessionPartInternal('inactivity');
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
+    session.getUserSessionManager().startSessionPartInternal('web_activity');
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
 
     await result.flush();
 
@@ -1931,7 +1931,7 @@ describe('isolated instances', () => {
       expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
 
       const internalSessionManager =
-        sdkInstance.session as SpanSessionManagerInternal;
+        sdkInstance.session as UserSessionManagerInternal;
 
       sdkInstance.log.message('some log', 'info');
       sdkInstance.trace.startSpan('some span').end();
@@ -1952,7 +1952,7 @@ describe('isolated instances', () => {
 
       // Two emb-session-part spans are expected per instance: the init part
       // is ended explicitly, then a fresh activity part is opened and ended.
-      // Each instance owns its own spanSessionManager, so the parts are
+      // Each instance owns its own userSessionManager, so the parts are
       // isolated per instance and not shared.
       expect(finishedSpans).to.have.lengthOf(4);
       expect(finishedSpans[0].name).to.equal('some span');

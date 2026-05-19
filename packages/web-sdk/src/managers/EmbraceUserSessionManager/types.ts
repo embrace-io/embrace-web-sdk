@@ -2,8 +2,8 @@ import type { DiagLogger, TracerProvider } from '@opentelemetry/api';
 import type {
   SessionPartEndReason,
   SessionPartStartReason,
-  SpanSessionManager,
   UserSessionEndReason,
+  UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
@@ -84,12 +84,12 @@ export interface UserSessionAttributes {
 
 /**
  * SDK-internal handle on the user-session manager. Extends the public
- * `SpanSessionManager` with the part-side surface (span lifecycle, listeners,
+ * `UserSessionManager` with the part-side surface (span lifecycle, listeners,
  * counters) used by span/log processors. Instrumentations, processors, and
  * the SDK init flow take this type; customer code only sees
- * `SpanSessionManager`.
+ * `UserSessionManager`.
  */
-export interface SpanSessionManagerInternal extends SpanSessionManager {
+export interface UserSessionManagerInternal extends UserSessionManager {
   getUserSessionAttributes: () => UserSessionAttributes | null;
 
   /**
@@ -131,7 +131,7 @@ export interface SpanSessionManagerInternal extends SpanSessionManager {
   setTracerProvider: (tracerProvider: TracerProvider) => void;
 }
 
-export interface EmbraceSpanSessionManagerArgs {
+export interface EmbraceUserSessionManagerArgs {
   diag?: DiagLogger;
   perf: PerformanceManager;
   storage: NamespacedStorage;

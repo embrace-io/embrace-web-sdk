@@ -131,7 +131,7 @@ const InfoItem = ({
 const POKEMON_URL = 'https://pokeapi.co/api/v2/pokemon/1/'; // some free and open source random API for testing purposes
 
 const App = () => {
-  const userSessionManager = session.getSpanSessionManager();
+  const userSessionManager = session.getUserSessionManager();
   const logManager = log.getLogManager();
   const [spans, setSpans] = useState<Span[]>([]);
   const [userSessionId, setUserSessionId] = useState<string | null>(null);
@@ -156,7 +156,7 @@ const App = () => {
   const [inactivityTimeoutSeconds, setInactivityTimeoutSeconds] = useState<
     number | null
   >(null);
-  const [sessionDurationMs, setSessionDurationMs] = useState<number>(0);
+  const [userSessionDurationMs, setUserSessionDurationMs] = useState<number>(0);
   const [partStartTs, setPartStartTs] = useState<number | null>(null);
   const [partDurationMs, setPartDurationMs] = useState<number>(0);
   const [partStartReason, setPartStartReason] = useState<string | null>(null);
@@ -298,10 +298,11 @@ const App = () => {
 
   useEffect(() => {
     if (userSessionStartTs === null) {
-      setSessionDurationMs(0);
+      setUserSessionDurationMs(0);
       return;
     }
-    const tick = () => setSessionDurationMs(Date.now() - userSessionStartTs);
+    const tick = () =>
+      setUserSessionDurationMs(Date.now() - userSessionStartTs);
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -576,7 +577,7 @@ const App = () => {
               <td>
                 {userSessionStartTs === null
                   ? '—'
-                  : formatDuration(sessionDurationMs)}
+                  : formatDuration(userSessionDurationMs)}
               </td>
             </tr>
           </tbody>
@@ -658,7 +659,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Config</legend>
+        <legend>User Session Config</legend>
         <dl className="info-list info-list-horizontal">
           <InfoItem
             label="Max Duration"
@@ -682,7 +683,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Control</legend>
+        <legend>User Session Control</legend>
         <div className="actions">
           <button
             type="button"
@@ -750,7 +751,7 @@ const App = () => {
       </fieldset>
 
       <fieldset>
-        <legend>Session Properties</legend>
+        <legend>User Session Properties</legend>
         <div className="actions">
           <button
             type="button"

@@ -22,7 +22,7 @@ export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
   {
     logManager,
-    spanSessionManager,
+    userSessionManager,
     pageManager,
     limitManager,
   }: SetupDefaultInstrumentationsArgs,
@@ -110,8 +110,8 @@ export const setupDefaultInstrumentations = (
 
   for (const instrumentation of instrumentations) {
     if (instrumentation instanceof EmbraceInstrumentationBase) {
-      if (spanSessionManager) {
-        instrumentation.setSessionManager(spanSessionManager);
+      if (userSessionManager) {
+        instrumentation.setUserSessionManager(userSessionManager);
       }
 
       if (logManager) {

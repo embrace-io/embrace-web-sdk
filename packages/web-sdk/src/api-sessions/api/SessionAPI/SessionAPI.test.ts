@@ -2,7 +2,7 @@ import type { Span } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { SpanSessionManagerInternal } from '../../../managers/EmbraceSpanSessionManager/types.ts';
+import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type { SessionAPIInstance } from './SessionAPI.ts';
 import { SessionAPI } from './SessionAPI.ts';
 
@@ -14,7 +14,7 @@ afterEach(() => {
   SessionAPI.resetInstance();
 });
 
-const createMockSpanSessionManager = (): SpanSessionManagerInternal => ({
+const createMockUserSessionManager = (): UserSessionManagerInternal => ({
   // Part identity
   getSessionPartId: sinon.stub().returns('partId'),
   getSessionPartSpan: sinon.stub().returns({} as Span),
@@ -66,71 +66,71 @@ describe('SessionAPI', () => {
     expect(instance1).to.equal(instance2);
   });
 
-  it('should return a proxy from getSpanSessionManager that forwards to the registered manager', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
-    const returned = sessionAPI.getSpanSessionManager();
+  it('should return a proxy from getUserSessionManager that forwards to the registered manager', () => {
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
+    const returned = sessionAPI.getUserSessionManager();
     void expect(returned.getSessionPartId()).to.equal('partId');
-    void expect(spanSessionManager.getSessionPartId).to.have.been.calledOnce;
+    void expect(userSessionManager.getSessionPartId).to.have.been.calledOnce;
   });
 
   it('should forward user session methods to the manager', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
     expect(sessionAPI.getUserSessionId()).to.equal('userSessionId');
-    void expect(spanSessionManager.getUserSessionId).to.have.been.calledOnce;
+    void expect(userSessionManager.getUserSessionId).to.have.been.calledOnce;
 
     expect(sessionAPI.getPreviousUserSessionId()).to.equal('prevUserSessionId');
-    void expect(spanSessionManager.getPreviousUserSessionId).to.have.been
+    void expect(userSessionManager.getPreviousUserSessionId).to.have.been
       .calledOnce;
 
     expect(sessionAPI.getUserSessionStartTime()).to.equal(1000);
-    void expect(spanSessionManager.getUserSessionStartTime).to.have.been
+    void expect(userSessionManager.getUserSessionStartTime).to.have.been
       .calledOnce;
 
     sessionAPI.endUserSession();
-    void expect(spanSessionManager.endUserSession).to.have.been.calledOnce;
+    void expect(userSessionManager.endUserSession).to.have.been.calledOnce;
   });
 
   it('should forward property and breadcrumb methods to the manager', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
     sessionAPI.addBreadcrumb('br-name');
-    void expect(spanSessionManager.addBreadcrumb).to.have.been.calledOnceWith(
+    void expect(userSessionManager.addBreadcrumb).to.have.been.calledOnceWith(
       'br-name',
     );
 
     sessionAPI.addProperty('key', 'value');
-    void expect(spanSessionManager.addProperty).to.have.been.calledOnceWith(
+    void expect(userSessionManager.addProperty).to.have.been.calledOnceWith(
       'key',
       'value',
     );
 
     sessionAPI.removeProperty('key');
-    void expect(spanSessionManager.removeProperty).to.have.been.calledOnceWith(
+    void expect(userSessionManager.removeProperty).to.have.been.calledOnceWith(
       'key',
     );
   });
 
   it('should forward deprecated getSessionId, getSessionStartTime, getSessionSpan to the manager', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
     expect(sessionAPI.getSessionId()).to.equal('userSessionId');
-    void expect(spanSessionManager.getSessionId).to.have.been.calledOnce;
+    void expect(userSessionManager.getSessionId).to.have.been.calledOnce;
 
     expect(sessionAPI.getSessionStartTime()).to.equal(1000);
-    void expect(spanSessionManager.getSessionStartTime).to.have.been.calledOnce;
+    void expect(userSessionManager.getSessionStartTime).to.have.been.calledOnce;
 
     void expect(sessionAPI.getSessionSpan()).to.not.be.null;
-    void expect(spanSessionManager.getSessionSpan).to.have.been.calledOnce;
+    void expect(userSessionManager.getSessionSpan).to.have.been.calledOnce;
   });
 
   it('should return null for deprecated getPreviousSessionId without delegating and noop deprecated listeners/startSessionSpan', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
     void expect(sessionAPI.getPreviousSessionId()).to.be.null;
     expect(() => sessionAPI.addSessionStartedListener(() => {})).to.not.throw();
@@ -139,10 +139,10 @@ describe('SessionAPI', () => {
   });
 
   it('should forward endSessionSpan to the manager', () => {
-    const spanSessionManager = createMockSpanSessionManager();
-    sessionAPI.setGlobalSessionManager(spanSessionManager);
+    const userSessionManager = createMockUserSessionManager();
+    sessionAPI.setGlobalUserSessionManager(userSessionManager);
 
     sessionAPI.endSessionSpan();
-    void expect(spanSessionManager.endSessionSpan).to.have.been.calledOnce;
+    void expect(userSessionManager.endSessionSpan).to.have.been.calledOnce;
   });
 });

@@ -1,11 +1,11 @@
-export { NoOpSpanSessionManager } from './NoOpSpanSessionManager/index.ts';
-export { ProxySpanSessionManager } from './ProxySpanSessionManager/index.ts';
+export { NoOpUserSessionManager } from './NoOpUserSessionManager/index.ts';
+export { ProxyUserSessionManager } from './ProxyUserSessionManager/index.ts';
 export type {
   PropertyOptions,
   ReasonSessionEnded,
   SessionPartEndReason,
   SessionPartStartReason,
-  SpanSessionManager,
   StartSessionOptions,
   UserSessionEndReason,
+  UserSessionManager,
 } from './types.ts';

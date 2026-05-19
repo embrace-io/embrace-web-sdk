@@ -3,10 +3,10 @@ import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import { NoOpSpanSessionManager } from '../../api-sessions/manager/NoOpSpanSessionManager/index.ts';
-import type { SpanSessionManagerInternal } from '../../managers/EmbraceSpanSessionManager/index.ts';
-import type { UserSessionAttributes } from '../../managers/EmbraceSpanSessionManager/types.ts';
-import { IdentifiableSessionLogRecordProcessor } from './IdentifiableSessionLogRecordProcessor.ts';
+import { NoOpUserSessionManager } from '../../api-sessions/manager/NoOpUserSessionManager/index.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
+import type { UserSessionAttributes } from '../../managers/EmbraceUserSessionManager/types.ts';
+import { UserSessionLogRecordProcessor } from './UserSessionLogRecordProcessor.ts';
 
 const { expect } = chai;
 
@@ -23,15 +23,15 @@ const mockAttributes: UserSessionAttributes = {
   'emb.user_session_inactivity_timeout_seconds': 1800,
 };
 
-// Stub built on top of NoOpSpanSessionManager so we satisfy the full
-// SpanSessionManagerInternal surface without listing every method. A non-null
+// Stub built on top of NoOpUserSessionManager so we satisfy the full
+// UserSessionManagerInternal surface without listing every method. A non-null
 // `attrs` models an active user session, which implies an active part; a null
 // `attrs` models neither.
-const createMockSpanSessionManager = (
+const createMockUserSessionManager = (
   attrs: UserSessionAttributes | null = mockAttributes,
-  overrides: Partial<SpanSessionManagerInternal> = {},
-): SpanSessionManagerInternal => {
-  const base = new NoOpSpanSessionManager();
+  overrides: Partial<UserSessionManagerInternal> = {},
+): UserSessionManagerInternal => {
+  const base = new NoOpUserSessionManager();
   return Object.assign(base, {
     getUserSessionId: () => (attrs ? attrs['emb.user_session_id'] : null),
     getSessionPartId: () => (attrs ? 'PART_XYZ' : null),
@@ -40,15 +40,15 @@ const createMockSpanSessionManager = (
   });
 };
 
-const setup = (manager: SpanSessionManagerInternal) => {
+const setup = (manager: UserSessionManagerInternal) => {
   const memoryExporter = setupTestLogExporter([
-    new IdentifiableSessionLogRecordProcessor({ spanSessionManager: manager }),
+    new UserSessionLogRecordProcessor({ userSessionManager: manager }),
   ]);
   const logger = logs.getLogger('test-logger');
   return { memoryExporter, logger };
 };
 
-describe('IdentifiableSessionLogRecordProcessor', () => {
+describe('UserSessionLogRecordProcessor', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let logger: Logger;
 
@@ -57,7 +57,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   });
 
   it('should stamp a 32-char log uid and the active part id on every record', () => {
-    ({ memoryExporter, logger } = setup(createMockSpanSessionManager()));
+    ({ memoryExporter, logger } = setup(createMockUserSessionManager()));
 
     logger.emit({ body: 'test log' });
 
@@ -69,7 +69,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   });
 
   it('should stamp empty session ids when the manager has no user session at all', () => {
-    ({ memoryExporter, logger } = setup(createMockSpanSessionManager(null)));
+    ({ memoryExporter, logger } = setup(createMockUserSessionManager(null)));
 
     logger.emit({ body: 'test log' });
 
@@ -86,7 +86,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
     // Invariant: emb.user_session_id is never blank when the manager has a
     // user session, even if no part is currently active.
     ({ memoryExporter, logger } = setup(
-      createMockSpanSessionManager(mockAttributes, {
+      createMockUserSessionManager(mockAttributes, {
         getSessionPartId: () => null,
       }),
     ));
@@ -103,7 +103,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
   });
 
   it('should stamp the 3 session ids on logs emitted during an active part', () => {
-    ({ memoryExporter, logger } = setup(createMockSpanSessionManager()));
+    ({ memoryExporter, logger } = setup(createMockUserSessionManager()));
 
     logger.emit({ body: 'test log' });
 
@@ -133,7 +133,7 @@ describe('IdentifiableSessionLogRecordProcessor', () => {
 
   it('should emit the previous user session id on emb.user_session_previous_id when available', () => {
     ({ memoryExporter, logger } = setup(
-      createMockSpanSessionManager(mockAttributes, {
+      createMockUserSessionManager(mockAttributes, {
         getPreviousUserSessionId: () => 'PREVIOUS_USER_SESSION',
       }),
     ));

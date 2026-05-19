@@ -15,7 +15,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
-import { EmbraceSpanSessionManager } from './EmbraceSpanSessionManager.ts';
+import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -36,7 +36,7 @@ const lastEndCall = (spy: sinon.SinonSpy): EndCall | undefined => {
   return spy.lastCall.args as EndCall;
 };
 
-describe('EmbraceSpanSessionManager', () => {
+describe('EmbraceUserSessionManager', () => {
   let inMemoryStorage: InMemoryStorage;
   let storage: NamespacedStorage;
   let diag: InMemoryDiagLogger;
@@ -57,7 +57,7 @@ describe('EmbraceSpanSessionManager', () => {
     maxUserSessionDurationSeconds?: number;
     inactivityTimeoutSeconds?: number;
   }) =>
-    new EmbraceSpanSessionManager({
+    new EmbraceUserSessionManager({
       diag,
       perf: new MockPerformanceManager(clock),
       storage,
@@ -254,7 +254,7 @@ describe('EmbraceSpanSessionManager', () => {
       diag,
     });
 
-    const manager = new EmbraceSpanSessionManager({
+    const manager = new EmbraceUserSessionManager({
       diag,
       perf: new MockPerformanceManager(clock),
       storage: safeFailing,

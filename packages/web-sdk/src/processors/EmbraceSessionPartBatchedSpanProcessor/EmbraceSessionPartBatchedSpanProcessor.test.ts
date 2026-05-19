@@ -15,14 +15,14 @@ import {
   mockSessionSpan,
   mockSpan,
 } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
-import type { SpanSessionManagerInternal } from '../../managers/index.ts';
+import type { UserSessionManagerInternal } from '../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../managers/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
-import { EmbraceSessionBatchedSpanProcessor } from './EmbraceSessionBatchedSpanProcessor.ts';
+import { EmbraceSessionPartBatchedSpanProcessor } from './EmbraceSessionPartBatchedSpanProcessor.ts';
 
 const { expect } = chai;
 
@@ -45,13 +45,13 @@ class FailingSpanExporter extends InMemorySpanExporter {
   }
 }
 
-describe('EmbraceSessionBatchedSpanProcessor', () => {
+describe('EmbraceSessionPartBatchedSpanProcessor', () => {
   let memoryExporter: InMemorySpanExporter;
-  let processor: EmbraceSessionBatchedSpanProcessor;
+  let processor: EmbraceSessionPartBatchedSpanProcessor;
   let diag: InMemoryDiagLogger;
   let limitManager: EmbraceLimitManager;
   let clock: sinon.SinonFakeTimers;
-  let spanSessionManager: SpanSessionManagerInternal;
+  let userSessionManager: UserSessionManagerInternal;
 
   beforeEach(() => {
     clock = sinon.useFakeTimers(1756138004000);
@@ -68,17 +68,17 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
       },
     });
 
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager,
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
 
-    processor = new EmbraceSessionBatchedSpanProcessor({
+    processor = new EmbraceSessionPartBatchedSpanProcessor({
       exporter: memoryExporter,
       limitManager,
-      spanSessionManager,
+      userSessionManager,
     });
   });
 
@@ -88,7 +88,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     trace.disable();
   });
 
-  it('should not export non-session spans immediately', () => {
+  it('should not export non-session-part spans immediately', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
@@ -104,7 +104,7 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
     );
   });
 
-  it('should batch non-session spans with session span', () => {
+  it('should batch non-session-part spans with session-part span', () => {
     processor.onEnd(mockSpan);
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     processor.onEnd(mockSessionSpan);
@@ -161,25 +161,25 @@ describe('EmbraceSessionBatchedSpanProcessor', () => {
 
   exportFailedTests.forEach((test) => {
     it(test.name, async () => {
-      spanSessionManager.startSessionPartInternal('init');
+      userSessionManager.startSessionPartInternal('init');
       const diagLogger = new InMemoryDiagLogger();
-      processor = new EmbraceSessionBatchedSpanProcessor({
+      processor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
           test.errorMessage ? new Error(test.errorMessage) : undefined,
         ),
         diag: diagLogger,
         limitManager,
-        spanSessionManager,
+        userSessionManager,
       });
 
       processor.onEnd(mockSessionSpan);
 
       await Promise.resolve();
 
-      spanSessionManager.endSessionPartInternal('inactivity');
+      userSessionManager.endSessionPartInternal('inactivity');
 
-      spanSessionManager.startSessionPartInternal('init');
-      spanSessionManager.endSessionPartInternal('inactivity');
+      userSessionManager.startSessionPartInternal('init');
+      userSessionManager.endSessionPartInternal('inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);

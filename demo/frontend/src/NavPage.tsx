@@ -15,11 +15,11 @@ const NavPage = ({
   nav?: ReactNode;
   children?: ReactNode;
 }) => {
-  // Resolve at render time, not module load: the proxy's getSpanSessionManager()
+  // Resolve at render time, not module load: the proxy's getUserSessionManager()
   // returns the underlying manager directly, and at module load that's still
   // the no-op stand-in (setupSDK runs after this module's imports resolve).
   // Cast to the concrete manager to read getUserSessionAttributes (not on the proxy).
-  const userSessionManager = session.getSpanSessionManager();
+  const userSessionManager = session.getUserSessionManager();
   const [sessionPartId, setSessionPartId] = useState<string | null>(null);
   const [userSessionPartIndex, setUserSessionPartIndex] = useState<
     number | null

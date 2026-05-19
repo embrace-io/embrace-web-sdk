@@ -4,7 +4,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { OTelPerformanceManager } from '../utils/index.ts';
 import { log } from './logAPI.ts';
@@ -37,7 +37,7 @@ describe('logAPI', () => {
       const storage = setupTestStorage();
       const perf = new OTelPerformanceManager();
       manager = new EmbraceLogManager({
-        spanSessionManager: new EmbraceSpanSessionManager({
+        userSessionManager: new EmbraceUserSessionManager({
           limitManager,
           perf,
           storage,

@@ -1,8 +1,8 @@
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
-  SpanSessionManagerInternal,
   UserSessionAttributes,
-} from '../../../managers/EmbraceSpanSessionManager/types.ts';
+  UserSessionManagerInternal,
+} from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type {
   PropertyOptions,
   SessionPartEndReason,
@@ -10,7 +10,7 @@ import type {
   UserSessionEndReason,
 } from '../index.ts';
 
-export class NoOpSpanSessionManager implements SpanSessionManagerInternal {
+export class NoOpUserSessionManager implements UserSessionManagerInternal {
   public addBreadcrumb(_name: string): void {
     // do nothing.
   }

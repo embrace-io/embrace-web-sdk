@@ -1,6 +1,6 @@
-# Span Session Manager
+# User Session Manager
 
-`EmbraceSpanSessionManager` is the source of truth for user-session and
+`EmbraceUserSessionManager` is the source of truth for user-session and
 session-part state across all tabs in this browser.
 
 ## Two-level model
@@ -24,7 +24,7 @@ part is bound to a user session at start time.
 
 ## Public API surface
 
-The `SpanSessionManager` interface exposes the following methods.
+The `UserSessionManager` interface exposes the following methods.
 
 ### Active
 
@@ -57,7 +57,7 @@ new equivalents; others are inert (return `null` or no-op).
 
 ### Internal interface
 
-`SpanSessionManagerInternal` extends the public interface with members used by
+`UserSessionManagerInternal` extends the public interface with members used by
 instrumentations and processors only:
 
 - `startSessionPartInternal(reason)`, `endSessionPartInternal(reason, userSessionEndReason?)`
@@ -247,7 +247,7 @@ A session part can only start when the tab is visible and focused. Only the
 focused tab can hold a part. A tab that loses focus ends its part with reason
 `web_background`. This makes `localStorage` the single source of truth with
 no write contention during active parts and no need for cross-tab event
-listeners. The class-level doc comment on `EmbraceSpanSessionManager` records
+listeners. The class-level doc comment on `EmbraceUserSessionManager` records
 the choice.
 
 ### Property visibility
@@ -296,7 +296,7 @@ There is no BFCache-specific code in the manager. Behavior is absorbed by the
 existing engagement events:
 
 - **Freeze** (entering BFCache). `pagehide` fires.
-  `EmbraceSpanSessionManager._onEngagementChange` ends the active part with
+  `EmbraceUserSessionManager._onEngagementChange` ends the active part with
   reason `web_background`.
 - **Restore** (leaving BFCache). `pageshow` fires. If the document is visible
   and focused and no part is active, a new part starts with reason
@@ -340,11 +340,11 @@ preserves the JS heap.
 ### Stamped on every other span
 
 Nothing. Non-part spans are correlated server-side via the batched envelope
-emitted by `EmbraceSessionBatchedSpanProcessor`, not by per-span ID stamping.
+emitted by `EmbraceSessionPartBatchedSpanProcessor`, not by per-span ID stamping.
 
 ### Stamped on log records
 
-`IdentifiableSessionLogRecordProcessor` writes the same set as spans, plus
+`UserSessionLogRecordProcessor` writes the same set as spans, plus
 `log.record.uid` (a fresh UUID per record).
 
 ## Known gaps
@@ -365,7 +365,7 @@ Why it happens:
    (parts are foreground-only by design).
 3. Until the next engagement event fires (`pageshow`/`focus`/
    `visibilitychange`), `_activeSessionPartId === null`. Logs that pass
-   through `IdentifiableSessionLogRecordProcessor` in that window end up
+   through `UserSessionLogRecordProcessor` in that window end up
    with `emb.session_part_id: ''`. Spans are not affected; only the
    session-part span itself carries IDs, and other spans are correlated
    server-side via the batched envelope.

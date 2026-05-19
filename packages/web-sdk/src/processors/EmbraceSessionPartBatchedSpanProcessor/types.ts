@@ -2,12 +2,12 @@ import type { DiagLogger } from '@opentelemetry/api';
 import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
 import type {
   LimitManagerInternal,
-  SpanSessionManagerInternal,
+  UserSessionManagerInternal,
 } from '../../managers/index.ts';
 
-export type EmbraceSessionBatchedSpanProcessorArgs = {
+export type EmbraceSessionPartBatchedSpanProcessorArgs = {
   exporter: SpanExporter;
   limitManager: LimitManagerInternal;
-  spanSessionManager: SpanSessionManagerInternal;
+  userSessionManager: UserSessionManagerInternal;
   diag?: DiagLogger;
 };

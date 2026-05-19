@@ -39,7 +39,7 @@ describe('webSdkResource', () => {
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: 'EmbIOAppVersionX.X.X',
-        pageSessionStorage: storage,
+        tabStorage: storage,
       });
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
@@ -62,7 +62,7 @@ describe('webSdkResource', () => {
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '3.4.2',
-        pageSessionStorage: storage,
+        tabStorage: storage,
       });
 
       expect(resource.attributes['app_version']).to.equal('3.4.2');
@@ -73,7 +73,7 @@ describe('webSdkResource', () => {
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
-        pageSessionStorage: storage,
+        tabStorage: storage,
       });
 
       expect(resource.attributes['emb.app_instance_id']).to.be.equal(
@@ -85,7 +85,7 @@ describe('webSdkResource', () => {
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
-        pageSessionStorage: storage,
+        tabStorage: storage,
       });
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
@@ -103,7 +103,7 @@ describe('webSdkResource', () => {
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: '1.0.0',
-        pageSessionStorage: failingStorage,
+        tabStorage: failingStorage,
       });
 
       const appInstanceId = resource.attributes['emb.app_instance_id'];
