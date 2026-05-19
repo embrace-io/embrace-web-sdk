@@ -30,6 +30,7 @@ import type {
   EmptyRootInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
+  RageClickInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationConfig,
@@ -369,6 +370,7 @@ export interface SetupPageArgs {
 type OptionalInstrumentations =
   | 'exception'
   | 'click'
+  | 'rage-click'
   | 'web-vital'
   | 'loaf'
   | 'user-timing'
@@ -393,6 +395,7 @@ export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
+  'rage-click'?: RageClickInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationConfig;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;

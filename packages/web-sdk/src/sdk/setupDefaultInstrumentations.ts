@@ -9,6 +9,7 @@ import {
   EmptyRootInstrumentation,
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
+  RageClickInstrumentation,
   ServerTimingInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
@@ -37,6 +38,10 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('click')) {
     instrumentations.push(new ClicksInstrumentation(config['click']));
+  }
+
+  if (!config.omit?.has('rage-click')) {
+    instrumentations.push(new RageClickInstrumentation(config['rage-click']));
   }
 
   if (!config.omit?.has('web-vital')) {

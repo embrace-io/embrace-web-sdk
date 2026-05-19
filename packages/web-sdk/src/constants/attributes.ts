@@ -55,6 +55,7 @@ export enum EMB_TYPES {
   UserTiming = 'ux.user_timing',
   ElementTiming = 'ux.element_timing',
   ServerTiming = 'ux.server_timing',
+  RageClick = 'ux.rage_click',
 }
 
 export enum EMB_STATES {

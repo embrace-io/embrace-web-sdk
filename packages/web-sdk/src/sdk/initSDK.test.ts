@@ -46,6 +46,7 @@ import {
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
+import { RageClickInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
   EmbraceLogManager,
@@ -450,6 +451,43 @@ describe('initSDK', () => {
     });
     void expect(result).not.to.be.false;
     void expect(testWebVitalListeners.clsStub.called).to.be.false;
+  });
+
+  it('should register the rage-click instrumentation by default', () => {
+    const enableSpy = sinon.spy(RageClickInstrumentation.prototype, 'enable');
+
+    try {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        logProcessors: [new FakeLogRecordProcessor()],
+        spanProcessors: [new FakeSpanProcessor()],
+      });
+      void expect(result).not.to.be.false;
+      void expect(enableSpy.calledOnce).to.be.true;
+    } finally {
+      enableSpy.restore();
+    }
+  });
+
+  it('should allow omitting the rage-click instrumentation', () => {
+    const enableSpy = sinon.spy(RageClickInstrumentation.prototype, 'enable');
+
+    try {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        logProcessors: [new FakeLogRecordProcessor()],
+        spanProcessors: [new FakeSpanProcessor()],
+        defaultInstrumentationConfig: {
+          omit: new Set(['rage-click']),
+        },
+      });
+      void expect(result).not.to.be.false;
+      void expect(enableSpy.called).to.be.false;
+    } finally {
+      enableSpy.restore();
+    }
   });
 
   it('should register all global managers', async () => {
