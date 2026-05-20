@@ -37,26 +37,25 @@ export interface UserSessionManager {
    * Stores a key/value property that travels with every session part within
    * the current user session. Properties added without `lifespan: 'permanent'`
    * survive across foreground/background transitions but are cleared when the
-   * user session ends (manual `endUserSession()`, max-duration rollover, or a
-   * cross-tab end). They are persisted alongside the user-session state in
+   * user session ends. They are persisted alongside the user-session state in
    * localStorage, so other tabs sharing the same user session pick them up
    * on their next part start. With `lifespan: 'permanent'` the property is
    * stored as its own localStorage entry and reapplied across user sessions
    * until removed via `removeProperty(key)`.
    *
-   * If localStorage is unavailable the property degrades to in-memory only:
-   * it still travels with parts in the current tab, but other tabs will not
-   * see it. The SDK logs a one-line warning in that case.
+   * When storage is unavailable, writes are rejected (both for `lifespan:
+   * 'permanent'` and the default user-session scope), the in-memory state
+   * is not updated, and the property will not appear on any session part
+   * span. A warning is logged.
    *
-   * Safe to call before any part is active: the value is queued in memory and
-   * applied on the next part start.
+   * Safe to call before any part is active. Properties are persisted
+   * immediately and stamped on the session part span at end time.
    */
   addProperty: (key: string, value: string, options?: PropertyOptions) => void;
 
   /**
    * Removes a property regardless of scope: clears it from the in-memory
-   * user-session map and from localStorage if it was permanent. If a part is
-   * currently active, also removes the attribute from the active part span.
+   * maps (both user-session and permanent) and from localStorage.
    */
   removeProperty: (key: string) => void;
 
