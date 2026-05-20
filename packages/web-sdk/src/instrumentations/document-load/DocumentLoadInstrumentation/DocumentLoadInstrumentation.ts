@@ -34,7 +34,11 @@ import {
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import {
+  EMB_TYPES,
+  KEY_EMB_INCOMPLETE_STARTUP,
+  KEY_EMB_TYPE,
+} from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
@@ -72,6 +76,7 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
+  private readonly _onPageHide: () => void;
   private _performanceCollected = false;
 
   public constructor({
@@ -95,7 +100,15 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       },
     });
 
+    this._onPageHide = () => {
+      this.sessionManager
+        .getSessionSpan()
+        ?.setAttribute(KEY_EMB_INCOMPLETE_STARTUP, true);
+      window.removeEventListener('pagehide', this._onPageHide);
+    };
+
     this._onDocumentLoaded = () => {
+      window.removeEventListener('pagehide', this._onPageHide);
       // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
         this._collectPerformance();
@@ -541,10 +554,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public enable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
+    window.removeEventListener('pagehide', this._onPageHide);
+    window.addEventListener('pagehide', this._onPageHide);
     this._waitForPageLoad();
   }
 
   public disable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
+    window.removeEventListener('pagehide', this._onPageHide);
   }
 }

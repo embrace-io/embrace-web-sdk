@@ -23,6 +23,15 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
+import { InMemoryStorage } from '../../../../tests/utils/index.ts';
+import { session } from '../../../api-sessions/index.ts';
+import { KEY_EMB_INCOMPLETE_STARTUP } from '../../../constants/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceSpanSessionManager,
+} from '../../../managers/index.ts';
+import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
@@ -270,10 +279,8 @@ describe('DocumentLoad Instrumentation', () => {
     it('should collect performance after document load event', (done) => {
       const spy = sandbox.spy(window, 'addEventListener');
       plugin.enable();
-      const args = spy.args[0];
-      const name = args[0];
-      assert.strictEqual(name, 'load');
-      assert.ok(spy.calledOnce);
+      assert.ok(spy.args.some((args) => args[0] === 'load'));
+      assert.ok(spy.args.some((args) => args[0] === 'pagehide'));
       assert.ok(spyEntries.callCount === 0);
 
       window.dispatchEvent(
@@ -880,6 +887,123 @@ describe('DocumentLoad Instrumentation', () => {
         assert.isUndefined(resourceSpan.attributes['http.request.prevented']);
         done();
       });
+    });
+  });
+
+  describe('incomplete_startup abandonment detection', () => {
+    let spanSessionManager: EmbraceSpanSessionManager;
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+
+    beforeEach(() => {
+      spanSessionManager = new EmbraceSpanSessionManager({
+        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+        perf: new OTelPerformanceManager(),
+        storage: new InMemoryStorage(),
+        visibilityDoc: window.document,
+      });
+      spanSessionManager.startSessionSpan();
+      session.setGlobalSessionManager(spanSessionManager);
+
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+
+    afterEach(() => {
+      spanSessionManager.endSessionSpan();
+      spyEntries.restore();
+    });
+
+    it('should set emb.incomplete_startup when pagehide fires before load', () => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      assert.strictEqual(
+        spanSessionManager.getSessionSpan()?.attributes[
+          KEY_EMB_INCOMPLETE_STARTUP
+        ],
+        true,
+      );
+    });
+
+    it('should not set emb.incomplete_startup when load fires before pagehide', (done) => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      window.dispatchEvent(new Event('load'));
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event('pagehide'));
+        assert.isUndefined(
+          spanSessionManager.getSessionSpan()?.attributes[
+            KEY_EMB_INCOMPLETE_STARTUP
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should not set emb.incomplete_startup when document is already complete on enable', (done) => {
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event('pagehide'));
+        assert.isUndefined(
+          spanSessionManager.getSessionSpan()?.attributes[
+            KEY_EMB_INCOMPLETE_STARTUP
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should not throw when pagehide fires with no active session span', () => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      spanSessionManager.endSessionSpan();
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      assert.doesNotThrow(() => {
+        window.dispatchEvent(new Event('pagehide'));
+      });
+    });
+
+    it('should not set emb.incomplete_startup after disable', () => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+      plugin.disable();
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      assert.isUndefined(
+        spanSessionManager.getSessionSpan()?.attributes[
+          KEY_EMB_INCOMPLETE_STARTUP
+        ],
+      );
     });
   });
 
