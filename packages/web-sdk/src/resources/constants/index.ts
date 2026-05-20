@@ -1,5 +1,5 @@
 export const TEMPLATE_APP_VERSION = 'EmbIOAppVersionX.X.X';
-export const SDK_VERSION = '2.20.0';
+export const SDK_VERSION = '0.0.0-6fdef471';
 export const EMBRACE_SERVICE_NAME = 'embrace-web-sdk';
 // NATIVE_FRAMEWORK is the representation Embrace BE uses to differentiate between
 // sdks. It is an enum, so we just send a number here
