@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Temporary: stamp every version string in the repo with the current HEAD commit.
+# This util stamps every version string in the repo with the current HEAD
+# commit.
 # Used while testing a branch so emitted SDK telemetry carries the build's SHA.
 # Delegates to validate-versions.js, which updates package.json, SDK_VERSION /
-# CLI_VERSION constants, and golden files in one pass. Remove this script once
-# testing is done.
+# CLI_VERSION constants, golden files, and lockfile in one pass.
+
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
