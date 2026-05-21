@@ -49,6 +49,7 @@ import {
   generateUUID,
   getIncrementedCount,
   getVisibilityState,
+  SOFT_NAVIGATION_EVENT,
   throttle,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
@@ -204,6 +205,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onPageShow: this._onPageShow,
       onPageHide: this._onPageHide,
     });
+    this._target.addEventListener(
+      SOFT_NAVIGATION_EVENT,
+      this._onSoftNavigation,
+    );
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
     // fresh session here.
@@ -754,9 +759,24 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onPageShow: this._onPageShow,
       onPageHide: this._onPageHide,
     });
+    this._target.removeEventListener(
+      SOFT_NAVIGATION_EVENT,
+      this._onSoftNavigation,
+    );
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
   }
+
+  private readonly _onSoftNavigation = (): void => {
+    try {
+      if (this._activeSessionPartId !== null) {
+        this.endSessionPartInternal('web_soft_navigation');
+      }
+      this.startSessionPartInternal('web_soft_navigation');
+    } catch (e) {
+      this._diag.warn('Error handling soft navigation', e);
+    }
+  };
 
   private readonly _onActivity = (): void => {
     try {

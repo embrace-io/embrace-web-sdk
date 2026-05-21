@@ -27,7 +27,7 @@ const PAGES: Record<
     path: 'soft/a',
     title: 'Page A',
     description:
-      'You navigated to Page A. The URL changed but the page was not reloaded — this is a soft navigation.',
+      'You navigated to Page A. The URL changed but the page was not reloaded; this is a soft navigation.',
   },
   b: {
     path: 'soft/b',

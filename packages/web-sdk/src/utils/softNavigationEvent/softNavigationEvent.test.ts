@@ -1,9 +1,11 @@
 import * as chai from 'chai';
 import { installSoftNavigationEvent } from './softNavigationEvent.ts';
-import type { SoftNavigationDetail } from './types.ts';
+import type { SoftNavigationDetail, SoftNavigationOptions } from './types.ts';
 import { SOFT_NAVIGATION_EVENT } from './types.ts';
 
 const { expect } = chai;
+
+const SDK_SIDE_SOURCES = new Set(['navigation-api', 'history']);
 
 const waitForFrames = (count: number): Promise<DOMHighResTimeStamp> =>
   new Promise<DOMHighResTimeStamp>((resolve) => {
@@ -42,9 +44,15 @@ const PATH_A = '/page-a';
 const PATH_B = '/page-b';
 
 describe('installSoftNavigationEvent', () => {
-  let teardown: () => void;
+  const teardowns: Array<() => void> = [];
   let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
   let originalUrl: string;
+
+  const install = (options?: SoftNavigationOptions): (() => void) => {
+    const teardown = installSoftNavigationEvent(options);
+    teardowns.push(teardown);
+    return teardown;
+  };
 
   beforeEach(() => {
     originalUrl = window.location.href;
@@ -60,19 +68,20 @@ describe('installSoftNavigationEvent', () => {
     };
     (globalThis as Record<string, unknown>)['PerformanceObserver'] = Stub;
 
-    teardown = () => {};
     history.replaceState(null, '', HOME);
   });
 
   afterEach(() => {
-    teardown();
+    while (teardowns.length > 0) {
+      teardowns.pop()?.();
+    }
     history.replaceState(null, '', originalUrl);
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
   });
 
   it('fires once after pointerdown then pushState', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -82,6 +91,7 @@ describe('installSoftNavigationEvent', () => {
 
     expect(captured.events).to.have.lengthOf(1);
     const detail = captured.events[0];
+    expect(SDK_SIDE_SOURCES.has(detail.source)).to.equal(true);
     expect(detail.url).to.match(/page-a$/);
     expect(detail.previousUrl).to.match(/\/$/);
     expect(detail.startTime).to.be.at.most(detail.paintTime);
@@ -92,7 +102,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('fires after keydown then replaceState', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
@@ -107,7 +117,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('fires on popstate after a click-driven back navigation', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     history.pushState(null, '', PATH_A);
     const captured = captureEvents();
 
@@ -125,7 +135,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('fires on hashchange after a click', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -141,7 +151,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('does not fire when pushState happens with no preceding interaction', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     history.pushState(null, '', PATH_A);
@@ -153,7 +163,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('does not fire when the interaction is older than the timeout', async () => {
-    teardown = installSoftNavigationEvent({ interactionTimeoutMs: 50 });
+    install({ interactionTimeoutMs: 50 });
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -167,7 +177,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('does not fire when pushState targets the current URL', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -180,7 +190,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('fires only once for two rapid pushStates after a single click', async () => {
-    teardown = installSoftNavigationEvent();
+    install();
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -195,7 +205,7 @@ describe('installSoftNavigationEvent', () => {
   });
 
   it('teardown stops further events', async () => {
-    teardown = installSoftNavigationEvent();
+    const teardown = install();
     const captured = captureEvents();
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -204,7 +214,6 @@ describe('installSoftNavigationEvent', () => {
     expect(captured.events).to.have.lengthOf(1);
 
     teardown();
-    teardown = () => {};
     captured.events.length = 0;
 
     window.dispatchEvent(new PointerEvent('pointerdown'));
@@ -215,7 +224,7 @@ describe('installSoftNavigationEvent', () => {
     captured.remove();
   });
 
-  it('uses the native PerformanceObserver bridge when soft-navigation entries are supported', async () => {
+  it('uses the native PerformanceObserver bridge when soft-navigation entries are supported', () => {
     type ObserverCallback = (list: {
       getEntries: () => PerformanceEntry[];
     }) => void;
@@ -236,7 +245,7 @@ describe('installSoftNavigationEvent', () => {
 
     const originalPushState = history.pushState;
 
-    teardown = installSoftNavigationEvent();
+    install();
     expect(history.pushState).to.equal(originalPushState);
     expect(observerState.cb).to.not.be.null;
 
@@ -256,11 +265,56 @@ describe('installSoftNavigationEvent', () => {
 
     expect(events.events).to.have.lengthOf(1);
     expect(events.events[0]).to.deep.include({
+      source: 'soft-navigation-entry',
       url: '/native-route',
       startTime: 100,
       paintTime: 142,
       navigationId: 'native-id',
     });
     events.remove();
+  });
+
+  it('falls back when native PerformanceObserver throws during observe', async () => {
+    const Stub = class {
+      public static supportedEntryTypes = ['soft-navigation'];
+      public observe(): void {
+        throw new Error('observe rejected');
+      }
+      public disconnect(): void {}
+      public takeRecords(): PerformanceEntry[] {
+        return [];
+      }
+    };
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] = Stub;
+
+    install();
+    const captured = captureEvents();
+
+    window.dispatchEvent(new PointerEvent('pointerdown'));
+    history.pushState(null, '', PATH_A);
+
+    await waitForFrames(3);
+
+    expect(captured.events).to.have.lengthOf(1);
+    expect(SDK_SIDE_SOURCES.has(captured.events[0].source)).to.equal(true);
+    captured.remove();
+  });
+
+  it('re-install after teardown does not chain history wrappers', async () => {
+    const firstTeardown = install();
+    const wrappedOnce = history.pushState;
+    firstTeardown();
+    expect(history.pushState).to.equal(wrappedOnce);
+
+    install();
+    expect(history.pushState).to.equal(wrappedOnce);
+
+    const captured = captureEvents();
+    window.dispatchEvent(new PointerEvent('pointerdown'));
+    history.pushState(null, '', PATH_A);
+    await waitForFrames(3);
+
+    expect(captured.events).to.have.lengthOf(1);
+    captured.remove();
   });
 });

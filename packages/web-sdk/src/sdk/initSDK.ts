@@ -62,7 +62,6 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  SOFT_NAVIGATION_EVENT,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -282,6 +281,12 @@ export const initSDK = (
     });
 
     userSessionManager.setTracerProvider(tracerProvider);
+    // Start emitting `emb:soft-navigation` events. The manager subscribed
+    // to this event in setTracerProvider above and will rotate the session
+    // part each time one fires. The teardown is intentionally discarded:
+    // the SDK has no shutdown path and the helper guards against double
+    // installation, so re-init is safe.
+    installSoftNavigationEvent();
     // No-op if the tab is hidden/unfocused at init; the first part starts
     // on the next engagement via the manager's browser-activity listeners.
     userSessionManager.startSessionPartInternal('init');
@@ -301,15 +306,6 @@ export const initSDK = (
       pageManager,
       visibilityDoc: window.document,
     });
-
-    installSoftNavigationEvent();
-    window.addEventListener(SOFT_NAVIGATION_EVENT, () => {
-      if (userSessionManager.getSessionPartId() !== null) {
-        userSessionManager.endSessionPartInternal('web_soft_navigation');
-      }
-      userSessionManager.startSessionPartInternal('web_soft_navigation');
-    });
-
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be

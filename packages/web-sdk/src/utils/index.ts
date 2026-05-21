@@ -23,6 +23,7 @@ export {
   SOFT_NAVIGATION_EVENT,
   type SoftNavigationDetail,
   type SoftNavigationOptions,
+  type SoftNavigationSource,
 } from './softNavigationEvent/index.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';
