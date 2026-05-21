@@ -2,17 +2,18 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   InMemoryDiagLogger,
-  InMemoryStorage,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import { page } from '../../../api-page/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { NavigationInstrumentation } from './NavigationInstrumentation.ts';
@@ -23,7 +24,7 @@ describe('NavigationInstrumentation', () => {
   let navigationInstrumentation: NavigationInstrumentation;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: EmbraceSpanSessionManager;
+  let userSessionManager: UserSessionManagerInternal;
   let pageManager: EmbracePageManager;
 
   before(() => {
@@ -34,13 +35,13 @@ describe('NavigationInstrumentation', () => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
 
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
-      storage: new InMemoryStorage(),
+      storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalUserSessionManager(userSessionManager);
 
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
@@ -200,15 +201,15 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     // Start and end session to test that listeners are cleaned up
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
       url: '/test/1235',
     });
 
-    // Only session span
+    // Only session part span
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
 
     expect(diag.getDebugLogs()).to.be.deep.equal([
@@ -217,8 +218,8 @@ describe('NavigationInstrumentation', () => {
     ]);
   });
 
-  it('should start and end route span when session ends', () => {
-    spanSessionManager.startSessionSpan();
+  it('should start and end route span when session part ends', () => {
+    userSessionManager.startSessionPartInternal('init');
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -228,13 +229,13 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
-    // Session span and route span
+    // Session part span and route span
     expect(finishedSpans).to.have.lengthOf(2);
 
-    // First span is the session span
+    // First span is the session part span
     const span = finishedSpans[0];
     expect(span.name).to.equal('/test/:id');
     expect(span.attributes).to.deep.equal({
@@ -252,8 +253,8 @@ describe('NavigationInstrumentation', () => {
     ]);
   });
 
-  it('should start the route span when the session starts if it was previously ended', () => {
-    spanSessionManager.startSessionSpan();
+  it('should start the route span when the session part starts if it was previously ended', () => {
+    userSessionManager.startSessionPartInternal('init');
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -263,14 +264,14 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
 
     // At this point we should have two spans: one for the session and one for the route
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
 
     // Start and finish another session without changing the route
-    spanSessionManager.startSessionSpan();
-    spanSessionManager.endSessionSpan();
+    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // 2 sessions and 2 route spans
@@ -310,7 +311,7 @@ describe('NavigationInstrumentation', () => {
 
   it('should work correctly after disable() then enable()', () => {
     navigationInstrumentation = new NavigationInstrumentation({ diag });
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPartInternal('init');
 
     navigationInstrumentation.setCurrentRoute({
       path: '/first',
@@ -325,7 +326,7 @@ describe('NavigationInstrumentation', () => {
       url: '/second',
     });
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     const navigationSpans = finishedSpans.filter(

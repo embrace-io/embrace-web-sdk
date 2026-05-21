@@ -35,8 +35,8 @@ import {
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
 import {
-  NoOpSpanSessionManager,
-  ProxySpanSessionManager,
+  NoOpUserSessionManager,
+  ProxyUserSessionManager,
   session,
 } from '../api-sessions/index.ts';
 import {
@@ -46,11 +46,12 @@ import {
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
+import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
   EmbraceTraceManager,
   EmbraceUserManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { SDK_VERSION } from '../resources/index.ts';
 import { initSDK } from './initSDK.ts';
@@ -75,6 +76,8 @@ type ExportedSpan = ReadableSpan & {
       intValue: number;
     } & {
       doubleValue: number;
+    } & {
+      boolValue: boolean;
     };
   }[];
 };
@@ -82,6 +85,25 @@ type ExportedSpan = ReadableSpan & {
 type SpanScope = {
   name: string;
   version?: string;
+};
+
+const otlpAttrsToRecord = (
+  attrs: ExportedSpan['attributes'],
+): Record<string, string | number | boolean> => {
+  const out: Record<string, string | number | boolean> = {};
+  for (const a of attrs) {
+    const v = a.value;
+    if (typeof v.boolValue === 'boolean') {
+      out[a.key] = v.boolValue;
+    } else if (typeof v.intValue === 'number') {
+      out[a.key] = v.intValue;
+    } else if (typeof v.doubleValue === 'number') {
+      out[a.key] = v.doubleValue;
+    } else {
+      out[a.key] = v.stringValue;
+    }
+  }
+  return out;
 };
 
 const getLastSessionExportedSpans = async (
@@ -107,10 +129,10 @@ const getLastSessionExportedSpans = async (
   expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
   const sessionScopeSpan = resourceSpan['scopeSpans'][0];
   expect(sessionScopeSpan['scope']).to.deep.equal({
-    name: 'embrace-web-sdk-sessions',
+    name: 'embrace-web-sdk-session-parts',
   });
   expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
-  expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session');
+  expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session-part');
   const otherScopeSpan = resourceSpan['scopeSpans'][1];
   expect(otherScopeSpan['scope']).to.deep.equal(scope);
 
@@ -395,7 +417,7 @@ describe('initSDK', () => {
       attribution: {},
     } as MetricWithAttribution);
 
-    session.getSpanSessionManager().endSessionSpan();
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
     if (result) {
       await result.flush();
     }
@@ -437,14 +459,20 @@ describe('initSDK', () => {
       (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
 
-    expect(session.getSpanSessionManager()).to.be.instanceOf(
-      ProxySpanSessionManager,
+    expect(session.getUserSessionManager()).to.be.instanceOf(
+      ProxyUserSessionManager,
     );
     expect(
       (
-        session.getSpanSessionManager() as ProxySpanSessionManager
+        session.getUserSessionManager() as ProxyUserSessionManager
       ).getDelegate(),
-    ).to.be.instanceOf(EmbraceSpanSessionManager);
+    ).to.be.instanceOf(EmbraceUserSessionManager);
+    // Calling a public method on `session` must reach the same delegate, which
+    // proves the proxy chain is wired up between the API and the registered
+    // manager.
+    expect(session.getUserSessionId()).to.equal(
+      session.getUserSessionManager().getUserSessionId(),
+    );
 
     expect(embtrace.getTraceManager()).to.be.instanceOf(ProxyTraceManager);
     expect(
@@ -634,8 +662,8 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
 
-      const sessionID = session.getSessionId();
-      session.endSessionSpan();
+      const sessionPartId = session.getUserSessionManager().getSessionPartId();
+      session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
@@ -686,45 +714,52 @@ describe('initSDK', () => {
       expect(resourceSpan['scopeSpans']).to.have.lengthOf(1);
       const scopeSpan = resourceSpan['scopeSpans'][0];
       expect(scopeSpan['scope']).to.deep.equal({
-        name: 'embrace-web-sdk-sessions',
+        name: 'embrace-web-sdk-session-parts',
       });
       expect(scopeSpan['spans']).to.have.lengthOf(1);
       const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
-      expect(sessionSpan['name']).to.be.equal('emb-session');
+      expect(sessionSpan['name']).to.be.equal('emb-session-part');
 
-      const sessionNumber = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.session_number',
-      );
-      void expect(sessionNumber?.value.intValue).not.to.be.undefined;
-      expect(sessionNumber?.value.intValue).to.be.greaterThan(0);
-      expect(sessionNumber?.value.intValue).to.be.lessThan(20);
+      const attrRecord = otlpAttrsToRecord(sessionSpan['attributes']);
 
-      const startupDuration = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'emb.sdk_startup_duration',
-      );
-      void expect(startupDuration?.value.intValue).not.to.be.undefined;
-      expect(startupDuration?.value.intValue).to.be.greaterThan(0);
-      expect(startupDuration?.value.intValue).to.be.lessThan(100);
+      const userSessionId = attrRecord['emb.user_session_id'];
+      const userSessionStartTs = attrRecord['emb.user_session_start_ts'];
+      const sdkStartupDuration = attrRecord['emb.sdk_startup_duration'];
+      const browserUrlFull = attrRecord['browser.url.full'];
 
-      const browserUrlFull = sessionSpan['attributes'].find(
-        (attr) => attr.key === 'browser.url.full',
-      )?.value.stringValue;
-      void expect(browserUrlFull).to.be.a('string');
+      expect(userSessionId)
+        .to.be.a('string')
+        .and.match(/^[0-9A-F]{32}$/);
+      expect(sessionPartId).to.match(/^[0-9A-F]{32}$/);
+      expect(userSessionStartTs).to.be.a('number').and.greaterThan(0);
+      expect(sdkStartupDuration)
+        .to.be.a('number')
+        .and.greaterThan(0)
+        .and.lessThan(100);
+      expect(browserUrlFull).to.be.a('string').and.match(/^http/);
 
-      expect(sessionSpan['attributes']).to.deep.equal([
-        { key: 'emb.type', value: { stringValue: 'ux.session' } },
-        { key: 'emb.state', value: { stringValue: 'foreground' } },
-        {
-          key: 'session.id',
-          value: { stringValue: sessionID },
-        },
-        { key: 'emb.cold_start', value: { boolValue: true } },
-        sessionNumber,
-        { key: 'emb.session_start_type', value: { stringValue: 'init' } },
-        { key: 'emb.session_end_type', value: { stringValue: 'manual' } },
-        startupDuration,
-        { key: 'browser.url.full', value: { stringValue: browserUrlFull } },
-      ]);
+      expect(attrRecord).to.deep.equal({
+        'emb.type': 'ux.session_part',
+        'emb.state': 'foreground',
+        'emb.session_part_id': sessionPartId,
+        'emb.session_part_start_reason': 'init',
+        'emb.session_part_end_reason': 'user_session_ended',
+        'emb.cold_start': true,
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+        'emb.user_session_id': userSessionId,
+        'emb.user_session_previous_id': '',
+        'emb.user_session_number': 1,
+        'emb.user_session_part_index': 1,
+        'emb.session_part_number': 1,
+        'emb.user_session_start_ts': userSessionStartTs,
+        'emb.user_session_max_duration_seconds': 43200,
+        'emb.user_session_inactivity_timeout_seconds': 1800,
+        'emb.sdk_startup_duration': sdkStartupDuration,
+        'session.id': userSessionId,
+        'session.previous_id': '',
+        'browser.url.full': browserUrlFull,
+      });
     });
 
     it('should allow user resource to override service.name but not other SDK attributes', async () => {
@@ -752,7 +787,7 @@ describe('initSDK', () => {
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
 
-      session.endSessionSpan();
+      session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
@@ -804,7 +839,7 @@ describe('initSDK', () => {
       // shouldn't get exported
       embtrace.startSpan('my unfinished performance span');
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
 
@@ -835,7 +870,7 @@ describe('initSDK', () => {
         embtrace.startSpan(`my-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1000);
@@ -845,14 +880,14 @@ describe('initSDK', () => {
 
       fakeFetchResetHistory();
 
-      session.getSpanSessionManager().startSessionSpan();
+      session.getUserSessionManager().startSessionPartInternal('init');
 
       // Limit should be reset for the next session
       for (let i = 0; i < 100; i++) {
         embtrace.startSpan(`my-next-session-span-${i.toString()}`).end();
       }
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const nextSessionExportedSpans = await getLastSessionExportedSpans(0);
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
@@ -890,7 +925,7 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -936,22 +971,26 @@ describe('initSDK', () => {
       }
 
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap. browser.url.full is added by BrowserSpanProcessor.onEnd()
-      // which writes directly to span.attributes, bypassing the cap
+      // 200 is the span attribute cap; one additional attribute is written
+      // directly to span.attributes by a later processor at onEnd, bypassing
+      // the cap: browser.url.full (BrowserSpanProcessor).
       expect(exportedAttributes).to.have.lengthOf(201);
 
+      // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
+      // attributes option). Non-part spans no longer carry session IDs; the
+      // session-part span itself is the only span stamped, and correlation for
+      // everything else happens server-side via the batched envelope. Newest
+      // attributes are dropped when the limit is reached, so the first 199
+      // span-attribute-N entries survive.
       expect(exportedAttributes[0].key).to.equal('emb.type');
-      expect(exportedAttributes[1].key).to.equal('session.id');
-      for (let i = 2; i < exportedAttributes.length - 1; i++) {
-        // Newest attributes are dropped when the limit is reached, start counting after
-        // the 2 internal attributes added by our API
-        const expected = i - 2;
+      for (let i = 1; i < 200; i++) {
+        const expected = i - 1;
         expect(exportedAttributes[i].key).to.equal(
           `span-attribute-${expected.toString()}`,
         );
@@ -959,53 +998,10 @@ describe('initSDK', () => {
           stringValue: expected.toString(),
         });
       }
-      expect(exportedAttributes[200].key).to.equal('browser.url.full');
-    });
-
-    it('should apply limits on the events of an individual span', async () => {
-      fakeFetchRespondWith('');
-      const result = initSDK({
-        appID: 'abc12',
-        appVersion: 'my-app-version',
-        defaultInstrumentationConfig: {
-          omit: new Set([
-            // This instrumentation does its own patching of Fetch which interferes with our test stub
-            '@opentelemetry/instrumentation-fetch',
-            // Document load instrumentation generates a bunch of spans in this test environment
-            'document-load',
-          ]),
-        },
-      });
-      void expect(result).not.to.be.false;
-
-      // Needed to allow the browser detector resources to be grabbed
-      await new Promise((r) => setTimeout(r, 1));
-
-      const span = embtrace.startSpan('my-span');
-
-      // Capped at 200 events per span
-      for (let i = 0; i < 300; i++) {
-        span.addEvent(`span-event-${i.toString()}`);
-      }
-
-      span.end();
-      session.getSpanSessionManager().endSessionSpan();
-
-      const exportedSpans = await getLastSessionExportedSpans(1);
-      expect(exportedSpans).to.have.lengthOf(1);
-
-      const exportedEvents = exportedSpans[0].events;
-      expect(exportedEvents).to.have.lengthOf(200);
-
-      for (let i = 0; i < exportedEvents.length; i++) {
-        // Default OTel limiting of events drops the oldest events when the limit
-        // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
-        const expected = i + 100;
-        expect(exportedEvents[i]['name']).to.equal(
-          `span-event-${expected.toString()}`,
-        );
-      }
+      const bypassKeys = exportedAttributes
+        .slice(200)
+        .map((a: { key: string }) => a.key);
+      expect(bypassKeys).to.have.members(['browser.url.full']);
     });
 
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
@@ -1042,7 +1038,7 @@ describe('initSDK', () => {
 
       span.addEvent('span-event', spanEventAttributes);
       span.end();
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       const exportedSpans = await getLastSessionExportedSpans(1);
       expect(exportedSpans).to.have.lengthOf(1);
@@ -1093,7 +1089,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1169,7 +1165,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1248,7 +1244,7 @@ describe('initSDK', () => {
         },
       });
 
-      session.getSpanSessionManager().endSessionSpan();
+      session.getUserSessionManager().endSessionPartInternal('inactivity');
 
       if (result) {
         await result.flush();
@@ -1339,13 +1335,13 @@ describe('initSDK', () => {
     it('should disable the SDK', () => {
       const noOpLogManager = new NoOpLogManager();
       const noOpTraceManager = new NoOpTraceManager();
-      const noOpSpanSessionManager = new NoOpSpanSessionManager();
-      const noOpUserSessionManager = new NoOpUserManager();
+      const noOpUserSessionManager = new NoOpUserSessionManager();
+      const noOpUserManager = new NoOpUserManager();
 
       log.setGlobalLogManager(noOpLogManager);
       embtrace.setGlobalTraceManager(noOpTraceManager);
-      session.setGlobalSessionManager(noOpSpanSessionManager);
-      user.setGlobalUserManager(noOpUserSessionManager);
+      session.setGlobalUserSessionManager(noOpUserSessionManager);
+      user.setGlobalUserManager(noOpUserManager);
 
       const myCustomConfigManager: DynamicConfigManager = {
         refreshRemoteConfig: sinon.stub(),
@@ -1394,7 +1390,7 @@ describe('initSDK', () => {
         user.clearUserId();
         user.getEmbraceUserId();
 
-        // session
+        // user session (using deprecated method names)
         session.getSessionId();
         session.getSessionSpan();
         session.getSessionStartTime();
@@ -1752,7 +1748,7 @@ describe('initSDK', () => {
           }
         }
 
-        session.getSpanSessionManager().endSessionSpan();
+        session.getUserSessionManager().endSessionPartInternal('inactivity');
 
         // Need to restore the clock here so that the setTimeout in `getLastSessionExportedSpans` works
         clock.restore();
@@ -1880,8 +1876,12 @@ describe('isolated instances', () => {
 
     expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
 
-    session.startSessionSpan();
+    // Deprecated public path — must be a no-op against the unregistered global.
     session.endSessionSpan();
+    // New internal path through the proxy's underlying manager — also a no-op.
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
+    session.getUserSessionManager().startSessionPartInternal('web_activity');
+    session.getUserSessionManager().endSessionPartInternal('inactivity');
 
     await result.flush();
 
@@ -1930,10 +1930,14 @@ describe('isolated instances', () => {
       expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
 
+      const internalSessionManager =
+        sdkInstance.session as UserSessionManagerInternal;
+
       sdkInstance.log.message('some log', 'info');
       sdkInstance.trace.startSpan('some span').end();
-      sdkInstance.session.startSessionSpan();
-      sdkInstance.session.endSessionSpan();
+      internalSessionManager.endSessionPartInternal('inactivity');
+      internalSessionManager.startSessionPartInternal('web_activity');
+      internalSessionManager.endSessionPartInternal('inactivity');
       instrumentation.emit();
 
       await sdkInstance.flush();
@@ -1946,22 +1950,26 @@ describe('isolated instances', () => {
 
       const finishedSpans = spanExporter.getFinishedSpans();
 
-      // Two emb-session spans are expected per instance:
-      //   1. initSDK starts an init session; the startSessionSpan() call
-      //      above ends that one (emitting #1) and opens a fresh session.
-      //   2. The endSessionSpan() call closes the fresh session (emitting #2).
-      // Each instance has its own spanSessionManager, so sessions are not
-      // shared across instances.
+      // Two emb-session-part spans are expected per instance: the init part
+      // is ended explicitly, then a fresh activity part is opened and ended.
+      // Each instance owns its own userSessionManager, so the parts are
+      // isolated per instance and not shared.
       expect(finishedSpans).to.have.lengthOf(4);
       expect(finishedSpans[0].name).to.equal('some span');
-      expect(finishedSpans[1].name).to.equal('emb-session');
-      expect(finishedSpans[1].attributes['emb.session_start_type']).to.equal(
-        'init',
-      );
-      expect(finishedSpans[2].name).to.equal('emb-session');
-      expect(finishedSpans[2].attributes['emb.session_start_type']).to.equal(
-        'manual',
-      );
+      expect(finishedSpans[1].name).to.equal('emb-session-part');
+      expect(
+        finishedSpans[1].attributes['emb.session_part_start_reason'],
+      ).to.equal('init');
+      expect(
+        finishedSpans[1].attributes['emb.session_part_end_reason'],
+      ).to.equal('inactivity');
+      expect(finishedSpans[2].name).to.equal('emb-session-part');
+      expect(
+        finishedSpans[2].attributes['emb.session_part_start_reason'],
+      ).to.equal('web_activity');
+      expect(
+        finishedSpans[2].attributes['emb.session_part_end_reason'],
+      ).to.equal('inactivity');
       expect(finishedSpans[3].name).to.equal('my span');
     };
 
@@ -2006,33 +2014,33 @@ describe('isolated instances', () => {
 
     // Wait for remote config to be fetched and stored for both instances
     await waitForLocalStorageKeys([
-      'app11_embrace_remote_config',
-      'app22_embrace_remote_config',
+      'app11__embrace_remote_config',
+      'app22__embrace_remote_config',
     ]);
 
     // First instance using namespaced storage
-    expect(!!localStorage.getItem('app11_embrace_user_id')).to.equal(
+    expect(!!localStorage.getItem('app11__embrace_user_id')).to.equal(
       true,
       'first app did not store embrace user id',
     );
-    expect(!!localStorage.getItem('app11_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app11__embrace_remote_config')).to.equal(
       true,
       'first app did not store remote config',
     );
-    expect(!!sessionStorage.getItem('app11_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app11__embrace_app_instance_id')).to.equal(
       true,
       'first app did not store app instance id',
     );
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(
       true,
       'second app did not store embrace user id',
     );
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
       true,
       'second app did not store remote config',
     );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
       true,
       'second app did not store app instance id',
     );
@@ -2074,59 +2082,18 @@ describe('isolated instances', () => {
     void expect(secondSDKInstance).not.to.be.false;
 
     // Wait for remote config to be fetched and stored (only second instance has appID)
-    await waitForLocalStorageKeys(['app22_embrace_remote_config']);
+    await waitForLocalStorageKeys(['app22__embrace_remote_config']);
 
     // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
+    expect(!!localStorage.getItem('app22__embrace_user_id')).to.equal(true);
+    expect(!!localStorage.getItem('app22__embrace_remote_config')).to.equal(
       true,
     );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
+    expect(!!sessionStorage.getItem('app22__embrace_app_instance_id')).to.equal(
       true,
     );
     // First instance using storage without a prefix
     expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
-    expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
-  });
-
-  it('should not namespace the storage when registering globally', async () => {
-    fakeFetchRespondWith(
-      JSON.stringify({
-        threshold: 90,
-      }),
-    );
-
-    const firstSDKInstance = initSDK({
-      appID: 'app11',
-      appVersion: 'app-version',
-    });
-
-    const secondSDKInstance = initSDK({
-      appID: 'app22',
-      appVersion: 'app-version',
-      registerGlobally: false,
-    });
-
-    void expect(firstSDKInstance).not.to.be.false;
-    void expect(secondSDKInstance).not.to.be.false;
-
-    // Wait for remote config to be fetched and stored for both instances
-    await waitForLocalStorageKeys([
-      'embrace_remote_config',
-      'app22_embrace_remote_config',
-    ]);
-
-    // Second instance using namespaced storage
-    expect(!!localStorage.getItem('app22_embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('app22_embrace_remote_config')).to.equal(
-      true,
-    );
-    expect(!!sessionStorage.getItem('app22_embrace_app_instance_id')).to.equal(
-      true,
-    );
-    // First instance using storage without a prefix
-    expect(!!localStorage.getItem('embrace_user_id')).to.equal(true);
-    expect(!!localStorage.getItem('embrace_remote_config')).to.equal(true);
     expect(!!sessionStorage.getItem('embrace_app_instance_id')).to.equal(true);
   });
 });

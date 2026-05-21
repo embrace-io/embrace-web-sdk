@@ -57,7 +57,7 @@ export type LimitedException = {
   attributes: Record<string, AttributeValue | undefined>;
 };
 
-export type LimitedSessionProperty = {
+export type LimitedUserSessionProperty = {
   key: string;
   value: string;
 };
@@ -73,10 +73,10 @@ export interface LimitManagerInternal {
     message: string,
     attributes: Record<string, AttributeValue | undefined>,
   ) => LimitedException | 'dropped';
-  limitSessionProperty: (
+  limitUserSessionProperty: (
     key: string,
     value: string,
-  ) => LimitedSessionProperty | 'dropped';
+  ) => LimitedUserSessionProperty | 'dropped';
   limitBreadcrumb: (name: string) => LimitedBreadcrumb | 'dropped';
   limitUserTimingEntry: (entryType: 'mark' | 'measure') => boolean;
   limitElementTimingEntry: () => boolean;

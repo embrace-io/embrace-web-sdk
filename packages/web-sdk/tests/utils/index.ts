@@ -25,5 +25,6 @@ export { InMemoryStorage } from './InMemoryStorage.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mock-entities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';
+export { setupTestStorage } from './setupTestStorage.ts';
 export { setupTestTraceExporter } from './setupTestTraceExporter.ts';
 export { setupTestWebVitalListeners } from './setupTestWebVitalListeners.ts';

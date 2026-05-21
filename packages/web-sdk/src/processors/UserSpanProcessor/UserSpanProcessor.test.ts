@@ -3,7 +3,7 @@ import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
-  InMemoryStorage,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../tests/utils/index.ts';
 import type { UserManager } from '../../api-users/index.ts';
@@ -18,9 +18,7 @@ describe('UserSpanProcessor', () => {
   let tracer: Tracer;
 
   before(() => {
-    userManager = new EmbraceUserManager({
-      storage: new InMemoryStorage(),
-    });
+    userManager = new EmbraceUserManager({ storage: setupTestStorage() });
 
     memoryExporter = setupTestTraceExporter([
       new UserSpanProcessor({ userManager }),

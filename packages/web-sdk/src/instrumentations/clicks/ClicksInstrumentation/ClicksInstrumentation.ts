@@ -48,9 +48,10 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
       }
 
       try {
-        const currentSessionSpan = this.sessionManager.getSessionSpan();
-        if (currentSessionSpan) {
-          currentSessionSpan.addEvent(
+        const currentSessionPartSpan =
+          this.userSessionManager.getSessionPartSpan();
+        if (currentSessionPartSpan) {
+          currentSessionPartSpan.addEvent(
             'click',
             {
               'emb.type': 'ux.tap',

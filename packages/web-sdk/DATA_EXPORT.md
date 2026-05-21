@@ -2,9 +2,9 @@
 
 ## When is data sent?
 
-Telemetry data for Spans and Logs are exported from the SDK independently. Spans are sent as a batch whenever a session
-ends, this is managed by the [EmbraceSessionBatchedSpanProcessor](./src/processors/EmbraceSessionBatchedSpanProcessor/EmbraceSessionBatchedSpanProcessor.ts).
-Logs are also batched but can be sent throughout a session, this is managed by a [BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.57.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts).
+Telemetry data for Spans and Logs are exported from the SDK independently. Spans are sent as a batch whenever a session part
+ends, this is managed by the [EmbraceSessionPartBatchedSpanProcessor](./src/processors/EmbraceSessionPartBatchedSpanProcessor/EmbraceSessionPartBatchedSpanProcessor.ts).
+Logs are also batched but can be sent throughout a session part, this is managed by a [BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.57.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts).
 
 ## How is data sent?
 

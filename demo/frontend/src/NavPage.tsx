@@ -2,7 +2,6 @@ import { session } from '@embrace-io/web-sdk';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 
-const sessionProvider = session.getSpanSessionManager();
 const navEntry = window.performance.getEntriesByType('navigation')[0] as
   | PerformanceNavigationTiming
   | undefined;
@@ -16,23 +15,37 @@ const NavPage = ({
   nav?: ReactNode;
   children?: ReactNode;
 }) => {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  // Resolve at render time, not module load: the proxy's getUserSessionManager()
+  // returns the underlying manager directly, and at module load that's still
+  // the no-op stand-in (setupSDK runs after this module's imports resolve).
+  // Cast to the concrete manager to read getUserSessionAttributes (not on the proxy).
+  const userSessionManager = session.getUserSessionManager();
+  const [sessionPartId, setSessionPartId] = useState<string | null>(null);
+  const [userSessionPartIndex, setUserSessionPartIndex] = useState<
+    number | null
+  >(null);
+  const [sessionPartNumber, setSessionPartNumber] = useState<number | null>(
+    null,
+  );
 
-  const updateSession = useCallback(() => {
-    setSessionId(sessionProvider.getSessionId());
-  }, []);
+  const updateSessionPart = useCallback(() => {
+    setSessionPartId(userSessionManager.getSessionPartId());
+    const attrs = userSessionManager.getUserSessionAttributes();
+    setUserSessionPartIndex(attrs?.['emb.user_session_part_index'] ?? null);
+    setSessionPartNumber(attrs?.['emb.session_part_number'] ?? null);
+  }, [userSessionManager]);
 
   useEffect(() => {
-    updateSession();
+    updateSessionPart();
     const unsubscribeStart =
-      sessionProvider.addSessionStartedListener(updateSession);
+      userSessionManager.addSessionPartStartedListener(updateSessionPart);
     const unsubscribeEnd =
-      sessionProvider.addSessionEndedListener(updateSession);
+      userSessionManager.addSessionPartEndedListener(updateSessionPart);
     return () => {
       unsubscribeStart();
       unsubscribeEnd();
     };
-  }, [updateSession]);
+  }, [userSessionManager, updateSessionPart]);
 
   return (
     <>
@@ -51,10 +64,14 @@ const NavPage = ({
         </dl>
       </fieldset>
       <fieldset>
-        <legend>Session</legend>
+        <legend>Session Part</legend>
         <dl className="info-list">
-          <dt>Session ID</dt>
-          <dd>{sessionId ?? '—'}</dd>
+          <dt>Part index (within user session)</dt>
+          <dd>{userSessionPartIndex?.toString() ?? '—'}</dd>
+          <dt>Part # (across visits)</dt>
+          <dd>{sessionPartNumber?.toString() ?? '—'}</dd>
+          <dt>Session Part ID</dt>
+          <dd>{sessionPartId ?? '—'}</dd>
         </dl>
       </fieldset>
     </>

@@ -4,12 +4,6 @@
       "resource": {
         "attributes": [
           {
-            "key": "service.name",
-            "value": {
-              "stringValue": "embrace-web-sdk"
-            }
-          },
-          {
             "key": "telemetry.sdk.name",
             "value": {
               "stringValue": "embrace-web-sdk"
@@ -60,7 +54,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "0DE7D1EFA82A061CEA67C603DBC1A096"
+              "stringValue": "1FC035B45B804CC73690E39ADBF71F8E"
             }
           },
           {
@@ -74,6 +68,12 @@
             "value": {
               "stringValue": "1280x720"
             }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "embrace-web-sdk"
+            }
           }
         ],
         "droppedAttributesCount": 0
@@ -85,8 +85,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1775548359659200195",
-              "observedTimeUnixNano": "1775548359659000000",
+              "timeUnixNano": "1778792195622300049",
+              "observedTimeUnixNano": "1778792195622000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -102,13 +102,13 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "Error\n    at Fc.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:79323)\n    at _E.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:38001)\n    at Proxy.<anonymous> (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:37542)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:219639\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:1:967\n    at new Promise (<anonymous>)\n    at Zt (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:1:787)\n    at a (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:9:219611)\n    at F_ (http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:8:127510)"
+                    "stringValue": "Error\n    at ef.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:97695)\n    at Ay.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:38001)\n    at Proxy.<anonymous> (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:37542)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:231094\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:1:966\n    at new Promise (<anonymous>)\n    at Ut (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:1:786)\n    at i (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:231066)\n    at ng (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:8:127510)"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"Error\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:11:33\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-qINAsadP.js:11:126\":\"3d9bf9584dd68a94fe0fe5b0deec00f5\"}"
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:11:33\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:11:126\":\"05d1173f5302f5d00f1464789fc7459c\"}"
                   }
                 },
                 {
@@ -120,18 +120,38 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "A99B8C7A3798B2B7D923A6529394CC55"
+                    "stringValue": "8675864A9C4383D7541ED2A421AE8768"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "064C2FC8212CCF8E1D74450F67FFD882"
+                    "stringValue": "A023E8E077EDB89F32F60B5C7F16C0C4"
                   }
                 },
                 {
                   "key": "session.previous_id",
-                  "value": {}
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "A023E8E077EDB89F32F60B5C7F16C0C4"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "32399D9B7789C0BDC8E3E0B2F80F5E5F"
+                  }
                 },
                 {
                   "key": "browser.url.full",

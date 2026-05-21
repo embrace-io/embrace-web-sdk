@@ -8,7 +8,7 @@ import {
   useNavigate,
 } from 'react-router-domv6plus';
 import {
-  InMemoryStorage,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../../../../tests/utils/index.ts';
 import { render } from '../../../../../../tests/utils/react/reactTestUtils.ts';
@@ -20,13 +20,13 @@ import {
   ProductDetails,
 } from '../../../../../../tests/utils/react/testComponents.tsx';
 import { page } from '../../../../../api-page/index.ts';
-import type { SpanSessionManager } from '../../../../../api-sessions/index.ts';
 import { session } from '../../../../../api-sessions/index.ts';
+import type { UserSessionManagerInternal } from '../../../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbracePageManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
 import { OTelPerformanceManager } from '../../../../../utils/index.ts';
@@ -82,17 +82,17 @@ const renderReactApp = () => {
 describe('ReactRouterV6Declarative', () => {
   let pageManager: EmbracePageManager;
   let memoryExporter: InMemorySpanExporter;
-  let spanSessionManager: SpanSessionManager;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
-      storage: new InMemoryStorage(),
+      storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
 
-    session.setGlobalSessionManager(spanSessionManager);
+    session.setGlobalUserSessionManager(userSessionManager);
 
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
@@ -105,7 +105,7 @@ describe('ReactRouterV6Declarative', () => {
   });
 
   it('create route spans', async () => {
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPartInternal('init');
 
     expect(pageManager.getCurrentPageId()).to.be.null;
     expect(pageManager.getCurrentRoute()).to.be.null;
@@ -117,12 +117,12 @@ describe('ReactRouterV6Declarative', () => {
       rootElement: container,
     });
 
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('user_session_ended', 'manual');
     tearDown();
 
     const routeSpans = memoryExporter
       .getFinishedSpans()
-      .filter((span) => span.name !== 'emb-session');
+      .filter((span) => span.name !== 'emb-session-part');
     expect(routeSpans.length).to.equal(4);
     expect(routeSpans[0].name).to.equal('/');
     expect(routeSpans[1].name).to.equal('/product/:id');

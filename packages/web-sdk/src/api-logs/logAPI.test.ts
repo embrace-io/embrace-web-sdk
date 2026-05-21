@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { InMemoryStorage } from '../../tests/utils/index.ts';
+import { setupTestStorage } from '../../tests/utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
   EmbraceLogManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { OTelPerformanceManager } from '../utils/index.ts';
 import { log } from './logAPI.ts';
@@ -34,10 +34,10 @@ describe('logAPI', () => {
 
     beforeEach(() => {
       const limitManager = new EmbraceLimitManager({ ...DEFAULT_LIMITS });
-      const storage = new InMemoryStorage();
+      const storage = setupTestStorage();
       const perf = new OTelPerformanceManager();
       manager = new EmbraceLogManager({
-        spanSessionManager: new EmbraceSpanSessionManager({
+        userSessionManager: new EmbraceUserSessionManager({
           limitManager,
           perf,
           storage,

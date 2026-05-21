@@ -16,7 +16,7 @@ import type {
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
 import type { LogManager } from '../api-logs/index.ts';
 import type { PageManager } from '../api-page/index.ts';
-import type { SpanSessionManager } from '../api-sessions/index.ts';
+import type { UserSessionManager } from '../api-sessions/index.ts';
 import type { TraceManager } from '../api-traces/index.ts';
 import type { UserManager } from '../api-users/index.ts';
 import type {
@@ -31,16 +31,15 @@ import type {
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
   ServerTimingInstrumentationArgs,
-  SpanSessionBrowserActivityInstrumentationArgs,
-  SpanSessionVisibilityInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationArgs,
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
-  SpanSessionManagerInternal,
+  UserSessionConfig,
+  UserSessionManagerInternal,
 } from '../managers/index.ts';
-import type { PerformanceManager } from '../utils/index.ts';
+import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
 
 export interface DynamicSDKConfig {
   /**
@@ -232,6 +231,20 @@ type BaseSDKInitConfig = {
    * **default**: true
    */
   useDocumentTitleAsPageLabel?: boolean;
+
+  /**
+   * maxUserSessionDurationSeconds overrides the default maximum user session duration (12 hours).
+   *
+   * **default**: 43200 seconds (12 hours)
+   */
+  maxUserSessionDurationSeconds?: number;
+
+  /**
+   * inactivityTimeoutSeconds overrides the default inactivity timeout (30 minutes).
+   *
+   * **Default**: 1800 seconds (30 minutes)
+   */
+  inactivityTimeoutSeconds?: number;
 };
 
 /*
@@ -290,27 +303,27 @@ export interface SDKControl {
   setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
   log: LogManager;
   trace: TraceManager;
-  session: SpanSessionManager;
+  session: UserSessionManager;
   user: UserManager;
   page: PageManager;
 }
 
 export interface SetupUserArgs {
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
 }
 
-export interface SetupSessionArgs {
+export interface SetupUserSessionArgs {
   limitManager: LimitManagerInternal;
   perf: PerformanceManager;
   registerGlobally?: boolean;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
   visibilityDoc: VisibilityStateDocument;
+  userSessionConfig?: UserSessionConfig;
 }
 
 export interface SetupTracesArgs {
   resource: Resource;
-  spanSessionManager: SpanSessionManager;
   userManager: UserManager;
   spanExporters?: SpanExporter[];
   spanProcessors: SpanProcessor[];
@@ -328,13 +341,13 @@ export interface SetupLogsArgs {
   userManager: UserManager;
   logExporters?: LogRecordExporter[];
   logProcessors: LogRecordProcessor[];
-  spanSessionManager: SpanSessionManagerInternal;
+  userSessionManager: UserSessionManagerInternal;
   limitManager: LimitManagerInternal;
   attributeScrubbers: AttributeScrubber[];
   perf: PerformanceManager;
   registerGlobally?: boolean;
   embraceLogProcessor?: BatchLogRecordProcessor;
-  sdkLocalStorage: Storage;
+  sdkLocalStorage: NamespacedStorage;
   pageManager: PageManager;
   visibilityDoc: VisibilityStateDocument;
 }
@@ -362,7 +375,7 @@ interface NetworkInstrumentationArgs {
 
 export interface SetupDefaultInstrumentationsArgs {
   logManager?: LogManager;
-  spanSessionManager?: SpanSessionManager;
+  userSessionManager?: UserSessionManagerInternal;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
 }
@@ -372,8 +385,6 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationArgs;
-  'session-visibility'?: SpanSessionVisibilityInstrumentationArgs;
-  'session-activity'?: SpanSessionBrowserActivityInstrumentationArgs;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;

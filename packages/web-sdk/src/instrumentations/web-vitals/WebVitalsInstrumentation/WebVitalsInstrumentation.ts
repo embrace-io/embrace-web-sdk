@@ -277,9 +277,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           return;
         }
 
-        const currentSessionSpan = this.sessionManager.getSessionSpan();
+        const currentSessionPartSpan =
+          this.userSessionManager.getSessionPartSpan();
 
-        if (!currentSessionSpan) {
+        if (!currentSessionPartSpan) {
           return;
         }
 
@@ -315,7 +316,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           attrs[KEY_APP_SURFACE_LABEL] = attributedPage.label;
         }
 
-        currentSessionSpan.addEvent(
+        currentSessionPartSpan.addEvent(
           `${EMB_WEB_VITALS_PREFIX}-report-${name}`,
           attrs,
           metricTime,

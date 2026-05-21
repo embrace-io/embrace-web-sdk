@@ -2,15 +2,15 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import {
   InMemoryDiagLogger,
-  InMemoryStorage,
+  setupTestStorage,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { session } from '../../../api-sessions/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
-  EmbraceSpanSessionManager,
+  EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { EmptyRootInstrumentation } from './EmptyRootInstrumentation.ts';
@@ -21,7 +21,7 @@ describe('EmptyInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: EmptyRootInstrumentation;
   let diag: InMemoryDiagLogger;
-  let spanSessionManager: SpanSessionManager;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -30,21 +30,21 @@ describe('EmptyInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
-    spanSessionManager = new EmbraceSpanSessionManager({
+    userSessionManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
-      storage: new InMemoryStorage(),
+      storage: setupTestStorage(),
       visibilityDoc: window.document,
     });
-    session.setGlobalSessionManager(spanSessionManager);
-    spanSessionManager.startSessionSpan();
+    session.setGlobalUserSessionManager(userSessionManager);
+    userSessionManager.startSessionPartInternal('init');
   });
 
   afterEach(() => {
     instrumentation.disable();
   });
 
-  it('should add a span event to the session when the root node becomes empty', async () => {
+  it('should add a span event to the session part when the root node becomes empty', async () => {
     const rootNode = document.createElement('div');
     const child1 = document.createElement('div');
     const child2 = document.createElement('div');
@@ -65,7 +65,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 1));
 
     // The instrumentation shouldn't immediately emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -73,12 +73,12 @@ describe('EmptyInstrumentation', () => {
     expect(sessionSpan.events).to.have.lengthOf(0);
     memoryExporter.reset();
 
-    spanSessionManager.startSessionSpan();
+    userSessionManager.startSessionPartInternal('init');
 
     await new Promise((r) => setTimeout(r, 20));
 
     // Should now emit if the node is still empty after the timeout
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     sessionSpan = finishedSpans[0];
@@ -113,7 +113,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -145,7 +145,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -173,7 +173,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -198,7 +198,7 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    spanSessionManager.endSessionSpan();
+    userSessionManager.endSessionPartInternal('inactivity');
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

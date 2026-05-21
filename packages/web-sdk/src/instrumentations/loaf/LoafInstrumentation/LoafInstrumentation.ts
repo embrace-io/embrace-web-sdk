@@ -1,8 +1,8 @@
 /* eslint-disable baseline-js/use-baseline */
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
-import type { SpanSessionManager } from '../../../api-sessions/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
@@ -36,7 +36,7 @@ type ScriptSummaries = Map<string, ScriptSummaryValue>;
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isFirstEntry = true;
-  private _removeSessionEndListener: (() => void) | null = null;
+  private _removeSessionPartEndedListener: (() => void) | null = null;
   private _isEnabled = false;
 
   private _totalDuration = 0;
@@ -91,20 +91,20 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    this._registerSessionEndListener();
+    this._registerSessionPartEndedListener();
   }
 
-  private _registerSessionEndListener(): void {
+  private _registerSessionPartEndedListener(): void {
     if (!this._isEnabled) {
       return;
     }
 
-    if (this._removeSessionEndListener) {
-      this._removeSessionEndListener();
+    if (this._removeSessionPartEndedListener) {
+      this._removeSessionPartEndedListener();
     }
 
-    this._removeSessionEndListener =
-      this.sessionManager.addSessionEndedListener(() => {
+    this._removeSessionPartEndedListener =
+      this.userSessionManager.addSessionPartEndedListener(() => {
         try {
           this._flushReport();
         } catch (e) {
@@ -113,9 +113,11 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       });
   }
 
-  public override setSessionManager(sessionManager: SpanSessionManager): void {
-    super.setSessionManager(sessionManager);
-    this._registerSessionEndListener();
+  public override setUserSessionManager(
+    userSessionManager: UserSessionManagerInternal,
+  ): void {
+    super.setUserSessionManager(userSessionManager);
+    this._registerSessionPartEndedListener();
   }
 
   public disable(): void {
@@ -127,9 +129,9 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       this._observer = null;
     }
 
-    if (this._removeSessionEndListener) {
-      this._removeSessionEndListener();
-      this._removeSessionEndListener = null;
+    if (this._removeSessionPartEndedListener) {
+      this._removeSessionPartEndedListener();
+      this._removeSessionPartEndedListener = null;
     }
   }
 
