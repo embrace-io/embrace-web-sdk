@@ -54,6 +54,7 @@ jobs:
     steps:
       - name: Restore previous test results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -75,6 +76,7 @@ jobs:
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -136,6 +138,7 @@ jobs:
     steps:
       - name: Restore previous test results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -157,6 +160,7 @@ jobs:
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -210,6 +214,7 @@ jobs:
     steps:
       - name: Restore previous test results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -231,6 +236,7 @@ jobs:
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -335,6 +341,7 @@ jobs:
     steps:
       - name: Restore previous test results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -356,6 +363,7 @@ jobs:
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -395,6 +403,7 @@ jobs:
     steps:
       - name: Restore previous test results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TEST_STATUS_FILE }}
@@ -416,6 +425,7 @@ jobs:
       - name: Setup Node.js
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -509,6 +519,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -530,6 +541,7 @@ jobs:
     steps:
       - name: Restore previous lint results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.LINT_STATUS_FILE }}
@@ -549,6 +561,7 @@ jobs:
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -580,6 +593,7 @@ jobs:
     steps:
       - name: Restore previous type check results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.TYPE_CHECK_STATUS_FILE }}
@@ -599,6 +613,7 @@ jobs:
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -632,6 +647,7 @@ jobs:
     steps:
       - name: Restore previous validate results
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
             ${{ env.VALIDATE_STATUS_FILE }}
@@ -651,6 +667,7 @@ jobs:
           persist-credentials: false
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        # zizmor: ignore[cache-poisoning] - job doesn't produce published artifacts
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           node-version-file: .nvmrc
@@ -703,8 +720,8 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
-          cache: npm
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
       - name: Install NPM dependencies
         run: |
@@ -747,7 +764,7 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: .nvmrc
-          cache: npm
+          package-manager-cache: false
 
       - name: Install npm dependencies
         run: npm ci
