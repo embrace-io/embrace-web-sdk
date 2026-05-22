@@ -5,12 +5,10 @@
 
 import type { Attributes, HrTime } from '@opentelemetry/api';
 import { context, propagation, trace } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   TRACE_PARENT_HEADER,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   BasicTracerProvider,
@@ -25,10 +23,7 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import {
-  InMemoryStorage,
-  setupTestLogExporter,
-} from '../../../../tests/utils/index.ts';
+import { InMemoryStorage } from '../../../../tests/utils/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import { KEY_EMB_PAGE_LOAD } from '../../../constants/index.ts';
 import {
@@ -46,8 +41,6 @@ const provider = new BasicTracerProvider({
   spanProcessors: [spanProcessor],
 });
 trace.setGlobalTracerProvider(provider);
-
-let logMemoryExporter: InMemoryLogRecordExporter;
 
 const resources = [
   {
@@ -234,7 +227,6 @@ describe('DocumentLoad Instrumentation', () => {
 
   before(() => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
-    logMemoryExporter = setupTestLogExporter();
   });
 
   describe('constructor', () => {
@@ -902,8 +894,6 @@ describe('DocumentLoad Instrumentation', () => {
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
 
     beforeEach(() => {
-      logMemoryExporter.reset();
-
       spanSessionManager = new EmbraceSpanSessionManager({
         limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
         perf: new OTelPerformanceManager(),
@@ -999,47 +989,6 @@ describe('DocumentLoad Instrumentation', () => {
       assert.isUndefined(
         spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
       );
-    });
-
-    it('should emit abandonment log when session ends before load fires', () => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setSessionManager(spanSessionManager);
-      plugin.enable();
-
-      spanSessionManager.endSessionSpan();
-
-      const record = logMemoryExporter
-        .getFinishedLogRecords()
-        .find((r) => r.eventName === 'abandonment');
-      assert.ok(record, 'abandonment log should be emitted');
-      assert.strictEqual(record.severityNumber, SeverityNumber.INFO);
-      assert.strictEqual(typeof record.attributes['elapsed_ms'], 'number');
-    });
-
-    it('should not emit abandonment log when session ends after load fires', (done) => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setSessionManager(spanSessionManager);
-      plugin.enable();
-
-      window.dispatchEvent(new Event('load'));
-
-      setTimeout(() => {
-        spanSessionManager.endSessionSpan();
-
-        const record = logMemoryExporter
-          .getFinishedLogRecords()
-          .find((r) => r.eventName === 'abandonment');
-        assert.isUndefined(record, 'abandonment log should not be emitted');
-        done();
-      });
     });
   });
 

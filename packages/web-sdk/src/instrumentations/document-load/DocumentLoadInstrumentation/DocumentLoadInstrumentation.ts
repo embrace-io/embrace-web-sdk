@@ -18,7 +18,6 @@
 
 import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
@@ -79,7 +78,6 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
   private _performanceCollected = false;
-  private _removeSessionEndedListener: (() => void) | null = null;
 
   public constructor({
     diag,
@@ -103,8 +101,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     });
 
     this._onDocumentLoaded = () => {
-      this._removeSessionEndedListener?.();
-      this._removeSessionEndedListener = null;
       const sessionSpan = this.sessionManager.getSessionSpan();
       if (sessionSpan?.attributes[KEY_EMB_COLD_START] === true) {
         sessionSpan.setAttribute(KEY_EMB_PAGE_LOAD, true);
@@ -554,40 +550,14 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public enable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    this._removeSessionEndedListener?.();
-    this._removeSessionEndedListener = null;
     const span = this.sessionManager.getSessionSpan();
     if (span?.attributes[KEY_EMB_COLD_START] === true) {
       span.setAttribute(KEY_EMB_PAGE_LOAD, false);
-      this._removeSessionEndedListener =
-        this.sessionManager.addSessionEndedListener(() => {
-          if (
-            this.sessionManager.getSessionSpan()?.attributes[
-              KEY_EMB_PAGE_LOAD
-            ] === false
-          ) {
-            try {
-              this.logger.emit({
-                timestamp: this.perf.getNowMillis(),
-                eventName: 'abandonment',
-                severityNumber: SeverityNumber.INFO,
-                attributes: {
-                  elapsed_ms: this.perf.millisFromZeroTime(performance.now()),
-                },
-              });
-            } catch (e) {
-              this._diag.error('error emitting abandonment log', e);
-            }
-          }
-          this._removeSessionEndedListener = null;
-        });
     }
     this._waitForPageLoad();
   }
 
   public disable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    this._removeSessionEndedListener?.();
-    this._removeSessionEndedListener = null;
   }
 }

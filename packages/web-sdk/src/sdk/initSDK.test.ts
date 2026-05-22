@@ -590,13 +590,10 @@ describe('initSDK', () => {
     const logger = logs.getLogger('test-logger');
     logger.emit({ body: 'pending log', severityNumber: SeverityNumber.INFO });
 
-    // Log is queued in BatchLogRecordProcessor, not yet exported
     expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
 
-    // Ending the session triggers loggerProvider.forceFlush()
     session.endSessionSpan();
 
-    // Allow the flush Promise to resolve
     await new Promise<void>((resolve) => setTimeout(resolve));
 
     expect(
