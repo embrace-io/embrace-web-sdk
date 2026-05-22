@@ -309,9 +309,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('starts a new part with reason foreground on pageshow (BFCache restore)', () => {
     manager.startSessionPartInternal('init');
 
-    // BFCache restore path: pagehide ended the prior part, then pageshow
-    // signals the canonical restore. No part is active when pageshow fires.
-    firePageHide();
+    // BFCache restore path: pagehide with persisted=true freezes the tab and
+    // ends the prior part as web_background, then pageshow signals the
+    // canonical restore. No part is active when pageshow fires.
+    firePageHide(true);
     void expect(manager.getSessionPartId()).to.be.null;
 
     // Document is restored visible on BFCache restore.
@@ -325,16 +326,29 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('does not start a part on pageshow (BFCache restore) when the tab is disengaged at restore', () => {
     manager.startSessionPartInternal('init');
 
-    // Tab freezes while disengaged: pagehide ends the prior part, then by
-    // the time pageshow fires, the document has restored hidden (the user
-    // restored a backgrounded tab without bringing it to focus).
-    firePageHide();
+    // Tab freezes while disengaged: pagehide with persisted=true ends the
+    // prior part, then by the time pageshow fires, the document has restored
+    // hidden (the user restored a backgrounded tab without bringing it to
+    // focus).
+    firePageHide(true);
     visibilityDoc.visibilityState = 'hidden';
     firePageShow();
 
     // No new part. Only 'init' is in the start log.
     expect(startReasons()).to.deep.equal(['init']);
     void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('swallows errors thrown by endSessionPartInternal during pagehide', () => {
+    manager.startSessionPartInternal('init');
+
+    // The pagehide handler wraps endSessionPartInternal in try/catch because
+    // a throw at unload would skip the keepalive flush. Stub the dependency
+    // to throw and assert the handler does not propagate.
+    endSpy.restore();
+    sinon.stub(manager, 'endSessionPartInternal').throws(new Error('boom'));
+
+    expect(() => firePageHide()).to.not.throw();
   });
 
   it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {

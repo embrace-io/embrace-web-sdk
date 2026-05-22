@@ -101,7 +101,8 @@ engagement condition holds, the call is a debug-level no-op.
 
 | Value | Trigger |
 | --- | --- |
-| `web_background` | `visibilitychange` to hidden, `blur`, or `pagehide` while a session part is active. |
+| `web_background` | `visibilitychange` to hidden, `blur`, or `pagehide` with `persisted=true` (BFCache freeze). |
+| `web_hard_navigation` | `pagehide` with `persisted=false` (hard navigation away, tab close, or reload). |
 | `inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
@@ -295,9 +296,10 @@ Several specific edge cases are handled:
 There is no BFCache-specific code in the manager. Behavior is absorbed by the
 existing engagement events:
 
-- **Freeze** (entering BFCache). `pagehide` fires.
-  `EmbraceUserSessionManager._onEngagementChange` ends the active part with
-  reason `web_background`.
+- **Freeze** (entering BFCache). `pagehide` fires with `persisted=true`.
+  `EmbraceUserSessionManager._onPageHide` ends the active part with reason
+  `web_background`. A `pagehide` with `persisted=false` is a hard navigation,
+  not a BFCache freeze, and ends the part with `web_hard_navigation` instead.
 - **Restore** (leaving BFCache). `pageshow` fires. If the document is visible
   and focused and no part is active, a new part starts with reason
   `web_foreground`. If the document restores hidden, no part starts.

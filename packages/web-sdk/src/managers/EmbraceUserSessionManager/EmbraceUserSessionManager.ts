@@ -801,12 +801,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   };
 
   // Navigation away (hard nav, tab close) OR BFCache freeze. Both signal the
-  // page is about to stop running, so we always end the active part to push
-  // its span (and any pending non-part spans buffered in the Embrace
-  // processor) into the export pipeline while the page can still issue a
-  // keepalive fetch. On BFCache restore, pageshow will start a fresh part.
-  // event.persisted distinguishes the two: false is a confirmed hard nav,
-  // true is a BFCache freeze that may come back via pageshow.
+  // page is about to stop running, so we always end the active part. Ending
+  // the part flushes its span (and the spans batched against it in
+  // EmbraceSessionPartBatchedSpanProcessor) through the export pipeline while
+  // the page can still issue a keepalive fetch. On BFCache restore, pageshow
+  // will start a fresh part.
   private readonly _onPageHide = (event: PageTransitionEvent): void => {
     try {
       if (this._activeSessionPartId === null) {
@@ -820,7 +819,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       );
       this.endSessionPartInternal(reason);
     } catch (e) {
-      this._diag.warn('Error handling pagehide event', e);
+      this._diag.error(
+        `Error ending session part on pagehide (persisted=${event.persisted})`,
+        e,
+      );
     }
   };
 
