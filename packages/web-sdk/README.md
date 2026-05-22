@@ -612,8 +612,6 @@ module.exports = {
 };
 ```
 
-See the [webpack 4 integration test](../../tests/integration/platforms/webpack-4/webpack.config.js) for a complete example.
-
 ### Client-side only usage
 
 The Embrace SDK is designed for browser environments. Importing it in server-side code (e.g. Next.js Server Components,
