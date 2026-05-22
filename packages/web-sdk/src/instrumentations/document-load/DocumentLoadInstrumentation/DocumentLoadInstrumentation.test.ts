@@ -5,10 +5,12 @@
 
 import type { Attributes, HrTime } from '@opentelemetry/api';
 import { context, propagation, trace } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import {
   TRACE_PARENT_HEADER,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
 import {
   BasicTracerProvider,
@@ -23,9 +25,12 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import { InMemoryStorage } from '../../../../tests/utils/index.ts';
+import {
+  InMemoryStorage,
+  setupTestLogExporter,
+} from '../../../../tests/utils/index.ts';
 import { session } from '../../../api-sessions/index.ts';
-import { KEY_EMB_INCOMPLETE_STARTUP } from '../../../constants/index.ts';
+import { KEY_EMB_PAGE_LOAD } from '../../../constants/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -41,6 +46,8 @@ const provider = new BasicTracerProvider({
   spanProcessors: [spanProcessor],
 });
 trace.setGlobalTracerProvider(provider);
+
+let logMemoryExporter: InMemoryLogRecordExporter;
 
 const resources = [
   {
@@ -227,6 +234,7 @@ describe('DocumentLoad Instrumentation', () => {
 
   before(() => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+    logMemoryExporter = setupTestLogExporter();
   });
 
   describe('constructor', () => {
@@ -280,7 +288,6 @@ describe('DocumentLoad Instrumentation', () => {
       const spy = sandbox.spy(window, 'addEventListener');
       plugin.enable();
       assert.ok(spy.args.some((args) => args[0] === 'load'));
-      assert.ok(spy.args.some((args) => args[0] === 'pagehide'));
       assert.ok(spyEntries.callCount === 0);
 
       window.dispatchEvent(
@@ -890,11 +897,13 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
-  describe('incomplete_startup abandonment detection', () => {
+  describe('page load abandonment detection', () => {
     let spanSessionManager: EmbraceSpanSessionManager;
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
 
     beforeEach(() => {
+      logMemoryExporter.reset();
+
       spanSessionManager = new EmbraceSpanSessionManager({
         limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
         perf: new OTelPerformanceManager(),
@@ -915,7 +924,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should set emb.incomplete_startup when pagehide fires before load', () => {
+    it('should set emb.page_load = false on enable', () => {
       Object.defineProperty(window.document, 'readyState', {
         writable: true,
         value: 'loading',
@@ -924,17 +933,13 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.setSessionManager(spanSessionManager);
       plugin.enable();
 
-      window.dispatchEvent(new Event('pagehide'));
-
       assert.strictEqual(
-        spanSessionManager.getSessionSpan()?.attributes[
-          KEY_EMB_INCOMPLETE_STARTUP
-        ],
-        true,
+        spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
+        false,
       );
     });
 
-    it('should not set emb.incomplete_startup when load fires before pagehide', (done) => {
+    it('should set emb.page_load = true when load fires', (done) => {
       Object.defineProperty(window.document, 'readyState', {
         writable: true,
         value: 'loading',
@@ -946,48 +951,57 @@ describe('DocumentLoad Instrumentation', () => {
       window.dispatchEvent(new Event('load'));
 
       setTimeout(() => {
-        window.dispatchEvent(new Event('pagehide'));
-        assert.isUndefined(
-          spanSessionManager.getSessionSpan()?.attributes[
-            KEY_EMB_INCOMPLETE_STARTUP
-          ],
+        assert.strictEqual(
+          spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
+          true,
         );
         done();
       });
     });
 
-    it('should not set emb.incomplete_startup when document is already complete on enable', (done) => {
+    it('should set emb.page_load = true when document is already complete on enable', (done) => {
       plugin = new DocumentLoadInstrumentation({ enabled: false });
       plugin.setSessionManager(spanSessionManager);
       plugin.enable();
 
       setTimeout(() => {
-        window.dispatchEvent(new Event('pagehide'));
-        assert.isUndefined(
-          spanSessionManager.getSessionSpan()?.attributes[
-            KEY_EMB_INCOMPLETE_STARTUP
-          ],
+        assert.strictEqual(
+          spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
+          true,
         );
         done();
       });
     });
 
-    it('should not throw when pagehide fires with no active session span', () => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
+    it('should not throw when enable is called with no active session span', (done) => {
       spanSessionManager.endSessionSpan();
       plugin = new DocumentLoadInstrumentation({ enabled: false });
       plugin.setSessionManager(spanSessionManager);
-      plugin.enable();
 
       assert.doesNotThrow(() => {
-        window.dispatchEvent(new Event('pagehide'));
+        plugin.enable();
       });
+
+      setTimeout(done);
     });
 
-    it('should not set emb.incomplete_startup after disable', () => {
+    it('should not set emb.page_load on a non-cold-start session', () => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      // Start a second session — cold_start flips to false after the first
+      spanSessionManager.startSessionSpan();
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      assert.isUndefined(
+        spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
+      );
+    });
+
+    it('should emit abandonment log when session ends before load fires', () => {
       Object.defineProperty(window.document, 'readyState', {
         writable: true,
         value: 'loading',
@@ -995,15 +1009,37 @@ describe('DocumentLoad Instrumentation', () => {
       plugin = new DocumentLoadInstrumentation({ enabled: false });
       plugin.setSessionManager(spanSessionManager);
       plugin.enable();
-      plugin.disable();
 
-      window.dispatchEvent(new Event('pagehide'));
+      spanSessionManager.endSessionSpan();
 
-      assert.isUndefined(
-        spanSessionManager.getSessionSpan()?.attributes[
-          KEY_EMB_INCOMPLETE_STARTUP
-        ],
-      );
+      const record = logMemoryExporter
+        .getFinishedLogRecords()
+        .find((r) => r.eventName === 'abandonment');
+      assert.ok(record, 'abandonment log should be emitted');
+      assert.strictEqual(record.severityNumber, SeverityNumber.INFO);
+      assert.strictEqual(typeof record.attributes['elapsed_ms'], 'number');
+    });
+
+    it('should not emit abandonment log when session ends after load fires', (done) => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin.setSessionManager(spanSessionManager);
+      plugin.enable();
+
+      window.dispatchEvent(new Event('load'));
+
+      setTimeout(() => {
+        spanSessionManager.endSessionSpan();
+
+        const record = logMemoryExporter
+          .getFinishedLogRecords()
+          .find((r) => r.eventName === 'abandonment');
+        assert.isUndefined(record, 'abandonment log should not be emitted');
+        done();
+      });
     });
   });
 

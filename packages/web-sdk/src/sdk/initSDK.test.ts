@@ -581,6 +581,29 @@ describe('initSDK', () => {
     }
   });
 
+  it('should flush pending logs when a session ends', async () => {
+    initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+    });
+
+    const logger = logs.getLogger('test-logger');
+    logger.emit({ body: 'pending log', severityNumber: SeverityNumber.INFO });
+
+    // Log is queued in BatchLogRecordProcessor, not yet exported
+    expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
+
+    // Ending the session triggers loggerProvider.forceFlush()
+    session.endSessionSpan();
+
+    // Allow the flush Promise to resolve
+    await new Promise<void>((resolve) => setTimeout(resolve));
+
+    expect(
+      logExporter.getFinishedLogRecords().some((r) => r.body === 'pending log'),
+    ).to.be.true;
+  });
+
   it('should setup a default context manager when none is provided', async () => {
     const result = initSDK({
       spanExporters: [spanExporter],

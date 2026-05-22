@@ -18,6 +18,7 @@
 
 import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api-logs';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
@@ -36,7 +37,8 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import {
   EMB_TYPES,
-  KEY_EMB_INCOMPLETE_STARTUP,
+  KEY_EMB_COLD_START,
+  KEY_EMB_PAGE_LOAD,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
@@ -76,8 +78,8 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
-  private readonly _onPageHide: () => void;
   private _performanceCollected = false;
+  private _removeSessionEndedListener: (() => void) | null = null;
 
   public constructor({
     diag,
@@ -100,15 +102,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       },
     });
 
-    this._onPageHide = () => {
-      this.sessionManager
-        .getSessionSpan()
-        ?.setAttribute(KEY_EMB_INCOMPLETE_STARTUP, true);
-      window.removeEventListener('pagehide', this._onPageHide);
-    };
-
     this._onDocumentLoaded = () => {
-      window.removeEventListener('pagehide', this._onPageHide);
+      this._removeSessionEndedListener?.();
+      this._removeSessionEndedListener = null;
+      const sessionSpan = this.sessionManager.getSessionSpan();
+      if (sessionSpan?.attributes[KEY_EMB_COLD_START] === true) {
+        sessionSpan.setAttribute(KEY_EMB_PAGE_LOAD, true);
+      }
       // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
         this._collectPerformance();
@@ -554,13 +554,40 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public enable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    window.removeEventListener('pagehide', this._onPageHide);
-    window.addEventListener('pagehide', this._onPageHide);
+    this._removeSessionEndedListener?.();
+    this._removeSessionEndedListener = null;
+    const span = this.sessionManager.getSessionSpan();
+    if (span?.attributes[KEY_EMB_COLD_START] === true) {
+      span.setAttribute(KEY_EMB_PAGE_LOAD, false);
+      this._removeSessionEndedListener =
+        this.sessionManager.addSessionEndedListener(() => {
+          if (
+            this.sessionManager.getSessionSpan()?.attributes[
+              KEY_EMB_PAGE_LOAD
+            ] === false
+          ) {
+            try {
+              this.logger.emit({
+                timestamp: this.perf.getNowMillis(),
+                eventName: 'abandonment',
+                severityNumber: SeverityNumber.INFO,
+                attributes: {
+                  elapsed_ms: this.perf.millisFromZeroTime(performance.now()),
+                },
+              });
+            } catch (e) {
+              this._diag.error('error emitting abandonment log', e);
+            }
+          }
+          this._removeSessionEndedListener = null;
+        });
+    }
     this._waitForPageLoad();
   }
 
   public disable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    window.removeEventListener('pagehide', this._onPageHide);
+    this._removeSessionEndedListener?.();
+    this._removeSessionEndedListener = null;
   }
 }
