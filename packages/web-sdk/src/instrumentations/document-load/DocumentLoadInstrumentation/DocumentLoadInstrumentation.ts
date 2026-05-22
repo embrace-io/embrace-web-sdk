@@ -34,12 +34,7 @@ import {
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
-import {
-  EMB_TYPES,
-  KEY_EMB_COLD_START,
-  KEY_EMB_PAGE_LOAD,
-  KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
@@ -101,10 +96,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     });
 
     this._onDocumentLoaded = () => {
-      const sessionSpan = this.userSessionManager.getSessionPartSpan();
-      if (sessionSpan?.attributes[KEY_EMB_COLD_START] === true) {
-        sessionSpan.setAttribute(KEY_EMB_PAGE_LOAD, true);
-      }
       // Timeout needed because performance metrics for loadEnd aren't available until after the load event
       window.setTimeout(() => {
         this._collectPerformance();
@@ -550,10 +541,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public enable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    const span = this.userSessionManager.getSessionPartSpan();
-    if (span?.attributes[KEY_EMB_COLD_START] === true) {
-      span.setAttribute(KEY_EMB_PAGE_LOAD, false);
-    }
     this._waitForPageLoad();
   }
 

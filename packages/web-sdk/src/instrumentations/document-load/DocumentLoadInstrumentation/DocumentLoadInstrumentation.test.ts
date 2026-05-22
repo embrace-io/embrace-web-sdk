@@ -23,15 +23,6 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import { setupTestStorage } from '../../../../tests/utils/index.ts';
-import { session } from '../../../api-sessions/index.ts';
-import { KEY_EMB_PAGE_LOAD } from '../../../constants/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceUserSessionManager,
-} from '../../../managers/index.ts';
-import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
@@ -886,110 +877,6 @@ describe('DocumentLoad Instrumentation', () => {
         assert.isUndefined(resourceSpan.attributes['http.request.prevented']);
         done();
       });
-    });
-  });
-
-  describe('page load abandonment detection', () => {
-    let spanSessionManager: EmbraceUserSessionManager;
-    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
-
-    beforeEach(() => {
-      spanSessionManager = new EmbraceUserSessionManager({
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        perf: new OTelPerformanceManager(),
-        storage: setupTestStorage(),
-        visibilityDoc: window.document,
-      });
-      spanSessionManager.startSessionPartInternal('init');
-      session.setGlobalUserSessionManager(spanSessionManager);
-
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([]);
-      spyEntries.withArgs('paint').returns([]);
-    });
-
-    afterEach(() => {
-      spanSessionManager.endSessionPartInternal('web_background');
-      spyEntries.restore();
-    });
-
-    it('should set emb.page_load = false on enable', () => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setUserSessionManager(spanSessionManager);
-      plugin.enable();
-
-      assert.strictEqual(
-        spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
-        false,
-      );
-    });
-
-    it('should set emb.page_load = true when load fires', (done) => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setUserSessionManager(spanSessionManager);
-      plugin.enable();
-
-      window.dispatchEvent(new Event('load'));
-
-      setTimeout(() => {
-        assert.strictEqual(
-          spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
-          true,
-        );
-        done();
-      });
-    });
-
-    it('should set emb.page_load = true when document is already complete on enable', (done) => {
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setUserSessionManager(spanSessionManager);
-      plugin.enable();
-
-      setTimeout(() => {
-        assert.strictEqual(
-          spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
-          true,
-        );
-        done();
-      });
-    });
-
-    it('should not throw when enable is called with no active session span', (done) => {
-      spanSessionManager.endSessionPartInternal('web_background');
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setUserSessionManager(spanSessionManager);
-
-      assert.doesNotThrow(() => {
-        plugin.enable();
-      });
-
-      setTimeout(done);
-    });
-
-    it('should not set emb.page_load on a non-cold-start session', () => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-      // End the first part and start a second — cold_start flips to false after the first part
-      spanSessionManager.endSessionPartInternal('web_background');
-      spanSessionManager.startSessionPartInternal('web_foreground');
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
-      plugin.setUserSessionManager(spanSessionManager);
-      plugin.enable();
-
-      assert.isUndefined(
-        spanSessionManager.getSessionSpan()?.attributes[KEY_EMB_PAGE_LOAD],
-      );
     });
   });
 

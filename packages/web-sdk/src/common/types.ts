@@ -6,6 +6,7 @@ export interface VisibilityStateDocument {
   // valid. The real `window.document` always provides these; consumers
   // that depend on document-level events (e.g., the session manager
   // listening for `visibilitychange`) guard with optional chaining.
+  readyState?: DocumentReadyState;
   addEventListener?: (
     type: string,
     listener: EventListenerOrEventListenerObject,

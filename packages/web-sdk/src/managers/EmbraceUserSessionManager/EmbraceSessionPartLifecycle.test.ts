@@ -16,6 +16,7 @@ import {
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
+import { KEY_EMB_PAGE_LOAD } from '../../constants/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
 import {
@@ -1502,6 +1503,66 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(finishedSpans[1].attributes).to.have.property(
         'emb.cold_start',
         true,
+      );
+    });
+  });
+
+  describe('emb.page_load attribute', () => {
+    const makeDoc = (
+      readyState: DocumentReadyState,
+    ): VisibilityStateDocument => ({
+      visibilityState: 'visible',
+      hasFocus: () => true,
+      readyState,
+    });
+
+    it('should set emb.page_load = true when readyState is complete at part end', () => {
+      const localManager = new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: makeDoc('complete'),
+      });
+      localManager.startSessionPartInternal('init');
+      localManager.endSessionPartInternal('web_background');
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, true);
+    });
+
+    it('should set emb.page_load = false when readyState is not complete at part end', () => {
+      const localManager = new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: makeDoc('loading'),
+      });
+      localManager.startSessionPartInternal('init');
+      localManager.endSessionPartInternal('web_background');
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, false);
+    });
+
+    it('should not set emb.page_load on non-cold-start parts', () => {
+      const localManager = new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: makeDoc('loading'),
+      });
+      localManager.startSessionPartInternal('init');
+      localManager.endSessionPartInternal('web_background');
+      localManager.startSessionPartInternal('web_foreground');
+      localManager.endSessionPartInternal('web_background');
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      expect(finishedSpans[1].attributes).to.not.have.property(
+        KEY_EMB_PAGE_LOAD,
       );
     });
   });
