@@ -25,7 +25,6 @@ The integration tests consist of two phases:
 Build tests verify the SDK can be built correctly for each platform and checks bundle sizes.
 
 **Platforms tested:**
-- Webpack 4 (es2015)
 - Webpack 5 (es2015)
 - Vite 6 (es2015)
 - Vite 7 (es2015)
