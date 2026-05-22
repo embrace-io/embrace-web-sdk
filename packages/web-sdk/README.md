@@ -591,27 +591,6 @@ initSDK({
 });
 ```
 
-### Webpack 4 Configuration
-
-When using webpack 4, you need to add aliases to your webpack configuration to resolve dependency paths correctly:
-
-```javascript
-// webpack.config.js
-const path = require('node:path');
-
-module.exports = {
-  // ... other config
-  resolve: {
-    alias: {
-      '@opentelemetry/semantic-conventions/incubating': path.resolve(
-        __dirname,
-        './node_modules/@opentelemetry/semantic-conventions/build/src/index-incubating.js'
-      ),
-    },
-  },
-};
-```
-
 ### Client-side only usage
 
 The Embrace SDK is designed for browser environments. Importing it in server-side code (e.g. Next.js Server Components,
