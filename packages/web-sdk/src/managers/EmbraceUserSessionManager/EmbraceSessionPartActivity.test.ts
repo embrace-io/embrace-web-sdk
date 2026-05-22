@@ -106,10 +106,11 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
   // Per the Page Lifecycle spec, visibilityState is already 'hidden' by the
   // time pagehide fires (visibilitychange to 'hidden' fires first), so the
-  // helper mirrors that ordering.
-  const firePageHide = () => {
+  // helper mirrors that ordering. persisted=true is the BFCache-freeze
+  // variant; persisted=false (the default here) is hard-nav unload.
+  const firePageHide = (persisted = false) => {
     visibilityDoc.visibilityState = 'hidden';
-    target.dispatchEvent(new Event('pagehide'));
+    target.dispatchEvent(new PageTransitionEvent('pagehide', { persisted }));
   };
 
   const firePageShow = () => {
@@ -230,12 +231,38 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ends the active part with reason background on pagehide', () => {
+  it('ends the active part with reason web_hard_navigation on pagehide unload', () => {
     manager.startSessionPartInternal('init');
 
     firePageHide();
 
+    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
+    void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('ends the active part with reason web_background on BFCache pagehide', () => {
+    manager.startSessionPartInternal('init');
+
+    firePageHide(true);
+
     expect(endReasons()).to.deep.equal(['web_background']);
+    void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('ends the active part on pagehide even when the document is still visible and focused', () => {
+    // Chrome hard-nav: pagehide fires before any visibilitychange to
+    // 'hidden' and while the window still reports focus. Without an explicit
+    // end here, the Embrace processor's pending spans would never get
+    // pushed to the exporter before the page is gone.
+    manager.startSessionPartInternal('init');
+
+    visibilityDoc.visibilityState = 'visible';
+    visibilityDoc.hasFocus = () => true;
+    target.dispatchEvent(
+      new PageTransitionEvent('pagehide', { persisted: false }),
+    );
+
+    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
