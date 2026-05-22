@@ -299,6 +299,15 @@ export type SDKInitConfig = BaseSDKInitConfig &
   );
 
 export interface SDKControl {
+  /**
+   * @deprecated Will be removed in a future major version. The SDK exports
+   * spans when a session part ends, so this method does not flush Embrace's
+   * own span buffer. Call `session.endUserSession()` instead to end the
+   * active user session and trigger a real export of buffered spans.
+   *
+   * Currently flushes logs and any user-supplied span exporter, but leaves
+   * Embrace's span buffer untouched.
+   */
   flush: () => Promise<void>;
   setDynamicConfig: (config: Partial<DynamicSDKConfig>) => void;
   log: LogManager;
