@@ -101,7 +101,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     });
 
     this._onDocumentLoaded = () => {
-      const sessionSpan = this.sessionManager.getSessionSpan();
+      const sessionSpan = this.userSessionManager.getSessionPartSpan();
       if (sessionSpan?.attributes[KEY_EMB_COLD_START] === true) {
         sessionSpan.setAttribute(KEY_EMB_PAGE_LOAD, true);
       }
@@ -550,7 +550,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public enable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
-    const span = this.sessionManager.getSessionSpan();
+    const span = this.userSessionManager.getSessionPartSpan();
     if (span?.attributes[KEY_EMB_COLD_START] === true) {
       span.setAttribute(KEY_EMB_PAGE_LOAD, false);
     }
