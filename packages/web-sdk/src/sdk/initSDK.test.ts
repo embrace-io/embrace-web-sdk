@@ -581,26 +581,6 @@ describe('initSDK', () => {
     }
   });
 
-  it('should flush pending logs when a session ends', async () => {
-    initSDK({
-      logExporters: [logExporter],
-      spanExporters: [spanExporter],
-    });
-
-    const logger = logs.getLogger('test-logger');
-    logger.emit({ body: 'pending log', severityNumber: SeverityNumber.INFO });
-
-    expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
-
-    session.endSessionSpan();
-
-    await new Promise<void>((resolve) => setTimeout(resolve));
-
-    expect(
-      logExporter.getFinishedLogRecords().some((r) => r.body === 'pending log'),
-    ).to.be.true;
-  });
-
   it('should setup a default context manager when none is provided', async () => {
     const result = initSDK({
       spanExporters: [spanExporter],
@@ -812,6 +792,7 @@ describe('initSDK', () => {
         'emb.session_part_start_reason': 'init',
         'emb.session_part_end_reason': 'user_session_ended',
         'emb.cold_start': true,
+        'emb.page_load': true,
         'emb.is_final_session_part': 1,
         'emb.user_session_termination_reason': 'manual',
         'emb.user_session_id': userSessionId,

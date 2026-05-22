@@ -326,12 +326,6 @@ export const initSDK = (
       });
     }
 
-    // Make sure we flush all logs triggered by any instrumentation
-    // emmiting logs on session ended
-    userSessionManager.addSessionEndedListener(() => {
-      void loggerProvider.forceFlush();
-    });
-
     diagLogger.info('successfully initialized the SDK');
 
     const sdkControl: SDKControl = {
