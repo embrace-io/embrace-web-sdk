@@ -106,10 +106,11 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
   // Per the Page Lifecycle spec, visibilityState is already 'hidden' by the
   // time pagehide fires (visibilitychange to 'hidden' fires first), so the
-  // helper mirrors that ordering.
-  const firePageHide = () => {
+  // helper mirrors that ordering. persisted=true is the BFCache-freeze
+  // variant; persisted=false (the default here) is hard-nav unload.
+  const firePageHide = (persisted = false) => {
     visibilityDoc.visibilityState = 'hidden';
-    target.dispatchEvent(new Event('pagehide'));
+    target.dispatchEvent(new PageTransitionEvent('pagehide', { persisted }));
   };
 
   const firePageShow = () => {
@@ -230,12 +231,38 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ends the active part with reason background on pagehide', () => {
+  it('ends the active part with reason web_hard_navigation on pagehide unload', () => {
     manager.startSessionPartInternal('init');
 
     firePageHide();
 
+    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
+    void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('ends the active part with reason web_background on BFCache pagehide', () => {
+    manager.startSessionPartInternal('init');
+
+    firePageHide(true);
+
     expect(endReasons()).to.deep.equal(['web_background']);
+    void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('ends the active part on pagehide even when the document is still visible and focused', () => {
+    // Chrome hard-nav: pagehide fires before any visibilitychange to
+    // 'hidden' and while the window still reports focus. Without an explicit
+    // end here, the Embrace processor's pending spans would never get
+    // pushed to the exporter before the page is gone.
+    manager.startSessionPartInternal('init');
+
+    visibilityDoc.visibilityState = 'visible';
+    visibilityDoc.hasFocus = () => true;
+    target.dispatchEvent(
+      new PageTransitionEvent('pagehide', { persisted: false }),
+    );
+
+    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -282,9 +309,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('starts a new part with reason foreground on pageshow (BFCache restore)', () => {
     manager.startSessionPartInternal('init');
 
-    // BFCache restore path: pagehide ended the prior part, then pageshow
-    // signals the canonical restore. No part is active when pageshow fires.
-    firePageHide();
+    // BFCache restore path: pagehide with persisted=true freezes the tab and
+    // ends the prior part as web_background, then pageshow signals the
+    // canonical restore. No part is active when pageshow fires.
+    firePageHide(true);
     void expect(manager.getSessionPartId()).to.be.null;
 
     // Document is restored visible on BFCache restore.
@@ -298,16 +326,29 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('does not start a part on pageshow (BFCache restore) when the tab is disengaged at restore', () => {
     manager.startSessionPartInternal('init');
 
-    // Tab freezes while disengaged: pagehide ends the prior part, then by
-    // the time pageshow fires, the document has restored hidden (the user
-    // restored a backgrounded tab without bringing it to focus).
-    firePageHide();
+    // Tab freezes while disengaged: pagehide with persisted=true ends the
+    // prior part, then by the time pageshow fires, the document has restored
+    // hidden (the user restored a backgrounded tab without bringing it to
+    // focus).
+    firePageHide(true);
     visibilityDoc.visibilityState = 'hidden';
     firePageShow();
 
     // No new part. Only 'init' is in the start log.
     expect(startReasons()).to.deep.equal(['init']);
     void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('swallows errors thrown by endSessionPartInternal during pagehide', () => {
+    manager.startSessionPartInternal('init');
+
+    // The pagehide handler wraps endSessionPartInternal in try/catch because
+    // a throw at unload would skip the keepalive flush. Stub the dependency
+    // to throw and assert the handler does not propagate.
+    endSpy.restore();
+    sinon.stub(manager, 'endSessionPartInternal').throws(new Error('boom'));
+
+    expect(() => firePageHide()).to.not.throw();
   });
 
   it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
