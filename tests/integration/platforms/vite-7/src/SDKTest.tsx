@@ -3,7 +3,7 @@ import { sdkControl } from './otel.ts';
 
 const SDKTest = () => {
   const handleEndSession = async () => {
-    session.endSessionSpan();
+    session.endUserSession();
 
     if (sdkControl) {
       await sdkControl.flush();

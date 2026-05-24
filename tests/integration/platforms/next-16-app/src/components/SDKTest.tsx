@@ -5,7 +5,7 @@ import { embraceWebSdk } from './EmbraceWebSdk.tsx';
 
 const SDKTest = () => {
   const handleEndSession = async () => {
-    session.endSessionSpan();
+    session.endUserSession();
     if (embraceWebSdk) {
       await embraceWebSdk.flush();
     }
