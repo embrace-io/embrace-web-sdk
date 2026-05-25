@@ -20,10 +20,10 @@ const sdkControl = initSDK({
 
 declare global {
   interface Window {
-    EMBRACE_CURRENT_SESSION_ID: string | null;
+    EMBRACE_CURRENT_USER_SESSION_ID: string | null;
   }
 }
 
-window.EMBRACE_CURRENT_SESSION_ID = session.getSessionId();
+window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
 
 export { sdkControl };
