@@ -158,24 +158,19 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           return;
         }
 
-        // Decompress the gzipped data
-        zlib.gunzip(buffer, (err, result) => {
-          if (err) {
-            console.error('Failed to decompress request from SDK:', err);
-          } else {
-            try {
-              const json = result.toString('utf-8');
-
-              requests.push({
-                url: request.url(),
-                headers: request.headers(),
-                data: JSON.parse(json) as Record<string, unknown>,
-              });
-            } catch (e) {
-              console.error('Failed to parse request to JSON:', e);
-            }
-          }
-        });
+        // Decompress and record synchronously before route.continue() so the
+        // entry is visible in `requests` by the time waitForOTelRequest resolves
+        // on the response.
+        try {
+          const json = zlib.gunzipSync(buffer).toString('utf-8');
+          requests.push({
+            url: request.url(),
+            headers: request.headers(),
+            data: JSON.parse(json) as Record<string, unknown>,
+          });
+        } catch (e) {
+          console.error('Failed to parse request from SDK:', e);
+        }
 
         await route.continue();
       };

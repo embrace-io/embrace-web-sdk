@@ -186,12 +186,6 @@ const runE2ETests = ({
         await button.click();
         await waitForOTelRequest();
 
-        if (requests.length === 0) {
-          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
-          // yet populated
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
-
         testE2E.expect(requests).toHaveLength(1);
 
         if (goldenFiles) {
@@ -412,12 +406,6 @@ const runE2ETests = ({
 
         await page.getByRole('button', { name: 'End Session' }).click();
         await waitForOTelRequest();
-
-        if (requests.length === 1) {
-          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
-          // yet populated
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
 
         testE2E.expect(requests).toHaveLength(2);
         // Should contain a span capturing the fetch request
