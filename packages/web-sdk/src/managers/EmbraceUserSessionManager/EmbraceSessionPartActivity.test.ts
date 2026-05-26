@@ -114,32 +114,31 @@ describe('EmbraceUserSessionManager browser activity', () => {
     target.dispatchEvent(new Event('focus'));
   };
 
-  // Real Chrome active-tab unload (hard nav OR BFCache freeze): blur fires
-  // first while still 'visible', then visibilitychange to 'hidden'.
-  // pagehide also fires between them, but the SDK does not listen for it
-  // because blur has already ended the part by then.
-  const fireActiveTabUnload = () => {
+  // Focus-shifting active-tab unload (URL-bar typing, alt-tab-then-close):
+  // blur fires first, then visibilitychange to 'hidden'. The programmatic
+  // nav variant fires no blur and is exercised by fireVisibilityChange('hidden')
+  // directly. See README for the verified cross-engine ordering.
+  const fireFocusShiftingUnload = () => {
     visibilityDoc.hasFocus = () => false;
     target.dispatchEvent(new Event('blur'));
     visibilityDoc.visibilityState = 'hidden';
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
-  // Real Chrome already-backgrounded-tab unload: visibilitychange-to-
-  // 'hidden' fired earlier (when the user originally switched tabs).
-  // pagehide is not listened to.
-  const fireAlreadyHiddenTabUnload = () => {
+  // Tab becomes hidden. Covers two real Chrome scenarios that look
+  // identical to the SDK: the user switching to another tab, and an
+  // already-backgrounded tab unloading. In both cases the SDK only
+  // observes visibilitychange-to-'hidden' since pagehide is not listened to.
+  const fireTabHidden = () => {
     visibilityDoc.visibilityState = 'hidden';
     visibilityDoc.hasFocus = () => false;
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
-  // Real Chrome BFCache restore: focus fires first while visibilityState
-  // is still 'hidden', then visibilitychange to 'visible'. focus alone
-  // doesn't satisfy the engagement gate (which requires visible AND
-  // focused), so visibilitychange-to-'visible' is what actually starts
-  // the new part. pageshow also fires last, but the SDK does not listen
-  // for it.
+  // BFCache restore per Chrome's page-lifecycle docs (Playwright suppresses
+  // BFCache, so this is doc-derived not empirically observed): focus fires
+  // first while still 'hidden', then visibilitychange to 'visible' starts
+  // the part. The trailing pageshow has no listener.
   const fireBfcacheRestore = () => {
     visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(new Event('focus'));
@@ -313,7 +312,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('ends the active part exactly once as web_background on a real active-tab unload sequence', () => {
     manager.startSessionPartInternal('init');
 
-    fireActiveTabUnload();
+    fireFocusShiftingUnload();
 
     expect(endReasons()).to.deep.equal(['web_background']);
     expect(endSpy.callCount).to.equal(1);
@@ -323,7 +322,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('ends on visibilitychange-to-hidden for an already-backgrounded tab unload', () => {
     manager.startSessionPartInternal('init');
 
-    fireAlreadyHiddenTabUnload();
+    fireTabHidden();
 
     expect(endReasons()).to.deep.equal(['web_background']);
     expect(endSpy.callCount).to.equal(1);
@@ -332,7 +331,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
   it('starts the new part exactly once as web_foreground on a real BFCache restore sequence', () => {
     manager.startSessionPartInternal('init');
-    fireAlreadyHiddenTabUnload();
+    fireTabHidden();
     startSpy.resetHistory();
     endSpy.resetHistory();
 
@@ -346,7 +345,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('nets to one end and one start across a full active-tab unload then BFCache restore round-trip', () => {
     manager.startSessionPartInternal('init');
 
-    fireActiveTabUnload();
+    fireFocusShiftingUnload();
     fireBfcacheRestore();
 
     expect(endReasons()).to.deep.equal(['web_background']);

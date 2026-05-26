@@ -122,7 +122,7 @@ export type SessionPartStartReason =
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
 export type SessionPartEndReason =
-  | 'web_background' // tab became disengaged via visibilitychange (hidden) or blur; also covers hard-nav unload and BFCache freeze, since blur or an earlier visibilitychange-to-hidden ends the part before pagehide fires
+  | 'web_background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
   | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
