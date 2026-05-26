@@ -11,8 +11,9 @@ import type { ReceivedSpans } from '../tests/integration/types.ts';
 import {
   logInfo,
   logReceivedLogRecords,
-  logReceivedSessionSpan,
+  logReceivedSessionPartSpan,
   logReceivedSpans,
+  logWarn,
 } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -136,17 +137,28 @@ const server = createServer((req, res) => {
 
         logReceivedSpans(resourceSpans);
 
-        const sessionSpan = resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-          (span) => span.name === 'emb-session-part',
-        );
-        const sessionId = sessionSpan?.attributes.find(
-          (attr) => attr.key === 'session.id',
+        const sessionPartSpan =
+          resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
+            (span) => span.name === 'emb-session-part',
+          );
+        const userSessionId = sessionPartSpan?.attributes.find(
+          (attr) => attr.key === 'emb.user_session_id',
         )?.value.stringValue;
 
-        if (sessionId) {
-          receivedSpans[sessionId] = true;
-          if (sessionSpan) {
-            logReceivedSessionSpan(resourceSpans, sessionSpan, sessionId);
+        if (sessionPartSpan && !userSessionId) {
+          logWarn(
+            'emb-session-part received without emb.user_session_id; SDK contract broken?',
+          );
+        }
+
+        if (userSessionId) {
+          receivedSpans[userSessionId] = true;
+          if (sessionPartSpan) {
+            logReceivedSessionPartSpan(
+              resourceSpans,
+              sessionPartSpan,
+              userSessionId,
+            );
           }
         }
 
