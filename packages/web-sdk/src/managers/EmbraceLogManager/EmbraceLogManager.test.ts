@@ -956,6 +956,46 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  // Non-visible visibilityState values (prerender, unloaded, undefined) are
+  // "not actively viewing" per the emb.state contract and must map to
+  // background. Pins the getVisibilityState semantics for log attributes.
+  it('should record emb.state as background for non-visible visibilityState values', () => {
+    const cases: Array<{
+      name: string;
+      visibilityDoc: VisibilityStateDocument;
+    }> = [
+      {
+        name: 'prerender',
+        visibilityDoc: {
+          visibilityState: 'prerender' as DocumentVisibilityState,
+          hasFocus: () => false,
+        },
+      },
+      {
+        name: 'missing visibilityState',
+        visibilityDoc: {} as VisibilityStateDocument,
+      },
+    ];
+
+    for (const { visibilityDoc } of cases) {
+      const localManager = new EmbraceLogManager({
+        perf,
+        userSessionManager,
+        limitManager,
+        storage,
+        visibilityDoc,
+      });
+
+      localManager.message('info log', 'info');
+    }
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(cases.length);
+    for (const log of finishedLogs) {
+      expect(log.attributes).to.have.property('emb.state', 'background');
+    }
+  });
+
   it('should record an attribute when there is an error.cause available', () => {
     expect(() => {
       manager.logException(

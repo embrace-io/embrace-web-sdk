@@ -88,8 +88,8 @@ import {
 
 /**
  * Parts are engagement-gated (visible AND focused), so only one part can
- * be active at a time. That mutex lets us treat storage as a
- * plain shared row read on engagement and written on changes.
+ * be active at a time. Engagement exclusivity lets us treat storage as
+ * a plain shared row read on engagement and written on changes.
  */
 export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _state: UserSessionState | null = null;
@@ -105,8 +105,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _hasStoredState = false;
 
   private _activeSessionPartId: string | null = null;
-  // Snapshotted at part start so a concurrent bump in another tab doesn't
-  // shift this part's value before its span ends.
+  // Held for the part's lifetime so getUserSessionAttributes() reads
+  // during the part return its starting value, even if another tab bumps
+  // the shared counter while this tab is mid-disengagement.
   private _currentSessionPartNumber: number | null = null;
   private _sessionPartSpan: ExtendedSpan | null = null;
   private _activeSessionPartCounts: Record<string, number> | null = null;
@@ -201,8 +202,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
-      onPageShow: this._onPageShow,
-      onPageHide: this._onPageHide,
     });
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
@@ -751,8 +750,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
-      onPageShow: this._onPageShow,
-      onPageHide: this._onPageHide,
     });
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
@@ -787,43 +784,18 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   // Window focus lost (alt-tab away, clicked into DevTools or another window).
   // hasFocus is now false; engagement transition ends the active part.
+  //
+  // pagehide and pageshow are intentionally not listened to. Per the HTML
+  // spec's "unload a document" algorithm (§7.5.9), pagehide fires before
+  // visibilitychange-to-hidden in the same task, but in shipping engines
+  // blur fires first on active-tab unload and the earlier
+  // visibilitychange-to-hidden already ended the part for backgrounded-tab
+  // unload; pagehide always short-circuits. On BFCache restore, focus and
+  // visibilitychange-to-visible fire before pageshow, so pageshow finds
+  // an already-active part. Initial-load part-start is driven directly by
+  // initSDK via the 'init' SessionPartStartReason.
   private readonly _onBlur = (): void => {
     this._handleEngagementTransition('blur');
-  };
-
-  // Initial page load OR BFCache restore. event.persisted only affects the
-  // debug source string; routing is via _handleEngagementTransition, which
-  // keys off engagement state and whether a part is currently active.
-  private readonly _onPageShow = (event: PageTransitionEvent): void => {
-    this._handleEngagementTransition(
-      event.persisted ? 'pageshow-bfcache' : 'pageshow-initial',
-    );
-  };
-
-  // Navigation away (hard nav, tab close) OR BFCache freeze. Both signal the
-  // page is about to stop running, so we always end the active part. Ending
-  // the part flushes its span (and the spans batched against it in
-  // EmbraceSessionPartBatchedSpanProcessor) through the export pipeline while
-  // the page can still issue a keepalive fetch. On BFCache restore, pageshow
-  // will start a fresh part.
-  private readonly _onPageHide = (event: PageTransitionEvent): void => {
-    try {
-      if (this._activeSessionPartId === null) {
-        return;
-      }
-      const reason: SessionPartEndReason = event.persisted
-        ? 'web_background'
-        : 'web_hard_navigation';
-      this._diag.debug(
-        `page hiding (persisted=${event.persisted}); ending current part as ${reason}`,
-      );
-      this.endSessionPartInternal(reason);
-    } catch (e) {
-      this._diag.error(
-        `Error ending session part on pagehide (persisted=${event.persisted})`,
-        e,
-      );
-    }
   };
 
   private _handleEngagementTransition(source: string): void {

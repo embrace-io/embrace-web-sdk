@@ -239,45 +239,47 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     );
   });
 
-  it('should skip starting a session part when the document is hidden', () => {
-    const visibilityDoc: VisibilityStateDocument = {
-      visibilityState: 'hidden',
-      hasFocus: () => false,
-    };
-    const localManager = new EmbraceUserSessionManager({
-      visibilityDoc,
-      limitManager,
-      perf,
-      storage,
-    });
-    localManager.startSessionPartInternal('init');
-    void expect(localManager.getSessionPartId()).to.be.null;
-    void expect(localManager.getSessionPartSpan()).to.be.null;
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(0);
-  });
-
-  it('should skip starting a session part when the document is visible but unfocused', () => {
-    // Multi-monitor / DevTools-undocked case: tab is on-screen but another
-    // window has focus. Engagement gate must close on `!hasFocus()` alone.
-    const visibilityDoc: VisibilityStateDocument = {
+  // Engagement gate is visibilityState === 'visible' && hasFocus(). Any
+  // other combination must block startSessionPartInternal. Visible+hasFocus
+  // is the happy path tested above.
+  const disengagedCases: Array<{
+    name: string;
+    visibilityState: DocumentVisibilityState;
+    hasFocus: boolean;
+  }> = [
+    { name: 'hidden', visibilityState: 'hidden', hasFocus: false },
+    {
+      name: 'visible but unfocused',
       visibilityState: 'visible',
-      hasFocus: () => false,
-    };
-    const localManager = new EmbraceUserSessionManager({
-      visibilityDoc,
-      limitManager,
-      perf,
-      storage,
-    });
-    localManager.startSessionPartInternal('init');
-    void expect(localManager.getSessionPartId()).to.be.null;
-    void expect(localManager.getSessionPartSpan()).to.be.null;
+      hasFocus: false,
+    },
+    {
+      name: 'prerender with focus',
+      visibilityState: 'prerender' as DocumentVisibilityState,
+      hasFocus: true,
+    },
+  ];
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(0);
-  });
+  for (const { name, visibilityState, hasFocus } of disengagedCases) {
+    it(`should skip starting a session part when the document is ${name}`, () => {
+      const visibilityDoc: VisibilityStateDocument = {
+        visibilityState,
+        hasFocus: () => hasFocus,
+      };
+      const localManager = new EmbraceUserSessionManager({
+        visibilityDoc,
+        limitManager,
+        perf,
+        storage,
+      });
+      localManager.startSessionPartInternal('init');
+      void expect(localManager.getSessionPartId()).to.be.null;
+      void expect(localManager.getSessionPartSpan()).to.be.null;
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(0);
+    });
+  }
 
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
