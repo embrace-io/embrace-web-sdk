@@ -293,22 +293,45 @@ Several specific edge cases are handled:
 ## Unload and BFCache handling
 
 There is no BFCache-specific code in the manager and no `pagehide`/`pageshow`
-listener. Behavior is absorbed by the engagement-transition events because, per
-the HTML "unload a document" algorithm and the empirically verified ordering in
-shipping Chrome, Gecko, and WebKit:
+listener. Behavior is absorbed by the engagement-transition events the manager
+already listens to (`blur`, `focus`, `visibilitychange`), per the HTML
+[unload a document][unload-spec] algorithm and the event ordering observed in
+the browsers below:
 
-- **Active-tab unload** (hard nav OR BFCache freeze). `blur` fires first while
-  `visibilityState` is still `'visible'`, ending the part as `web_background`.
-  `pagehide` and `visibilitychange` to hidden follow but find no active part.
+- **Active-tab unload** (hard nav OR BFCache freeze). On a focus-shifting nav
+  (address-bar typing, omnibox suggestion), `blur` fires first while
+  `visibilityState` is still `'visible'` and ends the part as `web_background`.
+  On a programmatic `location.href` nav, no `blur` fires; instead `pagehide`
+  and `visibilitychange` to hidden fire in the same task at navigation commit,
+  and the `visibilitychange` listener ends the part as `web_background`. In
+  both cases the part is ended before any `pagehide` handler could run.
 - **Backgrounded-tab unload**. `visibilitychange` to hidden already fired
   earlier (when the user switched away), ending the part as `web_background`
   at that moment. The later `pagehide` is on an already-ended part.
-- **BFCache restore**. `focus` fires first, then `visibilitychange` to
-  `'visible'`. The combined visible+focused transition starts a new part as
-  `web_foreground`. `pageshow` fires last and would be redundant.
+- **BFCache restore**. Per the spec, `focus` and `visibilitychange` to
+  `'visible'` fire before `pageshow`. The combined visible+focused transition
+  starts a new part as `web_foreground`; `pageshow` would be redundant. This
+  path is spec-derived rather than empirically verified here because Playwright
+  suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
 
 The in-memory `_state` survives the freeze-restore cycle because BFCache
 preserves the JS heap.
+
+### Verified event ordering
+
+Verified 2026-05 on macOS under Chromium 148, Firefox 150, and WebKit 26.4.
+On a plain `location.href` hard nav, all three engines fire `beforeunload`,
+then `pagehide` (with `visibilityState='visible'`, `hasFocus=true`,
+`persisted=false`), then `visibilitychange` to `hidden`, all within the same
+task. `pagehide` and `visibilitychange` share a `performance.now()` timestamp,
+with `pagehide` ordered first per the HTML spec's unload steps.
+
+No `blur` fires in any engine for the programmatic `location.href` case.
+`blur` is observed on the active-tab path only when the navigation itself
+shifts focus out of the document (URL bar typing, alt-tab away, click into
+another window).
+
+[unload-spec]: https://html.spec.whatwg.org/multipage/document-lifecycle.html#unload-a-document
 
 ## Attributes
 
