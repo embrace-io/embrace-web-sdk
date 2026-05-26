@@ -785,15 +785,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   // Window focus lost (alt-tab away, clicked into DevTools or another window).
   // hasFocus is now false; engagement transition ends the active part.
   //
-  // pagehide and pageshow are intentionally not listened to. Per the HTML
-  // spec's "unload a document" algorithm (§7.5.9), pagehide fires before
-  // visibilitychange-to-hidden in the same task, but in shipping engines
-  // blur fires first on active-tab unload and the earlier
+  // pagehide and pageshow are intentionally not listened to. In shipping
+  // engines, blur fires first on active-tab unload, and the earlier
   // visibilitychange-to-hidden already ended the part for backgrounded-tab
-  // unload; pagehide always short-circuits. On BFCache restore, focus and
+  // unload. pagehide always short-circuits. On BFCache restore, focus and
   // visibilitychange-to-visible fire before pageshow, so pageshow finds
   // an already-active part. Initial-load part-start is driven directly by
   // initSDK via the 'init' SessionPartStartReason.
+  // https://developer.chrome.com/docs/web-platform/page-lifecycle-api
   private readonly _onBlur = (): void => {
     this._handleEngagementTransition('blur');
   };

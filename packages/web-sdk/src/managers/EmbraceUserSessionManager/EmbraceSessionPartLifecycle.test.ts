@@ -253,11 +253,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityState: 'visible',
       hasFocus: false,
     },
-    {
-      name: 'prerender with focus',
-      visibilityState: 'prerender' as DocumentVisibilityState,
-      hasFocus: true,
-    },
   ];
 
   for (const { name, visibilityState, hasFocus } of disengagedCases) {

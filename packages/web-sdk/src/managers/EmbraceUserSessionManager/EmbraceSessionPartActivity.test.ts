@@ -116,8 +116,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
   // Real Chrome active-tab unload (hard nav OR BFCache freeze): blur fires
   // first while still 'visible', then visibilitychange to 'hidden'.
-  // pagehide also fires between them per spec but the SDK does not listen
-  // for it because blur has already ended the part by then.
+  // pagehide also fires between them, but the SDK does not listen for it
+  // because blur has already ended the part by then.
   const fireActiveTabUnload = () => {
     visibilityDoc.hasFocus = () => false;
     target.dispatchEvent(new Event('blur'));
@@ -138,8 +138,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // is still 'hidden', then visibilitychange to 'visible'. focus alone
   // doesn't satisfy the engagement gate (which requires visible AND
   // focused), so visibilitychange-to-'visible' is what actually starts
-  // the new part. pageshow also fires last per spec but the SDK does not
-  // listen for it.
+  // the new part. pageshow also fires last, but the SDK does not listen
+  // for it.
   const fireBfcacheRestore = () => {
     visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(new Event('focus'));

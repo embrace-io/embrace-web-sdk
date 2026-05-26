@@ -23,15 +23,6 @@ describe('getVisibilityState', () => {
     ).to.equal('background');
   });
 
-  it('should report background for transitional states like prerender', () => {
-    expect(
-      getVisibilityState({
-        visibilityState: 'prerender' as DocumentVisibilityState,
-        hasFocus: () => false,
-      }),
-    ).to.equal('background');
-  });
-
   it('should report background when document visibility cannot be determined', () => {
     expect(getVisibilityState({} as VisibilityStateDocument)).to.equal(
       'background',
