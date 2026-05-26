@@ -390,7 +390,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._activeSessionPartCounts = {};
     this._nextSessionPartCounts = {};
     this._sessionPartSpan = span;
-    this._coldStart = false;
 
     this._startSessionPartInactivityTimer();
 
@@ -423,7 +422,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         ...this._limitManager.getDiagnosticCounts(),
         [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
       };
-      if (span.attributes[KEY_EMB_COLD_START] === true) {
+      if (this._coldStart) {
         endAttrs[KEY_EMB_PAGE_LOAD] =
           this._visibilityDoc.readyState === 'complete';
       }
@@ -464,6 +463,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         this._diag.warn('Error ending session part span', error);
       }
       this._sessionPartSpan = null;
+      this._coldStart = false;
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
       this._currentSessionPartNumber = null;
