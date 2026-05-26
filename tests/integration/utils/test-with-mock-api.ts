@@ -114,18 +114,15 @@ const IGNORED_ATTRIBUTES_LIST = [
 
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
-    async ({ page, requests }, use) => {
+    async ({ page }, use) => {
       await use(async (url) => {
-        await Promise.any([
-          // Wait for the request to be made or
-          page.waitForResponse((request) => request.url().match(url) !== null),
-          // Check if the request has already been made
-          new Promise((resolve) => {
-            if (requests.length > 0 && requests.find((r) => r.url.match(url))) {
-              resolve(undefined);
-            }
-          }),
-        ]);
+        // Wait for the next matching response. The route handler records the
+        // request before responding, so it is present in `requests` once this
+        // resolves. Each call waits for a fresh response, so consecutive waits
+        // don't short-circuit on a request recorded by an earlier call.
+        await page.waitForResponse(
+          (response) => response.url().match(url) !== null,
+        );
       });
     },
     { scope: 'test' },
