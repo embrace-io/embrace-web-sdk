@@ -134,7 +134,7 @@ export const initSDK = (
     const initSDKStart = perf.getNowMillis();
 
     window.addEventListener('pageshow', (event: PageTransitionEvent) => {
-      updatePageStartMillis(perf.epochMillisFromOriginOffset(event.timeStamp));
+      updatePageShowMillis(window.performance.timeOrigin + event.timeStamp);
     });
 
     const validatedAppID = validateAppID(appID);
