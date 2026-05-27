@@ -28,7 +28,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const GOLDEN_DIR = path.resolve(__dirname, '../tests/__golden__');
 const INTENDED_CHANGE_MESSAGE = `\n\nIf you intended to change the golden files, run test:integration:update-golden instead.`;
-const shouldUpdateGolden = process.env.UPDATE_GOLDEN === '1';
+const shouldUpdateGolden = process.env['UPDATE_GOLDEN'] === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
 };
@@ -114,26 +114,26 @@ const IGNORED_ATTRIBUTES_LIST = [
 
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
-    async ({ page, requests }, use) => {
+    async ({ page }, use) => {
       await use(async (url) => {
-        await Promise.any([
-          // Wait for the request to be made or
-          page.waitForResponse((request) => request.url().match(url) !== null),
-          // Check if the request has already been made
-          new Promise((resolve) => {
-            if (requests.length > 0 && requests.find((r) => r.url.match(url))) {
-              resolve(undefined);
-            }
-          }),
-        ]);
+        await page.waitForResponse(
+          (response) => response.url().match(url) !== null,
+        );
       });
     },
     { scope: 'test' },
   ],
   waitForOTelRequest: [
-    async ({ waitForRequest }, use) => {
+    // `requests` only holds OTel requests, so wait on the recorded buffer
+    // rather than the network event. A per-test cursor resolves on a new
+    // request without short-circuiting on one an earlier call consumed.
+    async ({ requests }, use, testInfo) => {
+      let consumed = 0;
       await use(async () => {
-        await waitForRequest(OTEL_REQUEST_REGEX);
+        await expect
+          .poll(() => requests.length, { timeout: testInfo.timeout })
+          .toBeGreaterThan(consumed);
+        consumed += 1;
       });
     },
     { scope: 'test' },
@@ -158,9 +158,8 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           return;
         }
 
-        // Decompress and record synchronously before route.continue() so the
-        // entry is visible in `requests` by the time waitForOTelRequest resolves
-        // on the response.
+        // Record synchronously before route.continue() so the entry is in
+        // `requests` by the time waitForOTelRequest sees it.
         try {
           const json = zlib.gunzipSync(buffer).toString('utf-8');
           requests.push({
@@ -598,12 +597,12 @@ const expect = testWithMockApi.expect.extend({
     const expectedString = fs.readFileSync(filePath, 'utf-8');
 
     try {
-      const expectedResources = received.data.resourceSpans
+      const expectedResources = received.data['resourceSpans']
         ? (JSON.parse(expectedString) as IExportTraceServiceRequest)
             .resourceSpans
         : (JSON.parse(expectedString) as IExportLogsServiceRequest)
             .resourceLogs;
-      const receivedResources = received.data.resourceSpans
+      const receivedResources = received.data['resourceSpans']
         ? (received.data as IExportTraceServiceRequest).resourceSpans
         : (received.data as IExportLogsServiceRequest).resourceLogs;
 
