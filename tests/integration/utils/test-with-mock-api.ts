@@ -55,6 +55,7 @@ type TestWithMockApi = {
   requests: EmbraceDataRequest[];
   waitForRequest: (url: RegExp) => Promise<void>;
   waitForOTelRequest: () => Promise<void>;
+  waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
@@ -65,6 +66,12 @@ type TestWithMockApi = {
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   'DocumentLoadInstrumentation',
 ];
+// Scopes on this list have their entities sorted by a stable key before
+// comparison because the order they are emitted is non-deterministic.
+const SCOPES_WITH_SORTED_COMPARISON = new Set(['WebVitalsInstrumentation']);
+// If a log record has any of these attribute keys, its body is excluded from
+// comparison because the content (e.g. raw attribution timing values) changes every run.
+const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // Resource spans whose url.full matches any of these patterns are excluded from
 // comparison entirely. Favicons are fetched asynchronously by the browser and
 // may or may not complete before the SDK captures PerformanceResourceTiming
@@ -109,6 +116,9 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.web_vital.delta',
   'emb.web_vital.id',
   'emb.web_vital.value',
+  'browser.web_vital.delta',
+  'browser.web_vital.id',
+  'browser.web_vital.value',
   'tap.coords',
 ];
 
@@ -134,6 +144,30 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           .poll(() => requests.length, { timeout: testInfo.timeout })
           .toBeGreaterThan(consumed);
         consumed += 1;
+      });
+    },
+    { scope: 'test' },
+  ],
+  waitForOTelRequestMatching: [
+    async ({ requests }, use) => {
+      await use(async (pattern: RegExp) => {
+        const timeoutMs = 10_000;
+        const start = Date.now();
+        await new Promise<void>((resolve, reject) => {
+          const interval = setInterval(() => {
+            if (requests.some((r) => pattern.test(r.url))) {
+              clearInterval(interval);
+              resolve();
+            } else if (Date.now() - start > timeoutMs) {
+              clearInterval(interval);
+              reject(
+                new Error(
+                  `Expected OTel request matching ${pattern.toString()} within ${timeoutMs.toString()}ms`,
+                ),
+              );
+            }
+          }, 100);
+        });
       });
     },
     { scope: 'test' },
@@ -250,6 +284,14 @@ const isScopeSpan = (entity: IScopeSpans | IScopeLogs): entity is IScopeSpans =>
 const isSpan = (entity: ISpan | ILogRecord): entity is ISpan =>
   (entity as ISpan).spanId !== undefined;
 
+const getEntitySortKey = (entity: ISpan | ILogRecord): string => {
+  if (isSpan(entity)) return entity.name;
+  return (
+    entity.attributes?.find((a) => a.key === 'browser.web_vital.name')?.value
+      .stringValue ?? ''
+  );
+};
+
 const expect = testWithMockApi.expect.extend({
   toMatchAttributes: (
     received: IKeyValue[],
@@ -269,9 +311,13 @@ const expect = testWithMockApi.expect.extend({
       };
     }
 
-    // Sort both arrays by key
-    const sortedReceived = received.sort((a, b) => a.key.localeCompare(b.key));
-    const sortedExpected = expected.sort((a, b) => a.key.localeCompare(b.key));
+    // Sort copies by key so we don't mutate the caller's arrays
+    const sortedReceived = [...received].sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
+    const sortedExpected = [...expected].sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
 
     // Compare each attribute
     for (const [index, receivedAttr] of sortedReceived.entries()) {
@@ -407,11 +453,11 @@ const expect = testWithMockApi.expect.extend({
       message: `Attributes mismatch for span ${received.name}`,
     });
 
-    const sortedReceivedEvents = received.events.sort((a, b) =>
+    const sortedReceivedEvents = [...(received.events ?? [])].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
 
-    const sortedExpectedEvents = expected.events.sort((a, b) =>
+    const sortedExpectedEvents = [...(expected.events ?? [])].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
 
@@ -427,14 +473,18 @@ const expect = testWithMockApi.expect.extend({
     };
   },
   toMatchLog: (received: ILogRecord, expected: ILogRecord) => {
+    const ignoreBody =
+      received.attributes?.some((a) => LOGS_WITH_IGNORED_BODY.has(a.key)) ??
+      false;
+
     // Use this instead of objectContaining for a better error message
     expect({
-      body: received.body,
+      ...(ignoreBody ? {} : { body: received.body }),
       severityNumber: received.severityNumber,
       severityText: received.severityText,
       droppedAttributesCount: received.droppedAttributesCount,
     }).toEqual({
-      body: expected.body,
+      ...(ignoreBody ? {} : { body: expected.body }),
       severityNumber: expected.severityNumber,
       severityText: expected.severityText,
       droppedAttributesCount: expected.droppedAttributesCount,
@@ -457,6 +507,14 @@ const expect = testWithMockApi.expect.extend({
       return {
         pass: true,
         message: () => `Entities matched`,
+      };
+    }
+
+    if (!expected || !received) {
+      return {
+        pass: false,
+        message: () =>
+          `Expected entities to be ${expected ? 'present' : 'absent'}, but received was ${received ? 'present' : 'absent'}${INTENDED_CHANGE_MESSAGE}`,
       };
     }
 
@@ -519,10 +577,10 @@ const expect = testWithMockApi.expect.extend({
                   pass: false,
                   message: () =>
                     `Expected ${chalk.green(filteredExpected.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(filteredReceived.length)}${INTENDED_CHANGE_MESSAGE}\n${
-                      diff(filteredReceived, filteredExpected, {
+                      diff(filteredExpected, filteredReceived, {
                         expand: true,
-                        aAnnotation: 'Received',
-                        bAnnotation: 'Expected',
+                        aAnnotation: 'Expected',
+                        bAnnotation: 'Received',
                       }) || ''
                     }`,
                 };
@@ -538,11 +596,25 @@ const expect = testWithMockApi.expect.extend({
                 continue;
               }
 
+              const shouldSort = SCOPES_WITH_SORTED_COMPARISON.has(
+                receivedScope.scope.name,
+              );
+              const sortedReceived = shouldSort
+                ? [...filteredReceived].sort((a, b) =>
+                    getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
+                  )
+                : filteredReceived;
+              const sortedExpected = shouldSort
+                ? [...filteredExpected].sort((a, b) =>
+                    getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
+                  )
+                : filteredExpected;
+
               for (const [
                 entityIndex,
                 receivedEntity,
-              ] of filteredReceived.entries()) {
-                const expectedEntity = filteredExpected[entityIndex];
+              ] of sortedReceived.entries()) {
+                const expectedEntity = sortedExpected[entityIndex];
 
                 try {
                   if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
@@ -552,6 +624,10 @@ const expect = testWithMockApi.expect.extend({
                     !isSpan(expectedEntity)
                   ) {
                     expect(receivedEntity).toMatchLog(expectedEntity);
+                  } else {
+                    throw new Error(
+                      `Entity type mismatch: received is ${isSpan(receivedEntity) ? 'a span' : 'a log'} but expected is ${isSpan(expectedEntity) ? 'a span' : 'a log'}`,
+                    );
                   }
                 } catch (e) {
                   const entityName = isSpan(receivedEntity)
@@ -606,7 +682,7 @@ const expect = testWithMockApi.expect.extend({
         ? (received.data as IExportTraceServiceRequest).resourceSpans
         : (received.data as IExportLogsServiceRequest).resourceLogs;
 
-      expect(expectedResources).toMatchOTelEntities(receivedResources);
+      expect(receivedResources).toMatchOTelEntities(expectedResources);
     } catch (e) {
       // If we are updating the golden file, and the comparison fails for any reason,
       // we will write the actual data to the golden file
