@@ -21,6 +21,10 @@ export {
 } from './loaf/index.ts';
 export { getNavigationInstrumentation } from './navigation/index.ts';
 export {
+  RageClickInstrumentation,
+  type RageClickInstrumentationArgs,
+} from './rage-click/index.ts';
+export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
 } from './server-timing/index.ts';

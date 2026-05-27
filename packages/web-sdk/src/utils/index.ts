@@ -5,6 +5,7 @@ export { createSafeProxy } from './createSafeProxy/index.ts';
 export { generateUUID } from './generateUUID.ts';
 export { generateWebVitalID } from './generateWebVitalID.ts';
 export { getIncrementedCount } from './getIncrementedCount.ts';
+export { getSelector } from './getSelector.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';
 export { isDeviceIdEnabled } from './isDeviceIdEnabled.ts';
