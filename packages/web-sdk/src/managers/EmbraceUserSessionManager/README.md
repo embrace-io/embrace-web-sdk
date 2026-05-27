@@ -91,7 +91,7 @@ engagement condition holds, the call is a debug-level no-op.
 | Value | Trigger |
 | --- | --- |
 | `init` | SDK init flow on page load. |
-| `web_foreground` | `visibilitychange` to visible, `focus`, or `pageshow` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
+| `web_foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
 | `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
 | `user_session_rollover` | Called synchronously by `_terminateUserSession` immediately after a user session ends. |
 
@@ -101,8 +101,7 @@ engagement condition holds, the call is a debug-level no-op.
 
 | Value | Trigger |
 | --- | --- |
-| `web_background` | `visibilitychange` to hidden, `blur`, or `pagehide` with `persisted=true` (BFCache freeze). |
-| `web_hard_navigation` | `pagehide` with `persisted=false` (hard navigation away, tab close, or reload). |
+| `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
 | `inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
@@ -291,21 +290,48 @@ Several specific edge cases are handled:
   the stale timer fires first, `_terminateUserSession('max_duration_reached')`
   runs benignly against the already-cleared storage row.
 
-## BFCache handling
+## Unload and BFCache handling
 
-There is no BFCache-specific code in the manager. Behavior is absorbed by the
-existing engagement events:
+There is no BFCache-specific code in the manager and no `pagehide`/`pageshow`
+listener. Behavior is absorbed by the engagement-transition events the manager
+already listens to (`blur`, `focus`, `visibilitychange`), per the HTML
+[unload a document][unload-spec] algorithm and the event ordering observed in
+the browsers below:
 
-- **Freeze** (entering BFCache). `pagehide` fires with `persisted=true`.
-  `EmbraceUserSessionManager._onPageHide` ends the active part with reason
-  `web_background`. A `pagehide` with `persisted=false` is a hard navigation,
-  not a BFCache freeze, and ends the part with `web_hard_navigation` instead.
-- **Restore** (leaving BFCache). `pageshow` fires. If the document is visible
-  and focused and no part is active, a new part starts with reason
-  `web_foreground`. If the document restores hidden, no part starts.
+- **Active-tab unload** (hard nav OR BFCache freeze). On a focus-shifting nav
+  (address-bar typing, omnibox suggestion), `blur` fires first while
+  `visibilityState` is still `'visible'` and ends the part as `web_background`.
+  On a programmatic `location.href` nav, no `blur` fires; instead `pagehide`
+  and `visibilitychange` to hidden fire in the same task at navigation commit,
+  and the `visibilitychange` listener ends the part as `web_background`. In
+  both cases the part is ended before any `pagehide` handler could run.
+- **Backgrounded-tab unload**. `visibilitychange` to hidden already fired
+  earlier (when the user switched away), ending the part as `web_background`
+  at that moment. The later `pagehide` is on an already-ended part.
+- **BFCache restore**. Per the spec, `focus` and `visibilitychange` to
+  `'visible'` fire before `pageshow`. The combined visible+focused transition
+  starts a new part as `web_foreground`; `pageshow` would be redundant. This
+  path is spec-derived rather than empirically verified here because Playwright
+  suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
 
 The in-memory `_state` survives the freeze-restore cycle because BFCache
 preserves the JS heap.
+
+### Verified event ordering
+
+Verified 2026-05 on macOS under Chromium 148, Firefox 150, and WebKit 26.4.
+On a plain `location.href` hard nav, all three engines fire `beforeunload`,
+then `pagehide` (with `visibilityState='visible'`, `hasFocus=true`,
+`persisted=false`), then `visibilitychange` to `hidden`, all within the same
+task. `pagehide` and `visibilitychange` share a `performance.now()` timestamp,
+with `pagehide` ordered first per the HTML spec's unload steps.
+
+No `blur` fires in any engine for the programmatic `location.href` case.
+`blur` is observed on the active-tab path only when the navigation itself
+shifts focus out of the document (URL bar typing, alt-tab away, click into
+another window).
+
+[unload-spec]: https://html.spec.whatwg.org/multipage/document-lifecycle.html#unload-a-document
 
 ## Attributes
 
@@ -365,8 +391,8 @@ Why it happens:
 2. `initSDK` calls `startSessionPartInternal('init')` next, but the call
    no-ops when `!document.hasFocus()` or `visibilityState === 'background'`
    (parts are foreground-only by design).
-3. Until the next engagement event fires (`pageshow`/`focus`/
-   `visibilitychange`), `_activeSessionPartId === null`. Logs that pass
+3. Until the next engagement event fires (`focus`/`visibilitychange`),
+   `_activeSessionPartId === null`. Logs that pass
    through `UserSessionLogRecordProcessor` in that window end up
    with `emb.session_part_id: ''`. Spans are not affected; only the
    session-part span itself carries IDs, and other spans are correlated

@@ -384,9 +384,8 @@ describe('EmbraceUserSessionManager', () => {
 
   it('should not resurrect cleared state on a part-end-driven persist', () => {
     // If a user wipes site data (or the browser evicts it) while a part
-    // is active, the visibility-change pagehide flow used to re-persist
-    // the in-memory state and silently restore everything. Honor the
-    // clear instead.
+    // is active, an end-driven persist could re-write the in-memory
+    // state and silently restore everything. Honor the clear instead.
     const manager = createManager();
     manager.startSessionPartInternal('init');
     expect(inMemoryStorage.getItem('embrace_user_session_state')).to.not.be

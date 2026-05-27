@@ -1,7 +1,10 @@
 import type { VisibilityStateDocument } from '../common/index.ts';
 import { EMB_STATES } from '../constants/index.ts';
 
+// emb.state describes whether the user is actively viewing the page.
+// Anything other than 'visible' (including the fallback when
+// visibilityState is missing) maps to Background.
 export const getVisibilityState = (visibilityDoc: VisibilityStateDocument) =>
-  visibilityDoc.visibilityState === 'hidden'
-    ? EMB_STATES.Background
-    : EMB_STATES.Foreground;
+  visibilityDoc.visibilityState === 'visible'
+    ? EMB_STATES.Foreground
+    : EMB_STATES.Background;

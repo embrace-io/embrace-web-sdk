@@ -956,6 +956,38 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  // When visibilityState is missing, emb.state must fall back to background
+  // per the getVisibilityState contract. Pins the semantics for log attributes.
+  it('should record emb.state as background when visibilityState is missing', () => {
+    const cases: Array<{
+      name: string;
+      visibilityDoc: VisibilityStateDocument;
+    }> = [
+      {
+        name: 'missing visibilityState',
+        visibilityDoc: {} as VisibilityStateDocument,
+      },
+    ];
+
+    for (const { visibilityDoc } of cases) {
+      const localManager = new EmbraceLogManager({
+        perf,
+        userSessionManager,
+        limitManager,
+        storage,
+        visibilityDoc,
+      });
+
+      localManager.message('info log', 'info');
+    }
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(cases.length);
+    for (const log of finishedLogs) {
+      expect(log.attributes).to.have.property('emb.state', 'background');
+    }
+  });
+
   it('should record an attribute when there is an error.cause available', () => {
     expect(() => {
       manager.logException(
