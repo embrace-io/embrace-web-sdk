@@ -1278,15 +1278,15 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       );
     });
 
-    it('should stamp "inactivity" when the inactivity timer ends the part', () => {
+    it('should stamp "web_inactivity" when the inactivity timer ends the part', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('inactivity');
+      manager.endSessionPartInternal('web_inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.session_part_end_reason',
-        'inactivity',
+        'web_inactivity',
       );
     });
 

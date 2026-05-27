@@ -109,11 +109,16 @@ export type StartSessionOptions = {
 };
 
 // Reasons that describe SDK-agnostic, cross-platform concepts (`init`,
-// `manual`, `inactivity`, `max_duration_reached`, `user_session_rollover`,
-// `user_session_ended`) are emitted unprefixed so the backend can correlate
+// `manual`, `max_duration_reached`, `user_session_rollover`,
+// `user_session_ended`, and the user-session-level `inactivity` on
+// `UserSessionEndReason`) are emitted unprefixed so the backend can correlate
 // them across platforms. Reasons that describe behaviour specific to the web
-// environment (`web_foreground`, `web_background`, `web_activity`) are stamped
-// with a `web_` prefix.
+// environment (`web_foreground`, `web_background`, `web_activity`,
+// `web_inactivity`) are stamped with a `web_` prefix. The part-level
+// `web_inactivity` and the user-session-level `inactivity` are distinct: when
+// the part-inactivity timer fires it stamps `web_inactivity` as the part end
+// reason and `inactivity` as the enclosing user session's termination reason
+// on the same final part span.
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
@@ -123,7 +128,7 @@ export type SessionPartStartReason =
 
 export type SessionPartEndReason =
   | 'web_background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
 export type UserSessionEndReason =

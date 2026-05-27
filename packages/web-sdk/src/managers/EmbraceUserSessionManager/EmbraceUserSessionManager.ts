@@ -359,7 +359,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const isFinal = reason === 'user_session_ended' || reason === 'inactivity';
+    const isFinal =
+      reason === 'user_session_ended' || reason === 'web_inactivity';
 
     // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
     // and must not push it forward.
@@ -827,7 +828,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag.debug(
         'inactivity timer fired; ending current part and user session',
       );
-      this.endSessionPartInternal('inactivity', 'inactivity');
+      this.endSessionPartInternal('web_inactivity', 'inactivity');
     } catch (e) {
       this._diag.warn('Error handling inactivity timer', e);
     }
