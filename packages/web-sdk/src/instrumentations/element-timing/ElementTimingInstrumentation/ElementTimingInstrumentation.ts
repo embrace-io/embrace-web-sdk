@@ -92,7 +92,7 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     const span = this.tracer.startSpan(entry.identifier, {
       // Span start anchors to navigation start so the span duration equals "time from navigation
       // until the element was rendered" — useful for analyzing page-load render timing.
-      startTime: this.perf.epochMillisFromOriginOffset(0),
+      startTime: this.perf.epochMillisFromZeroTime(0),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
         [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,
@@ -106,12 +106,9 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
       },
     });
     if (entry.loadTime > 0) {
-      span.addEvent(
-        'load',
-        this.perf.epochMillisFromOriginOffset(entry.loadTime),
-      );
+      span.addEvent('load', this.perf.epochMillisFromZeroTime(entry.loadTime));
     }
     // entry.startTime = renderTime if non-zero, else loadTime
-    span.end(this.perf.epochMillisFromOriginOffset(entry.startTime));
+    span.end(this.perf.epochMillisFromZeroTime(entry.startTime));
   }
 }

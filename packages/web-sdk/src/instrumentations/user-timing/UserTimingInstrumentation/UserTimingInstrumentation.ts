@@ -136,7 +136,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     if (entry.entryType === 'measure') {
       const measureDetail = (entry as PerformanceMeasure).detail;
       const span = this.tracer.startSpan(entry.name, {
-        startTime: this.perf.epochMillisFromOriginOffset(entry.startTime),
+        startTime: this.perf.epochMillisFromZeroTime(entry.startTime),
         attributes: {
           [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
           [KEY_EMB_INSTRUMENTATION]:
@@ -152,7 +152,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
         },
       });
       span.end(
-        this.perf.epochMillisFromOriginOffset(entry.startTime + entry.duration),
+        this.perf.epochMillisFromZeroTime(entry.startTime + entry.duration),
       );
       return;
     }
@@ -161,7 +161,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     const body = detail != null ? JSON.stringify(detail) : undefined;
 
     this.logger.emit({
-      timestamp: this.perf.epochMillisFromOriginOffset(entry.startTime),
+      timestamp: this.perf.epochMillisFromZeroTime(entry.startTime),
       eventName: USER_TIMING_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes: {
