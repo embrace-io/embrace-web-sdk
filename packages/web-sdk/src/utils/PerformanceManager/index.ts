@@ -1,2 +1,6 @@
-export { OTelPerformanceManager } from './OTelPerformanceManager.ts';
+export {
+  _resetPageShowMillisForTesting,
+  OTelPerformanceManager,
+  updatePageShowMillis,
+} from './OTelPerformanceManager.ts';
 export type { PerformanceManager } from './types.ts';

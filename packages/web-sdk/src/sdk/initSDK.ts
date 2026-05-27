@@ -61,6 +61,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
+  updatePageShowMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -131,6 +132,11 @@ export const initSDK = (
 
     const perf = new OTelPerformanceManager();
     const initSDKStart = perf.getNowMillis();
+
+    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
+      updatePageShowMillis(window.performance.timeOrigin + event.timeStamp);
+    });
+
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);
 

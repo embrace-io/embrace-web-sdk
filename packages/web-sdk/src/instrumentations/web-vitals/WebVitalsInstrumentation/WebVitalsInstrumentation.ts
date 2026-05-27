@@ -314,13 +314,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
     if (metric.name === 'CLS' && metric.attribution.largestShiftTime) {
-      return this.perf.epochMillisFromOriginOffset(
+      return this.perf.epochMillisFromZeroTime(
         metric.attribution.largestShiftTime,
       );
     }
 
     if (metric.name === 'INP' && metric.attribution.interactionTime) {
-      return this.perf.epochMillisFromOriginOffset(
+      return this.perf.epochMillisFromZeroTime(
         metric.attribution.interactionTime,
       );
     }
