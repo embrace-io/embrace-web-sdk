@@ -179,7 +179,7 @@ describe('LoafInstrumentation', () => {
     expect(report?.attributes['browser.web_vital.id'])
       .to.be.a('string')
       .and.to.have.length.greaterThan(0);
-    expect(report?.attributes['browser.web_vital.name']).to.equal('TBD');
+    expect(report?.attributes['browser.web_vital.name']).to.equal('tbd');
     expect(report?.attributes['emb.tbd.loaf_total_duration']).to.equal(180);
     expect(report?.attributes['emb.tbd.loaf_count']).to.equal(2);
     expect(report?.attributes['emb.tbd.loaf_longest_duration']).to.equal(100);

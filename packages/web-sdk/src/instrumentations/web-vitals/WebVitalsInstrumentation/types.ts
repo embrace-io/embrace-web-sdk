@@ -10,7 +10,7 @@ import type { PageManager } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import type { PerformanceManager } from '../../../utils/index.ts';
 
-/** @deprecated All vitals metrics are tracked by default */
+/** @deprecated All vitals metrics are tracked */
 export type TrackingLevel = 'core' | 'all';
 
 export type WebVitalOnReport = (metric: MetricWithAttribution) => void;
@@ -41,6 +41,6 @@ export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
   diag?: DiagLogger;
   perf?: PerformanceManager;
 
-  /** @deprecated All vitals metrics are tracked by default */
+  /** @deprecated All vitals metrics are tracked */
   trackingLevel?: TrackingLevel;
 }

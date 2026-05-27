@@ -214,7 +214,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     const attrs: Record<string, string | number> = {
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
       ['browser.web_vital.id']: generateWebVitalID(),
-      ['browser.web_vital.name']: 'TBD',
+      ['browser.web_vital.name']: 'tbd',
       ['browser.web_vital.value']: Math.round(this._totalBlockingDuration),
       ['browser.web_vital.rating']: rating,
       [ATTR_TBD_LOAF_TOTAL_DURATION]: Math.round(this._totalDuration),
