@@ -1,4 +1,7 @@
-import type { IKeyValue } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types';
+import type {
+  IAnyValue,
+  IKeyValue,
+} from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
 import type { ILogRecord } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import type {
   IResourceSpans,
@@ -31,6 +34,38 @@ const getAttributeValue = (
   }
 
   return null;
+};
+
+const renderAttributeValue = (value: IAnyValue): string => {
+  if (value.stringValue !== undefined && value.stringValue !== null) {
+    return value.stringValue;
+  }
+  if (value.intValue !== undefined && value.intValue !== null) {
+    return String(value.intValue);
+  }
+  if (value.boolValue !== undefined && value.boolValue !== null) {
+    return String(value.boolValue);
+  }
+  if (value.doubleValue !== undefined && value.doubleValue !== null) {
+    return String(value.doubleValue);
+  }
+  if (value.arrayValue) {
+    return `[${value.arrayValue.values.map(renderAttributeValue).join(', ')}]`;
+  }
+  if (value.kvlistValue) {
+    const entries = value.kvlistValue.values
+      .map((kv) => `${kv.key}=${renderAttributeValue(kv.value)}`)
+      .join(', ');
+    return `{${entries}}`;
+  }
+  if (value.bytesValue !== undefined && value.bytesValue !== null) {
+    const length =
+      typeof value.bytesValue === 'string'
+        ? value.bytesValue.length
+        : value.bytesValue.byteLength;
+    return `<${length} bytes>`;
+  }
+  return '<empty>';
 };
 
 const getEmbType = (span: ISpan): string | null => {
@@ -77,25 +112,34 @@ const logInfo = (message: string) => {
   console.log(`[SERVER] ${getTimestamp()} ${pc.blue('ℹ')} ${message}`);
 };
 
-const logReceivedSessionSpan = (
+const logWarn = (message: string) => {
+  console.warn(`[SERVER] ${getTimestamp()} ${pc.yellow('⚠')} ${message}`);
+};
+
+const logReceivedSessionPartSpan = (
   resourceSpans: IResourceSpans[],
-  sessionSpan: ISpan,
-  sessionId: string,
+  sessionPartSpan: ISpan,
+  userSessionId: string,
 ) => {
-  const endSessionReason = attributeValueFromSpan(
-    sessionSpan,
-    'emb.session_end_type',
-  );
+  const sessionPartId =
+    attributeValueFromSpan(sessionPartSpan, 'emb.session_part_id') ??
+    '<unknown>';
 
   logInfo(
-    `Session received ${sessionId}. End reason: ${endSessionReason || 'unknown'}`,
+    `Session part received ${sessionPartId} (user session ${userSessionId}):`,
   );
+  const sortedAttrs = [...sessionPartSpan.attributes].sort((a, b) =>
+    a.key.localeCompare(b.key),
+  );
+  for (const attr of sortedAttrs) {
+    logInfo(`  ${attr.key}=${renderAttributeValue(attr.value)}`);
+  }
 
   const groupedSpans = groupSpansByType(resourceSpans);
 
   logReceivedSurfaceSpans(groupedSpans['ux.surface'] || []);
   logReceivedNetworkSpans(groupedSpans['perf.network_request'] || []);
-  logBreadcrumbs(sessionSpan);
+  logBreadcrumbs(sessionPartSpan);
 };
 
 const logReceivedSurfaceSpans = (surfaceSpans: ISpan[]) => {
@@ -132,17 +176,17 @@ const logReceivedNetworkSpans = (networkSpans: ISpan[]) => {
   });
 };
 
-const logBreadcrumbs = (sessionSpan: ISpan) => {
-  const breadcrumbSpanEvents = sessionSpan.events.filter(
+const logBreadcrumbs = (sessionPartSpan: ISpan) => {
+  const breadcrumbSpanEvents = sessionPartSpan.events.filter(
     (event) => event.name === 'emb-breadcrumb',
   );
 
   if (breadcrumbSpanEvents.length === 0) {
-    logInfo('No breadcrumbs found in session span');
+    logInfo('No breadcrumbs found in session part span');
     return;
   }
 
-  logInfo(`Breadcrumbs for session:`);
+  logInfo(`Breadcrumbs for session part:`);
   breadcrumbSpanEvents.forEach((event, index) => {
     const messageAttr = event.attributes.find((attr) => attr.key === 'message');
 
@@ -151,11 +195,16 @@ const logBreadcrumbs = (sessionSpan: ISpan) => {
   });
 };
 
+const SEVERITY_NUMBER_WARN = 13;
+
 const LOG_RECORD_IGNORED_KEYS = [
   'app.surface.label',
   'log.record.uid',
   'session.id',
   'session.previous_id',
+  'emb.user_session_id',
+  'emb.user_session_previous_id',
+  'emb.session_part_id',
   'user.id',
 ];
 
@@ -173,14 +222,15 @@ const logReceivedLogRecords = (logRecords: ILogRecord[]) => {
         continue;
       }
 
-      const value = getAttributeValue(attr);
-      parts.push(`${attr.key}=${value ?? '<unsupported type>'}`);
+      parts.push(`${attr.key}=${renderAttributeValue(attr.value)}`);
     }
 
     const body = record.body?.stringValue
       ? `\n  body=${record.body.stringValue}`
       : '';
-    logInfo(`Log record: ${eventName}\n  ${parts.join('\n  ')}${body}`);
+    const log =
+      (record.severityNumber ?? 0) >= SEVERITY_NUMBER_WARN ? logWarn : logInfo;
+    log(`Log record: ${eventName}\n  ${parts.join('\n  ')}${body}`);
   }
 };
 
@@ -189,10 +239,7 @@ const formatDurationMs = (
   endUnixNano: string | number | undefined,
 ): string => {
   if (startUnixNano === undefined || endUnixNano === undefined) return '?';
-  const start = BigInt(startUnixNano);
-  const end = BigInt(endUnixNano);
-  const diffNs = end - start;
-  const ms = Number(diffNs / 1_000_000n);
+  const ms = Number((BigInt(endUnixNano) - BigInt(startUnixNano)) / 1_000_000n);
   return `${ms}ms`;
 };
 
@@ -203,15 +250,11 @@ const logReceivedSpans = (resourceSpans: IResourceSpans[]) => {
       for (const span of scopeSpan.spans ?? []) {
         total++;
         const embType = getEmbType(span) ?? '-';
-        const sessionId =
-          attributeValueFromSpan(span, 'session.id') ?? '<no session.id>';
         const dur = formatDurationMs(
           span.startTimeUnixNano as string | number | undefined,
           span.endTimeUnixNano as string | number | undefined,
         );
-        logInfo(
-          `Span: ${pc.cyan(span.name)} [emb.type=${embType}] dur=${dur} session.id=${sessionId}`,
-        );
+        logInfo(`Span: ${pc.cyan(span.name)} [emb.type=${embType}] dur=${dur}`);
       }
     }
   }
@@ -225,6 +268,7 @@ const logReceivedSpans = (resourceSpans: IResourceSpans[]) => {
 export {
   logInfo,
   logReceivedLogRecords,
-  logReceivedSessionSpan,
+  logReceivedSessionPartSpan,
   logReceivedSpans,
+  logWarn,
 };
