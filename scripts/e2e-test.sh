@@ -11,6 +11,12 @@ if ! podman ps -q --filter "name=${SERVE_CONTAINER}" | grep -q .; then
   exit 1
 fi
 
+# Mount test source directories from the host so changes are picked up without
+# rebuilding the image. The built artifacts (platforms/, node_modules/) are
+# intentionally left from the image, which is why we mount subdirs rather than
+# the whole tests/integration tree.
 run_with_golden_copy "npx playwright test --config playwright.config.prebuilt.ts" \
   --network "container:${SERVE_CONTAINER}" \
-  -w /workspace/tests/integration
+  -w /workspace/tests/integration \
+  -v "${WORKSPACE}/tests/integration/tests:/workspace/tests/integration/tests" \
+  -v "${WORKSPACE}/tests/integration/utils:/workspace/tests/integration/utils"

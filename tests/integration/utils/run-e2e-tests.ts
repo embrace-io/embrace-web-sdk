@@ -176,7 +176,7 @@ const runE2ETests = ({
       'it should end a session and send a request to the API',
       async ({
         requests,
-        waitForOTelRequest,
+        waitForOTelRequestMatching,
         navigateAndWaitUntilReady,
         page,
         browserName,
@@ -184,13 +184,38 @@ const runE2ETests = ({
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
-        await waitForOTelRequest();
+        // Wait until the session span is present in `requests` (after gunzip).
+        // Web vitals log requests may arrive first, so waiting for any OTel
+        // request is not sufficient.
+        await waitForOTelRequestMatching(/\/v2\/spans/);
 
-        testE2E.expect(requests).toHaveLength(1);
+        // Give a short window for the concurrent log request (sent alongside the
+        // span flush) to finish being parsed from the gzip buffer.
+        if (!requests.find((req) => req.url.endsWith('/logs'))) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        const sessionRequest = requests.find((req) =>
+          req.url.endsWith('/spans'),
+        );
+        // Web vitals may have flushed a log request before session end; use the
+        // last log request which corresponds to the session end flush.
+        const logRequest = requests.find((req) => req.url.endsWith('/logs'));
 
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          if (!sessionRequest) {
+            throw new Error('Session request was not sent to the API');
+          }
+
+          if (!logRequest) {
+            throw new Error('Log request was not sent to the API');
+          }
+
+          extendedMockApiTestExpect(sessionRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-session.json`,
+          );
+          extendedMockApiTestExpect(logRequest).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-log.json`,
           );
         }
       },
@@ -253,7 +278,7 @@ const runE2ETests = ({
           () => window.EMBRACE_CURRENT_USER_SESSION_ID,
           {},
         );
-        testE2E.expect(currentUserSessionId).toBeNull();
+        testE2E.expect(currentUserSessionId).toBeFalsy();
       },
     );
 

@@ -54,13 +54,13 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "F2241F7002AB2C6B5FDE28CFC03F75FC"
+              "stringValue": "050484AAD45180814B30CDA4B32A8F8D"
             }
           },
           {
             "key": "user_agent.original",
             "value": {
-              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.15 Safari/537.36"
+              "stringValue": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.7778.96 Safari/537.36"
             }
           },
           {
@@ -81,12 +81,404 @@
       "scopeLogs": [
         {
           "scope": {
+            "name": "WebVitalsInstrumentation",
+            "version": "1.0.0"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1779891714757800049",
+              "observedTimeUnixNano": "1779891714757000000",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "{\"waitingDuration\":0,\"cacheDuration\":0.7999999970197678,\"dnsDuration\":0,\"connectionDuration\":0.20000000298023224,\"requestDuration\":0.7000000029802322}"
+              },
+              "eventName": "browser.web_vital",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.web_vital"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.name",
+                  "value": {
+                    "stringValue": "ttfb"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.value",
+                  "value": {
+                    "doubleValue": 1.7000000029802322
+                  }
+                },
+                {
+                  "key": "browser.web_vital.delta",
+                  "value": {
+                    "doubleValue": 1.7000000029802322
+                  }
+                },
+                {
+                  "key": "browser.web_vital.rating",
+                  "value": {
+                    "stringValue": "good"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.id",
+                  "value": {
+                    "stringValue": "v5-1779891714754-5718795311361"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.navigation_type",
+                  "value": {
+                    "stringValue": "navigate"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.name",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.id",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.redirect",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.domainLookup",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.tcpConnection",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.tlsNegotiation",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.serverResponse",
+                  "value": {
+                    "intValue": 1
+                  }
+                },
+                {
+                  "key": "emb.web_vital.attribution.unattributed",
+                  "value": {
+                    "intValue": 1
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "44F74C8D0D51EF663DA82D18CA3D4A5F"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "B3EB24531E88614CF3BE3785E1388A94"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            },
+            {
+              "timeUnixNano": "1779891714772199951",
+              "observedTimeUnixNano": "1779891714772000000",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "{\"timeToFirstByte\":1.7000000029802322,\"firstByteToFCP\":46.29999999701977,\"loadState\":\"complete\"}"
+              },
+              "eventName": "browser.web_vital",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.web_vital"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.name",
+                  "value": {
+                    "stringValue": "fcp"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.value",
+                  "value": {
+                    "intValue": 48
+                  }
+                },
+                {
+                  "key": "browser.web_vital.delta",
+                  "value": {
+                    "intValue": 48
+                  }
+                },
+                {
+                  "key": "browser.web_vital.rating",
+                  "value": {
+                    "stringValue": "good"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.id",
+                  "value": {
+                    "stringValue": "v5-1779891714754-8381846990986"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.navigation_type",
+                  "value": {
+                    "stringValue": "navigate"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.name",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.id",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "7F761B87F7F6037E26BCDBBA44F15889"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "B3EB24531E88614CF3BE3785E1388A94"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            },
+            {
+              "timeUnixNano": "1779891714889100098",
+              "observedTimeUnixNano": "1779891714889000000",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "{\"timeToFirstByte\":1.7000000029802322,\"resourceLoadDelay\":0,\"resourceLoadDuration\":0,\"elementRenderDelay\":46.29999999701977,\"target\":\"#root>h1\"}"
+              },
+              "eventName": "browser.web_vital",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.web_vital"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.name",
+                  "value": {
+                    "stringValue": "lcp"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.value",
+                  "value": {
+                    "intValue": 48
+                  }
+                },
+                {
+                  "key": "browser.web_vital.delta",
+                  "value": {
+                    "intValue": 48
+                  }
+                },
+                {
+                  "key": "browser.web_vital.rating",
+                  "value": {
+                    "stringValue": "good"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.id",
+                  "value": {
+                    "stringValue": "v5-1779891714754-2821955512084"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.navigation_type",
+                  "value": {
+                    "stringValue": "navigate"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.name",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.id",
+                  "value": {}
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "F68DFFB315B3AF0BE609C3B23423F4EE"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "B3EB24531E88614CF3BE3785E1388A94"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            }
+          ]
+        },
+        {
+          "scope": {
             "name": "embrace-web-sdk-logs"
           },
           "logRecords": [
             {
-              "timeUnixNano": "1778792198720000000",
-              "observedTimeUnixNano": "1778792198720000000",
+              "timeUnixNano": "1779891715306800049",
+              "observedTimeUnixNano": "1779891715307000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -102,13 +494,13 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "Error\n    at ef.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:97695)\n    at Ay.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:38001)\n    at Proxy.<anonymous> (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:37542)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:231094\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:1:966\n    at new Promise (<anonymous>)\n    at Ut (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:1:786)\n    at i (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:9:231066)\n    at ng (http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:8:127510)"
+                    "stringValue": "Error\n    at nf.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:9:115001)\n    at Ry.message (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:9:38001)\n    at Proxy.<anonymous> (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:9:37542)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:9:231311\n    at Generator.next (<anonymous>)\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:1:966\n    at new Promise (<anonymous>)\n    at Ut (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:1:786)\n    at i (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:9:231283)\n    at eg (http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:8:127510)"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"Error\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:11:33\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-yFKGL-qG.js:11:126\":\"05d1173f5302f5d00f1464789fc7459c\"}"
+                    "stringValue": "{\"Error\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:11:33\\n    at http://localhost:3001/platforms/vite-7/es2015/assets/index-BUsN_Gpq.js:11:126\":\"befe0c236b73acf40d3eccdcd08328e6\"}"
                   }
                 },
                 {
@@ -120,13 +512,13 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "D766716940465D8DA79ED0E67ACC875F"
+                    "stringValue": "34022054566466AB866BBB9820BF5360"
                   }
                 },
                 {
                   "key": "session.id",
                   "value": {
-                    "stringValue": "BBA577F4EDC8D09F7301BAC146699DA0"
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
                   }
                 },
                 {
@@ -138,7 +530,7 @@
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "BBA577F4EDC8D09F7301BAC146699DA0"
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
                   }
                 },
                 {
@@ -150,7 +542,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "39DF30900DC98EC32B5DA09B8576005B"
+                    "stringValue": "B3EB24531E88614CF3BE3785E1388A94"
                   }
                 },
                 {

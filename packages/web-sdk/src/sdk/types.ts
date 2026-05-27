@@ -32,7 +32,7 @@ import type {
   LoafInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   UserTimingInstrumentationArgs,
-  WebVitalsInstrumentationArgs,
+  WebVitalsInstrumentationConfig,
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
@@ -393,7 +393,7 @@ export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
-  'web-vital'?: WebVitalsInstrumentationArgs;
+  'web-vital'?: WebVitalsInstrumentationConfig;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;
