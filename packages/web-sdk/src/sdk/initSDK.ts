@@ -212,10 +212,6 @@ export const initSDK = (
       return false;
     }
 
-    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
-      updatePageShowMillis(window.performance.timeOrigin + event.timeStamp);
-    });
-
     const nsfValid = nsfConfigValidation({
       featureManager: sdkFeaturesManager,
       diag: diagLogger,
