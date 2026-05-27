@@ -2583,4 +2583,136 @@ describe('WebVitalsInstrumentation', () => {
       expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
     });
   });
+
+  describe('PerformanceObserver unavailable', () => {
+    let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+    beforeEach(() => {
+      originalPerformanceObserver = globalThis.PerformanceObserver;
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        undefined;
+    });
+
+    afterEach(() => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        originalPerformanceObserver;
+    });
+
+    it('should log debug and not register listeners when PerformanceObserver is undefined', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      expect(clsStub.callCount).to.equal(0);
+      expect(diag.getDebugLogs()).to.include(
+        'PerformanceObserver not supported, web vitals will not be collected',
+      );
+    });
+  });
+
+  it('should not track page when urlAttribution listener fires while disabled', () => {
+    const urlDocument = { URL: 'https://example.com/page-a' };
+
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlDocument,
+    });
+
+    const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+    instrumentation.disable();
+
+    const metric = {
+      name: 'CLS',
+      value: 0.1,
+      rating: 'good',
+      delta: 0.1,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      attribution: { largestShiftTarget: 'el' },
+    } as MetricWithAttribution;
+
+    // fires while disabled — should not update attributed page
+    pageTrackFunc(metric);
+
+    instrumentation.enable();
+    emitFunc(metric);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    // attributed page was never captured (guard returned early) → no URL attr
+    expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
+  });
+
+  describe('applyCustomLogRecordData hook', () => {
+    it('should call the hook and allow modifying the log record', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+        applyCustomLogRecordData: (logRecord) => {
+          logRecord.attributes = {
+            ...logRecord.attributes,
+            'custom.attr': 'custom-value',
+          };
+        },
+      });
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['custom.attr']).to.equal('custom-value');
+    });
+
+    it('should log an error when the hook throws', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+        applyCustomLogRecordData: () => {
+          throw new Error('hook error');
+        },
+      });
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        attribution: {},
+      } as MetricWithAttribution);
+
+      // record is still emitted despite hook failure
+      expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
+      expect(diag.getErrorLogs()).to.include(
+        'applyCustomLogRecordData hook failed',
+      );
+    });
+  });
 });
