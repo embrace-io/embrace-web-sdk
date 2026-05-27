@@ -425,7 +425,7 @@ describe('initSDK', () => {
     emitFunc(clsMetric);
 
     if (result) {
-      await logExporter.forceFlush();
+      await result.flush();
     }
 
     const finishedLogRecords = logExporter.getFinishedLogRecords();

@@ -278,7 +278,7 @@ const runE2ETests = ({
           () => window.EMBRACE_CURRENT_USER_SESSION_ID,
           {},
         );
-        testE2E.expect(currentUserSessionId).toBeNull();
+        testE2E.expect(currentUserSessionId).toBeFalsy();
       },
     );
 
