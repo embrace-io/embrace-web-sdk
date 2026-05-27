@@ -182,12 +182,15 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal(['web_inactivity']);
   });
 
-  it('ends the part with reason inactivity when the part-inactivity window elapses', () => {
+  it('ends the part with reason web_inactivity when the part-inactivity window elapses', () => {
     manager.startSessionPartInternal('init');
 
     clock.tick(SESSION_PART_INACTIVITY_MS);
 
     expect(endReasons()).to.deep.equal(['web_inactivity']);
+    // The part end reason is web-prefixed, but the enclosing user session's
+    // termination reason stays unprefixed for cross-platform correlation.
+    expect(endSpy.lastCall.args[1]).to.equal('inactivity');
     void expect(manager.getSessionPartId()).to.be.null;
   });
 

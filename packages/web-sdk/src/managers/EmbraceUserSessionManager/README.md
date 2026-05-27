@@ -105,6 +105,8 @@ engagement condition holds, the call is a debug-level no-op.
 | `web_inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
+The part-level `web_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
+
 ### End behavior
 
 On end, the manager:
@@ -172,7 +174,7 @@ is called from:
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
 | `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Reserved value. | No. Inactivity is detected lazily at next part start, after the prior part span is already exported. |
+| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On termination the manager calls
 `endSessionPartInternal('user_session_ended', reason)`, saves
