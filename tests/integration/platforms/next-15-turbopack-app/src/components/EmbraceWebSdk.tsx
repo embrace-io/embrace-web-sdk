@@ -22,12 +22,12 @@ export const embraceWebSdk = initSDK({
 
 declare global {
   interface Window {
-    EMBRACE_CURRENT_SESSION_ID: string | null;
+    EMBRACE_CURRENT_USER_SESSION_ID: string | null;
   }
 }
 
 if (typeof window !== 'undefined') {
-  window.EMBRACE_CURRENT_SESSION_ID = session.getSessionId();
+  window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
 }
 
 export default function EmbraceWebSdk() {

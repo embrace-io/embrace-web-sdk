@@ -25,7 +25,6 @@ The integration tests consist of two phases:
 Build tests verify the SDK can be built correctly for each platform and checks bundle sizes.
 
 **Platforms tested:**
-- Webpack 4 (es2015)
 - Webpack 5 (es2015)
 - Vite 6 (es2015)
 - Vite 7 (es2015)
@@ -217,7 +216,7 @@ runE2ETests({
 4. **Expose session ID on window:**
 
 ```javascript
-window.EMBRACE_CURRENT_SESSION_ID = getCurrentSessionId();
+window.EMBRACE_CURRENT_USER_SESSION_ID = getCurrentUserSessionId();
 ```
 
 ## Troubleshooting
@@ -236,7 +235,7 @@ Check that:
 1. Build tests passed (required for e2e setup)
 2. The correct number of spans is set in `numberOfExpectedSpans`
 3. Required buttons are present and use correct labels
-4. Session ID is exposed on `window.EMBRACE_CURRENT_SESSION_ID`
+4. Session ID is exposed on `window.EMBRACE_CURRENT_USER_SESSION_ID`
 
 ### Golden file mismatches
 

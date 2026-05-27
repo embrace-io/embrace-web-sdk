@@ -800,13 +800,30 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     );
   };
 
-  // Navigation away (hard nav, tab close) OR BFCache freeze. event.persisted
-  // only affects the debug source string; both disengage the tab, so the
-  // disengage branch of _handleEngagementTransition ends the active part.
+  // Navigation away (hard nav, tab close) OR BFCache freeze. Both signal the
+  // page is about to stop running, so we always end the active part. Ending
+  // the part flushes its span (and the spans batched against it in
+  // EmbraceSessionPartBatchedSpanProcessor) through the export pipeline while
+  // the page can still issue a keepalive fetch. On BFCache restore, pageshow
+  // will start a fresh part.
   private readonly _onPageHide = (event: PageTransitionEvent): void => {
-    this._handleEngagementTransition(
-      event.persisted ? 'pagehide-bfcache' : 'pagehide-unload',
-    );
+    try {
+      if (this._activeSessionPartId === null) {
+        return;
+      }
+      const reason: SessionPartEndReason = event.persisted
+        ? 'web_background'
+        : 'web_hard_navigation';
+      this._diag.debug(
+        `page hiding (persisted=${event.persisted}); ending current part as ${reason}`,
+      );
+      this.endSessionPartInternal(reason);
+    } catch (e) {
+      this._diag.error(
+        `Error ending session part on pagehide (persisted=${event.persisted})`,
+        e,
+      );
+    }
   };
 
   private _handleEngagementTransition(source: string): void {

@@ -7,28 +7,28 @@ const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionPartBatchedSpanProcessor non-session-part span ended';
 
 type E2ETestFixture = {
-  getCurrentSessionId: () => Promise<string>;
+  getCurrentUserSessionId: () => Promise<string>;
   waitUntilSpanLogged: () => Promise<void>;
   navigateAndWaitUntilReady: (
     url: string,
     numberOfExpectedSpans: number,
   ) => Promise<void>;
-  validateThatSessionEnded: (sessionId?: string) => Promise<void>;
+  validateThatUserSessionEnded: (userSessionId?: string) => Promise<void>;
 };
 
 const testE2E = testWithMockApi.extend<E2ETestFixture>({
-  getCurrentSessionId: async ({ page }, use) => {
+  getCurrentUserSessionId: async ({ page }, use) => {
     await use(async () => {
-      const sessionId = await page.evaluate(
-        () => window.EMBRACE_CURRENT_SESSION_ID,
+      const userSessionId = await page.evaluate(
+        () => window.EMBRACE_CURRENT_USER_SESSION_ID,
         {},
       );
 
-      if (!sessionId) {
+      if (!userSessionId) {
         throw new Error('Session ID is not available on the page');
       }
 
-      return sessionId;
+      return userSessionId;
     });
   },
 
@@ -90,9 +90,10 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
       });
     });
   },
-  validateThatSessionEnded: async ({ getCurrentSessionId }, use) => {
-    await use(async (sessionId?: string) => {
-      const currentSessionId = sessionId || (await getCurrentSessionId());
+  validateThatUserSessionEnded: async ({ getCurrentUserSessionId }, use) => {
+    await use(async (userSessionId?: string) => {
+      const currentUserSessionId =
+        userSessionId || (await getCurrentUserSessionId());
 
       // Easy way of making sure the server registered the session end
       // If this gets flaky, we can increase the timeout or read the server logs
@@ -108,7 +109,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
             );
             const receivedSpans = (await response.json()) as ReceivedSpans;
 
-            if (receivedSpans[currentSessionId]) {
+            if (receivedSpans[currentUserSessionId]) {
               clearInterval(interval);
               clearTimeout(timeout);
               resolve(null);
@@ -175,7 +176,7 @@ const runE2ETests = ({
       'it should end a session and send a request to the API',
       async ({
         requests,
-        waitForOTelRequest,
+        waitForOTelRequestMatching,
         navigateAndWaitUntilReady,
         page,
         browserName,
@@ -183,19 +184,38 @@ const runE2ETests = ({
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
         const button = page.getByRole('button', { name: 'End Session' });
         await button.click();
-        await waitForOTelRequest();
+        // Wait until the session span is present in `requests` (after gunzip).
+        // Web vitals log requests may arrive first, so waiting for any OTel
+        // request is not sufficient.
+        await waitForOTelRequestMatching(/\/v2\/spans/);
 
-        if (requests.length === 0) {
-          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
-          // yet populated
+        // Give a short window for the concurrent log request (sent alongside the
+        // span flush) to finish being parsed from the gzip buffer.
+        if (!requests.find((req) => req.url.endsWith('/logs'))) {
           await new Promise((resolve) => setTimeout(resolve, 500));
         }
 
-        testE2E.expect(requests).toHaveLength(1);
+        const sessionRequest = requests.find((req) =>
+          req.url.endsWith('/spans'),
+        );
+        // Web vitals may have flushed a log request before session end; use the
+        // last log request which corresponds to the session end flush.
+        const logRequest = requests.find((req) => req.url.endsWith('/logs'));
 
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          if (!sessionRequest) {
+            throw new Error('Session request was not sent to the API');
+          }
+
+          if (!logRequest) {
+            throw new Error('Log request was not sent to the API');
+          }
+
+          extendedMockApiTestExpect(sessionRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-session.json`,
+          );
+          extendedMockApiTestExpect(logRequest).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-log.json`,
           );
         }
       },
@@ -239,25 +259,26 @@ const runE2ETests = ({
         page,
         navigateAndWaitUntilReady,
         withRemoteConfig,
-        getCurrentSessionId,
+        getCurrentUserSessionId,
       }) => {
         await withRemoteConfig({
           threshold: 0,
         });
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        let currentSessionId: string | null = await getCurrentSessionId();
+        let currentUserSessionId: string | null =
+          await getCurrentUserSessionId();
 
         // First load works as expected as we don't wait for the remote config to be applied
-        testE2E.expect(currentSessionId).toHaveLength(32);
+        testE2E.expect(currentUserSessionId).toHaveLength(32);
 
         await page.reload();
 
         // After reload, the session id should not be set as it is sampled out
-        currentSessionId = await page.evaluate(
-          () => window.EMBRACE_CURRENT_SESSION_ID,
+        currentUserSessionId = await page.evaluate(
+          () => window.EMBRACE_CURRENT_USER_SESSION_ID,
           {},
         );
-        testE2E.expect(currentSessionId).toBeNull();
+        testE2E.expect(currentUserSessionId).toBeFalsy();
       },
     );
 
@@ -266,25 +287,29 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionEnded,
-        getCurrentSessionId,
+        validateThatUserSessionEnded,
+        getCurrentUserSessionId,
         browserName,
       }) => {
         testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
         testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        const currentSessionId = await getCurrentSessionId();
+        const currentUserSessionId = await getCurrentUserSessionId();
 
         await page.close();
 
-        await validateThatSessionEnded(currentSessionId);
+        await validateThatUserSessionEnded(currentUserSessionId);
       },
     );
 
     testE2E(
       'it should end the session and send it to the API if the page loses focus',
-      async ({ navigateAndWaitUntilReady, page, validateThatSessionEnded }) => {
+      async ({
+        navigateAndWaitUntilReady,
+        page,
+        validateThatUserSessionEnded,
+      }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
         // Simulate losing focus by minimizing the page or changing the tab
@@ -297,7 +322,7 @@ const runE2ETests = ({
           document.dispatchEvent(new Event('visibilitychange'));
         });
 
-        await validateThatSessionEnded();
+        await validateThatUserSessionEnded();
       },
     );
 
@@ -306,18 +331,18 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionEnded,
-        getCurrentSessionId,
+        validateThatUserSessionEnded,
+        getCurrentUserSessionId,
         browserName,
       }) => {
         testE2E.skip(browserName === 'firefox', 'Skipping on Firefox');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        const currentSessionId = await getCurrentSessionId();
+        const currentUserSessionId = await getCurrentUserSessionId();
 
         await page.reload();
 
-        await validateThatSessionEnded(currentSessionId);
+        await validateThatUserSessionEnded(currentUserSessionId);
       },
     );
 
@@ -326,21 +351,21 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionEnded,
-        getCurrentSessionId,
+        validateThatUserSessionEnded,
+        getCurrentUserSessionId,
         browserName,
       }) => {
         testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        const currentSessionId = await getCurrentSessionId();
+        const currentUserSessionId = await getCurrentUserSessionId();
 
         const button = page.getByRole('button', {
           name: 'Navigate to Another Page',
         });
         await button.click();
 
-        await validateThatSessionEnded(currentSessionId);
+        await validateThatUserSessionEnded(currentUserSessionId);
       },
     );
 
@@ -349,21 +374,21 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionEnded,
-        getCurrentSessionId,
+        validateThatUserSessionEnded,
+        getCurrentUserSessionId,
         browserName,
       }) => {
         testE2E.skip(browserName === 'webkit', 'Skipping on WebKit');
 
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        const currentSessionId = await getCurrentSessionId();
+        const currentUserSessionId = await getCurrentUserSessionId();
 
         // Simulate navigation by changing the URL directly
         // This is a workaround since Playwright does not support changing the URL bar directly
         // Not exactly the same as a user typing in the URL bar, but is the best we can do
         await page.goto('about:blank');
 
-        await validateThatSessionEnded(currentSessionId);
+        await validateThatUserSessionEnded(currentUserSessionId);
       },
     );
 
@@ -406,12 +431,6 @@ const runE2ETests = ({
 
         await page.getByRole('button', { name: 'End Session' }).click();
         await waitForOTelRequest();
-
-        if (requests.length === 1) {
-          // Small hack to avoid some flakiness where sometimes the response has returned but `requests` was not
-          // yet populated
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
 
         testE2E.expect(requests).toHaveLength(2);
         // Should contain a span capturing the fetch request

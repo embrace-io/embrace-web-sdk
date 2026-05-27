@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    EMBRACE_CURRENT_SESSION_ID: string | null;
+    EMBRACE_CURRENT_USER_SESSION_ID: string | null;
   }
 }
 

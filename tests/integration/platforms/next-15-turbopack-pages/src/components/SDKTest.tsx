@@ -3,7 +3,7 @@ import { embraceWebSdk } from '../lib/embrace.ts';
 
 const SDKTest = () => {
   const handleEndSession = async () => {
-    session.endSessionSpan();
+    session.endUserSession();
     if (embraceWebSdk) {
       await embraceWebSdk.flush();
     }
