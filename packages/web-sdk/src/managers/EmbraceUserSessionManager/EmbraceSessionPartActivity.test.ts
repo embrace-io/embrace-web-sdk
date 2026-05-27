@@ -104,19 +104,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
-  // Per the Page Lifecycle spec, visibilityState is already 'hidden' by the
-  // time pagehide fires (visibilitychange to 'hidden' fires first), so the
-  // helper mirrors that ordering. persisted=true is the BFCache-freeze
-  // variant; persisted=false (the default here) is hard-nav unload.
-  const firePageHide = (persisted = false) => {
-    visibilityDoc.visibilityState = 'hidden';
-    target.dispatchEvent(new PageTransitionEvent('pagehide', { persisted }));
-  };
-
-  const firePageShow = () => {
-    target.dispatchEvent(new Event('pageshow'));
-  };
-
   const fireBlur = () => {
     visibilityDoc.hasFocus = () => false;
     target.dispatchEvent(new Event('blur'));
@@ -125,6 +112,38 @@ describe('EmbraceUserSessionManager browser activity', () => {
   const fireFocus = () => {
     visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(new Event('focus'));
+  };
+
+  // Focus-shifting active-tab unload (URL-bar typing, alt-tab-then-close):
+  // blur fires first, then visibilitychange to 'hidden'. The programmatic
+  // nav variant fires no blur and is exercised by fireVisibilityChange('hidden')
+  // directly. See README for the verified cross-engine ordering.
+  const fireFocusShiftingUnload = () => {
+    visibilityDoc.hasFocus = () => false;
+    target.dispatchEvent(new Event('blur'));
+    visibilityDoc.visibilityState = 'hidden';
+    visibilityDoc.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  // Tab becomes hidden. Covers two real Chrome scenarios that look
+  // identical to the SDK: the user switching to another tab, and an
+  // already-backgrounded tab unloading. In both cases the SDK only
+  // observes visibilitychange-to-'hidden' since pagehide is not listened to.
+  const fireTabHidden = () => {
+    visibilityDoc.visibilityState = 'hidden';
+    visibilityDoc.hasFocus = () => false;
+    visibilityDoc.dispatchEvent(new Event('visibilitychange'));
+  };
+
+  // BFCache restore per Chrome's page-lifecycle docs (Playwright suppresses
+  // BFCache, so this is doc-derived not empirically observed): focus fires
+  // first while still 'hidden', then visibilitychange to 'visible' starts
+  // the part. The trailing pageshow has no listener.
+  const fireBfcacheRestore = () => {
+    visibilityDoc.hasFocus = () => true;
+    target.dispatchEvent(new Event('focus'));
+    visibilityDoc.visibilityState = 'visible';
+    visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
   it('arms the part-inactivity timer when a part starts', () => {
@@ -231,46 +250,25 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('ends the active part with reason web_hard_navigation on pagehide unload', () => {
+  it('ignores pagehide and pageshow events (no listeners registered)', () => {
     manager.startSessionPartInternal('init');
 
-    firePageHide();
-
-    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
-    void expect(manager.getSessionPartId()).to.be.null;
-  });
-
-  it('ends the active part with reason web_background on BFCache pagehide', () => {
-    manager.startSessionPartInternal('init');
-
-    firePageHide(true);
-
-    expect(endReasons()).to.deep.equal(['web_background']);
-    void expect(manager.getSessionPartId()).to.be.null;
-  });
-
-  it('ends the active part on pagehide even when the document is still visible and focused', () => {
-    // Chrome hard-nav: pagehide fires before any visibilitychange to
-    // 'hidden' and while the window still reports focus. Without an explicit
-    // end here, the Embrace processor's pending spans would never get
-    // pushed to the exporter before the page is gone.
-    manager.startSessionPartInternal('init');
-
-    visibilityDoc.visibilityState = 'visible';
-    visibilityDoc.hasFocus = () => true;
     target.dispatchEvent(
       new PageTransitionEvent('pagehide', { persisted: false }),
     );
-
-    expect(endReasons()).to.deep.equal(['web_hard_navigation']);
-    void expect(manager.getSessionPartId()).to.be.null;
-  });
-
-  it('is a no-op on pagehide when no part is active', () => {
-    firePageHide();
+    target.dispatchEvent(
+      new PageTransitionEvent('pagehide', { persisted: true }),
+    );
+    target.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: false }),
+    );
+    target.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: true }),
+    );
 
     expect(endReasons()).to.deep.equal([]);
-    expect(startReasons()).to.deep.equal([]);
+    expect(startReasons()).to.deep.equal(['init']);
+    void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
   it('ends the active part with reason background when the window loses focus', () => {
@@ -306,49 +304,55 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal(['init']);
   });
 
-  it('starts a new part with reason foreground on pageshow (BFCache restore)', () => {
+  // The tests below assert the real-Chrome event sequences. Each helper
+  // dispatches the events in shipping-browser order with the correct
+  // intermediate state transitions, pinning down which listener "wins"
+  // in production.
+
+  it('ends the active part exactly once as web_background on a real active-tab unload sequence', () => {
     manager.startSessionPartInternal('init');
 
-    // BFCache restore path: pagehide with persisted=true freezes the tab and
-    // ends the prior part as web_background, then pageshow signals the
-    // canonical restore. No part is active when pageshow fires.
-    firePageHide(true);
+    fireFocusShiftingUnload();
+
+    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.be.null;
+  });
 
-    // Document is restored visible on BFCache restore.
-    visibilityDoc.visibilityState = 'visible';
-    firePageShow();
+  it('ends on visibilitychange-to-hidden for an already-backgrounded tab unload', () => {
+    manager.startSessionPartInternal('init');
 
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    fireTabHidden();
+
+    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endSpy.callCount).to.equal(1);
+    void expect(manager.getSessionPartId()).to.be.null;
+  });
+
+  it('starts the new part exactly once as web_foreground on a real BFCache restore sequence', () => {
+    manager.startSessionPartInternal('init');
+    fireTabHidden();
+    startSpy.resetHistory();
+    endSpy.resetHistory();
+
+    fireBfcacheRestore();
+
+    expect(startReasons()).to.deep.equal(['web_foreground']);
+    expect(startSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('does not start a part on pageshow (BFCache restore) when the tab is disengaged at restore', () => {
+  it('nets to one end and one start across a full active-tab unload then BFCache restore round-trip', () => {
     manager.startSessionPartInternal('init');
 
-    // Tab freezes while disengaged: pagehide with persisted=true ends the
-    // prior part, then by the time pageshow fires, the document has restored
-    // hidden (the user restored a backgrounded tab without bringing it to
-    // focus).
-    firePageHide(true);
-    visibilityDoc.visibilityState = 'hidden';
-    firePageShow();
+    fireFocusShiftingUnload();
+    fireBfcacheRestore();
 
-    // No new part. Only 'init' is in the start log.
-    expect(startReasons()).to.deep.equal(['init']);
-    void expect(manager.getSessionPartId()).to.be.null;
-  });
-
-  it('swallows errors thrown by endSessionPartInternal during pagehide', () => {
-    manager.startSessionPartInternal('init');
-
-    // The pagehide handler wraps endSessionPartInternal in try/catch because
-    // a throw at unload would skip the keepalive flush. Stub the dependency
-    // to throw and assert the handler does not propagate.
-    endSpy.restore();
-    sinon.stub(manager, 'endSessionPartInternal').throws(new Error('boom'));
-
-    expect(() => firePageHide()).to.not.throw();
+    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(endSpy.callCount).to.equal(1);
+    expect(startSpy.callCount).to.equal(2);
+    void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
   it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
@@ -390,8 +394,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
     manager.startSessionPartInternal('init');
 
     expect(target.listenerCount('keydown')).to.equal(1);
-    expect(target.listenerCount('pagehide')).to.equal(1);
-    expect(target.listenerCount('pageshow')).to.equal(1);
+    expect(target.listenerCount('focus')).to.equal(1);
+    expect(target.listenerCount('blur')).to.equal(1);
 
     manager._shutdown();
 
@@ -399,8 +403,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(target.listenerCount('mousedown')).to.equal(0);
     expect(target.listenerCount('mousemove')).to.equal(0);
     expect(target.listenerCount('scroll')).to.equal(0);
-    expect(target.listenerCount('pagehide')).to.equal(0);
-    expect(target.listenerCount('pageshow')).to.equal(0);
+    expect(target.listenerCount('focus')).to.equal(0);
+    expect(target.listenerCount('blur')).to.equal(0);
 
     // visibilitychange listens on `visibilityDoc`, not `target`. Verify the
     // listener was unsubscribed by dispatching hidden and asserting no end.

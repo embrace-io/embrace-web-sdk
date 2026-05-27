@@ -23,9 +23,9 @@ describe('getVisibilityState', () => {
     ).to.equal('background');
   });
 
-  it('should report foreground when document visibility cannot be determined', () => {
+  it('should report background when document visibility cannot be determined', () => {
     expect(getVisibilityState({} as VisibilityStateDocument)).to.equal(
-      'foreground',
+      'background',
     );
   });
 });
