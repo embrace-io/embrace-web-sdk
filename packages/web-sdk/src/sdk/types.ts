@@ -37,7 +37,6 @@ import type {
 } from '../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
-  UserSessionConfig,
   UserSessionManagerInternal,
 } from '../managers/index.ts';
 import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
@@ -61,6 +60,21 @@ export interface DynamicSDKConfig {
    * @deprecated The empty session avoidance feature has been removed. This field is ignored and will be removed in a future major version.
    */
   emptySessionAvoidanceEnabledPct?: number;
+
+  /**
+   * Maximum duration of a user session, in seconds. Driven by remote config.
+   *
+   * **default**: 43200 seconds (12 hours)
+   */
+  maxUserSessionDurationSeconds?: number;
+
+  /**
+   * Inactivity timeout that ends a user session, in seconds. Driven by remote
+   * config.
+   *
+   * **default**: 1800 seconds (30 minutes)
+   */
+  inactivityTimeoutSeconds?: number;
 }
 
 export interface DynamicConfigManager {
@@ -232,20 +246,6 @@ type BaseSDKInitConfig = {
    * **default**: true
    */
   useDocumentTitleAsPageLabel?: boolean;
-
-  /**
-   * maxUserSessionDurationSeconds overrides the default maximum user session duration (12 hours).
-   *
-   * **default**: 43200 seconds (12 hours)
-   */
-  maxUserSessionDurationSeconds?: number;
-
-  /**
-   * inactivityTimeoutSeconds overrides the default inactivity timeout (30 minutes).
-   *
-   * **Default**: 1800 seconds (30 minutes)
-   */
-  inactivityTimeoutSeconds?: number;
 };
 
 /*
@@ -329,7 +329,7 @@ export interface SetupUserSessionArgs {
   registerGlobally?: boolean;
   sdkLocalStorage: NamespacedStorage;
   visibilityDoc: VisibilityStateDocument;
-  userSessionConfig?: UserSessionConfig;
+  dynamicConfigManager: DynamicConfigManager;
 }
 
 export interface SetupTracesArgs {

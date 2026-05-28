@@ -103,6 +103,70 @@ describe('EmbraceDynamicConfigManager', () => {
     });
   });
 
+  it('should parse user-session durations from remote config', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: null,
+        config: {
+          threshold: 100,
+          user_session: {
+            max_duration_seconds: 7200,
+            inactivity_timeout_seconds: 120,
+          },
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({ storage });
+
+    const config = configManager.getConfig();
+
+    expect(config.maxUserSessionDurationSeconds).to.equal(7200);
+    expect(config.inactivityTimeoutSeconds).to.equal(120);
+  });
+
+  it('should leave the omitted user-session field undefined when only one is sent', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: null,
+        config: {
+          threshold: 100,
+          user_session: {
+            max_duration_seconds: 7200,
+          },
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({ storage });
+
+    const config = configManager.getConfig();
+
+    expect(config.maxUserSessionDurationSeconds).to.equal(7200);
+    void expect(config.inactivityTimeoutSeconds).to.be.undefined;
+  });
+
+  it('should leave both user-session fields undefined when the block is absent', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: null,
+        config: {
+          threshold: 100,
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({ storage });
+
+    const config = configManager.getConfig();
+
+    void expect(config.maxUserSessionDurationSeconds).to.be.undefined;
+    void expect(config.inactivityTimeoutSeconds).to.be.undefined;
+  });
+
   it('should not fail if storage is not available', () => {
     const configManager = new EmbraceDynamicConfigManager({
       storage: new NamespacedStorage({

@@ -4,6 +4,7 @@ import {
   InMemoryDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
@@ -31,6 +32,7 @@ describe('EmptyInstrumentation', () => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
     userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),

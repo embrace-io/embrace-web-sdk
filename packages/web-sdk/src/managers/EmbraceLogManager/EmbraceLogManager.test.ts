@@ -19,6 +19,7 @@ import {
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
@@ -101,6 +102,7 @@ describe('EmbraceLogManager', () => {
 
     storage = setupTestStorage();
     userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,
       storage,

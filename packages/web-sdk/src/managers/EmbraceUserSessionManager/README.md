@@ -193,11 +193,12 @@ silently no-ops if not (the next engagement event will create it).
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
-Both `maxUserSessionDurationSeconds` and `inactivityTimeoutSeconds` are clamped to their
-respective ranges at construction; out-of-range values fall back to the
-default and emit a warning. In addition, `inactivityTimeoutSeconds` must be
-`<=` `maxUserSessionDurationSeconds`; if a caller violates that, the inactivity timeout falls
-back to its **default**, not to the max-duration value.
+Both `maxUserSessionDurationSeconds` and `inactivityTimeoutSeconds` are driven by
+remote config (`DynamicConfigManager.getConfig()`), read at each user-session
+creation. Each value is clamped to its respective range; out-of-range values fall
+back to the default and emit a warning. In addition, `inactivityTimeoutSeconds`
+must be `<=` `maxUserSessionDurationSeconds`; if remote config violates that, the
+inactivity timeout falls back to its **default**, not to the max-duration value.
 
 The max-duration timer is armed on session-part start AND re-armed after
 session-part end, so it runs even between parts. The delay is computed as
@@ -218,8 +219,12 @@ The part-inactivity timer is restarted on every activity event, subject to the
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
 
 `maxUserSessionDurationSeconds` and `inactivityTimeoutSeconds` are frozen into the state blob at
-session creation. A config change between page loads does not affect a user
-session already in progress.
+session creation. A remote-config change does not affect a user session already
+in progress. It takes effect when the next user session is created. To keep the
+cached config current, the manager fires a remote-config refresh whenever it
+creates a new user session (except on cold start, where `initSDK` already
+refreshes at startup). That fetch is async, so its result lands in the cache for
+the following user session rather than the one being created.
 
 ### Failure handling
 

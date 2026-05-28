@@ -7,11 +7,13 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+  createTestDynamicConfigManager,
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
@@ -73,6 +75,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       limitManager,
       perf,
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
   });
 
@@ -226,6 +229,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       limitManager,
       perf,
       storage,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     localManager.startSessionPartInternal('init');
     localManager.endSessionPartInternal('web_background');
@@ -266,6 +270,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         storage,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       localManager.startSessionPartInternal('init');
       void expect(localManager.getSessionPartId()).to.be.null;
@@ -283,6 +288,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       perf,
       storage,
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     const removeListener = localManager.addSessionPartStartedListener(listener);
 
@@ -305,6 +311,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       perf,
       storage,
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
 
     const listener = () => {
@@ -576,6 +583,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       limitManager,
       perf,
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     secondManager.startSessionPartInternal('init');
     secondManager.endSessionPartInternal('web_background');
@@ -616,6 +624,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         diag,
       }),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     flipManager.startSessionPartInternal('init');
     flipManager.addProperty('cart', '3');
@@ -645,6 +654,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         diag,
       }),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     failingManager.startSessionPartInternal('init');
 
@@ -807,6 +817,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         diag,
       }),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
 
     failingManager.startSessionPartInternal('init');
@@ -831,6 +842,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         diag,
       }),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     failingManager.startSessionPartInternal('init');
 
@@ -878,6 +890,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       perf,
       storage: new NamespacedStorage({ storage: flakyStorage, diag }),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     flakyManager.startSessionPartInternal('init');
 
@@ -943,7 +956,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         limitManager,
         perf,
-        config: { maxUserSessionDurationSeconds: 3600 },
+        dynamicConfigManager: createTestDynamicConfigManager({
+          maxUserSessionDurationSeconds: 3600,
+        }),
         visibilityDoc: window.document,
       });
 
@@ -1004,6 +1019,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
 
       localManager.startSessionPartInternal('init');
@@ -1023,10 +1039,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         limitManager,
         perf,
-        config: {
+        dynamicConfigManager: createTestDynamicConfigManager({
           maxUserSessionDurationSeconds: 3600,
           inactivityTimeoutSeconds: 3600,
-        },
+        }),
         visibilityDoc: window.document,
       });
 
@@ -1075,10 +1091,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         // first (timers registered earlier fire first when set to the same
         // delay; max-duration is armed in _ensureUserSessionState before
         // the inactivity timer is armed by startSessionPartInternal).
-        config: {
+        dynamicConfigManager: createTestDynamicConfigManager({
           maxUserSessionDurationSeconds: 3600,
           inactivityTimeoutSeconds: 3600,
-        },
+        }),
       });
 
       localManager.startSessionPartInternal('init');
@@ -1128,7 +1144,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         perf,
         storage,
         limitManager,
-        config: { inactivityTimeoutSeconds: 60 },
+        dynamicConfigManager: createTestDynamicConfigManager({
+          inactivityTimeoutSeconds: 60,
+        }),
         visibilityDoc: window.document,
       });
 
@@ -1166,6 +1184,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       localManager.setTracerProvider(tracerProvider);
 
@@ -1239,10 +1258,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         limitManager,
         perf,
-        config: {
+        dynamicConfigManager: createTestDynamicConfigManager({
           maxUserSessionDurationSeconds: 3600,
           inactivityTimeoutSeconds: 3600,
-        },
+        }),
         visibilityDoc: window.document,
       });
 
@@ -1335,7 +1354,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         perf,
         storage,
         limitManager,
-        config: { inactivityTimeoutSeconds: 60 },
+        dynamicConfigManager: createTestDynamicConfigManager({
+          inactivityTimeoutSeconds: 60,
+        }),
         visibilityDoc: window.document,
       });
 
@@ -1464,6 +1485,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       secondManager.startSessionPartInternal('init');
       secondManager.endSessionPartInternal('web_background');

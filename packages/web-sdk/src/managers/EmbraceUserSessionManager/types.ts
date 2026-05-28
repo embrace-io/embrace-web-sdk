@@ -7,6 +7,7 @@ import type {
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
+import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
   PerformanceManager,
@@ -52,11 +53,6 @@ export interface UserSessionState {
    * when stamping the part span. Cleared on user-session end.
    */
   readonly userSessionProperties: Record<string, string>;
-}
-
-export interface UserSessionConfig {
-  maxUserSessionDurationSeconds?: number;
-  inactivityTimeoutSeconds?: number;
 }
 
 /** Attributes emitted by the user-session layer. */
@@ -135,7 +131,11 @@ export interface EmbraceUserSessionManagerArgs {
   diag?: DiagLogger;
   perf: PerformanceManager;
   storage: NamespacedStorage;
-  config?: UserSessionConfig;
+  /**
+   * Source of the user-session durations (max duration, inactivity timeout),
+   * which are driven by remote config and resolved at each session creation.
+   */
+  dynamicConfigManager: DynamicConfigManager;
   /**
    * Document-shaped object used to gate part start/end on visibility +
    * focus.

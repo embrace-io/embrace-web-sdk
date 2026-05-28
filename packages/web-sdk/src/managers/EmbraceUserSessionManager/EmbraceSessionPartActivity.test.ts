@@ -5,6 +5,7 @@ import sinonChai from 'sinon-chai';
 import {
   MockPerformanceManager,
   setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type {
   SessionPartEndReason,
@@ -81,6 +82,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
       visibilityDoc,
       target,
       activityThrottleMs: THROTTLE_MS,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
     // Browser-activity listeners attach inside setTracerProvider; activity
     // tests need them live, so wire a tracer provider before spying.

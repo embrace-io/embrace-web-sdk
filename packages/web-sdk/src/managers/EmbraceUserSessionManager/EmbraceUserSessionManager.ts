@@ -39,6 +39,7 @@ import {
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
+import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
   PerformanceManager,
@@ -94,8 +95,6 @@ import {
 export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _state: UserSessionState | null = null;
   private _previousUserSessionId: string | null = null;
-  private readonly _maxUserSessionDurationSeconds: number;
-  private readonly _inactivityTimeoutSeconds: number;
   private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
   // Bare keys; the wire-format prefix is applied at stamp time.
   private _permanentProperties: Record<string, string> = {};
@@ -125,13 +124,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _storage: NamespacedStorage;
   private readonly _visibilityDoc: VisibilityStateDocument;
   private readonly _limitManager: LimitManagerInternal;
+  private readonly _dynamicConfigManager: DynamicConfigManager;
   private readonly _target: EventTarget;
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
 
   public constructor({
-    config,
+    dynamicConfigManager,
     diag: diagParam,
     perf,
     visibilityDoc,
@@ -150,6 +150,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
     this._limitManager = limitManager;
+    this._dynamicConfigManager = dynamicConfigManager;
     this._permanentProperties = readPermanentProperties(
       this._storage,
       this._diag,
@@ -158,34 +159,48 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._target = target;
     this._activityEvents = activityEvents;
     this._onActivityThrottled = throttle(this._onActivity, activityThrottleMs);
+  }
+
+  /**
+   * Reads the user-session durations from remote config, clamps each to its
+   * allowed range, and enforces inactivity <= max duration. Called once per
+   * user-session creation; the resolved values are frozen into that session's
+   * state.
+   */
+  private _resolveUserSessionDurations(): {
+    maxUserSessionDurationSeconds: number;
+    inactivityTimeoutSeconds: number;
+  } {
+    const config = this._dynamicConfigManager.getConfig();
 
     const maxUserSessionDurationSeconds = clampNumber({
       diag: this._diag,
-      value: config?.maxUserSessionDurationSeconds,
+      value: config.maxUserSessionDurationSeconds,
       defaultValue: DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
       min: MIN_USER_SESSION_MAX_DURATION_SECONDS,
       max: MAX_USER_SESSION_MAX_DURATION_SECONDS,
     });
     const inactivityTimeoutSeconds = clampNumber({
       diag: this._diag,
-      value: config?.inactivityTimeoutSeconds,
+      value: config.inactivityTimeoutSeconds,
       defaultValue: DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
       min: MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
       max: MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
     });
 
-    this._maxUserSessionDurationSeconds = maxUserSessionDurationSeconds;
     if (inactivityTimeoutSeconds <= maxUserSessionDurationSeconds) {
-      this._inactivityTimeoutSeconds = inactivityTimeoutSeconds;
-    } else {
-      this._diag.warn(
-        `inactivityTimeoutSeconds (${inactivityTimeoutSeconds.toString()}s) ` +
-          `exceeds maxUserSessionDurationSeconds (${maxUserSessionDurationSeconds.toString()}s); ` +
-          `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
-      );
-      this._inactivityTimeoutSeconds =
-        DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS;
+      return { maxUserSessionDurationSeconds, inactivityTimeoutSeconds };
     }
+
+    this._diag.warn(
+      `inactivityTimeoutSeconds (${inactivityTimeoutSeconds.toString()}s) ` +
+        `exceeds maxUserSessionDurationSeconds (${maxUserSessionDurationSeconds.toString()}s); ` +
+        `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
+    );
+    return {
+      maxUserSessionDurationSeconds,
+      inactivityTimeoutSeconds: DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+    };
   }
 
   public setTracerProvider(tracerProvider: TracerProvider): void {
@@ -610,11 +625,20 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         EMBRACE_USER_SESSION_NUMBER_KEY,
         this._diag,
       );
+      // Refresh remote config for the next user session. The fetch is async,
+      // so it lands in the cache after this session's durations are frozen
+      // below; this session uses the currently cached config. Skipped on cold
+      // start, where initSDK already refreshes at startup.
+      if (!this._coldStart) {
+        void this._dynamicConfigManager.refreshRemoteConfig();
+      }
+      const { maxUserSessionDurationSeconds, inactivityTimeoutSeconds } =
+        this._resolveUserSessionDurations();
       state = createUserSessionState({
         now,
         previousUserSessionId: this._previousUserSessionId,
-        maxUserSessionDurationSeconds: this._maxUserSessionDurationSeconds,
-        inactivityTimeoutSeconds: this._inactivityTimeoutSeconds,
+        maxUserSessionDurationSeconds,
+        inactivityTimeoutSeconds,
         userSessionNumber,
       });
       created = true;
@@ -836,9 +860,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   private _startSessionPartInactivityTimer(): void {
     this._clearSessionPartInactivityTimer();
+    // Callers only arm this with an active part, so the early return is a type
+    // guard rather than a live path.
+    if (!this._state) {
+      return;
+    }
     this._sessionPartInactivityTimer = setTimeout(
       this._onSessionPartInactivity,
-      this._inactivityTimeoutSeconds * 1000,
+      this._state.inactivityTimeoutSeconds * 1000,
     );
   }
 
