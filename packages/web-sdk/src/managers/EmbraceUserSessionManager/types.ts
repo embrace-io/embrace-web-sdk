@@ -36,11 +36,11 @@ export interface UserSessionState {
    * Configured values captured and locked at session creation, persisted
    * so they survive page reloads.
    */
-  readonly maxUserSessionDurationSeconds: number;
-  readonly inactivityTimeoutSeconds: number;
+  readonly userSessionMaxDurationSeconds: number;
+  readonly userSessionInactivityTimeoutSeconds: number;
   /**
    * Absolute timestamp after which the session expires from inactivity
-   * (`part_end_ts + inactivityTimeoutSeconds * 1000`). Set on part-end;
+   * (`part_end_ts + userSessionInactivityTimeoutSeconds * 1000`). Set on part-end;
    * null while a part is active. Checked lazily on the next part start.
    */
   readonly inactivityDeadlineTs: number | null;

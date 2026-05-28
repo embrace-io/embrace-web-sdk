@@ -66,7 +66,7 @@ export interface DynamicSDKConfig {
    *
    * **default**: 43200 seconds (12 hours)
    */
-  maxUserSessionDurationSeconds?: number;
+  userSessionMaxDurationSeconds?: number;
 
   /**
    * Inactivity timeout that ends a user session, in seconds. Driven by remote
@@ -74,7 +74,7 @@ export interface DynamicSDKConfig {
    *
    * **default**: 1800 seconds (30 minutes)
    */
-  inactivityTimeoutSeconds?: number;
+  userSessionInactivityTimeoutSeconds?: number;
 }
 
 export interface DynamicConfigManager {

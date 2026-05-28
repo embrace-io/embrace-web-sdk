@@ -168,38 +168,42 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * state.
    */
   private _resolveUserSessionDurations(): {
-    maxUserSessionDurationSeconds: number;
-    inactivityTimeoutSeconds: number;
+    userSessionMaxDurationSeconds: number;
+    userSessionInactivityTimeoutSeconds: number;
   } {
     const config = this._dynamicConfigManager.getConfig();
 
-    const maxUserSessionDurationSeconds = clampNumber({
+    const userSessionMaxDurationSeconds = clampNumber({
       diag: this._diag,
-      value: config.maxUserSessionDurationSeconds,
+      value: config.userSessionMaxDurationSeconds,
       defaultValue: DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
       min: MIN_USER_SESSION_MAX_DURATION_SECONDS,
       max: MAX_USER_SESSION_MAX_DURATION_SECONDS,
     });
-    const inactivityTimeoutSeconds = clampNumber({
+    const userSessionInactivityTimeoutSeconds = clampNumber({
       diag: this._diag,
-      value: config.inactivityTimeoutSeconds,
+      value: config.userSessionInactivityTimeoutSeconds,
       defaultValue: DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
       min: MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
       max: MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
     });
 
-    if (inactivityTimeoutSeconds <= maxUserSessionDurationSeconds) {
-      return { maxUserSessionDurationSeconds, inactivityTimeoutSeconds };
+    if (userSessionInactivityTimeoutSeconds <= userSessionMaxDurationSeconds) {
+      return {
+        userSessionMaxDurationSeconds,
+        userSessionInactivityTimeoutSeconds,
+      };
     }
 
     this._diag.warn(
-      `inactivityTimeoutSeconds (${inactivityTimeoutSeconds.toString()}s) ` +
-        `exceeds maxUserSessionDurationSeconds (${maxUserSessionDurationSeconds.toString()}s); ` +
+      `userSessionInactivityTimeoutSeconds (${userSessionInactivityTimeoutSeconds.toString()}s) ` +
+        `exceeds userSessionMaxDurationSeconds (${userSessionMaxDurationSeconds.toString()}s); ` +
         `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
     );
     return {
-      maxUserSessionDurationSeconds,
-      inactivityTimeoutSeconds: DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+      userSessionMaxDurationSeconds,
+      userSessionInactivityTimeoutSeconds:
+        DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
     };
   }
 
@@ -263,9 +267,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       [KEY_EMB_SESSION_PART_NUMBER]: this._currentSessionPartNumber ?? 0,
       [KEY_EMB_USER_SESSION_START_TS]: this._state.userSessionStartTs,
       [KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS]:
-        this._state.maxUserSessionDurationSeconds,
+        this._state.userSessionMaxDurationSeconds,
       [KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS]:
-        this._state.inactivityTimeoutSeconds,
+        this._state.userSessionInactivityTimeoutSeconds,
     };
   }
 
@@ -632,13 +636,15 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (!this._coldStart) {
         void this._dynamicConfigManager.refreshRemoteConfig();
       }
-      const { maxUserSessionDurationSeconds, inactivityTimeoutSeconds } =
-        this._resolveUserSessionDurations();
+      const {
+        userSessionMaxDurationSeconds,
+        userSessionInactivityTimeoutSeconds,
+      } = this._resolveUserSessionDurations();
       state = createUserSessionState({
         now,
         previousUserSessionId: this._previousUserSessionId,
-        maxUserSessionDurationSeconds,
-        inactivityTimeoutSeconds,
+        userSessionMaxDurationSeconds,
+        userSessionInactivityTimeoutSeconds,
         userSessionNumber,
       });
       created = true;
@@ -709,7 +715,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._state = {
       ...this._state,
       inactivityDeadlineTs:
-        partEndTs + this._state.inactivityTimeoutSeconds * 1000,
+        partEndTs + this._state.userSessionInactivityTimeoutSeconds * 1000,
     };
     this._storeState();
   }
@@ -867,7 +873,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
     this._sessionPartInactivityTimer = setTimeout(
       this._onSessionPartInactivity,
-      this._state.inactivityTimeoutSeconds * 1000,
+      this._state.userSessionInactivityTimeoutSeconds * 1000,
     );
   }
 

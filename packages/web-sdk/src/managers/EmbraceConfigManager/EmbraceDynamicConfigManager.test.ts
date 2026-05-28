@@ -122,8 +122,8 @@ describe('EmbraceDynamicConfigManager', () => {
 
     const config = configManager.getConfig();
 
-    expect(config.maxUserSessionDurationSeconds).to.equal(7200);
-    expect(config.inactivityTimeoutSeconds).to.equal(120);
+    expect(config.userSessionMaxDurationSeconds).to.equal(7200);
+    expect(config.userSessionInactivityTimeoutSeconds).to.equal(120);
   });
 
   it('should leave the omitted user-session field undefined when only one is sent', () => {
@@ -144,8 +144,8 @@ describe('EmbraceDynamicConfigManager', () => {
 
     const config = configManager.getConfig();
 
-    expect(config.maxUserSessionDurationSeconds).to.equal(7200);
-    void expect(config.inactivityTimeoutSeconds).to.be.undefined;
+    expect(config.userSessionMaxDurationSeconds).to.equal(7200);
+    void expect(config.userSessionInactivityTimeoutSeconds).to.be.undefined;
   });
 
   it('should leave both user-session fields undefined when the block is absent', () => {
@@ -163,8 +163,8 @@ describe('EmbraceDynamicConfigManager', () => {
 
     const config = configManager.getConfig();
 
-    void expect(config.maxUserSessionDurationSeconds).to.be.undefined;
-    void expect(config.inactivityTimeoutSeconds).to.be.undefined;
+    void expect(config.userSessionMaxDurationSeconds).to.be.undefined;
+    void expect(config.userSessionInactivityTimeoutSeconds).to.be.undefined;
   });
 
   it('should not fail if storage is not available', () => {

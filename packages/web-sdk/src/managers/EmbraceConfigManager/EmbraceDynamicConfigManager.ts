@@ -27,12 +27,12 @@ const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
   }
 
   if (remoteConfig.user_session?.max_duration_seconds !== undefined) {
-    parsed.maxUserSessionDurationSeconds =
+    parsed.userSessionMaxDurationSeconds =
       remoteConfig.user_session.max_duration_seconds;
   }
 
   if (remoteConfig.user_session?.inactivity_timeout_seconds !== undefined) {
-    parsed.inactivityTimeoutSeconds =
+    parsed.userSessionInactivityTimeoutSeconds =
       remoteConfig.user_session.inactivity_timeout_seconds;
   }
 
