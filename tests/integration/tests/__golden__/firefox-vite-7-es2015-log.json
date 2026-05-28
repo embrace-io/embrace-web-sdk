@@ -354,6 +354,114 @@
               "droppedAttributesCount": 0
             }
           ]
+        },
+        {
+          "scope": {
+            "name": "FirstInteractionInstrumentation",
+            "version": "1.0.0"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1780365712028000000",
+              "observedTimeUnixNano": "1780365711985000000",
+              "severityNumber": 9,
+              "body": {},
+              "eventName": "first-interaction",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "emb.otel_log"
+                  }
+                },
+                {
+                  "key": "first_interaction.interaction_type",
+                  "value": {
+                    "stringValue": "click"
+                  }
+                },
+                {
+                  "key": "first_interaction.element_type",
+                  "value": {
+                    "stringValue": "button"
+                  }
+                },
+                {
+                  "key": "first_interaction.element_selector",
+                  "value": {
+                    "stringValue": "#root>section>button"
+                  }
+                },
+                {
+                  "key": "first_interaction.x",
+                  "value": {
+                    "intValue": 51
+                  }
+                },
+                {
+                  "key": "first_interaction.y",
+                  "value": {
+                    "intValue": 92
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "43DC907C81DCB6DB2E1040546541C45E"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "6DE95784F2FD505AE96BFB47EC26B18C"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "6DE95784F2FD505AE96BFB47EC26B18C"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "D079E8714FB392B408F30D6DA6470460"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            }
+          ]
         }
       ]
     }

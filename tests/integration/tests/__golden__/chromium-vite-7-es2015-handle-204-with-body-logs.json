@@ -473,6 +473,114 @@
         },
         {
           "scope": {
+            "name": "FirstInteractionInstrumentation",
+            "version": "1.0.0"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1780365700738599854",
+              "observedTimeUnixNano": "1780365700708000000",
+              "severityNumber": 9,
+              "body": {},
+              "eventName": "first-interaction",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "emb.otel_log"
+                  }
+                },
+                {
+                  "key": "first_interaction.interaction_type",
+                  "value": {
+                    "stringValue": "click"
+                  }
+                },
+                {
+                  "key": "first_interaction.element_type",
+                  "value": {
+                    "stringValue": "button"
+                  }
+                },
+                {
+                  "key": "first_interaction.element_selector",
+                  "value": {
+                    "stringValue": "#root>section>button"
+                  }
+                },
+                {
+                  "key": "first_interaction.x",
+                  "value": {
+                    "intValue": 409
+                  }
+                },
+                {
+                  "key": "first_interaction.y",
+                  "value": {
+                    "intValue": 90
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "BA01D02DF675D93A90BD3D217E603F7C"
+                  }
+                },
+                {
+                  "key": "session.id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "session.previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "630825E7EDBD03A49B2C6EB79FDCDE83"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "B3EB24531E88614CF3BE3785E1388A94"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            }
+          ]
+        },
+        {
+          "scope": {
             "name": "embrace-web-sdk-logs"
           },
           "logRecords": [
