@@ -22,9 +22,9 @@ import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
   FakeSpanProcessor,
-  fakeFetchGetBody,
-  fakeFetchGetRequestHeaders,
-  fakeFetchGetUrl,
+  fakeFetchGetConfigUrl,
+  fakeFetchGetSpansBody,
+  fakeFetchGetSpansRequestHeaders,
   fakeFetchInstall,
   fakeFetchResetHistory,
   fakeFetchRespondWith,
@@ -108,13 +108,15 @@ const otlpAttrsToRecord = (
 };
 
 const getLastSessionExportedSpans = async (
-  callNumber = 0,
+  spansExportNumber = 0,
   scope: SpanScope = { name: 'embrace-web-sdk-traces' },
 ) => {
   // Needed to allow the transport to actually send its data off to fetch
   await new Promise((r) => setTimeout(r, 1));
 
-  const body = fakeFetchGetBody(callNumber);
+  // Address the export by its position among spans sends, skipping interleaved
+  // remote-config fetches and logs sends.
+  const body = fakeFetchGetSpansBody(spansExportNumber);
   void expect(body).not.to.be.null;
   const decompressedStream = new Response(body).body?.pipeThrough(
     new DecompressionStream('gzip'),
@@ -713,10 +715,10 @@ describe('initSDK', () => {
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
 
-      const headers = fakeFetchGetRequestHeaders(1);
+      const headers = fakeFetchGetSpansRequestHeaders();
       expect((headers as Record<string, string>)['X-EM-AID']).to.equal('abc12');
 
-      const body = fakeFetchGetBody(1);
+      const body = fakeFetchGetSpansBody();
 
       void expect(body).not.to.be.null;
       const decompressedStream = new Response(body).body?.pipeThrough(
@@ -837,7 +839,7 @@ describe('initSDK', () => {
       // Needed to allow the transport to actually send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
 
-      const body = fakeFetchGetBody(1);
+      const body = fakeFetchGetSpansBody();
       void expect(body).not.to.be.null;
       const decompressedStream = new Response(body).body?.pipeThrough(
         new DecompressionStream('gzip'),
@@ -886,7 +888,7 @@ describe('initSDK', () => {
 
       session.getUserSessionManager().endSessionPartInternal('web_inactivity');
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
 
       expect(exportedSpans[0]['name']).to.be.equal('my performance span');
     });
@@ -917,7 +919,7 @@ describe('initSDK', () => {
 
       session.getUserSessionManager().endSessionPartInternal('web_inactivity');
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1000);
       for (let i = 0; i < exportedSpans.length; i++) {
         expect(exportedSpans[i]['name']).to.equal(`my-span-${i.toString()}`);
@@ -972,7 +974,7 @@ describe('initSDK', () => {
       span.end();
       session.getUserSessionManager().endSessionPartInternal('web_inactivity');
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedEvents = exportedSpans[0].events;
@@ -1018,7 +1020,7 @@ describe('initSDK', () => {
       span.end();
       session.getUserSessionManager().endSessionPartInternal('web_inactivity');
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
@@ -1085,7 +1087,7 @@ describe('initSDK', () => {
       span.end();
       session.getUserSessionManager().endSessionPartInternal('web_inactivity');
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedEvents = exportedSpans[0].events;
@@ -1141,7 +1143,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -1218,7 +1220,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -1298,7 +1300,7 @@ describe('initSDK', () => {
         await result.flush();
       }
 
-      const exportedSpans = await getLastSessionExportedSpans(1);
+      const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
       expect(exportedSpans[0].attributes[0]).to.deep.equal({
         key: 'url.full',
@@ -1349,7 +1351,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       void expect(fakeFetchWasCalled()).to.be.true;
-      expect(fakeFetchGetUrl()).to.contain(
+      expect(fakeFetchGetConfigUrl()).to.contain(
         'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=my-app-version&deviceId=',
       );
     });
@@ -1375,7 +1377,7 @@ describe('initSDK', () => {
       void expect(result).not.to.be.false;
 
       void expect(fakeFetchWasCalled()).to.be.true;
-      expect(fakeFetchGetUrl()).to.contain(
+      expect(fakeFetchGetConfigUrl()).to.contain(
         'https://a-abc12.config.emb-api.com/v2/config?appId=abc12&osVersion=1&appVersion=EmbIOAppVersionX.X.X&deviceId=',
       );
     });
@@ -1802,16 +1804,13 @@ describe('initSDK', () => {
 
         // Need to restore the clock here so that the setTimeout in `getLastSessionExportedSpans` works
         clock.restore();
-        const exportedSpans = await getLastSessionExportedSpans(
-          test.networkType === 'fetch' ? 1 : 0,
-          {
-            name:
-              test.networkType === 'fetch'
-                ? '@opentelemetry/instrumentation-fetch'
-                : '@opentelemetry/instrumentation-xml-http-request',
-            version: '0.218.0',
-          },
-        );
+        const exportedSpans = await getLastSessionExportedSpans(0, {
+          name:
+            test.networkType === 'fetch'
+              ? '@opentelemetry/instrumentation-fetch'
+              : '@opentelemetry/instrumentation-xml-http-request',
+          version: '0.218.0',
+        });
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
         const expectedTraceparent = `00-${networkSpan.traceId}-${networkSpan.spanId}-01`;
