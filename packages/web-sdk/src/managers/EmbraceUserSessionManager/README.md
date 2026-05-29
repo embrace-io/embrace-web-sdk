@@ -188,17 +188,20 @@ silently no-ops if not (the next engagement event will create it).
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. The configured value is written into the state blob as `userSessionInactivityTimeoutSeconds`, and `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`. Checked on the next part start by `_isExpired`. |
-| Part inactivity | `PART_INACTIVITY_TIMEOUT_MS` | 30 minutes | n/a | `endSessionPartInternal('web_inactivity')` |
+| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
+| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal('web_inactivity', 'inactivity')` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
-Both `userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are driven by
-remote config (`DynamicConfigManager.getConfig()`), read at each user-session
-creation. Each value is clamped to its respective range; out-of-range values fall
-back to the default and emit a warning. In addition, `userSessionInactivityTimeoutSeconds`
-must be `<=` `userSessionMaxDurationSeconds`; if remote config violates that, the
-inactivity timeout falls back to its **default**, not to the max-duration value.
+`userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
+`userSessionForegroundInactivityTimeoutSeconds` are driven by remote config
+(`DynamicConfigManager.getConfig()`), read at each user-session creation. Each
+value is clamped to its own range; out-of-range values fall back to their
+default and emit a warning. In addition, each inactivity timeout must be `<=`
+`userSessionMaxDurationSeconds`; if remote config violates that, the offending
+timeout falls back to its **default**, not to the max-duration value.
+`userSessionForegroundInactivityTimeoutSeconds` drives the live part timer;
+`userSessionInactivityTimeoutSeconds` drives the lazy post-part-end deadline.
 
 The max-duration timer is armed on session-part start AND re-armed after
 session-part end, so it runs even between parts. The delay is computed as
@@ -358,6 +361,7 @@ another window).
 | `emb.user_session_start_ts` | Milliseconds since Unix epoch. |
 | `emb.user_session_max_duration_seconds` | Whole seconds, frozen at session creation. |
 | `emb.user_session_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
+| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
 | `emb.properties.*` | All properties at part-start time. |
 
 ### Stamped at session-part end
