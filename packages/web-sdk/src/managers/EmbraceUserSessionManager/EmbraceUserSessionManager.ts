@@ -902,7 +902,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
     this._sessionPartInactivityTimer = setTimeout(
       this._onSessionPartInactivity,
-      this._state.userSessionInactivityTimeoutSeconds * 1000,
+      this._state.userSessionForegroundInactivityTimeoutSeconds * 1000,
     );
   }
 

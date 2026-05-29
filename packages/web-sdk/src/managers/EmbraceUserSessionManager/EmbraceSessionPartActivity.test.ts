@@ -3,6 +3,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+  createTestDynamicConfigManager,
   MockPerformanceManager,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -20,7 +21,7 @@ import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 chai.use(sinonChai);
 const { expect } = chai;
 
-const SESSION_PART_INACTIVITY_MS = 30 * 60 * 1000;
+const FOREGROUND_INACTIVITY_MS = 30 * 60 * 1000;
 const THROTTLE_MS = 30 * 1000;
 
 class FakeTarget implements EventTarget {
@@ -151,7 +152,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('arms the part-inactivity timer when a part starts', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
@@ -161,10 +162,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('resets the part-inactivity timer on activity', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     fireActivity();
 
-    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
@@ -178,7 +179,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(THROTTLE_MS - 1);
     fireActivity();
 
-    clock.tick(SESSION_PART_INACTIVITY_MS - (THROTTLE_MS - 1) - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - (THROTTLE_MS - 1) - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
     expect(endReasons()).to.deep.equal(['web_inactivity']);
@@ -187,7 +188,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('ends the part with reason web_inactivity when the part-inactivity window elapses', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS);
+    clock.tick(FOREGROUND_INACTIVITY_MS);
 
     expect(endReasons()).to.deep.equal(['web_inactivity']);
     // The part end reason is web-prefixed, but the enclosing user session's
@@ -199,7 +200,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('starts a new part with reason activity after an inactivity-killed part', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS);
+    clock.tick(FOREGROUND_INACTIVITY_MS);
     void expect(manager.getSessionPartId()).to.be.null;
 
     fireActivity();
@@ -207,7 +208,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal(['init', 'web_activity']);
     void expect(manager.getSessionPartId()).to.not.be.null;
 
-    clock.tick(SESSION_PART_INACTIVITY_MS);
+    clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['web_inactivity', 'web_inactivity']);
   });
 
@@ -220,10 +221,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('clears the part-inactivity timer when a part ends through another path', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS / 2);
+    clock.tick(FOREGROUND_INACTIVITY_MS / 2);
     manager.endSessionPartInternal('user_session_ended', 'manual');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS);
+    clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['user_session_ended']);
   });
 
@@ -363,7 +364,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
     manager.startSessionPartInternal('init');
 
-    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     // Redundant focus event while the tab is still engaged and the part is
     // still active (no blur/hide in between). This is the
     // browser-quirk path: the engagement handler should re-arm the
@@ -372,7 +373,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     // The timer was re-armed at this tick, so it now needs another full
     // window before inactivity fires.
-    clock.tick(SESSION_PART_INACTIVITY_MS - 1);
+    clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
     expect(endReasons()).to.deep.equal(['web_inactivity']);
@@ -385,7 +386,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     // Inactivity expires; the part finalizes. Then user activity resumes;
     // the next event must start a new part with reason 'web_activity'.
-    clock.tick(SESSION_PART_INACTIVITY_MS);
+    clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['web_inactivity']);
     void expect(manager.getSessionPartId()).to.be.null;
 
@@ -393,6 +394,35 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     expect(startReasons()).to.deep.equal(['init', 'web_activity']);
     void expect(manager.getSessionPartId()).to.not.be.null;
+  });
+
+  it('arms the live timer from the foreground value while the lazy deadline uses the inactivity value', () => {
+    const storage = setupTestStorage();
+    const splitManager = new EmbraceUserSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new MockPerformanceManager(clock),
+      storage,
+      visibilityDoc,
+      target,
+      activityThrottleMs: THROTTLE_MS,
+      dynamicConfigManager: createTestDynamicConfigManager({
+        userSessionForegroundInactivityTimeoutSeconds: 60,
+        userSessionInactivityTimeoutSeconds: 1800,
+      }),
+    });
+    splitManager.setTracerProvider(new WebTracerProvider());
+    const endSpy2 = sinon.spy(splitManager, 'endSessionPartInternal');
+
+    splitManager.startSessionPartInternal('init');
+
+    // Live timer fires on the 60s foreground value, not the 1800s inactivity value.
+    clock.tick(60 * 1000 - 1);
+    expect(endSpy2.called).to.equal(false);
+    clock.tick(1);
+    expect(endSpy2.lastCall.args[0]).to.equal('web_inactivity');
+    expect(endSpy2.lastCall.args[1]).to.equal('inactivity');
+
+    splitManager._shutdown();
   });
 
   it('removes listeners and clears the timer on shutdown', () => {
@@ -420,7 +450,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     // The internal part-inactivity timer was cleared on shutdown, so no
     // further endSessionPartInternal('web_inactivity') calls fire.
     const endCallsBefore = endSpy.callCount;
-    clock.tick(SESSION_PART_INACTIVITY_MS * 2);
+    clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
   });
 });
