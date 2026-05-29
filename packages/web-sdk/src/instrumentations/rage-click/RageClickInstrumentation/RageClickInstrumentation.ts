@@ -133,7 +133,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
       eventName: RAGE_CLICK_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.RageClick,
+        [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
         [ATTR_RAGE_CLICK_ELEMENT_TYPE]:
           eventWindow.target.tagName.toLowerCase(),
         [ATTR_RAGE_CLICK_ELEMENT_SELECTOR]: getSelector(eventWindow.target),
