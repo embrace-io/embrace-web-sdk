@@ -1042,6 +1042,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
         visibilityDoc: window.document,
       });
@@ -1094,6 +1095,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
       });
 
@@ -1261,6 +1263,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
         visibilityDoc: window.document,
       });

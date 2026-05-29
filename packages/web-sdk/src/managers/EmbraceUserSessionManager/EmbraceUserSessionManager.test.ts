@@ -188,6 +188,7 @@ describe('EmbraceUserSessionManager', () => {
     const manager = createManager({
       userSessionMaxDurationSeconds: 3600,
       userSessionInactivityTimeoutSeconds: 3600,
+      userSessionForegroundInactivityTimeoutSeconds: 3600,
     });
 
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -208,6 +209,7 @@ describe('EmbraceUserSessionManager', () => {
     const manager = createManager({
       userSessionMaxDurationSeconds: 3600,
       userSessionInactivityTimeoutSeconds: 3600,
+      userSessionForegroundInactivityTimeoutSeconds: 3600,
     });
 
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -793,6 +795,7 @@ describe('EmbraceUserSessionManager', () => {
       const { manager, refreshRemoteConfig } = createManagerWithLiveConfig({
         userSessionMaxDurationSeconds: 3600,
         userSessionInactivityTimeoutSeconds: 3600,
+        userSessionForegroundInactivityTimeoutSeconds: 3600,
       });
 
       manager.startSessionPartInternal('init');
