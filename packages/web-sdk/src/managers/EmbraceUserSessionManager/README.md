@@ -122,7 +122,8 @@ On end, the manager:
    `web_inactivity`, in practice `web_background`), calls
    `_continueUserSessionAfterPartEnd(partEndTs)` which writes
    `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
-   `inactivityDeadlineTs` and re-arms the max-duration timer.
+   `inactivityDeadlineTs`. The max-duration timer keeps running on its existing
+   deadline (`userSessionMaxEndTs` is fixed at creation), so it is not re-armed.
 
 When the end reason is final (`user_session_ended` or `web_inactivity`) the
 manager also stamps `emb.is_final_session_part = 1` and, when a
@@ -137,8 +138,8 @@ User-session creation is lazy. No user-session object exists between
 engagement gate. Creation happens inside `_beginUserSessionForPartStart`:
 
 1. Read the state blob from storage.
-2. If null or `_isExpired(state, now)`, save the old ID into
-   `_previousUserSessionId` and call `_createSession(now)` to mint a fresh user
+2. If null or `isUserSessionExpired(state, now)`, save the old ID into
+   `_previousUserSessionId` and call `createUserSessionState` to mint a fresh user
    session.
 3. Increment `userSessionPartIndex` by 1, and bump the
    `embrace_session_part_number` storage counter (persisted across visits
@@ -149,7 +150,7 @@ engagement gate. Creation happens inside `_beginUserSessionForPartStart`:
 
 ### Expiry
 
-`_isExpired` returns `true` when any of the following holds:
+`isUserSessionExpired` returns `true` when any of the following holds:
 
 - `now < state.userSessionStartTs`. The clock jumped backwards.
 - `now >= state.userSessionMaxEndTs`. The max-duration boundary has passed.
@@ -200,12 +201,15 @@ value is clamped to its own range; out-of-range values fall back to their
 default and emit a warning. In addition, each inactivity timeout must be `<=`
 `userSessionMaxDurationSeconds`; if remote config violates that, the offending
 timeout falls back to its **default**, not to the max-duration value.
-`userSessionForegroundInactivityTimeoutSeconds` drives the live part timer;
+`userSessionForegroundInactivityTimeoutSeconds` drives the live part timer.
 `userSessionInactivityTimeoutSeconds` drives the lazy post-part-end deadline.
 
-The max-duration timer is armed on session-part start AND re-armed after
-session-part end, so it runs even between parts. The delay is computed as
-`state.userSessionMaxEndTs - now`, not the full duration value.
+The max-duration timer is armed at user-session creation, and re-armed when a
+fresh manager loads an existing, unexpired state on page reload (no timer
+running yet). It is not re-armed on session-part end; `userSessionMaxEndTs` is
+fixed at creation, so it keeps running across parts on its original deadline.
+The delay is computed as `state.userSessionMaxEndTs - now`, not the full
+duration value.
 
 The part-inactivity timer is restarted on every activity event, subject to the
 30 second throttle, and cleared on session-part end.
@@ -370,8 +374,8 @@ another window).
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
 | `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. |
-| `emb.is_final_session_part = 1` | Only when ending due to user-session end. |
-| `emb.user_session_termination_reason` | Only when ending due to user-session end. |
+| `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_inactivity`). |
+| `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
 | `emb.app.applied_limit.*` | Diagnostic counts from the limit manager. |
 | Counter keys | From `_activeSessionPartCounts`, populated by instrumentations. |

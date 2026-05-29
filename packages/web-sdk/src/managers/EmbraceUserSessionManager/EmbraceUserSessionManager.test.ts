@@ -1090,5 +1090,28 @@ describe('EmbraceUserSessionManager', () => {
       manager.startSessionPartInternal('init');
       expect(readStoredForegroundTimeout()).to.equal(1800);
     });
+
+    it('falls back the foreground timeout without disturbing a valid inactivity timeout', () => {
+      const manager = createManager({
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 120,
+        userSessionForegroundInactivityTimeoutSeconds: 7200,
+      });
+      manager.startSessionPartInternal('init');
+
+      const raw = inMemoryStorage.getItem('embrace_user_session_state');
+      void expect(raw).to.not.be.null;
+      const stored = JSON.parse(raw as string) as {
+        userSessionInactivityTimeoutSeconds: number;
+        userSessionForegroundInactivityTimeoutSeconds: number;
+      };
+      // The foreground timeout exceeds max duration, so it falls back to its
+      // own default...
+      expect(stored.userSessionForegroundInactivityTimeoutSeconds).to.equal(
+        1800,
+      );
+      // ...while the independently-valid inactivity timeout is left untouched.
+      expect(stored.userSessionInactivityTimeoutSeconds).to.equal(120);
+    });
   });
 });
