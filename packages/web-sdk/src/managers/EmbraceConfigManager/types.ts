@@ -18,6 +18,7 @@ export type RemoteConfig = {
   user_session?: {
     max_duration_seconds?: number;
     inactivity_timeout_seconds?: number;
+    web_foreground_inactivity_timeout_seconds?: number;
   };
 };
 

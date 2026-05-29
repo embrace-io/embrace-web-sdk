@@ -75,6 +75,16 @@ export interface DynamicSDKConfig {
    * **default**: 1800 seconds (30 minutes)
    */
   userSessionInactivityTimeoutSeconds?: number;
+
+  /**
+   * Inactivity timeout that ends a session part (and its enclosing user
+   * session) while the tab is foregrounded, in seconds. Driven by remote
+   * config. Distinct from `userSessionInactivityTimeoutSeconds`, which drives
+   * the lazy deadline after a backgrounding.
+   *
+   * **default**: 1800 seconds (30 minutes)
+   */
+  userSessionForegroundInactivityTimeoutSeconds?: number;
 }
 
 export interface DynamicConfigManager {

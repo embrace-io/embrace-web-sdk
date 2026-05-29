@@ -126,6 +126,49 @@ describe('EmbraceDynamicConfigManager', () => {
     expect(config.userSessionInactivityTimeoutSeconds).to.equal(120);
   });
 
+  it('should parse the web foreground inactivity timeout from remote config', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: null,
+        config: {
+          threshold: 100,
+          user_session: {
+            web_foreground_inactivity_timeout_seconds: 90,
+          },
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({ storage });
+
+    const config = configManager.getConfig();
+
+    expect(config.userSessionForegroundInactivityTimeoutSeconds).to.equal(90);
+  });
+
+  it('should leave the foreground inactivity timeout undefined when absent', () => {
+    storage.setItem(
+      LOCAL_STORAGE_REMOTE_CONFIG_KEY,
+      JSON.stringify({
+        etag: null,
+        config: {
+          threshold: 100,
+          user_session: {
+            inactivity_timeout_seconds: 120,
+          },
+        },
+      }),
+    );
+
+    const configManager = new EmbraceDynamicConfigManager({ storage });
+
+    const config = configManager.getConfig();
+
+    void expect(config.userSessionForegroundInactivityTimeoutSeconds).to.be
+      .undefined;
+  });
+
   it('should leave the omitted user-session field undefined when only one is sent', () => {
     storage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
