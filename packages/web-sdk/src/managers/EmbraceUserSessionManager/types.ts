@@ -82,7 +82,7 @@ export interface UserSessionAttributes {
   readonly 'emb.user_session_max_duration_seconds': number;
   /** Whole seconds. */
   readonly 'emb.user_session_inactivity_timeout_seconds': number;
-  /** Whole seconds. Drives the live foreground part-inactivity timer. */
+  /** Whole seconds. */
   readonly 'emb.user_session_foreground_inactivity_timeout_seconds': number;
 }
 

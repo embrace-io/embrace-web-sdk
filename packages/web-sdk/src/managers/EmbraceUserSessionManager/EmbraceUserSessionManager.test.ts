@@ -115,6 +115,7 @@ describe('EmbraceUserSessionManager', () => {
     });
     manager.startSessionPartInternal('init');
     const attrs = manager.getUserSessionAttributes();
+    void expect(attrs).to.not.be.null;
     expect(
       attrs?.['emb.user_session_foreground_inactivity_timeout_seconds'],
     ).to.equal(90);
