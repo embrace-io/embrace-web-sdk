@@ -802,6 +802,7 @@ describe('initSDK', () => {
         'emb.user_session_start_ts': userSessionStartTs,
         'emb.user_session_max_duration_seconds': 43200,
         'emb.user_session_inactivity_timeout_seconds': 1800,
+        'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
         'emb.sdk_startup_duration': sdkStartupDuration,
         'session.id': userSessionId,
         'session.previous_id': '',

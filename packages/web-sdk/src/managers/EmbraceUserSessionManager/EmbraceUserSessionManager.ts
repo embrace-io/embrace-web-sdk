@@ -28,6 +28,7 @@ import {
   KEY_EMB_SESSION_PART_START_REASON,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
+  KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   KEY_EMB_USER_SESSION_ID,
   KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS,
@@ -297,6 +298,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         this._state.userSessionMaxDurationSeconds,
       [KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS]:
         this._state.userSessionInactivityTimeoutSeconds,
+      [KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS]:
+        this._state.userSessionForegroundInactivityTimeoutSeconds,
     };
   }
 

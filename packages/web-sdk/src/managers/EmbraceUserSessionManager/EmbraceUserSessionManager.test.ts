@@ -109,6 +109,17 @@ describe('EmbraceUserSessionManager', () => {
     );
   });
 
+  it('stamps emb.user_session_foreground_inactivity_timeout_seconds at part start', () => {
+    const manager = createManager({
+      userSessionForegroundInactivityTimeoutSeconds: 90,
+    });
+    manager.startSessionPartInternal('init');
+    const attrs = manager.getUserSessionAttributes();
+    expect(
+      attrs?.['emb.user_session_foreground_inactivity_timeout_seconds'],
+    ).to.equal(90);
+  });
+
   it('should continue session across parts within timeout', () => {
     const manager = createManager();
 
