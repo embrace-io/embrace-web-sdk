@@ -162,7 +162,10 @@ const App = () => {
   const [partStartReason, setPartStartReason] = useState<string | null>(null);
   const [isColdStart, setIsColdStart] = useState<boolean | null>(null);
   const [partEndTs, setPartEndTs] = useState<number | null>(null);
-  const [partEndReason, setPartEndReason] = useState<string | null>(null);
+  const [lastPartEndedTs, setLastPartEndedTs] = useState<number | null>(null);
+  const [lastPartEndedReason, setLastPartEndedReason] = useState<string | null>(
+    null,
+  );
   const [userId, setUserId] = useState<string | null>(null);
   const [embraceUserId, setEmbraceUserId] = useState<string | null>(null);
   const [pageLabel, setPageLabel] = useState<string | null>(null);
@@ -253,19 +256,24 @@ const App = () => {
     }
 
     const handlePartStart = () => {
+      // Release the duration freeze for the part that is starting. Deliberately
+      // leave the "last ended" record alone: clearing it on start would erase
+      // the previous part's end the moment the next part begins, which in the
+      // user-session rollover case is synchronous and would never be seen.
       setPartEndTs(null);
-      setPartEndReason(null);
       setPartStartTs(Date.now());
       updateUserSession();
       updateSessionPart();
     };
     const handlePartEnd = () => {
-      setPartEndTs(Date.now());
+      const endTs = Date.now();
+      setPartEndTs(endTs);
+      setLastPartEndedTs(endTs);
       const endReason =
         userSessionManager.getSessionPartSpan()?.attributes?.[
           'emb.session_part_end_reason'
         ];
-      setPartEndReason(typeof endReason === 'string' ? endReason : null);
+      setLastPartEndedReason(typeof endReason === 'string' ? endReason : null);
       // End listeners fire before the SDK clears the part span, so defer the
       // re-read until after the SDK finishes cleaning up its state.
       queueMicrotask(updateSessionPart);
@@ -630,10 +638,10 @@ const App = () => {
             <tr>
               <th scope="row">Last Ended</th>
               <td>
-                {partEndTs === null
+                {lastPartEndedTs === null
                   ? '—'
-                  : `${formatTimestamp(partEndTs)}${
-                      partEndReason ? ` (${partEndReason})` : ''
+                  : `${formatTimestamp(lastPartEndedTs)}${
+                      lastPartEndedReason ? ` (${lastPartEndedReason})` : ''
                     }`}
               </td>
             </tr>
