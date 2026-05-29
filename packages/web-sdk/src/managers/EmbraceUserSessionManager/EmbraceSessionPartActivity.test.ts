@@ -396,12 +396,11 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('arms the live timer from the foreground value while the lazy deadline uses the inactivity value', () => {
-    const storage = setupTestStorage();
+  it('arms the live timer from the foreground value, not the inactivity value', () => {
     const splitManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new MockPerformanceManager(clock),
-      storage,
+      storage: setupTestStorage(),
       visibilityDoc,
       target,
       activityThrottleMs: THROTTLE_MS,
@@ -419,6 +418,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(60 * 1000 - 1);
     expect(endSpy2.called).to.equal(false);
     clock.tick(1);
+    expect(endSpy2.callCount).to.equal(1);
     expect(endSpy2.lastCall.args[0]).to.equal('web_inactivity');
     expect(endSpy2.lastCall.args[1]).to.equal('inactivity');
 
