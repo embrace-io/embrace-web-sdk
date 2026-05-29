@@ -7,6 +7,7 @@ import {
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../api-logs/index.ts';
 import { log } from '../../../api-logs/index.ts';
@@ -50,6 +51,7 @@ describe('GlobalExceptionInstrumentation', () => {
     perf = new MockPerformanceManager(clock);
     logManager = new EmbraceLogManager({
       userSessionManager: new EmbraceUserSessionManager({
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager,
         perf,
         storage,

@@ -1,15 +1,19 @@
+import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+  createTestDynamicConfigManager,
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type {
   SessionPartEndReason,
   UserSessionEndReason,
 } from '../../api-sessions/index.ts';
+import type { DynamicSDKConfig } from '../../sdk/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import {
   DEFAULT_LIMITS,
@@ -54,8 +58,8 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   const createManager = (config?: {
-    maxUserSessionDurationSeconds?: number;
-    inactivityTimeoutSeconds?: number;
+    userSessionMaxDurationSeconds?: number;
+    userSessionInactivityTimeoutSeconds?: number;
   }) =>
     new EmbraceUserSessionManager({
       diag,
@@ -63,8 +67,30 @@ describe('EmbraceUserSessionManager', () => {
       storage,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       visibilityDoc: window.document,
-      config,
+      dynamicConfigManager: createTestDynamicConfigManager(config),
     });
+
+  // Builds a manager whose getConfig() reads a live, mutable config object so a
+  // test can change remote-config values mid-session. getConfig returns a fresh
+  // copy each call so mutations are picked up at the next session creation.
+  const createManagerWithLiveConfig = (
+    config: Partial<DynamicSDKConfig> = {},
+  ) => {
+    const refreshRemoteConfig = sinon.stub();
+    const manager = new EmbraceUserSessionManager({
+      diag,
+      perf: new MockPerformanceManager(clock),
+      storage,
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      visibilityDoc: window.document,
+      dynamicConfigManager: {
+        refreshRemoteConfig,
+        setConfig: sinon.stub(),
+        getConfig: () => ({ samplingPct: 100, ...config }),
+      },
+    });
+    return { manager, config, refreshRemoteConfig };
+  };
 
   it('should create a session on first part start', () => {
     const manager = createManager();
@@ -125,7 +151,7 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   it('should start a session when max duration expires', () => {
-    const manager = createManager({ maxUserSessionDurationSeconds: 3600 });
+    const manager = createManager({ userSessionMaxDurationSeconds: 3600 });
 
     manager.startSessionPartInternal('init');
     const attrs1 = manager.getUserSessionAttributes();
@@ -148,8 +174,8 @@ describe('EmbraceUserSessionManager', () => {
     // max is armed first (in _ensureUserSessionState during part start)
     // so it fires first and finalizes via _rolloverUserSession.
     const manager = createManager({
-      maxUserSessionDurationSeconds: 3600,
-      inactivityTimeoutSeconds: 3600,
+      userSessionMaxDurationSeconds: 3600,
+      userSessionInactivityTimeoutSeconds: 3600,
     });
 
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -168,8 +194,8 @@ describe('EmbraceUserSessionManager', () => {
 
   it('should provide termination info when max duration fires', () => {
     const manager = createManager({
-      maxUserSessionDurationSeconds: 3600,
-      inactivityTimeoutSeconds: 3600,
+      userSessionMaxDurationSeconds: 3600,
+      userSessionInactivityTimeoutSeconds: 3600,
     });
 
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -260,6 +286,7 @@ describe('EmbraceUserSessionManager', () => {
       storage: safeFailing,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
 
     manager.startSessionPartInternal('init');
@@ -277,7 +304,7 @@ describe('EmbraceUserSessionManager', () => {
   it('should clamp max duration to the maximum', () => {
     // 25 hours exceeds 24 hour max
     const manager = createManager({
-      maxUserSessionDurationSeconds: 25 * 60 * 60,
+      userSessionMaxDurationSeconds: 25 * 60 * 60,
     });
     manager.startSessionPartInternal('init');
     const attrs = manager.getUserSessionAttributes();
@@ -286,7 +313,9 @@ describe('EmbraceUserSessionManager', () => {
 
   it('should clamp inactivity timeout to the maximum', () => {
     // 25 hours exceeds 24 hour max
-    const manager = createManager({ inactivityTimeoutSeconds: 25 * 60 * 60 });
+    const manager = createManager({
+      userSessionInactivityTimeoutSeconds: 25 * 60 * 60,
+    });
     manager.startSessionPartInternal('init');
     const attrs = manager.getUserSessionAttributes();
     expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -323,7 +352,7 @@ describe('EmbraceUserSessionManager', () => {
     // The user-session max-duration timer must fire even while no part is
     // active. When the rollover runs with no active part, state is cleared
     // directly so the next part start lazily creates a fresh user session.
-    const manager = createManager({ maxUserSessionDurationSeconds: 3600 });
+    const manager = createManager({ userSessionMaxDurationSeconds: 3600 });
 
     manager.startSessionPartInternal('init');
     const firstSessionId = manager.getUserSessionId();
@@ -459,7 +488,7 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   it('should expose the dying user session id via getPreviousUserSessionId on max-duration rollover', () => {
-    const manager = createManager({ maxUserSessionDurationSeconds: 3600 });
+    const manager = createManager({ userSessionMaxDurationSeconds: 3600 });
     manager.startSessionPartInternal('init');
     const attrs = manager.getUserSessionAttributes();
     const dyingId = attrs?.['emb.user_session_id'];
@@ -551,31 +580,33 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   describe('config clamp min-boundary', () => {
-    it('should fall back to default when maxUserSessionDurationSeconds is below minimum', () => {
+    it('should fall back to default when userSessionMaxDurationSeconds is below minimum', () => {
       // MIN is 1 hour (3600s); 60s is below minimum
-      const manager = createManager({ maxUserSessionDurationSeconds: 60 });
+      const manager = createManager({ userSessionMaxDurationSeconds: 60 });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     });
 
-    it('should fall back to default when maxUserSessionDurationSeconds is zero', () => {
-      const manager = createManager({ maxUserSessionDurationSeconds: 0 });
+    it('should fall back to default when userSessionMaxDurationSeconds is zero', () => {
+      const manager = createManager({ userSessionMaxDurationSeconds: 0 });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     });
 
-    it('should fall back to default when maxUserSessionDurationSeconds is negative', () => {
-      const manager = createManager({ maxUserSessionDurationSeconds: -60 });
+    it('should fall back to default when userSessionMaxDurationSeconds is negative', () => {
+      const manager = createManager({ userSessionMaxDurationSeconds: -60 });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     });
 
-    it('should fall back to default when inactivityTimeoutSeconds is below minimum', () => {
+    it('should fall back to default when userSessionInactivityTimeoutSeconds is below minimum', () => {
       // MIN is 30s; 10s is below minimum
-      const manager = createManager({ inactivityTimeoutSeconds: 10 });
+      const manager = createManager({
+        userSessionInactivityTimeoutSeconds: 10,
+      });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -583,8 +614,8 @@ describe('EmbraceUserSessionManager', () => {
       );
     });
 
-    it('should fall back to default when inactivityTimeoutSeconds is zero', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: 0 });
+    it('should fall back to default when userSessionInactivityTimeoutSeconds is zero', () => {
+      const manager = createManager({ userSessionInactivityTimeoutSeconds: 0 });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -592,8 +623,10 @@ describe('EmbraceUserSessionManager', () => {
       );
     });
 
-    it('should fall back to default when inactivityTimeoutSeconds is negative', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: -60 });
+    it('should fall back to default when userSessionInactivityTimeoutSeconds is negative', () => {
+      const manager = createManager({
+        userSessionInactivityTimeoutSeconds: -60,
+      });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -601,29 +634,31 @@ describe('EmbraceUserSessionManager', () => {
       );
     });
 
-    it('should fall back to default when maxUserSessionDurationSeconds is NaN', () => {
+    it('should fall back to default when userSessionMaxDurationSeconds is NaN', () => {
       // NaN slips both range gates (NaN < x and NaN > x both return false), so
       // without the finite-number guard the manager would persist NaN as
-      // _maxUserSessionDurationSeconds and JSON.stringify would write `null` to storage.
+      // _userSessionMaxDurationSeconds and JSON.stringify would write `null` to storage.
       const manager = createManager({
-        maxUserSessionDurationSeconds: Number.NaN,
+        userSessionMaxDurationSeconds: Number.NaN,
       });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     });
 
-    it('should fall back to default when maxUserSessionDurationSeconds is Infinity', () => {
+    it('should fall back to default when userSessionMaxDurationSeconds is Infinity', () => {
       const manager = createManager({
-        maxUserSessionDurationSeconds: Number.POSITIVE_INFINITY,
+        userSessionMaxDurationSeconds: Number.POSITIVE_INFINITY,
       });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     });
 
-    it('should fall back to default when inactivityTimeoutSeconds is NaN', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: Number.NaN });
+    it('should fall back to default when userSessionInactivityTimeoutSeconds is NaN', () => {
+      const manager = createManager({
+        userSessionInactivityTimeoutSeconds: Number.NaN,
+      });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
       expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -632,10 +667,13 @@ describe('EmbraceUserSessionManager', () => {
     });
 
     it('should diag.warn when a config value is rejected so dropped config is visible to developers', () => {
-      createManager({
-        maxUserSessionDurationSeconds: 60,
-        inactivityTimeoutSeconds: Number.NaN,
+      const manager = createManager({
+        userSessionMaxDurationSeconds: 60,
+        userSessionInactivityTimeoutSeconds: Number.NaN,
       });
+      // Durations are resolved lazily at user-session creation, so the
+      // clamp warnings only fire once a part starts.
+      manager.startSessionPartInternal('init');
 
       const warnLogs = diag.getWarnLogs();
       expect(
@@ -653,8 +691,8 @@ describe('EmbraceUserSessionManager', () => {
     it('should fall back to default inactivity when configured inactivity exceeds max duration', () => {
       // max = 1h, inactivity = 2h (both inside their own min/max range, but inactivity > max)
       const manager = createManager({
-        maxUserSessionDurationSeconds: 3600,
-        inactivityTimeoutSeconds: 7200,
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 7200,
       });
       manager.startSessionPartInternal('init');
       const attrs = manager.getUserSessionAttributes();
@@ -662,6 +700,89 @@ describe('EmbraceUserSessionManager', () => {
       expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
         1800,
       );
+    });
+
+    it('should diag.warn when configured inactivity exceeds max duration so the fallback is visible', () => {
+      const manager = createManager({
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 7200,
+      });
+      manager.startSessionPartInternal('init');
+
+      expect(
+        diag
+          .getWarnLogs()
+          .some((l) => l.includes('exceeds userSessionMaxDurationSeconds')),
+        'expected diag.warn when inactivity exceeds max duration',
+      ).to.equal(true);
+    });
+  });
+
+  describe('remote config refresh on new user session', () => {
+    it('refreshes remote config for each new user session after cold start, but not on cold start itself', () => {
+      const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
+
+      // The cold-start user session relies on initSDK's startup refresh, so
+      // the manager must not issue its own redundant fetch here.
+      manager.startSessionPartInternal('init');
+      expect(refreshRemoteConfig.callCount).to.equal(0);
+
+      // Ending the user session rolls over into a fresh one, which should
+      // trigger a refresh so the new session can pick up updated values.
+      manager.endUserSession();
+      expect(refreshRemoteConfig.callCount).to.equal(1);
+
+      // A third user session refreshes again (cooldown cleared first).
+      clock.tick(6 * 1000);
+      manager.endUserSession();
+      expect(refreshRemoteConfig.callCount).to.equal(2);
+    });
+
+    it('does not refresh on a continuing part within the same user session', () => {
+      const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
+
+      manager.startSessionPartInternal('init');
+      manager.endSessionPartInternal('web_background');
+      clock.tick(60 * 1000); // within the default inactivity timeout
+      manager.startSessionPartInternal('init'); // same session continues
+
+      expect(refreshRemoteConfig.callCount).to.equal(0);
+    });
+
+    it('refreshes when the inactivity timeout expires into a new user session', () => {
+      const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
+
+      manager.startSessionPartInternal('init');
+      manager.endSessionPartInternal('web_background');
+      clock.tick(31 * 60 * 1000); // past the default 30 min inactivity timeout
+      manager.startSessionPartInternal('init'); // fresh session
+
+      expect(refreshRemoteConfig.callCount).to.equal(1);
+    });
+
+    it('refreshes when the max-duration timer rolls the session over', () => {
+      // Equal max + inactivity so the max-duration timer (armed first) fires
+      // before the part-inactivity timer, matching the lifecycle suite.
+      const { manager, refreshRemoteConfig } = createManagerWithLiveConfig({
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 3600,
+      });
+
+      manager.startSessionPartInternal('init');
+      clock.tick(3601 * 1000); // fire max-duration timer -> rollover
+
+      expect(refreshRemoteConfig.callCount).to.equal(1);
+    });
+
+    it('does not refresh on the cold-start session created eagerly by setTracerProvider', () => {
+      const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
+
+      // setTracerProvider eagerly creates the cold-start session before any
+      // part starts. That creation must rely on initSDK's startup refresh, not
+      // issue its own redundant fetch.
+      manager.setTracerProvider(new WebTracerProvider());
+
+      expect(refreshRemoteConfig.callCount).to.equal(0);
     });
   });
 
@@ -717,7 +838,9 @@ describe('EmbraceUserSessionManager', () => {
     });
 
     it('should write the inactivity deadline onto the state row when a non-final part ends', () => {
-      const manager = createManager({ inactivityTimeoutSeconds: 120 });
+      const manager = createManager({
+        userSessionInactivityTimeoutSeconds: 120,
+      });
       manager.startSessionPartInternal('init');
       clock.tick(10 * 1000);
       // web_background keeps the user session alive and writes the
@@ -742,7 +865,7 @@ describe('EmbraceUserSessionManager', () => {
 
     it('should not expire on inactivity when recovering a session with no prior part-end', () => {
       const manager1 = createManager({
-        maxUserSessionDurationSeconds: 12 * 60 * 60,
+        userSessionMaxDurationSeconds: 12 * 60 * 60,
       });
       manager1.startSessionPartInternal('init');
       const attrs1 = manager1.getUserSessionAttributes();
@@ -756,7 +879,7 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(60 * 60 * 1000);
 
       const manager2 = createManager({
-        maxUserSessionDurationSeconds: 12 * 60 * 60,
+        userSessionMaxDurationSeconds: 12 * 60 * 60,
       });
       manager2.startSessionPartInternal('init');
       const attrs2 = manager2.getUserSessionAttributes();
@@ -764,6 +887,75 @@ describe('EmbraceUserSessionManager', () => {
       expect(attrs2?.['emb.user_session_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
+    });
+  });
+
+  describe('durations frozen per user session', () => {
+    it('keeps the active session on its frozen inactivity timeout but applies config changes to the next session', () => {
+      const { manager, config } = createManagerWithLiveConfig({
+        userSessionInactivityTimeoutSeconds: 120,
+      });
+
+      manager.startSessionPartInternal('init');
+      expect(
+        manager.getUserSessionAttributes()?.[
+          'emb.user_session_inactivity_timeout_seconds'
+        ],
+      ).to.equal(120);
+
+      // A mid-session remote-config change must not shift the active session.
+      config.userSessionInactivityTimeoutSeconds = 600;
+      clock.tick(10 * 1000);
+      manager.endSessionPartInternal('web_background');
+      // The persisted deadline uses the frozen 120s, not the live 600s.
+      expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
+
+      // Rolling into a fresh session resolves durations again, picking up 600s.
+      clock.tick(3 * 60 * 1000); // past the frozen 120s deadline -> expired
+      manager.startSessionPartInternal('init');
+      expect(
+        manager.getUserSessionAttributes()?.[
+          'emb.user_session_inactivity_timeout_seconds'
+        ],
+      ).to.equal(600);
+      expect(
+        manager.getUserSessionAttributes()?.['emb.user_session_number'],
+      ).to.equal(2);
+    });
+
+    it('keeps the active session on its frozen max duration but applies config changes to the next session', () => {
+      const { manager, config } = createManagerWithLiveConfig({
+        userSessionMaxDurationSeconds: 3600,
+      });
+
+      manager.startSessionPartInternal('init');
+      expect(
+        manager.getUserSessionAttributes()?.[
+          'emb.user_session_max_duration_seconds'
+        ],
+      ).to.equal(3600);
+
+      // A mid-session remote-config change must not shift the active session.
+      config.userSessionMaxDurationSeconds = 7200;
+      expect(
+        manager.getUserSessionAttributes()?.[
+          'emb.user_session_max_duration_seconds'
+        ],
+      ).to.equal(3600);
+
+      // Inactivity expiry rolls into a fresh session, which resolves durations
+      // again and picks up the changed 7200s max.
+      manager.endSessionPartInternal('web_background');
+      clock.tick(31 * 60 * 1000); // past the default 30 min inactivity timeout
+      manager.startSessionPartInternal('init');
+      expect(
+        manager.getUserSessionAttributes()?.[
+          'emb.user_session_max_duration_seconds'
+        ],
+      ).to.equal(7200);
+      expect(
+        manager.getUserSessionAttributes()?.['emb.user_session_number'],
+      ).to.equal(2);
     });
   });
 
@@ -793,7 +985,7 @@ describe('EmbraceUserSessionManager', () => {
   describe('clock anomaly: jump forward past userSessionMaxEndTs', () => {
     it('should detect a forward clock jump as an expired session on the next part start', () => {
       const manager1 = createManager({
-        maxUserSessionDurationSeconds: 60 * 60,
+        userSessionMaxDurationSeconds: 60 * 60,
       });
       manager1.startSessionPartInternal('init');
       const attrs1 = manager1.getUserSessionAttributes();
@@ -807,7 +999,7 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(60 * 60 * 1000 + 1);
 
       const manager2 = createManager({
-        maxUserSessionDurationSeconds: 60 * 60,
+        userSessionMaxDurationSeconds: 60 * 60,
       });
       manager2.startSessionPartInternal('init');
       const attrs2 = manager2.getUserSessionAttributes();

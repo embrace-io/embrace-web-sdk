@@ -1,4 +1,5 @@
 export {
+  createTestDynamicConfigManager,
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,

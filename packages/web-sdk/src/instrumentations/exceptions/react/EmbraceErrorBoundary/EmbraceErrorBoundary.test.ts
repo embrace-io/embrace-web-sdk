@@ -5,6 +5,7 @@ import type React from 'react';
 import {
   setupTestLogExporter,
   setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../../tests/utils/index.ts';
 import type { LogManager } from '../../../../api-logs/index.ts';
 import { log } from '../../../../api-logs/index.ts';
@@ -45,6 +46,7 @@ describe('EmbraceErrorBoundary', () => {
     const perf = new OTelPerformanceManager();
     logManager = new EmbraceLogManager({
       userSessionManager: new EmbraceUserSessionManager({
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager,
         perf,
         storage,

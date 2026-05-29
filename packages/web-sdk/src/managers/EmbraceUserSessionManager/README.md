@@ -120,7 +120,7 @@ On end, the manager:
    `_activeSessionPartId`, and `_activeSessionPartCounts`.
 4. If `reason !== 'user_session_ended'`, calls
    `_continueUserSessionAfterPartEnd(partEndTs)` which writes
-   `partEndTs + inactivityTimeoutSeconds * 1000` into the state blob's
+   `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
    `inactivityDeadlineTs` and re-arms the max-duration timer.
 
 When `reason === 'user_session_ended'` the manager also stamps
@@ -188,16 +188,17 @@ silently no-ops if not (the next engagement event will create it).
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. The configured value is written into the state blob as `inactivityTimeoutSeconds`, and `_continueUserSessionAfterPartEnd` records `partEndTs + inactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`. Checked on the next part start by `_isExpired`. |
+| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. The configured value is written into the state blob as `userSessionInactivityTimeoutSeconds`, and `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`. Checked on the next part start by `_isExpired`. |
 | Part inactivity | `PART_INACTIVITY_TIMEOUT_MS` | 30 minutes | n/a | `endSessionPartInternal('web_inactivity')` |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
-Both `maxUserSessionDurationSeconds` and `inactivityTimeoutSeconds` are clamped to their
-respective ranges at construction; out-of-range values fall back to the
-default and emit a warning. In addition, `inactivityTimeoutSeconds` must be
-`<=` `maxUserSessionDurationSeconds`; if a caller violates that, the inactivity timeout falls
-back to its **default**, not to the max-duration value.
+Both `userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are driven by
+remote config (`DynamicConfigManager.getConfig()`), read at each user-session
+creation. Each value is clamped to its respective range; out-of-range values fall
+back to the default and emit a warning. In addition, `userSessionInactivityTimeoutSeconds`
+must be `<=` `userSessionMaxDurationSeconds`; if remote config violates that, the
+inactivity timeout falls back to its **default**, not to the max-duration value.
 
 The max-duration timer is armed on session-part start AND re-armed after
 session-part end, so it runs even between parts. The delay is computed as
@@ -217,9 +218,13 @@ The part-inactivity timer is restarted on every activity event, subject to the
 | `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
 
-`maxUserSessionDurationSeconds` and `inactivityTimeoutSeconds` are frozen into the state blob at
-session creation. A config change between page loads does not affect a user
-session already in progress.
+`userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are frozen into the state blob at
+session creation. A remote-config change does not affect a user session already
+in progress. It takes effect when the next user session is created. To keep the
+cached config current, the manager fires a remote-config refresh whenever it
+creates a new user session (except on cold start, where `initSDK` already
+refreshes at startup). That fetch is async, so its result lands in the cache for
+the following user session rather than the one being created.
 
 ### Failure handling
 

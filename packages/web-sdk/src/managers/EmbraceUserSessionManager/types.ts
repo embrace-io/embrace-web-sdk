@@ -7,6 +7,7 @@ import type {
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
+import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
   PerformanceManager,
@@ -35,11 +36,11 @@ export interface UserSessionState {
    * Configured values captured and locked at session creation, persisted
    * so they survive page reloads.
    */
-  readonly maxUserSessionDurationSeconds: number;
-  readonly inactivityTimeoutSeconds: number;
+  readonly userSessionMaxDurationSeconds: number;
+  readonly userSessionInactivityTimeoutSeconds: number;
   /**
    * Absolute timestamp after which the session expires from inactivity
-   * (`part_end_ts + inactivityTimeoutSeconds * 1000`). Set on part-end;
+   * (`part_end_ts + userSessionInactivityTimeoutSeconds * 1000`). Set on part-end;
    * null while a part is active. Checked lazily on the next part start.
    */
   readonly inactivityDeadlineTs: number | null;
@@ -52,11 +53,6 @@ export interface UserSessionState {
    * when stamping the part span. Cleared on user-session end.
    */
   readonly userSessionProperties: Record<string, string>;
-}
-
-export interface UserSessionConfig {
-  maxUserSessionDurationSeconds?: number;
-  inactivityTimeoutSeconds?: number;
 }
 
 /** Attributes emitted by the user-session layer. */
@@ -135,7 +131,11 @@ export interface EmbraceUserSessionManagerArgs {
   diag?: DiagLogger;
   perf: PerformanceManager;
   storage: NamespacedStorage;
-  config?: UserSessionConfig;
+  /**
+   * Source of the user-session durations (max duration, inactivity timeout),
+   * which are driven by remote config and resolved at each session creation.
+   */
+  dynamicConfigManager: DynamicConfigManager;
   /**
    * Document-shaped object used to gate part start/end on visibility +
    * focus.

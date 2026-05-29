@@ -6,6 +6,7 @@ import {
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
 import { log } from '../../../api-logs/index.ts';
 import {
@@ -53,6 +54,7 @@ describe('ServerTimingInstrumentation', () => {
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
     const userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,
       storage,

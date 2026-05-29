@@ -26,27 +26,27 @@ export const isUserSessionExpired = (
 export interface CreateUserSessionStateArgs {
   now: number;
   previousUserSessionId: string | null;
-  maxUserSessionDurationSeconds: number;
-  inactivityTimeoutSeconds: number;
+  userSessionMaxDurationSeconds: number;
+  userSessionInactivityTimeoutSeconds: number;
   userSessionNumber: number;
 }
 
 export const createUserSessionState = ({
   now,
   previousUserSessionId,
-  maxUserSessionDurationSeconds,
-  inactivityTimeoutSeconds,
+  userSessionMaxDurationSeconds,
+  userSessionInactivityTimeoutSeconds,
   userSessionNumber,
 }: CreateUserSessionStateArgs): UserSessionState => ({
   schemaVersion: USER_SESSION_STATE_SCHEMA_VERSION,
   userSessionId: generateUUID(),
   previousUserSessionId,
   userSessionStartTs: now,
-  userSessionMaxEndTs: now + maxUserSessionDurationSeconds * 1000,
+  userSessionMaxEndTs: now + userSessionMaxDurationSeconds * 1000,
   userSessionNumber,
   userSessionPartIndex: 0,
-  maxUserSessionDurationSeconds,
-  inactivityTimeoutSeconds,
+  userSessionMaxDurationSeconds,
+  userSessionInactivityTimeoutSeconds,
   inactivityDeadlineTs: null,
   userSessionProperties: {},
 });

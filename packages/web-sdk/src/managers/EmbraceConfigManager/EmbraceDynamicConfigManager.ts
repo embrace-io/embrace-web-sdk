@@ -26,6 +26,16 @@ const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
       remoteConfig.network_span_forwarding.pct_enabled;
   }
 
+  if (remoteConfig.user_session?.max_duration_seconds !== undefined) {
+    parsed.userSessionMaxDurationSeconds =
+      remoteConfig.user_session.max_duration_seconds;
+  }
+
+  if (remoteConfig.user_session?.inactivity_timeout_seconds !== undefined) {
+    parsed.userSessionInactivityTimeoutSeconds =
+      remoteConfig.user_session.inactivity_timeout_seconds;
+  }
+
   return parsed;
 };
 

@@ -1,5 +1,8 @@
 import { expect } from 'chai';
-import { setupTestStorage } from '../../tests/utils/index.ts';
+import {
+  setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
+} from '../../tests/utils/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -48,6 +51,7 @@ describe('sessionAPI', () => {
 
     beforeEach(() => {
       manager = new EmbraceUserSessionManager({
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager: new EmbraceLimitManager({ ...DEFAULT_LIMITS }),
         perf: new OTelPerformanceManager(),
         storage: setupTestStorage(),

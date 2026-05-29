@@ -5,6 +5,7 @@ import { Route, Router, Switch, useHistory } from 'react-router-domv4v5';
 import {
   setupTestStorage,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../../../tests/utils/index.ts';
 import { render } from '../../../../../../tests/utils/react/reactTestUtils.ts';
 import { runReactRouterTest } from '../../../../../../tests/utils/react/sharedTests.ts';
@@ -74,6 +75,7 @@ describe('ReactRouterV5Legacy', () => {
 
   before(() => {
     userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),

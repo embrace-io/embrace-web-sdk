@@ -9,6 +9,7 @@ import {
   InMemoryDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import {
   mockNetworkRequestSpan,
@@ -69,6 +70,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
     });
 
     userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf: new OTelPerformanceManager(),
       storage: setupTestStorage(),

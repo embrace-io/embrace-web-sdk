@@ -8,6 +8,7 @@ import {
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
 import { log } from '../../../api-logs/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
@@ -103,6 +104,7 @@ describe('LoafInstrumentation', () => {
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
     userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,
       storage,
@@ -494,6 +496,7 @@ describe('LoafInstrumentation', () => {
     const limitManager2 = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage2 = setupTestStorage();
     const userSessionManager2 = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: limitManager2,
       perf,
       storage: storage2,
