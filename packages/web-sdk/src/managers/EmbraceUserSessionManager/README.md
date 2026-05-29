@@ -118,15 +118,15 @@ On end, the manager:
    prevent the span from ending).
 3. Inside `finally`: ends the span and clears `_sessionPartSpan`,
    `_activeSessionPartId`, and `_activeSessionPartCounts`.
-4. If `reason !== 'user_session_ended'`, calls
+4. If the end reason is not final (anything other than `user_session_ended` or
+   `web_inactivity`, in practice `web_background`), calls
    `_continueUserSessionAfterPartEnd(partEndTs)` which writes
    `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
    `inactivityDeadlineTs` and re-arms the max-duration timer.
 
-When `reason === 'user_session_ended'` the manager also stamps
-`emb.is_final_session_part = 1` and (if a `userSessionEndReason` was passed in,
-which `_terminateUserSession` always does)
-`emb.user_session_termination_reason`.
+When the end reason is final (`user_session_ended` or `web_inactivity`) the
+manager also stamps `emb.is_final_session_part = 1` and, when a
+`userSessionEndReason` is provided, `emb.user_session_termination_reason`.
 
 ## User-session lifecycle
 
