@@ -20,6 +20,12 @@ export const DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 30 * 60;
 export const MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 30;
 export const MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 24 * 60 * 60;
 
+export const DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
+  30 * 60;
+export const MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS = 30;
+export const MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
+  24 * 60 * 60;
+
 // Anti-spam guard: minimum interval between successful endUserSession calls.
 // Persists across page refreshes so a refresh-and-call loop can't manufacture
 // session boundaries faster than this.

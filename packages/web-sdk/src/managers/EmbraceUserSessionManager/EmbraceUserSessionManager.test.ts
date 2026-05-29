@@ -60,6 +60,7 @@ describe('EmbraceUserSessionManager', () => {
   const createManager = (config?: {
     userSessionMaxDurationSeconds?: number;
     userSessionInactivityTimeoutSeconds?: number;
+    userSessionForegroundInactivityTimeoutSeconds?: number;
   }) =>
     new EmbraceUserSessionManager({
       diag,
@@ -1022,5 +1023,42 @@ describe('EmbraceUserSessionManager', () => {
     // addProperty with permanent lifespan stores into permanent properties
     // without creating user-session state.
     expect(manager.getSessionPartProperties()).to.deep.equal({ perm: 'value' });
+  });
+
+  describe('foreground inactivity timeout frozen into state', () => {
+    const readStoredForegroundTimeout = (): number | null => {
+      const raw = inMemoryStorage.getItem('embrace_user_session_state');
+      if (!raw) return null;
+      return (
+        JSON.parse(raw) as {
+          userSessionForegroundInactivityTimeoutSeconds: number;
+        }
+      ).userSessionForegroundInactivityTimeoutSeconds;
+    };
+
+    it('freezes the configured foreground timeout into the state blob', () => {
+      const manager = createManager({
+        userSessionForegroundInactivityTimeoutSeconds: 90,
+      });
+      manager.startSessionPartInternal('init');
+      expect(readStoredForegroundTimeout()).to.equal(90);
+    });
+
+    it('falls back to the default when the foreground timeout is below the minimum', () => {
+      const manager = createManager({
+        userSessionForegroundInactivityTimeoutSeconds: 5,
+      });
+      manager.startSessionPartInternal('init');
+      expect(readStoredForegroundTimeout()).to.equal(1800);
+    });
+
+    it('falls back to the default when the foreground timeout exceeds the max duration', () => {
+      const manager = createManager({
+        userSessionMaxDurationSeconds: 3600,
+        userSessionForegroundInactivityTimeoutSeconds: 7200,
+      });
+      manager.startSessionPartInternal('init');
+      expect(readStoredForegroundTimeout()).to.equal(1800);
+    });
   });
 });

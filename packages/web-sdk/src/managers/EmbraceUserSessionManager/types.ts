@@ -39,6 +39,12 @@ export interface UserSessionState {
   readonly userSessionMaxDurationSeconds: number;
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
+   * Frozen at session creation. Drives the live foreground part-inactivity
+   * timer. Distinct from `userSessionInactivityTimeoutSeconds`, which drives
+   * the lazy deadline set when a part ends.
+   */
+  readonly userSessionForegroundInactivityTimeoutSeconds: number;
+  /**
    * Absolute timestamp after which the session expires from inactivity
    * (`part_end_ts + userSessionInactivityTimeoutSeconds * 1000`). Set on part-end;
    * null while a part is active. Checked lazily on the next part start.
