@@ -102,7 +102,7 @@ engagement condition holds, the call is a debug-level no-op.
 | Value | Trigger |
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
-| `web_inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
+| `web_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
 The part-level `web_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
@@ -221,7 +221,7 @@ The part-inactivity timer is restarted on every activity event, subject to the
 | `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
 
-`userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are frozen into the state blob at
+`userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
 in progress. It takes effect when the next user session is created. To keep the
 cached config current, the manager fires a remote-config refresh whenever it
