@@ -9,10 +9,13 @@ export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.ts';
 export { FakeSpanProcessor } from './FakeSpanProcessor.ts';
 export {
   fakeFetchGetBody,
+  fakeFetchGetConfigUrl,
   fakeFetchGetKeepalive,
   fakeFetchGetMethod,
   fakeFetchGetOptions,
   fakeFetchGetRequestHeaders,
+  fakeFetchGetSpansBody,
+  fakeFetchGetSpansRequestHeaders,
   fakeFetchGetUrl,
   fakeFetchInstall,
   fakeFetchResetHistory,
