@@ -199,4 +199,4 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 
 **Format**: `EMBR-(ticket) (type)[(scope)]: subject`
 
-Fill the sections in `.github/PULL_REQUEST_TEMPLATE.md` (What problem / Short description / How tested / Checklist). Keep it proportional: about 1-2 sentences or two short bullets per section. Cover the full diff vs `main` (not just the latest commit), briefly, and tick checklist items to reflect reality.
+Fill the sections in `.github/PULL_REQUEST_TEMPLATE.md` (What problem / Short description / How tested / Checklist). As a rough guide, scale the body to the size of the diff: a small change can be a line or two, a large one can run fuller. Avoid exhaustive or commit-by-commit detail. Cover the full diff vs `main` (not just the latest commit), and tick checklist items to reflect reality.
