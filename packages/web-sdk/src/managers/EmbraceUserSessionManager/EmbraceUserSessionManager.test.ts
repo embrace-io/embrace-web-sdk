@@ -717,6 +717,21 @@ describe('EmbraceUserSessionManager', () => {
         'expected diag.warn when inactivity exceeds max duration',
       ).to.equal(true);
     });
+
+    it('should diag.warn when the configured foreground timeout exceeds max duration so the fallback is visible', () => {
+      const manager = createManager({
+        userSessionMaxDurationSeconds: 3600,
+        userSessionForegroundInactivityTimeoutSeconds: 7200,
+      });
+      manager.startSessionPartInternal('init');
+
+      expect(
+        diag
+          .getWarnLogs()
+          .some((l) => l.includes('default foreground inactivity timeout')),
+        'expected diag.warn when foreground timeout exceeds max duration',
+      ).to.equal(true);
+    });
   });
 
   describe('remote config refresh on new user session', () => {

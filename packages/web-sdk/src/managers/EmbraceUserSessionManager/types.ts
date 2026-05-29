@@ -138,8 +138,9 @@ export interface EmbraceUserSessionManagerArgs {
   perf: PerformanceManager;
   storage: NamespacedStorage;
   /**
-   * Source of the user-session durations (max duration, inactivity timeout),
-   * which are driven by remote config and resolved at each session creation.
+   * Source of the user-session durations (max duration, inactivity timeout,
+   * foreground inactivity timeout), which are driven by remote config and
+   * resolved at each session creation.
    */
   dynamicConfigManager: DynamicConfigManager;
   /**
