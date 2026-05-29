@@ -69,7 +69,7 @@ describe('RageClickInstrumentation', () => {
     expect(logs[0].eventName).to.equal('rage-click');
     expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
     expect(logs[0].attributes).to.include({
-      'emb.type': 'ux.rage_click',
+      'emb.type': 'emb.otel_log',
       'rage_click.element_type': 'button',
       'rage_click.element_selector': '#checkout-btn',
       'rage_click.interaction_type': 'click',
