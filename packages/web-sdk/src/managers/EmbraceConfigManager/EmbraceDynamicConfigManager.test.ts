@@ -191,7 +191,7 @@ describe('EmbraceDynamicConfigManager', () => {
     void expect(config.userSessionInactivityTimeoutSeconds).to.be.undefined;
   });
 
-  it('should leave both user-session fields undefined when the block is absent', () => {
+  it('should leave the user-session fields undefined when the block is absent', () => {
     storage.setItem(
       LOCAL_STORAGE_REMOTE_CONFIG_KEY,
       JSON.stringify({
@@ -208,6 +208,8 @@ describe('EmbraceDynamicConfigManager', () => {
 
     void expect(config.userSessionMaxDurationSeconds).to.be.undefined;
     void expect(config.userSessionInactivityTimeoutSeconds).to.be.undefined;
+    void expect(config.userSessionForegroundInactivityTimeoutSeconds).to.be
+      .undefined;
   });
 
   it('should not fail if storage is not available', () => {
