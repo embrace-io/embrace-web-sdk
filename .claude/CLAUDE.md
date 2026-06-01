@@ -164,11 +164,6 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 3. Export from `packages/web-sdk/src/processors/index.ts`
 4. Wire into processor chain in `initSDK.ts`
 
-## Gotchas
-
-- **Session-id keys are stamped on every log** (by `UserSessionLogRecordProcessor`). An empty-string value (no active user session) is the contract, not a bug
-- **Logs render on the session timeline.** When you need something visible on the timeline, emit a log rather than a span event
-
 ## Git Workflow
 
 ### Branches
