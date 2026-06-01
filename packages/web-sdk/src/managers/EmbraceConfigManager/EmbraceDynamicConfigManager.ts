@@ -36,6 +36,14 @@ const parseRemoteConfig = (remoteConfig: RemoteConfig): DynamicSDKConfig => {
       remoteConfig.user_session.inactivity_timeout_seconds;
   }
 
+  if (
+    remoteConfig.user_session?.web_foreground_inactivity_timeout_seconds !==
+    undefined
+  ) {
+    parsed.userSessionForegroundInactivityTimeoutSeconds =
+      remoteConfig.user_session.web_foreground_inactivity_timeout_seconds;
+  }
+
   return parsed;
 };
 

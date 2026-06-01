@@ -28,6 +28,7 @@ import {
   KEY_EMB_SESSION_PART_START_REASON,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
+  KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   KEY_EMB_USER_SESSION_ID,
   KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS,
@@ -57,6 +58,7 @@ import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.
 import {
   DEFAULT_ACTIVITY_EVENTS,
   DEFAULT_ACTIVITY_THROTTLE_MS,
+  DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
   EMBRACE_LAST_END_USER_SESSION_TS_KEY,
@@ -64,8 +66,11 @@ import {
   EMBRACE_USER_SESSION_NUMBER_KEY,
   EMBRACE_USER_SESSION_STATE_KEY,
   END_USER_SESSION_COOLDOWN_MS,
+  FINAL_SESSION_PART_END_REASONS,
+  MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_MAX_DURATION_SECONDS,
+  MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MIN_USER_SESSION_MAX_DURATION_SECONDS,
   SESSION_PART_SPAN_NAME,
@@ -170,6 +175,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _resolveUserSessionDurations(): {
     userSessionMaxDurationSeconds: number;
     userSessionInactivityTimeoutSeconds: number;
+    userSessionForegroundInactivityTimeoutSeconds: number;
   } {
     const config = this._dynamicConfigManager.getConfig();
 
@@ -187,23 +193,46 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       min: MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
       max: MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
     });
+    const userSessionForegroundInactivityTimeoutSeconds = clampNumber({
+      diag: this._diag,
+      value: config.userSessionForegroundInactivityTimeoutSeconds,
+      defaultValue: DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
+      min: MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
+      max: MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
+    });
 
-    if (userSessionInactivityTimeoutSeconds <= userSessionMaxDurationSeconds) {
-      return {
-        userSessionMaxDurationSeconds,
-        userSessionInactivityTimeoutSeconds,
-      };
+    // Each inactivity timeout must fit inside the max duration; if remote
+    // config violates that, the offending value falls back to its own default
+    // rather than to the max-duration value.
+    const inactivityWithinMax =
+      userSessionInactivityTimeoutSeconds <= userSessionMaxDurationSeconds;
+    const foregroundWithinMax =
+      userSessionForegroundInactivityTimeoutSeconds <=
+      userSessionMaxDurationSeconds;
+
+    if (!inactivityWithinMax) {
+      this._diag.warn(
+        `userSessionInactivityTimeoutSeconds (${userSessionInactivityTimeoutSeconds.toString()}s) ` +
+          `exceeds userSessionMaxDurationSeconds (${userSessionMaxDurationSeconds.toString()}s); ` +
+          `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
+      );
+    }
+    if (!foregroundWithinMax) {
+      this._diag.warn(
+        `userSessionForegroundInactivityTimeoutSeconds (${userSessionForegroundInactivityTimeoutSeconds.toString()}s) ` +
+          `exceeds userSessionMaxDurationSeconds (${userSessionMaxDurationSeconds.toString()}s); ` +
+          `falling back to default foreground inactivity timeout (${DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
+      );
     }
 
-    this._diag.warn(
-      `userSessionInactivityTimeoutSeconds (${userSessionInactivityTimeoutSeconds.toString()}s) ` +
-        `exceeds userSessionMaxDurationSeconds (${userSessionMaxDurationSeconds.toString()}s); ` +
-        `falling back to default inactivity timeout (${DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS.toString()}s).`,
-    );
     return {
       userSessionMaxDurationSeconds,
-      userSessionInactivityTimeoutSeconds:
-        DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+      userSessionInactivityTimeoutSeconds: inactivityWithinMax
+        ? userSessionInactivityTimeoutSeconds
+        : DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
+      userSessionForegroundInactivityTimeoutSeconds: foregroundWithinMax
+        ? userSessionForegroundInactivityTimeoutSeconds
+        : DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
     };
   }
 
@@ -270,6 +299,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         this._state.userSessionMaxDurationSeconds,
       [KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS]:
         this._state.userSessionInactivityTimeoutSeconds,
+      [KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS]:
+        this._state.userSessionForegroundInactivityTimeoutSeconds,
     };
   }
 
@@ -378,8 +409,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const isFinal =
-      reason === 'user_session_ended' || reason === 'web_inactivity';
+    const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
 
     // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
     // and must not push it forward.
@@ -392,7 +422,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         ...this._limitManager.getDiagnosticCounts(),
         [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
       };
-      if (isFinal) {
+      if (isFinalSessionPart) {
         endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;
         if (userSessionEndReason) {
           endAttrs[KEY_EMB_USER_SESSION_TERMINATION_REASON] =
@@ -435,7 +465,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._limitManager.reset();
     }
 
-    if (isFinal) {
+    if (isFinalSessionPart) {
       this._previousUserSessionId = this._state?.userSessionId ?? null;
       this._state = null;
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
@@ -639,12 +669,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const {
         userSessionMaxDurationSeconds,
         userSessionInactivityTimeoutSeconds,
+        userSessionForegroundInactivityTimeoutSeconds,
       } = this._resolveUserSessionDurations();
       state = createUserSessionState({
         now,
         previousUserSessionId: this._previousUserSessionId,
         userSessionMaxDurationSeconds,
         userSessionInactivityTimeoutSeconds,
+        userSessionForegroundInactivityTimeoutSeconds,
         userSessionNumber,
       });
       created = true;
@@ -858,7 +890,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag.debug(
         'inactivity timer fired; ending current part and user session',
       );
-      this.endSessionPartInternal('web_inactivity', 'inactivity');
+      this.endSessionPartInternal('web_foreground_inactivity', 'inactivity');
     } catch (e) {
       this._diag.warn('Error handling inactivity timer', e);
     }
@@ -873,7 +905,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
     this._sessionPartInactivityTimer = setTimeout(
       this._onSessionPartInactivity,
-      this._state.userSessionInactivityTimeoutSeconds * 1000,
+      this._state.userSessionForegroundInactivityTimeoutSeconds * 1000,
     );
   }
 

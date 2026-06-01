@@ -40,6 +40,8 @@ export const KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS =
   'emb.user_session_max_duration_seconds';
 export const KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS =
   'emb.user_session_inactivity_timeout_seconds';
+export const KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
+  'emb.user_session_foreground_inactivity_timeout_seconds';
 
 export enum EMB_TYPES {
   SessionPart = 'ux.session_part',

@@ -21,6 +21,7 @@ const mockAttributes: UserSessionAttributes = {
   'emb.user_session_start_ts': 1000,
   'emb.user_session_max_duration_seconds': 43200,
   'emb.user_session_inactivity_timeout_seconds': 1800,
+  'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
 };
 
 // Stub built on top of NoOpUserSessionManager so we satisfy the full

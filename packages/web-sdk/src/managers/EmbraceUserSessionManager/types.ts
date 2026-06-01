@@ -39,6 +39,12 @@ export interface UserSessionState {
   readonly userSessionMaxDurationSeconds: number;
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
+   * Frozen at session creation. Drives the live foreground part-inactivity
+   * timer. Distinct from `userSessionInactivityTimeoutSeconds`, which drives
+   * the lazy deadline set when a part ends.
+   */
+  readonly userSessionForegroundInactivityTimeoutSeconds: number;
+  /**
    * Absolute timestamp after which the session expires from inactivity
    * (`part_end_ts + userSessionInactivityTimeoutSeconds * 1000`). Set on part-end;
    * null while a part is active. Checked lazily on the next part start.
@@ -76,6 +82,8 @@ export interface UserSessionAttributes {
   readonly 'emb.user_session_max_duration_seconds': number;
   /** Whole seconds. */
   readonly 'emb.user_session_inactivity_timeout_seconds': number;
+  /** Whole seconds. */
+  readonly 'emb.user_session_foreground_inactivity_timeout_seconds': number;
 }
 
 /**
@@ -132,8 +140,9 @@ export interface EmbraceUserSessionManagerArgs {
   perf: PerformanceManager;
   storage: NamespacedStorage;
   /**
-   * Source of the user-session durations (max duration, inactivity timeout),
-   * which are driven by remote config and resolved at each session creation.
+   * Source of the user-session durations (max duration, inactivity timeout,
+   * foreground inactivity timeout), which are driven by remote config and
+   * resolved at each session creation.
    */
   dynamicConfigManager: DynamicConfigManager;
   /**
