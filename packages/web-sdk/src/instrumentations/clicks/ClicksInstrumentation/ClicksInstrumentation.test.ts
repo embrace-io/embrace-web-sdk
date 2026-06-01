@@ -60,7 +60,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -86,7 +86,7 @@ describe('ClicksInstrumentation', () => {
     target.disabled = true;
     testContainer.append(target);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -104,7 +104,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -131,7 +131,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(target);
 
     target.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -165,7 +165,7 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     t1.click();
     t2.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -221,7 +221,7 @@ describe('ClicksInstrumentation', () => {
     t2.click();
     instrumentation.disable();
     t1.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -252,7 +252,7 @@ describe('ClicksInstrumentation', () => {
     testContainer.append(t2);
 
     t2.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     t1.click();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -286,7 +286,7 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -323,7 +323,7 @@ describe('ClicksInstrumentation', () => {
 
     target1.click();
     target2.click();
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);

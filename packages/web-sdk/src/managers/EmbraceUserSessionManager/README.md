@@ -102,10 +102,10 @@ engagement condition holds, the call is a debug-level no-op.
 | Value | Trigger |
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
-| `web_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
+| `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
-The part-level `web_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
+The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
 
 ### End behavior
 
@@ -119,13 +119,13 @@ On end, the manager:
 3. Inside `finally`: ends the span and clears `_sessionPartSpan`,
    `_activeSessionPartId`, and `_activeSessionPartCounts`.
 4. If the end reason is not final (anything other than `user_session_ended` or
-   `web_inactivity`, in practice `web_background`), calls
+   `web_foreground_inactivity`, in practice `web_background`), calls
    `_continueUserSessionAfterPartEnd(partEndTs)` which writes
    `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
    `inactivityDeadlineTs`. The max-duration timer keeps running on its existing
    deadline (`userSessionMaxEndTs` is fixed at creation), so it is not re-armed.
 
-When the end reason is final (`user_session_ended` or `web_inactivity`) the
+When the end reason is final (`user_session_ended` or `web_foreground_inactivity`) the
 manager also stamps `emb.is_final_session_part = 1` and, when a
 `userSessionEndReason` is provided, `emb.user_session_termination_reason`.
 
@@ -175,7 +175,7 @@ is called from:
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
 | `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On termination the manager calls
 `endSessionPartInternal('user_session_ended', reason)`, saves
@@ -190,7 +190,7 @@ silently no-ops if not (the next engagement event will create it).
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
 | User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
-| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal('web_inactivity', 'inactivity')` ends the part and the enclosing user session. |
+| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal('web_foreground_inactivity', 'inactivity')` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
@@ -374,7 +374,7 @@ another window).
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
 | `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. |
-| `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_inactivity`). |
+| `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
 | `emb.app.applied_limit.*` | Diagnostic counts from the limit manager. |

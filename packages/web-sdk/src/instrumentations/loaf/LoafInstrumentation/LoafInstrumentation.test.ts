@@ -170,7 +170,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const logs = memoryExporter.getFinishedLogRecords();
     const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -206,7 +206,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, renderStart: 0 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -229,7 +229,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ startTime: 200, duration: 80, styleAndLayoutStart: 0 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -253,7 +253,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 0 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -276,7 +276,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 30, firstUIEventTimestamp: 12345 }), // interaction-driven
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -293,7 +293,7 @@ describe('LoafInstrumentation', () => {
     });
     instrumentation.setUserSessionManager(userSessionManager);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const logs = memoryExporter.getFinishedLogRecords();
     const reports = logs.filter((l) => l.eventName === 'emb-loaf-report');
@@ -334,7 +334,7 @@ describe('LoafInstrumentation', () => {
 
     // Re-create a session to trigger end
     userSessionManager.startSessionPartInternal('init');
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -359,7 +359,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -383,7 +383,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 200 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -405,7 +405,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 201 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -429,7 +429,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 600 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -453,7 +453,7 @@ describe('LoafInstrumentation', () => {
       makeEntry({ blockingDuration: 601 }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -474,7 +474,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.enable();
 
     triggerEntries([makeEntry({ duration: 60 })]);
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -514,7 +514,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager2);
 
     triggerEntries([makeEntry({ duration: 90 })]);
-    userSessionManager2.endSessionPartInternal('web_inactivity');
+    userSessionManager2.endSessionPartInternal('web_foreground_inactivity');
 
     const reports = memoryExporter
       .getFinishedLogRecords()
@@ -546,7 +546,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
 
     triggerEntries([makeEntry({ duration: 100 })]);
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -558,7 +558,7 @@ describe('LoafInstrumentation', () => {
     userSessionManager.startSessionPartInternal('init');
 
     triggerEntries([makeEntry({ duration: 80 })]);
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -578,7 +578,7 @@ describe('LoafInstrumentation', () => {
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const firstReport = memoryExporter
       .getFinishedLogRecords()
@@ -595,7 +595,7 @@ describe('LoafInstrumentation', () => {
 
     triggerEntries([makeEntry({ duration: 60 }), makeEntry({ duration: 40 })]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const secondReport = memoryExporter
       .getFinishedLogRecords()
@@ -627,7 +627,7 @@ describe('LoafInstrumentation', () => {
       }),
     ]);
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const report = memoryExporter
       .getFinishedLogRecords()
@@ -677,7 +677,7 @@ describe('LoafInstrumentation', () => {
       throw new Error('emit failed');
     };
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
 
@@ -730,7 +730,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const logs = memoryExporter.getFinishedLogRecords();
       const summary = logs.find((l) => l.eventName === 'emb-loaf-scripts');
@@ -778,7 +778,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -807,7 +807,7 @@ describe('LoafInstrumentation', () => {
       ) as unknown as PerformanceLongAnimationFrameTiming['scripts'];
 
       triggerEntries([makeEntry({ scripts })]);
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -826,7 +826,7 @@ describe('LoafInstrumentation', () => {
 
       triggerEntries([makeEntry({ scripts: [] })]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summaries = memoryExporter
         .getFinishedLogRecords()
@@ -852,7 +852,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
       memoryExporter.reset();
 
       userSessionManager.startSessionPartInternal('init');
@@ -869,7 +869,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -905,7 +905,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()
@@ -939,7 +939,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const logs = memoryExporter.getFinishedLogRecords();
       const report = logs.find((l) => l.eventName === 'emb-loaf-report');
@@ -976,7 +976,7 @@ describe('LoafInstrumentation', () => {
         }),
       ]);
 
-      userSessionManager.endSessionPartInternal('web_inactivity');
+      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
       const summary = memoryExporter
         .getFinishedLogRecords()

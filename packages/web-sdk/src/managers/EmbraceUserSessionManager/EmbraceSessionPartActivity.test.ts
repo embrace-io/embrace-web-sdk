@@ -156,7 +156,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
   it('resets the part-inactivity timer on activity', () => {
@@ -169,7 +169,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal([]);
 
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
   it('throttles activity events within the throttle window', () => {
@@ -182,15 +182,15 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(FOREGROUND_INACTIVITY_MS - (THROTTLE_MS - 1) - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
-  it('ends the part with reason web_inactivity when the part-inactivity window elapses', () => {
+  it('ends the part with reason web_foreground_inactivity when the part-inactivity window elapses', () => {
     manager.startSessionPartInternal('init');
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
 
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
     // The part end reason is web-prefixed, but the enclosing user session's
     // termination reason stays unprefixed for cross-platform correlation.
     expect(endSpy.lastCall.args[1]).to.equal('inactivity');
@@ -209,7 +209,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
-    expect(endReasons()).to.deep.equal(['web_inactivity', 'web_inactivity']);
+    expect(endReasons()).to.deep.equal([
+      'web_foreground_inactivity',
+      'web_foreground_inactivity',
+    ]);
   });
 
   it('starts a part with reason activity when input arrives and no part is active', () => {
@@ -376,7 +379,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
     // No additional part starts: still only the initial 'init'.
     expect(startReasons()).to.deep.equal(['init']);
   });
@@ -387,7 +390,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     // Inactivity expires; the part finalizes. Then user activity resumes;
     // the next event must start a new part with reason 'web_activity'.
     clock.tick(FOREGROUND_INACTIVITY_MS);
-    expect(endReasons()).to.deep.equal(['web_inactivity']);
+    expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
     void expect(manager.getSessionPartId()).to.be.null;
 
     fireActivity();
@@ -419,7 +422,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endSpy2.called).to.equal(false);
     clock.tick(1);
     expect(endSpy2.callCount).to.equal(1);
-    expect(endSpy2.lastCall.args[0]).to.equal('web_inactivity');
+    expect(endSpy2.lastCall.args[0]).to.equal('web_foreground_inactivity');
     expect(endSpy2.lastCall.args[1]).to.equal('inactivity');
 
     splitManager._shutdown();
@@ -448,7 +451,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endSpy.callCount).to.equal(endCallsBeforeVisibility);
 
     // The internal part-inactivity timer was cleared on shutdown, so no
-    // further endSessionPartInternal('web_inactivity') calls fire.
+    // further endSessionPartInternal('web_foreground_inactivity') calls fire.
     const endCallsBefore = endSpy.callCount;
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);

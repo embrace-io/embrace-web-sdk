@@ -114,9 +114,9 @@ export type StartSessionOptions = {
 // `UserSessionEndReason`) are emitted unprefixed so the backend can correlate
 // them across platforms. Reasons that describe behaviour specific to the web
 // environment (`web_foreground`, `web_background`, `web_activity`,
-// `web_inactivity`) are stamped with a `web_` prefix. The part-level
-// `web_inactivity` and the user-session-level `inactivity` are distinct: when
-// the part-inactivity timer fires it stamps `web_inactivity` as the part end
+// `web_foreground_inactivity`) are stamped with a `web_` prefix. The part-level
+// `web_foreground_inactivity` and the user-session-level `inactivity` are distinct: when
+// the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end
 // reason and `inactivity` as the enclosing user session's termination reason
 // on the same final part span.
 
@@ -128,7 +128,7 @@ export type SessionPartStartReason =
 
 export type SessionPartEndReason =
   | 'web_background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'web_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_foreground_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
 export type UserSessionEndReason =
