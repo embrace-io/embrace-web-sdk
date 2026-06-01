@@ -66,6 +66,7 @@ import {
   EMBRACE_USER_SESSION_NUMBER_KEY,
   EMBRACE_USER_SESSION_STATE_KEY,
   END_USER_SESSION_COOLDOWN_MS,
+  FINAL_SESSION_PART_END_REASONS,
   MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_MAX_DURATION_SECONDS,
@@ -408,8 +409,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const isFinal =
-      reason === 'user_session_ended' || reason === 'web_foreground_inactivity';
+    const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
 
     // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
     // and must not push it forward.
@@ -422,7 +422,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         ...this._limitManager.getDiagnosticCounts(),
         [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
       };
-      if (isFinal) {
+      if (isFinalSessionPart) {
         endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;
         if (userSessionEndReason) {
           endAttrs[KEY_EMB_USER_SESSION_TERMINATION_REASON] =
@@ -465,7 +465,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._limitManager.reset();
     }
 
-    if (isFinal) {
+    if (isFinalSessionPart) {
       this._previousUserSessionId = this._state?.userSessionId ?? null;
       this._state = null;
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
