@@ -102,10 +102,10 @@ engagement condition holds, the call is a debug-level no-op.
 | Value | Trigger |
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
-| `web_inactivity` | The 30 minute part-inactivity timer fires without any user input event resetting it. |
+| `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
 | `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
-The part-level `web_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
+The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
 
 ### End behavior
 
@@ -118,15 +118,16 @@ On end, the manager:
    prevent the span from ending).
 3. Inside `finally`: ends the span and clears `_sessionPartSpan`,
    `_activeSessionPartId`, and `_activeSessionPartCounts`.
-4. If `reason !== 'user_session_ended'`, calls
+4. If the end reason is not final (anything other than `user_session_ended` or
+   `web_foreground_inactivity`, in practice `web_background`), calls
    `_continueUserSessionAfterPartEnd(partEndTs)` which writes
    `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
-   `inactivityDeadlineTs` and re-arms the max-duration timer.
+   `inactivityDeadlineTs`. The max-duration timer keeps running on its existing
+   deadline (`userSessionMaxEndTs` is fixed at creation), so it is not re-armed.
 
-When `reason === 'user_session_ended'` the manager also stamps
-`emb.is_final_session_part = 1` and (if a `userSessionEndReason` was passed in,
-which `_terminateUserSession` always does)
-`emb.user_session_termination_reason`.
+When the end reason is final (`user_session_ended` or `web_foreground_inactivity`) the
+manager also stamps `emb.is_final_session_part = 1` and, when a
+`userSessionEndReason` is provided, `emb.user_session_termination_reason`.
 
 ## User-session lifecycle
 
@@ -137,8 +138,8 @@ User-session creation is lazy. No user-session object exists between
 engagement gate. Creation happens inside `_beginUserSessionForPartStart`:
 
 1. Read the state blob from storage.
-2. If null or `_isExpired(state, now)`, save the old ID into
-   `_previousUserSessionId` and call `_createSession(now)` to mint a fresh user
+2. If null or `isUserSessionExpired(state, now)`, save the old ID into
+   `_previousUserSessionId` and call `createUserSessionState` to mint a fresh user
    session.
 3. Increment `userSessionPartIndex` by 1, and bump the
    `embrace_session_part_number` storage counter (persisted across visits
@@ -149,7 +150,7 @@ engagement gate. Creation happens inside `_beginUserSessionForPartStart`:
 
 ### Expiry
 
-`_isExpired` returns `true` when any of the following holds:
+`isUserSessionExpired` returns `true` when any of the following holds:
 
 - `now < state.userSessionStartTs`. The clock jumped backwards.
 - `now >= state.userSessionMaxEndTs`. The max-duration boundary has passed.
@@ -174,7 +175,7 @@ is called from:
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
 | `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On termination the manager calls
 `endSessionPartInternal('user_session_ended', reason)`, saves
@@ -188,21 +189,27 @@ silently no-ops if not (the next engagement event will create it).
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. The configured value is written into the state blob as `userSessionInactivityTimeoutSeconds`, and `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`. Checked on the next part start by `_isExpired`. |
-| Part inactivity | `PART_INACTIVITY_TIMEOUT_MS` | 30 minutes | n/a | `endSessionPartInternal('web_inactivity')` |
+| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
+| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal('web_foreground_inactivity', 'inactivity')` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
-Both `userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are driven by
-remote config (`DynamicConfigManager.getConfig()`), read at each user-session
-creation. Each value is clamped to its respective range; out-of-range values fall
-back to the default and emit a warning. In addition, `userSessionInactivityTimeoutSeconds`
-must be `<=` `userSessionMaxDurationSeconds`; if remote config violates that, the
-inactivity timeout falls back to its **default**, not to the max-duration value.
+`userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
+`userSessionForegroundInactivityTimeoutSeconds` are driven by remote config
+(`DynamicConfigManager.getConfig()`), read at each user-session creation. Each
+value is clamped to its own range; out-of-range values fall back to their
+default and emit a warning. In addition, each inactivity timeout must be `<=`
+`userSessionMaxDurationSeconds`; if remote config violates that, the offending
+timeout falls back to its **default**, not to the max-duration value.
+`userSessionForegroundInactivityTimeoutSeconds` drives the live part timer.
+`userSessionInactivityTimeoutSeconds` drives the lazy post-part-end deadline.
 
-The max-duration timer is armed on session-part start AND re-armed after
-session-part end, so it runs even between parts. The delay is computed as
-`state.userSessionMaxEndTs - now`, not the full duration value.
+The max-duration timer is armed at user-session creation, and re-armed when a
+fresh manager loads an existing, unexpired state on page reload (no timer
+running yet). It is not re-armed on session-part end; `userSessionMaxEndTs` is
+fixed at creation, so it keeps running across parts on its original deadline.
+The delay is computed as `state.userSessionMaxEndTs - now`, not the full
+duration value.
 
 The part-inactivity timer is restarted on every activity event, subject to the
 30 second throttle, and cleared on session-part end.
@@ -218,7 +225,7 @@ The part-inactivity timer is restarted on every activity event, subject to the
 | `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
 
-`userSessionMaxDurationSeconds` and `userSessionInactivityTimeoutSeconds` are frozen into the state blob at
+`userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
 in progress. It takes effect when the next user session is created. To keep the
 cached config current, the manager fires a remote-config refresh whenever it
@@ -358,6 +365,7 @@ another window).
 | `emb.user_session_start_ts` | Milliseconds since Unix epoch. |
 | `emb.user_session_max_duration_seconds` | Whole seconds, frozen at session creation. |
 | `emb.user_session_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
+| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
 | `emb.properties.*` | All properties at part-start time. |
 
 ### Stamped at session-part end
@@ -366,8 +374,8 @@ another window).
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
 | `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. |
-| `emb.is_final_session_part = 1` | Only when ending due to user-session end. |
-| `emb.user_session_termination_reason` | Only when ending due to user-session end. |
+| `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
+| `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
 | `emb.app.applied_limit.*` | Diagnostic counts from the limit manager. |
 | Counter keys | From `_activeSessionPartCounts`, populated by instrumentations. |

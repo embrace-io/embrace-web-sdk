@@ -1042,6 +1042,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
         visibilityDoc: window.document,
       });
@@ -1094,6 +1095,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
       });
 
@@ -1261,6 +1263,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
         }),
         visibilityDoc: window.document,
       });
@@ -1297,15 +1300,15 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       );
     });
 
-    it('should stamp "web_inactivity" when the inactivity timer ends the part', () => {
+    it('should stamp "web_foreground_inactivity" when the inactivity timer ends the part', () => {
       manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_inactivity');
+      manager.endSessionPartInternal('web_foreground_inactivity');
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
         'emb.session_part_end_reason',
-        'web_inactivity',
+        'web_foreground_inactivity',
       );
     });
 

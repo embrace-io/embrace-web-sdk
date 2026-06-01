@@ -1,3 +1,5 @@
+import type { SessionPartEndReason } from '../../api-sessions/manager/types.ts';
+
 export const EMBRACE_USER_SESSION_STATE_KEY = 'embrace_user_session_state';
 /**
  * Bump when UserSessionState's shape changes incompatibly. Persisted blobs
@@ -12,6 +14,13 @@ export const EMBRACE_LAST_END_USER_SESSION_TS_KEY =
 
 export const SESSION_PART_SPAN_NAME = 'emb-session-part';
 
+/**
+ * Part end reasons that also terminate the enclosing user session, so the
+ * part is stamped as the final one (`emb.is_final_session_part`).
+ */
+export const FINAL_SESSION_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
+  new Set(['user_session_ended', 'web_foreground_inactivity']);
+
 export const DEFAULT_USER_SESSION_MAX_DURATION_SECONDS = 12 * 60 * 60;
 export const MIN_USER_SESSION_MAX_DURATION_SECONDS = 1 * 60 * 60;
 export const MAX_USER_SESSION_MAX_DURATION_SECONDS = 24 * 60 * 60;
@@ -19,6 +28,12 @@ export const MAX_USER_SESSION_MAX_DURATION_SECONDS = 24 * 60 * 60;
 export const DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 30 * 60;
 export const MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 30;
 export const MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS = 24 * 60 * 60;
+
+export const DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
+  30 * 60;
+export const MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS = 30;
+export const MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
+  24 * 60 * 60;
 
 // Anti-spam guard: minimum interval between successful endUserSession calls.
 // Persists across page refreshes so a refresh-and-call loop can't manufacture

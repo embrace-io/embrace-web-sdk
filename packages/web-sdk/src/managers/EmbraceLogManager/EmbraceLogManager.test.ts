@@ -544,7 +544,7 @@ describe('EmbraceLogManager', () => {
       handled: true,
     });
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -563,7 +563,7 @@ describe('EmbraceLogManager', () => {
     }).to.not.throw();
 
     userSessionManager.startSessionPartInternal('init');
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -600,7 +600,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an error log');
     }
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -644,7 +644,7 @@ describe('EmbraceLogManager', () => {
       'this is an info log which has a message longer than the allo',
     );
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -693,7 +693,7 @@ describe('EmbraceLogManager', () => {
     // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
     expect(finishedLogs[1].attributes).not.to.have.property('key3');
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -726,7 +726,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -764,7 +764,7 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an exception');
     }
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -804,7 +804,7 @@ describe('EmbraceLogManager', () => {
       'this is an exception which has a message longer th',
     );
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -856,7 +856,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
     expect(finishedLogs[1].attributes).not.to.have.property('key4');
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -890,7 +890,7 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    userSessionManager.endSessionPartInternal('web_inactivity');
+    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

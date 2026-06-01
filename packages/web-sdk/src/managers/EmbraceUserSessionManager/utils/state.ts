@@ -28,6 +28,7 @@ export interface CreateUserSessionStateArgs {
   previousUserSessionId: string | null;
   userSessionMaxDurationSeconds: number;
   userSessionInactivityTimeoutSeconds: number;
+  userSessionForegroundInactivityTimeoutSeconds: number;
   userSessionNumber: number;
 }
 
@@ -36,6 +37,7 @@ export const createUserSessionState = ({
   previousUserSessionId,
   userSessionMaxDurationSeconds,
   userSessionInactivityTimeoutSeconds,
+  userSessionForegroundInactivityTimeoutSeconds,
   userSessionNumber,
 }: CreateUserSessionStateArgs): UserSessionState => ({
   schemaVersion: USER_SESSION_STATE_SCHEMA_VERSION,
@@ -47,6 +49,7 @@ export const createUserSessionState = ({
   userSessionPartIndex: 0,
   userSessionMaxDurationSeconds,
   userSessionInactivityTimeoutSeconds,
+  userSessionForegroundInactivityTimeoutSeconds,
   inactivityDeadlineTs: null,
   userSessionProperties: {},
 });
