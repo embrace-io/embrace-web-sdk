@@ -58,7 +58,6 @@ export enum EMB_TYPES {
   ElementTiming = 'ux.element_timing',
   ServerTiming = 'ux.server_timing',
   OTelLog = 'emb.otel_log',
-  RageClick = 'ux.rage_click',
 }
 
 export enum EMB_STATES {
