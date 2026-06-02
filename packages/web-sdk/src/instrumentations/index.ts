@@ -16,6 +16,10 @@ export {
   type GlobalExceptionInstrumentationArgs,
 } from './exceptions/index.ts';
 export {
+  FirstInteractionInstrumentation,
+  type FirstInteractionInstrumentationArgs,
+} from './first-interaction/index.ts';
+export {
   LoafInstrumentation,
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';

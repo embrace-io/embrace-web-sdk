@@ -120,6 +120,8 @@ const IGNORED_ATTRIBUTES_LIST = [
   'browser.web_vital.id',
   'browser.web_vital.value',
   'tap.coords',
+  'first_interaction.x',
+  'first_interaction.y',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({

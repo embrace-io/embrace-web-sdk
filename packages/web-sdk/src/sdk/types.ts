@@ -28,6 +28,7 @@ import type {
   DocumentLoadInstrumentationConfig,
   ElementTimingInstrumentationArgs,
   EmptyRootInstrumentationArgs,
+  FirstInteractionInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
   RageClickInstrumentationArgs,
@@ -381,6 +382,7 @@ type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'rage-click'
+  | 'first-interaction'
   | 'web-vital'
   | 'loaf'
   | 'user-timing'
@@ -406,6 +408,7 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'rage-click'?: RageClickInstrumentationArgs;
+  'first-interaction'?: FirstInteractionInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationConfig;
   loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;

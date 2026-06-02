@@ -7,6 +7,7 @@ import {
   ElementTimingInstrumentation,
   EmbraceInstrumentationBase,
   EmptyRootInstrumentation,
+  FirstInteractionInstrumentation,
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
   RageClickInstrumentation,
@@ -42,6 +43,12 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('rage-click')) {
     instrumentations.push(new RageClickInstrumentation(config['rage-click']));
+  }
+
+  if (!config.omit?.has('first-interaction')) {
+    instrumentations.push(
+      new FirstInteractionInstrumentation(config['first-interaction']),
+    );
   }
 
   if (!config.omit?.has('web-vital')) {
