@@ -1,6 +1,7 @@
 export const KEY_EMB_TYPE = 'emb.type';
 export const KEY_EMB_STATE = 'emb.state';
 export const KEY_EMB_COLD_START = 'emb.cold_start';
+export const KEY_EMB_PAGE_LOAD = 'emb.page_load';
 export const KEY_EMB_EXCEPTION_NUMBER = 'emb.exception_number';
 export const KEY_EMB_SDK_STARTUP_DURATION = 'emb.sdk_startup_duration';
 export const KEY_PREFIX_EMB_PROPERTIES = 'emb.properties.';

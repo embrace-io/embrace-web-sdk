@@ -792,6 +792,7 @@ describe('initSDK', () => {
         'emb.session_part_start_reason': 'init',
         'emb.session_part_end_reason': 'user_session_ended',
         'emb.cold_start': true,
+        'emb.page_load': true,
         'emb.is_final_session_part': 1,
         'emb.user_session_termination_reason': 'manual',
         'emb.user_session_id': userSessionId,

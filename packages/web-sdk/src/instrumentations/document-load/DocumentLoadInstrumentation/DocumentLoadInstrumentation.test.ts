@@ -270,10 +270,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should collect performance after document load event', (done) => {
       const spy = sandbox.spy(window, 'addEventListener');
       plugin.enable();
-      const args = spy.args[0];
-      const name = args[0];
-      assert.strictEqual(name, 'load');
-      assert.ok(spy.calledOnce);
+      assert.ok(spy.args.some((args) => args[0] === 'load'));
       assert.ok(spyEntries.callCount === 0);
 
       window.dispatchEvent(
