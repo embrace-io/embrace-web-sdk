@@ -128,11 +128,9 @@ const logReceivedSessionPartSpan = (
   logInfo(
     `Session part received ${sessionPartId} (user session ${userSessionId}):`,
   );
-
   const sortedAttrs = [...sessionPartSpan.attributes].sort((a, b) =>
     a.key.localeCompare(b.key),
   );
-
   for (const attr of sortedAttrs) {
     logInfo(`  ${attr.key}=${renderAttributeValue(attr.value)}`);
   }

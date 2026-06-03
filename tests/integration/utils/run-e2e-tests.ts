@@ -274,12 +274,11 @@ const runE2ETests = ({
         await page.reload();
 
         // After reload, the session id should not be set as it is sampled out
-        currentUserSessionId =
-          (await page.evaluate(
-            () => window.EMBRACE_CURRENT_USER_SESSION_ID,
-            {},
-          )) ?? null;
-        testE2E.expect(currentUserSessionId).toBeNull();
+        currentUserSessionId = await page.evaluate(
+          () => window.EMBRACE_CURRENT_USER_SESSION_ID,
+          {},
+        );
+        testE2E.expect(currentUserSessionId).toBeFalsy();
       },
     );
 

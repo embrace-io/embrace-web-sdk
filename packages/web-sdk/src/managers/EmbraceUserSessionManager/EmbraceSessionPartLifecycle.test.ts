@@ -1523,6 +1523,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: makeDoc('complete'),
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       localManager.startSessionPartInternal('init');
       localManager.endSessionPartInternal('web_background');
@@ -1538,6 +1539,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: makeDoc('loading'),
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       localManager.startSessionPartInternal('init');
       localManager.endSessionPartInternal('web_background');
@@ -1553,6 +1555,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         limitManager,
         perf,
         visibilityDoc: makeDoc('loading'),
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
       localManager.startSessionPartInternal('init');
       localManager.endSessionPartInternal('web_background');
