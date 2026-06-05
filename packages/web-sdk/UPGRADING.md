@@ -28,9 +28,8 @@ session.endSessionSpan();
 session.endUserSession();
 ```
 
-A new user session begins with
-the next session part: immediately if the tab is still foregrounded, otherwise the next time it is foregrounded. The
-call is subject to a 5-second cooldown.
+A new user session begins with the next session part: immediately if the tab is still foregrounded, otherwise
+the next time it is foregrounded. The call is subject to a 5-second cooldown.
 
 `getSessionPartSpan()` is provided for backwards compatibility only: direct access to the span will be removed
 entirely in a future version. The SDK owns the span's lifecycle and can end it at any moment, so do not end it
