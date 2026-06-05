@@ -6,7 +6,6 @@ import type {
   UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
-import type { ExtendedSpan } from '../../index.ts';
 import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
@@ -103,7 +102,6 @@ export interface UserSessionManagerInternal extends UserSessionManager {
   getSessionPartProperties: () => Record<string, string>;
 
   getSessionPartId: () => string | null;
-  getSessionPartSpan: () => ExtendedSpan | null;
 
   startSessionPartInternal: (reason: SessionPartStartReason) => void;
   /**
