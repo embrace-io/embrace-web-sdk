@@ -1,5 +1,50 @@
 # Upgrading
 
+## 2.x to 2.21.0
+
+The session API now distinguishes between a **user session** (the full period of user engagement, which can span
+multiple foregrounds of the page) and a **session part** (a single foreground period within a user session). Methods
+on `session` were renamed to make this explicit. The old names still work as deprecated forwarders and will be
+removed in a future version.
+
+### Renamed methods
+
+| Deprecated                      | Replacement                         |
+| ------------------------------- | ----------------------------------- |
+| `session.getSessionId()`        | `session.getUserSessionId()`        |
+| `session.getSessionStartTime()` | `session.getUserSessionStartTime()` |
+| `session.endSessionSpan()`      | `session.endUserSession()`          |
+| `session.getSessionSpan()`      | `session.getSessionPartSpan()`      |
+
+For example:
+
+```typescript
+import { session } from '@embrace-io/web-sdk';
+
+// Before
+session.endSessionSpan();
+
+// After
+session.endUserSession();
+```
+
+Note that `endUserSession()` ends the entire user session, not just the current span. A new user session begins with
+the next session part: immediately if the tab is still foregrounded, otherwise the next time it is foregrounded. The
+call is subject to a 5-second cooldown.
+
+`getSessionPartSpan()` is provided for backwards compatibility only: direct access to the span will be removed
+entirely in a future version. The SDK owns the span's lifecycle and can end it at any moment, so do not end it
+yourself or hold long-lived references to it.
+
+### Deprecated methods with changed behavior
+
+- `session.getPreviousSessionId()` always returns `null`. Use `session.getPreviousUserSessionId()` instead.
+- `session.startSessionSpan()` is a no-op. A session part starts automatically when the page is foregrounded, this
+  is no longer exposed as an API.
+- `session.currentSessionAsReadableSpan()` always returns `null`.
+- `session.addSessionStartedListener()` and `session.addSessionEndedListener()` are no-ops, the listeners are never
+  invoked and the returned unsubscribe functions do nothing.
+
 ## 1.x to 2.x
 
 See the breaking changes outlined in the [2.0.0 Release notes](https://github.com/embrace-io/embrace-web-sdk/releases/tag/2.0.0).
@@ -89,7 +134,7 @@ log.message('Loading not finished in time.', 'error', {
   keYB: 'valueB'
 }, true);
 
-// ... 
+// ...
 
 log.logException(err, true, { keyA: 'valueA' }, ts);
 ```
@@ -107,7 +152,7 @@ log.message('Loading not finished in time.', 'error', {
   includeStacktrace: true
 });
 
-// ... 
+// ...
 
 log.logException(err, {
   handled: true,

@@ -76,6 +76,18 @@ export interface UserSessionManager {
   getUserSessionStartTime: () => number | null;
 
   /**
+   * Returns the active session part span, or `null` when no part is active.
+   *
+   * The SDK owns this span's lifecycle and can end it at any moment
+   * (backgrounding, inactivity, max duration, user session end). Do not end
+   * it yourself and do not hold long-lived references to it.
+   *
+   * Direct access to the span exists for backwards compatibility only and
+   * will be removed entirely in a future version.
+   */
+  getSessionPartSpan: () => ExtendedSpan | null;
+
+  /**
    * Ends the current user session. The next foreground session part will
    * begin a new user session; there is no companion public start API,
    * starting is an internal consequence of the next foreground part.
