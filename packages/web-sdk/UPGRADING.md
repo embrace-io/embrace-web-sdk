@@ -28,7 +28,7 @@ session.endSessionSpan();
 session.endUserSession();
 ```
 
-Note that `endUserSession()` ends the entire user session, not just the current span. A new user session begins with
+A new user session begins with
 the next session part: immediately if the tab is still foregrounded, otherwise the next time it is foregrounded. The
 call is subject to a 5-second cooldown.
 
