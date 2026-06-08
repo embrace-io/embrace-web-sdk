@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import type { Page } from '@playwright/test';
 import { test } from '@playwright/test';
-import getPort from 'get-port';
 import type { CDPSession } from 'playwright';
 import { chromium } from 'playwright';
 import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
@@ -119,11 +118,11 @@ const getPerformanceSnapshot = async (
   // No need to change the rest of the test
   return {
     // Transform s to ms
-    scriptDuration: metrics.ScriptDuration * 1000 || 0,
+    scriptDuration: metrics['ScriptDuration'] * 1000 || 0,
     // Transform s to ms
-    taskDuration: metrics.TaskDuration * 1000 || 0,
+    taskDuration: metrics['TaskDuration'] * 1000 || 0,
     // Transform bytes to MB
-    heapUsedSize: (metrics.JSHeapUsedSize || 0) / 1024 / 1024,
+    heapUsedSize: (metrics['JSHeapUsedSize'] || 0) / 1024 / 1024,
   };
 };
 
@@ -177,7 +176,7 @@ test.describe('CDP Performance Tests', () => {
   for (const testPage of Object.values(PAGES)) {
     test(`Tests Performance for ${testPage.name}`, async () => {
       // Start a new context on each test to make sure we have a clean slate
-      const port = await getPort();
+      const port = 60061;
       const chromeBrowser = await chromium.launch({
         args: [`--remote-debugging-port=${port.toString()}`],
         headless: true,
