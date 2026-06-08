@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from '@playwright/test';
-import getPort from 'get-port';
 import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
 import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
@@ -91,7 +90,7 @@ test.describe('Lighthouse Performance Tests', () => {
   for (const page of Object.values(PAGES)) {
     test(`Run lighthouse for ${page.name}`, async () => {
       // Launch a new context for each test to ensure a clean slate
-      const port = await getPort();
+      const port = 60062;
       const userDataDir = path.join(os.tmpdir(), 'pw', String(Math.random()));
       const context = await chromium.launchPersistentContext(userDataDir, {
         args: [`--remote-debugging-port=${port.toString()}`],
@@ -111,7 +110,6 @@ test.describe('Lighthouse Performance Tests', () => {
         output: ['json', 'html'],
         onlyCategories: ['performance'],
         pauseAfterLoadMs: 5000,
-        enableErrorReporting: false,
       });
 
       test.expect(result).toBeDefined();
