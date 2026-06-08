@@ -68,7 +68,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -120,7 +120,7 @@ jobs:
 
       # https://github.com/codecov/codecov-action
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' && github.event_name != 'release' && env.TEST_COLLECTED_COVERAGE == 'true' && success()}}
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # zizmor: ignore[secrets-outside-env]
@@ -152,7 +152,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -228,7 +228,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -355,7 +355,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -417,7 +417,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -514,7 +514,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -555,7 +555,7 @@ jobs:
             echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -607,7 +607,7 @@ jobs:
             echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -661,7 +661,7 @@ jobs:
             echo 'VALIDATE_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -712,7 +712,7 @@ jobs:
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
@@ -756,7 +756,7 @@ jobs:
     # Only run on push to main (staging environment), not PRs or releases
     if: ${{ needs.environment.outputs.name == 'staging' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
