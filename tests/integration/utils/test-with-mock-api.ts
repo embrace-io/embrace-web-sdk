@@ -23,6 +23,7 @@ import { test as base } from '@playwright/test';
 import chalk from 'chalk';
 import { diff } from 'jest-diff';
 import type { Request, Route } from 'playwright';
+import type { ReceivedSpans } from '../types.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -59,6 +60,8 @@ type TestWithMockApi = {
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
+  getCurrentUserSessionId: () => Promise<string>;
+  validateThatUserSessionEnded: (userSessionId?: string) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -237,6 +240,46 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       }),
     { scope: 'test' },
   ],
+  getCurrentUserSessionId: async ({ page }, use) => {
+    await use(async () => {
+      const userSessionId = await page.evaluate(
+        () => window.EMBRACE_CURRENT_USER_SESSION_ID,
+      );
+
+      if (!userSessionId) {
+        throw new Error('Session ID is not available on the page');
+      }
+
+      return userSessionId;
+    });
+  },
+  validateThatUserSessionEnded: async ({ getCurrentUserSessionId }, use) => {
+    await use(async (userSessionId?: string) => {
+      const currentUserSessionId =
+        userSessionId ?? (await getCurrentUserSessionId());
+
+      const timeout = setTimeout(() => {
+        throw new Error('Server did not register the session end in time');
+      }, 4000);
+
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          void (async () => {
+            const response = await fetch(
+              'http://localhost:3001/received-spans',
+            );
+            const receivedSpans = (await response.json()) as ReceivedSpans;
+
+            if (receivedSpans[currentUserSessionId]) {
+              clearInterval(interval);
+              clearTimeout(timeout);
+              resolve(null);
+            }
+          })();
+        }, 200);
+      });
+    });
+  },
 });
 
 const getAttributeValue = (

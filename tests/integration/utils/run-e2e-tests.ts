@@ -1,4 +1,3 @@
-import type { ReceivedSpans } from '../index.ts';
 import testWithMockApi, {
   expect as extendedMockApiTestExpect,
 } from './test-with-mock-api.ts';
@@ -7,31 +6,14 @@ const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionPartBatchedSpanProcessor non-session-part span ended';
 
 type E2ETestFixture = {
-  getCurrentUserSessionId: () => Promise<string>;
   waitUntilSpanLogged: () => Promise<void>;
   navigateAndWaitUntilReady: (
     url: string,
     numberOfExpectedSpans: number,
   ) => Promise<void>;
-  validateThatUserSessionEnded: (userSessionId?: string) => Promise<void>;
 };
 
 const testE2E = testWithMockApi.extend<E2ETestFixture>({
-  getCurrentUserSessionId: async ({ page }, use) => {
-    await use(async () => {
-      const userSessionId = await page.evaluate(
-        () => window.EMBRACE_CURRENT_USER_SESSION_ID,
-        {},
-      );
-
-      if (!userSessionId) {
-        throw new Error('Session ID is not available on the page');
-      }
-
-      return userSessionId;
-    });
-  },
-
   waitUntilSpanLogged: async ({ page }, use) => {
     await use(async () => {
       let spanLogged = false;
@@ -87,35 +69,6 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
             resolve(null);
           }
         }, 100);
-      });
-    });
-  },
-  validateThatUserSessionEnded: async ({ getCurrentUserSessionId }, use) => {
-    await use(async (userSessionId?: string) => {
-      const currentUserSessionId =
-        userSessionId || (await getCurrentUserSessionId());
-
-      // Easy way of making sure the server registered the session end
-      // If this gets flaky, we can increase the timeout or read the server logs
-      const timeout = setTimeout(() => {
-        throw new Error('Server did not register the session end in time');
-      }, 4000);
-
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          void (async () => {
-            const response = await fetch(
-              'http://localhost:3001/received-spans',
-            );
-            const receivedSpans = (await response.json()) as ReceivedSpans;
-
-            if (receivedSpans[currentUserSessionId]) {
-              clearInterval(interval);
-              clearTimeout(timeout);
-              resolve(null);
-            }
-          })();
-        }, 200);
       });
     });
   },
