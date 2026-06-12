@@ -140,7 +140,7 @@ Create a new platform directory under `platforms/<platform-name>/` with a `packa
 {
   "scripts": {
     "build": "npm run build:clean && npm run build:es2015",
-    "build:clean": "npx rimraf dist .sonda",
+    "build:clean": "emb-rm dist .sonda",
     "build:es2015": "your-build-command && npm run process-sourcemaps",
     "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
   }

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "webpack serve --config webpack.config.es2015.mjs --mode development",
     "build": "npm run build:clean && npm run build:es2015",
-    "build:clean": "npx rimraf dist .sonda",
+    "build:clean": "emb-rm dist .sonda",
     "build:es2015": "webpack --config webpack.config.es2015.mjs --mode production && npm run process-sourcemaps",
     "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
   },
