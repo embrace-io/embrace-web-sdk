@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare": "npx -y lefthook install -f",
-    "clean": "npx -y rimraf -g \"**/.turbo\" \"**/.next\" \"**/dist\" \"**/node_modules\"",
+    "clean": "node scripts/emb-rm.js \"**/.turbo\" \"**/.next\" \"**/dist\" \"**/node_modules\"",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "biome check .",
@@ -30,6 +30,7 @@
   "workspaces": [
     "packages/*",
     "demo/*",
+    "scripts",
     "server",
     "tests/integration"
   ],
@@ -66,7 +67,6 @@
     "publint": "0.3.21",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "rimraf": "6.1.3",
     "sinon": "22.0.0",
     "sinon-chai": "4.0.1",
     "sonda": "0.11.1",

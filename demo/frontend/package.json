@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --build",
-    "clean": "npx -y rimraf .sonda dist",
+    "clean": "emb-rm .sonda dist",
     "dev": "vite --port 4847 --open",
     "build": "vite build",
     "preview": "vite preview --port 4847 --open",
