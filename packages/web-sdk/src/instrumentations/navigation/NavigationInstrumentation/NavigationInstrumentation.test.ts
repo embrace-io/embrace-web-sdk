@@ -203,8 +203,10 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     // Start and end session to test that listeners are cleaned up
-    userSessionManager.startSessionPartInternal('init');
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     navigationInstrumentation.setCurrentRoute({
       path: '/test/:id',
@@ -221,7 +223,7 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should start and end route span when session part ends', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -231,7 +233,9 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // Session part span and route span
@@ -256,7 +260,7 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should start the route span when the session part starts if it was previously ended', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     navigationInstrumentation = new NavigationInstrumentation({ diag });
     navigationInstrumentation.setCurrentRoute({
@@ -266,14 +270,18 @@ describe('NavigationInstrumentation', () => {
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     // At this point we should have two spans: one for the session and one for the route
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
 
     // Start and finish another session without changing the route
-    userSessionManager.startSessionPartInternal('init');
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     // 2 sessions and 2 route spans
@@ -313,7 +321,7 @@ describe('NavigationInstrumentation', () => {
 
   it('should work correctly after disable() then enable()', () => {
     navigationInstrumentation = new NavigationInstrumentation({ diag });
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     navigationInstrumentation.setCurrentRoute({
       path: '/first',
@@ -328,7 +336,9 @@ describe('NavigationInstrumentation', () => {
       url: '/second',
     });
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     const navigationSpans = finishedSpans.filter(

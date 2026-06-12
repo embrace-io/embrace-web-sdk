@@ -39,7 +39,7 @@ describe('EmptyInstrumentation', () => {
       visibilityDoc: window.document,
     });
     session.setGlobalUserSessionManager(userSessionManager);
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
   });
 
   afterEach(() => {
@@ -67,7 +67,9 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 1));
 
     // The instrumentation shouldn't immediately emit the event
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -75,12 +77,14 @@ describe('EmptyInstrumentation', () => {
     expect(sessionSpan.events).to.have.lengthOf(0);
     memoryExporter.reset();
 
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     await new Promise((r) => setTimeout(r, 20));
 
     // Should now emit if the node is still empty after the timeout
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     sessionSpan = finishedSpans[0];
@@ -115,7 +119,9 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -147,7 +153,9 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -175,7 +183,9 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -200,7 +210,9 @@ describe('EmptyInstrumentation', () => {
     await new Promise((r) => setTimeout(r, 20));
 
     // Should not emit the event
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

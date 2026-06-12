@@ -225,7 +225,7 @@ describe('FirstInteractionInstrumentation', () => {
       'first_interaction.interaction_type': 'click',
     });
 
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     const target2 = document.createElement('a');
     target2.id = 'b';
@@ -273,7 +273,7 @@ describe('FirstInteractionInstrumentation', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
     instrumentation.disable();
 
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     const target = document.createElement('button');
     testContainer.append(target);

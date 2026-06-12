@@ -85,6 +85,21 @@ export interface UserSessionAttributes {
   readonly 'emb.user_session_foreground_inactivity_timeout_seconds': number;
 }
 
+export interface StartSessionPartOptions {
+  readonly reason: SessionPartStartReason;
+}
+
+export interface EndSessionPartOptions {
+  readonly reason: SessionPartEndReason;
+  /**
+   * Termination reason for the enclosing user session; only meaningful
+   * when the part-end reason also ends the user session
+   * (`user_session_ended` or `web_foreground_inactivity`). Ignored
+   * otherwise.
+   */
+  readonly userSessionEndReason?: UserSessionEndReason;
+}
+
 /**
  * SDK-internal handle on the user-session manager. Extends the public
  * `UserSessionManager` with the part-side surface (span lifecycle, listeners,
@@ -103,17 +118,8 @@ export interface UserSessionManagerInternal extends UserSessionManager {
 
   getSessionPartId: () => string | null;
 
-  startSessionPartInternal: (reason: SessionPartStartReason) => void;
-  /**
-   * Ends the active part. `reason` is the part-end reason.
-   * `userSessionEndReason` is only meaningful when the reason ends the
-   * user session (`user_session_ended` or `inactivity`); the implementation
-   * ignores it otherwise.
-   */
-  endSessionPartInternal: (
-    reason: SessionPartEndReason,
-    userSessionEndReason?: UserSessionEndReason,
-  ) => void;
+  startSessionPartInternal: (options: StartSessionPartOptions) => void;
+  endSessionPartInternal: (options: EndSessionPartOptions) => void;
 
   incrSessionPartCountForKey: (key: string) => void;
   /** Same as `incrSessionPartCountForKey` but for the next part. */

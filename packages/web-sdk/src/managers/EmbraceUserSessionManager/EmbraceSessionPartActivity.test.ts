@@ -17,6 +17,10 @@ import {
   EmbraceLimitManager,
 } from '../EmbraceLimitManager/index.ts';
 import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
+import type {
+  EndSessionPartOptions,
+  StartSessionPartOptions,
+} from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -61,16 +65,16 @@ describe('EmbraceUserSessionManager browser activity', () => {
   let clock: sinon.SinonFakeTimers;
   let target: FakeTarget;
   let manager: EmbraceUserSessionManager;
-  let startSpy: sinon.SinonSpy<[reason: SessionPartStartReason], void>;
+  let startSpy: sinon.SinonSpy<[options: StartSessionPartOptions], void>;
   let endSpy: sinon.SinonSpy;
   let visibilityDoc: FakeVisibilityDoc;
 
   // Pulls reasons from the spies in the same order startSessionPartInternal /
   // endSessionPartInternal were invoked.
   const startReasons = (): SessionPartStartReason[] =>
-    startSpy.getCalls().map((c) => c.args[0]);
+    startSpy.getCalls().map((c) => c.args[0].reason);
   const endReasons = (): SessionPartEndReason[] =>
-    endSpy.getCalls().map((c) => c.args[0] as SessionPartEndReason);
+    endSpy.getCalls().map((c) => (c.args[0] as EndSessionPartOptions).reason);
 
   beforeEach(() => {
     clock = sinon.useFakeTimers({ now: 0 });
@@ -150,7 +154,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   };
 
   it('arms the part-inactivity timer when a part starts', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
@@ -160,7 +164,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('resets the part-inactivity timer on activity', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     fireActivity();
@@ -173,7 +177,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('throttles activity events within the throttle window', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireActivity();
     clock.tick(THROTTLE_MS - 1);
@@ -186,19 +190,21 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('ends the part with reason web_foreground_inactivity when the part-inactivity window elapses', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
 
     expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
     // The part end reason is web-prefixed, but the enclosing user session's
     // termination reason stays unprefixed for cross-platform correlation.
-    expect(endSpy.lastCall.args[1]).to.equal('inactivity');
+    expect(
+      (endSpy.lastCall.args[0] as EndSessionPartOptions).userSessionEndReason,
+    ).to.equal('inactivity');
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
   it('starts a new part with reason activity after an inactivity-killed part', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
     void expect(manager.getSessionPartId()).to.be.null;
@@ -222,17 +228,20 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('clears the part-inactivity timer when a part ends through another path', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS / 2);
-    manager.endSessionPartInternal('user_session_ended', 'manual');
+    manager.endSessionPartInternal({
+      reason: 'user_session_ended',
+      userSessionEndReason: 'manual',
+    });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['user_session_ended']);
   });
 
   it('ends the active part with reason background when the tab hides', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireVisibilityChange('hidden');
 
@@ -248,7 +257,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('starts a new part with reason foreground when the tab returns to visible', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireVisibilityChange('hidden');
     void expect(manager.getSessionPartId()).to.be.null;
@@ -260,7 +269,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('ignores pagehide and pageshow events (no listeners registered)', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     target.dispatchEvent(
       new PageTransitionEvent('pagehide', { persisted: false }),
@@ -281,7 +290,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('ends the active part with reason background when the window loses focus', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireBlur();
 
@@ -290,7 +299,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('starts a new part with reason foreground when focus returns to a visible tab', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireBlur();
     void expect(manager.getSessionPartId()).to.be.null;
@@ -302,7 +311,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('ignores activity events on a visible-but-unfocused tab', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     fireBlur();
 
     fireActivity();
@@ -319,7 +328,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // in production.
 
   it('ends the active part exactly once as web_background on a real active-tab unload sequence', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireFocusShiftingUnload();
 
@@ -329,7 +338,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('ends on visibilitychange-to-hidden for an already-backgrounded tab unload', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireTabHidden();
 
@@ -339,7 +348,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('starts the new part exactly once as web_foreground on a real BFCache restore sequence', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     fireTabHidden();
     startSpy.resetHistory();
     endSpy.resetHistory();
@@ -352,7 +361,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('nets to one end and one start across a full active-tab unload then BFCache restore round-trip', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     fireFocusShiftingUnload();
     fireBfcacheRestore();
@@ -365,7 +374,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     // Redundant focus event while the tab is still engaged and the part is
@@ -385,7 +394,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   it('starts a fresh part when an activity event arrives just after the prior part finalized', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     // Inactivity expires; the part finalizes. Then user activity resumes;
     // the next event must start a new part with reason 'web_activity'.
@@ -415,21 +424,22 @@ describe('EmbraceUserSessionManager browser activity', () => {
     splitManager.setTracerProvider(new WebTracerProvider());
     const endSpy2 = sinon.spy(splitManager, 'endSessionPartInternal');
 
-    splitManager.startSessionPartInternal('init');
+    splitManager.startSessionPartInternal({ reason: 'init' });
 
     // Live timer fires on the 60s foreground value, not the 1800s inactivity value.
     clock.tick(60 * 1000 - 1);
     expect(endSpy2.called).to.equal(false);
     clock.tick(1);
     expect(endSpy2.callCount).to.equal(1);
-    expect(endSpy2.lastCall.args[0]).to.equal('web_foreground_inactivity');
-    expect(endSpy2.lastCall.args[1]).to.equal('inactivity');
+    const endOptions2 = endSpy2.lastCall.args[0] as EndSessionPartOptions;
+    expect(endOptions2.reason).to.equal('web_foreground_inactivity');
+    expect(endOptions2.userSessionEndReason).to.equal('inactivity');
 
     splitManager._shutdown();
   });
 
   it('removes listeners and clears the timer on shutdown', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     expect(target.listenerCount('keydown')).to.equal(1);
     expect(target.listenerCount('focus')).to.equal(1);
@@ -451,7 +461,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endSpy.callCount).to.equal(endCallsBeforeVisibility);
 
     // The internal part-inactivity timer was cleared on shutdown, so no
-    // further endSessionPartInternal('web_foreground_inactivity') calls fire.
+    // further endSessionPartInternal({ reason: 'web_foreground_inactivity' }) calls fire.
     const endCallsBefore = endSpy.callCount;
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
