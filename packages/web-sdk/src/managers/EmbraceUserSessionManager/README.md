@@ -177,11 +177,12 @@ is called from:
 | `max_duration_reached` | Max-duration timer fires. | Yes |
 | `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
-On termination the manager calls
-`endSessionPartInternal({ reason: 'user_session_ended', userSessionEndReason })`,
+On termination the manager samples one boundary timestamp and calls
+`endSessionPartInternal({ reason: 'user_session_ended', userSessionEndReason, timestamp })`,
 saves `_previousUserSessionId`, sets `_state` to `null`, removes the storage
 row, and immediately calls
-`startSessionPartInternal({ reason: 'user_session_rollover' })`. That
+`startSessionPartInternal({ reason: 'user_session_rollover', timestamp })`
+with the same value, so the two part spans tile without a gap. That
 follow-up call mints a fresh user session if the tab is still engaged, or
 silently no-ops if not (the next engagement event will create it).
 
