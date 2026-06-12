@@ -405,7 +405,7 @@ Why it happens:
    `_loadOrCreateUserSessionState`, so `getUserSessionId()` returns a real
    id immediately.
 2. `initSDK` calls `startSessionPartInternal({ reason: 'init' })` next, but the call
-   no-ops when `!document.hasFocus()` or `visibilityState === 'background'`
+   no-ops when `!document.hasFocus()` or `visibilityState === 'hidden'`
    (parts are foreground-only by design).
 3. Until the next engagement event fires (`focus`/`visibilitychange`),
    `_activeSessionPartId === null`. Logs that pass
