@@ -120,9 +120,11 @@ On end, the manager:
    `_activeSessionPartId`, and `_activeSessionPartCounts`.
 4. If the end reason is not final (anything other than `user_session_ended` or
    `web_foreground_inactivity`, in practice `web_background`), calls
-   `_continueUserSessionAfterPartEnd(partEndTs)` which writes
-   `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
-   `inactivityDeadlineTs`. The max-duration timer keeps running on its existing
+   `_continueUserSessionAfterPartEnd(now)` which writes
+   `now + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
+   `inactivityDeadlineTs`. `now` is the actual call time, not the (possibly
+   anchored) span end timestamp, so an anchored part end cannot shorten the
+   inactivity window. The max-duration timer keeps running on its existing
    deadline (`userSessionMaxEndTs` is fixed at creation), so it is not re-armed.
 
 When the end reason is final (`user_session_ended` or `web_foreground_inactivity`) the
@@ -195,7 +197,7 @@ silently no-ops if not (the next engagement event will create it).
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_rolloverUserSession('max_duration_reached')` |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
+| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `now + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs` (from the actual call time, not the anchored span end), checked on the next part start by `isUserSessionExpired`. |
 | Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal({ reason: 'web_foreground_inactivity', userSessionEndReason: 'inactivity' })` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
