@@ -61,7 +61,7 @@ type TestWithMockApi = {
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
-  validateThatUserSessionEnded: (userSessionId?: string) => Promise<void>;
+  validateThatSessionPartEnded: (userSessionId?: string) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -253,7 +253,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       return userSessionId;
     });
   },
-  validateThatUserSessionEnded: async ({ getCurrentUserSessionId }, use) => {
+  validateThatSessionPartEnded: async ({ getCurrentUserSessionId }, use) => {
     await use(async (userSessionId?: string) => {
       const currentUserSessionId =
         userSessionId ?? (await getCurrentUserSessionId());
