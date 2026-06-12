@@ -340,7 +340,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return this._sessionPartSpan;
   }
 
-  public startSessionPartInternal({ reason }: StartSessionPartOptions): void {
+  public startSessionPartInternal({
+    reason,
+    timestamp,
+  }: StartSessionPartOptions): void {
     if (this._sessionPartSpan) {
       this._diag.warn(
         `startSessionPartInternal called while a part is active (reason: ${reason}); ignoring`,
@@ -379,7 +382,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     let span: EmbraceExtendedSpan;
     try {
       span = new EmbraceExtendedSpan(
-        this._tracer.startSpan(SESSION_PART_SPAN_NAME, { attributes }),
+        this._tracer.startSpan(SESSION_PART_SPAN_NAME, {
+          attributes,
+          startTime: timestamp,
+        }),
       );
     } catch (error) {
       this._activeSessionPartId = null;
@@ -399,6 +405,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   public endSessionPartInternal({
     reason,
     userSessionEndReason,
+    timestamp,
   }: EndSessionPartOptions): void {
     if (!this._sessionPartSpan) {
       this._diag.debug(
@@ -411,9 +418,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
 
-    // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
-    // and must not push it forward.
-    const partEndTs = this._perf.getNowMillis();
+    // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd
+    // cannot push them forward: the caller's timestamp (when given) becomes
+    // the span end time, while the inactivity deadline is computed from the
+    // actual call time so an anchored end cannot shorten the expiry window.
+    const now = this._perf.getNowMillis();
+    const partEndTs = timestamp ?? now;
     const span = this._sessionPartSpan;
     try {
       const endAttrs: Attributes = {
@@ -476,7 +486,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
       this._clearMaxDurationTimer();
     } else {
-      this._continueUserSessionAfterPartEnd(partEndTs);
+      this._continueUserSessionAfterPartEnd(now);
     }
   }
 
@@ -726,7 +736,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * part start can detect lazy expiry. The max-duration timer stays valid
    * because userSessionMaxEndTs doesn't change between parts.
    */
-  private _continueUserSessionAfterPartEnd(partEndTs: number): void {
+  private _continueUserSessionAfterPartEnd(now: number): void {
     if (!this._state) {
       this._clearMaxDurationTimer();
       return;
@@ -752,7 +762,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._state = {
       ...this._state,
       inactivityDeadlineTs:
-        partEndTs + this._state.userSessionInactivityTimeoutSeconds * 1000,
+        now + this._state.userSessionInactivityTimeoutSeconds * 1000,
     };
     this._storeState();
   }
@@ -769,11 +779,16 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     userSessionEndReason: UserSessionEndReason,
   ): void {
     if (this._sessionPartSpan) {
+      const boundaryTimestamp = this._perf.getNowMillis();
       this.endSessionPartInternal({
         reason: 'user_session_ended',
         userSessionEndReason,
+        timestamp: boundaryTimestamp,
       });
-      this.startSessionPartInternal({ reason: 'user_session_rollover' });
+      this.startSessionPartInternal({
+        reason: 'user_session_rollover',
+        timestamp: boundaryTimestamp,
+      });
       return;
     }
 
