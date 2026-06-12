@@ -93,7 +93,7 @@ engagement condition holds, the call is a debug-level no-op.
 | `init` | SDK init flow on page load. |
 | `web_foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
 | `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
-| `user_session_rollover` | Called synchronously by `_terminateUserSession` immediately after a user session ends. |
+| `user_session_rollover` | Called synchronously by `_rolloverUserSession` immediately after a user session ends. |
 
 ### End triggers
 
@@ -103,7 +103,7 @@ engagement condition holds, the call is a debug-level no-op.
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
 | `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
-| `user_session_ended` | `_terminateUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
+| `user_session_ended` | `_rolloverUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
 
 The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
 
@@ -163,11 +163,15 @@ receive `emb.is_final_session_part`.
 
 ### Termination
 
-`_terminateUserSession(reason)` is the only path that ends a user session. It
-is called from:
+`_rolloverUserSession(reason)` ends the active user session and immediately
+attempts to start a part for the next one. It is called from:
 
 - `endUserSession()` with reason `manual`.
 - The max-duration `setTimeout` callback with reason `max_duration_reached`.
+
+The part-inactivity timer ends a user session without going through
+`_rolloverUserSession`: it calls `endSessionPartInternal` directly with the
+`inactivity` termination reason (see the table below).
 
 `UserSessionEndReason` defines all possible values:
 
@@ -190,7 +194,7 @@ silently no-ops if not (the next engagement event will create it).
 
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
-| Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
+| Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_rolloverUserSession('max_duration_reached')` |
 | User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
 | Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal({ reason: 'web_foreground_inactivity', userSessionEndReason: 'inactivity' })` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
@@ -222,7 +226,7 @@ The part-inactivity timer is restarted on every activity event, subject to the
 
 | Key | Contents | Lifetime |
 | --- | --- | --- |
-| `embrace_user_session_state` | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared on `_terminateUserSession`. Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_state` | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or `_rolloverUserSession` with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
 | `embrace_user_session_number` | Monotonic integer string. | Persisted across visits. Only ever incremented. |
 | `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
@@ -303,7 +307,7 @@ Several specific edge cases are handled:
   has no active part at the moment of rollover, so no `_continueUserSessionAfterPartEnd`
   call can race with the wipe. The peer's stale max-duration timer is cleared
   lazily, on its next `_setupMaxDurationTimer` call (the next part start). If
-  the stale timer fires first, `_terminateUserSession('max_duration_reached')`
+  the stale timer fires first, `_rolloverUserSession('max_duration_reached')`
   runs benignly against the already-cleared storage row.
 
 ## Unload and BFCache handling
