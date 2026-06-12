@@ -10,7 +10,7 @@
     "access": "public"
   },
   "scripts": {
-    "clean": "npx -y rimraf dist",
+    "clean": "emb-rm dist",
     "build": "tsdown",
     "dev": "tsdown --watch --no-clean",
     "check": "tsc",
