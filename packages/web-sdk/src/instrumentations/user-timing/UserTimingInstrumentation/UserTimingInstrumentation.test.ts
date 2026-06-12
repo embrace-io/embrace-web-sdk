@@ -125,7 +125,7 @@ describe('UserTimingInstrumentation', () => {
       storage,
       visibilityDoc: window.document,
     });
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
     const logManager = new EmbraceLogManager({
       userSessionManager,
       limitManager,

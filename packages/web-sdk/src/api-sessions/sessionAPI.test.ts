@@ -57,7 +57,7 @@ describe('sessionAPI', () => {
         storage: setupTestStorage(),
         visibilityDoc: window.document,
       });
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       session.setGlobalUserSessionManager(manager);
     });
 

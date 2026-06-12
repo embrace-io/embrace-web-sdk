@@ -95,7 +95,7 @@ describe('ReactRouterV5Legacy', () => {
   });
 
   it('create route spans', async () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     expect(pageManager.getCurrentPageId()).to.be.null;
     expect(pageManager.getCurrentRoute()).to.be.null;
@@ -107,7 +107,10 @@ describe('ReactRouterV5Legacy', () => {
       rootElement: container,
     });
 
-    userSessionManager.endSessionPartInternal('user_session_ended', 'manual');
+    userSessionManager.endSessionPartInternal({
+      reason: 'user_session_ended',
+      userSessionEndReason: 'manual',
+    });
     tearDown();
 
     const routeSpans = memoryExporter

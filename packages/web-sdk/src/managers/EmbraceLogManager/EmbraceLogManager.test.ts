@@ -520,7 +520,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should report counts of logging on the active session part span', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     // Error logs should be counted
     manager.message('this is an error log', 'error');
@@ -544,7 +544,9 @@ describe('EmbraceLogManager', () => {
       handled: true,
     });
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -562,8 +564,10 @@ describe('EmbraceLogManager', () => {
       });
     }).to.not.throw();
 
-    userSessionManager.startSessionPartInternal('init');
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -577,7 +581,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should limit the amount of logs per severity per session', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     for (let i = 0; i < 10; i++) {
       manager.message('this is a warning log', 'warning');
@@ -600,7 +604,9 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an error log');
     }
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -621,7 +627,7 @@ describe('EmbraceLogManager', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
     manager.message('this is a warning log', 'warning');
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
@@ -629,7 +635,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate log messages', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.message('this is an info log', 'info');
     manager.message(
@@ -644,7 +650,9 @@ describe('EmbraceLogManager', () => {
       'this is an info log which has a message longer than the allo',
     );
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -661,7 +669,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the number of log attributes', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.message('this is an error log', 'error', {
       attributes: {
@@ -693,7 +701,9 @@ describe('EmbraceLogManager', () => {
     // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
     expect(finishedLogs[1].attributes).not.to.have.property('key3');
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -710,7 +720,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the key and value of a log attribute', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.message('this is an error log', 'error', {
       attributes: {
@@ -726,7 +736,9 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -751,7 +763,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should limit the amount of exceptions per session', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     for (let i = 0; i < 10; i++) {
       manager.logException(new Error('this is an exception'));
@@ -764,7 +776,9 @@ describe('EmbraceLogManager', () => {
       expect(finishedLogs[i].body).to.equal('this is an exception');
     }
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -782,7 +796,7 @@ describe('EmbraceLogManager', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
     manager.logException(new Error('this is an exception'));
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
@@ -790,7 +804,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate exception messages', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.logException(
       new Error(
@@ -804,7 +818,9 @@ describe('EmbraceLogManager', () => {
       'this is an exception which has a message longer th',
     );
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -821,7 +837,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the number of exception attributes', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.logException('this is an exception', {
       attributes: {
@@ -856,7 +872,9 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
     expect(finishedLogs[1].attributes).not.to.have.property('key4');
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];
@@ -873,7 +891,7 @@ describe('EmbraceLogManager', () => {
   });
 
   it('should truncate the key and value of an exception attribute', () => {
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     manager.logException('this is an exception', {
       attributes: {
@@ -890,7 +908,9 @@ describe('EmbraceLogManager', () => {
       'a-very-long-',
     );
 
-    userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionSpan = finishedSpans[0];

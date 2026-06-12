@@ -11,8 +11,6 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
-  SessionPartEndReason,
-  SessionPartStartReason,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
@@ -78,6 +76,8 @@ import {
 } from './constants.ts';
 import type {
   EmbraceUserSessionManagerArgs,
+  EndSessionPartOptions,
+  StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
   UserSessionState,
@@ -340,7 +340,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return this._sessionPartSpan;
   }
 
-  public startSessionPartInternal(reason: SessionPartStartReason): void {
+  public startSessionPartInternal({ reason }: StartSessionPartOptions): void {
     if (this._sessionPartSpan) {
       this._diag.warn(
         `startSessionPartInternal called while a part is active (reason: ${reason}); ignoring`,
@@ -396,10 +396,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._fireListeners(this._sessionPartStartedListeners, 'started');
   }
 
-  public endSessionPartInternal(
-    reason: SessionPartEndReason,
-    userSessionEndReason?: UserSessionEndReason | null,
-  ): void {
+  public endSessionPartInternal({
+    reason,
+    userSessionEndReason,
+  }: EndSessionPartOptions): void {
     if (!this._sessionPartSpan) {
       this._diag.debug(
         'trying to end a session part, but there is no session part in progress. This is a no-op.',
@@ -769,8 +769,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     userSessionEndReason: UserSessionEndReason,
   ): void {
     if (this._sessionPartSpan) {
-      this.endSessionPartInternal('user_session_ended', userSessionEndReason);
-      this.startSessionPartInternal('user_session_rollover');
+      this.endSessionPartInternal({
+        reason: 'user_session_ended',
+        userSessionEndReason,
+      });
+      this.startSessionPartInternal({ reason: 'user_session_rollover' });
       return;
     }
 
@@ -829,7 +832,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         return;
       }
       if (this._activeSessionPartId === null) {
-        this.startSessionPartInternal('web_activity');
+        this.startSessionPartInternal({ reason: 'web_activity' });
         return;
       }
       this._startSessionPartInactivityTimer();
@@ -867,12 +870,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug(`tab disengaged via ${source}; ending current part`);
-        this.endSessionPartInternal('web_background');
+        this.endSessionPartInternal({ reason: 'web_background' });
         return;
       }
       if (engaged && !active) {
         this._diag.debug(`tab engaged via ${source}; starting new part`);
-        this.startSessionPartInternal('web_foreground');
+        this.startSessionPartInternal({ reason: 'web_foreground' });
         return;
       }
       if (engaged && active) {
@@ -895,7 +898,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag.debug(
         'inactivity timer fired; ending current part and user session',
       );
-      this.endSessionPartInternal('web_foreground_inactivity', 'inactivity');
+      this.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
     } catch (e) {
       this._diag.warn('Error handling inactivity timer', e);
     }

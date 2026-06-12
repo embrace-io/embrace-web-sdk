@@ -60,7 +60,7 @@ new equivalents; others are inert (return `null` or no-op).
 `UserSessionManagerInternal` extends the public interface with members used by
 instrumentations and processors only:
 
-- `startSessionPartInternal(reason)`, `endSessionPartInternal(reason, userSessionEndReason?)`
+- `startSessionPartInternal({ reason })`, `endSessionPartInternal({ reason, userSessionEndReason? })`
 - `getSessionPartId()`, `getSessionPartSpan()`
 - `incrSessionPartCountForKey(key)` and `incrNextSessionPartCountForKey(key)`
 - `addSessionPartStartedListener(listener)`, `addSessionPartEndedListener(listener)`
@@ -75,7 +75,7 @@ is stamped as `emb.sdk_startup_duration` on every session-part end span.
 
 ### Start
 
-`startSessionPartInternal(reason)` is a no-op unless **both** of the following
+`startSessionPartInternal({ reason })` is a no-op unless **both** of the following
 are true at call time:
 
 - `document.visibilityState === 'visible'`
@@ -178,9 +178,10 @@ is called from:
 | `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On termination the manager calls
-`endSessionPartInternal('user_session_ended', reason)`, saves
-`_previousUserSessionId`, sets `_state` to `null`, removes the storage row, and
-immediately calls `startSessionPartInternal('user_session_rollover')`. That
+`endSessionPartInternal({ reason: 'user_session_ended', userSessionEndReason })`,
+saves `_previousUserSessionId`, sets `_state` to `null`, removes the storage
+row, and immediately calls
+`startSessionPartInternal({ reason: 'user_session_rollover' })`. That
 follow-up call mints a fresh user session if the tab is still engaged, or
 silently no-ops if not (the next engagement event will create it).
 
@@ -190,7 +191,7 @@ silently no-ops if not (the next engagement event will create it).
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_terminateUserSession('max_duration_reached')` |
 | User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `partEndTs + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs`, checked on the next part start by `isUserSessionExpired`. |
-| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal('web_foreground_inactivity', 'inactivity')` ends the part and the enclosing user session. |
+| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal({ reason: 'web_foreground_inactivity', userSessionEndReason: 'inactivity' })` ends the part and the enclosing user session. |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
@@ -403,7 +404,7 @@ Why it happens:
 1. `setTracerProvider` materializes the user-session state via
    `_loadOrCreateUserSessionState`, so `getUserSessionId()` returns a real
    id immediately.
-2. `initSDK` calls `startSessionPartInternal('init')` next, but the call
+2. `initSDK` calls `startSessionPartInternal({ reason: 'init' })` next, but the call
    no-ops when `!document.hasFocus()` or `visibilityState === 'hidden'`
    (parts are foreground-only by design).
 3. Until the next engagement event fires (`focus`/`visibilitychange`),

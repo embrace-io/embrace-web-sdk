@@ -279,7 +279,7 @@ export const initSDK = (
     userSessionManager.setTracerProvider(tracerProvider);
     // No-op if the tab is hidden/unfocused at init; the first part starts
     // on the next engagement via the manager's browser-activity listeners.
-    userSessionManager.startSessionPartInternal('init');
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
 
     const { loggerProvider, embraceLogManager } = setupLogs({
       resource: resourceWithWebSDKAttributes,

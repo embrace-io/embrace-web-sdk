@@ -163,7 +163,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
 
   exportFailedTests.forEach((test) => {
     it(test.name, async () => {
-      userSessionManager.startSessionPartInternal('init');
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
       const diagLogger = new InMemoryDiagLogger();
       processor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new FailingSpanExporter(
@@ -178,10 +178,14 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
 
       await Promise.resolve();
 
-      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+      userSessionManager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+      });
 
-      userSessionManager.startSessionPartInternal('init');
-      userSessionManager.endSessionPartInternal('web_foreground_inactivity');
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      userSessionManager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+      });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
