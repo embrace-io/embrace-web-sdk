@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare": "npx -y lefthook install -f",
-    "clean": "node scripts/emb-rm.js \"**/.turbo\" \"**/.next\" \"**/dist\" \"**/node_modules\"",
+    "clean": "node scripts/emb-rm.js '**/.turbo' '**/.next' '**/dist' '**/node_modules'",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "biome check .",
