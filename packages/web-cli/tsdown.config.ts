@@ -6,7 +6,7 @@ export default defineConfig({
   target: 'es2022',
   platform: 'node',
   outDir: 'dist',
-  clean: false,
+  dts: false,
   failOnWarn: true,
   publint: true,
 });
