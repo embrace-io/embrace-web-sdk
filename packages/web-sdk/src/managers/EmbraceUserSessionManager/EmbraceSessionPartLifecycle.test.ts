@@ -1,3 +1,4 @@
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -116,6 +117,69 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.session_part_id',
       sessionPartId,
+    );
+  });
+
+  it('anchors part end and start spans to an explicit boundary timestamp', () => {
+    manager.startSessionPartInternal({ reason: 'init' });
+    clock.tick(5000);
+
+    const boundaryTimestamp = perf.getNowMillis();
+    // Advance the clock past the boundary so the explicit timestamp and
+    // "now" diverge. Without this the default now-anchored path would
+    // produce the same values and the assertions would pass vacuously.
+    clock.tick(250);
+    manager.endSessionPartInternal({
+      reason: 'web_background',
+      timestamp: boundaryTimestamp,
+    });
+    manager.startSessionPartInternal({
+      reason: 'web_foreground',
+      timestamp: boundaryTimestamp,
+    });
+    clock.tick(1000);
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+      boundaryTimestamp,
+    );
+    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+      boundaryTimestamp,
+    );
+    // An omitted timestamp still anchors to now.
+    expect(hrTimeToMilliseconds(finishedSpans[1].endTime)).to.equal(
+      boundaryTimestamp + 1250,
+    );
+  });
+
+  it('tiles the rolled part spans even when part-end processing takes time', () => {
+    manager.startSessionPartInternal({ reason: 'init' });
+    clock.tick(5000);
+    const boundaryTimestamp = perf.getNowMillis();
+
+    // Simulate unbounded work between the part end and the rollover part
+    // start (e.g. slow part-end listeners or a slow SpanProcessor.onEnd
+    // pipeline). The rollover anchors both calls to one boundary
+    // timestamp, so the delay must not open a gap between the two part
+    // spans.
+    const removeListener = manager.addSessionPartEndedListener(() => {
+      clock.tick(250);
+    });
+    manager.endUserSession();
+    removeListener();
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    // The end stamp is captured upfront even without an anchor; the
+    // start-side assertion is the one the shared boundary timestamp owns.
+    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+      boundaryTimestamp,
+    );
+    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+      boundaryTimestamp,
     );
   });
 
@@ -1386,6 +1450,40 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       localManager.startSessionPartInternal({ reason: 'init' });
 
       void expect(readDeadline()).to.be.null;
+    });
+
+    it('computes the persisted inactivity deadline from now even when the part end is anchored', () => {
+      const localManager = new EmbraceUserSessionManager({
+        diag,
+        perf,
+        storage,
+        limitManager,
+        dynamicConfigManager: createTestDynamicConfigManager({
+          userSessionInactivityTimeoutSeconds: 60,
+        }),
+        visibilityDoc: window.document,
+      });
+
+      const readDeadline = (): number | null => {
+        const raw = inMemoryStorage.getItem('embrace_user_session_state');
+        if (!raw) return null;
+        return (JSON.parse(raw) as { inactivityDeadlineTs: number | null })
+          .inactivityDeadlineTs;
+      };
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+      clock.tick(5000);
+      const boundaryTimestamp = perf.getNowMillis();
+      // Advance the clock so now and the anchor diverge. The anchored
+      // timestamp is a span-presentation concern only and must not pull
+      // the lazy expiry window backward.
+      clock.tick(250);
+      localManager.endSessionPartInternal({
+        reason: 'web_background',
+        timestamp: boundaryTimestamp,
+      });
+
+      expect(readDeadline()).to.equal(boundaryTimestamp + 250 + 60000);
     });
   });
 

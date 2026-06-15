@@ -87,6 +87,8 @@ export interface UserSessionAttributes {
 
 export interface StartSessionPartOptions {
   readonly reason: SessionPartStartReason;
+  /** Epoch millis anchoring the part span start; defaults to now. */
+  readonly timestamp?: number;
 }
 
 export interface EndSessionPartOptions {
@@ -98,6 +100,8 @@ export interface EndSessionPartOptions {
    * otherwise.
    */
   readonly userSessionEndReason?: UserSessionEndReason;
+  /** Epoch millis anchoring the part span end; defaults to now. */
+  readonly timestamp?: number;
 }
 
 /**
