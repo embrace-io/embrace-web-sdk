@@ -122,15 +122,7 @@ export interface UserSessionManagerInternal extends UserSessionManager {
 
   getSessionPartId: () => string | null;
 
-  /**
-   * Part-roll sites pass the same `options.timestamp` to the paired
-   * endSessionPartInternal call so consecutive part spans tile without an
-   * artificial gap, while real gaps in the part timeline (page load,
-   * hidden tab) stay meaningful. The timestamp affects the span only.
-   * User-session state and timers always use the actual call time.
-   */
   startSessionPartInternal: (options: StartSessionPartOptions) => void;
-  /** See startSessionPartInternal for the part-roll timestamp pairing. */
   endSessionPartInternal: (options: EndSessionPartOptions) => void;
 
   incrSessionPartCountForKey: (key: string) => void;

@@ -779,6 +779,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     userSessionEndReason: UserSessionEndReason,
   ): void {
     if (this._sessionPartSpan) {
+      // The paired end/start share one boundary timestamp so the consecutive
+      // part spans tile without an artificial gap. Real gaps in the part
+      // timeline (page load, hidden tab) stay meaningful because those paths
+      // start a part without passing a timestamp. The timestamp anchors the
+      // spans only; user-session state and timers always use the actual call
+      // time.
       const boundaryTimestamp = this._perf.getNowMillis();
       this.endSessionPartInternal({
         reason: 'user_session_ended',
