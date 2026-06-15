@@ -43,7 +43,6 @@ export default defineConfig([
     entry: ['src/**/*.ts', '!src/**/*.test.*'],
     format: ['cjs', 'esm'],
     target: 'es2022',
-    dts: true,
     outDir: 'dist',
     sourcemap: true,
     platform: 'browser',
