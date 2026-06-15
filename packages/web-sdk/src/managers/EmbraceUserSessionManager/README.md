@@ -3,6 +3,12 @@
 `EmbraceUserSessionManager` is the source of truth for user-session and
 session-part state across all tabs in this browser.
 
+This document describes the model, the observable behavior, and the stable
+contracts: public API, emitted attributes, storage keys, and configuration.
+It deliberately avoids naming private methods or walking through internal
+algorithms, which drift as the implementation evolves. Read the source for
+those.
+
 ## Two-level model
 
 The manager tracks two distinct things:
@@ -35,13 +41,13 @@ The `UserSessionManager` interface exposes the following methods.
 | `getUserSessionStartTime()` | Returns wall-clock milliseconds since Unix epoch, or `null`. |
 | `endUserSession()` | Ends the current user session. Subject to a 5 second cooldown. No-op if no user session is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason. |
 | `addBreadcrumb(name)` | Adds an `emb-breadcrumb` event to the active session-part span. Dropped if no part is active. |
-| `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry lives inside the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eager-initializes a user-session row so the value is stamped on the part span when it begins. |
+| `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry lives inside the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it begins. |
 | `removeProperty(key)` | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute. |
 
 ### Deprecated forwarders
 
 These exist for source compatibility with the prior API. Some forward to the
-new equivalents; others are inert (return `null` or no-op).
+current equivalents; others are inert (return `null` or no-op).
 
 | Method | Behavior |
 | --- | --- |
@@ -58,31 +64,28 @@ new equivalents; others are inert (return `null` or no-op).
 ### Internal interface
 
 `UserSessionManagerInternal` extends the public interface with members used by
-instrumentations and processors only:
+instrumentations and processors inside the SDK only: driving the session-part
+lifecycle (start and end), reading the active part id and span, incrementing
+per-part counters, subscribing to part start/end, and wiring the tracer
+provider (required before the first part). Customer code only ever sees
+`UserSessionManager`.
 
-- `startSessionPartInternal({ reason })`, `endSessionPartInternal({ reason, userSessionEndReason? })`
-- `getSessionPartId()`, `getSessionPartSpan()`
-- `incrSessionPartCountForKey(key)` and `incrNextSessionPartCountForKey(key)`
-- `addSessionPartStartedListener(listener)`, `addSessionPartEndedListener(listener)`
-- `setTracerProvider(tracerProvider)`, which must be called before the first
-  session part starts.
-
-In addition, the concrete class exposes `recordSDKStartupDuration(ms)`. The
-SDK init flow calls this once with the measured startup duration; the value
+The SDK init flow also reports the measured startup duration once; the value
 is stamped as `emb.sdk_startup_duration` on every session-part end span.
 
 ## Session-part lifecycle
 
 ### Start
 
-`startSessionPartInternal({ reason })` is a no-op unless **both** of the following
-are true at call time:
+A session part starts only when the tab is engaged at call time, meaning
+**both** of the following are true:
 
 - `document.visibilityState === 'visible'`
 - `document.hasFocus()` returns `true`
 
-If a session part is already active, the call is a warn-level no-op. If neither
-engagement condition holds, the call is a debug-level no-op.
+A start request while a part is already active is a warn-level no-op. A request
+while the tab is not engaged is a debug-level no-op. Parts are foreground-only
+by design.
 
 ### Start triggers
 
@@ -93,7 +96,7 @@ engagement condition holds, the call is a debug-level no-op.
 | `init` | SDK init flow on page load. |
 | `web_foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
 | `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
-| `user_session_rollover` | Called synchronously by `_rolloverUserSession` immediately after a user session ends. |
+| `user_session_rollover` | Begins the next user session's first part immediately after a user session ends. |
 
 ### End triggers
 
@@ -103,77 +106,63 @@ engagement condition holds, the call is a debug-level no-op.
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
 | `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
-| `user_session_ended` | `_rolloverUserSession` ending the active part, fired on manual `endUserSession()` or max-duration expiry. |
+| `user_session_ended` | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry. |
 
 The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
 
 ### End behavior
 
-On end, the manager:
+On end, the manager refreshes user-session-scoped properties from storage to
+capture cross-tab writes, builds the end attributes, and applies them to the
+part span before ending it. A throwing attribute write is isolated from the
+span end, so a poisoned property value cannot prevent the span from ending.
+Part-end subscribers are notified.
 
-1. Fires `_sessionPartEndedListeners`.
-2. Inside a `try`: refreshes user-session-scoped properties from storage to
-   capture cross-tab writes, builds the end attributes, and applies them via
-   `span.setAttributes` (inner `try`/`catch` so a poisoned attribute can't
-   prevent the span from ending).
-3. Inside `finally`: ends the span and clears `_sessionPartSpan`,
-   `_activeSessionPartId`, and `_activeSessionPartCounts`.
-4. If the end reason is not final (anything other than `user_session_ended` or
-   `web_foreground_inactivity`, in practice `web_background`), calls
-   `_continueUserSessionAfterPartEnd(now)` which writes
-   `now + userSessionInactivityTimeoutSeconds * 1000` into the state blob's
-   `inactivityDeadlineTs`. `now` is the actual call time, not the (possibly
-   anchored) span end timestamp, so an anchored part end cannot shorten the
-   inactivity window. The max-duration timer keeps running on its existing
-   deadline (`userSessionMaxEndTs` is fixed at creation), so it is not re-armed.
+If the end reason is not final (in practice `web_background`), the user session
+continues: an inactivity deadline of
+`now + userSessionInactivityTimeoutSeconds * 1000` is written into the state
+blob, computed from the actual call time rather than any anchored span-end
+timestamp, so an anchored part end cannot shorten the inactivity window. The
+max-duration deadline is fixed at creation and keeps running, so it is not
+re-armed.
 
-When the end reason is final (`user_session_ended` or `web_foreground_inactivity`) the
-manager also stamps `emb.is_final_session_part = 1` and, when a
-`userSessionEndReason` is provided, `emb.user_session_termination_reason`.
+When the end reason is final (`user_session_ended` or `web_foreground_inactivity`)
+the final part span is additionally stamped `emb.is_final_session_part = 1` and,
+when a `userSessionEndReason` is supplied, `emb.user_session_termination_reason`.
 
 ## User-session lifecycle
 
 ### Creation
 
 User-session creation is lazy. No user-session object exists between
-`endUserSession()` and the next `startSessionPartInternal` call that passes the
-engagement gate. Creation happens inside `_beginUserSessionForPartStart`:
-
-1. Read the state blob from storage.
-2. If null or `isUserSessionExpired(state, now)`, save the old ID into
-   `_previousUserSessionId` and call `createUserSessionState` to mint a fresh user
-   session.
-3. Increment `userSessionPartIndex` by 1, and bump the
-   `embrace_session_part_number` storage counter (persisted across visits
-   and snapshotted into `_currentSessionPartNumber`).
-4. Set `inactivityDeadlineTs` to `null` (a session part is now active).
-5. Write the state blob back.
-6. Arm the max-duration timer.
+`endUserSession()` and the next engaged part start. On that start the manager
+reads the stored state; if it is missing or expired it records the prior id as
+the previous-session link and mints a fresh user session. It then advances the
+within-session part index and the cross-visit part-number counter
+(`embrace_session_part_number`), marks a part active, persists the state, and
+arms the max-duration timer.
 
 ### Expiry
 
-`isUserSessionExpired` returns `true` when any of the following holds:
+A stored user session is treated as expired when any of the following holds:
 
-- `now < state.userSessionStartTs`. The clock jumped backwards.
-- `now >= state.userSessionMaxEndTs`. The max-duration boundary has passed.
-- `state.inactivityDeadlineTs !== null && now >= state.inactivityDeadlineTs`.
-  The inactivity window since the last part end has elapsed.
+- The clock jumped backwards (`now` is before the recorded start timestamp).
+- The max-duration boundary has passed.
+- An inactivity deadline was recorded at the last part end and has elapsed.
 
 There is no live timer for the inactivity window. The deadline is checked at
-the next part start. The expired part span is already exported and does not
-receive `emb.is_final_session_part`.
+the next part start. A part span that has already been exported never
+retroactively receives `emb.is_final_session_part`.
 
 ### Termination
 
-`_rolloverUserSession(reason)` ends the active user session and immediately
-attempts to start a part for the next one. It is called from:
+A user session ends and immediately attempts to start a part for the next one.
+This happens on a manual `endUserSession()` (reason `manual`) and when the
+max-duration timer fires (reason `max_duration_reached`).
 
-- `endUserSession()` with reason `manual`.
-- The max-duration `setTimeout` callback with reason `max_duration_reached`.
-
-The part-inactivity timer ends a user session without going through
-`_rolloverUserSession`: it calls `endSessionPartInternal` directly with the
-`inactivity` termination reason (see the table below).
+The part-inactivity path ends a user session differently: it ends the active
+part directly with the `inactivity` termination reason rather than going
+through a rollover.
 
 `UserSessionEndReason` defines all possible values:
 
@@ -183,22 +172,19 @@ The part-inactivity timer ends a user session without going through
 | `max_duration_reached` | Max-duration timer fires. | Yes |
 | `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
-On termination the manager samples one boundary timestamp and calls
-`endSessionPartInternal({ reason: 'user_session_ended', userSessionEndReason, timestamp })`,
-saves `_previousUserSessionId`, sets `_state` to `null`, removes the storage
-row, and immediately calls
-`startSessionPartInternal({ reason: 'user_session_rollover', timestamp })`
-with the same value, so the two part spans tile without a gap. That
-follow-up call mints a fresh user session if the tab is still engaged, or
+On rollover the manager samples one boundary timestamp, ends the active part as
+final with that timestamp, clears the stored user session, and starts the next
+part with the same timestamp so the two part spans tile without a gap. The
+follow-up start mints a fresh user session if the tab is still engaged, or
 silently no-ops if not (the next engagement event will create it).
 
 ## Timers
 
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
-| Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | `_rolloverUserSession('max_duration_reached')` |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Written into the state blob as `userSessionInactivityTimeoutSeconds`; `_continueUserSessionAfterPartEnd` records `now + userSessionInactivityTimeoutSeconds * 1000` into `inactivityDeadlineTs` (from the actual call time, not the anchored span end), checked on the next part start by `isUserSessionExpired`. |
-| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire, `endSessionPartInternal({ reason: 'web_foreground_inactivity', userSessionEndReason: 'inactivity' })` ends the part and the enclosing user session. |
+| Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | Ends the user session and rolls into the next (`max_duration_reached`). |
+| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
+| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
 | Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
@@ -216,7 +202,7 @@ The max-duration timer is armed at user-session creation, and re-armed when a
 fresh manager loads an existing, unexpired state on page reload (no timer
 running yet). It is not re-armed on session-part end; `userSessionMaxEndTs` is
 fixed at creation, so it keeps running across parts on its original deadline.
-The delay is computed as `state.userSessionMaxEndTs - now`, not the full
+The delay is computed as the time remaining until that deadline, not the full
 duration value.
 
 The part-inactivity timer is restarted on every activity event, subject to the
@@ -228,7 +214,7 @@ The part-inactivity timer is restarted on every activity event, subject to the
 
 | Key | Contents | Lifetime |
 | --- | --- | --- |
-| `embrace_user_session_state` | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or `_rolloverUserSession` with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_state` | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
 | `embrace_user_session_number` | Monotonic integer string. | Persisted across visits. Only ever incremented. |
 | `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
 | `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
@@ -244,15 +230,15 @@ the following user session rather than the one being created.
 ### Failure handling
 
 `NamespacedStorage` wraps `localStorage` access. The first `setItem` throw flips
-a sticky `_writeDisabled` flag, logs one error, and silently no-ops further
+a sticky write-disabled flag, logs one error, and silently no-ops further
 writes. `getItem` and `removeItem` keep trying.
 
 The manager treats its in-memory state as locally authoritative: every mutating
-call (`addProperty`, `removeProperty`, lifecycle bookkeeping) updates `_state`
-or `_permanentProperties` first and then persists best-effort. Failed writes do
-not roll the in-memory update back, so the local tab continues to see and
-stamp every value it set even after storage goes read-only. Cross-tab visibility
-is the cost: a write that never reaches disk is invisible to other tabs.
+call (`addProperty`, `removeProperty`, lifecycle bookkeeping) updates memory
+first and then persists best-effort. Failed writes are not rolled back, so the
+local tab continues to see and stamp every value it set even after storage goes
+read-only. Cross-tab visibility is the cost: a write that never reaches disk is
+invisible to other tabs.
 
 The one exception is the cross-scope flip in `addProperty(key, val, { lifespan:
 'permanent' })`. The session-scoped entry for the same key is stripped only
@@ -290,27 +276,26 @@ ID is linked through `previousUserSessionId` in the new blob.
 
 ### Dead tab
 
-If a tab dies mid-part without calling `endSessionPartInternal`, the state blob
-remains in storage with `inactivityDeadlineTs = null`. The next tab to engage
-reads this state. Because the deadline is null and the max-duration boundary
-has not necessarily passed, the dead tab's user session is continued. Abrupt
-tab close is by design not a user-session boundary.
+If a tab dies mid-part without ending its part, the state blob remains in
+storage with `inactivityDeadlineTs = null`. The next tab to engage reads this
+state. Because the deadline is null and the max-duration boundary has not
+necessarily passed, the dead tab's user session is continued. Abrupt tab close
+is by design not a user-session boundary.
 
 ### Cross-tab safety hardening
 
 Several specific edge cases are handled:
 
-- Part finalization isolates a throwing `setAttributes` call from `span.end()`,
+- Part finalization isolates a throwing `setAttributes` call from the span end,
   so a poisoned permanent-property value cannot drop the part span from the
   export.
 - A peer tab that learns about a user-session rollover never stamps the dying
   tab's inactivity deadline onto the new user session's storage row. This is
   structural rather than active: the engagement gate guarantees the peer tab
-  has no active part at the moment of rollover, so no `_continueUserSessionAfterPartEnd`
-  call can race with the wipe. The peer's stale max-duration timer is cleared
-  lazily, on its next `_setupMaxDurationTimer` call (the next part start). If
-  the stale timer fires first, `_rolloverUserSession('max_duration_reached')`
-  runs benignly against the already-cleared storage row.
+  has no active part at the moment of rollover, so its part-end bookkeeping
+  cannot race with the wipe. The peer's stale max-duration timer is cleared
+  lazily, on its next part start. If the stale timer fires first, the rollover
+  it triggers runs benignly against the already-cleared storage row.
 
 ## Unload and BFCache handling
 
@@ -336,7 +321,7 @@ the browsers below:
   path is spec-derived rather than empirically verified here because Playwright
   suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
 
-The in-memory `_state` survives the freeze-restore cycle because BFCache
+The in-memory state survives the freeze-restore cycle because BFCache
 preserves the JS heap.
 
 ### Verified event ordering
@@ -386,7 +371,7 @@ another window).
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
 | `emb.app.applied_limit.*` | Diagnostic counts from the limit manager. |
-| Counter keys | From `_activeSessionPartCounts`, populated by instrumentations. |
+| Counter keys | Per-part counts populated by instrumentations. |
 
 ### Stamped on every other span
 
@@ -408,17 +393,15 @@ the part id is empty.
 
 Why it happens:
 
-1. `setTracerProvider` materializes the user-session state via
-   `_loadOrCreateUserSessionState`, so `getUserSessionId()` returns a real
-   id immediately.
-2. `initSDK` calls `startSessionPartInternal({ reason: 'init' })` next, but the call
-   no-ops when `!document.hasFocus()` or `visibilityState === 'hidden'`
-   (parts are foreground-only by design).
-3. Until the next engagement event fires (`focus`/`visibilitychange`),
-   `_activeSessionPartId === null`. Logs that pass
-   through `UserSessionLogRecordProcessor` in that window end up
-   with `emb.session_part_id: ''`. Spans are not affected; only the
-   session-part span itself carries IDs, and other spans are correlated
+1. Wiring the tracer provider materializes the user-session state, so
+   `getUserSessionId()` returns a real id immediately.
+2. The init flow then requests an `'init'` part, but that request no-ops when
+   the tab is not engaged (`!document.hasFocus()` or
+   `visibilityState === 'hidden'`), because parts are foreground-only by design.
+3. Until the next engagement event fires (`focus`/`visibilitychange`), no part
+   is active. Logs that pass through `UserSessionLogRecordProcessor` in that
+   window end up with `emb.session_part_id: ''`. Spans are not affected; only
+   the session-part span itself carries IDs, and other spans are correlated
    server-side via the batched envelope.
 
 How to reproduce: open the demo in a non-focused tab (or under headless
