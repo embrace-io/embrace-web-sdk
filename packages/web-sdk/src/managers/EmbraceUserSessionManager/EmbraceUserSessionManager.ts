@@ -672,7 +672,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     // every part start under a storage outage mints a fresh user session,
     // fragmenting one journey into many. Once we have persisted (_hasStoredState),
     // an empty read is a genuine clear (sibling tab, eviction) and falls through
-    // to creating a new session.
+    // to creating a new user session.
     if (!state && !this._hasStoredState && this._state) {
       state = this._state;
     }

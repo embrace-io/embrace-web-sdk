@@ -66,6 +66,23 @@ describe('EmbraceUserSessionManager', () => {
       dynamicConfigManager: createTestDynamicConfigManager(config),
     });
 
+  // A manager wired to storage that throws on every operation, so reads
+  // always come back empty and no write ever persists. Exercises the
+  // in-memory-authoritative path in _loadOrCreateUserSessionState.
+  const createFailingStorageManager = (config?: {
+    userSessionMaxDurationSeconds?: number;
+    userSessionInactivityTimeoutSeconds?: number;
+    userSessionForegroundInactivityTimeoutSeconds?: number;
+  }) =>
+    new EmbraceUserSessionManager({
+      diag,
+      perf: new MockPerformanceManager(clock),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      visibilityDoc: window.document,
+      dynamicConfigManager: createTestDynamicConfigManager(config),
+    });
+
   // Builds a manager whose getConfig() reads a live, mutable config object so a
   // test can change remote-config values mid-session. getConfig returns a fresh
   // copy each call so mutations are picked up at the next session creation.
@@ -315,14 +332,7 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   it('continues the same user session across parts when storage is unavailable', () => {
-    const manager = new EmbraceUserSessionManager({
-      diag,
-      perf: new MockPerformanceManager(clock),
-      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
-      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-      visibilityDoc: window.document,
-      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-    });
+    const manager = createFailingStorageManager();
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
@@ -340,6 +350,78 @@ describe('EmbraceUserSessionManager', () => {
       attrs1?.['emb.user_session_id'],
     );
     expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
+  });
+
+  it('keeps one user session across repeated parts when storage is unavailable', () => {
+    const manager = createFailingStorageManager();
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const userSessionId =
+      manager.getUserSessionAttributes()?.['emb.user_session_id'];
+
+    // Several engage/disengage cycles, each well within the inactivity
+    // timeout: one journey must stay one user session, never fragmenting into
+    // one-per-part the way it did before the in-memory fallback existed.
+    for (
+      let expectedPartIndex = 2;
+      expectedPartIndex <= 4;
+      expectedPartIndex++
+    ) {
+      manager.endSessionPartInternal({ reason: 'web_background' });
+      clock.tick(5 * 60 * 1000);
+      manager.startSessionPartInternal({ reason: 'init' });
+
+      const attrs = manager.getUserSessionAttributes();
+      expect(attrs?.['emb.user_session_id']).to.equal(userSessionId);
+      expect(attrs?.['emb.user_session_part_index']).to.equal(
+        expectedPartIndex,
+      );
+    }
+  });
+
+  it('mints a fresh user session when the inactivity timeout expires while storage is unavailable', () => {
+    const manager = createFailingStorageManager();
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    // Past the default 30 min inactivity timeout.
+    clock.tick(31 * 60 * 1000);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs2 = manager.getUserSessionAttributes();
+
+    // The in-memory session stays authoritative only while it is live: once
+    // its inactivity deadline passes, the next part rolls a fresh user session
+    // instead of resurrecting the expired one. The user-session number cannot
+    // advance because the shared counter also lives in unavailable storage.
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+  });
+
+  it('mints a fresh user session when the max duration expires while storage is unavailable', () => {
+    const manager = createFailingStorageManager({
+      userSessionMaxDurationSeconds: 3600,
+    });
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    // Past the 1 hour max duration. The max-duration timer lives in memory, so
+    // it rolls the user session over even though nothing was ever persisted.
+    clock.tick(3601 * 1000);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
   });
 
   it('should clamp max duration to the maximum', () => {
