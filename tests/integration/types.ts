@@ -4,6 +4,6 @@ declare global {
   }
 }
 
-type ReceivedSpans = Record<string, boolean>;
+type ReceivedSpans = Record<string, number>;
 
 export type { ReceivedSpans };

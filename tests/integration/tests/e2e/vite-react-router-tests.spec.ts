@@ -51,16 +51,16 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(2);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(3);
   });
 
   test('navigates back via the browser back button and ends a session part per navigation', async ({
@@ -80,22 +80,22 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(2);
 
     await page.goBack();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(3);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(4);
   });
 
   test('navigates forward via the browser forward button and ends a session part per navigation', async ({
@@ -115,27 +115,27 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(2);
 
     await page.goBack();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(3);
 
     await page.goForward();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(4);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded();
+    await validateThatSessionPartEnded(5);
   });
 });

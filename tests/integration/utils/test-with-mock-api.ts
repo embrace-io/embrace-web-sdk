@@ -61,7 +61,10 @@ type TestWithMockApi = {
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
-  validateThatSessionPartEnded: (userSessionId?: string) => Promise<void>;
+  validateThatSessionPartEnded: (
+    expectedCount: number,
+    userSessionId?: string,
+  ) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -254,7 +257,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
     });
   },
   validateThatSessionPartEnded: async ({ getCurrentUserSessionId }, use) => {
-    await use(async (userSessionId?: string) => {
+    await use(async (expectedCount: number, userSessionId?: string) => {
       const currentUserSessionId =
         userSessionId ?? (await getCurrentUserSessionId());
 
@@ -270,7 +273,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
             );
             const receivedSpans = (await response.json()) as ReceivedSpans;
 
-            if (receivedSpans[currentUserSessionId]) {
+            if ((receivedSpans[currentUserSessionId] ?? 0) >= expectedCount) {
               clearInterval(interval);
               clearTimeout(timeout);
               resolve(null);

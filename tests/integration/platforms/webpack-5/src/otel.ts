@@ -21,12 +21,9 @@ const sdkControl = initSDK({
 declare global {
   interface Window {
     EMBRACE_CURRENT_USER_SESSION_ID: string | null;
-    EMBRACE_CURRENT_SESSION_PART_ID: string | null;
   }
 }
 
 window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
-window.EMBRACE_CURRENT_SESSION_PART_ID =
-  session.getSessionPartSpan()?.spanContext().spanId ?? null;
 
 export { sdkControl };
