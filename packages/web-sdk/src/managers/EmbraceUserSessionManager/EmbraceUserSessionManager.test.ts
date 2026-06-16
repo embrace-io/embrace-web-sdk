@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   createTestDynamicConfigManager,
+  FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
@@ -311,6 +312,34 @@ describe('EmbraceUserSessionManager', () => {
     // exactly one error; later failures stay silent.
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
+  });
+
+  it('continues the same user session across parts when storage is unavailable', () => {
+    const manager = new EmbraceUserSessionManager({
+      diag,
+      perf: new MockPerformanceManager(clock),
+      storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+    });
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    // Advance within the inactivity timeout.
+    clock.tick(29 * 60 * 1000);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs2 = manager.getUserSessionAttributes();
+
+    // Storage is unavailable, so the in-memory session the manager already
+    // holds stays authoritative; a fresh user session is not minted per part.
+    expect(attrs2?.['emb.user_session_id']).to.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
   });
 
   it('should clamp max duration to the maximum', () => {
