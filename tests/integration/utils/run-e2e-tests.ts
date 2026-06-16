@@ -252,7 +252,7 @@ const runE2ETests = ({
 
         await page.close();
 
-        await validateThatSessionPartEnded(1, currentUserSessionId);
+        await validateThatSessionPartEnded(currentUserSessionId);
       },
     );
 
@@ -275,7 +275,7 @@ const runE2ETests = ({
           document.dispatchEvent(new Event('visibilitychange'));
         });
 
-        await validateThatSessionPartEnded(1);
+        await validateThatSessionPartEnded();
       },
     );
 
@@ -295,7 +295,7 @@ const runE2ETests = ({
 
         await page.reload();
 
-        await validateThatSessionPartEnded(1, currentUserSessionId);
+        await validateThatSessionPartEnded(currentUserSessionId);
       },
     );
 
@@ -318,7 +318,7 @@ const runE2ETests = ({
         });
         await button.click();
 
-        await validateThatSessionPartEnded(1, currentUserSessionId);
+        await validateThatSessionPartEnded(currentUserSessionId);
       },
     );
 
@@ -341,7 +341,7 @@ const runE2ETests = ({
         // Not exactly the same as a user typing in the URL bar, but is the best we can do
         await page.goto('about:blank');
 
-        await validateThatSessionPartEnded(1, currentUserSessionId);
+        await validateThatSessionPartEnded(currentUserSessionId);
       },
     );
 

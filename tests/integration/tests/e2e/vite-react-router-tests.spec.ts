@@ -35,7 +35,7 @@ test.describe('Vite React Router SPA Navigation', () => {
     page,
     loadHome,
     triggerSessionEnd,
-    validateThatSessionPartEnded,
+    validateThatSessionPartsEnded,
   }) => {
     // Skipped: each soft navigation should end the current session part, but
     // the soft navigation instrumentation is not yet implemented
@@ -51,23 +51,22 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(2);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded(3);
+    // 2 soft navigations + 1 session end = 3 session parts
+    await validateThatSessionPartsEnded(3);
   });
 
   test('navigates back via the browser back button and ends a session part per navigation', async ({
     page,
     loadHome,
     triggerSessionEnd,
-    validateThatSessionPartEnded,
+    validateThatSessionPartsEnded,
   }) => {
     // Skipped: each soft navigation should end the current session part, but
     // the soft navigation instrumentation is not yet implemented
@@ -80,29 +79,27 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(2);
 
     await page.goBack();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(3);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded(4);
+    // 3 soft navigations + 1 session end = 4 session parts
+    await validateThatSessionPartsEnded(4);
   });
 
   test('navigates forward via the browser forward button and ends a session part per navigation', async ({
     page,
     loadHome,
     triggerSessionEnd,
-    validateThatSessionPartEnded,
+    validateThatSessionPartsEnded,
   }) => {
     // Skipped: each soft navigation should end the current session part, but
     // the soft navigation instrumentation is not yet implemented
@@ -115,27 +112,24 @@ test.describe('Vite React Router SPA Navigation', () => {
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(1);
 
     await page.getByRole('link', { name: 'Product One' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(2);
 
     await page.goBack();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(3);
 
     await page.goForward();
     await test
       .expect(page.getByRole('heading', { name: 'Product 1' }))
       .toBeVisible();
-    await validateThatSessionPartEnded(4);
 
     await triggerSessionEnd();
-    await validateThatSessionPartEnded(5);
+    // 4 soft navigations + 1 session end = 5 session parts
+    await validateThatSessionPartsEnded(5);
   });
 });

@@ -61,10 +61,8 @@ type TestWithMockApi = {
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
-  validateThatSessionPartEnded: (
-    expectedCount: number,
-    userSessionId?: string,
-  ) => Promise<void>;
+  validateThatSessionPartEnded: (userSessionId?: string) => Promise<void>;
+  validateThatSessionPartsEnded: (expectedCount: number) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -257,7 +255,7 @@ const testWithMockApi = base.extend<TestWithMockApi>({
     });
   },
   validateThatSessionPartEnded: async ({ getCurrentUserSessionId }, use) => {
-    await use(async (expectedCount: number, userSessionId?: string) => {
+    await use(async (userSessionId?: string) => {
       const currentUserSessionId =
         userSessionId ?? (await getCurrentUserSessionId());
 
@@ -273,12 +271,47 @@ const testWithMockApi = base.extend<TestWithMockApi>({
             );
             const receivedSpans = (await response.json()) as ReceivedSpans;
 
-            if ((receivedSpans[currentUserSessionId] ?? 0) >= expectedCount) {
+            if (receivedSpans[currentUserSessionId]) {
               clearInterval(interval);
               clearTimeout(timeout);
               resolve(null);
             }
           })();
+        }, 200);
+      });
+    });
+  },
+  validateThatSessionPartsEnded: async ({ requests }, use) => {
+    await use(async (expectedCount: number) => {
+      const timeout = setTimeout(() => {
+        throw new Error(
+          `Expected ${expectedCount.toString()} session parts but timed out`,
+        );
+      }, 4000);
+
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          const count = requests.reduce((acc, req) => {
+            const resourceSpans =
+              (req.data as IExportTraceServiceRequest).resourceSpans ?? [];
+            return (
+              acc +
+              resourceSpans.flatMap(
+                (rs) =>
+                  rs.scopeSpans?.flatMap(
+                    (ss) =>
+                      ss.spans?.filter((s) => s.name === 'emb-session-part') ??
+                      [],
+                  ) ?? [],
+              ).length
+            );
+          }, 0);
+
+          if (count >= expectedCount) {
+            clearInterval(interval);
+            clearTimeout(timeout);
+            resolve(null);
+          }
         }, 200);
       });
     });

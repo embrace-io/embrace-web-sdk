@@ -152,8 +152,7 @@ const server = createServer((req, res) => {
         }
 
         if (userSessionId) {
-          receivedSpans[userSessionId] =
-            (receivedSpans[userSessionId] ?? 0) + 1;
+          receivedSpans[userSessionId] = true;
           if (sessionPartSpan) {
             logReceivedSessionPartSpan(
               resourceSpans,
