@@ -8,7 +8,6 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
-  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type { DynamicSDKConfig } from '../../sdk/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
@@ -290,35 +289,7 @@ describe('EmbraceUserSessionManager', () => {
 
   describe('storage unavailable', () => {
     it('creates an in-memory user session and reports the write failure once', () => {
-      const failingStorage = {
-        getItem: () => {
-          throw new Error('Storage unavailable');
-        },
-        setItem: () => {
-          throw new Error('Storage unavailable');
-        },
-        removeItem: () => {
-          throw new Error('Storage unavailable');
-        },
-        clear: () => {
-          throw new Error('Storage unavailable');
-        },
-        key: () => null,
-        length: 0,
-      } satisfies Storage;
-      const safeFailing = new NamespacedStorage({
-        storage: failingStorage,
-        diag,
-      });
-
-      const manager = new EmbraceUserSessionManager({
-        diag,
-        perf: new MockPerformanceManager(clock),
-        storage: safeFailing,
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        visibilityDoc: window.document,
-        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-      });
+      const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs = manager.getUserSessionAttributes();
@@ -361,8 +332,8 @@ describe('EmbraceUserSessionManager', () => {
         manager.getUserSessionAttributes()?.['emb.user_session_id'];
 
       // Several engage/disengage cycles, each well within the inactivity
-      // timeout: one journey must stay one user session, never fragmenting into
-      // one-per-part the way it did before the in-memory fallback existed.
+      // timeout: one journey must stay one user session and must not fragment
+      // into one part per user session.
       for (
         let expectedPartIndex = 2;
         expectedPartIndex <= 4;
@@ -380,14 +351,16 @@ describe('EmbraceUserSessionManager', () => {
       }
     });
 
-    it('mints a fresh user session when the inactivity timeout expires', () => {
+    it('mints a fresh user session when the between-parts inactivity deadline passes', () => {
       const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'web_background' });
 
-      // Past the default 30 min inactivity timeout.
+      // Past the default 30 min inactivity timeout. The part ended without a
+      // live timer, so the next start detects lazy expiry from the deadline
+      // recorded on the in-memory row.
       clock.tick(31 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
@@ -401,6 +374,11 @@ describe('EmbraceUserSessionManager', () => {
         attrs1?.['emb.user_session_id'],
       );
       expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      // The fresh user session back-links to the one that just expired, even
+      // though that link was never persisted.
+      expect(attrs2?.['emb.user_session_previous_id']).to.equal(
+        attrs1?.['emb.user_session_id'],
+      );
     });
 
     it('mints a fresh user session when the max duration expires', () => {
@@ -415,6 +393,55 @@ describe('EmbraceUserSessionManager', () => {
       // Past the 1 hour max duration. The max-duration timer lives in memory, so
       // it rolls the user session over even though nothing was ever persisted.
       clock.tick(3601 * 1000);
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const attrs2 = manager.getUserSessionAttributes();
+
+      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+    });
+
+    it('mints a fresh user session when the live foreground inactivity timer fires', () => {
+      const manager = createFailingStorageManager({
+        userSessionForegroundInactivityTimeoutSeconds: 60,
+        userSessionInactivityTimeoutSeconds: 1800,
+      });
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const attrs1 = manager.getUserSessionAttributes();
+
+      // Let the live timer fire while the part is still active. It ends the part
+      // with a final reason, which nulls the in-memory row, so the fallback must
+      // not resurrect it on the next start: the expired session is gone for good.
+      clock.tick(60 * 1000);
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const attrs2 = manager.getUserSessionAttributes();
+
+      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(attrs2?.['emb.user_session_previous_id']).to.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+    });
+
+    it('does not resurrect in-memory state once a write has persisted and storage clears', () => {
+      // Storage works at first, so the manager persists and flips _hasStoredState
+      // true. Then the row is wiped (sibling tab, eviction). An empty read after
+      // a successful persist is a genuine clear, not an outage, so the next part
+      // start must create a fresh user session rather than reuse the in-memory one.
+      const manager = createManager();
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const attrs1 = manager.getUserSessionAttributes();
+      manager.endSessionPartInternal({ reason: 'web_background' });
+
+      inMemoryStorage.clear();
+      clock.tick(5 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs2 = manager.getUserSessionAttributes();
