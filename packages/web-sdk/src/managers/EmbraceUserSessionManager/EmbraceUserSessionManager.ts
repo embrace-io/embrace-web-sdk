@@ -11,6 +11,8 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
+  SessionPartEndReason,
+  SessionPartStartReason,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
@@ -802,6 +804,41 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._state = null;
     this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
     this._clearMaxDurationTimer();
+  }
+
+  /**
+   * Ends the active part and starts a new one within the same user session.
+   * The user session is preserved while the part counters advance, so the
+   * caller's `endReason`/`startReason` must both be non-final. Both spans share
+   * one boundary timestamp so they tile without a gap; the caller may supply it
+   * (for example the timestamp of the triggering event), defaulting to now. A
+   * no-op when no part is active: there is nothing to roll over and the next
+   * engagement starts one.
+   */
+
+  // @ts-expect-error suppressed until a caller is wired; remove the directive then
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: no caller is wired yet
+  private _rolloverSessionPart({
+    endReason,
+    startReason,
+    timestamp,
+  }: {
+    endReason: SessionPartEndReason;
+    startReason: SessionPartStartReason;
+    timestamp?: number;
+  }): void {
+    if (!this._sessionPartSpan) {
+      return;
+    }
+    const boundaryTimestamp = timestamp ?? this._perf.getNowMillis();
+    this.endSessionPartInternal({
+      reason: endReason,
+      timestamp: boundaryTimestamp,
+    });
+    this.startSessionPartInternal({
+      reason: startReason,
+      timestamp: boundaryTimestamp,
+    });
   }
 
   private _setupMaxDurationTimer(state: UserSessionState, now: number): void {

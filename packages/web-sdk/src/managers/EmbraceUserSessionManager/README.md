@@ -96,6 +96,7 @@ by design.
 | `init` | SDK init flow on page load. |
 | `web_foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
 | `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
+| `web_soft_nav` | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part. |
 | `user_session_rollover` | Begins the next user session's first part immediately after a user session ends. |
 
 ### End triggers
@@ -106,6 +107,7 @@ by design.
 | --- | --- |
 | `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
 | `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
+| `web_soft_nav` | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately. |
 | `user_session_ended` | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry. |
 
 The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
