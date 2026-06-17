@@ -15,6 +15,10 @@ import { OTelPerformanceManager } from '../../utils/index.ts';
 import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
+type sessionPartListeners = {
+  start?: (() => void) | null;
+  end?: (() => void) | null;
+};
 export abstract class EmbraceInstrumentationBase<
     ConfigType extends InstrumentationConfig = InstrumentationConfig,
   >
@@ -26,6 +30,8 @@ export abstract class EmbraceInstrumentationBase<
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
   protected _isEnabled = false;
+  private _removeSessionPartListeners: sessionPartListeners = {};
+  private _sessionPartListeners: sessionPartListeners = {};
 
   protected constructor({
     instrumentationName,
@@ -89,6 +95,48 @@ export abstract class EmbraceInstrumentationBase<
     userSessionManager: UserSessionManagerInternal,
   ): void {
     this._userSessionManager = userSessionManager;
+    this._registerSessionPartListeners();
+  }
+
+  /*
+   * Management of session part listeners
+   */
+
+  protected setSessionPartListeners(listeners: sessionPartListeners): void {
+    this._sessionPartListeners = listeners;
+    this._registerSessionPartListeners();
+  }
+
+  protected unregisterSessionPartListeners(): void {
+    if (this._removeSessionPartListeners.start) {
+      this._removeSessionPartListeners.start();
+    }
+
+    if (this._removeSessionPartListeners.end) {
+      this._removeSessionPartListeners.end();
+    }
+
+    this._removeSessionPartListeners = {};
+  }
+
+  private _registerSessionPartListeners(): void {
+    if (this._isEnabled && this.userSessionManager) {
+      this.unregisterSessionPartListeners();
+
+      if (this._sessionPartListeners.start) {
+        this._removeSessionPartListeners.start =
+          this.userSessionManager.addSessionPartStartedListener(() =>
+            this._sessionPartListeners.start?.(),
+          );
+      }
+
+      if (this._sessionPartListeners.end) {
+        this._removeSessionPartListeners.end =
+          this.userSessionManager.addSessionPartEndedListener(() =>
+            this._sessionPartListeners.end?.(),
+          );
+      }
+    }
   }
 
   public override disable(): void {
@@ -98,6 +146,7 @@ export abstract class EmbraceInstrumentationBase<
 
     this._isEnabled = false;
     this.onDisable();
+    this.unregisterSessionPartListeners();
   }
 
   public override enable(): void {

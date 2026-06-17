@@ -30,7 +30,6 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
   private readonly _onKeyDown: (event: KeyboardEvent) => void;
   private readonly _onScroll: (event: Event) => void;
   private _listenersAttached = false;
-  private _removeSessionPartStartedFn: (() => void) | null = null;
 
   public constructor({ diag, perf }: FirstInteractionInstrumentationArgs = {}) {
     super({
@@ -74,22 +73,15 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
 
   public override onEnable(): void {
     this._attachListeners();
-
-    if (!this._removeSessionPartStartedFn) {
-      this._removeSessionPartStartedFn =
-        this.userSessionManager.addSessionPartStartedListener(() => {
-          this._attachListeners();
-        });
-    }
+    this.setSessionPartListeners({
+      start: () => {
+        this._attachListeners();
+      },
+    });
   }
 
   public override onDisable(): void {
     this._detachListeners();
-
-    if (this._removeSessionPartStartedFn) {
-      this._removeSessionPartStartedFn();
-      this._removeSessionPartStartedFn = null;
-    }
   }
 
   private _handle(data: InteractionData): void {
@@ -132,6 +124,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     document.removeEventListener('click', this._onClick, opts);
     document.removeEventListener('keydown', this._onKeyDown, opts);
     document.removeEventListener('scroll', this._onScroll, opts);
+    this.unregisterSessionPartListeners();
 
     this._listenersAttached = false;
   }
