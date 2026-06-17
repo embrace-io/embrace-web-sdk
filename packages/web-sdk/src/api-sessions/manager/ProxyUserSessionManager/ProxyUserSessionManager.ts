@@ -1,16 +1,15 @@
 import type { TracerProvider } from '@opentelemetry/api';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
+  EndSessionPartOptions,
+  StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
-  SessionPartEndReason,
-  SessionPartStartReason,
   StartSessionOptions,
-  UserSessionEndReason,
 } from '../index.ts';
 import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
 
@@ -117,15 +116,12 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
     return this.getDelegate().getSessionPartSpan();
   }
 
-  public startSessionPartInternal(reason: SessionPartStartReason): void {
-    this.getDelegate().startSessionPartInternal(reason);
+  public startSessionPartInternal(options: StartSessionPartOptions): void {
+    this.getDelegate().startSessionPartInternal(options);
   }
 
-  public endSessionPartInternal(
-    reason: SessionPartEndReason,
-    userSessionEndReason?: UserSessionEndReason,
-  ): void {
-    this.getDelegate().endSessionPartInternal(reason, userSessionEndReason);
+  public endSessionPartInternal(options: EndSessionPartOptions): void {
+    this.getDelegate().endSessionPartInternal(options);
   }
 
   public incrSessionPartCountForKey(key: string): void {

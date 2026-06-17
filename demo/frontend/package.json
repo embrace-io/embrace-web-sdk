@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --build",
-    "clean": "npx -y rimraf .sonda dist",
+    "clean": "emb-rm .sonda dist",
     "dev": "vite --port 4847 --open",
     "build": "vite build",
     "preview": "vite preview --port 4847 --open",
@@ -15,14 +15,14 @@
   "dependencies": {
     "@embrace-io/web-sdk": "*",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/api-logs": "^0.218.0",
-    "@opentelemetry/sdk-logs": "^0.218.0",
-    "@opentelemetry/sdk-trace-web": "^2.7.1",
+    "@opentelemetry/api-logs": "^0.219.0",
+    "@opentelemetry/sdk-logs": "^0.219.0",
+    "@opentelemetry/sdk-trace-web": "^2.8.0",
     "history": "^4.10.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-domv4v5": "npm:react-router-dom@^5.3.4",
-    "react-router-domv6plus": "npm:react-router-dom@^7.16.0"
+    "react-router-domv6plus": "npm:react-router-dom@^7.17.0"
   },
   "devDependencies": {
     "@embrace-io/web-cli": "*",

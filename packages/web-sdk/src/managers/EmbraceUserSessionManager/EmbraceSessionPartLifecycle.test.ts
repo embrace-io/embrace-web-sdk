@@ -1,3 +1,4 @@
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -91,7 +92,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should start a session part', () => {
     void expect(manager.getSessionPartSpan()).to.be.null;
     void expect(manager.getSessionPartId()).to.be.null;
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     void expect(manager.getSessionPartSpan()).to.not.be.null;
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
@@ -99,11 +100,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should end the session part', () => {
     void expect(manager.getSessionPartSpan()).to.be.null;
     void expect(manager.getSessionPartId()).to.be.null;
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     void expect(manager.getSessionPartSpan()).to.not.be.null;
     const sessionPartId = manager.getSessionPartId();
     void expect(sessionPartId).to.not.be.null;
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     void expect(manager.getSessionPartSpan()).to.be.null;
     void expect(manager.getSessionPartId()).to.be.null;
     const finishedSpans = memoryExporter.getFinishedSpans();
@@ -119,12 +120,75 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     );
   });
 
+  it('anchors part end and start spans to an explicit boundary timestamp', () => {
+    manager.startSessionPartInternal({ reason: 'init' });
+    clock.tick(5000);
+
+    const boundaryTimestamp = perf.getNowMillis();
+    // Advance the clock past the boundary so the explicit timestamp and
+    // "now" diverge. Without this the default now-anchored path would
+    // produce the same values and the assertions would pass vacuously.
+    clock.tick(250);
+    manager.endSessionPartInternal({
+      reason: 'web_background',
+      timestamp: boundaryTimestamp,
+    });
+    manager.startSessionPartInternal({
+      reason: 'web_foreground',
+      timestamp: boundaryTimestamp,
+    });
+    clock.tick(1000);
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+      boundaryTimestamp,
+    );
+    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+      boundaryTimestamp,
+    );
+    // An omitted timestamp still anchors to now.
+    expect(hrTimeToMilliseconds(finishedSpans[1].endTime)).to.equal(
+      boundaryTimestamp + 1250,
+    );
+  });
+
+  it('tiles the rolled part spans even when part-end processing takes time', () => {
+    manager.startSessionPartInternal({ reason: 'init' });
+    clock.tick(5000);
+    const boundaryTimestamp = perf.getNowMillis();
+
+    // Simulate unbounded work between the part end and the rollover part
+    // start (e.g. slow part-end listeners or a slow SpanProcessor.onEnd
+    // pipeline). The rollover anchors both calls to one boundary
+    // timestamp, so the delay must not open a gap between the two part
+    // spans.
+    const removeListener = manager.addSessionPartEndedListener(() => {
+      clock.tick(250);
+    });
+    manager.endUserSession();
+    removeListener();
+    manager.endSessionPartInternal({ reason: 'web_background' });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    // The end stamp is captured upfront even without an anchor; the
+    // start-side assertion is the one the shared boundary timestamp owns.
+    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+      boundaryTimestamp,
+    );
+    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+      boundaryTimestamp,
+    );
+  });
+
   it('should ignore startSessionPartInternal calls when a part is already active', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     const sessionPartId = manager.getSessionPartId();
     void expect(sessionPartId).to.not.be.null;
 
-    manager.startSessionPartInternal('web_activity');
+    manager.startSessionPartInternal({ reason: 'web_activity' });
 
     // Active part is unchanged, no part spans were finalized.
     expect(manager.getSessionPartId()).to.equal(sessionPartId);
@@ -136,7 +200,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should not end a session if there is no active session', () => {
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(0);
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
@@ -155,12 +219,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should add breadcrumb to session part span', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     void expect(manager.getSessionPartSpan()).to.not.be.null;
     void expect(manager.getSessionPartId()).to.not.be.null;
 
     manager.addBreadcrumb('some breadcrumb');
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -180,8 +244,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     // made before the first part lands in the state row and gets stamped
     // on the part span when it starts.
     manager.addProperty('queued-property', 'queued-value');
-    manager.startSessionPartInternal('init');
-    manager.endSessionPartInternal('web_background');
+    manager.startSessionPartInternal({ reason: 'init' });
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -192,11 +256,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should add properties to session part span', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     manager.addProperty('custom-property-1', 'custom value1');
     manager.addProperty('custom-property-2', 'custom value2');
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -232,8 +296,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       storage,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    localManager.startSessionPartInternal('init');
-    localManager.endSessionPartInternal('web_background');
+    localManager.startSessionPartInternal({ reason: 'init' });
+    localManager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -273,7 +337,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       void expect(localManager.getSessionPartId()).to.be.null;
       void expect(localManager.getSessionPartSpan()).to.be.null;
 
@@ -295,12 +359,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     void expect(listener.calledOnce).to.be.false;
 
-    localManager.startSessionPartInternal('init');
+    localManager.startSessionPartInternal({ reason: 'init' });
 
     void expect(listener.calledOnce).to.be.true;
 
     removeListener();
-    localManager.startSessionPartInternal('init');
+    localManager.startSessionPartInternal({ reason: 'init' });
 
     void expect(listener.calledOnce).to.be.true;
   });
@@ -322,28 +386,28 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     void expect(listenerSessionPartId).to.be.null;
 
-    localManager.startSessionPartInternal('init');
+    localManager.startSessionPartInternal({ reason: 'init' });
     let sessionPartId = localManager.getSessionPartId();
-    localManager.endSessionPartInternal('web_background');
+    localManager.endSessionPartInternal({ reason: 'web_background' });
 
     void expect(listenerSessionPartId).to.be.eq(sessionPartId);
 
     removeListener();
-    localManager.startSessionPartInternal('init');
+    localManager.startSessionPartInternal({ reason: 'init' });
     sessionPartId = localManager.getSessionPartId();
-    localManager.endSessionPartInternal('web_background');
+    localManager.endSessionPartInternal({ reason: 'web_background' });
 
     void expect(listenerSessionPartId).not.to.be.eq(sessionPartId);
   });
 
   it('should limit the amount of breadcrumbs per session', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     for (let i = 0; i < 10; i++) {
       manager.addBreadcrumb('this is a breadcrumb');
     }
 
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -371,9 +435,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addBreadcrumb('this is a breadcrumb');
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
     const nextSessionPartSpan = nextSessionFinishedSpans[0];
@@ -386,14 +450,14 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should truncate breadcrumb names', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     manager.addBreadcrumb('this is a breadcrumb');
     manager.addBreadcrumb(
       'this is a breadcrumb which has a name longer than the allowed maximum length',
     );
 
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -422,13 +486,13 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should limit the amount of session properties per session', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     for (let i = 0; i < 10; i++) {
       manager.addProperty(`property${i.toString()}`, i.toString());
     }
 
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -461,9 +525,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     // A new session should reset the limit
     memoryExporter.reset();
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty('my-new-prop', 'new');
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
     const nextSessionPartSpan = nextSessionFinishedSpans[0];
@@ -474,7 +538,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should truncate session property keys and values', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
 
     manager.addProperty('key1', '1');
     manager.addProperty(
@@ -482,7 +546,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       'session property long value with extra information',
     );
 
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     const sessionPartSpan = finishedSpans[0];
@@ -517,7 +581,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const propertyKey = 'permanent-key';
     const value = 'permanent-value';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
@@ -536,7 +600,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       value,
     );
 
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     // Survives across user-session boundaries.
     expect(blob('embrace_permanent_properties')).to.have.property(
@@ -548,7 +612,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should persist user-session-scoped properties inside the user-session state blob with bare keys', () => {
     const propertyKey = 'session-only-key';
     const value = 'session-only-value';
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value);
 
     // Not a top-level entry: that path is reserved for permanent properties,
@@ -574,9 +638,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const attributeKey = `emb.properties.${propertyKey}`;
     const value = '3';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value);
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     const secondManager = new EmbraceUserSessionManager({
       diag,
@@ -586,8 +650,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    secondManager.startSessionPartInternal('init');
-    secondManager.endSessionPartInternal('web_background');
+    secondManager.startSessionPartInternal({ reason: 'init' });
+    secondManager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
@@ -627,7 +691,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    flipManager.startSessionPartInternal('init');
+    flipManager.startSessionPartInternal({ reason: 'init' });
     flipManager.addProperty('cart', '3');
 
     permanentWriteShouldFail = true;
@@ -657,7 +721,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    failingManager.startSessionPartInternal('init');
+    failingManager.startSessionPartInternal({ reason: 'init' });
 
     expect(() => failingManager.addProperty('flag', 'on')).to.not.throw();
 
@@ -683,17 +747,17 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       return raw ? (JSON.parse(raw) as Record<string, string>) : {};
     };
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
     expect(blob()).to.have.property(propertyKey, value);
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.removeProperty(propertyKey);
     void expect(blob()[propertyKey]).to.be.undefined;
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     void expect(blob()[propertyKey]).to.be.undefined;
   });
@@ -709,14 +773,14 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const permanentPropertyKey = 'permanent-key';
     const permanentValue = 'permanent-value';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(sessionOnlyPropertyKey, sessionOnlyValue);
     manager.addProperty(permanentPropertyKey, permanentValue, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     expect(manager.getSessionPartProperties()).to.have.property(
       sessionOnlyPropertyKey,
       sessionOnlyValue,
@@ -737,7 +801,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const sessionOnlyPropertyKey = 'session-only-key';
     const permanentPropertyKey = 'permanent-key';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(sessionOnlyPropertyKey, 'session-only-value');
     manager.addProperty(permanentPropertyKey, 'permanent-value', {
       lifespan: 'permanent',
@@ -757,17 +821,17 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const propertyKey = 'permanent-key';
     const value = 'permanent-value';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.removeProperty(propertyKey);
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     expect(manager.getSessionPartProperties()).to.not.have.property(
       propertyKey,
       value,
@@ -779,13 +843,13 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const truncatedKey = 'permanent-key-that-i';
     const value = 'permanent-value';
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     manager.addProperty(propertyKey, value, {
       lifespan: 'permanent',
     });
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     expect(manager.getSessionPartProperties()).to.have.property(
       truncatedKey,
       value,
@@ -795,9 +859,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       value,
     );
     manager.removeProperty(propertyKey);
-    manager.endSessionPartInternal('web_background');
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     expect(manager.getSessionPartProperties()).to.not.have.property(
       truncatedKey,
       value,
@@ -821,8 +885,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
 
-    failingManager.startSessionPartInternal('init');
-    failingManager.endSessionPartInternal('web_background');
+    failingManager.startSessionPartInternal({ reason: 'init' });
+    failingManager.endSessionPartInternal({ reason: 'web_background' });
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
@@ -845,7 +909,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    failingManager.startSessionPartInternal('init');
+    failingManager.startSessionPartInternal({ reason: 'init' });
 
     expect(() =>
       failingManager.addProperty('flag', 'on', { lifespan: 'permanent' }),
@@ -893,7 +957,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       visibilityDoc: window.document,
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
     });
-    flakyManager.startSessionPartInternal('init');
+    flakyManager.startSessionPartInternal({ reason: 'init' });
 
     expect(() => flakyManager.removeProperty('flag')).to.not.throw();
     expect(
@@ -902,7 +966,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   it('should be a silent no-op when removeProperty is called for a key that was never set', () => {
-    manager.startSessionPartInternal('init');
+    manager.startSessionPartInternal({ reason: 'init' });
     expect(() => manager.removeProperty('never-set')).to.not.throw();
     // No storage write happens, no warning is logged.
     expect(
@@ -917,8 +981,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     manager.setTracerProvider(tracerProvider);
-    manager.startSessionPartInternal('init');
-    manager.endSessionPartInternal('web_background');
+    manager.startSessionPartInternal({ reason: 'init' });
+    manager.endSessionPartInternal({ reason: 'web_background' });
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
     expect(secondMemoryExporter.getFinishedSpans()).to.have.lengthOf(1);
@@ -932,8 +996,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       });
       manager.setTracerProvider(tracerProvider);
 
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -963,7 +1027,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       const firstPartId = localManager.getSessionPartId();
 
       localManager.endUserSession();
@@ -973,7 +1037,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should mark the session part as final when user session terminates', () => {
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       manager.endUserSession();
 
       const finishedSpans = memoryExporter.getFinishedSpans();
@@ -1023,7 +1087,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       stateOps.length = 0;
 
       localManager.endUserSession();
@@ -1048,7 +1112,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
 
       clock.tick(3601 * 1000);
 
@@ -1100,7 +1164,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         }),
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       const firstUserSessionId = localManager.getUserSessionId();
       const firstPartId = localManager.getSessionPartId();
       void expect(firstPartId).to.not.be.null;
@@ -1127,11 +1191,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       );
 
       // Tab becomes engaged again. The manager's _onEngagementChange would
-      // call startSessionPartInternal('web_foreground') in production;
+      // call startSessionPartInternal({ reason: 'web_foreground' }) in production;
       // simulate that here. A new user session is created.
       visibilityState.current = 'visible';
       visibilityState.focused = true;
-      localManager.startSessionPartInternal('web_foreground');
+      localManager.startSessionPartInternal({ reason: 'web_foreground' });
 
       void expect(localManager.getSessionPartId()).to.not.be.null;
       expect(localManager.getSessionPartId()).to.not.equal(firstPartId);
@@ -1153,24 +1217,24 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       const firstUserSessionId = localManager.getUserSessionId();
-      localManager.endSessionPartInternal('web_background');
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       clock.tick(61 * 1000);
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       const secondUserSessionId = localManager.getUserSessionId();
 
       expect(secondUserSessionId).to.not.equal(firstUserSessionId);
     });
 
     it('should keep the same user session id across consecutive parts within inactivity timeout', () => {
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       const firstUserSessionId = manager.getUserSessionId();
-      manager.endSessionPartInternal('web_background');
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       const secondUserSessionId = manager.getUserSessionId();
 
       expect(secondUserSessionId).to.equal(firstUserSessionId);
@@ -1191,7 +1255,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       });
       localManager.setTracerProvider(tracerProvider);
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
       const firstUserSessionId = localManager.getUserSessionId();
       void expect(firstUserSessionId).to.not.be.null;
 
@@ -1199,7 +1263,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // brand new part span. The new part span must carry the previous user
       // session's id on emb.user_session_previous_id.
       localManager.endUserSession();
-      localManager.endSessionPartInternal('web_background');
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1213,8 +1277,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   describe('emb.session_part_start_reason', () => {
     it('should default to "init" on the part span when no reason is passed', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -1225,8 +1289,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "activity" on the part span when started with that reason', () => {
-      manager.startSessionPartInternal('web_activity');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'web_activity' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -1237,11 +1301,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "user_session_rollover" on the part span started by user-session rollover', () => {
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       // Triggers the rollover path inside endUserSession, which restarts a
       // part with reason 'user_session_rollover'.
       manager.endUserSession();
-      manager.endSessionPartInternal('web_background');
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1269,11 +1333,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
       });
 
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
 
       clock.tick(3601 * 1000);
 
-      localManager.endSessionPartInternal('web_background');
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1290,8 +1354,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   describe('emb.session_part_end_reason', () => {
     it('should stamp "background" when the part ends on visibility hidden', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -1302,8 +1366,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "web_foreground_inactivity" when the inactivity timer ends the part', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_foreground_inactivity');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_foreground_inactivity' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
@@ -1314,9 +1378,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should stamp "user_session_ended" when the user-session manager ends the part on rollover', () => {
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       manager.endUserSession();
-      manager.endSessionPartInternal('web_background');
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1333,10 +1397,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   describe('emb.session_part_number', () => {
     it('emits a 1-indexed monotonic counter on the part span, persisted across visits', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1371,8 +1435,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
           .inactivityDeadlineTs;
       };
 
-      localManager.startSessionPartInternal('init');
-      localManager.endSessionPartInternal('web_background');
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       // End-of-part writes an inactivity deadline onto the state row.
       const deadlineAfterEnd = readDeadline();
@@ -1383,9 +1447,43 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       // A continuing part (still within the inactivity window) must clear
       // the deadline so a future part-start doesn't read a stale value.
-      localManager.startSessionPartInternal('init');
+      localManager.startSessionPartInternal({ reason: 'init' });
 
       void expect(readDeadline()).to.be.null;
+    });
+
+    it('computes the persisted inactivity deadline from now even when the part end is anchored', () => {
+      const localManager = new EmbraceUserSessionManager({
+        diag,
+        perf,
+        storage,
+        limitManager,
+        dynamicConfigManager: createTestDynamicConfigManager({
+          userSessionInactivityTimeoutSeconds: 60,
+        }),
+        visibilityDoc: window.document,
+      });
+
+      const readDeadline = (): number | null => {
+        const raw = inMemoryStorage.getItem('embrace_user_session_state');
+        if (!raw) return null;
+        return (JSON.parse(raw) as { inactivityDeadlineTs: number | null })
+          .inactivityDeadlineTs;
+      };
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+      clock.tick(5000);
+      const boundaryTimestamp = perf.getNowMillis();
+      // Advance the clock so now and the anchor diverge. The anchored
+      // timestamp is a span-presentation concern only and must not pull
+      // the lazy expiry window backward.
+      clock.tick(250);
+      localManager.endSessionPartInternal({
+        reason: 'web_background',
+        timestamp: boundaryTimestamp,
+      });
+
+      expect(readDeadline()).to.equal(boundaryTimestamp + 250 + 60000);
     });
   });
 
@@ -1407,8 +1505,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         .stub(EmbraceExtendedSpan.prototype, 'setAttributes')
         .throws(new Error('poisoned attribute value'));
 
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       // The span must still be ended and exported, despite the throw.
       expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
@@ -1437,11 +1535,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         .stub(EmbraceExtendedSpan.prototype, 'end')
         .throws(new Error('span-end exploded'));
 
-      manager.startSessionPartInternal('init');
+      manager.startSessionPartInternal({ reason: 'init' });
       void expect(manager.getSessionPartSpan()).to.not.be.null;
 
       expect(() =>
-        manager.endSessionPartInternal('web_background'),
+        manager.endSessionPartInternal({ reason: 'web_background' }),
       ).to.not.throw();
 
       void expect(manager.getSessionPartSpan()).to.be.null;
@@ -1456,12 +1554,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   describe('emb.cold_start', () => {
     it('should stamp true on the first part and false on subsequent parts from the same manager', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(3);
@@ -1480,8 +1578,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should stamp true again on the first part from a new manager instance sharing storage', () => {
-      manager.startSessionPartInternal('init');
-      manager.endSessionPartInternal('web_background');
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'web_background' });
 
       const secondManager = new EmbraceUserSessionManager({
         diag,
@@ -1491,8 +1589,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: window.document,
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
-      secondManager.startSessionPartInternal('init');
-      secondManager.endSessionPartInternal('web_background');
+      secondManager.startSessionPartInternal({ reason: 'init' });
+      secondManager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
@@ -1525,8 +1623,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: makeDoc('complete'),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
-      localManager.startSessionPartInternal('init');
-      localManager.endSessionPartInternal('web_background');
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       const [span] = memoryExporter.getFinishedSpans();
       expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, true);
@@ -1541,8 +1639,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: makeDoc('loading'),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
-      localManager.startSessionPartInternal('init');
-      localManager.endSessionPartInternal('web_background');
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       const [span] = memoryExporter.getFinishedSpans();
       expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, false);
@@ -1557,10 +1655,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         visibilityDoc: makeDoc('loading'),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       });
-      localManager.startSessionPartInternal('init');
-      localManager.endSessionPartInternal('web_background');
-      localManager.startSessionPartInternal('web_foreground');
-      localManager.endSessionPartInternal('web_background');
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'web_background' });
+      localManager.startSessionPartInternal({ reason: 'web_foreground' });
+      localManager.endSessionPartInternal({ reason: 'web_background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);

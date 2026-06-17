@@ -5,8 +5,8 @@
   "scripts": {
     "demo:cdn:frontend:full:preview": "bash ./scripts/runDemo.sh",
     "demo:cdn:frontend:full:preview:async": "bash ./scripts/runDemo.sh --async",
-    "demo:cdn:frontend:build:clean": "npx rimraf dist",
-    "demo:cdn:frontend:install:clean": "npx rimraf node_modules",
+    "demo:cdn:frontend:build:clean": "emb-rm dist",
+    "demo:cdn:frontend:install:clean": "emb-rm node_modules",
     "demo:cdn:sync:web:sdk": "ln -f ../../packages/web-sdk/dist/embrace-web-sdk.js ./public/embrace-web-sdk.js",
     "demo:cdn:frontend:dev": "vite",
     "demo:cdn:frontend:dev:async": "VITE_ASYNC_MODE=true vite",
@@ -16,9 +16,9 @@
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/api-logs": "^0.218.0",
-    "@opentelemetry/sdk-logs": "^0.218.0",
-    "@opentelemetry/sdk-trace-web": "^2.7.1",
+    "@opentelemetry/api-logs": "^0.219.0",
+    "@opentelemetry/sdk-logs": "^0.219.0",
+    "@opentelemetry/sdk-trace-web": "^2.8.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   }

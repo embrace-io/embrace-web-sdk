@@ -18,7 +18,6 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   target: false,
-  dts: true,
   outDir: 'dist',
   sourcemap: true,
   platform: 'browser',

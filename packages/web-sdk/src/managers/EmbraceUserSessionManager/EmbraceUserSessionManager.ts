@@ -78,6 +78,8 @@ import {
 } from './constants.ts';
 import type {
   EmbraceUserSessionManagerArgs,
+  EndSessionPartOptions,
+  StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
   UserSessionState,
@@ -340,7 +342,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return this._sessionPartSpan;
   }
 
-  public startSessionPartInternal(reason: SessionPartStartReason): void {
+  public startSessionPartInternal({
+    reason,
+    timestamp,
+  }: StartSessionPartOptions): void {
     if (this._sessionPartSpan) {
       this._diag.warn(
         `startSessionPartInternal called while a part is active (reason: ${reason}); ignoring`,
@@ -379,7 +384,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     let span: EmbraceExtendedSpan;
     try {
       span = new EmbraceExtendedSpan(
-        this._tracer.startSpan(SESSION_PART_SPAN_NAME, { attributes }),
+        this._tracer.startSpan(SESSION_PART_SPAN_NAME, {
+          attributes,
+          startTime: timestamp,
+        }),
       );
     } catch (error) {
       this._activeSessionPartId = null;
@@ -396,10 +404,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._fireListeners(this._sessionPartStartedListeners, 'started');
   }
 
-  public endSessionPartInternal(
-    reason: SessionPartEndReason,
-    userSessionEndReason?: UserSessionEndReason | null,
-  ): void {
+  public endSessionPartInternal({
+    reason,
+    userSessionEndReason,
+    timestamp,
+  }: EndSessionPartOptions): void {
     if (!this._sessionPartSpan) {
       this._diag.debug(
         'trying to end a session part, but there is no session part in progress. This is a no-op.',
@@ -411,9 +420,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
 
-    // Capture the end stamp upfront. SpanProcessor.onEnd can run unbounded
-    // and must not push it forward.
-    const partEndTs = this._perf.getNowMillis();
+    // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd
+    // cannot push them forward: the caller's timestamp (when given) becomes
+    // the span end time, while the inactivity deadline is computed from the
+    // actual call time so an anchored end cannot shorten the expiry window.
+    const now = this._perf.getNowMillis();
+    const partEndTs = timestamp ?? now;
     const span = this._sessionPartSpan;
     try {
       const endAttrs: Attributes = {
@@ -476,7 +488,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
       this._clearMaxDurationTimer();
     } else {
-      this._continueUserSessionAfterPartEnd(partEndTs);
+      this._continueUserSessionAfterPartEnd(now);
     }
   }
 
@@ -654,6 +666,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     created: boolean;
   } {
     let state = readUserSessionState(this._storage, this._diag);
+    // Never persisted (writes disabled): keep the in-memory session rather than
+    // mint a fresh one per part. After a persist, an empty read is a real clear.
+    if (!state && !this._hasStoredState && this._state) {
+      state = this._state;
+    }
     let created = false;
     if (!state || isUserSessionExpired(state, now)) {
       if (state) {
@@ -726,7 +743,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * part start can detect lazy expiry. The max-duration timer stays valid
    * because userSessionMaxEndTs doesn't change between parts.
    */
-  private _continueUserSessionAfterPartEnd(partEndTs: number): void {
+  private _continueUserSessionAfterPartEnd(now: number): void {
     if (!this._state) {
       this._clearMaxDurationTimer();
       return;
@@ -752,7 +769,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._state = {
       ...this._state,
       inactivityDeadlineTs:
-        partEndTs + this._state.userSessionInactivityTimeoutSeconds * 1000,
+        now + this._state.userSessionInactivityTimeoutSeconds * 1000,
     };
     this._storeState();
   }
@@ -769,8 +786,22 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     userSessionEndReason: UserSessionEndReason,
   ): void {
     if (this._sessionPartSpan) {
-      this.endSessionPartInternal('user_session_ended', userSessionEndReason);
-      this.startSessionPartInternal('user_session_rollover');
+      // The paired end/start share one boundary timestamp so the consecutive
+      // part spans tile without an artificial gap. Real gaps in the part
+      // timeline (page load, hidden tab) stay meaningful because those paths
+      // start a part without passing a timestamp. The timestamp anchors the
+      // spans only; user-session state and timers always use the actual call
+      // time.
+      const boundaryTimestamp = this._perf.getNowMillis();
+      this.endSessionPartInternal({
+        reason: 'user_session_ended',
+        userSessionEndReason,
+        timestamp: boundaryTimestamp,
+      });
+      this.startSessionPartInternal({
+        reason: 'user_session_rollover',
+        timestamp: boundaryTimestamp,
+      });
       return;
     }
 
@@ -778,6 +809,41 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._state = null;
     this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
     this._clearMaxDurationTimer();
+  }
+
+  /**
+   * Ends the active part and starts a new one within the same user session.
+   * The user session is preserved while the part counters advance, so the
+   * caller's `endReason`/`startReason` must both be non-final. Both spans share
+   * one boundary timestamp so they tile without a gap; the caller may supply it
+   * (for example the timestamp of the triggering event), defaulting to now. A
+   * no-op when no part is active: there is nothing to roll over and the next
+   * engagement starts one.
+   */
+
+  // @ts-expect-error suppressed until a caller is wired; remove the directive then
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: no caller is wired yet
+  private _rolloverSessionPart({
+    endReason,
+    startReason,
+    timestamp,
+  }: {
+    endReason: SessionPartEndReason;
+    startReason: SessionPartStartReason;
+    timestamp?: number;
+  }): void {
+    if (!this._sessionPartSpan) {
+      return;
+    }
+    const boundaryTimestamp = timestamp ?? this._perf.getNowMillis();
+    this.endSessionPartInternal({
+      reason: endReason,
+      timestamp: boundaryTimestamp,
+    });
+    this.startSessionPartInternal({
+      reason: startReason,
+      timestamp: boundaryTimestamp,
+    });
   }
 
   private _setupMaxDurationTimer(state: UserSessionState, now: number): void {
@@ -829,7 +895,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         return;
       }
       if (this._activeSessionPartId === null) {
-        this.startSessionPartInternal('web_activity');
+        this.startSessionPartInternal({ reason: 'web_activity' });
         return;
       }
       this._startSessionPartInactivityTimer();
@@ -867,12 +933,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug(`tab disengaged via ${source}; ending current part`);
-        this.endSessionPartInternal('web_background');
+        this.endSessionPartInternal({ reason: 'web_background' });
         return;
       }
       if (engaged && !active) {
         this._diag.debug(`tab engaged via ${source}; starting new part`);
-        this.startSessionPartInternal('web_foreground');
+        this.startSessionPartInternal({ reason: 'web_foreground' });
         return;
       }
       if (engaged && active) {
@@ -895,7 +961,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag.debug(
         'inactivity timer fired; ending current part and user session',
       );
-      this.endSessionPartInternal('web_foreground_inactivity', 'inactivity');
+      this.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
     } catch (e) {
       this._diag.warn('Error handling inactivity timer', e);
     }
