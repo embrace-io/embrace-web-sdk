@@ -351,7 +351,7 @@ describe('EmbraceUserSessionManager', () => {
       }
     });
 
-    it('mints a fresh user session when the between-parts inactivity deadline passes', () => {
+    it('mints a fresh user session when the next part starts after the inactivity timeout', () => {
       const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
