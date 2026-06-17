@@ -124,7 +124,6 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     document.removeEventListener('click', this._onClick, opts);
     document.removeEventListener('keydown', this._onKeyDown, opts);
     document.removeEventListener('scroll', this._onScroll, opts);
-    this.unregisterSessionPartListeners();
 
     this._listenersAttached = false;
   }
