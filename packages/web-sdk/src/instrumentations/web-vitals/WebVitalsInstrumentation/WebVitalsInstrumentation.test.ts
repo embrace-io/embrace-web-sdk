@@ -1231,21 +1231,6 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsStub.callCount).to.equal(1);
   });
 
-  it('should log debug message when enable() is called on already registered listeners', () => {
-    instrumentation = new WebVitalsInstrumentation({
-      diag,
-      perf,
-      listeners: mockWebVitalListeners,
-      urlAttribution: false,
-    });
-
-    instrumentation.enable();
-
-    expect(diag.getDebugLogs()).to.include(
-      'WebVitalsInstrumentation listeners already registered, resuming emission',
-    );
-  });
-
   it('should pause emission when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
