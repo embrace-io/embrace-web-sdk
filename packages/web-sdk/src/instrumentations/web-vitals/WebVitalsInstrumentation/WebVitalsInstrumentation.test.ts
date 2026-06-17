@@ -1231,6 +1231,22 @@ describe('WebVitalsInstrumentation', () => {
     expect(clsStub.callCount).to.equal(1);
   });
 
+  it('should log debug message when enable() is called on already registered listeners', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    instrumentation.disable();
+    instrumentation.enable();
+
+    expect(diag.getDebugLogs()).to.include(
+      'WebVitalsInstrumentation listeners already registered, resuming emission',
+    );
+  });
+
   it('should pause emission when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
@@ -1295,22 +1311,6 @@ describe('WebVitalsInstrumentation', () => {
     } as MetricWithAttribution);
 
     expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
-  });
-
-  it('logs a debug message when re-enabling already-registered listeners', () => {
-    instrumentation = new WebVitalsInstrumentation({
-      diag,
-      perf,
-      listeners: mockWebVitalListeners,
-      urlAttribution: false,
-    });
-
-    instrumentation.disable();
-    instrumentation.enable();
-
-    expect(diag.getDebugLogs()).to.include(
-      'WebVitalsInstrumentation listeners already registered, resuming emission',
-    );
   });
 
   it('should log debug message when disable() is called', () => {
