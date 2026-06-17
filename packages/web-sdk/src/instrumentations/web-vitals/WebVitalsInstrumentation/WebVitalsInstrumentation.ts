@@ -208,7 +208,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _largestShiftTargetForCLS: string | undefined | null = null;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
   private _listenersRegistered = false;
-  private _isEnabled = false;
 
   public constructor({
     diag,
@@ -240,23 +239,23 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public override disable(): void {
+  public override onDisable(): void {
     // web-vitals library doesn't support removing listeners, so we just pause emission
     // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
-    this._isEnabled = false;
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
 
   public override enable(): void {
-    if (typeof PerformanceObserver === 'undefined') {
+    if (typeof PerformanceObserver !== 'undefined') {
+      super.enable();
+    } else {
       this._diag.debug(
         'PerformanceObserver not supported, web vitals will not be collected',
       );
-      return;
     }
+  }
 
-    this._isEnabled = true;
-
+  public override onEnable(): void {
     // web-vitals library doesn't support removing listeners, so only register once
     if (this._listenersRegistered) {
       this._diag.debug(

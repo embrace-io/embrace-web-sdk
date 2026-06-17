@@ -37,7 +37,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isFirstEntry = true;
   private _removeSessionPartEndedListener: (() => void) | null = null;
-  private _isEnabled = false;
 
   private _totalDuration = 0;
   private _workDuration = 0;
@@ -62,18 +61,15 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public enable(): void {
-    if (this._isEnabled) {
-      return;
-    }
-
-    if (!isEntryTypeSupported('long-animation-frame')) {
+  public override enable(): void {
+    if (isEntryTypeSupported('long-animation-frame')) {
+      super.enable();
+    } else {
       this._diag.debug('long-animation-frame not supported, skipping');
-      return;
     }
+  }
 
-    this._isEnabled = true;
-
+  public onEnable(): void {
     if (this._observer) {
       this._observer.disconnect();
     }
@@ -120,8 +116,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     this._registerSessionPartEndedListener();
   }
 
-  public disable(): void {
-    this._isEnabled = false;
+  public onDisable(): void {
     this._resetAccumulators();
 
     if (this._observer) {

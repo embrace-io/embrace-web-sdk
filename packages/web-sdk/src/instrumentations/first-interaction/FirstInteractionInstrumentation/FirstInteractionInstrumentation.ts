@@ -72,7 +72,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     }
   }
 
-  public enable(): void {
+  public override onEnable(): void {
     this._attachListeners();
 
     if (!this._removeSessionPartStartedFn) {
@@ -83,7 +83,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     }
   }
 
-  public disable(): void {
+  public override onDisable(): void {
     this._detachListeners();
 
     if (this._removeSessionPartStartedFn) {

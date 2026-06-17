@@ -539,12 +539,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  public enable(): void {
+  public override onEnable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
   }
 
-  public disable(): void {
+  public override onDisable(): void {
     window.removeEventListener('load', this._onDocumentLoaded);
   }
 }

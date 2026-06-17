@@ -21,7 +21,6 @@ import type {
 
 export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
-  private _isEnabled = false;
 
   public constructor({
     diag,
@@ -42,18 +41,15 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public enable(): void {
-    if (this._isEnabled) {
-      return;
-    }
-
-    if (!isEntryTypeSupported('element')) {
+  public override enable(): void {
+    if (isEntryTypeSupported('element')) {
+      super.enable();
+    } else {
       this._diag.debug('element not supported, skipping');
-      return;
     }
+  }
 
-    this._isEnabled = true;
-
+  public override onEnable(): void {
     if (this._observer) {
       this._observer.disconnect();
     }
@@ -71,9 +67,7 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public disable(): void {
-    this._isEnabled = false;
-
+  public onDisable(): void {
     if (this._observer) {
       this._observer.disconnect();
       this._observer = null;
