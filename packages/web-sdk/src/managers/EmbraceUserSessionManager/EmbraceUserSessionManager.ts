@@ -666,13 +666,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     created: boolean;
   } {
     let state = readUserSessionState(this._storage, this._diag);
-    // Storage read came back empty but we hold an in-memory session we never
-    // managed to persist (writes disabled). It stays authoritative, mirroring
-    // _continueUserSessionAfterPartEnd's _hasStoredState gate. Without this,
-    // every part start under a storage outage mints a fresh user session,
-    // fragmenting one journey into many. Once we have persisted (_hasStoredState),
-    // an empty read is a genuine clear (sibling tab, eviction) and falls through
-    // to creating a new user session.
+    // Never persisted (writes disabled): keep the in-memory session rather than
+    // mint a fresh one per part. After a persist, an empty read is a real clear.
     if (!state && !this._hasStoredState && this._state) {
       state = this._state;
     }
