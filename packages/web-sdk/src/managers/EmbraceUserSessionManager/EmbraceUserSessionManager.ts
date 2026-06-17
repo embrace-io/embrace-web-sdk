@@ -666,6 +666,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     created: boolean;
   } {
     let state = readUserSessionState(this._storage, this._diag);
+    // Never persisted (writes disabled): keep the in-memory session rather than
+    // mint a fresh one per part. After a persist, an empty read is a real clear.
+    if (!state && !this._hasStoredState && this._state) {
+      state = this._state;
+    }
     let created = false;
     if (!state || isUserSessionExpired(state, now)) {
       if (state) {
