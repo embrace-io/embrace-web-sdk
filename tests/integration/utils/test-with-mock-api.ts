@@ -54,7 +54,7 @@ type SimulatedResponse = {
 type TestWithMockApi = {
   requests: EmbraceDataRequest[];
   waitForRequest: (url: RegExp) => Promise<void>;
-  waitForOTelRequest: () => Promise<void>;
+  waitForOTelRequest: (count?: number) => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
@@ -141,11 +141,11 @@ const testWithMockApi = base.extend<TestWithMockApi>({
     // request without short-circuiting on one an earlier call consumed.
     async ({ requests }, use, testInfo) => {
       let consumed = 0;
-      await use(async () => {
+      await use(async (count = 1) => {
         await expect
           .poll(() => requests.length, { timeout: testInfo.timeout })
-          .toBeGreaterThan(consumed);
-        consumed += 1;
+          .toBeGreaterThanOrEqual(consumed + count);
+        consumed += count;
       });
     },
     { scope: 'test' },

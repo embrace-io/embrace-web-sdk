@@ -430,7 +430,7 @@ const runE2ETests = ({
         }
 
         await page.getByRole('button', { name: 'End Session' }).click();
-        await waitForOTelRequest();
+        await waitForOTelRequest(2);
 
         testE2E.expect(requests).toHaveLength(3);
         // Should contain a span capturing the fetch request
