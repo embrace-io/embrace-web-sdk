@@ -432,11 +432,14 @@ const runE2ETests = ({
         await page.getByRole('button', { name: 'End Session' }).click();
         await waitForOTelRequest();
 
-        testE2E.expect(requests).toHaveLength(2);
+        testE2E.expect(requests).toHaveLength(3);
         // Should contain a span capturing the fetch request
         if (goldenFiles) {
           extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
             `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
+          );
+          extendedMockApiTestExpect(requests[2]).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-logs-after-part.json`,
           );
         }
       },
