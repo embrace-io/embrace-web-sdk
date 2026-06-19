@@ -134,7 +134,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'max_scroll_depth.pixels': 450,
       // scrollable range = scrollHeight - innerHeight = 1000 - 100 = 900; scrollY / 900 = 450 / 900 = 50%
       'max_scroll_depth.percent': 50,
-      'max_scroll_depth.did_scroll': 1,
+      'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
     });
   });
@@ -153,7 +153,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 700,
       'max_scroll_depth.percent': 78,
-      'max_scroll_depth.did_scroll': 1,
+      'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
     });
   });
@@ -171,7 +171,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
-      'max_scroll_depth.did_scroll': 0,
+      'max_scroll_depth.did_scroll': false,
       'max_scroll_depth.document_height': 1000,
     });
   });
@@ -196,7 +196,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 900,
       'max_scroll_depth.percent': 100,
-      'max_scroll_depth.did_scroll': 1,
+      'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
     });
     // Second part starts from where the user left off (100), not the previous part's 900.
@@ -204,7 +204,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 100,
       'max_scroll_depth.percent': 11,
-      'max_scroll_depth.did_scroll': 0,
+      'max_scroll_depth.did_scroll': false,
       'max_scroll_depth.document_height': 1000,
     });
   });
@@ -222,7 +222,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 1000,
       'max_scroll_depth.percent': 100,
-      'max_scroll_depth.did_scroll': 1,
+      'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
     });
   });
@@ -240,7 +240,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
-      'max_scroll_depth.did_scroll': 0,
+      'max_scroll_depth.did_scroll': false,
       'max_scroll_depth.document_height': 500,
     });
   });

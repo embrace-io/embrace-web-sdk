@@ -83,7 +83,7 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
         [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
         [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
         [ATTR_MAX_SCROLL_DEPTH_PERCENT]: scrollPercent,
-        [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled ? 1 : 0,
+        [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
         [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]: documentHeight,
       },
     });
