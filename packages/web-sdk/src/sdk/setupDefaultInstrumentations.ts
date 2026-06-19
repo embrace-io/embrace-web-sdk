@@ -2,6 +2,7 @@ import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import {
+  BrowserNavigationInstrumentation,
   ClicksInstrumentation,
   DocumentLoadInstrumentation,
   ElementTimingInstrumentation,
@@ -111,6 +112,12 @@ export const setupDefaultInstrumentations = (
             ?.ignoreUrls ?? []),
         ],
       }),
+    );
+  }
+
+  if (!config.omit?.has('browser-navigation') && config['browser-navigation']) {
+    instrumentations.push(
+      new BrowserNavigationInstrumentation(config['browser-navigation']),
     );
   }
 

@@ -24,6 +24,7 @@ import type {
   VisibilityStateDocument,
 } from '../common/index.ts';
 import type {
+  BrowserNavigationInstrumentationConfig,
   ClicksInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
   ElementTimingInstrumentationArgs,
@@ -389,6 +390,7 @@ type OptionalInstrumentations =
   | 'element-timing'
   | 'server-timing'
   | 'document-load'
+  | 'browser-navigation'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
@@ -435,6 +437,7 @@ export interface DefaultInstrumentationConfig {
   >;
 
   // Optional instrumentations that only run if they have been explicitly configured
+  'browser-navigation'?: BrowserNavigationInstrumentationConfig;
   'empty-root'?: EmptyRootInstrumentationArgs;
 }
 

@@ -23,7 +23,11 @@ export {
   LoafInstrumentation,
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';
-export { getNavigationInstrumentation } from './navigation/index.ts';
+export {
+  BrowserNavigationInstrumentation,
+  type BrowserNavigationInstrumentationConfig,
+  getNavigationInstrumentation,
+} from './navigation/index.ts';
 export {
   RageClickInstrumentation,
   type RageClickInstrumentationArgs,

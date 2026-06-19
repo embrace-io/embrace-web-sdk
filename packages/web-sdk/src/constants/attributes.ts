@@ -16,6 +16,20 @@ export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
   'emb.unhandled_exceptions_count';
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
+export const KEY_EMB_NAVIGATION_TYPE = 'emb.navigation.type';
+export const KEY_EMB_NAVIGATION_DETECTION_SOURCE =
+  'emb.navigation.detection_source';
+export const KEY_EMB_NAVIGATION_CONFIDENCE = 'emb.navigation.confidence';
+export const KEY_EMB_NAVIGATION_DOM_SCORE = 'emb.navigation.dom_score';
+export const KEY_EMB_NAVIGATION_TITLE_CHANGED = 'emb.navigation.title_changed';
+export const KEY_EMB_NAVIGATION_INTERACTION_TYPE =
+  'emb.navigation.interaction_type';
+export const KEY_EMB_NAVIGATION_INTERACTION_LATENCY_MS =
+  'emb.navigation.interaction_latency_ms';
+export const KEY_EMB_NAVIGATION_NETWORK_REQUESTS =
+  'emb.navigation.network_requests';
+export const KEY_EMB_NAVIGATION_SCROLL_RESET = 'emb.navigation.scroll_reset';
+export const KEY_EMB_REFERRER_URL = 'emb.referrer_url';
 export const KEY_BROWSER_URL_FULL = 'browser.url.full';
 // In the backend we use 'app.surface.name' and 'app.surface.id' for the page name and id
 // to be consistent with mobile where we use 'app.surface.*' for screen names and ids
@@ -55,6 +69,7 @@ export enum EMB_TYPES {
   ResourceFetch = 'ux.resource_fetch',
   DocumentLoad = 'ux.document_load',
   Surface = 'ux.surface',
+  Navigation = 'browser.navigation',
   UserTiming = 'ux.user_timing',
   ElementTiming = 'ux.element_timing',
   ServerTiming = 'ux.server_timing',
@@ -71,6 +86,7 @@ export enum EMB_NAVIGATION_INSTRUMENTATIONS {
   Declarative = 'react_router_declarative',
   Data = 'react_router_data',
   Manual = 'manual',
+  Browser = 'browser',
 }
 
 export enum EMB_ERROR_INSTRUMENTATIONS {
