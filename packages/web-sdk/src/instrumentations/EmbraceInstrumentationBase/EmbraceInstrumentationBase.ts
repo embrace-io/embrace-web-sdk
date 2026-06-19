@@ -15,9 +15,9 @@ import { OTelPerformanceManager } from '../../utils/index.ts';
 import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
-type sessionPartListeners = {
-  start?: (() => void) | null;
-  end?: (() => void) | null;
+type SessionPartListeners = {
+  start?: () => void;
+  end?: () => void;
 };
 export abstract class EmbraceInstrumentationBase<
     ConfigType extends InstrumentationConfig = InstrumentationConfig,
@@ -30,8 +30,8 @@ export abstract class EmbraceInstrumentationBase<
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
   protected _isEnabled = false;
-  private _removeSessionPartListeners: sessionPartListeners = {};
-  private _sessionPartListeners: sessionPartListeners = {};
+  private _removeSessionPartListeners: SessionPartListeners = {};
+  private _sessionPartListeners: SessionPartListeners = {};
 
   protected constructor({
     instrumentationName,
@@ -102,7 +102,7 @@ export abstract class EmbraceInstrumentationBase<
    * Management of session part listeners
    */
 
-  protected setSessionPartListeners(listeners: sessionPartListeners): void {
+  protected setSessionPartListeners(listeners: SessionPartListeners): void {
     this._sessionPartListeners = listeners;
     this._registerSessionPartListeners();
   }
