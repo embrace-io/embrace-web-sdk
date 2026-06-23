@@ -10,6 +10,7 @@ import {
   FirstInteractionInstrumentation,
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
+  MaxScrollDepthInstrumentation,
   RageClickInstrumentation,
   ServerTimingInstrumentation,
   UserTimingInstrumentation,
@@ -43,6 +44,12 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('rage-click')) {
     instrumentations.push(new RageClickInstrumentation(config['rage-click']));
+  }
+
+  if (!config.omit?.has('max-scroll-depth')) {
+    instrumentations.push(
+      new MaxScrollDepthInstrumentation(config['max-scroll-depth']),
+    );
   }
 
   if (!config.omit?.has('first-interaction')) {

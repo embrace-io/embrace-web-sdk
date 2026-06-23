@@ -31,6 +31,7 @@ import type {
   FirstInteractionInstrumentationArgs,
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
+  MaxScrollDepthInstrumentationArgs,
   RageClickInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   UserTimingInstrumentationArgs,
@@ -382,6 +383,7 @@ type OptionalInstrumentations =
   | 'exception'
   | 'click'
   | 'rage-click'
+  | 'max-scroll-depth'
   | 'first-interaction'
   | 'web-vital'
   | 'loaf'
@@ -408,6 +410,7 @@ export interface DefaultInstrumentationConfig {
   exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
   'rage-click'?: RageClickInstrumentationArgs;
+  'max-scroll-depth'?: MaxScrollDepthInstrumentationArgs;
   'first-interaction'?: FirstInteractionInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationConfig;
   loaf?: LoafInstrumentationArgs;

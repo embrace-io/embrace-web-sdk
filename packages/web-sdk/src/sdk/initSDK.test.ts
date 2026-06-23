@@ -1126,6 +1126,7 @@ describe('initSDK', () => {
             'document-load',
             'loaf',
             'web-vital',
+            'max-scroll-depth',
           ]),
         },
       });
@@ -1205,6 +1206,7 @@ describe('initSDK', () => {
             'document-load',
             'loaf',
             'web-vital',
+            'max-scroll-depth',
           ]),
         },
       });
@@ -1287,6 +1289,7 @@ describe('initSDK', () => {
             'document-load',
             'loaf',
             'web-vital',
+            'max-scroll-depth',
           ]),
         },
       });
@@ -1974,7 +1977,12 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // Disable as it was creating too many spans making it harder to test
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load', 'loaf', 'web-vital']),
+        omit: new Set([
+          'document-load',
+          'loaf',
+          'web-vital',
+          'max-scroll-depth',
+        ]),
       },
     });
 
@@ -1987,7 +1995,12 @@ describe('isolated instances', () => {
       instrumentations: [secondSDKInstrumentation],
       registerGlobally: false,
       defaultInstrumentationConfig: {
-        omit: new Set(['document-load', 'loaf', 'web-vital']),
+        omit: new Set([
+          'document-load',
+          'loaf',
+          'web-vital',
+          'max-scroll-depth',
+        ]),
       },
     });
 

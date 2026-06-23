@@ -23,6 +23,10 @@ export {
   LoafInstrumentation,
   type LoafInstrumentationArgs,
 } from './loaf/index.ts';
+export {
+  MaxScrollDepthInstrumentation,
+  type MaxScrollDepthInstrumentationArgs,
+} from './max-scroll-depth/index.ts';
 export { getNavigationInstrumentation } from './navigation/index.ts';
 export {
   RageClickInstrumentation,
