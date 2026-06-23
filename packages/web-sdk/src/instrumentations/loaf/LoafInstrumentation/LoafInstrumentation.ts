@@ -2,7 +2,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
-import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
@@ -36,7 +35,6 @@ type ScriptSummaries = Map<string, ScriptSummaryValue>;
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isFirstEntry = true;
-  private _removeSessionPartEndedListener: (() => void) | null = null;
 
   private _totalDuration = 0;
   private _workDuration = 0;
@@ -87,33 +85,15 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    this._registerSessionPartEndedListener();
-  }
-
-  private _registerSessionPartEndedListener(): void {
-    if (!this._isEnabled) {
-      return;
-    }
-
-    if (this._removeSessionPartEndedListener) {
-      this._removeSessionPartEndedListener();
-    }
-
-    this._removeSessionPartEndedListener =
-      this.userSessionManager.addSessionPartEndedListener(() => {
+    this.setSessionPartListeners({
+      end: () => {
         try {
           this._flushReport();
         } catch (e) {
           this._diag.error('error flushing report', e);
         }
-      });
-  }
-
-  public override setUserSessionManager(
-    userSessionManager: UserSessionManagerInternal,
-  ): void {
-    super.setUserSessionManager(userSessionManager);
-    this._registerSessionPartEndedListener();
+      },
+    });
   }
 
   public onDisable(): void {
@@ -122,11 +102,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     if (this._observer) {
       this._observer.disconnect();
       this._observer = null;
-    }
-
-    if (this._removeSessionPartEndedListener) {
-      this._removeSessionPartEndedListener();
-      this._removeSessionPartEndedListener = null;
     }
   }
 

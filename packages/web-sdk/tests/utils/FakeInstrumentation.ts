@@ -1,6 +1,9 @@
 import { EmbraceInstrumentationBase } from '../../src/instrumentations/index.ts';
 
 export class FakeInstrumentation extends EmbraceInstrumentationBase {
+  public startCount = 0;
+  public endCount = 0;
+
   public constructor() {
     super({
       instrumentationName: 'FakeInstrumentation',
@@ -18,7 +21,14 @@ export class FakeInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onEnable(): void {
-    // no-op
+    this.setSessionPartListeners({
+      start: () => {
+        this.startCount += 1;
+      },
+      end: () => {
+        this.endCount += 1;
+      },
+    });
   }
 
   public emit(): void {
