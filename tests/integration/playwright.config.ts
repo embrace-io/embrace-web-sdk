@@ -46,6 +46,13 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
+      name: 'vite-react-router',
+      command:
+        'cd platforms/vite-react-router && npm run build && npx vite preview --port 3016',
+      url: 'http://localhost:3016',
+      reuseExistingServer: false,
+    },
+    {
       name: 'api',
       command: 'npm run server --prefix ../..',
       url: 'http://localhost:3001/health-check',
