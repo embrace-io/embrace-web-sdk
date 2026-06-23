@@ -25,6 +25,7 @@ export abstract class EmbraceInstrumentationBase<
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
+  protected _isEnabled = false;
 
   protected constructor({
     instrumentationName,
@@ -89,4 +90,28 @@ export abstract class EmbraceInstrumentationBase<
   ): void {
     this._userSessionManager = userSessionManager;
   }
+
+  public override disable(): void {
+    if (!this._isEnabled) {
+      return;
+    }
+
+    this._isEnabled = false;
+    this.onDisable();
+  }
+
+  public override enable(): void {
+    if (this._isEnabled) {
+      return;
+    }
+
+    this._isEnabled = true;
+    this.onEnable();
+  }
+
+  /* Only triggered when the instrumentation transitions to disabled */
+  protected abstract onDisable(): void;
+
+  /* Only triggered when the instrumentation transitions to enabled */
+  public abstract onEnable(): void;
 }

@@ -1239,6 +1239,7 @@ describe('WebVitalsInstrumentation', () => {
       urlAttribution: false,
     });
 
+    instrumentation.disable();
     instrumentation.enable();
 
     expect(diag.getDebugLogs()).to.include(

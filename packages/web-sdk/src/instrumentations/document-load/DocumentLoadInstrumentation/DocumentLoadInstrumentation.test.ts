@@ -892,11 +892,11 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should not collect performance twice when enable() is called multiple times', (done) => {
+    it('should not collect performance twice when disabled and re-enabled', (done) => {
       plugin = new DocumentLoadInstrumentation({ enabled: false });
 
       plugin.enable();
-      plugin.enable();
+      plugin.disable();
       plugin.enable();
 
       setTimeout(() => {

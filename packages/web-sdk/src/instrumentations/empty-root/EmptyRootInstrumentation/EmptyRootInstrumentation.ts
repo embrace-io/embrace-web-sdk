@@ -33,20 +33,26 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
       },
     );
 
-    if (this._config.enabled && this._rootNode) {
+    if (this._config.enabled) {
       this.enable();
-    } else if (!this._rootNode) {
+    }
+  }
+
+  public override enable(): void {
+    if (this._rootNode) {
+      super.enable();
+    } else {
       this._diag.warn(
         "supplied root node was null, this instrumentation won't be enabled",
       );
     }
   }
 
-  public disable(): void {
+  public override onDisable(): void {
     this._observer.disconnect();
   }
 
-  public enable(): void {
+  public override onEnable(): void {
     if (this._rootNode) {
       this._observer.observe(this._rootNode, { childList: true });
     }

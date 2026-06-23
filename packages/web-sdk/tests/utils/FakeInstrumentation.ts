@@ -1,8 +1,6 @@
 import { EmbraceInstrumentationBase } from '../../src/instrumentations/index.ts';
 
 export class FakeInstrumentation extends EmbraceInstrumentationBase {
-  private _enabled = false;
-
   public constructor() {
     super({
       instrumentationName: 'FakeInstrumentation',
@@ -15,16 +13,16 @@ export class FakeInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public disable(): void {
-    this._enabled = false;
+  public override onDisable(): void {
+    // no-op
   }
 
-  public enable(): void {
-    this._enabled = true;
+  public override onEnable(): void {
+    // no-op
   }
 
   public emit(): void {
-    if (this._enabled) {
+    if (this._isEnabled) {
       this.logger.emit({
         body: 'my log',
       });

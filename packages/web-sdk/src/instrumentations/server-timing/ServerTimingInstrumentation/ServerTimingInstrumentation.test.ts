@@ -237,7 +237,7 @@ describe('ServerTimingInstrumentation', () => {
   });
 
   describe('duplicate collection guard', () => {
-    it('does not emit logs a second time when enable() is called again', () => {
+    it('does not emit logs a second time when disabled and re-enabled', () => {
       getEntriesByTypeStub
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
@@ -249,6 +249,7 @@ describe('ServerTimingInstrumentation', () => {
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
+      instrumentation.disable();
       instrumentation.enable();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);

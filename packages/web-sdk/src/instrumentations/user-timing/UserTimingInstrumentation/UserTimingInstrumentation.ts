@@ -24,7 +24,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _markObserver: PerformanceObserver | null = null;
   private _measureObserver: PerformanceObserver | null = null;
   private _seenEntries: Set<string> = new Set();
-  private _isEnabled = false;
   private readonly _allowedEntries: UserTimingEntryFilter | undefined;
 
   public constructor({
@@ -48,12 +47,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public enable(): void {
-    if (this._isEnabled) {
-      return;
-    }
-
-    this._isEnabled = true;
+  public override onEnable(): void {
     this._seenEntries = new Set();
 
     if (this._markObserver) {
@@ -88,9 +82,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public disable(): void {
-    this._isEnabled = false;
-
+  public onDisable(): void {
     if (this._markObserver) {
       this._markObserver.disconnect();
       this._markObserver = null;

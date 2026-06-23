@@ -35,7 +35,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public disable(): void {
+  public onDisable(): void {
     window.removeEventListener('error', this._onErrorHandler);
     window.removeEventListener(
       'unhandledrejection',
@@ -43,7 +43,7 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     );
   }
 
-  public enable(): void {
+  public onEnable(): void {
     window.addEventListener('error', this._onErrorHandler);
     window.addEventListener(
       'unhandledrejection',

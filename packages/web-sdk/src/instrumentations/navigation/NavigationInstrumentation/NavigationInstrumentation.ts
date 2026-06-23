@@ -137,7 +137,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
-  public enable = () => {
+  public override onEnable = () => {
     this.setConfig({
       enabled: true,
     });
@@ -146,7 +146,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     );
   };
 
-  public disable = () => {
+  public override onDisable = () => {
     this._cleanUpSessionPartListeners();
     this.setConfig({
       enabled: false,

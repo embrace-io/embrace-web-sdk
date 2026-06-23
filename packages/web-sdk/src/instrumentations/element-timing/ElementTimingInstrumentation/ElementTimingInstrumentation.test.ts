@@ -267,4 +267,27 @@ describe('ElementTimingInstrumentation', () => {
 
     instrumentation.disable();
   });
+
+  it('logs an error when the observer fails to construct', () => {
+    const original = globalThis.PerformanceObserver;
+    // @ts-expect-error redefinition is intentional for testing
+    globalThis.PerformanceObserver = class {
+      public static supportedEntryTypes = ['element'];
+      public constructor() {
+        throw new Error('constructor failed');
+      }
+    };
+
+    const diagLogger = new InMemoryDiagLogger();
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      diag: diagLogger,
+      limitManager,
+    });
+
+    expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable');
+
+    globalThis.PerformanceObserver = original;
+    instrumentation.disable();
+  });
 });

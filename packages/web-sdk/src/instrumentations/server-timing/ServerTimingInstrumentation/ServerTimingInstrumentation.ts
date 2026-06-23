@@ -36,7 +36,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public enable(): void {
+  public override onEnable(): void {
     window.removeEventListener('load', this._onLoad);
 
     if (window.document.readyState === 'complete') {
@@ -47,7 +47,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     window.addEventListener('load', this._onLoad);
   }
 
-  public disable(): void {
+  public override onDisable(): void {
     window.removeEventListener('load', this._onLoad);
   }
 
