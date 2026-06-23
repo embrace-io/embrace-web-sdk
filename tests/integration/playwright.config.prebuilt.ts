@@ -49,6 +49,13 @@ export default defineConfig({
       timeout: 30 * 1000,
     },
     {
+      name: 'vite-react-router',
+      command: 'cd platforms/vite-react-router && npx vite preview --port 3016',
+      url: 'http://localhost:3016',
+      reuseExistingServer: true,
+      timeout: 30 * 1000,
+    },
+    {
       name: 'api',
       command: 'npm run server --prefix ../..',
       url: 'http://localhost:3001/health-check',
