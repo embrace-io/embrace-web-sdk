@@ -19,9 +19,28 @@ export interface VisibilityStateDocument {
   ) => void;
 }
 
+// Minimal shape of NavigationCurrentEntryChangeEvent (Navigation API, not yet in TypeScript's DOM lib).
+// `from` is optional so test fakes that dispatch a plain Event remain valid.
+export interface SoftNavigationEvent extends Event {
+  readonly from: { url: string };
+}
+
+// Minimal shape of window.navigation (Navigation API, not yet in TypeScript's DOM lib).
+export interface Navigation {
+  addEventListener(
+    type: 'currententrychange',
+    listener: (event: SoftNavigationEvent) => void,
+  ): void;
+  removeEventListener(
+    type: 'currententrychange',
+    listener: (event: SoftNavigationEvent) => void,
+  ): void;
+}
+
 // Useful for testing so that we can pass in a window-like object for soft-navigation detection
 export interface NavigationHost {
-  navigation?: EventTarget;
+  navigation?: Navigation;
+  location: { href: string };
 }
 
 // Useful for testing so that we can pass in a document-like object and change its URL

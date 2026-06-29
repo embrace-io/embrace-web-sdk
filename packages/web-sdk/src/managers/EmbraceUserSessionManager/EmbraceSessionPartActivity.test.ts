@@ -12,6 +12,7 @@ import type {
   SessionPartEndReason,
   SessionPartStartReason,
 } from '../../api-sessions/index.ts';
+import type { Navigation, SoftNavigationEvent } from '../../common/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -53,6 +54,40 @@ class FakeTarget implements EventTarget {
 
   public listenerCount(type: string): number {
     return this._listeners.get(type)?.size ?? 0;
+  }
+}
+
+class FakeNavigation implements Navigation {
+  private readonly _listeners: Array<(event: SoftNavigationEvent) => void> = [];
+
+  public addEventListener(
+    _type: 'currententrychange',
+    listener: (event: SoftNavigationEvent) => void,
+  ): void {
+    this._listeners.push(listener);
+  }
+
+  public removeEventListener(
+    _type: 'currententrychange',
+    listener: (event: SoftNavigationEvent) => void,
+  ): void {
+    const i = this._listeners.indexOf(listener);
+    if (i !== -1) {
+      this._listeners.splice(i, 1);
+    }
+  }
+
+  public fire(from: string): void {
+    const event = Object.assign(new Event('currententrychange'), {
+      from: { url: from },
+    });
+    for (const listener of [...this._listeners]) {
+      listener(event);
+    }
+  }
+
+  public listenerCount(): number {
+    return this._listeners.length;
   }
 }
 
@@ -468,7 +503,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
   });
 
   describe('soft navigation (currententrychange)', () => {
-    let navigationTarget: FakeTarget;
+    let navigationTarget: FakeNavigation;
     let softNavManager: EmbraceUserSessionManager;
     let softNavStartSpy: sinon.SinonSpy<
       [options: StartSessionPartOptions],
@@ -484,11 +519,11 @@ describe('EmbraceUserSessionManager browser activity', () => {
         .map((c) => (c.args[0] as EndSessionPartOptions).reason);
 
     const fireCurrentEntryChange = () => {
-      navigationTarget.dispatchEvent(new Event('currententrychange'));
+      navigationTarget.fire('http://previous.example.com/');
     };
 
     beforeEach(() => {
-      navigationTarget = new FakeTarget();
+      navigationTarget = new FakeNavigation();
       softNavManager = new EmbraceUserSessionManager({
         limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
         perf: new MockPerformanceManager(clock),
@@ -497,7 +532,10 @@ describe('EmbraceUserSessionManager browser activity', () => {
         target,
         activityThrottleMs: THROTTLE_MS,
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-        navigationHost: { navigation: navigationTarget },
+        navigationHost: {
+          navigation: navigationTarget,
+          location: { href: 'http://current.example.com/' },
+        },
       });
       softNavManager.setTracerProvider(new WebTracerProvider());
       softNavStartSpy = sinon.spy(softNavManager, 'startSessionPartInternal');
@@ -516,6 +554,15 @@ describe('EmbraceUserSessionManager browser activity', () => {
       expect(softNavEndReasons()).to.deep.equal(['web_soft_nav']);
       expect(softNavStartReasons()).to.deep.equal(['init', 'web_soft_nav']);
       void expect(softNavManager.getSessionPartId()).to.not.be.null;
+    });
+
+    it('is a no-op when navigating to the same URL', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+
+      navigationTarget.fire('http://current.example.com/');
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal(['init']);
     });
 
     it('is a no-op when a navigation fires with no active part', () => {
@@ -546,7 +593,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
         target,
         activityThrottleMs: THROTTLE_MS,
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-        navigationHost: {},
+        navigationHost: { location: { href: 'http://current.example.com/' } },
       });
       expect(() => {
         noNavManager.setTracerProvider(new WebTracerProvider());

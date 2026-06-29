@@ -1,5 +1,6 @@
 import type {
   NavigationHost,
+  SoftNavigationEvent,
   VisibilityStateDocument,
 } from '../../../common/index.ts';
 
@@ -15,7 +16,7 @@ export interface ActivityListenersArgs {
   onVisibilityChange: (event: Event) => void;
   onFocus: (event: Event) => void;
   onBlur: (event: Event) => void;
-  onSoftNavigation: (event: Event) => void;
+  onSoftNavigation: (event: SoftNavigationEvent) => void;
 }
 
 export const addActivityListeners = ({

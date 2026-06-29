@@ -17,6 +17,7 @@ import type {
 } from '../../api-sessions/manager/types.ts';
 import type {
   NavigationHost,
+  SoftNavigationEvent,
   VisibilityStateDocument,
 } from '../../common/index.ts';
 import {
@@ -897,7 +898,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._clearMaxDurationTimer();
   }
 
-  private readonly _onSoftNavigation = (): void => {
+  private readonly _onSoftNavigation = (event: SoftNavigationEvent): void => {
+    // Skip same-URL replacements (e.g. framework hydration via history.replaceState).
+    if (event.from.url === this._navigationHost.location.href) {
+      return;
+    }
+
     try {
       this._rolloverSessionPart({
         endReason: 'web_soft_nav',
