@@ -904,14 +904,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    try {
-      this._rolloverSessionPart({
-        endReason: 'web_soft_nav',
-        startReason: 'web_soft_nav',
-      });
-    } catch (e) {
-      this._diag.warn('Error handling navigation currententrychange event', e);
-    }
+    this._rolloverSessionPart({
+      endReason: 'web_soft_nav',
+      startReason: 'web_soft_nav',
+    });
   };
 
   private readonly _onActivity = (): void => {
