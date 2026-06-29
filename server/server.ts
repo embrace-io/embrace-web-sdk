@@ -152,8 +152,20 @@ const server = createServer((req, res) => {
         }
 
         if (userSessionId) {
-          receivedSpans[userSessionId] = true;
+          if (!receivedSpans[userSessionId]) {
+            receivedSpans[userSessionId] = {};
+          }
           if (sessionPartSpan) {
+            const sessionPartId = sessionPartSpan.attributes.find(
+              (attr) => attr.key === 'emb.session_part_id',
+            )?.value.stringValue;
+            const endReason =
+              sessionPartSpan.attributes.find(
+                (attr) => attr.key === 'emb.session_part_end_reason',
+              )?.value.stringValue ?? 'unknown';
+            if (sessionPartId) {
+              receivedSpans[userSessionId][sessionPartId] = { endReason };
+            }
             logReceivedSessionPartSpan(
               resourceSpans,
               sessionPartSpan,

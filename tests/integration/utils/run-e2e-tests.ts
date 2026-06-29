@@ -240,7 +240,7 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionPartEnded,
+        validateThatSessionPartsEnded,
         getCurrentUserSessionId,
         browserName,
       }) => {
@@ -252,7 +252,7 @@ const runE2ETests = ({
 
         await page.close();
 
-        await validateThatSessionPartEnded(currentUserSessionId);
+        await validateThatSessionPartsEnded(1, currentUserSessionId);
       },
     );
 
@@ -261,7 +261,7 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionPartEnded,
+        validateThatSessionPartsEnded,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
@@ -275,7 +275,7 @@ const runE2ETests = ({
           document.dispatchEvent(new Event('visibilitychange'));
         });
 
-        await validateThatSessionPartEnded();
+        await validateThatSessionPartsEnded();
       },
     );
 
@@ -284,7 +284,7 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionPartEnded,
+        validateThatSessionPartsEnded,
         getCurrentUserSessionId,
         browserName,
       }) => {
@@ -295,7 +295,7 @@ const runE2ETests = ({
 
         await page.reload();
 
-        await validateThatSessionPartEnded(currentUserSessionId);
+        await validateThatSessionPartsEnded(1, currentUserSessionId);
       },
     );
 
@@ -304,7 +304,7 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionPartEnded,
+        validateThatSessionPartsEnded,
         getCurrentUserSessionId,
         browserName,
       }) => {
@@ -318,7 +318,7 @@ const runE2ETests = ({
         });
         await button.click();
 
-        await validateThatSessionPartEnded(currentUserSessionId);
+        await validateThatSessionPartsEnded(1, currentUserSessionId);
       },
     );
 
@@ -327,7 +327,7 @@ const runE2ETests = ({
       async ({
         navigateAndWaitUntilReady,
         page,
-        validateThatSessionPartEnded,
+        validateThatSessionPartsEnded,
         getCurrentUserSessionId,
         browserName,
       }) => {
@@ -341,7 +341,7 @@ const runE2ETests = ({
         // Not exactly the same as a user typing in the URL bar, but is the best we can do
         await page.goto('about:blank');
 
-        await validateThatSessionPartEnded(currentUserSessionId);
+        await validateThatSessionPartsEnded(1, currentUserSessionId);
       },
     );
 

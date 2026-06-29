@@ -19,6 +19,11 @@ export interface VisibilityStateDocument {
   ) => void;
 }
 
+// Useful for testing so that we can pass in a window-like object for soft-navigation detection
+export interface NavigationHost {
+  navigation?: EventTarget;
+}
+
 // Useful for testing so that we can pass in a document-like object and change its URL
 export interface URLDocument {
   URL: string;

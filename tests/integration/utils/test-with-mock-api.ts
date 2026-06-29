@@ -61,8 +61,10 @@ type TestWithMockApi = {
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
-  validateThatSessionPartEnded: (userSessionId?: string) => Promise<void>;
-  validateThatSessionPartsEnded: (expectedCount: number) => Promise<void>;
+  validateThatSessionPartsEnded: (
+    expectedCount?: number,
+    userSessionId?: string,
+  ) => Promise<void>;
 };
 
 // Instrumentation on this list will only compare that the same amount of spans
@@ -255,13 +257,15 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       return userSessionId;
     });
   },
-  validateThatSessionPartEnded: async ({ getCurrentUserSessionId }, use) => {
-    await use(async (userSessionId?: string) => {
+  validateThatSessionPartsEnded: async ({ getCurrentUserSessionId }, use) => {
+    await use(async (expectedCount = 1, userSessionId?: string) => {
       const currentUserSessionId =
         userSessionId ?? (await getCurrentUserSessionId());
 
       const timeout = setTimeout(() => {
-        throw new Error('Server did not register the session end in time');
+        throw new Error(
+          `Expected ${expectedCount.toString()} session parts but timed out`,
+        );
       }, 4000);
 
       await new Promise((resolve) => {
@@ -271,48 +275,15 @@ const testWithMockApi = base.extend<TestWithMockApi>({
               'http://localhost:3001/received-spans',
             );
             const receivedSpans = (await response.json()) as ReceivedSpans;
+            const parts = receivedSpans[currentUserSessionId];
+            const count = parts ? Object.keys(parts).length : 0;
 
-            if (receivedSpans[currentUserSessionId]) {
+            if (count >= expectedCount) {
               clearInterval(interval);
               clearTimeout(timeout);
               resolve(null);
             }
           })();
-        }, 200);
-      });
-    });
-  },
-  validateThatSessionPartsEnded: async ({ requests }, use) => {
-    await use(async (expectedCount: number) => {
-      const timeout = setTimeout(() => {
-        throw new Error(
-          `Expected ${expectedCount.toString()} session parts but timed out`,
-        );
-      }, 4000);
-
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          const count = requests.reduce((acc, req) => {
-            const resourceSpans =
-              (req.data as IExportTraceServiceRequest).resourceSpans ?? [];
-            return (
-              acc +
-              resourceSpans.flatMap(
-                (rs) =>
-                  rs.scopeSpans?.flatMap(
-                    (ss) =>
-                      ss.spans?.filter((s) => s.name === 'emb-session-part') ??
-                      [],
-                  ) ?? [],
-              ).length
-            );
-          }, 0);
-
-          if (count >= expectedCount) {
-            clearInterval(interval);
-            clearTimeout(timeout);
-            resolve(null);
-          }
         }, 200);
       });
     });

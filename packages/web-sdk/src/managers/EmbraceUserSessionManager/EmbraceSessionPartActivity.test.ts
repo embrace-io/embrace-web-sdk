@@ -466,4 +466,93 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
   });
+
+  describe('soft navigation (currententrychange)', () => {
+    let navigationTarget: FakeTarget;
+    let softNavManager: EmbraceUserSessionManager;
+    let softNavStartSpy: sinon.SinonSpy<
+      [options: StartSessionPartOptions],
+      void
+    >;
+    let softNavEndSpy: sinon.SinonSpy;
+
+    const softNavStartReasons = (): SessionPartStartReason[] =>
+      softNavStartSpy.getCalls().map((c) => c.args[0].reason);
+    const softNavEndReasons = (): SessionPartEndReason[] =>
+      softNavEndSpy
+        .getCalls()
+        .map((c) => (c.args[0] as EndSessionPartOptions).reason);
+
+    const fireCurrentEntryChange = () => {
+      navigationTarget.dispatchEvent(new Event('currententrychange'));
+    };
+
+    beforeEach(() => {
+      navigationTarget = new FakeTarget();
+      softNavManager = new EmbraceUserSessionManager({
+        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+        perf: new MockPerformanceManager(clock),
+        storage: setupTestStorage(),
+        visibilityDoc,
+        target,
+        activityThrottleMs: THROTTLE_MS,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        navigationHost: { navigation: navigationTarget },
+      });
+      softNavManager.setTracerProvider(new WebTracerProvider());
+      softNavStartSpy = sinon.spy(softNavManager, 'startSessionPartInternal');
+      softNavEndSpy = sinon.spy(softNavManager, 'endSessionPartInternal');
+    });
+
+    afterEach(() => {
+      softNavManager._shutdown();
+    });
+
+    it('rolls over the part with web_soft_nav reasons when a navigation fires while a part is active', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal(['web_soft_nav']);
+      expect(softNavStartReasons()).to.deep.equal(['init', 'web_soft_nav']);
+      void expect(softNavManager.getSessionPartId()).to.not.be.null;
+    });
+
+    it('is a no-op when a navigation fires with no active part', () => {
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal([]);
+    });
+
+    it('removes the currententrychange listener on shutdown', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+      softNavManager._shutdown();
+      softNavStartSpy.resetHistory();
+      softNavEndSpy.resetHistory();
+
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal([]);
+    });
+
+    it('handles absent navigation gracefully (old browser)', () => {
+      const noNavManager = new EmbraceUserSessionManager({
+        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+        perf: new MockPerformanceManager(clock),
+        storage: setupTestStorage(),
+        visibilityDoc,
+        target,
+        activityThrottleMs: THROTTLE_MS,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        navigationHost: {},
+      });
+      expect(() => {
+        noNavManager.setTracerProvider(new WebTracerProvider());
+        noNavManager.startSessionPartInternal({ reason: 'init' });
+        noNavManager._shutdown();
+      }).to.not.throw();
+    });
+  });
 });

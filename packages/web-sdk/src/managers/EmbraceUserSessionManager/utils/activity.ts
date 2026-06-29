@@ -1,4 +1,7 @@
-import type { VisibilityStateDocument } from '../../../common/index.ts';
+import type {
+  NavigationHost,
+  VisibilityStateDocument,
+} from '../../../common/index.ts';
 
 export const isTabEngaged = (visibilityDoc: VisibilityStateDocument): boolean =>
   visibilityDoc.visibilityState === 'visible' && visibilityDoc.hasFocus();
@@ -6,21 +9,25 @@ export const isTabEngaged = (visibilityDoc: VisibilityStateDocument): boolean =>
 export interface ActivityListenersArgs {
   target: EventTarget;
   visibilityDoc: VisibilityStateDocument;
+  navigationHost: NavigationHost;
   activityEvents: ReadonlyArray<string>;
   onActivity: (event: Event) => void;
   onVisibilityChange: (event: Event) => void;
   onFocus: (event: Event) => void;
   onBlur: (event: Event) => void;
+  onSoftNavigation: (event: Event) => void;
 }
 
 export const addActivityListeners = ({
   target,
   visibilityDoc,
+  navigationHost,
   activityEvents,
   onActivity,
   onVisibilityChange,
   onFocus,
   onBlur,
+  onSoftNavigation,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.addEventListener(event, onActivity);
@@ -30,16 +37,22 @@ export const addActivityListeners = ({
   // Window focus changes (alt-tab, click into DevTools, multi-monitor).
   target.addEventListener('focus', onFocus);
   target.addEventListener('blur', onBlur);
+  navigationHost.navigation?.addEventListener(
+    'currententrychange',
+    onSoftNavigation,
+  );
 };
 
 export const removeActivityListeners = ({
   target,
   visibilityDoc,
+  navigationHost,
   activityEvents,
   onActivity,
   onVisibilityChange,
   onFocus,
   onBlur,
+  onSoftNavigation,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.removeEventListener(event, onActivity);
@@ -47,4 +60,8 @@ export const removeActivityListeners = ({
   visibilityDoc.removeEventListener?.('visibilitychange', onVisibilityChange);
   target.removeEventListener('focus', onFocus);
   target.removeEventListener('blur', onBlur);
+  navigationHost.navigation?.removeEventListener(
+    'currententrychange',
+    onSoftNavigation,
+  );
 };
