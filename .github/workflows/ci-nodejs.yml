@@ -46,14 +46,14 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -68,7 +68,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -131,13 +131,13 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
     steps:
       - name: Restore previous test results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -152,7 +152,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -205,7 +205,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -213,7 +213,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Restore previous test results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -228,7 +228,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -340,7 +340,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Restore previous test results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -355,7 +355,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -393,7 +393,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
     permissions:
       pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
@@ -402,7 +402,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Restore previous test results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -417,7 +417,7 @@ jobs:
             echo 'TEST_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -514,7 +514,7 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -540,7 +540,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous lint results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -555,7 +555,7 @@ jobs:
             echo 'LINT_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.LINT_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -592,7 +592,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Restore previous type check results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -607,7 +607,7 @@ jobs:
             echo 'TYPE_CHECK_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.TYPE_CHECK_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -646,7 +646,7 @@ jobs:
       VALIDATE_STATUS_FILE: validate.success.txt
     steps:
       - name: Restore previous validate results
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         # zizmor: ignore[cache-poisoning] - only checking for marker existence, no possible code injection
         with:
           path: |
@@ -661,7 +661,7 @@ jobs:
             echo 'VALIDATE_PREVIOUSLY_PASSED=false' >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         if: ${{ env.VALIDATE_PREVIOUSLY_PASSED != 'true' }}
         with:
           persist-credentials: false
@@ -712,7 +712,7 @@ jobs:
     timeout-minutes: 10
     if: ${{ needs.environment.outputs.name == 'production' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
@@ -756,7 +756,7 @@ jobs:
     # Only run on push to main (staging environment), not PRs or releases
     if: ${{ needs.environment.outputs.name == 'staging' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
