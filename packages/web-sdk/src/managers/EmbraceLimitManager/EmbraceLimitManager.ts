@@ -41,6 +41,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     user_timing_measure: 0,
     element_timing: 0,
     server_timing: 0,
+    soft_navigation: 0,
   };
   private readonly _maxAllowed: Record<MaxLimitedType, number>;
   private readonly _maxLength: Record<LengthLimitedType, number>;
@@ -132,6 +133,10 @@ export class EmbraceLimitManager implements LimitManagerInternal {
     return this._dropIfMaxReached('server_timing');
   }
 
+  public limitSoftNavigationEntry(): boolean {
+    return this._dropIfMaxReached('soft_navigation');
+  }
+
   public limitBreadcrumb(name: string): LimitedBreadcrumb | 'dropped' {
     if (this._dropIfMaxReached('breadcrumb')) {
       return 'dropped';
@@ -221,6 +226,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       user_timing_measure: 0,
       element_timing: 0,
       server_timing: 0,
+      soft_navigation: 0,
     };
   }
 
