@@ -126,6 +126,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'tap.coords',
   'first_interaction.x',
   'first_interaction.y',
+  'first_interaction.time',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
