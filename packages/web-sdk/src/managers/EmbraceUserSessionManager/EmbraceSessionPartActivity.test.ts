@@ -12,7 +12,6 @@ import type {
   SessionPartEndReason,
   SessionPartStartReason,
 } from '../../api-sessions/index.ts';
-import type { Navigation, SoftNavigationEvent } from '../../common/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
@@ -57,19 +56,21 @@ class FakeTarget implements EventTarget {
   }
 }
 
-class FakeNavigation implements Navigation {
-  private readonly _listeners: Array<(event: SoftNavigationEvent) => void> = [];
+class FakeNavigation {
+  private readonly _listeners: Array<
+    (event: NavigationCurrentEntryChangeEvent) => void
+  > = [];
 
   public addEventListener(
     _type: 'currententrychange',
-    listener: (event: SoftNavigationEvent) => void,
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
   ): void {
     this._listeners.push(listener);
   }
 
   public removeEventListener(
     _type: 'currententrychange',
-    listener: (event: SoftNavigationEvent) => void,
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
   ): void {
     const i = this._listeners.indexOf(listener);
     if (i !== -1) {
@@ -80,7 +81,7 @@ class FakeNavigation implements Navigation {
   public fire(from: string): void {
     const event = Object.assign(new Event('currententrychange'), {
       from: { url: from },
-    });
+    }) as NavigationCurrentEntryChangeEvent;
     for (const listener of [...this._listeners]) {
       listener(event);
     }
@@ -533,7 +534,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
         activityThrottleMs: THROTTLE_MS,
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         navigationHost: {
-          navigation: navigationTarget,
+          navigation: navigationTarget as unknown as Navigation,
           location: { href: 'http://current.example.com/' },
         },
       });

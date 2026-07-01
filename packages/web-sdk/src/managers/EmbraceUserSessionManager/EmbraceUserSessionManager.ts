@@ -17,7 +17,6 @@ import type {
 } from '../../api-sessions/manager/types.ts';
 import type {
   NavigationHost,
-  SoftNavigationEvent,
   VisibilityStateDocument,
 } from '../../common/index.ts';
 import {
@@ -898,8 +897,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._clearMaxDurationTimer();
   }
 
-  private readonly _onSoftNavigation = (event: SoftNavigationEvent): void => {
+  private readonly _onSoftNavigation = (
+    event: NavigationCurrentEntryChangeEvent,
+  ): void => {
     // Skip same-URL replacements (e.g. framework hydration via history.replaceState).
+    // eslint-disable-next-line baseline-js/use-baseline
     if (event.from.url === this._navigationHost.location.href) {
       return;
     }
