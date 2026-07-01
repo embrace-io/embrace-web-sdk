@@ -281,7 +281,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireVisibilityChange('hidden');
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -300,7 +300,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireVisibilityChange('visible');
 
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -330,7 +330,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireBlur();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -342,7 +342,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireFocus();
 
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -363,12 +363,12 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // intermediate state transitions, pinning down which listener "wins"
   // in production.
 
-  it('ends the active part exactly once as web_background on a real active-tab unload sequence', () => {
+  it('ends the active part exactly once as background on a real active-tab unload sequence', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     fireFocusShiftingUnload();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     expect(endSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.be.null;
   });
@@ -378,12 +378,12 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireTabHidden();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     expect(endSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
-  it('starts the new part exactly once as web_foreground on a real BFCache restore sequence', () => {
+  it('starts the new part exactly once as foreground on a real BFCache restore sequence', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     fireTabHidden();
     startSpy.resetHistory();
@@ -391,7 +391,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireBfcacheRestore();
 
-    expect(startReasons()).to.deep.equal(['web_foreground']);
+    expect(startReasons()).to.deep.equal(['foreground']);
     expect(startSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
@@ -402,8 +402,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
     fireFocusShiftingUnload();
     fireBfcacheRestore();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(endReasons()).to.deep.equal(['background']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     expect(endSpy.callCount).to.equal(1);
     expect(startSpy.callCount).to.equal(2);
     void expect(manager.getSessionPartId()).to.not.be.null;

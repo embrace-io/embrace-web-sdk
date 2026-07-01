@@ -940,7 +940,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   };
 
   // Window focus lost (alt-tab, DevTools, another window). Engagement
-  // transition ends the active part as web_background. pagehide/pageshow
+  // transition ends the active part as background. pagehide/pageshow
   // are not listened to: blur or visibilitychange-to-hidden end the part
   // first (see README "Unload and BFCache handling" for the verified
   // cross-engine ordering). The part-end doubles as the unload flush via
@@ -956,12 +956,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug(`tab disengaged via ${source}; ending current part`);
-        this.endSessionPartInternal({ reason: 'web_background' });
+        this.endSessionPartInternal({ reason: 'background' });
         return;
       }
       if (engaged && !active) {
         this._diag.debug(`tab engaged via ${source}; starting new part`);
-        this.startSessionPartInternal({ reason: 'web_foreground' });
+        this.startSessionPartInternal({ reason: 'foreground' });
         return;
       }
       if (engaged && active) {

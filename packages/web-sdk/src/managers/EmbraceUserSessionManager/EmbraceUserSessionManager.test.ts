@@ -137,9 +137,9 @@ describe('EmbraceUserSessionManager', () => {
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
-    // web_background ends the part but keeps the user session alive
+    // background ends the part but keeps the user session alive
     // (inactivity now ends both the part and the user session in one step).
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
 
     // Advance time within inactivity timeout (29 min)
     clock.tick(29 * 60 * 1000);
@@ -159,7 +159,7 @@ describe('EmbraceUserSessionManager', () => {
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
 
     // Advance past inactivity timeout (31 min)
     clock.tick(31 * 60 * 1000);
@@ -179,7 +179,7 @@ describe('EmbraceUserSessionManager', () => {
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
 
     // Advance past max duration (3601 seconds)
     clock.tick(3601 * 1000);
@@ -272,9 +272,9 @@ describe('EmbraceUserSessionManager', () => {
     const manager1 = createManager();
     manager1.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager1.getUserSessionAttributes();
-    // web_background keeps the user session alive; another tab joining
+    // background keeps the user session alive; another tab joining
     // should adopt it. (inactivity now ends both part and user session.)
-    manager1.endSessionPartInternal({ reason: 'web_background' });
+    manager1.endSessionPartInternal({ reason: 'background' });
 
     // Simulate another tab creating a manager with the same storage
     const manager2 = createManager();
@@ -308,7 +308,7 @@ describe('EmbraceUserSessionManager', () => {
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager.getUserSessionAttributes();
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
 
       // Advance within the inactivity timeout.
       clock.tick(29 * 60 * 1000);
@@ -339,7 +339,7 @@ describe('EmbraceUserSessionManager', () => {
         expectedPartIndex <= 4;
         expectedPartIndex++
       ) {
-        manager.endSessionPartInternal({ reason: 'web_background' });
+        manager.endSessionPartInternal({ reason: 'background' });
         clock.tick(5 * 60 * 1000);
         manager.startSessionPartInternal({ reason: 'init' });
 
@@ -356,7 +356,7 @@ describe('EmbraceUserSessionManager', () => {
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager.getUserSessionAttributes();
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
 
       // Past the default 30 min inactivity timeout. The part ended without a
       // live timer, so the next start detects lazy expiry from the deadline
@@ -388,7 +388,7 @@ describe('EmbraceUserSessionManager', () => {
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager.getUserSessionAttributes();
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
 
       // Past the 1 hour max duration. The max-duration timer lives in memory, so
       // it rolls the user session over even though nothing was ever persisted.
@@ -438,7 +438,7 @@ describe('EmbraceUserSessionManager', () => {
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager.getUserSessionAttributes();
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
 
       inMemoryStorage.clear();
       clock.tick(5 * 60 * 1000);
@@ -479,13 +479,13 @@ describe('EmbraceUserSessionManager', () => {
     const manager = createManager();
 
     manager.startSessionPartInternal({ reason: 'init' });
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
     // Expire the session
     clock.tick(31 * 60 * 1000);
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs2 = manager.getUserSessionAttributes();
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
     clock.tick(31 * 60 * 1000);
 
     manager.startSessionPartInternal({ reason: 'init' });
@@ -510,7 +510,7 @@ describe('EmbraceUserSessionManager', () => {
     const firstSessionId = manager.getUserSessionId();
     expect(firstSessionId).to.not.be.null;
 
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
 
     clock.tick(3601 * 1000);
 
@@ -518,7 +518,7 @@ describe('EmbraceUserSessionManager', () => {
     // user-session id resets. The next part start rolls a fresh session.
     expect(manager.getUserSessionId()).to.be.null;
 
-    manager.startSessionPartInternal({ reason: 'web_foreground' });
+    manager.startSessionPartInternal({ reason: 'foreground' });
     expect(manager.getUserSessionId()).to.not.equal(firstSessionId);
   });
 
@@ -574,10 +574,10 @@ describe('EmbraceUserSessionManager', () => {
 
     inMemoryStorage.clear();
 
-    // web_background is the non-final part end that triggers the
+    // background is the non-final part end that triggers the
     // continuation persist; this is the path that previously rewrote
     // the cleared row.
-    manager.endSessionPartInternal({ reason: 'web_background' });
+    manager.endSessionPartInternal({ reason: 'background' });
 
     void expect(inMemoryStorage.getItem('embrace_user_session_state')).to.be
       .null;
@@ -904,7 +904,7 @@ describe('EmbraceUserSessionManager', () => {
       const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
 
       manager.startSessionPartInternal({ reason: 'init' });
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
       clock.tick(60 * 1000); // within the default inactivity timeout
       manager.startSessionPartInternal({ reason: 'init' }); // same session continues
 
@@ -915,7 +915,7 @@ describe('EmbraceUserSessionManager', () => {
       const { manager, refreshRemoteConfig } = createManagerWithLiveConfig();
 
       manager.startSessionPartInternal({ reason: 'init' });
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
       clock.tick(31 * 60 * 1000); // past the default 30 min inactivity timeout
       manager.startSessionPartInternal({ reason: 'init' }); // fresh session
 
@@ -954,9 +954,9 @@ describe('EmbraceUserSessionManager', () => {
       const manager1 = createManager();
       manager1.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager1.getUserSessionAttributes();
-      // web_background keeps state on disk for the second manager to
+      // background keeps state on disk for the second manager to
       // read back; the test then mutates the persisted row.
-      manager1.endSessionPartInternal({ reason: 'web_background' });
+      manager1.endSessionPartInternal({ reason: 'background' });
 
       // Simulate device clock jumping backward (before userSessionStartTs).
       const rawBefore = inMemoryStorage.getItem('embrace_user_session_state');
@@ -1006,9 +1006,9 @@ describe('EmbraceUserSessionManager', () => {
       });
       manager.startSessionPartInternal({ reason: 'init' });
       clock.tick(10 * 1000);
-      // web_background keeps the user session alive and writes the
+      // background keeps the user session alive and writes the
       // deadline; inactivity would terminate the session in one step.
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
 
       expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
     });
@@ -1016,7 +1016,7 @@ describe('EmbraceUserSessionManager', () => {
     it('should clear the inactivity deadline when a continuing part starts', () => {
       const manager = createManager();
       manager.startSessionPartInternal({ reason: 'init' });
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
       void expect(readStoredDeadline()).to.not.be.null;
 
       // A continuing part (within timeout) should clear the persisted value.
@@ -1069,7 +1069,7 @@ describe('EmbraceUserSessionManager', () => {
       // A mid-session remote-config change must not shift the active session.
       config.userSessionInactivityTimeoutSeconds = 600;
       clock.tick(10 * 1000);
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
       // The persisted deadline uses the frozen 120s, not the live 600s.
       expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
 
@@ -1108,7 +1108,7 @@ describe('EmbraceUserSessionManager', () => {
 
       // Inactivity expiry rolls into a fresh session, which resolves durations
       // again and picks up the changed 7200s max.
-      manager.endSessionPartInternal({ reason: 'web_background' });
+      manager.endSessionPartInternal({ reason: 'background' });
       clock.tick(31 * 60 * 1000); // past the default 30 min inactivity timeout
       manager.startSessionPartInternal({ reason: 'init' });
       expect(
@@ -1152,7 +1152,7 @@ describe('EmbraceUserSessionManager', () => {
       });
       manager1.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager1.getUserSessionAttributes();
-      manager1.endSessionPartInternal({ reason: 'web_background' });
+      manager1.endSessionPartInternal({ reason: 'background' });
       // Cancel manager1's max-duration timer so it doesn't auto-rollover during
       // the tick. We're simulating a page reload: the prior page is gone,
       // storage carries the dying state forward, and a fresh manager loads.
