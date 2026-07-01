@@ -5,7 +5,7 @@ declare global {
 }
 
 type SessionPartInfo = {
-  endReason: string;
+  endReason?: string;
 };
 
 type ReceivedSpans = Record<string, Record<string, SessionPartInfo>>;

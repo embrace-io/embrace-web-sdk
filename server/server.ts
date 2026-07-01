@@ -162,7 +162,12 @@ const server = createServer((req, res) => {
             const endReason =
               sessionPartSpan.attributes.find(
                 (attr) => attr.key === 'emb.session_part_end_reason',
-              )?.value.stringValue ?? 'unknown';
+              )?.value.stringValue ?? undefined;
+            if (!endReason) {
+              logWarn(
+                'emb-session-part received without emb.session_part_end_reason; SDK contract broken?',
+              );
+            }
             if (sessionPartId) {
               receivedSpans[userSessionId][sessionPartId] = { endReason };
             }
