@@ -7,6 +7,7 @@ import {
   ATTR_FIRST_INTERACTION_ELEMENT_SELECTOR,
   ATTR_FIRST_INTERACTION_ELEMENT_TYPE,
   ATTR_FIRST_INTERACTION_INTERACTION_TYPE,
+  ATTR_FIRST_INTERACTION_TIME,
   ATTR_FIRST_INTERACTION_X,
   ATTR_FIRST_INTERACTION_Y,
   FIRST_INTERACTION_EVENT_NAME,
@@ -142,6 +143,9 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
       [ATTR_FIRST_INTERACTION_INTERACTION_TYPE]: data.interactionType,
       [ATTR_FIRST_INTERACTION_ELEMENT_TYPE]: elementType,
       [ATTR_FIRST_INTERACTION_ELEMENT_SELECTOR]: elementSelector,
+      [ATTR_FIRST_INTERACTION_TIME]: this.perf.millisFromZeroTime(
+        data.timestamp,
+      ),
     };
 
     if (data.x !== undefined && data.y !== undefined) {
