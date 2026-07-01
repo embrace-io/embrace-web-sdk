@@ -907,8 +907,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
 
     this._rolloverSessionPart({
-      endReason: 'web_soft_nav',
-      startReason: 'web_soft_nav',
+      endReason: 'web_soft_navigation',
+      startReason: 'web_soft_navigation',
     });
   };
 

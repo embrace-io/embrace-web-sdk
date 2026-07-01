@@ -547,13 +547,16 @@ describe('EmbraceUserSessionManager browser activity', () => {
       softNavManager._shutdown();
     });
 
-    it('rolls over the part with web_soft_nav reasons when a navigation fires while a part is active', () => {
+    it('rolls over the part with web_soft_navigation reasons when a navigation fires while a part is active', () => {
       softNavManager.startSessionPartInternal({ reason: 'init' });
 
       fireCurrentEntryChange();
 
-      expect(softNavEndReasons()).to.deep.equal(['web_soft_nav']);
-      expect(softNavStartReasons()).to.deep.equal(['init', 'web_soft_nav']);
+      expect(softNavEndReasons()).to.deep.equal(['web_soft_navigation']);
+      expect(softNavStartReasons()).to.deep.equal([
+        'init',
+        'web_soft_navigation',
+      ]);
       void expect(softNavManager.getSessionPartId()).to.not.be.null;
     });
 
