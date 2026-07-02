@@ -8,12 +8,10 @@ import type {
   INPMetricWithAttribution,
   MetricWithAttribution,
 } from 'web-vitals/attribution';
-import {
-  InMemoryDiagLogger,
-  MockPerformanceManager,
-  setupTestLogExporter,
-  setupTestWebVitalListeners,
-} from '../../../../tests/utils/index.ts';
+import { InMemoryDiagLogger } from '../../../../tests/utils/InMemoryDiagLogger.ts';
+import { MockPerformanceManager } from '../../../../tests/utils/MockPerformanceManager.ts';
+import { setupTestLogExporter } from '../../../../tests/utils/setupTestLogExporter.ts';
+import { setupTestWebVitalListeners } from '../../../../tests/utils/setupTestWebVitalListeners.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
@@ -21,8 +19,8 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
-import { EmbracePageManager } from '../../../managers/index.ts';
+} from '../../../constants/attributes.ts';
+import { EmbracePageManager } from '../../../managers/EmbracePageManager/EmbracePageManager.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 

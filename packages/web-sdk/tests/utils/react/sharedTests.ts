@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import { flushSync } from 'react-dom';
-import type { PageManager } from '../../../src/api-page/index.ts';
+import type { PageManager } from '../../../src/api-page/manager/types.ts';
 import { UUID_PATTERN } from '../constants.ts';
 import { waitFor } from './reactTestUtils.ts';
 

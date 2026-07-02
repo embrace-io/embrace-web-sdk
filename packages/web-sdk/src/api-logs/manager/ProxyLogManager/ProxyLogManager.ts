@@ -1,10 +1,10 @@
+import { NoOpLogManager } from '../NoOpLogManager/NoOpLogManager.ts';
 import type {
   LogExceptionOptions,
   LogManager,
   LogMessageOptions,
   LogSeverity,
-} from '../index.ts';
-import { NoOpLogManager } from '../NoOpLogManager/index.ts';
+} from '../types.ts';
 
 const NOOP_LOG_MANAGER = new NoOpLogManager();
 

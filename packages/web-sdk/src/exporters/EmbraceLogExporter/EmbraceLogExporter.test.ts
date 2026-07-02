@@ -11,7 +11,7 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/fakeFetch.ts';
 import { EmbraceLogExporter } from './EmbraceLogExporter.ts';
 import type { EmbraceLogExporterArgs } from './types.ts';
 

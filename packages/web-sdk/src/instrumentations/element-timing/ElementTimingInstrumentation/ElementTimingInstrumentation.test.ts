@@ -2,15 +2,11 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  InMemoryDiagLogger,
-  MockPerformanceManager,
-  setupTestTraceExporter,
-} from '../../../../tests/utils/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../../../managers/index.ts';
+import { InMemoryDiagLogger } from '../../../../tests/utils/InMemoryDiagLogger.ts';
+import { MockPerformanceManager } from '../../../../tests/utils/MockPerformanceManager.ts';
+import { setupTestTraceExporter } from '../../../../tests/utils/setupTestTraceExporter.ts';
+import { DEFAULT_LIMITS } from '../../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
 import { ElementTimingInstrumentation } from './ElementTimingInstrumentation.ts';
 import type { PerformanceElementTiming } from './types.ts';
 

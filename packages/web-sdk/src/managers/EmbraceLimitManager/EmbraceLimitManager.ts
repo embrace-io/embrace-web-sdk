@@ -1,8 +1,8 @@
 import type { AttributeValue, DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
-import type { LogSeverity } from '../../api-logs/index.ts';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { LogSeverity } from '../../api-logs/manager/types.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/attributes.ts';
 import type {
   AttributeLimitedType,
   EmbraceLimitManagerArgs,

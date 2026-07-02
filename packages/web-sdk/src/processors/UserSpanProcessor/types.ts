@@ -1,4 +1,4 @@
-import type { UserManager } from '../../api-users/index.ts';
+import type { UserManager } from '../../api-users/manager/types.ts';
 
 export interface UserSpanProcessorArgs {
   userManager: UserManager;

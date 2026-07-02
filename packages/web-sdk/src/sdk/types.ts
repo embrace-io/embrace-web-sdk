@@ -14,34 +14,31 @@ import type {
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { LogManager } from '../api-logs/index.ts';
-import type { PageManager } from '../api-page/index.ts';
-import type { UserSessionManager } from '../api-sessions/index.ts';
-import type { TraceManager } from '../api-traces/index.ts';
-import type { UserManager } from '../api-users/index.ts';
+import type { LogManager } from '../api-logs/manager/types.ts';
+import type { PageManager } from '../api-page/manager/types.ts';
+import type { UserSessionManager } from '../api-sessions/manager/types.ts';
+import type { TraceManager } from '../api-traces/manager/types.ts';
+import type { UserManager } from '../api-users/manager/types.ts';
 import type {
   AttributeScrubber,
   VisibilityStateDocument,
-} from '../common/index.ts';
-import type {
-  ClicksInstrumentationArgs,
-  DocumentLoadInstrumentationConfig,
-  ElementTimingInstrumentationArgs,
-  EmptyRootInstrumentationArgs,
-  FirstInteractionInstrumentationArgs,
-  GlobalExceptionInstrumentationArgs,
-  LoafInstrumentationArgs,
-  MaxScrollDepthInstrumentationArgs,
-  RageClickInstrumentationArgs,
-  ServerTimingInstrumentationArgs,
-  UserTimingInstrumentationArgs,
-  WebVitalsInstrumentationConfig,
-} from '../instrumentations/index.ts';
-import type {
-  LimitManagerInternal,
-  UserSessionManagerInternal,
-} from '../managers/index.ts';
-import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
+} from '../common/types.ts';
+import type { ClicksInstrumentationArgs } from '../instrumentations/clicks/ClicksInstrumentation/types.ts';
+import type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/DocumentLoadInstrumentation/types.ts';
+import type { ElementTimingInstrumentationArgs } from '../instrumentations/element-timing/ElementTimingInstrumentation/types.ts';
+import type { EmptyRootInstrumentationArgs } from '../instrumentations/empty-root/EmptyRootInstrumentation/types.ts';
+import type { GlobalExceptionInstrumentationArgs } from '../instrumentations/exceptions/GlobalExceptionInstrumentation/types.ts';
+import type { FirstInteractionInstrumentationArgs } from '../instrumentations/first-interaction/FirstInteractionInstrumentation/types.ts';
+import type { LoafInstrumentationArgs } from '../instrumentations/loaf/LoafInstrumentation/types.ts';
+import type { MaxScrollDepthInstrumentationArgs } from '../instrumentations/max-scroll-depth/MaxScrollDepthInstrumentation/types.ts';
+import type { RageClickInstrumentationArgs } from '../instrumentations/rage-click/RageClickInstrumentation/types.ts';
+import type { ServerTimingInstrumentationArgs } from '../instrumentations/server-timing/ServerTimingInstrumentation/types.ts';
+import type { UserTimingInstrumentationArgs } from '../instrumentations/user-timing/UserTimingInstrumentation/types.ts';
+import type { WebVitalsInstrumentationConfig } from '../instrumentations/web-vitals/WebVitalsInstrumentation/types.ts';
+import type { LimitManagerInternal } from '../managers/EmbraceLimitManager/types.ts';
+import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/types.ts';
+import type { NamespacedStorage } from '../utils/NamespacedStorage/NamespacedStorage.ts';
+import type { PerformanceManager } from '../utils/PerformanceManager/types.ts';
 
 export interface DynamicSDKConfig {
   /**

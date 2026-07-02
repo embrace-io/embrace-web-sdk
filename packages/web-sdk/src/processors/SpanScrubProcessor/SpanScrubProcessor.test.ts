@@ -2,7 +2,7 @@ import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
 import { SpanScrubProcessor } from './SpanScrubProcessor.ts';
 
 const { expect } = chai;

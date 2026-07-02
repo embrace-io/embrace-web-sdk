@@ -1,4 +1,4 @@
-import type { ProxyUserSessionManager } from '../../manager/index.ts';
+import type { ProxyUserSessionManager } from '../../manager/ProxyUserSessionManager/ProxyUserSessionManager.ts';
 
 export interface SessionAPIArgs {
   proxyUserSessionManager: ProxyUserSessionManager;

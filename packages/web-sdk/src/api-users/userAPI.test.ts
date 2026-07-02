@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { setupTestStorage } from '../../tests/utils/index.ts';
-import { EmbraceUserManager } from '../managers/index.ts';
-import { UserAPI } from './api/index.ts';
+import { setupTestStorage } from '../../tests/utils/setupTestStorage.ts';
+import { EmbraceUserManager } from '../managers/EmbraceUserManager/EmbraceUserManager.ts';
+import { UserAPI } from './api/UserAPI/UserAPI.ts';
 import { user } from './userAPI.ts';
 
 describe('userAPI', () => {

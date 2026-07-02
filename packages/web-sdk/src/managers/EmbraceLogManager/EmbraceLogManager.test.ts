@@ -13,37 +13,29 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  setupTestLogExporter,
-  setupTestStorage,
-  setupTestTraceExporter,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../tests/utils/index.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
+import { TEST_DYNAMIC_CONFIG_MANAGER } from '../../../tests/utils/constants.ts';
+import { FailingStorage } from '../../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestLogExporter } from '../../../tests/utils/setupTestLogExporter.ts';
+import { setupTestStorage } from '../../../tests/utils/setupTestStorage.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
+import type { VisibilityStateDocument } from '../../common/types.ts';
 import {
   KEY_EMB_ERROR_LOG_COUNT,
-  KEY_EMB_JS_FILE_BUNDLE_IDS,
-  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.ts';
-import {
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_TYPE,
-} from '../../constants/index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
-import {
-  GLOBAL_CONFIG,
-  NamespacedStorage,
-  OTelPerformanceManager,
-} from '../../utils/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.ts';
-import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
-import { EmbraceUserSessionManager } from '../EmbraceUserSessionManager/index.ts';
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.ts';
+import { GLOBAL_CONFIG } from '../../utils/globalConfig.ts';
+import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
+import { OTelPerformanceManager } from '../../utils/PerformanceManager/OTelPerformanceManager.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
+import { DEFAULT_LIMITS } from '../EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceUserSessionManager } from '../EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/types.ts';
 import { EmbraceLogManager } from './EmbraceLogManager.ts';
 
 chai.use(sinonChai);

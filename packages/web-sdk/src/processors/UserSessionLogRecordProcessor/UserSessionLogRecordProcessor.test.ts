@@ -2,10 +2,12 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import { NoOpUserSessionManager } from '../../api-sessions/manager/NoOpUserSessionManager/index.ts';
-import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
-import type { UserSessionAttributes } from '../../managers/EmbraceUserSessionManager/types.ts';
+import { setupTestLogExporter } from '../../../tests/utils/setupTestLogExporter.ts';
+import { NoOpUserSessionManager } from '../../api-sessions/manager/NoOpUserSessionManager/NoOpUserSessionManager.ts';
+import type {
+  UserSessionAttributes,
+  UserSessionManagerInternal,
+} from '../../managers/EmbraceUserSessionManager/types.ts';
 import { UserSessionLogRecordProcessor } from './UserSessionLogRecordProcessor.ts';
 
 const { expect } = chai;

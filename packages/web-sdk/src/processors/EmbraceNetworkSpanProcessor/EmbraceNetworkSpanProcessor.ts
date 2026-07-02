@@ -14,7 +14,7 @@ import {
   ATTR_HTTP_REQUEST_BODY_SIZE,
   ATTR_HTTP_RESPONSE_BODY_SIZE,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/attributes.ts';
 import { isNetworkSpan } from './types.ts';
 
 /**

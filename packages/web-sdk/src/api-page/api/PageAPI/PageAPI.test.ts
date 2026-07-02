@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { PageManager, Route } from '../../index.ts';
-import { ProxyPageManager } from '../../index.ts';
+import { ProxyPageManager } from '../../manager/ProxyPageManager/ProxyPageManager.ts';
+import type { PageManager, Route } from '../../manager/types.ts';
 import type { PageAPIInstance } from './PageAPI.ts';
 import { PageAPI } from './PageAPI.ts';
 

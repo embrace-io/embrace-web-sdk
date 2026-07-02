@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { EmbracePageManager } from '../managers/index.ts';
-import { PageAPI } from './api/index.ts';
+import { EmbracePageManager } from '../managers/EmbracePageManager/EmbracePageManager.ts';
+import { PageAPI } from './api/PageAPI/PageAPI.ts';
 import { page } from './pageAPI.ts';
 
 describe('pageAPI', () => {

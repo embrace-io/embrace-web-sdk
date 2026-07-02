@@ -6,9 +6,9 @@ import type {
   MetricWithAttribution,
   ReportOpts,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.ts';
-import type { URLDocument } from '../../../common/index.ts';
-import type { PerformanceManager } from '../../../utils/index.ts';
+import type { PageManager } from '../../../api-page/manager/types.ts';
+import type { URLDocument } from '../../../common/types.ts';
+import type { PerformanceManager } from '../../../utils/PerformanceManager/types.ts';
 
 /** @deprecated All vitals metrics are tracked */
 export type TrackingLevel = 'core' | 'all';

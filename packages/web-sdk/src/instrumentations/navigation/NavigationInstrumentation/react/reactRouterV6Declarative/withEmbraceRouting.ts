@@ -1,9 +1,9 @@
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import type React from 'react';
 import { createElement } from 'react';
-import type { Route } from '../../../../../api-page/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import type { Route } from '../../../../../api-page/manager/types.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/attributes.ts';
+import { getNavigationInstrumentation } from '../../instance.ts';
 import type { RoutesFunctionalComponentReturn } from './types.ts';
 
 // Routes can be nested, we need to traverse the routeContext to find the last route

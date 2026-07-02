@@ -34,8 +34,8 @@ import {
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
   DocumentLoadCustomAttributeFunction,

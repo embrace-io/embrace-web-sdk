@@ -2,19 +2,15 @@ import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import {
-  createTestDynamicConfigManager,
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-  MockPerformanceManager,
-} from '../../../tests/utils/index.ts';
-import type { DynamicSDKConfig } from '../../sdk/index.ts';
+import { createTestDynamicConfigManager } from '../../../tests/utils/constants.ts';
+import { FailingStorage } from '../../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../../tests/utils/InMemoryStorage.ts';
+import { MockPerformanceManager } from '../../../tests/utils/MockPerformanceManager.ts';
+import type { DynamicSDKConfig } from '../../sdk/types.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.ts';
+import { DEFAULT_LIMITS } from '../EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../EmbraceLimitManager/EmbraceLimitManager.ts';
 import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 import type { EndSessionPartOptions } from './types.ts';
 

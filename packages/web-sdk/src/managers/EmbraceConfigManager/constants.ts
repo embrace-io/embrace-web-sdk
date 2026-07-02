@@ -1,4 +1,4 @@
-import type { DynamicSDKConfig } from '../../sdk/index.ts';
+import type { DynamicSDKConfig } from '../../sdk/types.ts';
 
 export const DEFAULT_CONFIG: DynamicSDKConfig = {
   samplingPct: 100,

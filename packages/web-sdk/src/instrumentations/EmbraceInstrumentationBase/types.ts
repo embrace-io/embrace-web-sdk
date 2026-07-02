@@ -1,7 +1,7 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type { LimitManagerInternal } from '../../managers/index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
+import type { LimitManagerInternal } from '../../managers/EmbraceLimitManager/types.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
 
 export interface EmbraceInstrumentationBaseArgs<
   ConfigType extends InstrumentationConfig = InstrumentationConfig,

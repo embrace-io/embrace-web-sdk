@@ -5,8 +5,8 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-  InMemoryDiagLogger,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/fakeFetch.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
 import { _resetKeepaliveTracking, FetchTransport } from './FetchTransport.ts';
 
 const { expect } = chai;

@@ -8,7 +8,7 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/fakeFetch.ts';
 import { createFetchTransport } from './createFetchTransport.ts';
 import { _resetKeepaliveTracking } from './FetchTransport.ts';
 

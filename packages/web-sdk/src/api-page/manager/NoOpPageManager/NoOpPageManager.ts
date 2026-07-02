@@ -1,4 +1,4 @@
-import type { PageManager, Route } from '../index.ts';
+import type { PageManager, Route } from '../types.ts';
 
 export class NoOpPageManager implements PageManager {
   public setCurrentRoute(_route: Route): void {}

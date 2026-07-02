@@ -11,8 +11,8 @@ import type {
 import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
-} from '../../api-traces/index.ts';
-import { KEY_EMB_ERROR_CODE } from '../../constants/index.ts';
+} from '../../api-traces/api/TraceAPI/types.ts';
+import { KEY_EMB_ERROR_CODE } from '../../constants/attributes.ts';
 
 /**
  * EmbraceSpan for the most part simply delegates to the underlying Span it receives on initialization so

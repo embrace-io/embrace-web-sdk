@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { SDKFeaturesManager } from '../managers/index.ts';
-import type { SDKInitConfig } from '../sdk/index.ts';
+import type { SDKFeaturesManager } from '../managers/EmbraceSDKFeaturesManager/types.ts';
+import type { SDKInitConfig } from '../sdk/types.ts';
 
 type ValidateConfigArgs = {
   featureManager: SDKFeaturesManager;

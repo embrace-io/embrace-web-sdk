@@ -1,4 +1,4 @@
-import { NamespacedStorage } from '../../src/utils/NamespacedStorage/index.ts';
+import { NamespacedStorage } from '../../src/utils/NamespacedStorage/NamespacedStorage.ts';
 import { InMemoryStorage } from './InMemoryStorage.ts';
 
 /**

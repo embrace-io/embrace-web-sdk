@@ -23,7 +23,7 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import { DocumentLoadInstrumentation } from '../index.ts';
+import { DocumentLoadInstrumentation } from './DocumentLoadInstrumentation.ts';
 import { EventNames } from './enums/EventNames.ts';
 
 const exporter = new InMemorySpanExporter();

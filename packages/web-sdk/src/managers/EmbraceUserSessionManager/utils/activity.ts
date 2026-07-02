@@ -1,4 +1,4 @@
-import type { VisibilityStateDocument } from '../../../common/index.ts';
+import type { VisibilityStateDocument } from '../../../common/types.ts';
 
 export const isTabEngaged = (visibilityDoc: VisibilityStateDocument): boolean =>
   visibilityDoc.visibilityState === 'visible' && visibilityDoc.hasFocus();

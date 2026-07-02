@@ -1,20 +1,18 @@
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-} from '../../tests/utils/index.ts';
-import {
-  getWebSDKOverridableResource,
-  getWebSDKResource,
-  SDK_VERSION,
-} from '../resources/index.ts';
-import { NamespacedStorage } from '../utils/index.ts';
+import { FailingStorage } from '../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../tests/utils/InMemoryStorage.ts';
+import { NamespacedStorage } from '../utils/NamespacedStorage/NamespacedStorage.ts';
 import {
   EMBRACE_APP_INSTANCE_ID_STORAGE_KEY,
   EMBRACE_SERVICE_NAME,
+  SDK_VERSION,
 } from './constants/index.ts';
+import {
+  getWebSDKOverridableResource,
+  getWebSDKResource,
+} from './webSdkResource.ts';
 
 const { expect } = chai;
 

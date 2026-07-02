@@ -1,4 +1,4 @@
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
+import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/types.ts';
 
 export type NavigationInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,

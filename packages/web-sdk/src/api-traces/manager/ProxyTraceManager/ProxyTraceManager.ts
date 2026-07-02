@@ -1,7 +1,10 @@
 import type { Context } from '@opentelemetry/api';
-import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.ts';
-import type { TraceManager } from '../index.ts';
-import { NoOpTraceManager } from '../NoOpTraceManager/index.ts';
+import type {
+  ExtendedSpan,
+  ExtendedSpanOptions,
+} from '../../api/TraceAPI/types.ts';
+import { NoOpTraceManager } from '../NoOpTraceManager/NoOpTraceManager.ts';
+import type { TraceManager } from '../types.ts';
 
 const NOOP_TRACE_MANAGER = new NoOpTraceManager();
 

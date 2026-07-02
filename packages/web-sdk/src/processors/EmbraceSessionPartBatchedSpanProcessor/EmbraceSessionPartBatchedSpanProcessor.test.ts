@@ -5,24 +5,20 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
 import { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  InMemoryDiagLogger,
-  setupTestStorage,
-  setupTestTraceExporter,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../tests/utils/index.ts';
+import { TEST_DYNAMIC_CONFIG_MANAGER } from '../../../tests/utils/constants.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
 import {
   mockNetworkRequestSpan,
   mockSessionSpan,
   mockSpan,
 } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
-import type { UserSessionManagerInternal } from '../../managers/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceUserSessionManager,
-} from '../../managers/index.ts';
-import { OTelPerformanceManager } from '../../utils/index.ts';
+import { setupTestStorage } from '../../../tests/utils/setupTestStorage.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
+import { DEFAULT_LIMITS } from '../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceUserSessionManager } from '../../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/types.ts';
+import { OTelPerformanceManager } from '../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { EmbraceSessionPartBatchedSpanProcessor } from './EmbraceSessionPartBatchedSpanProcessor.ts';
 
 const { expect } = chai;

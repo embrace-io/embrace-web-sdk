@@ -1,10 +1,10 @@
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
-import type { PageManager } from '../../api-page/index.ts';
+import type { PageManager } from '../../api-page/manager/types.ts';
 import {
   KEY_APP_SURFACE_LABEL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
-} from '../../constants/index.ts';
+} from '../../constants/attributes.ts';
 import type { PageSpanProcessorArgs } from './types.ts';
 
 export class PageSpanProcessor implements SpanProcessor {

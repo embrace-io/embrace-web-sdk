@@ -15,7 +15,7 @@ import type {
   SessionPartStartReason,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
+import type { VisibilityStateDocument } from '../../common/types.ts';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -39,22 +39,18 @@ import {
   KEY_EMB_USER_SESSION_START_TS,
   KEY_EMB_USER_SESSION_TERMINATION_REASON,
   KEY_PREFIX_EMB_PROPERTIES,
-} from '../../constants/index.ts';
+} from '../../constants/attributes.ts';
 import type { ExtendedSpan } from '../../index.ts';
-import type { DynamicConfigManager } from '../../sdk/index.ts';
-import type {
-  NamespacedStorage,
-  PerformanceManager,
-  TimeoutRef,
-} from '../../utils/index.ts';
-import {
-  clampNumber,
-  generateUUID,
-  getIncrementedCount,
-  getVisibilityState,
-  throttle,
-} from '../../utils/index.ts';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import type { DynamicConfigManager } from '../../sdk/types.ts';
+import { clampNumber } from '../../utils/clampNumber.ts';
+import { generateUUID } from '../../utils/generateUUID.ts';
+import { getIncrementedCount } from '../../utils/getIncrementedCount.ts';
+import { getVisibilityState } from '../../utils/getVisibilityState.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
+import { throttle } from '../../utils/throttle.ts';
+import type { TimeoutRef } from '../../utils/timeout/types.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/types.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
 import {
   DEFAULT_ACTIVITY_EVENTS,
@@ -86,14 +82,16 @@ import type {
 } from './types.ts';
 import {
   addActivityListeners,
-  createUserSessionState,
   isTabEngaged,
+  removeActivityListeners,
+} from './utils/activity.ts';
+import {
+  createUserSessionState,
   isUserSessionExpired,
   readPermanentProperties,
   readUserSessionState,
-  removeActivityListeners,
   storePermanentProperties,
-} from './utils/index.ts';
+} from './utils/state.ts';
 
 /**
  * Parts are engagement-gated (visible AND focused), so only one part can

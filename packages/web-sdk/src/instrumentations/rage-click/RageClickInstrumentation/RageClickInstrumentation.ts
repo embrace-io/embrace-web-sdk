@@ -1,7 +1,7 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
-import { getSelector } from '../../../utils/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { getSelector } from '../../../utils/getSelector.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import type { InteractionType } from './constants.ts';
 import {
   ATTR_RAGE_CLICK_COUNT,

@@ -1,5 +1,5 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import type { AttributeScrubber } from '../../common/index.ts';
+import type { AttributeScrubber } from '../../common/types.ts';
 import type { LogRecordScrubProcessorArgs } from './types.ts';
 
 export class LogRecordScrubProcessor implements LogRecordProcessor {

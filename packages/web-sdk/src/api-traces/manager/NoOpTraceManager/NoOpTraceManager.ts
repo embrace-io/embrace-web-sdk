@@ -1,7 +1,10 @@
 import type { Context } from '@opentelemetry/api';
 import { ROOT_CONTEXT } from '@opentelemetry/api';
-import type { ExtendedSpan, ExtendedSpanOptions } from '../../api/index.ts';
-import type { TraceManager } from '../index.ts';
+import type {
+  ExtendedSpan,
+  ExtendedSpanOptions,
+} from '../../api/TraceAPI/types.ts';
+import type { TraceManager } from '../types.ts';
 import { NonRecordingExtendedSpan } from './NonRecordingExtendedSpan.ts';
 
 export class NoOpTraceManager implements TraceManager {

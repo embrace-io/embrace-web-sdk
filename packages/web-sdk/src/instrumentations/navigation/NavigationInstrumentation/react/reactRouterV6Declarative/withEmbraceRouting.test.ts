@@ -2,8 +2,8 @@ import * as chai from 'chai';
 import type React from 'react';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { Route } from '../../../../../api-page/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import type { Route } from '../../../../../api-page/manager/types.ts';
+import { getNavigationInstrumentation } from '../../instance.ts';
 import type { RoutesFunctionalComponentReturn } from './types.ts';
 import { withEmbraceRouting } from './withEmbraceRouting.ts';
 

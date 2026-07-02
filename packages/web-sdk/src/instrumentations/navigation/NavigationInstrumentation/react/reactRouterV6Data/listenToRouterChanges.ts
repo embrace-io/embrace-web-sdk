@@ -1,6 +1,6 @@
-import type { Route } from '../../../../../api-page/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import type { Route } from '../../../../../api-page/manager/types.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/attributes.ts';
+import { getNavigationInstrumentation } from '../../instance.ts';
 import type { ListenToRouterChangesArgs, Match } from './types.ts';
 
 /**

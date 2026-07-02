@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { TitleDocument } from '../../common/index.ts';
-import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.ts';
+import type { TitleDocument } from '../../common/types.ts';
+import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/attributes.ts';
 
 export interface EmbracePageManagerArgs {
   diag?: DiagLogger;

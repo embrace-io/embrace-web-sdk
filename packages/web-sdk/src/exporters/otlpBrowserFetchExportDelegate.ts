@@ -1,9 +1,7 @@
 import { createOtlpNetworkExportDelegate } from '@opentelemetry/otlp-exporter-base';
 import type { ISerializer } from '#embrace-io/otlp-transformer'; // internal package: https://nodejs.org/api/packages.html#imports
-import {
-  createFetchTransport,
-  createRetryingTransport,
-} from '../transport/index.ts';
+import { createFetchTransport } from '../transport/FetchTransport/createFetchTransport.ts';
+import { createRetryingTransport } from '../transport/RetryingTransport/createRetryingTransport.ts';
 import type { OtlpFetchExporterConfig } from './types.ts';
 
 // createOtlpBrowserFetchExportDelegate creates an export delegate that uses

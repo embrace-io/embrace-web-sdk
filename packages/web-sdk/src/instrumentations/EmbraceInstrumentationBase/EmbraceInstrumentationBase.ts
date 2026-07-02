@@ -3,16 +3,14 @@ import type {
   InstrumentationConfig,
   InstrumentationModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import type { LogManager } from '../../api-logs/index.ts';
-import { log } from '../../api-logs/index.ts';
-import { session } from '../../api-sessions/index.ts';
-import type {
-  LimitManagerInternal,
-  UserSessionManagerInternal,
-} from '../../managers/index.ts';
-import type { PerformanceManager } from '../../utils/index.ts';
-import { OTelPerformanceManager } from '../../utils/index.ts';
-import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
+import { log } from '../../api-logs/logAPI.ts';
+import type { LogManager } from '../../api-logs/manager/types.ts';
+import { session } from '../../api-sessions/sessionAPI.ts';
+import type { LimitManagerInternal } from '../../managers/EmbraceLimitManager/types.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/types.ts';
+import { OTelPerformanceManager } from '../../utils/PerformanceManager/OTelPerformanceManager.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
+import { InstrumentationAbstract } from '../InstrumentationAbstract/InstrumentationAbstract.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
 type SessionPartListeners = {

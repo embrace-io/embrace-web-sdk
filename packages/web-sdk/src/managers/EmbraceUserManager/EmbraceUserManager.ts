@@ -1,8 +1,8 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
-import type { UserManagerInternal } from '../../api-users/index.ts';
-import type { NamespacedStorage } from '../../utils/index.ts';
-import { generateUUID } from '../../utils/index.ts';
+import type { UserManagerInternal } from '../../api-users/manager/types.ts';
+import { generateUUID } from '../../utils/generateUUID.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,
   EMBRACE_USER_ID_STORAGE_KEY,

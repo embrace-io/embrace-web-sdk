@@ -10,8 +10,8 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
-  mockSpan,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/fakeFetch.ts';
+import { mockSpan } from '../../../tests/utils/mock-entities/ReadableSpan.ts';
 import { EmbraceTraceExporter } from './EmbraceTraceExporter.ts';
 import type { EmbraceTraceExporterArgs } from './types.ts';
 

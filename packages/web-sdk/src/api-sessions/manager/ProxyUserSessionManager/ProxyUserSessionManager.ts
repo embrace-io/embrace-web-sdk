@@ -6,12 +6,12 @@ import type {
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import { NoOpUserSessionManager } from '../NoOpUserSessionManager/NoOpUserSessionManager.ts';
 import type {
   PropertyOptions,
   ReasonSessionEnded,
   StartSessionOptions,
-} from '../index.ts';
-import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
+} from '../types.ts';
 
 const NOOP_USER_SESSION_MANAGER = new NoOpUserSessionManager();
 

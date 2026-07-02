@@ -1,7 +1,8 @@
 import { diag } from '@opentelemetry/api';
-import { createSafeProxy } from '../../../utils/index.ts';
-import type { PageManager } from '../../manager/index.ts';
-import { NoOpPageManager, ProxyPageManager } from '../../manager/index.ts';
+import { createSafeProxy } from '../../../utils/createSafeProxy/createSafeProxy.ts';
+import { NoOpPageManager } from '../../manager/NoOpPageManager/NoOpPageManager.ts';
+import { ProxyPageManager } from '../../manager/ProxyPageManager/ProxyPageManager.ts';
+import type { PageManager } from '../../manager/types.ts';
 
 /**
  * Public interface for PageAPI including SDK-internal methods.

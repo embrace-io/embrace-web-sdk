@@ -1,4 +1,0 @@
-export {
-  TOTAL_GZIP_SIZE_THRESHOLD_IN_KB,
-  TOTAL_UNCOMPRESSED_SIZE_THRESHOLD_IN_KB,
-} from './thresholds.ts';

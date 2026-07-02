@@ -1,7 +1,7 @@
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import * as React from 'react';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/attributes.ts';
+import { getNavigationInstrumentation } from '../../instance.ts';
 import type {
   RouteComponentProps,
   SwitchedRouteComponentProps,

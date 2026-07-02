@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { PageManager, Route } from '../index.ts';
-import { NoOpPageManager } from '../NoOpPageManager/index.ts';
+import { NoOpPageManager } from '../NoOpPageManager/NoOpPageManager.ts';
+import type { PageManager, Route } from '../types.ts';
 import { ProxyPageManager } from './ProxyPageManager.ts';
 
 chai.use(sinonChai);

@@ -5,13 +5,11 @@ import type {
   UserSessionEndReason,
   UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
-import type { DynamicConfigManager } from '../../sdk/index.ts';
-import type {
-  NamespacedStorage,
-  PerformanceManager,
-} from '../../utils/index.ts';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import type { VisibilityStateDocument } from '../../common/types.ts';
+import type { DynamicConfigManager } from '../../sdk/types.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/types.ts';
 
 export interface UserSessionState {
   /**

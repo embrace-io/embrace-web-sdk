@@ -1,4 +1,4 @@
-import type { PathnameDocument } from '../../../../../common/index.ts';
+import type { PathnameDocument } from '../../../../../common/types.ts';
 
 type Route = {
   path?: string;

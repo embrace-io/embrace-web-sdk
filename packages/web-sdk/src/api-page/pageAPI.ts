@@ -1,3 +1,3 @@
-import { PageAPI } from './api/index.ts';
+import { PageAPI } from './api/PageAPI/PageAPI.ts';
 
 export const page = PageAPI.getInstance();

@@ -2,25 +2,21 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
-import {
-  setupTestLogExporter,
-  setupTestStorage,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../../../tests/utils/index.ts';
-import type { LogManager } from '../../../../api-logs/index.ts';
-import { log } from '../../../../api-logs/index.ts';
+import { TEST_DYNAMIC_CONFIG_MANAGER } from '../../../../../tests/utils/constants.ts';
+import { setupTestLogExporter } from '../../../../../tests/utils/setupTestLogExporter.ts';
+import { setupTestStorage } from '../../../../../tests/utils/setupTestStorage.ts';
+import { log } from '../../../../api-logs/logAPI.ts';
+import type { LogManager } from '../../../../api-logs/manager/types.ts';
 import {
   EMB_ERROR_INSTRUMENTATIONS,
   KEY_EMB_INSTRUMENTATION,
   KEY_EMB_JS_FILE_BUNDLE_IDS,
 } from '../../../../constants/attributes.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceLogManager,
-  EmbraceUserSessionManager,
-} from '../../../../managers/index.ts';
-import { OTelPerformanceManager } from '../../../../utils/index.ts';
+import { DEFAULT_LIMITS } from '../../../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceLogManager } from '../../../../managers/EmbraceLogManager/EmbraceLogManager.ts';
+import { EmbraceUserSessionManager } from '../../../../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import { OTelPerformanceManager } from '../../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { EmbraceErrorBoundary } from './EmbraceErrorBoundary.ts';
 
 const { expect } = chai;

@@ -5,7 +5,7 @@ import type {
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
-import type { PropertyOptions } from '../index.ts';
+import type { PropertyOptions } from '../types.ts';
 
 export class NoOpUserSessionManager implements UserSessionManagerInternal {
   public addBreadcrumb(_name: string): void {

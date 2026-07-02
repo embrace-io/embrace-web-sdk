@@ -4,7 +4,7 @@ import {
   ATTR_URL_QUERY,
   SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
-import type { AttributeScrubber } from '../common/index.ts';
+import type { AttributeScrubber } from '../common/types.ts';
 
 const HOST_CREDENTIALS_REGEX = /\/\/(.+):(.+)@(.+)\//;
 

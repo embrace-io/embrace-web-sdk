@@ -1,13 +1,13 @@
 /* eslint-disable baseline-js/use-baseline */
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
 import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
-} from '../../../utils/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+} from '../../../utils/performanceObserver/performanceObserver.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import {
   ATTR_TBD_LOAF_COUNT,
   ATTR_TBD_LOAF_LONGEST_DURATION,

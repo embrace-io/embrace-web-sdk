@@ -1,9 +1,9 @@
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
-} from '../../../utils/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+} from '../../../utils/performanceObserver/performanceObserver.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import {
   KEY_EMB_ELEMENT_TIMING_ELEMENT,
   KEY_EMB_ELEMENT_TIMING_IDENTIFIER,

@@ -1,22 +1,18 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import {
-  InMemoryDiagLogger,
-  setupTestStorage,
-  setupTestTraceExporter,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../../tests/utils/index.ts';
-import { page } from '../../../api-page/index.ts';
-import { session } from '../../../api-sessions/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.ts';
-import type { UserSessionManagerInternal } from '../../../managers/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbracePageManager,
-  EmbraceUserSessionManager,
-} from '../../../managers/index.ts';
-import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { TEST_DYNAMIC_CONFIG_MANAGER } from '../../../../tests/utils/constants.ts';
+import { InMemoryDiagLogger } from '../../../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestStorage } from '../../../../tests/utils/setupTestStorage.ts';
+import { setupTestTraceExporter } from '../../../../tests/utils/setupTestTraceExporter.ts';
+import { page } from '../../../api-page/pageAPI.ts';
+import { session } from '../../../api-sessions/sessionAPI.ts';
+import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/attributes.ts';
+import { DEFAULT_LIMITS } from '../../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbracePageManager } from '../../../managers/EmbracePageManager/EmbracePageManager.ts';
+import { EmbraceUserSessionManager } from '../../../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import { OTelPerformanceManager } from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { NavigationInstrumentation } from './NavigationInstrumentation.ts';
 
 const { expect } = chai;

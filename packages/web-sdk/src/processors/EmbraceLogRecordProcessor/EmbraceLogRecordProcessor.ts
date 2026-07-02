@@ -1,7 +1,7 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import type { URLDocument } from '../../common/index.ts';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { URLDocument } from '../../common/types.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/attributes.ts';
 import type { EmbraceLogRecordProcessorArgs } from './types.ts';
 
 export class EmbraceLogRecordProcessor implements LogRecordProcessor {

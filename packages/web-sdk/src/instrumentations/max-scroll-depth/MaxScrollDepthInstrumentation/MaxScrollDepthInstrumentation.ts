@@ -1,6 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import {
   ATTR_MAX_SCROLL_DEPTH_DID_SCROLL,
   ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT,

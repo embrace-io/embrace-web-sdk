@@ -3,10 +3,12 @@ import { context, trace } from '@opentelemetry/api';
 import type {
   ExtendedSpan,
   ExtendedSpanOptions,
+} from '../../api-traces/api/TraceAPI/types.ts';
+import type {
   TraceManager,
   TraceManagerArgs,
-} from '../../api-traces/index.ts';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+} from '../../api-traces/manager/types.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/attributes.ts';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
 
 export class EmbraceTraceManager implements TraceManager {

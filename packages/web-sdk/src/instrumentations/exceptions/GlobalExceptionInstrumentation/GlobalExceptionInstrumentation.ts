@@ -1,4 +1,4 @@
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import type { GlobalExceptionInstrumentationArgs } from './types.ts';
 
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {

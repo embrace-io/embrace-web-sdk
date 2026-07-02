@@ -13,52 +13,46 @@ import {
   StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
-import { log } from '../api-logs/index.ts';
-import { page } from '../api-page/index.ts';
-import { session } from '../api-sessions/index.ts';
-import { trace } from '../api-traces/index.ts';
-import { user } from '../api-users/index.ts';
-import type { AttributeScrubber } from '../common/index.ts';
-import {
-  EmbraceLogExporter,
-  EmbraceTraceExporter,
-} from '../exporters/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceDynamicConfigManager,
-  EmbraceLimitManager,
-  EmbraceLogManager,
-  EmbracePageManager,
-  EmbraceSDKFeaturesManager,
-  EmbraceTraceManager,
-  EmbraceUserManager,
-  EmbraceUserSessionManager,
-} from '../managers/index.ts';
-import {
-  BrowserLogRecordProcessor,
-  BrowserSpanProcessor,
-  EmbraceLogRecordProcessor,
-  EmbraceNetworkSpanProcessor,
-  EmbraceSessionPartBatchedSpanProcessor,
-  LogRecordScrubProcessor,
-  PageLogRecordProcessor,
-  PageSpanProcessor,
-  SpanScrubProcessor,
-  UserLogRecordProcessor,
-  UserSessionLogRecordProcessor,
-  UserSpanProcessor,
-} from '../processors/index.ts';
-import { EmbraceW3CTraceContextPropagator } from '../propagators/index.ts';
+import { log } from '../api-logs/logAPI.ts';
+import { page } from '../api-page/pageAPI.ts';
+import { session } from '../api-sessions/sessionAPI.ts';
+import { trace } from '../api-traces/traceAPI.ts';
+import { user } from '../api-users/userAPI.ts';
+import type { AttributeScrubber } from '../common/types.ts';
+import { EmbraceLogExporter } from '../exporters/EmbraceLogExporter/EmbraceLogExporter.ts';
+import { EmbraceTraceExporter } from '../exporters/EmbraceTraceExporter/EmbraceTraceExporter.ts';
+import { EmbraceDynamicConfigManager } from '../managers/EmbraceConfigManager/EmbraceDynamicConfigManager.ts';
+import { DEFAULT_LIMITS } from '../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceLogManager } from '../managers/EmbraceLogManager/EmbraceLogManager.ts';
+import { EmbracePageManager } from '../managers/EmbracePageManager/EmbracePageManager.ts';
+import { EmbraceSDKFeaturesManager } from '../managers/EmbraceSDKFeaturesManager/EmbraceSDKFeaturesManager.ts';
+import { EmbraceTraceManager } from '../managers/EmbraceTraceManager/EmbraceTraceManager.ts';
+import { EmbraceUserManager } from '../managers/EmbraceUserManager/EmbraceUserManager.ts';
+import { EmbraceUserSessionManager } from '../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import { BrowserLogRecordProcessor } from '../processors/BrowserLogRecordProcessor/index.ts';
+import { BrowserSpanProcessor } from '../processors/BrowserSpanProcessor/index.ts';
+import { EmbraceLogRecordProcessor } from '../processors/EmbraceLogRecordProcessor/EmbraceLogRecordProcessor.ts';
+import { EmbraceNetworkSpanProcessor } from '../processors/EmbraceNetworkSpanProcessor/EmbraceNetworkSpanProcessor.ts';
+import { EmbraceSessionPartBatchedSpanProcessor } from '../processors/EmbraceSessionPartBatchedSpanProcessor/EmbraceSessionPartBatchedSpanProcessor.ts';
+import { LogRecordScrubProcessor } from '../processors/LogRecordScrubProcessor/LogRecordScrubProcessor.ts';
+import { PageLogRecordProcessor } from '../processors/PageLogRecordProcessor/index.ts';
+import { PageSpanProcessor } from '../processors/PageSpanProcessor/index.ts';
+import { SpanScrubProcessor } from '../processors/SpanScrubProcessor/SpanScrubProcessor.ts';
+import { UserLogRecordProcessor } from '../processors/UserLogRecordProcessor/UserLogRecordProcessor.ts';
+import { UserSessionLogRecordProcessor } from '../processors/UserSessionLogRecordProcessor/UserSessionLogRecordProcessor.ts';
+import { UserSpanProcessor } from '../processors/UserSpanProcessor/UserSpanProcessor.ts';
+import { EmbraceW3CTraceContextPropagator } from '../propagators/EmbraceW3CTraceContextPropagator/EmbraceW3CTraceContextPropagator.ts';
 import {
   getWebSDKOverridableResource,
   getWebSDKResource,
-} from '../resources/index.ts';
+} from '../resources/webSdkResource.ts';
+import { NamespacedStorage } from '../utils/NamespacedStorage/NamespacedStorage.ts';
+import { nsfConfigValidation } from '../utils/nsfConfigValidation.ts';
 import {
-  NamespacedStorage,
-  nsfConfigValidation,
   OTelPerformanceManager,
   updatePageShowMillis,
-} from '../utils/index.ts';
+} from '../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';

@@ -1,5 +1,5 @@
 import type { IExporterTransport } from '@opentelemetry/otlp-exporter-base';
-import { OTelPerformanceManager } from '../../utils/index.ts';
+import { OTelPerformanceManager } from '../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { RetryingTransport } from './RetryingTransport.ts';
 
 /**

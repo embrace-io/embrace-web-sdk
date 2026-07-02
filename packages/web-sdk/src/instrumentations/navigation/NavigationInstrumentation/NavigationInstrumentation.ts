@@ -1,6 +1,6 @@
 import type { Span } from '@opentelemetry/api';
-import type { Route } from '../../../api-page/index.ts';
-import { page } from '../../../api-page/index.ts';
+import type { Route } from '../../../api-page/manager/types.ts';
+import { page } from '../../../api-page/pageAPI.ts';
 import {
   EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
@@ -8,8 +8,8 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+} from '../../../constants/attributes.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import type { NavigationInstrumentationArgs } from './types.ts';
 
 // Regular expression to match path options in the format "(option)"

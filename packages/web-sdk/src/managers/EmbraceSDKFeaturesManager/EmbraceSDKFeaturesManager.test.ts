@@ -5,7 +5,7 @@ import {
   NOT_SAMPLED_UUID,
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/constants.ts';
 import { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager.ts';
 
 chai.use(sinonChai);

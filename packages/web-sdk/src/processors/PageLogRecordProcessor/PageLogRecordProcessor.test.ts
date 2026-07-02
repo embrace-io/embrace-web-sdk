@@ -2,14 +2,14 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import type { PageManager, Route } from '../../api-page/index.ts';
+import { setupTestLogExporter } from '../../../tests/utils/setupTestLogExporter.ts';
+import type { PageManager, Route } from '../../api-page/manager/types.ts';
 import {
   KEY_APP_SURFACE_LABEL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
-} from '../../constants/index.ts';
-import { EmbracePageManager } from '../../managers/index.ts';
+} from '../../constants/attributes.ts';
+import { EmbracePageManager } from '../../managers/EmbracePageManager/EmbracePageManager.ts';
 import { PageLogRecordProcessor } from './PageLogRecordProcessor.ts';
 
 const { expect } = chai;

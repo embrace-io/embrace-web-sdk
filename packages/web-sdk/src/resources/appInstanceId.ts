@@ -1,6 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { NamespacedStorage } from '../utils/index.ts';
-import { generateUUID } from '../utils/index.ts';
+import { generateUUID } from '../utils/generateUUID.ts';
+import type { NamespacedStorage } from '../utils/NamespacedStorage/NamespacedStorage.ts';
 import { EMBRACE_APP_INSTANCE_ID_STORAGE_KEY } from './constants/index.ts';
 
 export const getAppInstanceId = (

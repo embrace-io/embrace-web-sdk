@@ -9,8 +9,8 @@ import {
   MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
   TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
-} from '../config/index.ts';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.ts';
+} from '../config/thresholds.ts';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/test.ts';
 import type { Metric, TestPage } from '../types/index.ts';
 
 type AuditResult = {

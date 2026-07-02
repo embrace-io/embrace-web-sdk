@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { NavigationInstrumentation } from '../../index.ts';
+import { NavigationInstrumentation } from '../NavigationInstrumentation.ts';
 import { createReactRouterNavigationInstrumentation } from './createReactRouterNavigationInstrumentation.ts';
 
 describe('createReactRouterNavigationInstrumentation', () => {

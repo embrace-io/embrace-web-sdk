@@ -5,10 +5,10 @@ import {
   fakeFetchInstall,
   fakeFetchResetHistory,
   fakeFetchRespondWith,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-} from '../../../tests/utils/index.ts';
-import { NamespacedStorage } from '../../utils/index.ts';
+} from '../../../tests/utils/fakeFetch.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../../tests/utils/InMemoryStorage.ts';
+import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import { LOCAL_STORAGE_REMOTE_CONFIG_KEY } from './constants.ts';
 import { EmbraceDynamicConfigManager } from './EmbraceDynamicConfigManager.ts';
 

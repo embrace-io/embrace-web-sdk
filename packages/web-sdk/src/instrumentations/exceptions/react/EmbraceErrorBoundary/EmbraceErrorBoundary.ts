@@ -1,11 +1,11 @@
 import type { PropsWithChildren } from 'react';
 import * as React from 'react';
-import type { LogManager } from '../../../../api-logs/index.ts';
-import { log } from '../../../../api-logs/index.ts';
+import { log } from '../../../../api-logs/logAPI.ts';
+import type { LogManager } from '../../../../api-logs/manager/types.ts';
 import {
   EMB_ERROR_INSTRUMENTATIONS,
   KEY_EMB_INSTRUMENTATION,
-} from '../../../../constants/index.ts';
+} from '../../../../constants/attributes.ts';
 
 type EmbraceErrorBoundaryProps = {
   fallback: () => React.ReactNode;

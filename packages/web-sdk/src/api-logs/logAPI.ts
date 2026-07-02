@@ -1,3 +1,3 @@
-import { LogAPI } from './api/index.ts';
+import { LogAPI } from './api/LogAPI/LogAPI.ts';
 
 export const log = LogAPI.getInstance();

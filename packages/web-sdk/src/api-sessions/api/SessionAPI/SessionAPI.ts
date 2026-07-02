@@ -1,11 +1,9 @@
 import { diag } from '@opentelemetry/api';
 import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
-import { createSafeProxy } from '../../../utils/index.ts';
-import type { UserSessionManager } from '../../manager/index.ts';
-import {
-  NoOpUserSessionManager,
-  ProxyUserSessionManager,
-} from '../../manager/index.ts';
+import { createSafeProxy } from '../../../utils/createSafeProxy/createSafeProxy.ts';
+import { NoOpUserSessionManager } from '../../manager/NoOpUserSessionManager/NoOpUserSessionManager.ts';
+import { ProxyUserSessionManager } from '../../manager/ProxyUserSessionManager/ProxyUserSessionManager.ts';
+import type { UserSessionManager } from '../../manager/types.ts';
 
 /**
  * Public interface for SessionAPI including SDK-internal methods.

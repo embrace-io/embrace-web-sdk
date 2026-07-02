@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { UUID_PATTERN } from '../../../tests/utils/constants.ts';
-import type { Route } from '../../api-page/index.ts';
-import type { TitleDocument } from '../../common/index.ts';
+import type { Route } from '../../api-page/manager/types.ts';
+import type { TitleDocument } from '../../common/types.ts';
 import { EmbracePageManager } from './EmbracePageManager.ts';
 
 chai.use(sinonChai);

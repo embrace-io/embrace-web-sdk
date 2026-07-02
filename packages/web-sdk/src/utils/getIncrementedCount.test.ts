@@ -1,11 +1,9 @@
 import * as chai from 'chai';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  setupTestStorage,
-} from '../../tests/utils/index.ts';
+import { FailingStorage } from '../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestStorage } from '../../tests/utils/setupTestStorage.ts';
 import { getIncrementedCount } from './getIncrementedCount.ts';
-import { NamespacedStorage } from './NamespacedStorage/index.ts';
+import { NamespacedStorage } from './NamespacedStorage/NamespacedStorage.ts';
 
 const { expect } = chai;
 

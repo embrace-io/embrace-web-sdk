@@ -1,3 +1,3 @@
-import { UserAPI } from './api/index.ts';
+import { UserAPI } from './api/UserAPI/UserAPI.ts';
 
 export const user = UserAPI.getInstance();

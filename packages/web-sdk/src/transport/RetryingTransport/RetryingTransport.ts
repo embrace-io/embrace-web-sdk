@@ -2,8 +2,8 @@ import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-import type { PerformanceManager } from '../../utils/index.ts';
-import { OTelPerformanceManager } from '../../utils/index.ts';
+import { OTelPerformanceManager } from '../../utils/PerformanceManager/OTelPerformanceManager.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
 import {
   BACKOFF_MULTIPLIER,
   INITIAL_BACKOFF,

@@ -7,7 +7,7 @@ import {
   ATTR_TELEMETRY_SDK_VERSION,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions';
-import { KEY_EMB_APP_INSTANCE_ID } from '../constants/index.ts';
+import { KEY_EMB_APP_INSTANCE_ID } from '../constants/attributes.ts';
 import { getAppInstanceId } from './appInstanceId.ts';
 import {
   EMBRACE_SERVICE_NAME,

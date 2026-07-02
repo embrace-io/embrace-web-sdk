@@ -1,7 +1,8 @@
 import { diag } from '@opentelemetry/api';
-import { createSafeProxy } from '../../../utils/index.ts';
-import type { UserManager } from '../../manager/index.ts';
-import { NoOpUserManager, ProxyUserManager } from '../../manager/index.ts';
+import { createSafeProxy } from '../../../utils/createSafeProxy/createSafeProxy.ts';
+import { NoOpUserManager } from '../../manager/NoOpUserManager/NoOpUserManager.ts';
+import { ProxyUserManager } from '../../manager/ProxyUserManager/ProxyUserManager.ts';
+import type { UserManager } from '../../manager/types.ts';
 
 /**
  * Public interface for UserAPI including SDK-internal methods.

@@ -1,4 +1,4 @@
-import { EmbraceInstrumentationBase } from '../../src/instrumentations/index.ts';
+import { EmbraceInstrumentationBase } from '../../src/instrumentations/EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 
 export class FakeInstrumentation extends EmbraceInstrumentationBase {
   public startCount = 0;

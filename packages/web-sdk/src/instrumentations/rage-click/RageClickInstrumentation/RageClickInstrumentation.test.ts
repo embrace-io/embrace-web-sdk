@@ -2,12 +2,10 @@ import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  InMemoryDiagLogger,
-  setupTestLogExporter,
-} from '../../../../tests/utils/index.ts';
-import type { PerformanceManager } from '../../../utils/index.ts';
-import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { InMemoryDiagLogger } from '../../../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestLogExporter } from '../../../../tests/utils/setupTestLogExporter.ts';
+import { OTelPerformanceManager } from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
+import type { PerformanceManager } from '../../../utils/PerformanceManager/types.ts';
 import { RAGE_CLICK_WINDOW_TIME } from './constants.ts';
 import { RageClickInstrumentation } from './RageClickInstrumentation.ts';
 

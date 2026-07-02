@@ -2,12 +2,10 @@ import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import {
-  setupTestStorage,
-  setupTestTraceExporter,
-} from '../../../tests/utils/index.ts';
-import type { UserManager } from '../../api-users/index.ts';
-import { EmbraceUserManager } from '../../managers/index.ts';
+import { setupTestStorage } from '../../../tests/utils/setupTestStorage.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
+import type { UserManager } from '../../api-users/manager/types.ts';
+import { EmbraceUserManager } from '../../managers/EmbraceUserManager/EmbraceUserManager.ts';
 import { UserSpanProcessor } from './UserSpanProcessor.ts';
 
 const { expect } = chai;

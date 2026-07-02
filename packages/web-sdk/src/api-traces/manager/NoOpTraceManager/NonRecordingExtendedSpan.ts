@@ -10,7 +10,7 @@ import { INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
 import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
-} from '../../api/index.ts';
+} from '../../api/TraceAPI/types.ts';
 
 // File copied mostly from
 // https://github.com/open-telemetry/opentelemetry-js/blob/7e30af4c15017f48cbdffa054889c62b2006e4ed/api/src/trace/NonRecordingSpan.ts#L31

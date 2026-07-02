@@ -1,7 +1,7 @@
 import type { DiagLogger } from '@opentelemetry/api';
 
-import type { DynamicSDKConfig } from '../../sdk/index.ts';
-import type { NamespacedStorage } from '../../utils/index.ts';
+import type { DynamicSDKConfig } from '../../sdk/types.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 
 export type RemoteConfigURLParams = {
   osVersion: string;

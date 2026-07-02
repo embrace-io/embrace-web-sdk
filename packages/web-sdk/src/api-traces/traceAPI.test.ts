@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { EmbraceTraceManager } from '../managers/index.ts';
+import { EmbraceTraceManager } from '../managers/EmbraceTraceManager/EmbraceTraceManager.ts';
 import { trace } from './traceAPI.ts';
 
 describe('traceAPI', () => {

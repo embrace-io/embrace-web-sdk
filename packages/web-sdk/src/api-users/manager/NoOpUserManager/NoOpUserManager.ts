@@ -1,4 +1,4 @@
-import type { UserManager } from '../index.ts';
+import type { UserManager } from '../types.ts';
 
 export class NoOpUserManager implements UserManager {
   public getEmbraceUserId(): string {

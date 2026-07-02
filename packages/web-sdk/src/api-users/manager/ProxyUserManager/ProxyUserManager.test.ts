@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { UserManager } from '../index.ts';
-import { NoOpUserManager } from '../NoOpUserManager/index.ts';
+import { NoOpUserManager } from '../NoOpUserManager/NoOpUserManager.ts';
+import type { UserManager } from '../types.ts';
 import { ProxyUserManager } from './ProxyUserManager.ts';
 
 chai.use(sinonChai);

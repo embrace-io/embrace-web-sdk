@@ -1,7 +1,8 @@
 import { diag } from '@opentelemetry/api';
-import { createSafeProxy } from '../../../utils/index.ts';
-import type { LogManager } from '../../manager/index.ts';
-import { NoOpLogManager, ProxyLogManager } from '../../manager/index.ts';
+import { createSafeProxy } from '../../../utils/createSafeProxy/createSafeProxy.ts';
+import { NoOpLogManager } from '../../manager/NoOpLogManager/NoOpLogManager.ts';
+import { ProxyLogManager } from '../../manager/ProxyLogManager/ProxyLogManager.ts';
+import type { LogManager } from '../../manager/types.ts';
 
 /**
  * Public interface for LogAPI including SDK-internal methods.

@@ -1,21 +1,19 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import {
-  ClicksInstrumentation,
-  DocumentLoadInstrumentation,
-  ElementTimingInstrumentation,
-  EmbraceInstrumentationBase,
-  EmptyRootInstrumentation,
-  FirstInteractionInstrumentation,
-  GlobalExceptionInstrumentation,
-  LoafInstrumentation,
-  MaxScrollDepthInstrumentation,
-  RageClickInstrumentation,
-  ServerTimingInstrumentation,
-  UserTimingInstrumentation,
-  WebVitalsInstrumentation,
-} from '../instrumentations/index.ts';
+import { ClicksInstrumentation } from '../instrumentations/clicks/ClicksInstrumentation/ClicksInstrumentation.ts';
+import { DocumentLoadInstrumentation } from '../instrumentations/document-load/DocumentLoadInstrumentation/DocumentLoadInstrumentation.ts';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
+import { ElementTimingInstrumentation } from '../instrumentations/element-timing/ElementTimingInstrumentation/ElementTimingInstrumentation.ts';
+import { EmptyRootInstrumentation } from '../instrumentations/empty-root/EmptyRootInstrumentation/EmptyRootInstrumentation.ts';
+import { GlobalExceptionInstrumentation } from '../instrumentations/exceptions/GlobalExceptionInstrumentation/GlobalExceptionInstrumentation.ts';
+import { FirstInteractionInstrumentation } from '../instrumentations/first-interaction/FirstInteractionInstrumentation/FirstInteractionInstrumentation.ts';
+import { LoafInstrumentation } from '../instrumentations/loaf/LoafInstrumentation/LoafInstrumentation.ts';
+import { MaxScrollDepthInstrumentation } from '../instrumentations/max-scroll-depth/MaxScrollDepthInstrumentation/MaxScrollDepthInstrumentation.ts';
+import { RageClickInstrumentation } from '../instrumentations/rage-click/RageClickInstrumentation/RageClickInstrumentation.ts';
+import { ServerTimingInstrumentation } from '../instrumentations/server-timing/ServerTimingInstrumentation/ServerTimingInstrumentation.ts';
+import { UserTimingInstrumentation } from '../instrumentations/user-timing/UserTimingInstrumentation/UserTimingInstrumentation.ts';
+import { WebVitalsInstrumentation } from '../instrumentations/web-vitals/WebVitalsInstrumentation/WebVitalsInstrumentation.ts';
 import type {
   DefaultInstrumentationConfig,
   SetupDefaultInstrumentationsArgs,

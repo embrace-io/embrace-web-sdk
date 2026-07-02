@@ -1,5 +1,5 @@
-import type { VisibilityStateDocument } from '../common/index.ts';
-import { EMB_STATES } from '../constants/index.ts';
+import type { VisibilityStateDocument } from '../common/types.ts';
+import { EMB_STATES } from '../constants/attributes.ts';
 
 // emb.state describes whether the user is actively viewing the page.
 // Anything other than 'visible' (including the fallback when

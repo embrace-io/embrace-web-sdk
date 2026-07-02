@@ -1,6 +1,6 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import type { URLDocument } from '../../common/index.ts';
-import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
+import type { URLDocument } from '../../common/types.ts';
+import { KEY_BROWSER_URL_FULL } from '../../constants/attributes.ts';
 import type { BrowserLogRecordProcessorArgs } from './types.ts';
 
 /**

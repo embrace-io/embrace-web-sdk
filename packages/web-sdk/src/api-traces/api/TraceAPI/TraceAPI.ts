@@ -1,7 +1,8 @@
 import { diag } from '@opentelemetry/api';
-import { createSafeProxy } from '../../../utils/index.ts';
-import type { TraceManager } from '../../manager/index.ts';
-import { NoOpTraceManager, ProxyTraceManager } from '../../manager/index.ts';
+import { createSafeProxy } from '../../../utils/createSafeProxy/createSafeProxy.ts';
+import { NoOpTraceManager } from '../../manager/NoOpTraceManager/NoOpTraceManager.ts';
+import { ProxyTraceManager } from '../../manager/ProxyTraceManager/ProxyTraceManager.ts';
+import type { TraceManager } from '../../manager/types.ts';
 
 /**
  * Public interface for TraceAPI including SDK-internal methods.

@@ -2,7 +2,7 @@ import { context, defaultTextMapSetter, trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
 import { EmbraceW3CTraceContextPropagator } from './EmbraceW3CTraceContextPropagator.ts';
 
 const { expect } = chai;

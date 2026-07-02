@@ -1,10 +1,8 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import * as chai from 'chai';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-} from '../../../tests/utils/index.ts';
+import { FailingStorage } from '../../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../../tests/utils/InMemoryStorage.ts';
 import { NamespacedStorage } from './NamespacedStorage.ts';
 
 const { expect } = chai;

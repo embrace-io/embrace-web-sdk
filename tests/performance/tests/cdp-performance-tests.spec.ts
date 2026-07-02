@@ -10,8 +10,8 @@ import {
   TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
   TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
   TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
-} from '../config/index.ts';
-import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.ts';
+} from '../config/thresholds.ts';
+import { BASE_URL, EMBRACE_API_REGEX } from '../constants/test.ts';
 import type { Metric, TestPage } from '../types/index.ts';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';

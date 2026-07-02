@@ -1,7 +1,7 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { getNavigationInstrumentation } from '../../index.ts';
+import { getNavigationInstrumentation } from '../../instance.ts';
 import type { RouteComponentProps } from './types.ts';
 import { withEmbraceRoutingLegacy } from './withEmbraceRoutingLegacy.ts';
 

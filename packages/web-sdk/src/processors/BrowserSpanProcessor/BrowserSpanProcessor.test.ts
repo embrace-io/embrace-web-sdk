@@ -2,9 +2,9 @@ import type { Tracer } from '@opentelemetry/api';
 import { trace } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
-import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
-import type { URLDocument } from '../../common/index.ts';
-import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
+import type { URLDocument } from '../../common/types.ts';
+import { KEY_BROWSER_URL_FULL } from '../../constants/attributes.ts';
 import { BrowserSpanProcessor } from './BrowserSpanProcessor.ts';
 
 const { expect } = chai;

@@ -1,12 +1,12 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { EMB_PERFORMANCE_INSTRUMENTATIONS } from '../../../constants/attributes.ts';
 import {
+  EMB_PERFORMANCE_INSTRUMENTATIONS,
   EMB_TYPES,
   KEY_EMB_INSTRUMENTATION,
   KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
-import { createPerformanceObserver } from '../../../utils/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+} from '../../../constants/attributes.ts';
+import { createPerformanceObserver } from '../../../utils/performanceObserver/performanceObserver.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import {
   KEY_EMB_USER_TIMING_DETAIL,
   KEY_EMB_USER_TIMING_DURATION,

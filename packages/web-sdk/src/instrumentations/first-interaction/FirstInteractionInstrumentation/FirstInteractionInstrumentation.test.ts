@@ -1,20 +1,16 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import {
-  createTestDynamicConfigManager,
-  InMemoryDiagLogger,
-  setupTestLogExporter,
-  setupTestStorage,
-} from '../../../../tests/utils/index.ts';
-import { session } from '../../../api-sessions/index.ts';
-import type { UserSessionManagerInternal } from '../../../managers/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceUserSessionManager,
-} from '../../../managers/index.ts';
-import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { createTestDynamicConfigManager } from '../../../../tests/utils/constants.ts';
+import { InMemoryDiagLogger } from '../../../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestLogExporter } from '../../../../tests/utils/setupTestLogExporter.ts';
+import { setupTestStorage } from '../../../../tests/utils/setupTestStorage.ts';
+import { session } from '../../../api-sessions/sessionAPI.ts';
+import { DEFAULT_LIMITS } from '../../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceUserSessionManager } from '../../../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import { OTelPerformanceManager } from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { FirstInteractionInstrumentation } from './FirstInteractionInstrumentation.ts';
 
 const { expect } = chai;

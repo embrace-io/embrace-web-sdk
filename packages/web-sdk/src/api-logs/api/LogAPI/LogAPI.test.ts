@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import type { LogManager } from '../../manager/index.ts';
-import { ProxyLogManager } from '../../manager/index.ts';
+import { ProxyLogManager } from '../../manager/ProxyLogManager/ProxyLogManager.ts';
+import type { LogManager } from '../../manager/types.ts';
 import type { LogAPIInstance } from './LogAPI.ts';
 import { LogAPI } from './LogAPI.ts';
 

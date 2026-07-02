@@ -11,7 +11,7 @@
       recording click events for which `stopPropagation` is called. See https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1368
  */
 
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import type { ClicksInstrumentationArgs } from './types.ts';
 
 import { getHTMLElementFriendlyName } from './utils.ts';

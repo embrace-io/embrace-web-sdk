@@ -7,38 +7,33 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import type { LogManager, LogSeverity } from '../../api-logs/index.ts';
 import type {
+  ExceptionHandlerType,
   LogExceptionOptions,
+  LogManager,
   LogMessageOptions,
-} from '../../api-logs/manager/index.ts';
-import type { ExceptionHandlerType } from '../../api-logs/manager/types.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
-import {
-  KEY_EMB_ERROR_LOG_COUNT,
-  KEY_EMB_EXCEPTION_CAUSE,
-  KEY_EMB_JS_FILE_BUNDLE_IDS,
-  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
-} from '../../constants/attributes.ts';
+  LogSeverity,
+} from '../../api-logs/manager/types.ts';
+import type { VisibilityStateDocument } from '../../common/types.ts';
 import {
   EMB_TYPES,
+  KEY_EMB_ERROR_LOG_COUNT,
+  KEY_EMB_EXCEPTION_CAUSE,
   KEY_EMB_EXCEPTION_HANDLING,
   KEY_EMB_EXCEPTION_NUMBER,
   KEY_EMB_JS_EXCEPTION_STACKTRACE,
+  KEY_EMB_JS_FILE_BUNDLE_IDS,
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
-} from '../../constants/index.ts';
-import type {
-  NamespacedStorage,
-  PerformanceManager,
-} from '../../utils/index.ts';
-import {
-  GLOBAL_CONFIG,
-  getIncrementedCount,
-  getVisibilityState,
-} from '../../utils/index.ts';
-import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
-import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
+  KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT,
+} from '../../constants/attributes.ts';
+import { getIncrementedCount } from '../../utils/getIncrementedCount.ts';
+import { getVisibilityState } from '../../utils/getVisibilityState.ts';
+import { GLOBAL_CONFIG } from '../../utils/globalConfig.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
+import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
+import type { LimitManagerInternal } from '../EmbraceLimitManager/types.ts';
+import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/types.ts';
 import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';

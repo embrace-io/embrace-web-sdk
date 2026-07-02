@@ -8,9 +8,9 @@ import {
   KEY_EMB_SESSION_PART_ID,
   KEY_EMB_USER_SESSION_ID,
   KEY_EMB_USER_SESSION_PREVIOUS_ID,
-} from '../../constants/index.ts';
-import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/index.ts';
-import { generateUUID } from '../../utils/index.ts';
+} from '../../constants/attributes.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/types.ts';
+import { generateUUID } from '../../utils/generateUUID.ts';
 import type { UserSessionLogRecordProcessorArgs } from './types.ts';
 
 export class UserSessionLogRecordProcessor implements LogRecordProcessor {

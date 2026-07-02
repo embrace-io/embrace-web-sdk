@@ -1,4 +1,4 @@
-import type { AttributeScrubber } from '../../common/index.ts';
+import type { AttributeScrubber } from '../../common/types.ts';
 
 export interface SpanScrubProcessorArgs {
   attributeScrubbers: AttributeScrubber[];

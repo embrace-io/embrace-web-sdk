@@ -3,20 +3,16 @@ import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import {
-  MockPerformanceManager,
-  setupTestLogExporter,
-  setupTestStorage,
-  TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../../tests/utils/index.ts';
-import type { LogManager } from '../../../api-logs/index.ts';
-import { log } from '../../../api-logs/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbraceLogManager,
-  EmbraceUserSessionManager,
-} from '../../../managers/index.ts';
+import { TEST_DYNAMIC_CONFIG_MANAGER } from '../../../../tests/utils/constants.ts';
+import { MockPerformanceManager } from '../../../../tests/utils/MockPerformanceManager.ts';
+import { setupTestLogExporter } from '../../../../tests/utils/setupTestLogExporter.ts';
+import { setupTestStorage } from '../../../../tests/utils/setupTestStorage.ts';
+import { log } from '../../../api-logs/logAPI.ts';
+import type { LogManager } from '../../../api-logs/manager/types.ts';
+import { DEFAULT_LIMITS } from '../../../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../../../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbraceLogManager } from '../../../managers/EmbraceLogManager/EmbraceLogManager.ts';
+import { EmbraceUserSessionManager } from '../../../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
 import { GlobalExceptionInstrumentation } from './GlobalExceptionInstrumentation.ts';
 
 const { expect } = chai;

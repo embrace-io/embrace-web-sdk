@@ -9,21 +9,19 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   createTestDynamicConfigManager,
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-  MockPerformanceManager,
-  setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../tests/utils/index.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
-import { KEY_EMB_PAGE_LOAD } from '../../constants/index.ts';
+} from '../../../tests/utils/constants.ts';
+import { FailingStorage } from '../../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../../tests/utils/InMemoryStorage.ts';
+import { MockPerformanceManager } from '../../../tests/utils/MockPerformanceManager.ts';
+import { setupTestTraceExporter } from '../../../tests/utils/setupTestTraceExporter.ts';
+import type { VisibilityStateDocument } from '../../common/types.ts';
+import { KEY_EMB_PAGE_LOAD } from '../../constants/attributes.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.ts';
+import { DEFAULT_LIMITS } from '../EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../EmbraceLimitManager/EmbraceLimitManager.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
 import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 

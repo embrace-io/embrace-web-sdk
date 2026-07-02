@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import { promisify } from 'node:util';
 import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
-import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.ts';
+import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/thresholds.ts';
 import { processSondaReport } from './process-sonda-report.ts';
 
 const execAsync = promisify(exec);

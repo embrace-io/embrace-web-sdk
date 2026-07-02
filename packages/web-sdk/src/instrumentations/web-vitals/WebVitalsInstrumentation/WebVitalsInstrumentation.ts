@@ -10,9 +10,9 @@ import type {
   MetricWithAttribution,
   TTFBAttribution,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.ts';
-import { page } from '../../../api-page/index.ts';
-import type { URLDocument } from '../../../common/index.ts';
+import type { PageManager } from '../../../api-page/manager/types.ts';
+import { page } from '../../../api-page/pageAPI.ts';
+import type { URLDocument } from '../../../common/types.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
@@ -20,8 +20,8 @@ import {
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
-} from '../../../constants/index.ts';
-import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
+} from '../../../constants/attributes.ts';
+import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
 import {
   KEY_BROWSER_WEB_VITAL_DELTA,
   KEY_BROWSER_WEB_VITAL_ID,

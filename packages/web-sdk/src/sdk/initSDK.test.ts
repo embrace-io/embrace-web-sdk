@@ -18,10 +18,10 @@ import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
 // deep import needed to stub the cached console refs used by DiagConsoleLogger
 import { _originalConsoleMethods } from '../../../../node_modules/@opentelemetry/api/build/esm/diag/consoleLogger.js';
+import { FakeInstrumentation } from '../../tests/utils/FakeInstrumentation.ts';
+import { FakeLogRecordProcessor } from '../../tests/utils/FakeLogRecordProcessor.ts';
+import { FakeSpanProcessor } from '../../tests/utils/FakeSpanProcessor.ts';
 import {
-  FakeInstrumentation,
-  FakeLogRecordProcessor,
-  FakeSpanProcessor,
   fakeFetchGetConfigUrl,
   fakeFetchGetSpansBody,
   fakeFetchGetSpansRequestHeaders,
@@ -30,31 +30,29 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore,
   fakeFetchWasCalled,
-  InMemoryDiagLogger,
-  setupTestWebVitalListeners,
-} from '../../tests/utils/index.ts';
-import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
-import {
-  NoOpUserSessionManager,
-  ProxyUserSessionManager,
-  session,
-} from '../api-sessions/index.ts';
-import {
-  trace as embtrace,
-  NoOpTraceManager,
-  ProxyTraceManager,
-} from '../api-traces/index.ts';
-import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
-import type { WebVitalOnReport } from '../instrumentations/index.ts';
-import { RageClickInstrumentation } from '../instrumentations/index.ts';
-import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
-import {
-  EmbraceLogManager,
-  EmbraceTraceManager,
-  EmbraceUserManager,
-  EmbraceUserSessionManager,
-} from '../managers/index.ts';
-import { SDK_VERSION } from '../resources/index.ts';
+} from '../../tests/utils/fakeFetch.ts';
+import { InMemoryDiagLogger } from '../../tests/utils/InMemoryDiagLogger.ts';
+import { setupTestWebVitalListeners } from '../../tests/utils/setupTestWebVitalListeners.ts';
+import { log } from '../api-logs/logAPI.ts';
+import { NoOpLogManager } from '../api-logs/manager/NoOpLogManager/NoOpLogManager.ts';
+import { ProxyLogManager } from '../api-logs/manager/ProxyLogManager/ProxyLogManager.ts';
+import { NoOpUserSessionManager } from '../api-sessions/manager/NoOpUserSessionManager/NoOpUserSessionManager.ts';
+import { ProxyUserSessionManager } from '../api-sessions/manager/ProxyUserSessionManager/ProxyUserSessionManager.ts';
+import { session } from '../api-sessions/sessionAPI.ts';
+import { NoOpTraceManager } from '../api-traces/manager/NoOpTraceManager/NoOpTraceManager.ts';
+import { ProxyTraceManager } from '../api-traces/manager/ProxyTraceManager/ProxyTraceManager.ts';
+import { trace as embtrace } from '../api-traces/traceAPI.ts';
+import { NoOpUserManager } from '../api-users/manager/NoOpUserManager/NoOpUserManager.ts';
+import { ProxyUserManager } from '../api-users/manager/ProxyUserManager/ProxyUserManager.ts';
+import { user } from '../api-users/userAPI.ts';
+import { RageClickInstrumentation } from '../instrumentations/rage-click/RageClickInstrumentation/RageClickInstrumentation.ts';
+import type { WebVitalOnReport } from '../instrumentations/web-vitals/WebVitalsInstrumentation/types.ts';
+import { EmbraceLogManager } from '../managers/EmbraceLogManager/EmbraceLogManager.ts';
+import { EmbraceTraceManager } from '../managers/EmbraceTraceManager/EmbraceTraceManager.ts';
+import { EmbraceUserManager } from '../managers/EmbraceUserManager/EmbraceUserManager.ts';
+import { EmbraceUserSessionManager } from '../managers/EmbraceUserSessionManager/EmbraceUserSessionManager.ts';
+import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/types.ts';
+import { SDK_VERSION } from '../resources/constants/index.ts';
 import { initSDK } from './initSDK.ts';
 import { registry } from './registry.ts';
 import type {

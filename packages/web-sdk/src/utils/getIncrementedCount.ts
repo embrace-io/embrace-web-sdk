@@ -1,5 +1,5 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { NamespacedStorage } from './NamespacedStorage/index.ts';
+import type { NamespacedStorage } from './NamespacedStorage/NamespacedStorage.ts';
 
 // Increments and returns a global counter shared across all tabs
 // Race conditions are possible but acceptable for diagnostic use-cases

@@ -4,18 +4,16 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   createTestDynamicConfigManager,
-  MockPerformanceManager,
-  setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
-} from '../../../tests/utils/index.ts';
+} from '../../../tests/utils/constants.ts';
+import { MockPerformanceManager } from '../../../tests/utils/MockPerformanceManager.ts';
+import { setupTestStorage } from '../../../tests/utils/setupTestStorage.ts';
 import type {
   SessionPartEndReason,
   SessionPartStartReason,
-} from '../../api-sessions/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-} from '../EmbraceLimitManager/index.ts';
+} from '../../api-sessions/manager/types.ts';
+import { DEFAULT_LIMITS } from '../EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../EmbraceLimitManager/EmbraceLimitManager.ts';
 import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
 import type {
   EndSessionPartOptions,

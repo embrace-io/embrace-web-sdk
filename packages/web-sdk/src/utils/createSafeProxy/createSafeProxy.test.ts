@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import { InMemoryDiagLogger } from '../../../tests/utils/index.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
 import { createSafeProxy } from './createSafeProxy.ts';
 
 const { expect } = chai;

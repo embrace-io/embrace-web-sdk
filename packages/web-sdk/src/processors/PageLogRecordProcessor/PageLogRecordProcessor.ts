@@ -1,10 +1,10 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import type { PageManager } from '../../api-page/index.ts';
+import type { PageManager } from '../../api-page/manager/types.ts';
 import {
   KEY_APP_SURFACE_LABEL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
-} from '../../constants/index.ts';
+} from '../../constants/attributes.ts';
 import type { PageLogRecordProcessorArgs } from './types.ts';
 
 export class PageLogRecordProcessor implements LogRecordProcessor {

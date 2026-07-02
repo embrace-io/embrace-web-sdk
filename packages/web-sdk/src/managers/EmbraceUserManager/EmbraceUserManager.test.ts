@@ -1,11 +1,9 @@
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
-import {
-  FailingStorage,
-  InMemoryDiagLogger,
-  InMemoryStorage,
-} from '../../../tests/utils/index.ts';
-import { NamespacedStorage } from '../../utils/index.ts';
+import { FailingStorage } from '../../../tests/utils/FailingStorage.ts';
+import { InMemoryDiagLogger } from '../../../tests/utils/InMemoryDiagLogger.ts';
+import { InMemoryStorage } from '../../../tests/utils/InMemoryStorage.ts';
+import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 
 import {
   EMBRACE_EXTERNAL_USER_ID_KEY,

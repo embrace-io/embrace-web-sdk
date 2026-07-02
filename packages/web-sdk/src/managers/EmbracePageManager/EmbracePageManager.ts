@@ -1,6 +1,6 @@
-import type { PageManager, Route } from '../../api-page/index.ts';
-import type { TitleDocument } from '../../common/index.ts';
-import { generateUUID } from '../../utils/index.ts';
+import type { PageManager, Route } from '../../api-page/manager/types.ts';
+import type { TitleDocument } from '../../common/types.ts';
+import { generateUUID } from '../../utils/generateUUID.ts';
 import type { EmbracePageManagerArgs } from './types.ts';
 
 export class EmbracePageManager implements PageManager {

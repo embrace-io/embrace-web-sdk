@@ -11,12 +11,10 @@ import type {
   SpanExporter,
   SpanProcessor,
 } from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
-import type { SessionPartSpan } from '../../instrumentations/index.ts';
-import type {
-  LimitManagerInternal,
-  UserSessionManagerInternal,
-} from '../../managers/index.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/attributes.ts';
+import type { SessionPartSpan } from '../../instrumentations/session-part/types.ts';
+import type { LimitManagerInternal } from '../../managers/EmbraceLimitManager/types.ts';
+import type { UserSessionManagerInternal } from '../../managers/EmbraceUserSessionManager/types.ts';
 import type { EmbraceSessionPartBatchedSpanProcessorArgs } from './types.ts';
 
 const isSessionPartSpan = (

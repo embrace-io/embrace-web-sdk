@@ -2,9 +2,9 @@ import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
-import { setupTestLogExporter } from '../../../tests/utils/index.ts';
-import type { URLDocument } from '../../common/index.ts';
-import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
+import { setupTestLogExporter } from '../../../tests/utils/setupTestLogExporter.ts';
+import type { URLDocument } from '../../common/types.ts';
+import { KEY_BROWSER_URL_FULL } from '../../constants/attributes.ts';
 import { BrowserLogRecordProcessor } from './BrowserLogRecordProcessor.ts';
 
 const { expect } = chai;

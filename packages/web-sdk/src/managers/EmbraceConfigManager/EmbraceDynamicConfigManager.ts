@@ -3,8 +3,8 @@ import { diag } from '@opentelemetry/api';
 import type {
   DynamicConfigManager,
   DynamicSDKConfig,
-} from '../../sdk/index.ts';
-import type { NamespacedStorage } from '../../utils/index.ts';
+} from '../../sdk/types.ts';
+import type { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import {
   DEFAULT_CONFIG,
   LOCAL_STORAGE_REMOTE_CONFIG_KEY,

@@ -1,17 +1,13 @@
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as chai from 'chai';
-import type { LogManager } from '../api-logs/index.ts';
-import {
-  EmbraceInstrumentationBase,
-  EmptyRootInstrumentation,
-} from '../instrumentations/index.ts';
-import type { UserSessionManagerInternal } from '../managers/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbracePageManager,
-} from '../managers/index.ts';
+import type { LogManager } from '../api-logs/manager/types.ts';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/EmbraceInstrumentationBase.ts';
+import { EmptyRootInstrumentation } from '../instrumentations/empty-root/EmptyRootInstrumentation/EmptyRootInstrumentation.ts';
+import { DEFAULT_LIMITS } from '../managers/EmbraceLimitManager/constants.ts';
+import { EmbraceLimitManager } from '../managers/EmbraceLimitManager/EmbraceLimitManager.ts';
+import { EmbracePageManager } from '../managers/EmbracePageManager/EmbracePageManager.ts';
+import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/types.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
 import type { SetupDefaultInstrumentationsArgs } from './types.ts';
 
