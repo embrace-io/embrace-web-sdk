@@ -1,3 +1,4 @@
+import { KEY_BROWSER_URL_FULL } from '../../../constants/index.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
@@ -9,7 +10,10 @@ import {
   KEY_EMB_SOFT_NAVIGATION_NAVIGATION_ID,
   KEY_EMB_SOFT_NAVIGATION_PAINT_TIME,
   KEY_EMB_SOFT_NAVIGATION_PRESENTATION_TIME,
+  KEY_EMB_SOFT_NAVIGATION_SOURCE,
   KEY_EMB_SOFT_NAVIGATION_START_TIME,
+  SOFT_NAVIGATION_SOURCES,
+  SOFT_NAVIGATION_SPAN_NAME,
 } from './constants.ts';
 import type {
   PerformanceSoftNavigationTiming,
@@ -80,9 +84,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
-    const span = this.tracer.startSpan(entry.name, {
+    const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
       startTime: this.perf.epochMillisFromZeroTime(entry.startTime),
       attributes: {
+        [KEY_BROWSER_URL_FULL]: entry.name,
+        [KEY_EMB_SOFT_NAVIGATION_SOURCE]:
+          SOFT_NAVIGATION_SOURCES.performanceObserver,
         [KEY_EMB_SOFT_NAVIGATION_NAVIGATION_ID]: entry.navigationId,
         [KEY_EMB_SOFT_NAVIGATION_INTERACTION_ID]: entry.interactionId,
         [KEY_EMB_SOFT_NAVIGATION_START_TIME]: this.perf.millisFromZeroTime(

@@ -125,7 +125,13 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
     const span = spans[0];
-    expect(span.name).to.equal('https://example.com/next-page');
+    expect(span.name).to.equal('Soft Navigation');
+    expect(span.attributes['browser.url.full']).to.equal(
+      'https://example.com/next-page',
+    );
+    expect(span.attributes['emb.soft_navigation.source']).to.equal(
+      'performance_observer',
+    );
     expect(span.attributes['emb.soft_navigation.navigation_id']).to.equal(
       'nav-1',
     );
