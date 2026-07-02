@@ -38,6 +38,10 @@ export {
 } from './server-timing/index.ts';
 export type { SessionPartSpan } from './session-part/index.ts';
 export {
+  SoftNavigationPerformanceInstrumentation,
+  type SoftNavigationPerformanceInstrumentationArgs,
+} from './soft-navigation-performance/index.ts';
+export {
   UserTimingInstrumentation,
   type UserTimingInstrumentationArgs,
 } from './user-timing/index.ts';

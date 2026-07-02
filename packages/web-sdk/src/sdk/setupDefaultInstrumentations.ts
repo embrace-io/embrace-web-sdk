@@ -13,6 +13,7 @@ import {
   MaxScrollDepthInstrumentation,
   RageClickInstrumentation,
   ServerTimingInstrumentation,
+  SoftNavigationPerformanceInstrumentation,
   UserTimingInstrumentation,
   WebVitalsInstrumentation,
 } from '../instrumentations/index.ts';
@@ -75,8 +76,17 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('element-timing')) {
     instrumentations.push(
       new ElementTimingInstrumentation({
-        ...config['element-timing'],
         limitManager,
+        ...config['element-timing'],
+      }),
+    );
+  }
+
+  if (!config.omit?.has('soft-navigation-performance')) {
+    instrumentations.push(
+      new SoftNavigationPerformanceInstrumentation({
+        limitManager,
+        ...config['soft-navigation-performance'],
       }),
     );
   }
@@ -90,8 +100,8 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('server-timing')) {
     instrumentations.push(
       new ServerTimingInstrumentation({
-        ...config['server-timing'],
         limitManager,
+        ...config['server-timing'],
       }),
     );
   }
