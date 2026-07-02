@@ -37,11 +37,6 @@ test.describe('Vite React Router SPA Navigation', () => {
     triggerSessionEnd,
     validateThatSessionPartsEnded,
   }) => {
-    // Skipped: each soft navigation should end the current session part, but
-    // the soft navigation instrumentation is not yet implemented
-    // biome-ignore lint/suspicious/noSkippedTests: soft navigation instrumentation not yet implemented
-    test.skip(true, 'soft navigation instrumentation not yet implemented');
-
     await loadHome();
     await test
       .expect(page.getByRole('heading', { name: 'Home' }))
@@ -68,11 +63,6 @@ test.describe('Vite React Router SPA Navigation', () => {
     triggerSessionEnd,
     validateThatSessionPartsEnded,
   }) => {
-    // Skipped: each soft navigation should end the current session part, but
-    // the soft navigation instrumentation is not yet implemented
-    // biome-ignore lint/suspicious/noSkippedTests: soft navigation instrumentation not yet implemented
-    test.skip(true, 'soft navigation instrumentation not yet implemented');
-
     await loadHome();
 
     await page.getByRole('link', { name: 'Products' }).click();
@@ -101,11 +91,6 @@ test.describe('Vite React Router SPA Navigation', () => {
     triggerSessionEnd,
     validateThatSessionPartsEnded,
   }) => {
-    // Skipped: each soft navigation should end the current session part, but
-    // the soft navigation instrumentation is not yet implemented
-    // biome-ignore lint/suspicious/noSkippedTests: soft navigation instrumentation not yet implemented
-    test.skip(true, 'soft navigation instrumentation not yet implemented');
-
     await loadHome();
 
     await page.getByRole('link', { name: 'Products' }).click();

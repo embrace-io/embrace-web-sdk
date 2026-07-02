@@ -125,8 +125,8 @@ export type StartSessionOptions = {
 // `user_session_ended`, and the user-session-level `inactivity` on
 // `UserSessionEndReason`) are emitted unprefixed so the backend can correlate
 // them across platforms. Reasons that describe behaviour specific to the web
-// environment (`web_foreground`, `web_background`, `web_activity`,
-// `web_foreground_inactivity`, `web_soft_nav`) are stamped with a `web_`
+// environment (`foreground`, `background`, `web_activity`,
+// `web_foreground_inactivity`, `web_soft_navigation`) are stamped with a `web_`
 // prefix. The part-level
 // `web_foreground_inactivity` and the user-session-level `inactivity` are distinct: when
 // the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end
@@ -135,15 +135,15 @@ export type StartSessionOptions = {
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
-  | 'web_foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
+  | 'foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
   | 'web_activity' // user input resumed after an inactivity-killed part
-  | 'web_soft_nav' // soft navigation started the next part in the same user session
+  | 'web_soft_navigation' // soft navigation started the next part in the same user session
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
 export type SessionPartEndReason =
-  | 'web_background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
+  | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
   | 'web_foreground_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
-  | 'web_soft_nav' // rolled the part over on a soft navigation. Not final, the user session continues
+  | 'web_soft_navigation' // rolled the part over on a soft navigation. Not final, the user session continues
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 
 export type UserSessionEndReason =

@@ -4,6 +4,10 @@ declare global {
   }
 }
 
-type ReceivedSpans = Record<string, boolean>;
+type SessionPartInfo = {
+  endReason?: string;
+};
 
-export type { ReceivedSpans };
+type ReceivedSpans = Record<string, Record<string, SessionPartInfo>>;
+
+export type { ReceivedSpans, SessionPartInfo };

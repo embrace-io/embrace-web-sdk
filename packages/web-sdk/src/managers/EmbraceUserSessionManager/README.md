@@ -94,9 +94,9 @@ by design.
 | Value | Trigger |
 | --- | --- |
 | `init` | SDK init flow on page load. |
-| `web_foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
+| `foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
 | `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
-| `web_soft_nav` | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part. |
+| `web_soft_navigation` | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part. |
 | `user_session_rollover` | Begins the next user session's first part immediately after a user session ends. |
 
 ### End triggers
@@ -105,9 +105,9 @@ by design.
 
 | Value | Trigger |
 | --- | --- |
-| `web_background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
+| `background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
 | `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
-| `web_soft_nav` | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately. |
+| `web_soft_navigation` | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately. |
 | `user_session_ended` | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry. |
 
 The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
@@ -120,7 +120,7 @@ part span before ending it. A throwing attribute write is isolated from the
 span end, so a poisoned property value cannot prevent the span from ending.
 Part-end subscribers are notified.
 
-If the end reason is not final (in practice `web_background`), the user session
+If the end reason is not final (in practice `background`), the user session
 continues: an inactivity deadline of
 `now + userSessionInactivityTimeoutSeconds * 1000` is written into the state
 blob, computed from the actual call time rather than any anchored span-end
@@ -255,7 +255,7 @@ A storage write failure never terminates the user session.
 
 A session part can only start when the tab is visible and focused. Only the
 focused tab can hold a part. A tab that loses focus ends its part with reason
-`web_background`. This makes `localStorage` the single source of truth with
+`background`. This makes `localStorage` the single source of truth with
 no write contention during active parts and no need for cross-tab event
 listeners. The class-level doc comment on `EmbraceUserSessionManager` records
 the choice.
@@ -309,17 +309,17 @@ the browsers below:
 
 - **Active-tab unload** (hard nav OR BFCache freeze). On a focus-shifting nav
   (address-bar typing, omnibox suggestion), `blur` fires first while
-  `visibilityState` is still `'visible'` and ends the part as `web_background`.
+  `visibilityState` is still `'visible'` and ends the part as `background`.
   On a programmatic `location.href` nav, no `blur` fires; instead `pagehide`
   and `visibilitychange` to hidden fire in the same task at navigation commit,
-  and the `visibilitychange` listener ends the part as `web_background`. In
+  and the `visibilitychange` listener ends the part as `background`. In
   both cases the part is ended before any `pagehide` handler could run.
 - **Backgrounded-tab unload**. `visibilitychange` to hidden already fired
-  earlier (when the user switched away), ending the part as `web_background`
+  earlier (when the user switched away), ending the part as `background`
   at that moment. The later `pagehide` is on an already-ended part.
 - **BFCache restore**. Per the spec, `focus` and `visibilitychange` to
   `'visible'` fire before `pageshow`. The combined visible+focused transition
-  starts a new part as `web_foreground`; `pageshow` would be redundant. This
+  starts a new part as `foreground`; `pageshow` would be redundant. This
   path is spec-derived rather than empirically verified here because Playwright
   suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
 
