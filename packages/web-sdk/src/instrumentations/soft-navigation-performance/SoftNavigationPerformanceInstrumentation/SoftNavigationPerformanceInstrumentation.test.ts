@@ -154,6 +154,46 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     instrumentation.disable();
   });
 
+  it('should omit paint/presentation time attributes when undefined', () => {
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+    });
+
+    triggerEntries([
+      makeEntry({ paintTime: undefined, presentationTime: undefined }),
+    ]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.paint_time',
+    );
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.presentation_time',
+    );
+
+    instrumentation.disable();
+  });
+
+  it('should omit paint/presentation time attributes when null', () => {
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+    });
+
+    triggerEntries([makeEntry({ paintTime: null, presentationTime: null })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.paint_time',
+    );
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.presentation_time',
+    );
+
+    instrumentation.disable();
+  });
+
   it('should not create an observer when soft-navigation entry type is unsupported', () => {
     const diagLogger = new InMemoryDiagLogger();
     class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {

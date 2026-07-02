@@ -90,11 +90,11 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
         ),
         [KEY_EMB_SOFT_NAVIGATION_DURATION]: entry.duration,
         [KEY_EMB_SOFT_NAVIGATION_PAINT_TIME]:
-          entry.paintTime !== undefined
+          entry.paintTime != null
             ? this.perf.millisFromZeroTime(entry.paintTime)
             : undefined,
         [KEY_EMB_SOFT_NAVIGATION_PRESENTATION_TIME]:
-          entry.presentationTime !== undefined
+          entry.presentationTime != null
             ? this.perf.millisFromZeroTime(entry.presentationTime)
             : undefined,
       },

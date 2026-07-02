@@ -76,8 +76,8 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('element-timing')) {
     instrumentations.push(
       new ElementTimingInstrumentation({
-        ...config['element-timing'],
         limitManager,
+        ...config['element-timing'],
       }),
     );
   }
@@ -85,8 +85,8 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('soft-navigation-performance')) {
     instrumentations.push(
       new SoftNavigationPerformanceInstrumentation({
-        ...config['soft-navigation-performance'],
         limitManager,
+        ...config['soft-navigation-performance'],
       }),
     );
   }
@@ -100,8 +100,8 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('server-timing')) {
     instrumentations.push(
       new ServerTimingInstrumentation({
-        ...config['server-timing'],
         limitManager,
+        ...config['server-timing'],
       }),
     );
   }
