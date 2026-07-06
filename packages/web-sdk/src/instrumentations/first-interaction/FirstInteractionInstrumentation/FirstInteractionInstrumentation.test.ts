@@ -70,14 +70,13 @@ describe('FirstInteractionInstrumentation', () => {
     target.id = 'go';
     testContainer.append(target);
 
-    target.dispatchEvent(
-      new PointerEvent('click', {
-        bubbles: true,
-        clientX: 12,
-        clientY: 34,
-        pointerType: 'mouse',
-      }),
-    );
+    const clickEvent = new PointerEvent('click', {
+      bubbles: true,
+      clientX: 12,
+      clientY: 34,
+      pointerType: 'mouse',
+    });
+    target.dispatchEvent(clickEvent);
 
     const logs = getLogs();
 
@@ -91,6 +90,7 @@ describe('FirstInteractionInstrumentation', () => {
       'first_interaction.element_selector': '#go',
       'first_interaction.x': 12,
       'first_interaction.y': 34,
+      'first_interaction.time': clickEvent.timeStamp,
     });
   });
 

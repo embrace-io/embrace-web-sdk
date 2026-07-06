@@ -34,6 +34,7 @@ import type {
   MaxScrollDepthInstrumentationArgs,
   RageClickInstrumentationArgs,
   ServerTimingInstrumentationArgs,
+  SoftNavigationPerformanceInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationConfig,
 } from '../instrumentations/index.ts';
@@ -390,6 +391,7 @@ type OptionalInstrumentations =
   | 'user-timing'
   | 'element-timing'
   | 'server-timing'
+  | 'soft-navigation-performance'
   | 'document-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
@@ -417,6 +419,7 @@ export interface DefaultInstrumentationConfig {
   'user-timing'?: UserTimingInstrumentationArgs;
   'element-timing'?: ElementTimingInstrumentationArgs;
   'server-timing'?: ServerTimingInstrumentationArgs;
+  'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
