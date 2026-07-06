@@ -16,7 +16,9 @@ const setupOTel = () => {
     appVersion: '0.0.1',
     spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
     logProcessors: [
-      new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+      new SimpleLogRecordProcessor({
+        exporter: new ConsoleLogRecordExporter(),
+      }),
     ],
   });
 };

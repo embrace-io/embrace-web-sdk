@@ -97,7 +97,9 @@ const initSDK = (
       registerGlobally: false,
       spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
       logProcessors: [
-        new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
+        new SimpleLogRecordProcessor({
+          exporter: new ConsoleLogRecordExporter(),
+        }),
       ],
       defaultInstrumentationConfig: {
         '@opentelemetry/instrumentation-fetch': {
