@@ -15,10 +15,14 @@
     "dev": "tsdown --watch --no-clean",
     "check": "tsc",
     "test": "tsx --test src/**/*.test.ts",
-    "validate": "tsx scripts/validate.ts"
+    "validate": "tsx scripts/validate.ts",
+    "licenses": "generate-license-file"
   },
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES.txt"
   ],
   "bugs": {
     "url": "https://github.com/embrace-io/embrace-web-sdk/issues",
