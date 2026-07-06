@@ -247,13 +247,13 @@ export const initSDK = (
         userSessionManager,
       });
 
-      embraceLogProcessor = new BatchLogRecordProcessor(
-        new EmbraceLogExporter({
+      embraceLogProcessor = new BatchLogRecordProcessor({
+        exporter: new EmbraceLogExporter({
           appID: validatedAppID,
           embraceDataURL,
           userID: enduserPseudoID,
         }),
-      );
+      });
     }
 
     const pageManager = setupPage({
@@ -483,7 +483,7 @@ const setupLogs = ({
   ];
 
   logExporters?.forEach((exporter) => {
-    finalLogProcessors.push(new BatchLogRecordProcessor(exporter));
+    finalLogProcessors.push(new BatchLogRecordProcessor({ exporter }));
   });
 
   if (embraceLogProcessor) {
