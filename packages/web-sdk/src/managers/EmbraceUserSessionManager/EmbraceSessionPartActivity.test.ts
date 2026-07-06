@@ -56,6 +56,42 @@ class FakeTarget implements EventTarget {
   }
 }
 
+class FakeNavigation {
+  private readonly _listeners: Array<
+    (event: NavigationCurrentEntryChangeEvent) => void
+  > = [];
+
+  public addEventListener(
+    _type: 'currententrychange',
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
+  ): void {
+    this._listeners.push(listener);
+  }
+
+  public removeEventListener(
+    _type: 'currententrychange',
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
+  ): void {
+    const i = this._listeners.indexOf(listener);
+    if (i !== -1) {
+      this._listeners.splice(i, 1);
+    }
+  }
+
+  public fire(from: string): void {
+    const event = Object.assign(new Event('currententrychange'), {
+      from: { url: from },
+    }) as NavigationCurrentEntryChangeEvent;
+    for (const listener of [...this._listeners]) {
+      listener(event);
+    }
+  }
+
+  public listenerCount(): number {
+    return this._listeners.length;
+  }
+}
+
 class FakeVisibilityDoc extends EventTarget {
   public visibilityState: DocumentVisibilityState = 'visible';
   public hasFocus = (): boolean => true;
@@ -245,7 +281,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireVisibilityChange('hidden');
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -264,7 +300,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireVisibilityChange('visible');
 
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -294,7 +330,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireBlur();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -306,7 +342,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireFocus();
 
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
@@ -327,12 +363,12 @@ describe('EmbraceUserSessionManager browser activity', () => {
   // intermediate state transitions, pinning down which listener "wins"
   // in production.
 
-  it('ends the active part exactly once as web_background on a real active-tab unload sequence', () => {
+  it('ends the active part exactly once as background on a real active-tab unload sequence', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     fireFocusShiftingUnload();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     expect(endSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.be.null;
   });
@@ -342,12 +378,12 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireTabHidden();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
+    expect(endReasons()).to.deep.equal(['background']);
     expect(endSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
-  it('starts the new part exactly once as web_foreground on a real BFCache restore sequence', () => {
+  it('starts the new part exactly once as foreground on a real BFCache restore sequence', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     fireTabHidden();
     startSpy.resetHistory();
@@ -355,7 +391,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     fireBfcacheRestore();
 
-    expect(startReasons()).to.deep.equal(['web_foreground']);
+    expect(startReasons()).to.deep.equal(['foreground']);
     expect(startSpy.callCount).to.equal(1);
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
@@ -366,8 +402,8 @@ describe('EmbraceUserSessionManager browser activity', () => {
     fireFocusShiftingUnload();
     fireBfcacheRestore();
 
-    expect(endReasons()).to.deep.equal(['web_background']);
-    expect(startReasons()).to.deep.equal(['init', 'web_foreground']);
+    expect(endReasons()).to.deep.equal(['background']);
+    expect(startReasons()).to.deep.equal(['init', 'foreground']);
     expect(endSpy.callCount).to.equal(1);
     expect(startSpy.callCount).to.equal(2);
     void expect(manager.getSessionPartId()).to.not.be.null;
@@ -465,5 +501,109 @@ describe('EmbraceUserSessionManager browser activity', () => {
     const endCallsBefore = endSpy.callCount;
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
+  });
+
+  describe('soft navigation (currententrychange)', () => {
+    let navigationTarget: FakeNavigation;
+    let softNavManager: EmbraceUserSessionManager;
+    let softNavStartSpy: sinon.SinonSpy<
+      [options: StartSessionPartOptions],
+      void
+    >;
+    let softNavEndSpy: sinon.SinonSpy;
+
+    const softNavStartReasons = (): SessionPartStartReason[] =>
+      softNavStartSpy.getCalls().map((c) => c.args[0].reason);
+    const softNavEndReasons = (): SessionPartEndReason[] =>
+      softNavEndSpy
+        .getCalls()
+        .map((c) => (c.args[0] as EndSessionPartOptions).reason);
+
+    const fireCurrentEntryChange = () => {
+      navigationTarget.fire('http://previous.example.com/');
+    };
+
+    beforeEach(() => {
+      navigationTarget = new FakeNavigation();
+      softNavManager = new EmbraceUserSessionManager({
+        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+        perf: new MockPerformanceManager(clock),
+        storage: setupTestStorage(),
+        visibilityDoc,
+        target,
+        activityThrottleMs: THROTTLE_MS,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        navigationHost: {
+          navigation: navigationTarget as unknown as Navigation,
+          location: { href: 'http://current.example.com/' },
+        },
+      });
+      softNavManager.setTracerProvider(new WebTracerProvider());
+      softNavStartSpy = sinon.spy(softNavManager, 'startSessionPartInternal');
+      softNavEndSpy = sinon.spy(softNavManager, 'endSessionPartInternal');
+    });
+
+    afterEach(() => {
+      softNavManager._shutdown();
+    });
+
+    it('rolls over the part with web_soft_navigation reasons when a navigation fires while a part is active', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal(['web_soft_navigation']);
+      expect(softNavStartReasons()).to.deep.equal([
+        'init',
+        'web_soft_navigation',
+      ]);
+      void expect(softNavManager.getSessionPartId()).to.not.be.null;
+    });
+
+    it('is a no-op when navigating to the same URL', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+
+      navigationTarget.fire('http://current.example.com/');
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal(['init']);
+    });
+
+    it('is a no-op when a navigation fires with no active part', () => {
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal([]);
+    });
+
+    it('removes the currententrychange listener on shutdown', () => {
+      softNavManager.startSessionPartInternal({ reason: 'init' });
+      softNavManager._shutdown();
+      softNavStartSpy.resetHistory();
+      softNavEndSpy.resetHistory();
+
+      fireCurrentEntryChange();
+
+      expect(softNavEndReasons()).to.deep.equal([]);
+      expect(softNavStartReasons()).to.deep.equal([]);
+    });
+
+    it('handles absent navigation gracefully (old browser)', () => {
+      const noNavManager = new EmbraceUserSessionManager({
+        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+        perf: new MockPerformanceManager(clock),
+        storage: setupTestStorage(),
+        visibilityDoc,
+        target,
+        activityThrottleMs: THROTTLE_MS,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        navigationHost: { location: { href: 'http://current.example.com/' } },
+      });
+      expect(() => {
+        noNavManager.setTracerProvider(new WebTracerProvider());
+        noNavManager.startSessionPartInternal({ reason: 'init' });
+        noNavManager._shutdown();
+      }).to.not.throw();
+    });
   });
 });

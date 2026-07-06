@@ -5,7 +5,10 @@ import type {
   UserSessionEndReason,
   UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
+import type {
+  NavigationHost,
+  VisibilityStateDocument,
+} from '../../common/index.ts';
 import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
@@ -168,6 +171,12 @@ export interface EmbraceUserSessionManagerArgs {
    * listeners that drive session-part lifecycle. Defaults to `window`.
    */
   target?: EventTarget;
+  /**
+   * Window-shaped object used to detect and listen for soft navigations via
+   * the Navigation API. Defaults to `window`. Optional `navigation` property
+   * handles old browsers that lack the API.
+   */
+  navigationHost?: NavigationHost;
   /**
    * Upper bound on how often the activity handler runs; prevents
    * mousemove from re-arming the inactivity timer for every sub-second event.

@@ -21,7 +21,8 @@ export type MaxLimitedType =
   | 'user_timing_mark'
   | 'user_timing_measure'
   | 'element_timing'
-  | 'server_timing';
+  | 'server_timing'
+  | 'soft_navigation';
 
 export type LengthLimitedType =
   | LogLimitedType
@@ -81,6 +82,7 @@ export interface LimitManagerInternal {
   limitUserTimingEntry: (entryType: 'mark' | 'measure') => boolean;
   limitElementTimingEntry: () => boolean;
   limitServerTimingEntry: () => boolean;
+  limitSoftNavigationEntry: () => boolean;
   reset: () => void;
   getDiagnosticCounts: () => Record<string, number>;
   truncateString: (type: LengthLimitedType, body: string) => string;

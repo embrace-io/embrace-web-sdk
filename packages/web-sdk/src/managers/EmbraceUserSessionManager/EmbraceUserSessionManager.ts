@@ -15,7 +15,10 @@ import type {
   SessionPartStartReason,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
+import type {
+  NavigationHost,
+  VisibilityStateDocument,
+} from '../../common/index.ts';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -134,6 +137,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _limitManager: LimitManagerInternal;
   private readonly _dynamicConfigManager: DynamicConfigManager;
   private readonly _target: EventTarget;
+  private readonly _navigationHost: NavigationHost;
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
@@ -146,6 +150,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     storage,
     limitManager,
     target = window,
+    navigationHost = window as NavigationHost,
     activityThrottleMs = DEFAULT_ACTIVITY_THROTTLE_MS,
     activityEvents = DEFAULT_ACTIVITY_EVENTS,
   }: EmbraceUserSessionManagerArgs) {
@@ -165,6 +170,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     );
     this._tracer = trace.getTracer('embrace-web-sdk-session-parts');
     this._target = target;
+    this._navigationHost = navigationHost;
     this._activityEvents = activityEvents;
     this._onActivityThrottled = throttle(this._onActivity, activityThrottleMs);
   }
@@ -248,11 +254,13 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     addActivityListeners({
       target: this._target,
       visibilityDoc: this._visibilityDoc,
+      navigationHost: this._navigationHost,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
+      onSoftNavigation: this._onSoftNavigation,
     });
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
@@ -821,8 +829,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * engagement starts one.
    */
 
-  // @ts-expect-error suppressed until a caller is wired; remove the directive then
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: no caller is wired yet
   private _rolloverSessionPart({
     endReason,
     startReason,
@@ -879,15 +885,32 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     removeActivityListeners({
       target: this._target,
       visibilityDoc: this._visibilityDoc,
+      navigationHost: this._navigationHost,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
+      onSoftNavigation: this._onSoftNavigation,
     });
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
   }
+
+  private readonly _onSoftNavigation = (
+    event: NavigationCurrentEntryChangeEvent,
+  ): void => {
+    // Skip same-URL replacements (e.g. framework hydration via history.replaceState).
+    // eslint-disable-next-line baseline-js/use-baseline
+    if (event.from.url === this._navigationHost.location.href) {
+      return;
+    }
+
+    this._rolloverSessionPart({
+      endReason: 'web_soft_navigation',
+      startReason: 'web_soft_navigation',
+    });
+  };
 
   private readonly _onActivity = (): void => {
     try {
@@ -917,7 +940,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   };
 
   // Window focus lost (alt-tab, DevTools, another window). Engagement
-  // transition ends the active part as web_background. pagehide/pageshow
+  // transition ends the active part as background. pagehide/pageshow
   // are not listened to: blur or visibilitychange-to-hidden end the part
   // first (see README "Unload and BFCache handling" for the verified
   // cross-engine ordering). The part-end doubles as the unload flush via
@@ -933,12 +956,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
         this._diag.debug(`tab disengaged via ${source}; ending current part`);
-        this.endSessionPartInternal({ reason: 'web_background' });
+        this.endSessionPartInternal({ reason: 'background' });
         return;
       }
       if (engaged && !active) {
         this._diag.debug(`tab engaged via ${source}; starting new part`);
-        this.startSessionPartInternal({ reason: 'web_foreground' });
+        this.startSessionPartInternal({ reason: 'foreground' });
         return;
       }
       if (engaged && active) {
