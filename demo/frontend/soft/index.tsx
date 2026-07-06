@@ -9,7 +9,7 @@ import { setupSDK } from '../src/otel-base.ts';
 
 setupSDK([createReactRouterNavigationInstrumentation()]);
 
-type Route = 'home' | 'a' | 'b';
+type Route = 'home' | 'a' | 'b' | 'query' | 'hash';
 
 const PAGES: Record<
   Route,
@@ -33,12 +33,26 @@ const PAGES: Record<
     description:
       'You navigated to Page B. Check the Navigation Info below to see how the SDK tracks this.',
   },
+  query: {
+    path: 'soft/?tab=details',
+    title: 'Query String',
+    description:
+      'Only the query string changed (?tab=details). Tests whether the SDK treats a search-param-only change as a soft navigation.',
+  },
+  hash: {
+    path: 'soft/#section',
+    title: 'Hash',
+    description:
+      'Only the hash changed (#section). Tests whether the SDK treats a hash-only change as a soft navigation.',
+  },
 };
 
 const getRoute = (): Route => {
-  const path = window.location.pathname;
-  if (path.endsWith('/a')) return 'a';
-  if (path.endsWith('/b')) return 'b';
+  const { pathname, search, hash } = window.location;
+  if (pathname.endsWith('/a')) return 'a';
+  if (pathname.endsWith('/b')) return 'b';
+  if (search.includes('tab=details')) return 'query';
+  if (hash.includes('section')) return 'hash';
   return 'home';
 };
 

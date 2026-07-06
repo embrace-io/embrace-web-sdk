@@ -19,6 +19,7 @@
     "server": "npx tsx server/server.ts",
     "commitlint": "commitlint",
     "test:integration": "turbo run test --filter=tests-integration",
+    "test:integration:headed": "turbo run test:headed --filter=tests-integration",
     "test:integration:update-golden": "turbo run update-golden --filter=tests-integration",
     "test:integration:container": "bash scripts/test-integration-podman.sh",
     "test:integration:container:update-golden": "UPDATE_GOLDEN=1 bash scripts/test-integration-podman.sh",
