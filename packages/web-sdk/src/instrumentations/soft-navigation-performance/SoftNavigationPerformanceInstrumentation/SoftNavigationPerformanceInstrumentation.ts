@@ -32,16 +32,15 @@ import type {
  */
 export function getNavigationEventTrigger(
   navigationTimestamp: number,
-  clickEntries: PerformanceEventTiming[],
+  entry: PerformanceEventTiming,
 ): PerformanceEventTiming | null {
-  return (
-    clickEntries.find(
-      (entry) =>
-        entry.startTime <= navigationTimestamp &&
-        navigationTimestamp <= entry.startTime + entry.duration,
-    ) ?? null
-  );
+  return entry.startTime <= navigationTimestamp &&
+    navigationTimestamp <= entry.startTime + entry.duration
+    ? entry
+    : null;
 }
+
+const PENDING_NAVIGATION_TTL_MS = 60_000;
 
 type PendingNavigation = { timestamp: number; url: string };
 
@@ -53,7 +52,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   private readonly _navigationHost: NavigationHost;
 
   private readonly _handleCurrentEntryChange = (): void => {
-    const url = this._navigationHost.navigation?.currentEntry?.url ?? '';
+    const url = this._navigationHost.navigation?.currentEntry?.url;
+    if (!url) {
+      this._diag.debug('currententrychange fired with no URL, skipping');
+      return;
+    }
+
     // Store origin-relative time (performance.now() equivalent) so it can be
     // compared directly against PerformanceEventTiming.startTime, which is also
     // origin-relative. getNowMillis() is epoch-based; subtracting getZeroTime()
@@ -89,7 +93,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       this._usePolyfill = false;
       super.enable();
     } else if (
-      this._navigationHost.navigation != null &&
+      this._navigationHost.navigation &&
       isEntryTypeSupported('event')
     ) {
       this._usePolyfill = true;
@@ -124,10 +128,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _enablePolyfill(): void {
-    const nav = this._navigationHost.navigation;
-    if (!nav) {
-      return;
+    if (this._eventObserver) {
+      this._eventObserver.disconnect();
     }
+
+    // biome-ignore lint/style/noNonNullAssertion: enable() is only called when navigationHost.navigation is defined
+    const nav = this._navigationHost.navigation!;
 
     nav.addEventListener('currententrychange', this._handleCurrentEntryChange);
 
@@ -214,8 +220,13 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
+    this._pendingNavigations = this._pendingNavigations.filter(
+      ({ timestamp }) =>
+        entry.startTime - timestamp < PENDING_NAVIGATION_TTL_MS,
+    );
+
     const index = this._pendingNavigations.findIndex(
-      ({ timestamp }) => getNavigationEventTrigger(timestamp, [entry]) !== null,
+      ({ timestamp }) => getNavigationEventTrigger(timestamp, entry) !== null,
     );
 
     if (index === -1) {

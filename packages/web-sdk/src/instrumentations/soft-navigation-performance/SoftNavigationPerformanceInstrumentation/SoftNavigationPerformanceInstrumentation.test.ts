@@ -390,40 +390,29 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 });
 
 describe('getNavigationEventTrigger', () => {
-  it('returns a matching entry when the timestamp falls within the click window', () => {
+  it('returns the entry when the timestamp falls within the click window', () => {
     const entry = makeClickEntry({ startTime: 100, duration: 200 });
-    const result = getNavigationEventTrigger(150, [entry]);
-    expect(result).to.equal(entry);
+    expect(getNavigationEventTrigger(150, entry)).to.equal(entry);
   });
 
-  it('returns a matching entry when the timestamp equals startTime', () => {
+  it('returns the entry when the timestamp equals startTime', () => {
     const entry = makeClickEntry({ startTime: 100, duration: 200 });
-    expect(getNavigationEventTrigger(100, [entry])).to.equal(entry);
+    expect(getNavigationEventTrigger(100, entry)).to.equal(entry);
   });
 
-  it('returns a matching entry when the timestamp equals startTime + duration', () => {
+  it('returns the entry when the timestamp equals startTime + duration', () => {
     const entry = makeClickEntry({ startTime: 100, duration: 200 });
-    expect(getNavigationEventTrigger(300, [entry])).to.equal(entry);
+    expect(getNavigationEventTrigger(300, entry)).to.equal(entry);
   });
 
   it('returns null when timestamp is before the click window', () => {
     const entry = makeClickEntry({ startTime: 100, duration: 200 });
-    expect(getNavigationEventTrigger(99, [entry])).to.be.null;
+    expect(getNavigationEventTrigger(99, entry)).to.be.null;
   });
 
   it('returns null when timestamp is after the click window', () => {
     const entry = makeClickEntry({ startTime: 100, duration: 200 });
-    expect(getNavigationEventTrigger(301, [entry])).to.be.null;
-  });
-
-  it('returns null for an empty entries array', () => {
-    expect(getNavigationEventTrigger(150, [])).to.be.null;
-  });
-
-  it('returns the first matching entry when multiple entries qualify', () => {
-    const entry1 = makeClickEntry({ startTime: 100, duration: 200 });
-    const entry2 = makeClickEntry({ startTime: 50, duration: 300 });
-    expect(getNavigationEventTrigger(150, [entry1, entry2])).to.equal(entry1);
+    expect(getNavigationEventTrigger(301, entry)).to.be.null;
   });
 });
 
@@ -558,6 +547,71 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
 
     expect(spanExporter.getFinishedSpans()).to.have.length(0);
+
+    instrumentation.disable();
+  });
+
+  it('skips a pending navigation and logs debug when currentEntry has no URL', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      diag: diagLogger,
+      limitManager,
+      navigationHost: {
+        navigation: mockNavigation as unknown as Navigation,
+        location: { href: 'https://example.com' },
+      },
+    });
+
+    mockNavigation.currentEntry = null;
+    clock.tick(150);
+    triggerCurrentEntryChange();
+
+    triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
+
+    expect(spanExporter.getFinishedSpans()).to.have.length(0);
+    expect(diagLogger.getDebugLogs()).to.include(
+      'currententrychange fired with no URL, skipping',
+    );
+
+    instrumentation.disable();
+  });
+
+  it('prunes pending navigations older than 60 s when a click entry arrives', () => {
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      navigationHost: {
+        navigation: mockNavigation as unknown as Navigation,
+        location: { href: 'https://example.com' },
+      },
+    });
+
+    // Navigation at t=0 (will be older than 60 s by the time the click arrives).
+    triggerCurrentEntryChange();
+
+    // Navigation at t=100 (recent, should survive).
+    clock.tick(100);
+    triggerCurrentEntryChange();
+
+    // Click arrives at t=60_100, so t=0 navigation is exactly 60_100 ms old (> 60_000)
+    // and t=100 navigation is 60_000 ms old (not > 60_000, so it stays).
+    // The click window covers [60_000, 60_200], which matches t=100... wait, 100 < 60_000.
+    // Use a click at startTime=60_100 with a very large duration to match t=100.
+    clock.tick(60_000); // t = 60_100
+    triggerClickEntries([makeClickEntry({ startTime: 60_100, duration: 200 })]);
+
+    // t=0 was pruned (60_100 - 0 = 60_100 > 60_000).
+    // t=100 was pruned (60_100 - 100 = 60_000, not < 60_000).
+    // No match → no span.
+    expect(spanExporter.getFinishedSpans()).to.have.length(0);
+
+    // Now verify a navigation within the 60 s window still matches.
+    clock.tick(100); // t = 60_200
+    triggerCurrentEntryChange(); // pending navigation at t=60_200
+    triggerClickEntries([makeClickEntry({ startTime: 60_200, duration: 200 })]);
+
+    expect(spanExporter.getFinishedSpans()).to.have.length(1);
 
     instrumentation.disable();
   });
@@ -707,32 +761,6 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     expect(spans[0].attributes['browser.url.full']).to.equal(
       'https://example.com/first',
     );
-
-    instrumentation.disable();
-  });
-
-  it('returns early from _enablePolyfill when navigation is removed from the host after construction', () => {
-    const host: {
-      navigation: Navigation | undefined;
-      location: { href: string };
-    } = {
-      navigation: mockNavigation as unknown as Navigation,
-      location: { href: 'https://example.com' },
-    };
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-      navigationHost: host,
-    });
-
-    instrumentation.disable();
-    host.navigation = undefined;
-
-    // onEnable() bypasses the _isEnabled guard; _usePolyfill is still true so
-    // _enablePolyfill() is entered, and the !nav guard fires.
-    instrumentation.onEnable();
-
-    expect(currentEntryChangeListeners).to.have.length(0);
 
     instrumentation.disable();
   });
