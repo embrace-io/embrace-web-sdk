@@ -1,6 +1,8 @@
 import type { PageManager, Route } from '../../api-page/index.ts';
-import type { TitleDocument } from '../../common/index.ts';
+import type { NavigationHost, TitleDocument } from '../../common/index.ts';
 import { generateUUID } from '../../utils/index.ts';
+import type { RouteMatcher } from './matcher.ts';
+import { createRouteMatcher } from './matcher.ts';
 import type { EmbracePageManagerArgs } from './types.ts';
 
 export class EmbracePageManager implements PageManager {
@@ -9,13 +11,44 @@ export class EmbracePageManager implements PageManager {
   private _pageLabel: string | null = null;
   private readonly _titleDocument: TitleDocument | undefined;
   private readonly _useDocumentTitleAsPageLabel: boolean;
+  private readonly _navigationHost: NavigationHost;
+  private readonly _matchRoute: RouteMatcher | null;
 
   public constructor({
     useDocumentTitleAsPageLabel = true,
     titleDocument = window.document,
+    routes,
+    navigationHost = window as NavigationHost,
   }: EmbracePageManagerArgs = {}) {
     this._useDocumentTitleAsPageLabel = useDocumentTitleAsPageLabel;
     this._titleDocument = titleDocument;
+    this._navigationHost = navigationHost;
+    this._matchRoute = routes?.length ? createRouteMatcher(routes) : null;
+
+    // When route templates are configured, derive the current route from the URL
+    // so page path stays low-cardinality without any app-side wiring: seed it now,
+    // then keep it in sync on each (soft) navigation. The listener is intentionally
+    // never removed: the page manager lives for the page's lifetime.
+    if (this._matchRoute) {
+      this._updateRouteFromURL();
+      this._navigationHost.navigation?.addEventListener(
+        'currententrychange',
+        this._onNavigation,
+      );
+    }
+  }
+
+  private readonly _onNavigation = (): void => {
+    this._updateRouteFromURL();
+  };
+
+  private _updateRouteFromURL(): void {
+    if (!this._matchRoute) {
+      return;
+    }
+
+    const url = new URL(this._navigationHost.location.href).pathname;
+    this.setCurrentRoute({ path: this._matchRoute(url), url });
   }
 
   public getCurrentPageId = (): string | null => this._currentPageId;

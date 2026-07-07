@@ -18,15 +18,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        'react-router-v5': resolve(__dirname, 'react-router-v5/index.html'),
-        'react-router-v6-declarative': resolve(
-          __dirname,
-          'react-router-v6-declarative/index.html',
-        ),
-        'react-router-v6-data': resolve(
-          __dirname,
-          'react-router-v6-data/index.html',
-        ),
         soft: resolve(__dirname, 'soft/index.html'),
       },
       output: {

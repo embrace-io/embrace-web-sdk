@@ -259,6 +259,17 @@ type BaseSDKInitConfig = {
    * **default**: true
    */
   useDocumentTitleAsPageLabel?: boolean;
+
+  /**
+   * routes is a list of route templates ('/order/:id', '/files/*') used to
+   * collapse high-cardinality URLs into stable page paths. On each navigation
+   * the SDK matches the current URL to the most specific template and records it
+   * as the current page path, which then decorates spans, logs, and web vitals.
+   * When omitted, page path is only set if you call `page.setCurrentRoute` yourself.
+   *
+   * **default**: undefined
+   */
+  routes?: string[];
 };
 
 /*
@@ -378,6 +389,7 @@ export interface SetupLogsArgs {
 export interface SetupPageArgs {
   useDocumentTitleAsPageLabel?: boolean;
   registerGlobally?: boolean;
+  routes?: string[];
 }
 
 type OptionalInstrumentations =

@@ -1,18 +1,18 @@
-import type { DiagLogger } from '@opentelemetry/api';
-import type { TitleDocument } from '../../common/index.ts';
-import type { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../constants/index.ts';
+import type { NavigationHost, TitleDocument } from '../../common/index.ts';
 
 export interface EmbracePageManagerArgs {
-  diag?: DiagLogger;
-  shouldCleanupPathOptionsFromRouteName?: boolean;
   useDocumentTitleAsPageLabel?: boolean;
   titleDocument?: TitleDocument;
-}
-
-export interface SetCurrentRouteSpanOptions {
-  instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS;
-}
-
-export interface SetCurrentRouteOptions {
-  instrumentationType?: EMB_NAVIGATION_INSTRUMENTATIONS;
+  /**
+   * Route templates ('/order/:id', '/files/*') used to collapse high-cardinality
+   * URLs into stable page paths. When set, the current route is derived from the
+   * URL on each navigation.
+   */
+  routes?: string[];
+  /**
+   * Window-shaped object used to read the current URL and listen for soft
+   * navigations via the Navigation API. Defaults to `window`. Only used when
+   * `routes` is set.
+   */
+  navigationHost?: NavigationHost;
 }

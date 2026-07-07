@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { UUID_PATTERN } from '../../../tests/utils/constants.ts';
 import type { Route } from '../../api-page/index.ts';
-import type { TitleDocument } from '../../common/index.ts';
+import type { NavigationHost, TitleDocument } from '../../common/index.ts';
 import { EmbracePageManager } from './EmbracePageManager.ts';
 
 chai.use(sinonChai);
@@ -116,5 +116,133 @@ describe('EmbracePageManager', () => {
     pageManager.setPageLabel('custom-label');
     pageManager.clearCurrentRoute();
     expect(pageManager.getPageLabel()).to.equal('My Page Title');
+  });
+});
+
+interface FakeNavigationHost extends NavigationHost {
+  setHref: (href: string) => void;
+  fire: () => void;
+}
+
+const makeNavigationHost = (href: string): FakeNavigationHost => {
+  let listener: EventListener | null = null;
+
+  return {
+    location: { href },
+    navigation: {
+      addEventListener: (_type: string, callback: EventListener) => {
+        listener = callback;
+      },
+      removeEventListener: () => {
+        listener = null;
+      },
+    } as unknown as Navigation,
+    setHref(next: string) {
+      this.location.href = next;
+    },
+    fire() {
+      listener?.(new Event('currententrychange'));
+    },
+  };
+};
+
+describe('EmbracePageManager route templates', () => {
+  it('seeds the current route from the URL when routes are configured', () => {
+    const pageManager = new EmbracePageManager({
+      routes: ['/order/:id'],
+      navigationHost: makeNavigationHost('https://app.test/order/123'),
+    });
+
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: '/order/:id',
+      url: '/order/123',
+    });
+  });
+
+  it('updates the current route on navigation', () => {
+    const host = makeNavigationHost('https://app.test/');
+    const pageManager = new EmbracePageManager({
+      routes: ['/', '/order/:id'],
+      navigationHost: host,
+    });
+
+    host.setHref('https://app.test/order/9');
+    host.fire();
+
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: '/order/:id',
+      url: '/order/9',
+    });
+  });
+
+  it('mints a new page id when the pathname changes on navigation', () => {
+    const host = makeNavigationHost('https://app.test/order/9');
+    const pageManager = new EmbracePageManager({
+      routes: ['/order/:id'],
+      navigationHost: host,
+    });
+
+    const seedPageId = pageManager.getCurrentPageId();
+    expect(seedPageId).to.match(UUID_PATTERN);
+
+    host.setHref('https://app.test/order/10');
+    host.fire();
+
+    const nextPageId = pageManager.getCurrentPageId();
+    expect(nextPageId).to.match(UUID_PATTERN);
+    expect(nextPageId).to.not.equal(seedPageId);
+  });
+
+  it('keeps the same page id when only the query string changes', () => {
+    const host = makeNavigationHost('https://app.test/order/9');
+    const pageManager = new EmbracePageManager({
+      routes: ['/order/:id'],
+      navigationHost: host,
+    });
+
+    const seedPageId = pageManager.getCurrentPageId();
+
+    host.setHref('https://app.test/order/9?tab=details');
+    host.fire();
+
+    expect(pageManager.getCurrentPageId()).to.equal(seedPageId);
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: '/order/:id',
+      url: '/order/9',
+    });
+  });
+
+  it('falls back to the raw pathname when no template matches', () => {
+    const pageManager = new EmbracePageManager({
+      routes: ['/order/:id'],
+      navigationHost: makeNavigationHost('https://app.test/unknown'),
+    });
+
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: '/unknown',
+      url: '/unknown',
+    });
+  });
+
+  it('does not track navigation when no routes are configured', () => {
+    const host = makeNavigationHost('https://app.test/order/1');
+    const pageManager = new EmbracePageManager({ navigationHost: host });
+
+    host.setHref('https://app.test/order/2');
+    host.fire();
+
+    void expect(pageManager.getCurrentRoute()).to.be.null;
+  });
+
+  it('does not throw when the Navigation API is unavailable', () => {
+    const pageManager = new EmbracePageManager({
+      routes: ['/order/:id'],
+      navigationHost: { location: { href: 'https://app.test/order/1' } },
+    });
+
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: '/order/:id',
+      url: '/order/1',
+    });
   });
 });

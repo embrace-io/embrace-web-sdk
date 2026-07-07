@@ -102,6 +102,7 @@ export const initSDK = (
     blockNetworkSpanForwarding = false,
     restrictedProtocols = new Set(['file:']),
     useDocumentTitleAsPageLabel = true,
+    routes,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
   try {
@@ -259,6 +260,7 @@ export const initSDK = (
     const pageManager = setupPage({
       useDocumentTitleAsPageLabel,
       registerGlobally,
+      routes,
     });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
@@ -515,9 +517,11 @@ const setupLogs = ({
 const setupPage = ({
   useDocumentTitleAsPageLabel,
   registerGlobally,
+  routes,
 }: SetupPageArgs) => {
   const embracePageManager = new EmbracePageManager({
     useDocumentTitleAsPageLabel,
+    routes,
   });
 
   if (registerGlobally) {

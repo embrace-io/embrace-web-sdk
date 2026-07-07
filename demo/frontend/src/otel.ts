@@ -6,6 +6,6 @@ while (performance.now() - start < 200) {
   // block main thread
 }
 
-const setupOTel = () => setupSDK();
+const setupOTel = (routes?: string[]) => setupSDK({ routes });
 
 export { setupOTel };

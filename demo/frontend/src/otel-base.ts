@@ -11,7 +11,13 @@ const APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
 const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 
-const setupSDK = (instrumentations?: Instrumentation[]) => {
+interface SetupSDKOptions {
+  instrumentations?: Instrumentation[];
+  /** Route templates used to collapse URLs into stable page paths. */
+  routes?: string[];
+}
+
+const setupSDK = ({ instrumentations, routes }: SetupSDKOptions = {}) => {
   const result = initSDK({
     logLevel: DiagLogLevel.ALL,
     appID: APP_ID || undefined,
@@ -29,6 +35,7 @@ const setupSDK = (instrumentations?: Instrumentation[]) => {
       //   'document-load',
       // ]),
     },
+    ...(routes ? { routes } : {}),
     ...(instrumentations ? { instrumentations } : {}),
     embraceDataURL: DATA_URL ?? undefined,
     embraceConfigURL: CONFIG_URL ?? undefined,

@@ -45,16 +45,10 @@ export default {
         // where we need to convert from cjs to esm
         noDiscovery: true,
         include: [
-          'hoist-non-react-statics',
           'react',
-          'cookie',
-          'set-cookie-parser',
           'react-dom/client',
           'react-dom',
           'react/jsx-dev-runtime',
-          'prop-types',
-          'react-is',
-          'path-to-regexp',
           '@opentelemetry/otlp-transformer', // used by test utils for internal types
           '@opentelemetry/instrumentation-fetch',
         ],

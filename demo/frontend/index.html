@@ -21,25 +21,6 @@
         path !== getRouterPath('soft')
       ) {
         window.location.assign(getRouterPath('soft'));
-      } else if (
-        path.startsWith(getRouterPath('react-router-v5').replace(/\/$/, '')) &&
-        path !== getRouterPath('react-router-v5')
-      ) {
-        window.location.assign(getRouterPath('react-router-v5'));
-      } else if (
-        path.startsWith(
-          getRouterPath('react-router-v6-declarative').replace(/\/$/, '')
-        ) &&
-        path !== getRouterPath('react-router-v6-declarative')
-      ) {
-        window.location.assign(getRouterPath('react-router-v6-declarative'));
-      } else if (
-        path.startsWith(
-          getRouterPath('react-router-v6-data').replace(/\/$/, '')
-        ) &&
-        path !== getRouterPath('react-router-v6-data')
-      ) {
-        window.location.assign(getRouterPath('react-router-v6-data'));
       }
     </script>
   </head>

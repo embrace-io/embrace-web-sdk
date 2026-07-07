@@ -7,9 +7,6 @@ const base = import.meta.env.BASE_URL;
 const NAV_ITEMS = [
   { href: base, label: 'Playground' },
   { href: `${base}soft/`, label: 'Soft Nav' },
-  { href: `${base}react-router-v5/`, label: 'Router v5' },
-  { href: `${base}react-router-v6-declarative/`, label: 'Router v6' },
-  { href: `${base}react-router-v6-data/`, label: 'Router v6 Data' },
 ] as const;
 
 const Layout = ({ children }: { children: ReactNode }) => {

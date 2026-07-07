@@ -21,8 +21,8 @@ npm ci && npm run demo
   promise rejection handling
 - **Network Monitoring**: Automatic instrumentation of fetch and XMLHttpRequest
   calls
-- **React Integration**: Error boundaries and routing instrumentation for React
-  Router v4/v5 and v6+
+- **React Integration**: Error boundaries, plus config-driven route tracking
+  (`initSDK({ routes })`) demonstrated by the Soft Nav page
 - **Session Properties**: Add and remove permanent and session-scoped properties
 - **Navigation Tracking**: Monitor page navigation and external link clicks
 - **Source Map Upload**: Integration with the web-cli for production debugging
