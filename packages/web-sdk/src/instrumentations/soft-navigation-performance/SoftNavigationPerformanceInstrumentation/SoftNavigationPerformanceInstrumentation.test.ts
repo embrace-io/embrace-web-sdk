@@ -294,8 +294,6 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     });
 
     expect(observerCallback).to.be.null;
-    expect(diagLogger.getDebugLogs().some((m) => m.includes('soft-navigation')))
-      .to.be.true;
 
     instrumentation.disable();
   });

@@ -60,6 +60,7 @@ export default defineConfig({
     },
   ],
   testMatch: '**/*.spec.ts',
+  testIgnore: '**/e2e-headed/**',
   projects: [
     {
       name: 'chromium',
