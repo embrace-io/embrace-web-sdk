@@ -370,6 +370,23 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
   });
+
+  it('disconnects the existing observer when onEnable is called while already active', () => {
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+    });
+
+    const firstCallback = observerCallback;
+
+    // Bypass the _isEnabled guard in enable() to re-enter _enableNative while
+    // _observer is already set, exercising the disconnect() branch.
+    instrumentation.onEnable();
+
+    expect(observerCallback).to.not.equal(firstCallback);
+
+    instrumentation.disable();
+  });
 });
 
 describe('getNavigationEventTrigger', () => {
@@ -690,6 +707,66 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     expect(spans[0].attributes['browser.url.full']).to.equal(
       'https://example.com/first',
     );
+
+    instrumentation.disable();
+  });
+
+  it('returns early from _enablePolyfill when navigation is removed from the host after construction', () => {
+    const host: {
+      navigation: Navigation | undefined;
+      location: { href: string };
+    } = {
+      navigation: mockNavigation as unknown as Navigation,
+      location: { href: 'https://example.com' },
+    };
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      navigationHost: host,
+    });
+
+    instrumentation.disable();
+    host.navigation = undefined;
+
+    // onEnable() bypasses the _isEnabled guard; _usePolyfill is still true so
+    // _enablePolyfill() is entered, and the !nav guard fires.
+    instrumentation.onEnable();
+
+    expect(currentEntryChangeListeners).to.have.length(0);
+
+    instrumentation.disable();
+  });
+
+  it('stops emitting in _emitPolyfillSpan once the limit is reached mid-batch', () => {
+    const customLimitManager = new EmbraceLimitManager({
+      ...DEFAULT_LIMITS,
+      maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, soft_navigation: 1 },
+    });
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager: customLimitManager,
+      navigationHost: {
+        navigation: mockNavigation as unknown as Navigation,
+        location: { href: 'https://example.com' },
+      },
+    });
+
+    // Two navigations at distinct timestamps so each click entry matches one.
+    clock.tick(150); // t = 150
+    triggerCurrentEntryChange();
+    clock.tick(200); // t = 350
+    triggerCurrentEntryChange();
+
+    // Two click entries whose windows cover a different navigation each.
+    // Entry 1: startTime=100, duration=100 → window [100, 200] matches t=150.
+    // Entry 2: startTime=300, duration=100 → window [300, 400] matches t=350.
+    triggerClickEntries([
+      makeClickEntry({ startTime: 100, duration: 100 }),
+      makeClickEntry({ startTime: 300, duration: 100 }),
+    ]);
+
+    // Only the first _emitPolyfillSpan call goes through; the second hits the limit guard.
+    expect(spanExporter.getFinishedSpans()).to.have.length(1);
 
     instrumentation.disable();
   });
