@@ -9,12 +9,12 @@ import {
   TRACE_PARENT_HEADER,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
-  BasicTracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import {
   PerformanceTimingNames as PTN,
   StackContextManager,
@@ -27,8 +27,8 @@ import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
 const exporter = new InMemorySpanExporter();
-const spanProcessor = new SimpleSpanProcessor(exporter);
-const provider = new BasicTracerProvider({
+const spanProcessor = new SimpleSpanProcessor({ exporter });
+const provider = new TracerProvider({
   spanProcessors: [spanProcessor],
 });
 trace.setGlobalTracerProvider(provider);
