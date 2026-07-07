@@ -1,0 +1,16 @@
+diff --git a/node_modules/generate-license-file/src/lib/internal/resolveLicenseContent/licenseFile.js b/node_modules/generate-license-file/src/lib/internal/resolveLicenseContent/licenseFile.js
+index b3efcd0..6d4fee3 100644
+--- a/node_modules/generate-license-file/src/lib/internal/resolveLicenseContent/licenseFile.js
++++ b/node_modules/generate-license-file/src/lib/internal/resolveLicenseContent/licenseFile.js
+@@ -21,7 +21,10 @@ const licenseFile = (inputs) => tslib_1.__awaiter(void 0, void 0, void 0, functi
+         cwd: directory,
+         maxDepth: 1,
+     });
+-    const filteredLicenseFiles = licenseFiles.filter(file => !exports.extensionDenyList.includes((0, path_1.extname)(file)));
++    // glob returns matches in filesystem order, which differs between
++    // case-sensitive and case-insensitive filesystems. Sort so the chosen
++    // file (and the warning) are deterministic across platforms.
++    const filteredLicenseFiles = licenseFiles.filter(file => !exports.extensionDenyList.includes((0, path_1.extname)(file))).sort();
+     if (filteredLicenseFiles.length === 0) {
+         return null;
+     }
