@@ -57,7 +57,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  updatePageShowMillis,
+  updateZeroTimeMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -127,9 +127,14 @@ export const initSDK = (
     const perf = new OTelPerformanceManager();
     const initSDKStart = perf.getNowMillis();
 
-    window.addEventListener('pageshow', (event: PageTransitionEvent) => {
-      updatePageShowMillis(window.performance.timeOrigin + event.timeStamp);
-    });
+    // Both events mark the start of a new "view" the user is looking at (a bfcache
+    // restore, or a client-side soft navigation), so both reset the SDK's zero time.
+    const resetZeroTime = (event: Event) =>
+      updateZeroTimeMillis(window.performance.timeOrigin + event.timeStamp);
+
+    window.addEventListener('pageshow', resetZeroTime);
+    // eslint-disable-next-line baseline-js/use-baseline
+    window.navigation?.addEventListener('currententrychange', resetZeroTime);
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);

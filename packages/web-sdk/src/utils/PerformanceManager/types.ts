@@ -2,7 +2,7 @@ import type { HrTime } from '@opentelemetry/api';
 
 export interface PerformanceManager {
   getNowHRTime: () => HrTime;
-  epochMillisFromZeroTime: (originOffset: number) => number;
+  epochMillisFromOrigin: (originOffset: number) => number;
   getNowMillis: () => number;
   millisSinceHRTime: (time: HrTime) => number;
   millisFromZeroTime: (originOffset: number) => number;

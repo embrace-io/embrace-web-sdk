@@ -188,7 +188,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     }
 
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
-      startTime: this.perf.epochMillisFromZeroTime(entry.startTime),
+      startTime: this.perf.epochMillisFromOrigin(entry.startTime),
       attributes: {
         [KEY_BROWSER_URL_FULL]: entry.name,
         [KEY_EMB_SOFT_NAVIGATION_SOURCE]:
@@ -209,9 +209,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
             : undefined,
       },
     });
-    span.end(
-      this.perf.epochMillisFromZeroTime(entry.startTime + entry.duration),
-    );
+    span.end(this.perf.epochMillisFromOrigin(entry.startTime + entry.duration));
   }
 
   private _processClickEntry(entry: PerformanceEventTiming): void {

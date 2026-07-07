@@ -2,14 +2,14 @@ import type { HrTime } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core';
 import type { PerformanceClock, PerformanceManager } from './types.ts';
 
-let _pageShowMillis: number | undefined;
+let _zeroTimeMillis: number | undefined;
 
-export function updatePageShowMillis(epochMs: number): void {
-  _pageShowMillis = epochMs;
+export function updateZeroTimeMillis(epochMs: number): void {
+  _zeroTimeMillis = epochMs;
 }
 
-export function _resetPageShowMillisForTesting(): void {
-  _pageShowMillis = undefined;
+export function _resetZeroTimeMillisForTesting(): void {
+  _zeroTimeMillis = undefined;
 }
 
 export class OTelPerformanceManager implements PerformanceManager {
@@ -20,25 +20,31 @@ export class OTelPerformanceManager implements PerformanceManager {
     this._clock = clock;
   }
 
-  public epochMillisFromZeroTime = (originOffset: number) =>
-    this.getZeroTime() + originOffset;
+  // originOffset (entry.startTime, event.timeStamp, performance.now()) is always
+  // "milliseconds since timeOrigin" by spec, a fixed relationship for the page's
+  // whole life, so converting to an epoch timestamp is just adding timeOrigin
+  // back in. getZeroTime() answers a different question (how long the user has
+  // been looking at the current view) and has no bearing on this conversion.
+  public epochMillisFromOrigin = (originOffset: number) =>
+    this._clock.timeOrigin + originOffset;
 
   public getNowHRTime = () => millisToHrTime(this.getNowMillis());
 
-  public getNowMillis = () => this.epochMillisFromZeroTime(this._clock.now()); // otperformance.now() returns milliseconds since timeOrigin, timeOrigin is the time from epoch to the start of the page load
+  public getNowMillis = () => this.epochMillisFromOrigin(this._clock.now());
 
   public millisSinceHRTime = (time: HrTime) =>
     Math.max(0, this.getNowMillis() - hrTimeToMilliseconds(time));
 
   /**
    * To measure the way a user experienced a metric, we measure metrics relative to the time the user
-   * started viewing the page. On prerendered pages, this is activationStart. On bfcache restores, this
-   * is the page restore time. On all other pages this value will be zero.
+   * started viewing the current page or view. On prerendered pages, this is activationStart. On bfcache
+   * restores and soft navigations, this is the time of the restore or navigation. On all other pages
+   * this value will be zero.
    */
   public getZeroTime = (): number =>
     Math.max(
       this._clock.timeOrigin + this._getNavigationActivationStart(),
-      _pageShowMillis ?? 0,
+      _zeroTimeMillis ?? 0,
     );
 
   private _getNavigationEntry(): PerformanceNavigationTiming | null {
@@ -62,8 +68,10 @@ export class OTelPerformanceManager implements PerformanceManager {
     return entry?.activationStart ?? 0;
   }
 
-  // Returns milliseconds elapsed since the SDK's zero time (currently navigation
-  // start). When soft-navigation support is added, this method will subtract the
-  // reset point so timings remain relative to the soft navigation.
-  public millisFromZeroTime = (originOffset: number) => originOffset;
+  // originOffset is relative to timeOrigin, but zero time may sit later than
+  // timeOrigin (activation start, bfcache restore). Subtract that gap to rebase the
+  // offset onto zero time; clamp to 0 for anything that predates zero time (e.g.
+  // prerendering activity captured before activationStart).
+  public millisFromZeroTime = (originOffset: number) =>
+    Math.max(0, originOffset - (this.getZeroTime() - this._clock.timeOrigin));
 }

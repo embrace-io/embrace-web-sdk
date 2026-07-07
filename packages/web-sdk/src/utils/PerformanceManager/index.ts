@@ -1,6 +1,6 @@
 export {
-  _resetPageShowMillisForTesting,
+  _resetZeroTimeMillisForTesting,
   OTelPerformanceManager,
-  updatePageShowMillis,
+  updateZeroTimeMillis,
 } from './OTelPerformanceManager.ts';
 export type { PerformanceManager } from './types.ts';
