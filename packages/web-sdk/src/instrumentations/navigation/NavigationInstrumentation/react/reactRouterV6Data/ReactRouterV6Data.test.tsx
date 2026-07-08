@@ -32,6 +32,7 @@ import {
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
 import { OTelPerformanceManager } from '../../../../../utils/index.ts';
+import { NavigationInstrumentation } from '../../index.ts';
 import { listenToRouterChanges } from './listenToRouterChanges.ts';
 
 const { expect } = chai;
@@ -124,6 +125,10 @@ describe('ReactRouterV6Data', () => {
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
 
+    // In production this is wired up automatically by initSDK; this test
+    // builds the pipeline manually so it needs to construct it itself.
+    new NavigationInstrumentation({ pageManager });
+
     memoryExporter = setupTestTraceExporter([
       new PageSpanProcessor({
         pageManager,
@@ -144,6 +149,8 @@ describe('ReactRouterV6Data', () => {
       rootElement: container,
     });
 
+    // Ends the last navigated route's still-open span too, since a route
+    // span must not outlive the session part it started in.
     userSessionManager.endSessionPartInternal({
       reason: 'user_session_ended',
       userSessionEndReason: 'manual',

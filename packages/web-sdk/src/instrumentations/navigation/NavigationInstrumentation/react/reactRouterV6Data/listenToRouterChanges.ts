@@ -1,6 +1,5 @@
 import type { Route } from '../../../../../api-page/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import { page } from '../../../../../api-page/index.ts';
 import type { ListenToRouterChangesArgs, Match } from './types.ts';
 
 /**
@@ -48,11 +47,6 @@ export const listenToRouterChanges = ({
   routesMatcher,
   config: { pathnameDocument = window.location } = {},
 }: ListenToRouterChangesArgs) => {
-  const navigationInstrumentation = getNavigationInstrumentation();
-  navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.Data,
-  );
-
   const initialMatches = routesMatcher(router.routes, {
     pathname: pathnameDocument.pathname,
   });
@@ -62,7 +56,7 @@ export const listenToRouterChanges = ({
     : null;
 
   if (initialRoute) {
-    navigationInstrumentation.setCurrentRoute(initialRoute);
+    page.setCurrentRoute(initialRoute);
   }
 
   return router.subscribe((state) => {
@@ -74,7 +68,7 @@ export const listenToRouterChanges = ({
     );
 
     if (currentRoute) {
-      navigationInstrumentation.setCurrentRoute(currentRoute);
+      page.setCurrentRoute(currentRoute);
     }
   });
 };

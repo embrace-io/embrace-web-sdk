@@ -11,6 +11,7 @@ import {
   GlobalExceptionInstrumentation,
   LoafInstrumentation,
   MaxScrollDepthInstrumentation,
+  NavigationInstrumentation,
   RageClickInstrumentation,
   ServerTimingInstrumentation,
   SoftNavigationPerformanceInstrumentation,
@@ -94,6 +95,12 @@ export const setupDefaultInstrumentations = (
   if (!config.omit?.has('document-load')) {
     instrumentations.push(
       new DocumentLoadInstrumentation(config['document-load']),
+    );
+  }
+
+  if (!config.omit?.has('navigation')) {
+    instrumentations.push(
+      new NavigationInstrumentation({ pageManager, ...config['navigation'] }),
     );
   }
 

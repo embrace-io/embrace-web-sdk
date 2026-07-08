@@ -32,6 +32,7 @@ import type {
   GlobalExceptionInstrumentationArgs,
   LoafInstrumentationArgs,
   MaxScrollDepthInstrumentationArgs,
+  NavigationInstrumentationArgs,
   RageClickInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   SoftNavigationPerformanceInstrumentationArgs,
@@ -378,6 +379,7 @@ export interface SetupLogsArgs {
 export interface SetupPageArgs {
   useDocumentTitleAsPageLabel?: boolean;
   registerGlobally?: boolean;
+  userSessionManager: UserSessionManagerInternal;
 }
 
 type OptionalInstrumentations =
@@ -393,6 +395,7 @@ type OptionalInstrumentations =
   | 'server-timing'
   | 'soft-navigation-performance'
   | 'document-load'
+  | 'navigation'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
@@ -421,6 +424,7 @@ export interface DefaultInstrumentationConfig {
   'server-timing'?: ServerTimingInstrumentationArgs;
   'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
+  navigation?: NavigationInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
   // '@opentelemetry/instrumentation-xml-http-request' to just be specified once

@@ -2,6 +2,7 @@ import type { TracerProvider } from '@opentelemetry/api';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   EndSessionPartOptions,
+  RolloverSessionPartOptions,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
@@ -122,6 +123,12 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
 
   public endSessionPartInternal(options: EndSessionPartOptions): void {
     this.getDelegate().endSessionPartInternal(options);
+  }
+
+  public rolloverSessionPartInternal(
+    options: RolloverSessionPartOptions,
+  ): void {
+    this.getDelegate().rolloverSessionPartInternal(options);
   }
 
   public incrSessionPartCountForKey(key: string): void {

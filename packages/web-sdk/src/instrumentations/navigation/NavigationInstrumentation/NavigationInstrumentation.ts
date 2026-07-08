@@ -1,10 +1,8 @@
 import type { Span } from '@opentelemetry/api';
-import type { Route } from '../../../api-page/index.ts';
+import type { PageManager, Route } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
 import {
-  EMB_NAVIGATION_INSTRUMENTATIONS,
   EMB_TYPES,
-  KEY_EMB_INSTRUMENTATION,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
@@ -19,15 +17,15 @@ const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
+  private readonly _pageManager: PageManager;
   private _currentRouteSpan: Span | null = null;
-  private _instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS =
-    EMB_NAVIGATION_INSTRUMENTATIONS.Manual;
-  private _removeSessionPartStartedFn: (() => void) | null = null;
-  private _removeSessionPartEndedFn: (() => void) | null = null;
+  private _currentRouteSpanUrl: string | null = null;
+  private _currentRouteSpanPath: string | null = null;
 
   public constructor({
     diag,
     shouldCleanupPathOptionsFromRouteName = true,
+    pageManager,
   }: NavigationInstrumentationArgs) {
     super({
       instrumentationName: 'NavigationInstrumentation',
@@ -38,102 +36,86 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     this._shouldCleanupPathOptionsFromRouteName =
       shouldCleanupPathOptionsFromRouteName;
+    this._pageManager = pageManager ?? page.getPageManager();
+    this._pageManager.addRouteChangedListener(this._onRouteChanged);
 
     if (this._config.enabled) {
       this.enable();
     }
   }
 
-  public setInstrumentationType = (
-    instrumentationType: EMB_NAVIGATION_INSTRUMENTATIONS,
-  ) => {
-    this._instrumentationType = instrumentationType;
-  };
-
-  public setCurrentRoute = (route: Route) => {
+  private readonly _onRouteChanged = (route: Route): void => {
     if (!this._config.enabled) {
       return;
     }
 
-    const currentRoute = page.getCurrentRoute();
-
-    if (route.url !== currentRoute?.url) {
-      page.setCurrentRoute(route);
-
-      this._endRouteSpan(currentRoute);
-      this._startRouteSpan(route);
-    }
-  };
-
-  private readonly _setupSessionPartListeners = () => {
-    if (!this._removeSessionPartStartedFn) {
-      this._removeSessionPartStartedFn =
-        this.userSessionManager.addSessionPartStartedListener(() => {
-          const currentRoute = page.getCurrentRoute();
-
-          if (currentRoute && !this._currentRouteSpan) {
-            this._diag.debug('Session started, starting route span.');
-
-            this._startRouteSpan(currentRoute);
-          }
-        });
+    if (this._currentRouteSpan && this._currentRouteSpanUrl === route.url) {
+      // Same url as the currently open span: either the templated path just
+      // resolved (rename in place), or a redundant re-render — no-op if the
+      // path hasn't actually changed.
+      if (this._currentRouteSpanPath !== route.path) {
+        this._renameCurrentRouteSpan(route.path);
+      }
+      return;
     }
 
-    if (!this._removeSessionPartEndedFn) {
-      this._removeSessionPartEndedFn =
-        this.userSessionManager.addSessionPartEndedListener(() => {
-          if (this._currentRouteSpan) {
-            this._diag.debug('Session ended, ending route span.');
-
-            this._endRouteSpan(page.getCurrentRoute());
-          }
-        });
-    }
-  };
-
-  private readonly _cleanUpSessionPartListeners = () => {
-    if (this._removeSessionPartStartedFn) {
-      this._removeSessionPartStartedFn();
-      this._removeSessionPartStartedFn = null;
-    }
-
-    if (this._removeSessionPartEndedFn) {
-      this._removeSessionPartEndedFn();
-      this._removeSessionPartEndedFn = null;
-    }
+    this._endRouteSpan();
+    this._startRouteSpan(route);
   };
 
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
-    this._setupSessionPartListeners();
 
-    const pathName = this._shouldCleanupPathOptionsFromRouteName
-      ? route.path.replace(PATH_OPTIONS_RE, '')
-      : route.path;
+    const pathName = this._cleanPath(route.path);
     this._currentRouteSpan = this.tracer.startSpan(pathName, {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Surface,
         [KEY_EMB_PAGE_PATH]: pathName,
-        [KEY_EMB_PAGE_ID]: page.getCurrentPageId() || undefined,
+        [KEY_EMB_PAGE_ID]: this._pageManager.getCurrentPageId() || undefined,
       },
     });
-
-    this._currentRouteSpan.setAttribute(
-      KEY_EMB_INSTRUMENTATION,
-      this._instrumentationType,
-    );
+    this._currentRouteSpanUrl = route.url;
+    this._currentRouteSpanPath = route.path;
 
     return this._currentRouteSpan;
   };
 
-  private readonly _endRouteSpan = (currentRoute: Route | null) => {
+  private readonly _endRouteSpan = (): void => {
     if (this._currentRouteSpan) {
-      if (currentRoute) {
-        this._diag.debug(`Ending route span for url: ${currentRoute.url}`);
-      }
+      this._diag.debug(
+        `Ending route span for url: ${this._currentRouteSpanUrl ?? 'unknown'}`,
+      );
 
       this._currentRouteSpan.end();
       this._currentRouteSpan = null;
+      this._currentRouteSpanUrl = null;
+      this._currentRouteSpanPath = null;
+    }
+  };
+
+  private readonly _renameCurrentRouteSpan = (path: string): void => {
+    const pathName = this._cleanPath(path);
+    this._diag.debug(`Resolved route span path to: ${pathName}`);
+
+    this._currentRouteSpan?.updateName(pathName);
+    this._currentRouteSpan?.setAttribute(KEY_EMB_PAGE_PATH, pathName);
+    this._currentRouteSpanPath = path;
+  };
+
+  private readonly _cleanPath = (path: string): string =>
+    this._shouldCleanupPathOptionsFromRouteName
+      ? path.replace(PATH_OPTIONS_RE, '')
+      : path;
+
+  // A route span must not outlive the session part it started in — e.g. the
+  // tab backgrounds, or the session ends, with no further navigation to
+  // trigger _onRouteChanged. Only the ending side is wired up: resuming a
+  // span on session-part-start was deliberately dropped in favor of relying
+  // solely on route reports.
+  private readonly _onSessionPartEnded = (): void => {
+    if (this._currentRouteSpan) {
+      this._diag.debug('Session ended, ending route span.');
+      this._endRouteSpan();
     }
   };
 
@@ -141,13 +123,14 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     this.setConfig({
       enabled: true,
     });
+    this.setSessionPartListeners({ end: this._onSessionPartEnded });
     this._diag.debug(
       'NavigationInstrumentation enabled, listening for navigation events.',
     );
   };
 
   public override onDisable = () => {
-    this._cleanUpSessionPartListeners();
+    this._endRouteSpan();
     this.setConfig({
       enabled: false,
     });

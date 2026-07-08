@@ -2490,6 +2490,7 @@ describe('WebVitalsInstrumentation', () => {
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns('Product Page'),
         clearCurrentRoute: sinon.stub(),
+        addRouteChangedListener: sinon.stub().returns(() => {}),
       };
 
       instrumentation = new WebVitalsInstrumentation({

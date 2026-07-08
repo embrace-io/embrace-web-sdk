@@ -18,4 +18,10 @@ export class NoOpPageManager implements PageManager {
   }
 
   public clearCurrentRoute(): void {}
+
+  public addRouteChangedListener(
+    _listener: (route: Route) => void,
+  ): () => void {
+    return () => {};
+  }
 }

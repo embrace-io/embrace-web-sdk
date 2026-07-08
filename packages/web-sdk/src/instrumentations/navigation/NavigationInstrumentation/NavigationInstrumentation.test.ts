@@ -6,9 +6,7 @@ import {
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
-import { page } from '../../../api-page/index.ts';
 import { session } from '../../../api-sessions/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../constants/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
@@ -25,8 +23,8 @@ describe('NavigationInstrumentation', () => {
   let navigationInstrumentation: NavigationInstrumentation;
   let memoryExporter: InMemorySpanExporter;
   let diag: InMemoryDiagLogger;
-  let userSessionManager: UserSessionManagerInternal;
   let pageManager: EmbracePageManager;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -35,6 +33,7 @@ describe('NavigationInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
+    pageManager = new EmbracePageManager();
 
     userSessionManager = new EmbraceUserSessionManager({
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
@@ -44,307 +43,250 @@ describe('NavigationInstrumentation', () => {
       visibilityDoc: window.document,
     });
     session.setGlobalUserSessionManager(userSessionManager);
-
-    pageManager = new EmbracePageManager();
-    page.setGlobalPageManager(pageManager);
   });
 
-  it('should start and end route span when the route changes', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
+  const surfaceSpans = () =>
+    memoryExporter
+      .getFinishedSpans()
+      .filter((s) => s.attributes['emb.type'] === 'ux.surface');
+
+  it('should start a route span the first time a route is reported', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
-    const pageId = page.getCurrentPageId();
+
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    const pageId = pageManager.getCurrentPageId();
 
     expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
 
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/1235',
-    });
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-
-    const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:id');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
+    expect(finishedSpans[0].name).to.equal('/test/:id');
+    expect(finishedSpans[0].attributes).to.deep.equal({
       'emb.type': 'ux.surface',
       'app.surface.name': '/test/:id',
       'app.surface.id': pageId,
     });
 
-    expect(diag.getDebugLogs()).to.be.deep.equal([
+    expect(diag.getDebugLogs()).to.deep.equal([
       'NavigationInstrumentation enabled, listening for navigation events.',
       'Starting route span for url: /test/123',
       'Ending route span for url: /test/123',
-      'Starting route span for url: /test/1235',
+      'Starting route span for url: /other',
     ]);
   });
 
-  it('should start and end route span when the route changes with given instrumentationType', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setInstrumentationType(
-      EMB_NAVIGATION_INSTRUMENTATIONS.Data,
-    );
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
-    });
-    const pageId = page.getCurrentPageId();
-
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/1235',
+  it('should not start a new span or log anything for a redundant report of the same route', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
+
+    expect(surfaceSpans()).to.have.lengthOf(1);
+    expect(diag.getDebugLogs()).to.deep.equal([
+      'NavigationInstrumentation enabled, listening for navigation events.',
+      'Starting route span for url: /test/123',
+      'Ending route span for url: /test/123',
+      'Starting route span for url: /other',
+    ]);
+  });
+
+  it('should rename the open span in place when the same url resolves to a different path', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    // A placeholder reported first (e.g. by EmbracePageManager on soft nav,
+    // before react-router has resolved the template), then the real path
+    // for the same url.
+    pageManager.setCurrentRoute({
+      path: '/products/123',
+      url: '/products/123',
+    });
+    pageManager.setCurrentRoute({
+      path: '/products/:id',
+      url: '/products/123',
+    });
+
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
+
+    // Exactly one span for /products/123, correctly renamed — no spurious
+    // extra span from the placeholder-to-resolved transition.
+    const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/products/:id');
+    expect(finishedSpans[0].attributes['app.surface.name']).to.equal(
+      '/products/:id',
+    );
 
-    const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:id');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': EMB_NAVIGATION_INSTRUMENTATIONS.Data,
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:id',
-      'app.surface.id': pageId,
+    expect(diag.getDebugLogs()).to.deep.equal([
+      'NavigationInstrumentation enabled, listening for navigation events.',
+      'Starting route span for url: /products/123',
+      'Resolved route span path to: /products/:id',
+      'Ending route span for url: /products/123',
+      'Starting route span for url: /other',
+    ]);
+  });
+
+  it('should end the old span and start a new one immediately when the url changes, with no session-part boundary needed', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
+
+    pageManager.setCurrentRoute({ path: '/first', url: '/first' });
+    expect(surfaceSpans()).to.have.lengthOf(0);
+
+    pageManager.setCurrentRoute({ path: '/second', url: '/second' });
+    expect(surfaceSpans()).to.have.lengthOf(1);
+
+    pageManager.setCurrentRoute({ path: '/third', url: '/third' });
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    expect(finishedSpans[0].name).to.equal('/first');
+    expect(finishedSpans[1].name).to.equal('/second');
   });
 
   it('should clean up the path options from the route name if configured', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setCurrentRoute({
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
       url: '/test/hourly',
     });
-    const pageId = page.getCurrentPageId();
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/1235',
-    });
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-
-    const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:time/:type');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:time/:type',
-      'app.surface.id': pageId,
-    });
+    expect(finishedSpans[0].name).to.equal('/test/:time/:type');
   });
 
   it('should not clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({
       diag,
+      pageManager,
       shouldCleanupPathOptionsFromRouteName: false,
     });
-    navigationInstrumentation.setCurrentRoute({
+
+    pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)',
       url: '/test/hourly',
     });
-    const pageId = page.getCurrentPageId();
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/1235',
-    });
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
+    const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-
-    const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:time(hourly|daily|weekly|monthly)');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:time(hourly|daily|weekly|monthly)',
-      'app.surface.id': pageId,
-    });
+    expect(finishedSpans[0].name).to.equal(
+      '/test/:time(hourly|daily|weekly|monthly)',
+    );
   });
 
-  it('should not start a new span if the route has not changed', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
+  it('should apply path-options cleanup through the rename path too', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
 
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
+    pageManager.setCurrentRoute({ path: '/test/hourly', url: '/test/hourly' });
+    pageManager.setCurrentRoute({
+      path: '/test/:time(hourly|daily)',
+      url: '/test/hourly',
     });
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(0);
-
-    expect(diag.getDebugLogs()).to.be.deep.equal([
-      'NavigationInstrumentation enabled, listening for navigation events.',
-      'Starting route span for url: /test/123',
-    ]);
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans[0].name).to.equal('/test/:time');
   });
 
   it('should be a no-op when not enabled', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
     navigationInstrumentation.disable();
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
-    });
 
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
-    // Start and end session to test that listeners are cleaned up
-    userSessionManager.startSessionPartInternal({ reason: 'init' });
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/1235',
-    });
-
-    // Only session part span
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
-
-    expect(diag.getDebugLogs()).to.be.deep.equal([
-      'NavigationInstrumentation enabled, listening for navigation events.',
-      'NavigationInstrumentation disabled, stopped listening for navigation events.',
-    ]);
+    expect(surfaceSpans()).to.have.lengthOf(0);
   });
 
-  it('should start and end route span when session part ends', () => {
-    userSessionManager.startSessionPartInternal({ reason: 'init' });
-
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
+  it('should end an open route span when disabled', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
 
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    expect(surfaceSpans()).to.have.lengthOf(0);
 
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
+    navigationInstrumentation.disable();
 
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    // Session part span and route span
-    expect(finishedSpans).to.have.lengthOf(2);
-
-    // First span is the session part span
-    const span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:id');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:id',
-      'app.surface.id': page.getCurrentPageId(),
-    });
-
-    expect(diag.getDebugLogs()).to.be.deep.equal([
-      'NavigationInstrumentation enabled, listening for navigation events.',
-      'Starting route span for url: /test/123',
-      'Session ended, ending route span.',
-      'Ending route span for url: /test/123',
-    ]);
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/test/:id');
   });
 
-  it('should start the route span when the session part starts if it was previously ended', () => {
+  it('should end an open route span when the session part ends, even without a url change', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
     userSessionManager.startSessionPartInternal({ reason: 'init' });
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    expect(surfaceSpans()).to.have.lengthOf(0);
 
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    navigationInstrumentation.setCurrentRoute({
-      path: '/test/:id',
-      url: '/test/123',
+    userSessionManager.endSessionPartInternal({ reason: 'background' });
+
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/test/:id');
+
+    expect(diag.getDebugLogs()).to.include('Session ended, ending route span.');
+  });
+
+  it('should not throw when a session part ends with no open route span', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
 
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    expect(() => {
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+    }).to.not.throw();
 
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
-
-    // At this point we should have two spans: one for the session and one for the route
-    expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(2);
-
-    // Start and finish another session without changing the route
-    userSessionManager.startSessionPartInternal({ reason: 'init' });
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    // 2 sessions and 2 route spans
-    expect(finishedSpans).to.have.lengthOf(4);
-
-    // First route span
-    let span = finishedSpans[0];
-    expect(span.name).to.equal('/test/:id');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:id',
-      'app.surface.id': page.getCurrentPageId(),
-    });
-
-    // Second route span
-    span = finishedSpans[2];
-    expect(span.name).to.equal('/test/:id');
-    expect(span.attributes).to.deep.equal({
-      'emb.instrumentation': 'manual',
-      'emb.type': 'ux.surface',
-      'app.surface.name': '/test/:id',
-      'app.surface.id': page.getCurrentPageId(),
-    });
-
-    expect(diag.getDebugLogs()).to.be.deep.equal([
-      'NavigationInstrumentation enabled, listening for navigation events.',
-      'Starting route span for url: /test/123',
-      'Session ended, ending route span.',
-      'Ending route span for url: /test/123',
-      'Session started, starting route span.',
-      'Starting route span for url: /test/123',
-      'Session ended, ending route span.',
-      'Ending route span for url: /test/123',
-    ]);
+    expect(surfaceSpans()).to.have.lengthOf(0);
   });
 
   it('should work correctly after disable() then enable()', () => {
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
-    userSessionManager.startSessionPartInternal({ reason: 'init' });
-
-    navigationInstrumentation.setCurrentRoute({
-      path: '/first',
-      url: '/first',
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
     });
+
+    pageManager.setCurrentRoute({ path: '/first', url: '/first' });
 
     navigationInstrumentation.disable();
     navigationInstrumentation.enable();
 
-    navigationInstrumentation.setCurrentRoute({
-      path: '/second',
-      url: '/second',
-    });
+    pageManager.setCurrentRoute({ path: '/second', url: '/second' });
+    pageManager.setCurrentRoute({ path: '/third', url: '/third' });
 
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    const navigationSpans = finishedSpans.filter(
-      (s) => s.attributes['emb.type'] === 'ux.surface',
-    );
-
-    expect(navigationSpans).to.have.lengthOf(2);
+    expect(surfaceSpans()).to.have.lengthOf(2);
   });
 });

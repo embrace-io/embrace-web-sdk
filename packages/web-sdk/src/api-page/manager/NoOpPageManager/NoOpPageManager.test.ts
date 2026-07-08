@@ -29,4 +29,11 @@ describe('NoOpPageManager', () => {
       noOpPageManager.clearCurrentRoute();
     }).to.not.throw();
   });
+
+  it('should return a no-op unsubscribe function for addRouteChangedListener', () => {
+    const unsubscribe = noOpPageManager.addRouteChangedListener(() => {});
+    void expect(() => {
+      unsubscribe();
+    }).to.not.throw();
+  });
 });

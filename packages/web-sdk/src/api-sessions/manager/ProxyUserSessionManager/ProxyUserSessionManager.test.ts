@@ -21,6 +21,7 @@ describe('ProxyUserSessionManager', () => {
       // Part lifecycle
       startSessionPartInternal: sinon.stub(),
       endSessionPartInternal: sinon.stub(),
+      rolloverSessionPartInternal: sinon.stub(),
       // Properties / breadcrumbs
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),

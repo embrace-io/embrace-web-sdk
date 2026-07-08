@@ -1,3 +1,4 @@
+import type { PageManager } from '../../../api-page/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type NavigationInstrumentationArgs = Pick<
@@ -11,4 +12,7 @@ export type NavigationInstrumentationArgs = Pick<
    * *default*: true
    */
   shouldCleanupPathOptionsFromRouteName?: boolean;
+
+  /** @internal SDK use only */
+  pageManager?: PageManager;
 };

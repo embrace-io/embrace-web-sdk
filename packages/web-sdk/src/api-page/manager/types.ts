@@ -19,4 +19,9 @@ export interface PageManager {
   getPageLabel: () => string | null;
 
   clearCurrentRoute: () => void;
+
+  // Fired on every setCurrentRoute call. Lets consumers (NavigationInstrumentation)
+  // learn about route changes without the reporter (react-router integrations)
+  // depending on them directly.
+  addRouteChangedListener: (listener: (route: Route) => void) => () => void;
 }

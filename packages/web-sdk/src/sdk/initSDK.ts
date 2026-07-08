@@ -276,6 +276,7 @@ export const initSDK = (
     const pageManager = setupPage({
       useDocumentTitleAsPageLabel,
       registerGlobally,
+      userSessionManager,
     });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
@@ -532,9 +533,11 @@ const setupLogs = ({
 const setupPage = ({
   useDocumentTitleAsPageLabel,
   registerGlobally,
+  userSessionManager,
 }: SetupPageArgs) => {
   const embracePageManager = new EmbracePageManager({
     useDocumentTitleAsPageLabel,
+    userSessionManager,
   });
 
   if (registerGlobally) {

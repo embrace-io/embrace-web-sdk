@@ -1,6 +1,7 @@
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   EndSessionPartOptions,
+  RolloverSessionPartOptions,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
@@ -89,6 +90,10 @@ export class NoOpUserSessionManager implements UserSessionManagerInternal {
   public startSessionPartInternal(_options: StartSessionPartOptions): void {}
 
   public endSessionPartInternal(_options: EndSessionPartOptions): void {}
+
+  public rolloverSessionPartInternal(
+    _options: RolloverSessionPartOptions,
+  ): void {}
 
   public incrSessionPartCountForKey(_key: string): void {}
 
