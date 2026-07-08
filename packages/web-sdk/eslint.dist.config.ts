@@ -34,6 +34,9 @@ export default defineConfig([
             'proto',
             // AbortSignal.timeout is guarded in FetchTransport
             'abortsignal-timeout',
+            // Navigation API (newly available) is used intentionally to
+            // track soft navigations. It is guarded by using a proxy interface named NavigationHost
+            'navigation',
           ],
         },
       ],
