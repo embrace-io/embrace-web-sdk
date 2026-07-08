@@ -199,6 +199,7 @@ const Waterfall = () => {
       lines: [
         `${(span.endMs - span.startMs).toFixed(1)} ms`,
         domain ? `start +${(span.startMs - domain.minMs).toFixed(0)} ms` : '',
+        domain ? `end +${(span.endMs - domain.minMs).toFixed(0)} ms` : '',
         `spanId ${span.spanId}`,
         'click to zoom',
       ].filter(Boolean),
@@ -221,6 +222,11 @@ const Waterfall = () => {
       y: e.clientY,
     });
   };
+
+  // Near the right/bottom third of the viewport, open the tooltip toward the
+  // opposite side of the cursor so it doesn't run off the edge.
+  const tipOpensLeft = tip !== null && tip.x > window.innerWidth * (2 / 3);
+  const tipOpensUp = tip !== null && tip.y > window.innerHeight * (2 / 3);
 
   return (
     <fieldset style={{ gridColumn: '1 / -1' }}>
@@ -389,8 +395,10 @@ const Waterfall = () => {
         <div
           style={{
             position: 'fixed',
-            left: tip.x + 14,
-            top: tip.y + 14,
+            left: tipOpensLeft ? undefined : tip.x + 14,
+            right: tipOpensLeft ? window.innerWidth - tip.x + 14 : undefined,
+            top: tipOpensUp ? undefined : tip.y + 14,
+            bottom: tipOpensUp ? window.innerHeight - tip.y + 14 : undefined,
             pointerEvents: 'none',
             zIndex: 1000,
             maxWidth: 360,
@@ -409,7 +417,11 @@ const Waterfall = () => {
           {tip.lines.map((line) => (
             <div
               key={line}
-              style={{ color: '#a1a1aa', wordBreak: 'break-word' }}
+              style={{
+                color: '#a1a1aa',
+                wordBreak: 'break-word',
+                fontStyle: line === 'click to zoom' ? 'italic' : undefined,
+              }}
             >
               {line}
             </div>
