@@ -80,14 +80,9 @@ describe('EmbraceLogExporter', () => {
     expect((headers as Record<string, string>)['X-EM-DID']).to.equal(
       mockUserID,
     );
-    // Chrome, Webkit and Firefox have slightly different encoding processes, generating different Content-Length values.
-    const chromeContentLength = '189';
-    const firefoxWebkitContentLength = '191';
-    //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
-    expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
-      chromeContentLength,
-      firefoxWebkitContentLength,
-    ]);
+    expect((headers as Record<string, string>)['Content-Length']).to.equal(
+      '189',
+    );
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.emb-api.com/v2/logs',
     );

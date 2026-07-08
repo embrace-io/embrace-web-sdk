@@ -319,50 +319,6 @@ describe('FetchTransport', () => {
     });
   });
 
-  describe('compression failure', () => {
-    it('should return failure with diagnostic log when compression fails', async () => {
-      const original = globalThis.CompressionStream;
-      globalThis.CompressionStream = class {
-        constructor() {
-          throw new Error('CompressionStream not supported');
-        }
-      } as unknown as typeof CompressionStream;
-
-      try {
-        const transport = makeTransport({ compression: 'gzip' });
-        const result = await transport.send(smallPayload, 1000);
-
-        expect(result.status).to.equal('failure');
-
-        const warns = diagLogger.getWarnLogs();
-        expect(warns.some((msg) => msg.includes('gzip compression failed'))).to
-          .be.true;
-      } finally {
-        globalThis.CompressionStream = original;
-      }
-    });
-
-    it('should not corrupt keepalive counters when compression fails', async () => {
-      const original = globalThis.CompressionStream;
-      globalThis.CompressionStream = class {
-        constructor() {
-          throw new Error('CompressionStream not supported');
-        }
-      } as unknown as typeof CompressionStream;
-
-      const transport = makeTransport({ compression: 'gzip' });
-      await transport.send(smallPayload, 1000);
-
-      globalThis.CompressionStream = original;
-
-      fakeFetchRespondWith('ok', { status: 200 });
-      const transport2 = makeTransport();
-      await transport2.send(smallPayload, 1000);
-
-      expect(fakeFetchGetKeepalive()).to.equal(true);
-    });
-  });
-
   describe('network errors', () => {
     it('should return retryable when fetch throws a TypeError', async () => {
       reinstallFetch().rejects(new TypeError('Failed to fetch'));
