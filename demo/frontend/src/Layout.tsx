@@ -6,6 +6,7 @@ const base = import.meta.env.BASE_URL;
 
 const NAV_ITEMS = [
   { href: base, label: 'Playground' },
+  { href: `${base}waterfall/`, label: 'Waterfall' },
   { href: `${base}soft/`, label: 'Soft Nav' },
   { href: `${base}react-router-v5/`, label: 'Router v5' },
   { href: `${base}react-router-v6-declarative/`, label: 'Router v6' },
