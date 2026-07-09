@@ -5,10 +5,18 @@ import '../src/index.css';
 import { Layout } from '../src/Layout.tsx';
 import { NavPage } from '../src/NavPage.tsx';
 import { setupSDK } from '../src/otel-base.ts';
+import { WebVitals } from '../src/WebVitals.tsx';
+import {
+  CapturingLogExporter,
+  CapturingSpanExporter,
+} from '../waterfall/telemetryCapture.ts';
 
-setupSDK();
+setupSDK([], [new CapturingSpanExporter()], [new CapturingLogExporter()]);
 
 type Route = 'home' | 'a' | 'b' | 'query' | 'hash';
+
+const SOFT_NAVS_SUPPORTED =
+  PerformanceObserver.supportedEntryTypes.includes('soft-navigation');
 
 const PAGES: Record<
   Route,
@@ -79,9 +87,22 @@ const App = () => {
   ));
 
   return (
-    <NavPage title={page.title} nav={nav}>
-      <p>{page.description}</p>
-    </NavPage>
+    <>
+      {SOFT_NAVS_SUPPORTED ? null : (
+        <p style={{ gridColumn: '1 / -1' }}>
+          ⚠️ Your browser does not support the soft-navigation API. In Chrome
+          this can be enabled in{' '}
+          <a href="chrome://flags/#soft-navigation-heuristics">
+            chrome://flags/#soft-navigation-heuristics
+          </a>
+          .
+        </p>
+      )}
+      <NavPage title={page.title} nav={nav}>
+        <p>{page.description}</p>
+      </NavPage>
+      <WebVitals />
+    </>
   );
 };
 
