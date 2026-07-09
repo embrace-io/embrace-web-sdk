@@ -33,7 +33,7 @@ const makeEntry = (
     entryType: 'soft-navigation',
     startTime: 200,
     duration: 50,
-    navigationId: 'nav-1',
+    navigationId: 1,
     interactionId: 7,
     paintTime: 230,
     presentationTime: 240,
@@ -194,7 +194,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
         name: 'https://example.com/next-page',
         startTime: 200,
         duration: 50,
-        navigationId: 'nav-1',
+        navigationId: 1,
         interactionId: 7,
         paintTime: 230,
         presentationTime: 240,
@@ -211,9 +211,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     expect(span.attributes['emb.soft_navigation.source']).to.equal(
       'performance_observer',
     );
-    expect(span.attributes['emb.soft_navigation.navigation_id']).to.equal(
-      'nav-1',
-    );
+    expect(span.attributes['emb.soft_navigation.navigation_id']).to.equal(1);
     expect(span.attributes['emb.soft_navigation.interaction_id']).to.equal(7);
     expect(span.attributes['emb.soft_navigation.start_time']).to.equal(200);
     expect(span.attributes['emb.soft_navigation.duration']).to.equal(50);
@@ -324,9 +322,9 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     });
 
     triggerEntries([
-      makeEntry({ navigationId: 'nav-0' }),
-      makeEntry({ navigationId: 'nav-1' }),
-      makeEntry({ navigationId: 'nav-2' }),
+      makeEntry({ navigationId: 0 }),
+      makeEntry({ navigationId: 1 }),
+      makeEntry({ navigationId: 2 }),
     ]);
 
     expect(spanExporter.getFinishedSpans()).to.have.length(2);

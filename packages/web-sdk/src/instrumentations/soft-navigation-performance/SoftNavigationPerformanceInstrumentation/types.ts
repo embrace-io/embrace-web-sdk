@@ -9,7 +9,7 @@ export type SoftNavigationPerformanceInstrumentationArgs = Pick<
 };
 
 export type PerformanceSoftNavigationTiming = PerformanceEntry & {
-  navigationId: string;
+  navigationId: number;
   interactionId?: number;
   paintTime?: number | null;
   presentationTime?: number | null;
