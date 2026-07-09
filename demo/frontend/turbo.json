@@ -6,8 +6,13 @@
       "dependsOn": ["clean", "^build"],
       "cache": false
     },
+    "build:watch": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
     "preview": {
-      "with": ["//#server"],
+      "with": ["//#server", "@embrace-io/web-sdk#dev", "build:watch"],
       "cache": false,
       "persistent": true
     },
