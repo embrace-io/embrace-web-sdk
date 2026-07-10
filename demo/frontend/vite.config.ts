@@ -67,7 +67,6 @@ export default defineConfig({
           __dirname,
           'react-router-v6-data/index.html',
         ),
-        soft: resolve(__dirname, 'soft/index.html'),
         waterfall: resolve(__dirname, 'waterfall/index.html'),
       },
       output: {
