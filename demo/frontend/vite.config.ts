@@ -10,7 +10,6 @@ const SUB_APPS = [
   'react-router-v5',
   'react-router-v6-declarative',
   'react-router-v6-data',
-  'soft',
   'waterfall',
 ];
 
