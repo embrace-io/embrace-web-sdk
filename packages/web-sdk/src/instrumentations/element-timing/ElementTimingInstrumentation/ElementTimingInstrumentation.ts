@@ -84,9 +84,10 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     const span = this.tracer.startSpan(entry.identifier, {
-      // Span start anchors to navigation start so the span duration equals "time from navigation
-      // until the element was rendered" — useful for analyzing page-load render timing.
-      startTime: this.perf.epochMillisFromOrigin(0),
+      // Span start anchors to the SDK's zero time (start of the current view) so the span
+      // duration equals "time since the user started viewing this page until the element
+      // was rendered" — useful for analyzing render timing relative to the current view.
+      startTime: this.perf.getZeroTime(),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
         [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,

@@ -1889,15 +1889,33 @@ describe('initSDK', () => {
       const perf = new OTelPerformanceManager();
       const zeroTimeBefore = perf.getZeroTime();
 
-      // from.url matches the current URL so EmbraceUserSessionManager's own
-      // currententrychange listener treats this as a same-URL replacement and
-      // no-ops, isolating this test to the zero time reset behavior.
+      const event = Object.assign(new Event('currententrychange'), {
+        from: { url: `${window.location.href}#different` },
+      }) as NavigationCurrentEntryChangeEvent;
+      window.navigation.dispatchEvent(event);
+
+      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+    });
+
+    it('does not reset the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+      });
+      void expect(result).not.to.be.false;
+      void expect(window.navigation).not.to.be.undefined;
+
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      // from.url matches the current URL, so this is a same-URL replacement
+      // (e.g. framework hydration via history.replaceState), not a real navigation.
       const event = Object.assign(new Event('currententrychange'), {
         from: { url: window.location.href },
       }) as NavigationCurrentEntryChangeEvent;
       window.navigation.dispatchEvent(event);
 
-      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
     });
   });
 });

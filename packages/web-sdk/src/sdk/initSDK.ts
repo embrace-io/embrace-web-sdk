@@ -134,7 +134,19 @@ export const initSDK = (
 
     window.addEventListener('pageshow', resetZeroTime);
     // eslint-disable-next-line baseline-js/use-baseline
-    window.navigation?.addEventListener('currententrychange', resetZeroTime);
+    window.navigation?.addEventListener(
+      'currententrychange',
+      (event: NavigationCurrentEntryChangeEvent) => {
+        // Skip same-URL replacements (e.g. framework hydration via history.replaceState),
+        // matching EmbraceUserSessionManager's own soft-navigation detection.
+        // eslint-disable-next-line baseline-js/use-baseline
+        if (event.from.url === window.location.href) {
+          return;
+        }
+
+        resetZeroTime(event);
+      },
+    );
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);

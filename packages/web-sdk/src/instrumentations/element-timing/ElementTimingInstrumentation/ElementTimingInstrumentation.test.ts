@@ -1,4 +1,6 @@
 /* eslint-disable baseline-js/use-baseline */
+
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -11,6 +13,10 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../../../managers/index.ts';
+import {
+  _resetZeroTimeMillisForTesting,
+  updateZeroTimeMillis,
+} from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { ElementTimingInstrumentation } from './ElementTimingInstrumentation.ts';
 import type { PerformanceElementTiming } from './types.ts';
 
@@ -76,6 +82,7 @@ describe('ElementTimingInstrumentation', () => {
 
   beforeEach(() => {
     spanExporter.reset();
+    _resetZeroTimeMillisForTesting();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
@@ -90,6 +97,7 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   afterEach(() => {
+    _resetZeroTimeMillisForTesting();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -176,9 +184,28 @@ describe('ElementTimingInstrumentation', () => {
     triggerEntries([makeEntry({ startTime: 250 })]);
 
     const span = spanExporter.getFinishedSpans()[0];
-    // start = epochMillisFromOriginOffset(0) = navigation epoch
-    // end   = epochMillisFromOriginOffset(250) = navigation epoch + 250ms
+    // start = getZeroTime() = navigation epoch (no reset has occurred)
+    // end   = epochMillisFromOrigin(250) = navigation epoch + 250ms
     expect(span.startTime).to.not.deep.equal(span.endTime);
+
+    instrumentation.disable();
+  });
+
+  it('anchors span start to the SDK zero time, not the original navigation, after a reset', () => {
+    clock.tick(1000);
+    const timeOriginPerf = new MockPerformanceManager(clock); // timeOrigin = 1000
+    clock.tick(500); // e.g. a bfcache restore or soft navigation happens at t=1500
+    updateZeroTimeMillis(1500);
+
+    const instrumentation = new ElementTimingInstrumentation({
+      perf: timeOriginPerf,
+      limitManager,
+    });
+
+    triggerEntries([makeEntry({ startTime: 250 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(hrTimeToMilliseconds(span.startTime)).to.equal(1500);
 
     instrumentation.disable();
   });
