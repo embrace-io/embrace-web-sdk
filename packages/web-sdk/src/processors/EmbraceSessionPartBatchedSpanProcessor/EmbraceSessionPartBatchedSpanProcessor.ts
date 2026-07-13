@@ -4,6 +4,7 @@ import type { ExportResult } from '@opentelemetry/core';
 import {
   BindOnceFuture,
   ExportResultCode,
+  // TODO: `internal._export` is an unstable OTel API; find a supported way to export a batch
   internal,
 } from '@opentelemetry/core';
 import type {
