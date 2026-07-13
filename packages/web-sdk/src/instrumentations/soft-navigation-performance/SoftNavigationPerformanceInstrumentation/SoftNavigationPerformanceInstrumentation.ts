@@ -51,19 +51,14 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   private _usePolyfill = false;
   private readonly _navigationHost: NavigationHost;
 
-  private readonly _handleCurrentEntryChange = (): void => {
+  private readonly _handleCurrentEntryChange = (event: Event): void => {
     const url = this._navigationHost.navigation?.currentEntry?.url;
     if (!url) {
       this._diag.debug('currententrychange fired with no URL, skipping');
       return;
     }
 
-    // Store origin-relative time (performance.now() equivalent) so it can be
-    // compared directly against PerformanceEventTiming.startTime, which is also
-    // origin-relative. getNowMillis() is epoch-based; subtracting getZeroTime()
-    // converts it back to origin-relative.
-    const timestamp = this.perf.getNowMillis() - this.perf.getZeroTime();
-    this._pendingNavigations.push({ timestamp, url });
+    this._pendingNavigations.push({ timestamp: event.timeStamp, url });
   };
 
   public constructor({
@@ -98,6 +93,10 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     ) {
       this._usePolyfill = true;
       super.enable();
+    } else {
+      this._diag.debug(
+        'soft-navigation and navigation API not supported, skipping',
+      );
     }
   }
 
@@ -137,12 +136,16 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
 
     nav.addEventListener('currententrychange', this._handleCurrentEntryChange);
 
+    // A plain click listener only provides event.timeStamp (= startTime).
+    // To correlate a click with the navigation it triggered we need the full [startTime, startTime + duration] window.
+    // PerformanceEventTiming is the only API that exposes duration for event processing.
     this._eventObserver = createPerformanceObserver<PerformanceEventTiming>(
       'event',
       (entry) => this._processClickEntry(entry),
       // SPA routers commit navigations synchronously inside the click handler,
-      // so the entry duration is well under the 104ms default threshold. 16ms
-      // (one frame) is the spec minimum and captures any real interaction.
+      // so the entry duration is well under the 104ms default threshold
+      // https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver/observe#durationthreshold
+      // 16ms (one frame) is the spec minimum and captures any real interaction.
       { diag: this._diag, durationThreshold: 16 },
     );
 
@@ -220,6 +223,8 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
+    // Remove any pending navigations that are older than the TTL. This prevents
+    // the pending navigation list from growing indefinitely.
     this._pendingNavigations = this._pendingNavigations.filter(
       ({ timestamp }) =>
         entry.startTime - timestamp < PENDING_NAVIGATION_TTL_MS,
@@ -242,6 +247,10 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     navigationTimestamp: number,
     url: string,
   ): void {
+    if (!this._isEnabled) {
+      return;
+    }
+
     if (this.limitManager?.limitSoftNavigationEntry()) {
       return;
     }

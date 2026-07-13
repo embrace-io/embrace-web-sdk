@@ -99,7 +99,7 @@ let eventObserveOptions: {
   durationThreshold?: number;
 } | null = null;
 
-let currentEntryChangeListeners: Array<() => void> = [];
+let currentEntryChangeListeners: Array<(event: Event) => void> = [];
 
 let mockNavigation: {
   currentEntry: { url: string } | null;
@@ -132,9 +132,9 @@ class MockPolyfillPerformanceObserver {
   }
 }
 
-const triggerCurrentEntryChange = () => {
+const triggerCurrentEntryChange = (timeStamp = performance.now()) => {
   for (const listener of currentEntryChangeListeners) {
-    listener();
+    listener({ timeStamp } as Event);
   }
 };
 
