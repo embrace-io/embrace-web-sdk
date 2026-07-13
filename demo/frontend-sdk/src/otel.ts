@@ -3,11 +3,11 @@ import {
   ConsoleLogRecordExporter,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
 
 interface DefaultInstrumentationConfig {
   '@opentelemetry/instrumentation-fetch'?: {

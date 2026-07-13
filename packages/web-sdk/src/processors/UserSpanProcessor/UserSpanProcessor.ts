@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { UserManager } from '../../api-users/index.ts';
 import type { UserSpanProcessorArgs } from './types.ts';

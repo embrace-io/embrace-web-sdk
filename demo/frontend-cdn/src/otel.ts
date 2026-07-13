@@ -5,7 +5,7 @@ import {
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
 
 const SAMPLE_APP_ID = import.meta.env.VITE_APP_ID;
 

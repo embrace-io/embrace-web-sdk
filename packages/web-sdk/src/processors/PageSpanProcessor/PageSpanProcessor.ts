@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import type { PageManager } from '../../api-page/index.ts';
 import {
   KEY_APP_SURFACE_LABEL,

@@ -2,8 +2,8 @@ import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-  WebTracerProvider,
-} from '@opentelemetry/sdk-trace-web';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -976,8 +976,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   it('should allow setting a different trace provider', () => {
     const secondMemoryExporter = new InMemorySpanExporter();
-    const tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(secondMemoryExporter)],
+    const tracerProvider = new TracerProvider({
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: secondMemoryExporter }),
+      ],
     });
 
     manager.setTracerProvider(tracerProvider);
@@ -991,8 +993,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   describe('user session attribute integration', () => {
     it('should attach user session attributes to the session part span', () => {
       const exporter = new InMemorySpanExporter();
-      const tracerProvider = new WebTracerProvider({
-        spanProcessors: [new SimpleSpanProcessor(exporter)],
+      const tracerProvider = new TracerProvider({
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
       });
       manager.setTracerProvider(tracerProvider);
 
@@ -1242,8 +1244,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should stamp emb.user_session_previous_id on a part span created during a user-session rollover', () => {
       const exporter = new InMemorySpanExporter();
-      const tracerProvider = new WebTracerProvider({
-        spanProcessors: [new SimpleSpanProcessor(exporter)],
+      const tracerProvider = new TracerProvider({
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
       });
       const localManager = new EmbraceUserSessionManager({
         diag,

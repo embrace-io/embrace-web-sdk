@@ -574,7 +574,7 @@ emitted:
 ```typescript
 import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-web'
+import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace'
 
 initSDK({
   appID: "YOUR_EMBRACE_APP_ID",

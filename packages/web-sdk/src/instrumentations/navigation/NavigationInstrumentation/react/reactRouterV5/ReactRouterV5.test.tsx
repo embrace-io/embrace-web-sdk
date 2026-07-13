@@ -1,4 +1,4 @@
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import { createBrowserHistory } from 'history';
 import { Route, Router, Switch, useHistory } from 'react-router-domv4v5';

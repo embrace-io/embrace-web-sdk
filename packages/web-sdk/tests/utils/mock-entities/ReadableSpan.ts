@@ -1,4 +1,4 @@
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../src/constants/index.ts';
 import { mockResource } from './Resource.ts';
 

@@ -1,5 +1,5 @@
 import { ExportResultCode } from '@opentelemetry/core';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import {

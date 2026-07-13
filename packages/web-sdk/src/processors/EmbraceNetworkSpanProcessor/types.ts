@@ -1,5 +1,5 @@
 import type { Attributes, AttributeValue } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
