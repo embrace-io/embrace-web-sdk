@@ -10,7 +10,7 @@ const getLazyLogger = () => logs.getLogger('embrace-web-sdk-demo-lazy-logger');
 const tracer = trace.getTracer('embrace-web-sdk-demo-tracer');
 let userSessionManager = ASYNC_MODE
   ? null
-  : // @ts-ignore
+  : // @ts-expect-error
     window.EmbraceWebSdk.session.getUserSessionManager();
 
 const App = () => {
@@ -27,8 +27,8 @@ const App = () => {
     if (!initialized) {
       // @ts-expect-error
       window.EmbraceWebSdkOnReady.onReady(() => {
-        // @ts-expect-error
         userSessionManager =
+          // @ts-expect-error
           window.EmbraceWebSdk.session.getUserSessionManager();
         setInitialized(true);
       });
