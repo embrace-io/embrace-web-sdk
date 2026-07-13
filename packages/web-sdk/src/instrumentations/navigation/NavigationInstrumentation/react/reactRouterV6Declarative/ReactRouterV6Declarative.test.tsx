@@ -7,6 +7,7 @@ import {
   Routes,
   useNavigate,
 } from 'react-router-domv6plus';
+import { UUID_PATTERN } from '../../../../../../tests/utils/constants.ts';
 import {
   setupTestStorage,
   setupTestTraceExporter,
@@ -100,22 +101,29 @@ describe('ReactRouterV6Declarative', () => {
     pageManager = new EmbracePageManager();
     page.setGlobalPageManager(pageManager);
 
-    // In production this is wired up automatically by initSDK; this test
-    // builds the pipeline manually so it needs to construct it itself.
-    new NavigationInstrumentation({ pageManager });
-
     memoryExporter = setupTestTraceExporter([
       new PageSpanProcessor({
         pageManager,
       }),
     ]);
+
+    // In production this is wired up automatically by initSDK, after the
+    // tracer provider is set up; this test builds the pipeline manually, so
+    // it needs to construct it itself in the same order — otherwise the
+    // route span started immediately for the already-current route (see
+    // NavigationInstrumentation's constructor) would be created against the
+    // wrong tracer provider.
+    new NavigationInstrumentation({ pageManager });
   });
 
   it('create route spans', async () => {
     userSessionManager.startSessionPartInternal({ reason: 'init' });
 
-    expect(pageManager.getCurrentPageId()).to.be.null;
-    expect(pageManager.getCurrentRoute()).to.be.null;
+    expect(pageManager.getCurrentPageId()).to.match(UUID_PATTERN);
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: window.location.pathname,
+      url: window.location.pathname,
+    });
 
     const { tearDown, container } = renderReactApp();
 

@@ -13,10 +13,19 @@ same soft navigation in either order. Now there's one actor driving both.
 - **`EmbracePageManager`** — holds the current route/page-id/label, listens
   to `window.navigation`'s `currententrychange`, and on every
   `setCurrentRoute` call notifies subscribers via `addRouteChangedListener`.
+  It also sets the initial route from the current location on construction,
+  since `currententrychange` never fires for the page's own initial entry —
+  without this, the first route (and route span) would stay unset until a
+  soft nav happens or some other caller reports one.
 - **React-router integrations** (`withEmbraceRouting`,
   `withEmbraceRoutingLegacy`, `listenToRouterChanges`) — only ever call
   `page.setCurrentRoute({ path, url })` once they've resolved the templated
-  route. They have no dependency on `NavigationInstrumentation` at all.
+  route. They're optional: the route the SDK derives from the raw pathname
+  is a complete, valid route on its own, out-of-the-box soft-navigation
+  instrumentation works without any router library. A react-router
+  integration is only needed if a user wants to see their app's route
+  patterns (e.g. `/products/:id`) instead of raw URLs. They have no
+  dependency on `NavigationInstrumentation` at all.
 - **`NavigationInstrumentation`** — subscribes to `addRouteChangedListener`
   (mirrors route changes into `ux.surface` spans: same url → rename in place,
   different url → end the old span and start a new one) and to the
@@ -50,7 +59,7 @@ sequenceDiagram
     SessionMgr->>SessionMgr: start NEW session-part span
 
     PageManager->>PageManager: setCurrentRoute({ path: pathname, url: pathname })
-    PageManager->>NavInstr: routeChanged (placeholder, no span open)
+    PageManager->>NavInstr: routeChanged (initial route, no span open)
     NavInstr->>NavInstr: start NEW route span (named from raw pathname)
 
     Note over Router: later, async — React render commits
@@ -74,9 +83,9 @@ itself. So `_onSoftNavigation` calls `rolloverSessionPartInternal` **before**
 listener) while it's still open and still the correct one, so it's already
 queued by the time the outgoing session-part span flushes. Setting the new
 route first would end the outgoing route span directly (via the url change)
-and start the new placeholder *before* the rollover — the session-part-ended
-listener would then find the new placeholder open and incorrectly close it
-instead of the outgoing span.
+and start the new route span *before* the rollover — the session-part-ended
+listener would then find the new span open and incorrectly close it instead
+of the outgoing one.
 
 ### Route spans never outlive their session part
 

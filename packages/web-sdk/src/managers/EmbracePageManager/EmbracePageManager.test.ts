@@ -51,12 +51,15 @@ describe('EmbracePageManager', () => {
     pageManager = new EmbracePageManager({ titleDocument: mockDocument });
   });
 
-  it('should initialize with null values', () => {
+  it('should initialize with the current location as the initial route', () => {
     const route = pageManager.getCurrentRoute();
     const pageId = pageManager.getCurrentPageId();
 
-    void expect(pageId).to.be.null;
-    void expect(route).to.be.null;
+    expect(route).to.deep.equal({
+      path: window.location.pathname,
+      url: window.location.pathname,
+    });
+    expect(pageId).to.match(UUID_PATTERN);
   });
 
   it('should set and get current route', () => {
@@ -223,7 +226,20 @@ describe('EmbracePageManager', () => {
       };
     });
 
-    it('sets a placeholder route from the raw pathname on soft navigation', () => {
+    it('sets the initial route from the current location on construction', () => {
+      const manager = new EmbracePageManager({
+        navigationHost: {
+          location: { href: 'http://current.example.com/', pathname: '/' },
+        },
+      });
+
+      expect(manager.getCurrentRoute()).to.deep.equal({
+        path: '/',
+        url: '/',
+      });
+    });
+
+    it('sets the route from the raw pathname on soft navigation', () => {
       const manager = createPageManager();
 
       navigation.fire('http://previous.example.com/');
@@ -246,7 +262,7 @@ describe('EmbracePageManager', () => {
       });
     });
 
-    it('rolls over the session part before setting the placeholder route', () => {
+    it('rolls over the session part before setting the new route', () => {
       const calls: string[] = [];
       const manager = createPageManager();
       manager.addRouteChangedListener(() => calls.push('routeChanged'));
@@ -265,10 +281,12 @@ describe('EmbracePageManager', () => {
 
     it('is a no-op when navigating to the same URL', () => {
       const manager = createPageManager();
+      const routeAtConstruction = manager.getCurrentRoute();
 
       navigation.fire('http://current.example.com/products/123');
 
-      void expect(manager.getCurrentRoute()).to.be.null;
+      // Unaffected by the same-url replacement — no re-set, no rollover.
+      expect(manager.getCurrentRoute()).to.equal(routeAtConstruction);
       void expect(rolloverStub.notCalled).to.be.true;
     });
 

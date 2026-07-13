@@ -35,6 +35,10 @@ describe('NavigationInstrumentation', () => {
     memoryExporter.reset();
     diag = new InMemoryDiagLogger();
     pageManager = new EmbracePageManager();
+    // EmbracePageManager's constructor sets an initial route from the test
+    // page's real location; reset to the clean "no route yet" state these
+    // tests assume before NavigationInstrumentation subscribes.
+    pageManager.clearCurrentRoute();
 
     userSessionManager = new EmbraceUserSessionManager({
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
@@ -81,6 +85,29 @@ describe('NavigationInstrumentation', () => {
     ]);
   });
 
+  it('should start a route span immediately for a route already set on the page manager before construction', () => {
+    // Mirrors production: EmbracePageManager sets its initial route on its
+    // own construction, before NavigationInstrumentation is constructed and
+    // subscribes — this must not be silently missed.
+    pageManager.setCurrentRoute({
+      path: '/already-set',
+      url: '/already-set',
+    });
+
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    expect(surfaceSpans()).to.have.lengthOf(0);
+
+    pageManager.setCurrentRoute({ path: '/next', url: '/next' });
+
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/already-set');
+  });
+
   it('should fall back to the global page manager when none is provided', () => {
     page.setGlobalPageManager(pageManager);
     navigationInstrumentation = new NavigationInstrumentation({ diag });
@@ -119,9 +146,9 @@ describe('NavigationInstrumentation', () => {
       pageManager,
     });
 
-    // A placeholder reported first (e.g. by EmbracePageManager on soft nav,
-    // before react-router has resolved the template), then the real path
-    // for the same url.
+    // The raw pathname reported first (e.g. by EmbracePageManager on soft
+    // nav — a complete, valid route on its own), then a react-router
+    // integration reports a nicer templated path for the same url.
     pageManager.setCurrentRoute({
       path: '/products/123',
       url: '/products/123',
@@ -134,7 +161,7 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
     // Exactly one span for /products/123, correctly renamed — no spurious
-    // extra span from the placeholder-to-resolved transition.
+    // extra span from the raw-pathname-to-template transition.
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].name).to.equal('/products/:id');

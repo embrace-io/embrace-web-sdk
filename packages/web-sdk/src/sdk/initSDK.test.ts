@@ -34,6 +34,7 @@ import {
   setupTestWebVitalListeners,
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
+import { page } from '../api-page/index.ts';
 import {
   NoOpUserSessionManager,
   ProxyUserSessionManager,
@@ -702,6 +703,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -711,6 +715,11 @@ describe('initSDK', () => {
       await new Promise((r) => setTimeout(r, 1));
 
       const sessionPartId = session.getUserSessionManager().getSessionPartId();
+      // EmbracePageManager sets the initial route from the current location
+      // on construction (currententrychange never fires for the page's own
+      // initial entry), so PageSpanProcessor stamps every span — including
+      // the session-part span — with page attributes by default.
+      const appSurfaceId = page.getCurrentPageId();
       session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
@@ -809,6 +818,8 @@ describe('initSDK', () => {
         'session.id': userSessionId,
         'session.previous_id': '',
         'browser.url.full': browserUrlFull,
+        'app.surface.name': window.location.pathname,
+        'app.surface.id': appSurfaceId,
       });
     });
 
@@ -877,6 +888,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -909,6 +923,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -967,6 +984,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -1015,6 +1035,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -1039,10 +1062,12 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap; one additional attribute is written
-      // directly to span.attributes by a later processor at onEnd, bypassing
-      // the cap: browser.url.full (BrowserSpanProcessor).
-      expect(exportedAttributes).to.have.lengthOf(201);
+      // 200 is the span attribute cap; three additional attributes are
+      // written directly to span.attributes by later processors at onEnd,
+      // bypassing the cap: browser.url.full (BrowserSpanProcessor) and
+      // app.surface.name/app.surface.id (PageSpanProcessor — stamped on
+      // every span since EmbracePageManager always has a current route).
+      expect(exportedAttributes).to.have.lengthOf(203);
 
       // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
       // attributes option). Non-part spans no longer carry session IDs; the
@@ -1063,7 +1088,11 @@ describe('initSDK', () => {
       const bypassKeys = exportedAttributes
         .slice(200)
         .map((a: { key: string }) => a.key);
-      expect(bypassKeys).to.have.members(['browser.url.full']);
+      expect(bypassKeys).to.have.members([
+        'browser.url.full',
+        'app.surface.name',
+        'app.surface.id',
+      ]);
     });
 
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
@@ -1081,6 +1110,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -1128,6 +1160,7 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
+            'navigation',
           ]),
         },
       });
@@ -1208,6 +1241,7 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
+            'navigation',
           ]),
         },
       });
@@ -1291,6 +1325,7 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
+            'navigation',
           ]),
         },
       });
@@ -1371,6 +1406,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -1397,6 +1435,9 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
+            // NavigationInstrumentation starts a route span immediately for
+            // the page's initial route, which this test doesn't care about
+            'navigation',
           ]),
         },
       });
@@ -1666,6 +1707,9 @@ describe('initSDK', () => {
         omit: new Set([
           // Document load instrumentation generates a bunch of spans in this test environment
           'document-load',
+          // NavigationInstrumentation starts a route span immediately for
+          // the page's initial route, which these tests don't care about
+          'navigation',
         ]),
       },
       dynamicSDKConfigManager: {

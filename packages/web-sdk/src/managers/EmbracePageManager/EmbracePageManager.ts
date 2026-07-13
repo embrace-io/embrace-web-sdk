@@ -36,6 +36,8 @@ export class EmbracePageManager implements PageManager {
       'currententrychange',
       this._onSoftNavigation,
     );
+
+    this._setInitialRouteFromCurrentLocation();
   }
 
   public getCurrentPageId = (): string | null => this._currentPageId;
@@ -111,17 +113,18 @@ export class EmbracePageManager implements PageManager {
     // outgoing session-part span itself ends — so the route span is already
     // queued by the time EmbraceSessionPartBatchedSpanProcessor flushes the
     // old part's batch. Setting the new route first would end the outgoing
-    // route span too late (after that flush) and start the new placeholder
-    // span before the rollover, so the session-part-ended listener would
-    // incorrectly close the placeholder instead of the outgoing span.
+    // route span too late (after that flush) and start the new route span
+    // before the rollover, so the session-part-ended listener would
+    // incorrectly close the new span instead of the outgoing one.
     this._userSessionManager?.rolloverSessionPartInternal({
       endReason: 'web_soft_navigation',
       startReason: 'web_soft_navigation',
     });
 
-    // The templated path isn't known yet (only react-router can resolve
-    // it) — the raw pathname is a placeholder until the route-reporting
-    // integration calls setCurrentRoute again with the resolved path.
+    this._setInitialRouteFromCurrentLocation();
+  };
+
+  private readonly _setInitialRouteFromCurrentLocation = (): void => {
     const pathname = this._navigationHost.location.pathname;
     this.setCurrentRoute({ path: pathname, url: pathname });
   };
