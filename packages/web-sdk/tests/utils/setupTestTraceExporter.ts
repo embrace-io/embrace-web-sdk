@@ -17,7 +17,7 @@ export const setupTestTraceExporter = (
   const tracerProvider = new TracerProvider({
     spanProcessors: [
       ...spanProcessors,
-      new SimpleSpanProcessor(memoryExporter),
+      new SimpleSpanProcessor({ exporter: memoryExporter }),
     ],
   });
   trace.setGlobalTracerProvider(tracerProvider);

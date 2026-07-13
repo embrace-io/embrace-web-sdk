@@ -95,7 +95,9 @@ const initSDK = (
       embraceConfigURL: `https://a-${appID}.config.stg.emb-eng.com`,
       logLevel: 80,
       registerGlobally: false,
-      spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+      ],
       logProcessors: [
         new SimpleLogRecordProcessor({
           exporter: new ConsoleLogRecordExporter(),

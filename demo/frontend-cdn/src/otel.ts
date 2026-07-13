@@ -14,7 +14,9 @@ const setupOTel = () => {
   window.EmbraceWebSdk.initSDK({
     appID: SAMPLE_APP_ID || undefined,
     appVersion: '0.0.1',
-    spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+    spanProcessors: [
+      new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+    ],
     logProcessors: [
       new SimpleLogRecordProcessor({
         exporter: new ConsoleLogRecordExporter(),

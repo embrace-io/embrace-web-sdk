@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "setup": "npx turbo run build && bash scripts/setupBundleSymLinks.sh",
+    "check": "tsc",
     "build": "tsc && vite build",
     "dev": "vite",
     "serve": "npm run build && vite preview"

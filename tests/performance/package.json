@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "tsc",
     "test": "npm run build --prefix ../.. && npm install && npx playwright install && npx playwright test"
   },
   "dependencies": {
