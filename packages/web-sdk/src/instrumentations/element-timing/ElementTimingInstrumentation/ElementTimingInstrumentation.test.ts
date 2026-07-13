@@ -192,10 +192,13 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('anchors span start to the SDK zero time, not the original navigation, after a reset', () => {
-    clock.tick(1000);
-    const timeOriginPerf = new MockPerformanceManager(clock); // timeOrigin = 1000
-    clock.tick(500); // e.g. a bfcache restore or soft navigation happens at t=1500
-    updateZeroTimeMillis(1500);
+    const timeOrigin = 1_700_000_000_000;
+    clock.setSystemTime(timeOrigin);
+    const timeOriginPerf = new MockPerformanceManager(clock); // timeOrigin = 1_700_000_000_000
+
+    const resetEpoch = timeOrigin + 500; // e.g. a bfcache restore or soft navigation happens 500ms later
+    clock.setSystemTime(resetEpoch);
+    updateZeroTimeMillis(resetEpoch);
 
     const instrumentation = new ElementTimingInstrumentation({
       perf: timeOriginPerf,
@@ -205,7 +208,7 @@ describe('ElementTimingInstrumentation', () => {
     triggerEntries([makeEntry({ startTime: 250 })]);
 
     const span = spanExporter.getFinishedSpans()[0];
-    expect(hrTimeToMilliseconds(span.startTime)).to.equal(1500);
+    expect(hrTimeToMilliseconds(span.startTime)).to.equal(resetEpoch);
 
     instrumentation.disable();
   });
