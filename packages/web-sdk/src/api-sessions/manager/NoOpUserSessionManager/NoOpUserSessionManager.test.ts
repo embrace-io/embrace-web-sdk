@@ -97,4 +97,13 @@ describe('NoOpUserSessionManager', () => {
       noOpUserSessionManager.endUserSession();
     }).to.not.throw();
   });
+
+  it('should do nothing for rolloverSessionPartInternal', () => {
+    expect(() => {
+      noOpUserSessionManager.rolloverSessionPartInternal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+    }).to.not.throw();
+  });
 });

@@ -6,6 +6,7 @@ import {
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
+import { page } from '../../../api-page/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import {
@@ -78,6 +79,18 @@ describe('NavigationInstrumentation', () => {
       'Ending route span for url: /test/123',
       'Starting route span for url: /other',
     ]);
+  });
+
+  it('should fall back to the global page manager when none is provided', () => {
+    page.setGlobalPageManager(pageManager);
+    navigationInstrumentation = new NavigationInstrumentation({ diag });
+
+    page.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    page.setCurrentRoute({ path: '/other', url: '/other' });
+
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/test/:id');
   });
 
   it('should not start a new span or log anything for a redundant report of the same route', () => {

@@ -90,6 +90,17 @@ describe('ProxyUserSessionManager', () => {
       expect(mockDelegate.endUserSession).to.have.been.calledOnce;
     });
 
+    it('should delegate rolloverSessionPartInternal to the userSessionManager', () => {
+      const options = {
+        endReason: 'web_soft_navigation' as const,
+        startReason: 'web_soft_navigation' as const,
+      };
+      proxyUserSessionManager.rolloverSessionPartInternal(options);
+      expect(
+        mockDelegate.rolloverSessionPartInternal,
+      ).to.have.been.calledOnceWith(options);
+    });
+
     it('should delegate addBreadcrumb to the userSessionManager', () => {
       proxyUserSessionManager.addBreadcrumb('some breadcrumb');
       expect(mockDelegate.addBreadcrumb).to.have.been.calledOnceWith(
