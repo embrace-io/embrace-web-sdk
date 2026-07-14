@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
+import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 import type { URLDocument } from '../../common/index.ts';
 import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
 import type { BrowserSpanProcessorArgs } from './types.ts';
@@ -19,13 +19,17 @@ export class BrowserSpanProcessor implements SpanProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEnd(span: ReadableSpan): void {
+  public onEnding(span: Span): void {
     if (!span.attributes[KEY_BROWSER_URL_FULL]) {
       span.attributes[KEY_BROWSER_URL_FULL] = this._urlDocument.URL;
     }
   }
 
   public onStart(this: void): void {
+    // do nothing.
+  }
+
+  public onEnd(this: void): void {
     // do nothing.
   }
 
