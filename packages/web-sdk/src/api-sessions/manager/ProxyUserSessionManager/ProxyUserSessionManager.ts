@@ -10,6 +10,7 @@ import type {
 import type {
   PropertyOptions,
   ReasonSessionEnded,
+  SessionPartStartedEvent,
   StartSessionOptions,
 } from '../index.ts';
 import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
@@ -139,7 +140,9 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
     this.getDelegate().incrNextSessionPartCountForKey(key);
   }
 
-  public addSessionPartStartedListener(listener: () => void): () => void {
+  public addSessionPartStartedListener(
+    listener: (event: SessionPartStartedEvent) => void,
+  ): () => void {
     return this.getDelegate().addSessionPartStartedListener(listener);
   }
 

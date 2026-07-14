@@ -28,12 +28,13 @@ same soft navigation in either order. Now there's one actor driving both.
   dependency on `NavigationInstrumentation` at all.
 - **`NavigationInstrumentation`** — subscribes to `addRouteChangedListener`
   (mirrors route changes into `ux.surface` spans: same url → rename in place,
-  different url → end the old span and start a new one) and to the
+  different url → end the old span and start a new one), to the
   session-part-ended listener (ends the open route span so it never outlives
   the session part it started in — e.g. the tab backgrounds with no further
-  navigation). It never listens for session-part-*start*: resuming a span is
-  handled purely by the next route report, not by the session-part
-  lifecycle.
+  navigation), and to the session-part-started listener (reopens a span for
+  the still-current route when a new part starts with no route change at all
+  — e.g. resuming from the background — since nothing would otherwise report
+  one).
 - **`EmbraceUserSessionManager`** — owns session-part start/end/rollover, but
   no longer knows the Navigation API exists.
 
@@ -96,8 +97,18 @@ a route span always closes by one of two events, whichever comes first:
 - the session part it started in ends, for *any* reason (soft nav,
   backgrounding, inactivity, manual `endUserSession()`).
 
-Resuming a span on the next session-part-*start* was deliberately dropped:
-if the same route is still current when a new part starts, the next
-`setCurrentRoute` report (or, for frameworks that only report on navigation,
-none at all) is what determines whether a span reopens — not the session
-part boundary itself.
+### Resuming on session-part-start
+
+A part ending and a new one starting with *no* route change in between (e.g.
+the tab backgrounds, then comes back) would otherwise leave the rest of that
+part with no route span at all: nothing calls `setCurrentRoute` just because
+a part started, so `_onRouteChanged` never fires. `NavigationInstrumentation`
+handles this itself, directly from the session-part-started listener: if
+`pageManager.getCurrentRoute()` is still set, it opens a span for it.
+
+This is skipped specifically when the start reason is
+`web_soft_navigation` — that means this session-part-started event is
+firing from inside `rolloverSessionPartInternal`, called *before*
+`_onSoftNavigation` has reported the real new route (see above). Resuming
+there would open a span for the now-stale outgoing route for the brief
+moment before the real route report replaces it.

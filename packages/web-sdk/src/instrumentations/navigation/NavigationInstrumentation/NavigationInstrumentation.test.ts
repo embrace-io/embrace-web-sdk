@@ -299,6 +299,58 @@ describe('NavigationInstrumentation', () => {
     expect(diag.getDebugLogs()).to.include('Session ended, ending route span.');
   });
 
+  it('should open a new route span when a session part starts with no route change (e.g. resuming from the background)', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({ reason: 'background' });
+    expect(surfaceSpans()).to.have.lengthOf(1);
+
+    userSessionManager.startSessionPartInternal({ reason: 'web_activity' });
+    userSessionManager.endSessionPartInternal({ reason: 'background' });
+
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(2);
+    expect(finishedSpans[0].name).to.equal('/test/:id');
+    expect(finishedSpans[1].name).to.equal('/test/:id');
+  });
+
+  it('should not open a spurious span for the outgoing route when a session part starts from a soft-navigation rollover', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    pageManager.setCurrentRoute({ path: '/first', url: '/first' });
+    expect(surfaceSpans()).to.have.lengthOf(0);
+
+    // Mirrors EmbracePageManager._onSoftNavigation: the rollover happens
+    // before the new route is reported, so at session-part-started time the
+    // page manager still holds the outgoing route.
+    userSessionManager.rolloverSessionPartInternal({
+      endReason: 'web_soft_navigation',
+      startReason: 'web_soft_navigation',
+    });
+    pageManager.setCurrentRoute({ path: '/second', url: '/second' });
+
+    // Only the outgoing span is finished — no extra span opened and
+    // immediately closed for '/first' in between.
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/first');
+
+    userSessionManager.endSessionPartInternal({ reason: 'background' });
+
+    const allFinishedSpans = surfaceSpans();
+    expect(allFinishedSpans).to.have.lengthOf(2);
+    expect(allFinishedSpans[1].name).to.equal('/second');
+  });
+
   it('should not throw when a session part ends with no open route span', () => {
     navigationInstrumentation = new NavigationInstrumentation({
       diag,

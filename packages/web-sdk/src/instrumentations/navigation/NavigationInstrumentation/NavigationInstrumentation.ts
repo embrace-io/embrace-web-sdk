@@ -1,6 +1,7 @@
 import type { Span } from '@opentelemetry/api';
 import type { PageManager, Route } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
+import type { SessionPartStartedEvent } from '../../../api-sessions/index.ts';
 import {
   EMB_TYPES,
   KEY_EMB_PAGE_ID,
@@ -74,6 +75,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     const pathName = this._cleanPath(route.path);
     this._currentRouteSpan = this.tracer.startSpan(pathName, {
+      startTime: this.perf.getNowMillis(),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Surface,
         [KEY_EMB_PAGE_PATH]: pathName,
@@ -92,7 +94,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
         `Ending route span for url: ${this._currentRouteSpanUrl ?? 'unknown'}`,
       );
 
-      this._currentRouteSpan.end();
+      this._currentRouteSpan.end(this.perf.getNowMillis());
       this._currentRouteSpan = null;
       this._currentRouteSpanUrl = null;
       this._currentRouteSpanPath = null;
@@ -115,9 +117,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
   // A route span must not outlive the session part it started in — e.g. the
   // tab backgrounds, or the session ends, with no further navigation to
-  // trigger _onRouteChanged. Only the ending side is wired up: resuming a
-  // span on session-part-start was deliberately dropped in favor of relying
-  // solely on route reports.
+  // trigger _onRouteChanged.
   private readonly _onSessionPartEnded = (): void => {
     if (this._currentRouteSpan) {
       this._diag.debug('Session ended, ending route span.');
@@ -125,11 +125,31 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
+  // Only needed when a session part starts with no route change (e.g.
+  // resuming after background/inactivity). Skipped for soft-nav rollovers,
+  // since the real new route is reported right after (see
+  // EmbracePageManager._onSoftNavigation).
+  private readonly _onSessionPartStarted = ({
+    reason,
+  }: SessionPartStartedEvent): void => {
+    if (reason === 'web_soft_navigation') {
+      return;
+    }
+
+    const currentRoute = this._pageManager.getCurrentRoute();
+    if (currentRoute) {
+      this._onRouteChanged(currentRoute);
+    }
+  };
+
   public override onEnable = () => {
     this.setConfig({
       enabled: true,
     });
-    this.setSessionPartListeners({ end: this._onSessionPartEnded });
+    this.setSessionPartListeners({
+      start: this._onSessionPartStarted,
+      end: this._onSessionPartEnded,
+    });
     this._diag.debug(
       'NavigationInstrumentation enabled, listening for navigation events.',
     );

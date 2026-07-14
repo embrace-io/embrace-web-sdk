@@ -11,6 +11,7 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
+  SessionPartStartedEvent,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
@@ -122,7 +123,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _coldStart = true;
   private _nextSessionPartCounts: Record<string, number> = {};
   private _sdkStartupDuration = 0;
-  private readonly _sessionPartStartedListeners: Array<() => void> = [];
+  private readonly _sessionPartStartedListeners: Array<
+    (event: SessionPartStartedEvent) => void
+  > = [];
   private readonly _sessionPartEndedListeners: Array<() => void> = [];
   private _tracer: Tracer;
 
@@ -400,7 +403,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._startSessionPartInactivityTimer();
 
-    this._fireListeners(this._sessionPartStartedListeners, 'started');
+    this._fireListeners(this._sessionPartStartedListeners, 'started', {
+      reason,
+    });
   }
 
   public endSessionPartInternal({
@@ -467,7 +472,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // Fire listeners after end attributes are stamped (so subscribers can
       // read them) and before span.end() (so anything they emit still
       // attaches to the part that is conceptually still active).
-      this._fireListeners(this._sessionPartEndedListeners, 'ended');
+      this._fireListeners(this._sessionPartEndedListeners, 'ended', undefined);
       try {
         span.end(partEndTs);
       } catch (error) {
@@ -612,7 +617,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       (this._nextSessionPartCounts[key] || 0) + 1;
   }
 
-  public addSessionPartStartedListener(listener: () => void): () => void {
+  public addSessionPartStartedListener(
+    listener: (event: SessionPartStartedEvent) => void,
+  ): () => void {
     return this._addListener(this._sessionPartStartedListeners, listener);
   }
 
@@ -983,10 +990,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
   }
 
-  private _addListener(
-    list: Array<() => void>,
-    listener: () => void,
-  ): () => void {
+  private _addListener<T>(list: T[], listener: T): () => void {
     list.push(listener);
     return () => {
       const i = list.indexOf(listener);
@@ -996,10 +1000,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     };
   }
 
-  private _fireListeners(list: Array<() => void>, kind: string): void {
+  private _fireListeners<T>(
+    list: Array<(arg: T) => void>,
+    kind: string,
+    arg: T,
+  ): void {
     for (const listener of list) {
       try {
-        listener();
+        listener(arg);
       } catch (error) {
         this._diag.warn(
           `Error while executing session part ${kind} listener`,

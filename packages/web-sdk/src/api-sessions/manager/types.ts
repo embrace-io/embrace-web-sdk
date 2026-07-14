@@ -140,6 +140,12 @@ export type SessionPartStartReason =
   | 'web_soft_navigation' // soft navigation started the next part in the same user session
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
+// Wrapped in an object, rather than passing the reason as a bare argument,
+// so listeners can gain more fields later without a signature change.
+export interface SessionPartStartedEvent {
+  readonly reason: SessionPartStartReason;
+}
+
 export type SessionPartEndReason =
   | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
   | 'web_foreground_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity

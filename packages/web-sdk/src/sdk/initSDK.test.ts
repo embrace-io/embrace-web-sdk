@@ -2151,8 +2151,10 @@ describe('isolated instances', () => {
       // Two emb-session-part spans are expected per instance: the init part
       // is ended explicitly, then a fresh activity part is opened and ended.
       // Each instance owns its own userSessionManager, so the parts are
-      // isolated per instance and not shared.
-      expect(finishedSpans).to.have.lengthOf(4);
+      // isolated per instance and not shared. The activity part resumes on
+      // the same route, so EmbracePageManager re-notifies NavigationInstrumentation
+      // on session-part-start, giving it its own route span too.
+      expect(finishedSpans).to.have.lengthOf(5);
       expect(finishedSpans[0].name).to.equal('some span');
       expect(finishedSpans[1].name).to.equal('emb-session-part');
       expect(
@@ -2161,14 +2163,15 @@ describe('isolated instances', () => {
       expect(
         finishedSpans[1].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[2].name).to.equal('emb-session-part');
+      expect(finishedSpans[2].name).to.equal(window.location.pathname);
+      expect(finishedSpans[3].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[2].attributes['emb.session_part_start_reason'],
+        finishedSpans[3].attributes['emb.session_part_start_reason'],
       ).to.equal('web_activity');
       expect(
-        finishedSpans[2].attributes['emb.session_part_end_reason'],
+        finishedSpans[3].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[3].name).to.equal('my span');
+      expect(finishedSpans[4].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

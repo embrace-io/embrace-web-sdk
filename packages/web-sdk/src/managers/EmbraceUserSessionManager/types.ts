@@ -1,6 +1,7 @@
 import type { DiagLogger, TracerProvider } from '@opentelemetry/api';
 import type {
   SessionPartEndReason,
+  SessionPartStartedEvent,
   SessionPartStartReason,
   UserSessionEndReason,
   UserSessionManager,
@@ -146,7 +147,9 @@ export interface UserSessionManagerInternal extends UserSessionManager {
    * Listeners must not call back into part lifecycle methods
    * (`endSessionPartInternal`, `startSessionPartInternal`) synchronously.
    */
-  addSessionPartStartedListener: (listener: () => void) => () => void;
+  addSessionPartStartedListener: (
+    listener: (event: SessionPartStartedEvent) => void,
+  ) => () => void;
   addSessionPartEndedListener: (listener: () => void) => () => void;
 
   /**
