@@ -43,6 +43,9 @@ import {
   LogRecordScrubProcessor,
   PageLogRecordProcessor,
   PageSpanProcessor,
+  SoftNavigationCorrelationLogRecordProcessor,
+  SoftNavigationCorrelationSpanProcessor,
+  SoftNavigationSignalBuffer,
   SpanScrubProcessor,
   UserLogRecordProcessor,
   UserSessionLogRecordProcessor,
@@ -263,6 +266,15 @@ export const initSDK = (
       perf,
     });
 
+    // The correlation buffer is only needed to back-fill soft-navigation
+    // spans, so skip creating it when that instrumentation is omitted.
+    const softNavigationEnabled = !defaultInstrumentationConfig?.omit?.has(
+      'soft-navigation-performance',
+    );
+    const softNavigationSignalBuffer = softNavigationEnabled
+      ? new SoftNavigationSignalBuffer()
+      : undefined;
+
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
       userManager,
@@ -276,6 +288,7 @@ export const initSDK = (
       registerGlobally,
       embraceSpanProcessor,
       pageManager,
+      softNavigationSignalBuffer,
     });
 
     userSessionManager.setTracerProvider(tracerProvider);
@@ -297,6 +310,7 @@ export const initSDK = (
       sdkLocalStorage,
       pageManager,
       visibilityDoc: window.document,
+      softNavigationSignalBuffer,
     });
 
     // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
@@ -407,6 +421,7 @@ const setupTraces = ({
   registerGlobally,
   embraceSpanProcessor,
   pageManager,
+  softNavigationSignalBuffer,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
@@ -415,6 +430,16 @@ const setupTraces = ({
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
     new SpanScrubProcessor({ attributeScrubbers }),
+    // WHY: placement in this chain does not affect the stamp: every
+    // processor's onEnding runs before any onEnd (the batcher exports at
+    // onEnd), so the soft-navigation span still sees the full window.
+    ...(softNavigationSignalBuffer
+      ? [
+          new SoftNavigationCorrelationSpanProcessor({
+            buffer: softNavigationSignalBuffer,
+          }),
+        ]
+      : []),
   ];
 
   spanExporters?.forEach((exporter) => {
@@ -471,12 +496,22 @@ const setupLogs = ({
   sdkLocalStorage,
   pageManager,
   visibilityDoc,
+  softNavigationSignalBuffer,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
     new UserSessionLogRecordProcessor({
       userSessionManager,
     }),
+    // WHY: must run after UserSessionLogRecordProcessor, which stamps the
+    // synthetic log id this processor records into the shared buffer.
+    ...(softNavigationSignalBuffer
+      ? [
+          new SoftNavigationCorrelationLogRecordProcessor({
+            buffer: softNavigationSignalBuffer,
+          }),
+        ]
+      : []),
     new BrowserLogRecordProcessor(),
     new EmbraceLogRecordProcessor(),
     new UserLogRecordProcessor({ userManager }),
