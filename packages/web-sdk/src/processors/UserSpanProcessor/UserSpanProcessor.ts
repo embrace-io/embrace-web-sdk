@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
+import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { UserManager } from '../../api-users/index.ts';
 import type { UserSpanProcessorArgs } from './types.ts';
@@ -17,9 +17,8 @@ export class UserSpanProcessor implements SpanProcessor {
     return Promise.resolve(undefined);
   }
 
-  // TODO `onEnd` is not supposed to modify the span. There is a new experimental onEnding api that allows modifying
-  // using onEnd to make sure we get the userId at the last possible moment in case it was set up after the span was started.
-  public onEnd(span: ReadableSpan): void {
+  // Read the userId in onEnding to catch an identity set after the span started.
+  public onEnding(span: Span): void {
     const userId = this._userManager.getUserId();
 
     if (userId) {
@@ -28,6 +27,10 @@ export class UserSpanProcessor implements SpanProcessor {
   }
 
   public onStart(this: void): void {
+    // do nothing.
+  }
+
+  public onEnd(this: void): void {
     // do nothing.
   }
 

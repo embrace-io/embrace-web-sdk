@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
+import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
@@ -26,10 +26,8 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
     return Promise.resolve(undefined);
   }
 
-  // TODO `onEnd` is not supposed to modify the span. There is a new experimental onEnding api that allows modifying
-
-  //  the span before it is sent to the exporter. This processor should be updated to use that api once that is available
-  public onEnd(span: ReadableSpan): void {
+  // Read in onEnding because isNetworkSpan depends on the HTTP response status, which is only set at span end.
+  public onEnding(span: Span): void {
     if (isNetworkSpan(span)) {
       span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
 
@@ -53,6 +51,10 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   }
 
   public onStart(this: void): void {
+    // do nothing.
+  }
+
+  public onEnd(this: void): void {
     // do nothing.
   }
 
