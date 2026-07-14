@@ -92,9 +92,15 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
         [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
         [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,
         [KEY_EMB_ELEMENT_TIMING_ELEMENT]: entry.element?.tagName?.toLowerCase(),
-        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: entry.renderTime,
-        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: entry.loadTime,
-        [KEY_EMB_ELEMENT_TIMING_START_TIME]: entry.startTime,
+        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: this.perf.millisFromZeroTime(
+          entry.renderTime,
+        ),
+        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: this.perf.millisFromZeroTime(
+          entry.loadTime,
+        ),
+        [KEY_EMB_ELEMENT_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+          entry.startTime,
+        ),
         [KEY_EMB_ELEMENT_TIMING_URL]: entry.url,
         [KEY_EMB_ELEMENT_TIMING_NATURAL_WIDTH]: entry.naturalWidth,
         [KEY_EMB_ELEMENT_TIMING_NATURAL_HEIGHT]: entry.naturalHeight,

@@ -229,7 +229,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       }
 
       if (!this.getConfig().ignorePerformancePaintEvents) {
-        addSpanPerformancePaintEvents(rootSpan);
+        addSpanPerformancePaintEvents(rootSpan, this.perf);
       }
 
       this._addCustomAttributesOnSpan(
@@ -257,7 +257,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         hasKey(entries, performanceName) &&
         typeof entries[performanceName] === 'number'
       ) {
-        span.end(entries[performanceName]);
+        span.end(this.perf.epochMillisFromOrigin(entries[performanceName]));
       } else {
         span.end();
       }
@@ -370,7 +370,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       const span = this.tracer.startSpan(
         spanName,
         {
-          startTime: entries[performanceName],
+          startTime: this.perf.epochMillisFromOrigin(entries[performanceName]),
         },
         parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined,
       );

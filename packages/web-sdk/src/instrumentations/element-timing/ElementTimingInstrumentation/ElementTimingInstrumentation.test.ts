@@ -191,7 +191,7 @@ describe('ElementTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('anchors span start to the SDK zero time, not the original navigation, after a reset', () => {
+  it('anchors span start and time attributes to the SDK zero time, not the original navigation, after a reset', () => {
     const timeOrigin = 1_700_000_000_000;
     clock.setSystemTime(timeOrigin);
     const timeOriginPerf = new MockPerformanceManager(clock); // timeOrigin = 1_700_000_000_000
@@ -205,10 +205,16 @@ describe('ElementTimingInstrumentation', () => {
       limitManager,
     });
 
-    triggerEntries([makeEntry({ startTime: 250 })]);
+    triggerEntries([
+      makeEntry({ startTime: 700, renderTime: 700, loadTime: 650 }),
+    ]);
 
     const span = spanExporter.getFinishedSpans()[0];
     expect(hrTimeToMilliseconds(span.startTime)).to.equal(resetEpoch);
+    // gap between timeOrigin and zero time is 500ms, so each raw offset is rebased by 500ms
+    expect(span.attributes['emb.element_timing.render_time']).to.equal(200);
+    expect(span.attributes['emb.element_timing.load_time']).to.equal(150);
+    expect(span.attributes['emb.element_timing.start_time']).to.equal(200);
 
     instrumentation.disable();
   });
