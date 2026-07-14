@@ -47,8 +47,6 @@ line.
 | `getZeroTime()` | What is the epoch timestamp of the current view's start? | `max(timeOrigin + activationStart, lastResetEpoch)` |
 | `millisFromZeroTime(offset)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - (getZeroTime() - timeOrigin))` |
 | `getNowMillis()` | What is the wall-clock epoch time right now? | `timeOrigin + performance.now()` |
-| `getNowHRTime()` | Same as `getNowMillis()`, as an OTel `HrTime` tuple | — |
-| `millisSinceHRTime(hrTime)` | How many ms have elapsed since a given `HrTime`? | `max(0, getNowMillis() - hrTime)` |
 
 Zero time never participates in converting a raw offset to an epoch: the
 offset already contains the full distance from time origin, so

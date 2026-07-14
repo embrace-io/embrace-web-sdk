@@ -1,4 +1,3 @@
-import type { HrTime } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -45,22 +44,9 @@ describe('OTelPerformanceManager', () => {
     expect(performanceManager.getNowMillis()).to.equal(1500);
   });
 
-  it('should get current time in HR time format', () => {
-    const result = performanceManager.getNowHRTime();
-    // HR time is [seconds, nanoseconds]
-    expect(result[0]).to.equal(1); // 1 second
-    expect(result[1]).to.equal(500000000); // 500ms = 500000000 nanoseconds
-  });
-
   it('should handle zero offset', () => {
     const result = performanceManager.epochMillisFromOrigin(0);
     expect(result).to.equal(1000); // timeOrigin (1000) + offset (0)
-  });
-
-  it('should get the milliseconds since a given HR time', () => {
-    // HR time is [seconds, nanoseconds]
-    const startTime: HrTime = [1, 100000000];
-    expect(performanceManager.millisSinceHRTime(startTime)).to.equal(400);
   });
 
   it('should return originOffset unchanged from millisFromZeroTime when zero time equals timeOrigin', () => {
@@ -101,22 +87,6 @@ describe('OTelPerformanceManager', () => {
   it('clamps millisFromZeroTime to 0 for offsets before the bfcache restore', () => {
     updateZeroTimeMillis(1800); // gap from timeOrigin (1000) is 800ms
     expect(performanceManager.millisFromZeroTime(500)).to.equal(0); // 500 - 800 clamped to 0
-  });
-
-  it('clamps millisSinceHRTime to 0 when the given time is after getNowMillis', () => {
-    // nowMillis = 1500, so a future HrTime of 2000ms should clamp to 0
-    const futureTime: HrTime = [2, 0]; // 2000ms
-    expect(performanceManager.millisSinceHRTime(futureTime)).to.equal(0);
-  });
-
-  it('millisSinceHRTime is unaffected by pageshow, since getNowMillis reports true wall-clock now', () => {
-    updateZeroTimeMillis(1800); // shifts zero time, but not timeOrigin or "now"
-    // getNowMillis() = timeOrigin (1000) + now() (500) = 1500
-    const beforeNow: HrTime = [1, 100000000]; // 1100ms
-    expect(performanceManager.millisSinceHRTime(beforeNow)).to.equal(400); // 1500 - 1100
-
-    const afterNow: HrTime = [2, 0]; // 2000ms > 1500ms
-    expect(performanceManager.millisSinceHRTime(afterNow)).to.equal(0);
   });
 
   it('returns timeOrigin when clock has no getEntriesByType (activationStart = 0)', () => {

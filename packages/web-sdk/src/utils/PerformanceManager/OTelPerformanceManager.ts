@@ -1,5 +1,3 @@
-import type { HrTime } from '@opentelemetry/api';
-import { hrTimeToMilliseconds, millisToHrTime } from '@opentelemetry/core';
 import type { PerformanceClock, PerformanceManager } from './types.ts';
 
 let _zeroTimeMillis: number | undefined;
@@ -28,12 +26,7 @@ export class OTelPerformanceManager implements PerformanceManager {
   public epochMillisFromOrigin = (originOffset: number) =>
     this._clock.timeOrigin + originOffset;
 
-  public getNowHRTime = () => millisToHrTime(this.getNowMillis());
-
   public getNowMillis = () => this.epochMillisFromOrigin(this._clock.now());
-
-  public millisSinceHRTime = (time: HrTime) =>
-    Math.max(0, this.getNowMillis() - hrTimeToMilliseconds(time));
 
   /**
    * To measure the way a user experienced a metric, we measure metrics relative to the time the user
