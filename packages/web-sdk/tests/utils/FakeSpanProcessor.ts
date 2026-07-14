@@ -1,5 +1,5 @@
 import type { Span } from '@opentelemetry/api';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 
 export class FakeSpanProcessor implements SpanProcessor {
   public forceFlush(): Promise<void> {

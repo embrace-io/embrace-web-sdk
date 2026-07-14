@@ -4,13 +4,14 @@ import type { ExportResult } from '@opentelemetry/core';
 import {
   BindOnceFuture,
   ExportResultCode,
+  // TODO: `internal._export` is an unstable OTel API; find a supported way to export a batch
   internal,
 } from '@opentelemetry/core';
 import type {
   ReadableSpan,
   SpanExporter,
   SpanProcessor,
-} from '@opentelemetry/sdk-trace-web'; // TODO: don't rely on internal API
+} from '@opentelemetry/sdk-trace';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
 import type { SessionPartSpan } from '../../instrumentations/index.ts';
 import type {

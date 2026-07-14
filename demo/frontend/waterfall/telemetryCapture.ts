@@ -5,7 +5,7 @@ import type {
   LogRecordExporter,
   ReadableLogRecord,
 } from '@opentelemetry/sdk-logs';
-import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace';
 
 // Demo-only visualization aid: taps the SDK's exporter chain so the waterfall
 // page can draw a live waterfall of spans and logs. Not shipped in the SDK.

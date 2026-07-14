@@ -1,5 +1,5 @@
 /* eslint-disable baseline-js/use-baseline */
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {

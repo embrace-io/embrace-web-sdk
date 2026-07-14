@@ -7,9 +7,9 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace';
 import {
-  BatchSpanProcessor,
   StackContextManager,
   WebTracerProvider,
 } from '@opentelemetry/sdk-trace-web';
@@ -416,7 +416,7 @@ const setupTraces = ({
   ];
 
   spanExporters?.forEach((exporter) => {
-    finalSpanProcessors.push(new BatchSpanProcessor(exporter));
+    finalSpanProcessors.push(new BatchSpanProcessor({ exporter }));
   });
 
   if (embraceSpanProcessor) {

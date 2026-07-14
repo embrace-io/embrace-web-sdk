@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,

@@ -2,7 +2,7 @@
 
 import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 
 export const embraceWebSdk = initSDK({
   appID: '11111',

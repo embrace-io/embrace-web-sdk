@@ -3,8 +3,8 @@ import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-  WebTracerProvider,
-} from '@opentelemetry/sdk-trace-web';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import sinonChai from 'sinon-chai';
 import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
@@ -199,8 +199,10 @@ describe('EmbraceTraceManager', () => {
 
   it('should allow overriding the global tracer provider', () => {
     const secondMemoryExporter = new InMemorySpanExporter();
-    const tracerProvider = new WebTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(secondMemoryExporter)],
+    const tracerProvider = new TracerProvider({
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: secondMemoryExporter }),
+      ],
     });
 
     const manager = new EmbraceTraceManager({

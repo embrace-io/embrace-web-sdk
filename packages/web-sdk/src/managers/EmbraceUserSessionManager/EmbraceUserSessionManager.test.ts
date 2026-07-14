@@ -1,4 +1,4 @@
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -943,7 +943,7 @@ describe('EmbraceUserSessionManager', () => {
       // setTracerProvider eagerly creates the cold-start session before any
       // part starts. That creation must rely on initSDK's startup refresh, not
       // issue its own redundant fetch.
-      manager.setTracerProvider(new WebTracerProvider());
+      manager.setTracerProvider(new TracerProvider());
 
       expect(refreshRemoteConfig.callCount).to.equal(0);
     });

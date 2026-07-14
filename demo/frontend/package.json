@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "tsc --build",
+    "check": "tsc",
     "clean": "emb-rm .sonda dist",
     "dev": "vite --port 4847 --open",
     "build": "vite build",
@@ -17,10 +17,10 @@
   "dependencies": {
     "@embrace-io/web-sdk": "*",
     "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/api-logs": "^0.220.0",
     "@opentelemetry/core": "^2.9.0",
+    "@opentelemetry/instrumentation": "^0.220.0",
     "@opentelemetry/sdk-logs": "^0.220.0",
-    "@opentelemetry/sdk-trace-web": "^2.9.0",
+    "@opentelemetry/sdk-trace": "^2.9.0",
     "history": "^4.10.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

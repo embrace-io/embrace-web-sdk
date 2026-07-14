@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "check": "tsc",
     "demo:cdn:frontend:full:preview": "bash ./scripts/runDemo.sh",
     "demo:cdn:frontend:full:preview:async": "bash ./scripts/runDemo.sh --async",
     "demo:cdn:frontend:build:clean": "emb-rm dist",
@@ -10,15 +11,15 @@
     "demo:cdn:sync:web:sdk": "ln -f ../../packages/web-sdk/dist/embrace-web-sdk.js ./public/embrace-web-sdk.js",
     "demo:cdn:frontend:dev": "vite",
     "demo:cdn:frontend:dev:async": "VITE_ASYNC_MODE=true vite",
-    "demo:cdn:frontend:build": "tsc -b && vite build",
-    "demo:cdn:frontend:build:async": "tsc -b && VITE_ASYNC_MODE=true vite build",
+    "demo:cdn:frontend:build": "vite build",
+    "demo:cdn:frontend:build:async": "VITE_ASYNC_MODE=true vite build",
     "demo:cdn:frontend:preview": "vite preview"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/api-logs": "^0.220.0",
     "@opentelemetry/sdk-logs": "^0.220.0",
-    "@opentelemetry/sdk-trace-web": "^2.9.0",
+    "@opentelemetry/sdk-trace": "^2.9.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   }

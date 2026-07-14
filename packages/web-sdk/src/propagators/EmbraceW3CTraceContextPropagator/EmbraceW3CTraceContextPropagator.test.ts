@@ -1,5 +1,5 @@
 import { context, defaultTextMapSetter, trace } from '@opentelemetry/api';
-import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import { setupTestTraceExporter } from '../../../tests/utils/index.ts';

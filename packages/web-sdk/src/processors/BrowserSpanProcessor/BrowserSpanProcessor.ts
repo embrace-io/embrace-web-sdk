@@ -1,4 +1,4 @@
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import type { URLDocument } from '../../common/index.ts';
 import { KEY_BROWSER_URL_FULL } from '../../constants/index.ts';
 import type { BrowserSpanProcessorArgs } from './types.ts';

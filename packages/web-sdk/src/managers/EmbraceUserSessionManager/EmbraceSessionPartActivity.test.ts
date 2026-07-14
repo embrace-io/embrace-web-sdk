@@ -1,4 +1,4 @@
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -127,7 +127,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     });
     // Browser-activity listeners attach inside setTracerProvider; activity
     // tests need them live, so wire a tracer provider before spying.
-    manager.setTracerProvider(new WebTracerProvider());
+    manager.setTracerProvider(new TracerProvider());
     startSpy = sinon.spy(manager, 'startSessionPartInternal');
     endSpy = sinon.spy(manager, 'endSessionPartInternal');
   });
@@ -457,7 +457,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
         userSessionInactivityTimeoutSeconds: 1800,
       }),
     });
-    splitManager.setTracerProvider(new WebTracerProvider());
+    splitManager.setTracerProvider(new TracerProvider());
     const endSpy2 = sinon.spy(splitManager, 'endSessionPartInternal');
 
     splitManager.startSessionPartInternal({ reason: 'init' });
@@ -538,7 +538,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
           location: { href: 'http://current.example.com/' },
         },
       });
-      softNavManager.setTracerProvider(new WebTracerProvider());
+      softNavManager.setTracerProvider(new TracerProvider());
       softNavStartSpy = sinon.spy(softNavManager, 'startSessionPartInternal');
       softNavEndSpy = sinon.spy(softNavManager, 'endSessionPartInternal');
     });
@@ -600,7 +600,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
         navigationHost: { location: { href: 'http://current.example.com/' } },
       });
       expect(() => {
-        noNavManager.setTracerProvider(new WebTracerProvider());
+        noNavManager.setTracerProvider(new TracerProvider());
         noNavManager.startSessionPartInternal({ reason: 'init' });
         noNavManager._shutdown();
       }).to.not.throw();

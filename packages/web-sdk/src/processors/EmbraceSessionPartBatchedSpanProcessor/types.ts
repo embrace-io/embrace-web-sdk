@@ -1,5 +1,5 @@
 import type { DiagLogger } from '@opentelemetry/api';
-import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { SpanExporter } from '@opentelemetry/sdk-trace';
 import type {
   LimitManagerInternal,
   UserSessionManagerInternal,

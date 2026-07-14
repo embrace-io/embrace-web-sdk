@@ -3,11 +3,11 @@ import {
   ConsoleLogRecordExporter,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-web';
+import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
 
 interface DefaultInstrumentationConfig {
   '@opentelemetry/instrumentation-fetch'?: {
@@ -95,7 +95,9 @@ const initSDK = (
       embraceConfigURL: `https://a-${appID}.config.stg.emb-eng.com`,
       logLevel: 80,
       registerGlobally: false,
-      spanProcessors: [new SimpleSpanProcessor(new ConsoleSpanExporter())],
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+      ],
       logProcessors: [
         new SimpleLogRecordProcessor({
           exporter: new ConsoleLogRecordExporter(),

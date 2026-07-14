@@ -3,8 +3,8 @@ import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { LogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import type { SpanExporter } from '@opentelemetry/sdk-trace-web';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-web';
+import type { SpanExporter } from '@opentelemetry/sdk-trace';
+import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 import { version } from '../../../packages/web-sdk/package.json' with {
   type: 'json',
 };
