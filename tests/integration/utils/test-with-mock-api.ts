@@ -129,6 +129,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'first_interaction.x',
   'first_interaction.y',
   'first_interaction.time',
+  'app.surface.id',
 ];
 
 const testWithMockApi = base.extend<TestWithMockApi>({
