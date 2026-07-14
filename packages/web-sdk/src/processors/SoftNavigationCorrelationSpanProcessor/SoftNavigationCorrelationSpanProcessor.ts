@@ -11,7 +11,7 @@ import {
   KEY_EMB_SOFT_NAVIGATION_SOURCE,
   KEY_EMB_SOFT_NAVIGATION_SPAN_IDS,
 } from '../../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
-import type { SoftNavigationSignalBuffer } from './SoftNavigationSignalBuffer.ts';
+import type { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
 import type { SoftNavigationCorrelationSpanProcessorArgs } from './types.ts';
 
 const isSoftNavigationSpan = (span: ReadableSpan | Span): boolean =>
@@ -22,8 +22,8 @@ const isSessionPartSpan = (span: ReadableSpan | Span): boolean =>
 
 /**
  * Records eligible spans as they start and, when a soft-navigation span ends,
- * stamps it with the ids of the logs and non-part spans that started within its
- * window.
+ * stamps it with the ids of the logs and non-part, non-soft-navigation spans
+ * that started within its window.
  */
 export class SoftNavigationCorrelationSpanProcessor implements SpanProcessor {
   private readonly _buffer: SoftNavigationSignalBuffer;
@@ -44,7 +44,7 @@ export class SoftNavigationCorrelationSpanProcessor implements SpanProcessor {
       this._buffer.record({
         kind: 'span',
         id: span.spanContext().spanId,
-        startEpochMillis: hrTimeToMilliseconds(span.startTime),
+        startTime: hrTimeToMilliseconds(span.startTime),
       });
     } catch (e) {
       diag.error('failed to record span for soft-navigation correlation', e);

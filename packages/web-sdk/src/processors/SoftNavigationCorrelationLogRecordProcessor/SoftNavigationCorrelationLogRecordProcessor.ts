@@ -2,7 +2,7 @@ import { diag } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
-import type { SoftNavigationSignalBuffer } from '../SoftNavigationCorrelationSpanProcessor/SoftNavigationSignalBuffer.ts';
+import type { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
 import type { SoftNavigationCorrelationLogRecordProcessorArgs } from './types.ts';
 
 /**
@@ -24,11 +24,13 @@ export class SoftNavigationCorrelationLogRecordProcessor
   public onEmit(logRecord: SdkLogRecord): void {
     try {
       const uid = logRecord.attributes[ATTR_LOG_RECORD_UID];
+      // Stamped upstream by UserSessionLogRecordProcessor; if that ordering
+      // regresses, this guard silently skips every log.
       if (typeof uid === 'string' && uid.length > 0) {
         this._buffer.record({
           kind: 'log',
           id: uid,
-          startEpochMillis: hrTimeToMilliseconds(logRecord.hrTime),
+          startTime: hrTimeToMilliseconds(logRecord.hrTime),
         });
       }
     } catch (e) {

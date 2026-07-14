@@ -3,8 +3,8 @@ import type { Span } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
 import { KEY_EMB_SOFT_NAVIGATION_SOURCE } from '../../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
+import { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
 import { SoftNavigationCorrelationSpanProcessor } from './SoftNavigationCorrelationSpanProcessor.ts';
-import { SoftNavigationSignalBuffer } from './SoftNavigationSignalBuffer.ts';
 
 const { expect } = chai;
 
@@ -65,8 +65,8 @@ describe('SoftNavigationCorrelationSpanProcessor', () => {
 
   it('stamps span_ids and log_ids on a soft-navigation span for its window', () => {
     const buffer = new SoftNavigationSignalBuffer();
-    buffer.record({ kind: 'span', id: 'child-span', startEpochMillis: 1500 });
-    buffer.record({ kind: 'log', id: 'child-log', startEpochMillis: 1600 });
+    buffer.record({ kind: 'span', id: 'child-span', startTime: 1500 });
+    buffer.record({ kind: 'log', id: 'child-log', startTime: 1600 });
     const processor = new SoftNavigationCorrelationSpanProcessor({ buffer });
 
     const softNav = fakeSpan({

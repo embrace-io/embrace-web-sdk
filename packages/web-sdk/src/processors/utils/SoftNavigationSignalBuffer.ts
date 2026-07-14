@@ -1,7 +1,7 @@
 export interface SoftNavigationSignalEntry {
-  kind: 'span' | 'log';
-  id: string;
-  startEpochMillis: number;
+  readonly kind: 'span' | 'log';
+  readonly id: string;
+  readonly startTime: number;
 }
 
 export interface SoftNavigationSignalBufferArgs {
@@ -14,6 +14,9 @@ export interface SoftNavigationWindowResult {
   logIds: string[];
 }
 
+// Best-effort correlation ceiling: a soft-navigation span whose window is
+// still open 60s after the newest recorded signal will under-report early
+// signals, since those signals have already been evicted by then.
 const DEFAULT_MAX_AGE_MILLIS = 60_000;
 const DEFAULT_MAX_ENTRIES = 4096;
 
@@ -26,7 +29,7 @@ export class SoftNavigationSignalBuffer {
   private readonly _maxAgeMillis: number;
   private readonly _maxEntries: number;
   private readonly _entries: SoftNavigationSignalEntry[] = [];
-  private _latestStartEpochMillis = 0;
+  private _latestStartTime = 0;
 
   public constructor({
     maxAgeMillis = DEFAULT_MAX_AGE_MILLIS,
@@ -38,23 +41,20 @@ export class SoftNavigationSignalBuffer {
 
   public record(entry: SoftNavigationSignalEntry): void {
     this._entries.push(entry);
-    if (entry.startEpochMillis > this._latestStartEpochMillis) {
-      this._latestStartEpochMillis = entry.startEpochMillis;
+    if (entry.startTime > this._latestStartTime) {
+      this._latestStartTime = entry.startTime;
     }
     this._evict();
   }
 
   public collectWindow(
-    startEpochMillis: number,
-    endEpochMillis: number,
+    startTime: number,
+    endTime: number,
   ): SoftNavigationWindowResult {
     const spanIds: string[] = [];
     const logIds: string[] = [];
     for (const entry of this._entries) {
-      if (
-        entry.startEpochMillis >= startEpochMillis &&
-        entry.startEpochMillis <= endEpochMillis
-      ) {
+      if (entry.startTime >= startTime && entry.startTime <= endTime) {
         if (entry.kind === 'span') {
           spanIds.push(entry.id);
         } else {
@@ -68,11 +68,8 @@ export class SoftNavigationSignalBuffer {
   // Age eviction is relative to the newest entry seen so the buffer needs no
   // injected clock and stays deterministic.
   private _evict(): void {
-    const cutoff = this._latestStartEpochMillis - this._maxAgeMillis;
-    while (
-      this._entries.length > 0 &&
-      this._entries[0].startEpochMillis < cutoff
-    ) {
+    const cutoff = this._latestStartTime - this._maxAgeMillis;
+    while (this._entries.length > 0 && this._entries[0].startTime < cutoff) {
       this._entries.shift();
     }
     while (this._entries.length > this._maxEntries) {

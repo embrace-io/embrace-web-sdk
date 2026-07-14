@@ -7,11 +7,9 @@ export { LogRecordScrubProcessor } from './LogRecordScrubProcessor/index.ts';
 export { PageLogRecordProcessor } from './PageLogRecordProcessor/index.ts';
 export { PageSpanProcessor } from './PageSpanProcessor/index.ts';
 export { SoftNavigationCorrelationLogRecordProcessor } from './SoftNavigationCorrelationLogRecordProcessor/index.ts';
-export {
-  SoftNavigationCorrelationSpanProcessor,
-  SoftNavigationSignalBuffer,
-} from './SoftNavigationCorrelationSpanProcessor/index.ts';
+export { SoftNavigationCorrelationSpanProcessor } from './SoftNavigationCorrelationSpanProcessor/index.ts';
 export { SpanScrubProcessor } from './SpanScrubProcessor/index.ts';
 export { UserLogRecordProcessor } from './UserLogRecordProcessor/index.ts';
 export { UserSessionLogRecordProcessor } from './UserSessionLogRecordProcessor/index.ts';
 export { UserSpanProcessor } from './UserSpanProcessor/index.ts';
+export { SoftNavigationSignalBuffer } from './utils/index.ts';

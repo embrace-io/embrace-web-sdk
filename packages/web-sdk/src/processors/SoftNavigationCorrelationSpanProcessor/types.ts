@@ -1,4 +1,4 @@
-import type { SoftNavigationSignalBuffer } from './SoftNavigationSignalBuffer.ts';
+import type { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
 
 export interface SoftNavigationCorrelationSpanProcessorArgs {
   buffer: SoftNavigationSignalBuffer;

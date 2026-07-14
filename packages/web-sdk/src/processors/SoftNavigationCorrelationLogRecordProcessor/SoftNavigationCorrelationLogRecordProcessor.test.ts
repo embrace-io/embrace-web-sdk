@@ -2,7 +2,7 @@ import { millisToHrTime } from '@opentelemetry/core';
 import type { SdkLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
-import { SoftNavigationSignalBuffer } from '../SoftNavigationCorrelationSpanProcessor/SoftNavigationSignalBuffer.ts';
+import { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
 import { SoftNavigationCorrelationLogRecordProcessor } from './SoftNavigationCorrelationLogRecordProcessor.ts';
 
 const { expect } = chai;

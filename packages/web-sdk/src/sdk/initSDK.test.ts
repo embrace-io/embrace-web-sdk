@@ -1551,9 +1551,10 @@ describe('initSDK', () => {
       const spanIdsAttr = softNavSpan?.attributes.find(
         (a: { key: string }) => a.key === 'emb.soft_navigation.span_ids',
       );
-      expect(spanIdsAttr?.value?.arrayValue?.values?.[0]?.stringValue).to.equal(
-        childId,
+      const spanIds = spanIdsAttr?.value.arrayValue.values.map(
+        (v) => v.stringValue,
       );
+      expect(spanIds).to.deep.equal([childId]);
     });
 
     it('does not stamp correlation attributes when soft-nav is omitted', async () => {
@@ -1643,9 +1644,10 @@ describe('initSDK', () => {
       const logIdsAttr = softNavSpan?.attributes.find(
         (a: { key: string }) => a.key === 'emb.soft_navigation.log_ids',
       );
-      expect(logIdsAttr?.value?.arrayValue?.values?.[0]?.stringValue).to.equal(
-        logUid,
+      const logIds = logIdsAttr?.value.arrayValue.values.map(
+        (v) => v.stringValue,
       );
+      expect(logIds).to.deep.equal([logUid]);
     });
   });
 
