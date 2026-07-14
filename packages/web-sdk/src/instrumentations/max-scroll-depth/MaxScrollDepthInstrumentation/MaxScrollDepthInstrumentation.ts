@@ -13,6 +13,7 @@ import type { MaxScrollDepthInstrumentationArgs } from './types.ts';
 /*
   Tracks how far the user scrolls during and emits telemetry when the session part ends
 */
+// Timing frame: none, no timing data (see src/utils/PerformanceManager/README.md)
 export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onScrollHandler: () => void;
   private _hasScrolled = false;

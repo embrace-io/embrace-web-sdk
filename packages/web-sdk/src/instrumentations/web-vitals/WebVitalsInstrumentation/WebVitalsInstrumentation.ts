@@ -189,6 +189,7 @@ const ttfbSubPartsAttribution = (
   return attributes;
 };
 
+// Timing frame: time-origin (see src/utils/PerformanceManager/README.md)
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;

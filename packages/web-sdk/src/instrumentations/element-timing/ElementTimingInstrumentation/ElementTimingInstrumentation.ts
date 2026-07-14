@@ -19,6 +19,7 @@ import type {
   PerformanceElementTiming,
 } from './types.ts';
 
+// Timing frame: zero-time (see src/utils/PerformanceManager/README.md)
 export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
 

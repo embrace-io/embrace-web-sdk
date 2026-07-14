@@ -16,6 +16,7 @@ import type { ClicksInstrumentationArgs } from './types.ts';
 
 import { getHTMLElementFriendlyName } from './utils.ts';
 
+// Timing frame: time-origin (see src/utils/PerformanceManager/README.md)
 export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 

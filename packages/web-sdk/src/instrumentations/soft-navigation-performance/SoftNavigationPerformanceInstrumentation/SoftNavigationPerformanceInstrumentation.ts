@@ -44,6 +44,7 @@ const PENDING_NAVIGATION_TTL_MS = 60_000;
 
 type PendingNavigation = { timestamp: number; url: string };
 
+// Timing frame: zero-time (see src/utils/PerformanceManager/README.md)
 export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _eventObserver: PerformanceObserver | null = null;
@@ -254,7 +255,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     }
 
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
-      startTime: this.perf.epochMillisFromZeroTime(clickEntry.startTime),
+      startTime: this.perf.epochMillisFromOrigin(clickEntry.startTime),
       attributes: {
         [KEY_BROWSER_URL_FULL]: url,
         [KEY_EMB_SOFT_NAVIGATION_SOURCE]: SOFT_NAVIGATION_SOURCES.polyfill,
@@ -267,6 +268,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
           clickEntry.interactionId !== 0 ? clickEntry.interactionId : undefined,
       },
     });
-    span.end(this.perf.epochMillisFromZeroTime(navigationTimestamp));
+    span.end(this.perf.epochMillisFromOrigin(navigationTimestamp));
   }
 }

@@ -5,6 +5,7 @@ import type { EmptyRootInstrumentationArgs } from './types.ts';
   EmptyRootInstrumentation observes changes to what is considered the root node of the application and emits a span
   event on the session part span if it ever finds it empty.
  */
+// Timing frame: none, no timing data (see src/utils/PerformanceManager/README.md)
 export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _observer: MutationObserver;
   private readonly _emptyCheckDelayMs: number;

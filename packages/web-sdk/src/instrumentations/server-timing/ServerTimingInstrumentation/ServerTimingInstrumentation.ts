@@ -9,6 +9,7 @@ import {
 } from './constants.ts';
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
+// Timing frame: none, durations only (see src/utils/PerformanceManager/README.md)
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
   private _performanceCollected = false;
