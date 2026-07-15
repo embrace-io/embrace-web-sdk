@@ -148,6 +148,10 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 
 - Telemetry on the unload path (`pagehide` / `visibilitychange` to hidden) is sent via keepalive `fetch` (the SDK does not use `sendBeacon`). The browser only grants a synchronous budget during unload, so async work (Promises, timers) may not run before teardown. Prefer synchronous work here and avoid adding `await`s. Note: gzip compression currently uses `CompressionStream` (async), a known teardown-race fragility, not a pattern to copy
 
+### Time
+
+- Anything touching timestamps or timing attributes must convert through `OTelPerformanceManager` (`this.perf`), never by hand or with raw offsets. Read `packages/web-sdk/src/utils/PerformanceManager/README.md` first — it defines the two reference frames (time origin vs zero time) and which method fits each case
+
 ## Common Tasks
 
 ### Adding an Instrumentation
@@ -156,6 +160,7 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 2. Extend `EmbraceInstrumentationBase`
 3. Export from `packages/web-sdk/src/instrumentations/index.ts`
 4. Register in `sdk/setupDefaultInstrumentations.ts` if auto-enabled
+5. Catalog its timing frame (zero-time / time-origin / none) in `packages/web-sdk/src/utils/PerformanceManager/README.md`
 
 ### Adding a Processor
 

@@ -55,6 +55,7 @@ import {
   EmbraceUserSessionManager,
 } from '../managers/index.ts';
 import { SDK_VERSION } from '../resources/index.ts';
+import { OTelPerformanceManager } from '../utils/index.ts';
 import { initSDK } from './initSDK.ts';
 import { registry } from './registry.ts';
 import type {
@@ -1858,6 +1859,63 @@ describe('initSDK', () => {
           test.expectInjection ? expectedTraceparent : '',
         );
       });
+    });
+  });
+
+  describe('SDK zero time reset listeners', () => {
+    it('advances the SDK zero time when the browser fires pageshow', () => {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+      });
+      void expect(result).not.to.be.false;
+
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      window.dispatchEvent(new Event('pageshow'));
+
+      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+    });
+
+    it('advances the SDK zero time on a soft navigation (currententrychange)', () => {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+      });
+      void expect(result).not.to.be.false;
+      void expect(window.navigation).not.to.be.undefined;
+
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      const event = Object.assign(new Event('currententrychange'), {
+        from: { url: `${window.location.href}#different` },
+      }) as NavigationCurrentEntryChangeEvent;
+      window.navigation.dispatchEvent(event);
+
+      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+    });
+
+    it('does not reset the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+      });
+      void expect(result).not.to.be.false;
+      void expect(window.navigation).not.to.be.undefined;
+
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      // from.url matches the current URL, so this is a same-URL replacement
+      // (e.g. framework hydration via history.replaceState), not a real navigation.
+      const event = Object.assign(new Event('currententrychange'), {
+        from: { url: window.location.href },
+      }) as NavigationCurrentEntryChangeEvent;
+      window.navigation.dispatchEvent(event);
+
+      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
     });
   });
 });

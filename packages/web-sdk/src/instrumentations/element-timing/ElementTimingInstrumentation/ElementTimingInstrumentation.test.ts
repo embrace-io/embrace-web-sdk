@@ -1,4 +1,6 @@
 /* eslint-disable baseline-js/use-baseline */
+
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -11,6 +13,10 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../../../managers/index.ts';
+import {
+  _resetZeroTimeMillisForTesting,
+  updateZeroTimeMillis,
+} from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { ElementTimingInstrumentation } from './ElementTimingInstrumentation.ts';
 import type { PerformanceElementTiming } from './types.ts';
 
@@ -76,6 +82,7 @@ describe('ElementTimingInstrumentation', () => {
 
   beforeEach(() => {
     spanExporter.reset();
+    _resetZeroTimeMillisForTesting();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
@@ -90,6 +97,7 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   afterEach(() => {
+    _resetZeroTimeMillisForTesting();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -176,9 +184,37 @@ describe('ElementTimingInstrumentation', () => {
     triggerEntries([makeEntry({ startTime: 250 })]);
 
     const span = spanExporter.getFinishedSpans()[0];
-    // start = epochMillisFromOriginOffset(0) = navigation epoch
-    // end   = epochMillisFromOriginOffset(250) = navigation epoch + 250ms
+    // start = getZeroTime() = navigation epoch (no reset has occurred)
+    // end   = epochMillisFromOrigin(250) = navigation epoch + 250ms
     expect(span.startTime).to.not.deep.equal(span.endTime);
+
+    instrumentation.disable();
+  });
+
+  it('anchors span start and time attributes to the SDK zero time, not the original navigation, after a reset', () => {
+    const timeOrigin = 1_700_000_000_000;
+    clock.setSystemTime(timeOrigin);
+    const timeOriginPerf = new MockPerformanceManager(clock); // timeOrigin = 1_700_000_000_000
+
+    const resetEpoch = timeOrigin + 500; // e.g. a bfcache restore or soft navigation happens 500ms later
+    clock.setSystemTime(resetEpoch);
+    updateZeroTimeMillis(resetEpoch);
+
+    const instrumentation = new ElementTimingInstrumentation({
+      perf: timeOriginPerf,
+      limitManager,
+    });
+
+    triggerEntries([
+      makeEntry({ startTime: 700, renderTime: 700, loadTime: 650 }),
+    ]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(hrTimeToMilliseconds(span.startTime)).to.equal(resetEpoch);
+    // gap between timeOrigin and zero time is 500ms, so each raw offset is rebased by 500ms
+    expect(span.attributes['emb.element_timing.render_time']).to.equal(200);
+    expect(span.attributes['emb.element_timing.load_time']).to.equal(150);
+    expect(span.attributes['emb.element_timing.start_time']).to.equal(200);
 
     instrumentation.disable();
   });

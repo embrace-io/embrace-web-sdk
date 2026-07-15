@@ -6,6 +6,7 @@
 import type { Span } from '@opentelemetry/api';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
+import type { PerformanceManager } from '../../../utils/index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
@@ -31,11 +32,17 @@ const performancePaintNames = {
   'first-contentful-paint': EventNames.FIRST_CONTENTFUL_PAINT,
 };
 
-export const addSpanPerformancePaintEvents = (span: Span) => {
+export const addSpanPerformancePaintEvents = (
+  span: Span,
+  perf: PerformanceManager,
+) => {
   const performancePaintTiming = window.performance.getEntriesByType('paint');
   performancePaintTiming.forEach(({ name, startTime }) => {
     if (hasKey(performancePaintNames, name)) {
-      span.addEvent(performancePaintNames[name], startTime);
+      span.addEvent(
+        performancePaintNames[name],
+        perf.epochMillisFromOrigin(startTime),
+      );
     }
   });
 };

@@ -84,25 +84,32 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     const span = this.tracer.startSpan(entry.identifier, {
-      // Span start anchors to navigation start so the span duration equals "time from navigation
-      // until the element was rendered" — useful for analyzing page-load render timing.
-      startTime: this.perf.epochMillisFromZeroTime(0),
+      // Span start anchors to the SDK's zero time (start of the current view) so the span
+      // duration equals "time since the user started viewing this page until the element
+      // was rendered" — useful for analyzing render timing relative to the current view.
+      startTime: this.perf.getZeroTime(),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
         [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,
         [KEY_EMB_ELEMENT_TIMING_ELEMENT]: entry.element?.tagName?.toLowerCase(),
-        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: entry.renderTime,
-        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: entry.loadTime,
-        [KEY_EMB_ELEMENT_TIMING_START_TIME]: entry.startTime,
+        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: this.perf.millisFromZeroTime(
+          entry.renderTime,
+        ),
+        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: this.perf.millisFromZeroTime(
+          entry.loadTime,
+        ),
+        [KEY_EMB_ELEMENT_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+          entry.startTime,
+        ),
         [KEY_EMB_ELEMENT_TIMING_URL]: entry.url,
         [KEY_EMB_ELEMENT_TIMING_NATURAL_WIDTH]: entry.naturalWidth,
         [KEY_EMB_ELEMENT_TIMING_NATURAL_HEIGHT]: entry.naturalHeight,
       },
     });
     if (entry.loadTime > 0) {
-      span.addEvent('load', this.perf.epochMillisFromZeroTime(entry.loadTime));
+      span.addEvent('load', this.perf.epochMillisFromOrigin(entry.loadTime));
     }
     // entry.startTime = renderTime if non-zero, else loadTime
-    span.end(this.perf.epochMillisFromZeroTime(entry.startTime));
+    span.end(this.perf.epochMillisFromOrigin(entry.startTime));
   }
 }

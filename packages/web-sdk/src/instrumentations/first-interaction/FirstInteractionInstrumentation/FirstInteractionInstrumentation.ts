@@ -154,7 +154,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     }
 
     this.logger.emit({
-      timestamp: this.perf.epochMillisFromZeroTime(data.timestamp),
+      timestamp: this.perf.epochMillisFromOrigin(data.timestamp),
       eventName: FIRST_INTERACTION_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,
