@@ -2,7 +2,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { PageManager, Route } from '../../api-page/index.ts';
 import type { NavigationHost, TitleDocument } from '../../common/index.ts';
-import { generateUUID } from '../../utils/index.ts';
+import { generateUUID, updateZeroTimeMillis } from '../../utils/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import type { EmbracePageManagerArgs } from './types.ts';
 
@@ -107,15 +107,11 @@ export class EmbracePageManager implements PageManager {
       return;
     }
 
-    // Rolling over the session part before setting the new route matters:
-    // NavigationInstrumentation ends its route span from the session-part-
-    // ended listener, which EmbraceUserSessionManager fires before the
-    // outgoing session-part span itself ends — so the route span is already
-    // queued by the time EmbraceSessionPartBatchedSpanProcessor flushes the
-    // old part's batch. Setting the new route first would end the outgoing
-    // route span too late (after that flush) and start the new route span
-    // before the rollover, so the session-part-ended listener would
-    // incorrectly close the new span instead of the outgoing one.
+    updateZeroTimeMillis(window.performance.timeOrigin + event.timeStamp);
+
+    // Order matters: rolling over first ends the outgoing route span (via the
+    // session-part-ended listener) while it's still open, so it's correctly
+    // attributed to the outgoing part.
     this._userSessionManager?.rolloverSessionPartInternal({
       endReason: 'web_soft_navigation',
       startReason: 'web_soft_navigation',

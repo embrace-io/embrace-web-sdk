@@ -98,11 +98,9 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  if (!config.omit?.has('navigation')) {
-    instrumentations.push(
-      new NavigationInstrumentation({ pageManager, ...config['navigation'] }),
-    );
-  }
+  instrumentations.push(
+    new NavigationInstrumentation({ pageManager, ...config['navigation'] }),
+  );
 
   if (!config.omit?.has('server-timing')) {
     instrumentations.push(

@@ -2,41 +2,36 @@
 
 `EmbracePageManager` is the single source of truth for the current route,
 and the sole listener of the Navigation API for soft-navigation detection.
-Centralizing both in one place is what avoids the race that used to exist
-between the session-part lifecycle and route-span creation: previously two
-independent actors (the session manager reacting to the Navigation API, and
-the navigation instrumentation reacting to route reports) could observe the
-same soft navigation in either order. Now there's one actor driving both.
 
 ## Component responsibilities
 
 - **`EmbracePageManager`** — holds the current route/page-id/label, listens
   to `window.navigation`'s `currententrychange`, and on every
   `setCurrentRoute` call notifies subscribers via `addRouteChangedListener`.
-  It also sets the initial route from the current location on construction,
-  since `currententrychange` never fires for the page's own initial entry —
-  without this, the first route (and route span) would stay unset until a
-  soft nav happens or some other caller reports one.
+  On construction, it sets the initial route from the current location,
+  since `currententrychange` never fires for the page's own initial entry.
+  On a soft navigation, it rolls over the active session part
+  (`EmbraceUserSessionManager.rolloverSessionPartInternal`) before reporting
+  the new route, and resets the SDK's zero time (`updateZeroTimeMillis`) —
+  the same reset `initSDK` performs on `pageshow` for bfcache restores.
 - **React-router integrations** (`withEmbraceRouting`,
-  `withEmbraceRoutingLegacy`, `listenToRouterChanges`) — only ever call
+  `withEmbraceRoutingLegacy`, `listenToRouterChanges`) — call
   `page.setCurrentRoute({ path, url })` once they've resolved the templated
   route. They're optional: the route the SDK derives from the raw pathname
-  is a complete, valid route on its own, out-of-the-box soft-navigation
-  instrumentation works without any router library. A react-router
-  integration is only needed if a user wants to see their app's route
-  patterns (e.g. `/products/:id`) instead of raw URLs. They have no
-  dependency on `NavigationInstrumentation` at all.
+  is a complete, valid route on its own. A react-router integration only
+  refines it with the app's route pattern (e.g. `/products/:id`) instead of
+  the raw URL, and has no dependency on `NavigationInstrumentation`.
 - **`NavigationInstrumentation`** — subscribes to `addRouteChangedListener`
-  (mirrors route changes into `ux.surface` spans: same url → rename in place,
-  different url → end the old span and start a new one), to the
-  session-part-ended listener (ends the open route span so it never outlives
-  the session part it started in — e.g. the tab backgrounds with no further
-  navigation), and to the session-part-started listener (reopens a span for
-  the still-current route when a new part starts with no route change at all
-  — e.g. resuming from the background — since nothing would otherwise report
-  one).
-- **`EmbraceUserSessionManager`** — owns session-part start/end/rollover, but
-  no longer knows the Navigation API exists.
+  (mirrors route changes into `ux.surface` spans: same url renames the open
+  span in place, different url ends the old span and starts a new one), to
+  the session-part-ended listener (ends the open route span so it never
+  outlives the session part it started in), and to the session-part-started
+  listener (opens a span for the current route when a new part starts with
+  no route change — e.g. resuming from the background — skipped when the
+  part started from a soft navigation, since the real new route follows
+  immediately).
+- **`EmbraceUserSessionManager`** — owns session-part start/end/rollover; has
+  no interaction with the Navigation API.
 
 ## Soft-navigation flow
 
@@ -69,46 +64,32 @@ sequenceDiagram
     NavInstr->>NavInstr: rename open span in place (no new span created)
 ```
 
-### Why the order inside `_onSoftNavigation` matters
+### Ordering inside `_onSoftNavigation`
 
-`EmbraceSessionPartBatchedSpanProcessor` doesn't tag spans with a
-session-part id — it queues every span as it ends and flushes the queue
-whenever a session-part span ends. A span's attribution is therefore decided
-by *ending order*, not by when it started.
-
+`_onSoftNavigation` rolls over the active session part before reporting the
+new route. This matters because `EmbraceSessionPartBatchedSpanProcessor`
+doesn't tag spans with a session-part id — it queues every span as it ends
+and flushes the queue whenever a session-part span ends, so a span's
+attribution is decided by *ending order*, not by when it started.
 `NavigationInstrumentation` ends its route span from the session-part-ended
-listener, and `EmbraceUserSessionManager.endSessionPartInternal` fires that
-listener **before** it calls `.end()` on the outgoing session-part span
-itself. So `_onSoftNavigation` calls `rolloverSessionPartInternal` **before**
-`setCurrentRoute`: the rollover ends the outgoing route span (via the
-listener) while it's still open and still the correct one, so it's already
-queued by the time the outgoing session-part span flushes. Setting the new
-route first would end the outgoing route span directly (via the url change)
-and start the new route span *before* the rollover — the session-part-ended
-listener would then find the new span open and incorrectly close it instead
-of the outgoing one.
+listener, which `EmbraceUserSessionManager.endSessionPartInternal` fires
+**before** ending the outgoing session-part span itself. Rolling over first
+means the outgoing route span is already ended and queued, correctly
+attributed to the outgoing part, by the time that part's span flushes.
 
 ### Route spans never outlive their session part
 
-Because `NavigationInstrumentation` also ends its span on session-part-end,
-a route span always closes by one of two events, whichever comes first:
+A route span always closes on whichever of these happens first:
 
 - a new route is reported (`_onRouteChanged` sees a different url), or
-- the session part it started in ends, for *any* reason (soft nav,
+- the session part it started in ends, for any reason (soft nav,
   backgrounding, inactivity, manual `endUserSession()`).
 
 ### Resuming on session-part-start
 
-A part ending and a new one starting with *no* route change in between (e.g.
-the tab backgrounds, then comes back) would otherwise leave the rest of that
-part with no route span at all: nothing calls `setCurrentRoute` just because
-a part started, so `_onRouteChanged` never fires. `NavigationInstrumentation`
-handles this itself, directly from the session-part-started listener: if
-`pageManager.getCurrentRoute()` is still set, it opens a span for it.
-
-This is skipped specifically when the start reason is
-`web_soft_navigation` — that means this session-part-started event is
-firing from inside `rolloverSessionPartInternal`, called *before*
-`_onSoftNavigation` has reported the real new route (see above). Resuming
-there would open a span for the now-stale outgoing route for the brief
-moment before the real route report replaces it.
+When a new session part starts with no route change (e.g. resuming from the
+background), `NavigationInstrumentation` opens a span for the current route
+directly from its session-part-started listener, since no route-changed
+event fires on its own in that case. This is skipped when the part started
+from a soft navigation (`web_soft_navigation`), since `_onSoftNavigation`
+reports the real new route immediately after the rollover.

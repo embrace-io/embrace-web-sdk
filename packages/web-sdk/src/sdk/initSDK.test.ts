@@ -131,17 +131,27 @@ const getLastSessionExportedSpans = async (
   const resourceSpan = parsed['resourceSpans'][0];
   void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
 
-  expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
-  const sessionScopeSpan = resourceSpan['scopeSpans'][0];
-  expect(sessionScopeSpan['scope']).to.deep.equal({
-    name: 'embrace-web-sdk-session-parts',
-  });
-  expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
-  expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session-part');
-  const otherScopeSpan = resourceSpan['scopeSpans'][1];
-  expect(otherScopeSpan['scope']).to.deep.equal(scope);
+  // NavigationInstrumentation always registers its own scope alongside
+  // whichever scope this call is after, so scopeSpans aren't matched by
+  // position — look each one up by scope name/version instead.
+  const scopeSpans = resourceSpan['scopeSpans'] as Array<{
+    scope: SpanScope;
+    spans: ExportedSpan[];
+  }>;
+  const matchesScope = (actual: SpanScope, expected: SpanScope): boolean =>
+    actual.name === expected.name && actual.version === expected.version;
 
-  return otherScopeSpan['spans'] as ExportedSpan[];
+  const sessionScopeSpan = scopeSpans.find((s) =>
+    matchesScope(s.scope, { name: 'embrace-web-sdk-session-parts' }),
+  );
+  void expect(sessionScopeSpan).not.to.be.undefined;
+  expect(sessionScopeSpan?.spans).to.have.lengthOf(1);
+  expect(sessionScopeSpan?.spans[0]['name']).to.be.equal('emb-session-part');
+
+  const otherScopeSpan = scopeSpans.find((s) => matchesScope(s.scope, scope));
+  void expect(otherScopeSpan).not.to.be.undefined;
+
+  return otherScopeSpan?.spans ?? [];
 };
 
 describe('initSDK', () => {
@@ -703,9 +713,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -768,13 +775,18 @@ describe('initSDK', () => {
       });
 
       void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
-      expect(resourceSpan['scopeSpans']).to.have.lengthOf(1);
-      const scopeSpan = resourceSpan['scopeSpans'][0];
-      expect(scopeSpan['scope']).to.deep.equal({
-        name: 'embrace-web-sdk-session-parts',
-      });
-      expect(scopeSpan['spans']).to.have.lengthOf(1);
-      const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
+      // NavigationInstrumentation always registers its own scope alongside
+      // the session-parts one, so look the latter up by name.
+      expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
+      const scopeSpan = (
+        resourceSpan['scopeSpans'] as Array<{
+          scope: { name: string };
+          spans: ExportedSpan[];
+        }>
+      ).find((s) => s.scope.name === 'embrace-web-sdk-session-parts');
+      void expect(scopeSpan).not.to.be.undefined;
+      expect(scopeSpan?.spans).to.have.lengthOf(1);
+      const sessionSpan = scopeSpan?.spans[0] as ExportedSpan;
       expect(sessionSpan['name']).to.be.equal('emb-session-part');
 
       const attrRecord = otlpAttrsToRecord(sessionSpan['attributes']);
@@ -888,9 +900,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -923,9 +932,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -984,9 +990,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -1035,9 +1038,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -1110,9 +1110,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -1160,7 +1157,6 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
-            'navigation',
           ]),
         },
       });
@@ -1241,7 +1237,6 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
-            'navigation',
           ]),
         },
       });
@@ -1325,7 +1320,6 @@ describe('initSDK', () => {
             'loaf',
             'web-vital',
             'max-scroll-depth',
-            'navigation',
           ]),
         },
       });
@@ -1406,9 +1400,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -1435,9 +1426,6 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // Document load instrumentation generates a bunch of spans in this test environment
             'document-load',
-            // NavigationInstrumentation starts a route span immediately for
-            // the page's initial route, which this test doesn't care about
-            'navigation',
           ]),
         },
       });
@@ -1707,9 +1695,6 @@ describe('initSDK', () => {
         omit: new Set([
           // Document load instrumentation generates a bunch of spans in this test environment
           'document-load',
-          // NavigationInstrumentation starts a route span immediately for
-          // the page's initial route, which these tests don't care about
-          'navigation',
         ]),
       },
       dynamicSDKConfigManager: {
@@ -1920,46 +1905,6 @@ describe('initSDK', () => {
       window.dispatchEvent(new Event('pageshow'));
 
       expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
-    });
-
-    it('advances the SDK zero time on a soft navigation (currententrychange)', () => {
-      const result = initSDK({
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-      });
-      void expect(result).not.to.be.false;
-      void expect(window.navigation).not.to.be.undefined;
-
-      const perf = new OTelPerformanceManager();
-      const zeroTimeBefore = perf.getZeroTime();
-
-      const event = Object.assign(new Event('currententrychange'), {
-        from: { url: `${window.location.href}#different` },
-      }) as NavigationCurrentEntryChangeEvent;
-      window.navigation.dispatchEvent(event);
-
-      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
-    });
-
-    it('does not reset the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
-      const result = initSDK({
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-      });
-      void expect(result).not.to.be.false;
-      void expect(window.navigation).not.to.be.undefined;
-
-      const perf = new OTelPerformanceManager();
-      const zeroTimeBefore = perf.getZeroTime();
-
-      // from.url matches the current URL, so this is a same-URL replacement
-      // (e.g. framework hydration via history.replaceState), not a real navigation.
-      const event = Object.assign(new Event('currententrychange'), {
-        from: { url: window.location.href },
-      }) as NavigationCurrentEntryChangeEvent;
-      window.navigation.dispatchEvent(event);
-
-      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
     });
   });
 });

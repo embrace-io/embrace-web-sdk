@@ -395,7 +395,6 @@ type OptionalInstrumentations =
   | 'server-timing'
   | 'soft-navigation-performance'
   | 'document-load'
-  | 'navigation'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 

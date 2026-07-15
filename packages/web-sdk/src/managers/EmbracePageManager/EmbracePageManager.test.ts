@@ -4,6 +4,7 @@ import sinonChai from 'sinon-chai';
 import { UUID_PATTERN } from '../../../tests/utils/constants.ts';
 import type { Route } from '../../api-page/index.ts';
 import type { NavigationHost, TitleDocument } from '../../common/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import { EmbracePageManager } from './EmbracePageManager.ts';
 
@@ -260,6 +261,26 @@ describe('EmbracePageManager', () => {
         endReason: 'web_soft_navigation',
         startReason: 'web_soft_navigation',
       });
+    });
+
+    it('advances the SDK zero time on soft navigation, like a bfcache restore does', () => {
+      createPageManager();
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      navigation.fire('http://previous.example.com/');
+
+      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+    });
+
+    it('does not advance the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
+      createPageManager();
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      navigation.fire('http://current.example.com/products/123');
+
+      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
     });
 
     it('rolls over the session part before setting the new route', () => {
