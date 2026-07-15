@@ -13,13 +13,7 @@ method converts between them, and how each instrumentation maps onto them.
 Every timing value the SDK handles lives in one of two frames:
 
 - **Time origin.** `performance.timeOrigin` is the epoch timestamp of the
-  original hard navigation. It is fixed for the entire life of the page: it
-  does not change on prerendering activation, on a bfcache restore (the
-  performance clock keeps counting through the freeze), or on a soft
-  navigation. Every raw value the browser hands out — `entry.startTime`,
-  `entry.renderTime`, `entry.loadTime`, `event.timeStamp`,
-  `performance.now()`, web-vitals attribution times — is defined as
-  *milliseconds since time origin*.
+  original hard navigation. It is fixed for the entire life of the page. Every time value from the Performance API is a [DOMHighResTimeStamp](https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/High_precision_timing#domhighrestimestamp) defined as *milliseconds since time origin*.
 - **Zero time.** The SDK's own concept: the moment the user started viewing
   what is currently on screen. It starts equal to time origin and moves
   forward on:
