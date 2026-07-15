@@ -1,7 +1,6 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { GlobalExceptionInstrumentationArgs } from './types.ts';
 
-// Timing frame: time-origin (see src/utils/PerformanceManager/README.md)
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (

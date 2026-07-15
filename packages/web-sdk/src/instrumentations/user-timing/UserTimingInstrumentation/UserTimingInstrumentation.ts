@@ -20,7 +20,6 @@ import type {
   UserTimingInstrumentationArgs,
 } from './types.ts';
 
-// Timing frame: zero-time (see src/utils/PerformanceManager/README.md)
 export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _markObserver: PerformanceObserver | null = null;
   private _measureObserver: PerformanceObserver | null = null;

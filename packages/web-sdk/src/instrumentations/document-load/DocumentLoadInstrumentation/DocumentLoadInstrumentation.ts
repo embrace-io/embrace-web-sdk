@@ -70,7 +70,6 @@ const ATTR_HTTP_RESPONSE_CACHE_REVALIDATED = 'http.response.cache_revalidated'; 
 const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request started but didn't complete
 const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
 
-// Timing frame: time-origin (see src/utils/PerformanceManager/README.md)
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private readonly _onDocumentLoaded: () => void;
   private _performanceCollected = false;

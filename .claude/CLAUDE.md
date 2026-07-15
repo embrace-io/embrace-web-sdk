@@ -160,7 +160,7 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 2. Extend `EmbraceInstrumentationBase`
 3. Export from `packages/web-sdk/src/instrumentations/index.ts`
 4. Register in `sdk/setupDefaultInstrumentations.ts` if auto-enabled
-5. Catalog its timing frame (zero-time / time-origin / none) in a `// Timing frame:` comment above the class and in the catalog in `packages/web-sdk/src/utils/PerformanceManager/README.md`
+5. Catalog its timing frame (zero-time / time-origin / none) in `packages/web-sdk/src/utils/PerformanceManager/README.md`
 
 ### Adding a Processor
 

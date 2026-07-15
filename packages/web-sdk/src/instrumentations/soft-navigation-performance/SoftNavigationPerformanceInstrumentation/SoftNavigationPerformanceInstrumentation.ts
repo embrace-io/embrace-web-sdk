@@ -44,7 +44,6 @@ const PENDING_NAVIGATION_TTL_MS = 60_000;
 
 type PendingNavigation = { timestamp: number; url: string };
 
-// Timing frame: zero-time (see src/utils/PerformanceManager/README.md)
 export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _eventObserver: PerformanceObserver | null = null;

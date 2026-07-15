@@ -32,7 +32,6 @@ type ScriptSummaryValue = {
 
 type ScriptSummaries = Map<string, ScriptSummaryValue>;
 
-// Timing frame: none, durations only (see src/utils/PerformanceManager/README.md)
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isFirstEntry = true;

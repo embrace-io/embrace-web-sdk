@@ -35,7 +35,6 @@ interface RageClickWindow {
   Detects when the user makes multiple rapid clicks ("rage clicks") in a target
   area, and emits one log per rage click.
 */
-// Timing frame: time-origin (see src/utils/PerformanceManager/README.md)
 export class RageClickInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
   private _eventWindow: RageClickWindow | null = null;

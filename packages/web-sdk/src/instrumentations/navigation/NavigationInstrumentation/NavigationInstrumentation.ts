@@ -17,7 +17,6 @@ import type { NavigationInstrumentationArgs } from './types.ts';
 // Could be simplified but done this way to prevent: https://javascript.info/regexp-catastrophic-backtracking
 const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
-// Timing frame: none, no timing data (see src/utils/PerformanceManager/README.md)
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
   private _currentRouteSpan: Span | null = null;
