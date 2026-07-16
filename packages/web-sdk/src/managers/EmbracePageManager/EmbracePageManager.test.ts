@@ -11,35 +11,16 @@ import { EmbracePageManager } from './EmbracePageManager.ts';
 chai.use(sinonChai);
 const { expect } = chai;
 
-class FakeNavigation {
-  private readonly _listeners: Array<
-    (event: NavigationCurrentEntryChangeEvent) => void
-  > = [];
-
-  public addEventListener(
-    _type: 'currententrychange',
-    listener: (event: NavigationCurrentEntryChangeEvent) => void,
-  ): void {
-    this._listeners.push(listener);
-  }
-
-  public removeEventListener(
-    _type: 'currententrychange',
-    listener: (event: NavigationCurrentEntryChangeEvent) => void,
-  ): void {
-    const i = this._listeners.indexOf(listener);
-    if (i !== -1) {
-      this._listeners.splice(i, 1);
-    }
-  }
-
-  public fire(from: string): void {
+class FakeNavigation extends EventTarget {
+  public fire(from: string, timeStamp = performance.now()): void {
     const event = Object.assign(new Event('currententrychange'), {
       from: { url: from },
     }) as NavigationCurrentEntryChangeEvent;
-    for (const listener of [...this._listeners]) {
-      listener(event);
-    }
+    Object.defineProperty(event, 'timeStamp', {
+      value: timeStamp,
+      configurable: true,
+    });
+    this.dispatchEvent(event);
   }
 }
 
@@ -268,7 +249,7 @@ describe('EmbracePageManager', () => {
       const perf = new OTelPerformanceManager();
       const zeroTimeBefore = perf.getZeroTime();
 
-      navigation.fire('http://previous.example.com/');
+      navigation.fire('http://previous.example.com/', performance.now() + 1000);
 
       expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
     });
