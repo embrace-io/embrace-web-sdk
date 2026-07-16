@@ -5,6 +5,7 @@ import type {
 } from '@opentelemetry/instrumentation';
 import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
+import type { SessionPartStartedEvent } from '../../api-sessions/index.ts';
 import { session } from '../../api-sessions/index.ts';
 import type {
   LimitManagerInternal,
@@ -16,6 +17,10 @@ import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
 type SessionPartListeners = {
+  start?: (event: SessionPartStartedEvent) => void;
+  end?: () => void;
+};
+type RemoveSessionPartListeners = {
   start?: () => void;
   end?: () => void;
 };
@@ -30,7 +35,7 @@ export abstract class EmbraceInstrumentationBase<
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
   protected _isEnabled = false;
-  private _removeSessionPartListeners: SessionPartListeners = {};
+  private _removeSessionPartListeners: RemoveSessionPartListeners = {};
   private _sessionPartListeners: SessionPartListeners = {};
 
   protected constructor({
@@ -125,8 +130,8 @@ export abstract class EmbraceInstrumentationBase<
 
       if (this._sessionPartListeners.start) {
         this._removeSessionPartListeners.start =
-          this.userSessionManager.addSessionPartStartedListener(() =>
-            this._sessionPartListeners.start?.(),
+          this.userSessionManager.addSessionPartStartedListener((event) =>
+            this._sessionPartListeners.start?.(event),
           );
       }
 

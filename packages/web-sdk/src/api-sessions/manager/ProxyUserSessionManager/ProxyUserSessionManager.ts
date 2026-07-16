@@ -2,6 +2,7 @@ import type { TracerProvider } from '@opentelemetry/api';
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   EndSessionPartOptions,
+  RolloverSessionPartOptions,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
@@ -9,6 +10,7 @@ import type {
 import type {
   PropertyOptions,
   ReasonSessionEnded,
+  SessionPartStartedEvent,
   StartSessionOptions,
 } from '../index.ts';
 import { NoOpUserSessionManager } from '../NoOpUserSessionManager/index.ts';
@@ -124,6 +126,12 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
     this.getDelegate().endSessionPartInternal(options);
   }
 
+  public rolloverSessionPartInternal(
+    options: RolloverSessionPartOptions,
+  ): void {
+    this.getDelegate().rolloverSessionPartInternal(options);
+  }
+
   public incrSessionPartCountForKey(key: string): void {
     this.getDelegate().incrSessionPartCountForKey(key);
   }
@@ -132,7 +140,9 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
     this.getDelegate().incrNextSessionPartCountForKey(key);
   }
 
-  public addSessionPartStartedListener(listener: () => void): () => void {
+  public addSessionPartStartedListener(
+    listener: (event: SessionPartStartedEvent) => void,
+  ): () => void {
     return this.getDelegate().addSessionPartStartedListener(listener);
   }
 

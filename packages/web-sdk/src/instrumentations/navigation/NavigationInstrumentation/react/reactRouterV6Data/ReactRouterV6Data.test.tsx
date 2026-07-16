@@ -8,6 +8,7 @@ import {
   RouterProvider,
   useNavigate,
 } from 'react-router-domv6plus';
+import { UUID_PATTERN } from '../../../../../../tests/utils/constants.ts';
 import {
   setupTestStorage,
   setupTestTraceExporter,
@@ -32,6 +33,7 @@ import {
 } from '../../../../../managers/index.ts';
 import { PageSpanProcessor } from '../../../../../processors/index.ts';
 import { OTelPerformanceManager } from '../../../../../utils/index.ts';
+import { NavigationInstrumentation } from '../../index.ts';
 import { listenToRouterChanges } from './listenToRouterChanges.ts';
 
 const { expect } = chai;
@@ -129,13 +131,24 @@ describe('ReactRouterV6Data', () => {
         pageManager,
       }),
     ]);
+
+    // In production this is wired up automatically by initSDK, after the
+    // tracer provider is set up; this test builds the pipeline manually, so
+    // it needs to construct it itself in the same order — otherwise the
+    // route span started immediately for the already-current route (see
+    // NavigationInstrumentation's constructor) would be created against the
+    // wrong tracer provider.
+    new NavigationInstrumentation({ pageManager });
   });
 
   it('create route spans', async () => {
     userSessionManager.startSessionPartInternal({ reason: 'init' });
 
-    expect(pageManager.getCurrentPageId()).to.be.null;
-    expect(pageManager.getCurrentRoute()).to.be.null;
+    expect(pageManager.getCurrentPageId()).to.match(UUID_PATTERN);
+    expect(pageManager.getCurrentRoute()).to.deep.equal({
+      path: window.location.pathname,
+      url: window.location.pathname,
+    });
 
     const { tearDown, container } = renderReactApp();
 
@@ -144,6 +157,8 @@ describe('ReactRouterV6Data', () => {
       rootElement: container,
     });
 
+    // Ends the last navigated route's still-open span too, since a route
+    // span must not outlive the session part it started in.
     userSessionManager.endSessionPartInternal({
       reason: 'user_session_ended',
       userSessionEndReason: 'manual',

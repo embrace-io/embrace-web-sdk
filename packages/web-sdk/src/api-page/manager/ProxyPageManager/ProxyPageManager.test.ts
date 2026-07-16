@@ -23,6 +23,7 @@ describe('ProxyPageManager', () => {
       clearCurrentRoute: sinon.stub(),
       setPageLabel: sinon.stub(),
       getPageLabel: sinon.stub(),
+      addRouteChangedListener: sinon.stub().returns(() => {}),
     };
   });
 
@@ -61,5 +62,14 @@ describe('ProxyPageManager', () => {
     proxyPageManager.setDelegate(mockDelegate);
     proxyPageManager.clearCurrentRoute();
     void expect(mockDelegate.clearCurrentRoute).to.have.been.calledOnce;
+  });
+
+  it('should delegate addRouteChangedListener to the delegate', () => {
+    proxyPageManager.setDelegate(mockDelegate);
+    const listener = sinon.spy();
+    proxyPageManager.addRouteChangedListener(listener);
+    void expect(
+      mockDelegate.addRouteChangedListener,
+    ).to.have.been.calledOnceWith(listener);
   });
 });

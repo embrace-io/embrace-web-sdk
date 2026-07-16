@@ -36,7 +36,7 @@ test.describe('CDN E2E Tests', () => {
 
     const sdk = await page.evaluate(() => window.EmbraceWebSdk);
 
-    expect(Object.entries(sdk).length).toBe(9);
+    expect(Object.entries(sdk).length).toBe(8);
   });
 
   test('it should not reinitialize when loaded twice', async ({ page }) => {

@@ -27,7 +27,10 @@ export {
   MaxScrollDepthInstrumentation,
   type MaxScrollDepthInstrumentationArgs,
 } from './max-scroll-depth/index.ts';
-export { getNavigationInstrumentation } from './navigation/index.ts';
+export {
+  NavigationInstrumentation,
+  type NavigationInstrumentationArgs,
+} from './navigation/index.ts';
 export {
   RageClickInstrumentation,
   type RageClickInstrumentationArgs,

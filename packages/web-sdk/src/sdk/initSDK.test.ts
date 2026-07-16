@@ -34,6 +34,7 @@ import {
   setupTestWebVitalListeners,
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
+import { page } from '../api-page/index.ts';
 import {
   NoOpUserSessionManager,
   ProxyUserSessionManager,
@@ -130,17 +131,27 @@ const getLastSessionExportedSpans = async (
   const resourceSpan = parsed['resourceSpans'][0];
   void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
 
-  expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
-  const sessionScopeSpan = resourceSpan['scopeSpans'][0];
-  expect(sessionScopeSpan['scope']).to.deep.equal({
-    name: 'embrace-web-sdk-session-parts',
-  });
-  expect(sessionScopeSpan['spans']).to.have.lengthOf(1);
-  expect(sessionScopeSpan['spans'][0]['name']).to.be.equal('emb-session-part');
-  const otherScopeSpan = resourceSpan['scopeSpans'][1];
-  expect(otherScopeSpan['scope']).to.deep.equal(scope);
+  // NavigationInstrumentation always registers its own scope alongside
+  // whichever scope this call is after, so scopeSpans aren't matched by
+  // position — look each one up by scope name/version instead.
+  const scopeSpans = resourceSpan['scopeSpans'] as Array<{
+    scope: SpanScope;
+    spans: ExportedSpan[];
+  }>;
+  const matchesScope = (actual: SpanScope, expected: SpanScope): boolean =>
+    actual.name === expected.name && actual.version === expected.version;
 
-  return otherScopeSpan['spans'] as ExportedSpan[];
+  const sessionScopeSpan = scopeSpans.find((s) =>
+    matchesScope(s.scope, { name: 'embrace-web-sdk-session-parts' }),
+  );
+  void expect(sessionScopeSpan).not.to.be.undefined;
+  expect(sessionScopeSpan?.spans).to.have.lengthOf(1);
+  expect(sessionScopeSpan?.spans[0]['name']).to.be.equal('emb-session-part');
+
+  const otherScopeSpan = scopeSpans.find((s) => matchesScope(s.scope, scope));
+  void expect(otherScopeSpan).not.to.be.undefined;
+
+  return otherScopeSpan?.spans ?? [];
 };
 
 describe('initSDK', () => {
@@ -711,6 +722,11 @@ describe('initSDK', () => {
       await new Promise((r) => setTimeout(r, 1));
 
       const sessionPartId = session.getUserSessionManager().getSessionPartId();
+      // EmbracePageManager sets the initial route from the current location
+      // on construction (currententrychange never fires for the page's own
+      // initial entry), so PageSpanProcessor stamps every span — including
+      // the session-part span — with page attributes by default.
+      const appSurfaceId = page.getCurrentPageId();
       session.endUserSession();
 
       // Needed to allow the transport to actually send its data off to fetch
@@ -759,13 +775,18 @@ describe('initSDK', () => {
       });
 
       void expect(resourceSpan['scopeSpans']).not.to.be.undefined;
-      expect(resourceSpan['scopeSpans']).to.have.lengthOf(1);
-      const scopeSpan = resourceSpan['scopeSpans'][0];
-      expect(scopeSpan['scope']).to.deep.equal({
-        name: 'embrace-web-sdk-session-parts',
-      });
-      expect(scopeSpan['spans']).to.have.lengthOf(1);
-      const sessionSpan = scopeSpan['spans'][0] as ExportedSpan;
+      // NavigationInstrumentation always registers its own scope alongside
+      // the session-parts one, so look the latter up by name.
+      expect(resourceSpan['scopeSpans']).to.have.lengthOf(2);
+      const scopeSpan = (
+        resourceSpan['scopeSpans'] as Array<{
+          scope: { name: string };
+          spans: ExportedSpan[];
+        }>
+      ).find((s) => s.scope.name === 'embrace-web-sdk-session-parts');
+      void expect(scopeSpan).not.to.be.undefined;
+      expect(scopeSpan?.spans).to.have.lengthOf(1);
+      const sessionSpan = scopeSpan?.spans[0] as ExportedSpan;
       expect(sessionSpan['name']).to.be.equal('emb-session-part');
 
       const attrRecord = otlpAttrsToRecord(sessionSpan['attributes']);
@@ -809,6 +830,8 @@ describe('initSDK', () => {
         'session.id': userSessionId,
         'session.previous_id': '',
         'browser.url.full': browserUrlFull,
+        'app.surface.name': window.location.pathname,
+        'app.surface.id': appSurfaceId,
       });
     });
 
@@ -1039,10 +1062,12 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap; one additional attribute is written
-      // directly to span.attributes by a later processor at onEnd, bypassing
-      // the cap: browser.url.full (BrowserSpanProcessor).
-      expect(exportedAttributes).to.have.lengthOf(201);
+      // 200 is the span attribute cap; three additional attributes are
+      // written directly to span.attributes by later processors at onEnd,
+      // bypassing the cap: browser.url.full (BrowserSpanProcessor) and
+      // app.surface.name/app.surface.id (PageSpanProcessor — stamped on
+      // every span since EmbracePageManager always has a current route).
+      expect(exportedAttributes).to.have.lengthOf(203);
 
       // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
       // attributes option). Non-part spans no longer carry session IDs; the
@@ -1063,7 +1088,11 @@ describe('initSDK', () => {
       const bypassKeys = exportedAttributes
         .slice(200)
         .map((a: { key: string }) => a.key);
-      expect(bypassKeys).to.have.members(['browser.url.full']);
+      expect(bypassKeys).to.have.members([
+        'browser.url.full',
+        'app.surface.name',
+        'app.surface.id',
+      ]);
     });
 
     // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
@@ -1877,46 +1906,6 @@ describe('initSDK', () => {
 
       expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
     });
-
-    it('advances the SDK zero time on a soft navigation (currententrychange)', () => {
-      const result = initSDK({
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-      });
-      void expect(result).not.to.be.false;
-      void expect(window.navigation).not.to.be.undefined;
-
-      const perf = new OTelPerformanceManager();
-      const zeroTimeBefore = perf.getZeroTime();
-
-      const event = Object.assign(new Event('currententrychange'), {
-        from: { url: `${window.location.href}#different` },
-      }) as NavigationCurrentEntryChangeEvent;
-      window.navigation.dispatchEvent(event);
-
-      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
-    });
-
-    it('does not reset the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
-      const result = initSDK({
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-      });
-      void expect(result).not.to.be.false;
-      void expect(window.navigation).not.to.be.undefined;
-
-      const perf = new OTelPerformanceManager();
-      const zeroTimeBefore = perf.getZeroTime();
-
-      // from.url matches the current URL, so this is a same-URL replacement
-      // (e.g. framework hydration via history.replaceState), not a real navigation.
-      const event = Object.assign(new Event('currententrychange'), {
-        from: { url: window.location.href },
-      }) as NavigationCurrentEntryChangeEvent;
-      window.navigation.dispatchEvent(event);
-
-      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
-    });
   });
 });
 
@@ -2107,8 +2096,10 @@ describe('isolated instances', () => {
       // Two emb-session-part spans are expected per instance: the init part
       // is ended explicitly, then a fresh activity part is opened and ended.
       // Each instance owns its own userSessionManager, so the parts are
-      // isolated per instance and not shared.
-      expect(finishedSpans).to.have.lengthOf(4);
+      // isolated per instance and not shared. The activity part resumes on
+      // the same route, so EmbracePageManager re-notifies NavigationInstrumentation
+      // on session-part-start, giving it its own route span too.
+      expect(finishedSpans).to.have.lengthOf(5);
       expect(finishedSpans[0].name).to.equal('some span');
       expect(finishedSpans[1].name).to.equal('emb-session-part');
       expect(
@@ -2117,14 +2108,15 @@ describe('isolated instances', () => {
       expect(
         finishedSpans[1].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[2].name).to.equal('emb-session-part');
+      expect(finishedSpans[2].name).to.equal(window.location.pathname);
+      expect(finishedSpans[3].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[2].attributes['emb.session_part_start_reason'],
+        finishedSpans[3].attributes['emb.session_part_start_reason'],
       ).to.equal('web_activity');
       expect(
-        finishedSpans[2].attributes['emb.session_part_end_reason'],
+        finishedSpans[3].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[3].name).to.equal('my span');
+      expect(finishedSpans[4].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

@@ -462,7 +462,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -482,7 +482,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -515,7 +515,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -536,7 +536,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -559,7 +559,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -583,7 +583,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -622,7 +622,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -647,7 +647,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -669,7 +669,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -694,7 +694,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager: customLimitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -726,7 +726,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -742,7 +742,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -775,7 +775,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       limitManager: customLimitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 

@@ -11,14 +11,10 @@ import {
 } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
-  SessionPartEndReason,
-  SessionPartStartReason,
+  SessionPartStartedEvent,
   UserSessionEndReason,
 } from '../../api-sessions/manager/types.ts';
-import type {
-  NavigationHost,
-  VisibilityStateDocument,
-} from '../../common/index.ts';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   EMB_STATES,
   EMB_TYPES,
@@ -82,6 +78,7 @@ import {
 import type {
   EmbraceUserSessionManagerArgs,
   EndSessionPartOptions,
+  RolloverSessionPartOptions,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
@@ -126,7 +123,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _coldStart = true;
   private _nextSessionPartCounts: Record<string, number> = {};
   private _sdkStartupDuration = 0;
-  private readonly _sessionPartStartedListeners: Array<() => void> = [];
+  private readonly _sessionPartStartedListeners: Array<
+    (event: SessionPartStartedEvent) => void
+  > = [];
   private readonly _sessionPartEndedListeners: Array<() => void> = [];
   private _tracer: Tracer;
 
@@ -137,7 +136,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _limitManager: LimitManagerInternal;
   private readonly _dynamicConfigManager: DynamicConfigManager;
   private readonly _target: EventTarget;
-  private readonly _navigationHost: NavigationHost;
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
@@ -150,7 +148,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     storage,
     limitManager,
     target = window,
-    navigationHost = window as NavigationHost,
     activityThrottleMs = DEFAULT_ACTIVITY_THROTTLE_MS,
     activityEvents = DEFAULT_ACTIVITY_EVENTS,
   }: EmbraceUserSessionManagerArgs) {
@@ -170,7 +167,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     );
     this._tracer = trace.getTracer('embrace-web-sdk-session-parts');
     this._target = target;
-    this._navigationHost = navigationHost;
     this._activityEvents = activityEvents;
     this._onActivityThrottled = throttle(this._onActivity, activityThrottleMs);
   }
@@ -254,13 +250,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     addActivityListeners({
       target: this._target,
       visibilityDoc: this._visibilityDoc,
-      navigationHost: this._navigationHost,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
-      onSoftNavigation: this._onSoftNavigation,
     });
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
@@ -409,7 +403,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._startSessionPartInactivityTimer();
 
-    this._fireListeners(this._sessionPartStartedListeners, 'started');
+    this._fireListeners(this._sessionPartStartedListeners, 'started', {
+      reason,
+    });
   }
 
   public endSessionPartInternal({
@@ -476,7 +472,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // Fire listeners after end attributes are stamped (so subscribers can
       // read them) and before span.end() (so anything they emit still
       // attaches to the part that is conceptually still active).
-      this._fireListeners(this._sessionPartEndedListeners, 'ended');
+      this._fireListeners(this._sessionPartEndedListeners, 'ended', undefined);
       try {
         span.end(partEndTs);
       } catch (error) {
@@ -621,7 +617,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       (this._nextSessionPartCounts[key] || 0) + 1;
   }
 
-  public addSessionPartStartedListener(listener: () => void): () => void {
+  public addSessionPartStartedListener(
+    listener: (event: SessionPartStartedEvent) => void,
+  ): () => void {
     return this._addListener(this._sessionPartStartedListeners, listener);
   }
 
@@ -829,15 +827,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * engagement starts one.
    */
 
-  private _rolloverSessionPart({
+  public rolloverSessionPartInternal({
     endReason,
     startReason,
     timestamp,
-  }: {
-    endReason: SessionPartEndReason;
-    startReason: SessionPartStartReason;
-    timestamp?: number;
-  }): void {
+  }: RolloverSessionPartOptions): void {
     if (!this._sessionPartSpan) {
       return;
     }
@@ -885,32 +879,15 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     removeActivityListeners({
       target: this._target,
       visibilityDoc: this._visibilityDoc,
-      navigationHost: this._navigationHost,
       activityEvents: this._activityEvents,
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
-      onSoftNavigation: this._onSoftNavigation,
     });
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
   }
-
-  private readonly _onSoftNavigation = (
-    event: NavigationCurrentEntryChangeEvent,
-  ): void => {
-    // Skip same-URL replacements (e.g. framework hydration via history.replaceState).
-    // eslint-disable-next-line baseline-js/use-baseline
-    if (event.from.url === this._navigationHost.location.href) {
-      return;
-    }
-
-    this._rolloverSessionPart({
-      endReason: 'web_soft_navigation',
-      startReason: 'web_soft_navigation',
-    });
-  };
 
   private readonly _onActivity = (): void => {
     try {
@@ -1013,10 +990,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
   }
 
-  private _addListener(
-    list: Array<() => void>,
-    listener: () => void,
-  ): () => void {
+  private _addListener<T>(list: T[], listener: T): () => void {
     list.push(listener);
     return () => {
       const i = list.indexOf(listener);
@@ -1026,10 +1000,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     };
   }
 
-  private _fireListeners(list: Array<() => void>, kind: string): void {
+  private _fireListeners<T>(
+    list: Array<(arg: T) => void>,
+    kind: string,
+    arg: T,
+  ): void {
     for (const listener of list) {
       try {
-        listener();
+        listener(arg);
       } catch (error) {
         this._diag.warn(
           `Error while executing session part ${kind} listener`,

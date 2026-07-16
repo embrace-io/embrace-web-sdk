@@ -2369,7 +2369,20 @@ describe('WebVitalsInstrumentation', () => {
     });
 
     it('should not attach page attributes when route is not set', () => {
-      const pageManager = new EmbracePageManager();
+      // EmbracePageManager always has a current route (it sets the initial
+      // route from the current location on construction), so this is a
+      // manual stub instead — the one case that actually exercises "no
+      // route info available" (NoOpPageManager.getCurrentPageId() returns
+      // '', not null).
+      const pageManager = {
+        setCurrentRoute: sinon.stub(),
+        getCurrentRoute: sinon.stub().returns(null),
+        getCurrentPageId: sinon.stub().returns(null),
+        setPageLabel: sinon.stub(),
+        getPageLabel: sinon.stub().returns(null),
+        clearCurrentRoute: sinon.stub(),
+        addRouteChangedListener: sinon.stub().returns(() => {}),
+      };
 
       instrumentation = new WebVitalsInstrumentation({
         diag,
@@ -2490,6 +2503,7 @@ describe('WebVitalsInstrumentation', () => {
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns('Product Page'),
         clearCurrentRoute: sinon.stub(),
+        addRouteChangedListener: sinon.stub().returns(() => {}),
       };
 
       instrumentation = new WebVitalsInstrumentation({

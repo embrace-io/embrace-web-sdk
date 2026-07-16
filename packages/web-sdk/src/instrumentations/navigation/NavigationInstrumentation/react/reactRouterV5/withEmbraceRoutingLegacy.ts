@@ -1,7 +1,6 @@
 import hoistNonReactStatics from 'hoist-non-react-statics';
 import * as React from 'react';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import { page } from '../../../../../api-page/index.ts';
 import type {
   RouteComponentProps,
   SwitchedRouteComponentProps,
@@ -10,11 +9,6 @@ import type {
 export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
   WrappedComponent: React.ComponentType<P>,
 ) => {
-  const navigationInstrumentation = getNavigationInstrumentation();
-  navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.DeclarativeLegacy,
-  );
-
   const RouteWithEmbraceRoutingLegacy: React.FC<P> = (props: P) => {
     // Make sure this is Route component
     if (props.path) {
@@ -26,7 +20,7 @@ export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
       // https://github.com/remix-run/react-router/blob/v5.3.4/packages/react-router/modules/Switch.js#L40
       // It shouldn't change as this version is legacy, and it's not being actively worked on
       if (routeProps.computedMatch) {
-        navigationInstrumentation.setCurrentRoute({
+        page.setCurrentRoute({
           path: routeProps.computedMatch.path,
           url: routeProps.computedMatch.url,
         });

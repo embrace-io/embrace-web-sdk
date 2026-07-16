@@ -7,6 +7,5 @@ export type { ExtendedSpan } from './api-traces/index.ts';
 export { trace } from './api-traces/index.ts';
 export { user } from './api-users/index.ts';
 export { attributes } from './common/index.ts';
-export { getNavigationInstrumentation } from './instrumentations/index.ts';
 export type { DynamicConfigManager, DynamicSDKConfig } from './sdk/index.ts';
 export { initSDK } from './sdk/index.ts';

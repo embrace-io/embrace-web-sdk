@@ -1,11 +1,12 @@
 import type { ExtendedSpan } from '../../../index.ts';
 import type {
   EndSessionPartOptions,
+  RolloverSessionPartOptions,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
-import type { PropertyOptions } from '../index.ts';
+import type { PropertyOptions, SessionPartStartedEvent } from '../index.ts';
 
 export class NoOpUserSessionManager implements UserSessionManagerInternal {
   public addBreadcrumb(_name: string): void {
@@ -90,11 +91,17 @@ export class NoOpUserSessionManager implements UserSessionManagerInternal {
 
   public endSessionPartInternal(_options: EndSessionPartOptions): void {}
 
+  public rolloverSessionPartInternal(
+    _options: RolloverSessionPartOptions,
+  ): void {}
+
   public incrSessionPartCountForKey(_key: string): void {}
 
   public incrNextSessionPartCountForKey(_key: string): void {}
 
-  public addSessionPartStartedListener(_listener: () => void): () => void {
+  public addSessionPartStartedListener(
+    _listener: (event: SessionPartStartedEvent) => void,
+  ): () => void {
     return () => {};
   }
 

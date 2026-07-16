@@ -1,4 +1,4 @@
 export {
-  getNavigationInstrumentation,
   NavigationInstrumentation,
+  type NavigationInstrumentationArgs,
 } from './NavigationInstrumentation/index.ts';

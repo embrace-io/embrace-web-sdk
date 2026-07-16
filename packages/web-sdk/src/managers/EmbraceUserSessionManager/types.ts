@@ -1,14 +1,12 @@
 import type { DiagLogger, TracerProvider } from '@opentelemetry/api';
 import type {
   SessionPartEndReason,
+  SessionPartStartedEvent,
   SessionPartStartReason,
   UserSessionEndReason,
   UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
-import type {
-  NavigationHost,
-  VisibilityStateDocument,
-} from '../../common/index.ts';
+import type { VisibilityStateDocument } from '../../common/index.ts';
 import type { DynamicConfigManager } from '../../sdk/index.ts';
 import type {
   NamespacedStorage,
@@ -107,6 +105,13 @@ export interface EndSessionPartOptions {
   readonly timestamp?: number;
 }
 
+export interface RolloverSessionPartOptions {
+  readonly endReason: SessionPartEndReason;
+  readonly startReason: SessionPartStartReason;
+  /** Epoch millis anchoring both part spans' boundary; defaults to now. */
+  readonly timestamp?: number;
+}
+
 /**
  * SDK-internal handle on the user-session manager. Extends the public
  * `UserSessionManager` with the part-side surface (span lifecycle, listeners,
@@ -127,6 +132,12 @@ export interface UserSessionManagerInternal extends UserSessionManager {
 
   startSessionPartInternal: (options: StartSessionPartOptions) => void;
   endSessionPartInternal: (options: EndSessionPartOptions) => void;
+  /**
+   * Ends the active part and immediately starts a new one within the same
+   * user session, sharing one boundary timestamp so the spans tile without
+   * a gap. A no-op when no part is active.
+   */
+  rolloverSessionPartInternal: (options: RolloverSessionPartOptions) => void;
 
   incrSessionPartCountForKey: (key: string) => void;
   /** Same as `incrSessionPartCountForKey` but for the next part. */
@@ -136,7 +147,9 @@ export interface UserSessionManagerInternal extends UserSessionManager {
    * Listeners must not call back into part lifecycle methods
    * (`endSessionPartInternal`, `startSessionPartInternal`) synchronously.
    */
-  addSessionPartStartedListener: (listener: () => void) => () => void;
+  addSessionPartStartedListener: (
+    listener: (event: SessionPartStartedEvent) => void,
+  ) => () => void;
   addSessionPartEndedListener: (listener: () => void) => () => void;
 
   /**
@@ -171,12 +184,6 @@ export interface EmbraceUserSessionManagerArgs {
    * listeners that drive session-part lifecycle. Defaults to `window`.
    */
   target?: EventTarget;
-  /**
-   * Window-shaped object used to detect and listen for soft navigations via
-   * the Navigation API. Defaults to `window`. Optional `navigation` property
-   * handles old browsers that lack the API.
-   */
-  navigationHost?: NavigationHost;
   /**
    * Upper bound on how often the activity handler runs; prevents
    * mousemove from re-arming the inactivity timer for every sub-second event.

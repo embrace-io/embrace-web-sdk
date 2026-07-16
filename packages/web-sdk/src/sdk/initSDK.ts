@@ -127,25 +127,8 @@ export const initSDK = (
     const perf = new OTelPerformanceManager();
     const initSDKStart = perf.getNowMillis();
 
-    // Both events mark the start of a new "view" the user is looking at (a bfcache
-    // restore, or a client-side soft navigation), so both reset the SDK's zero time.
-    const resetZeroTime = (event: Event) =>
-      updateZeroTimeMillis(window.performance.timeOrigin + event.timeStamp);
-
-    window.addEventListener('pageshow', resetZeroTime);
-    // eslint-disable-next-line baseline-js/use-baseline
-    window.navigation?.addEventListener(
-      'currententrychange',
-      (event: NavigationCurrentEntryChangeEvent) => {
-        // Skip same-URL replacements (e.g. framework hydration via history.replaceState),
-        // matching EmbraceUserSessionManager's own soft-navigation detection.
-        // eslint-disable-next-line baseline-js/use-baseline
-        if (event.from.url === window.location.href) {
-          return;
-        }
-
-        resetZeroTime(event);
-      },
+    window.addEventListener('pageshow', (event) =>
+      updateZeroTimeMillis(perf.epochMillisFromOrigin(event.timeStamp)),
     );
 
     const validatedAppID = validateAppID(appID);
@@ -276,6 +259,8 @@ export const initSDK = (
     const pageManager = setupPage({
       useDocumentTitleAsPageLabel,
       registerGlobally,
+      userSessionManager,
+      perf,
     });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
@@ -532,9 +517,13 @@ const setupLogs = ({
 const setupPage = ({
   useDocumentTitleAsPageLabel,
   registerGlobally,
+  userSessionManager,
+  perf,
 }: SetupPageArgs) => {
   const embracePageManager = new EmbracePageManager({
     useDocumentTitleAsPageLabel,
+    userSessionManager,
+    perf,
   });
 
   if (registerGlobally) {

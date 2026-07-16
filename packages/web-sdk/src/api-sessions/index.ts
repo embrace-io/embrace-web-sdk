@@ -2,6 +2,7 @@ export type {
   PropertyOptions,
   ReasonSessionEnded,
   SessionPartEndReason,
+  SessionPartStartedEvent,
   SessionPartStartReason,
   StartSessionOptions,
   UserSessionEndReason,

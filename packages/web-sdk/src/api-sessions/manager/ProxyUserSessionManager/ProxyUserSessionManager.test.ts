@@ -21,6 +21,7 @@ describe('ProxyUserSessionManager', () => {
       // Part lifecycle
       startSessionPartInternal: sinon.stub(),
       endSessionPartInternal: sinon.stub(),
+      rolloverSessionPartInternal: sinon.stub(),
       // Properties / breadcrumbs
       addBreadcrumb: sinon.stub(),
       addProperty: sinon.stub(),
@@ -87,6 +88,17 @@ describe('ProxyUserSessionManager', () => {
     it('should delegate endUserSession to the userSessionManager', () => {
       proxyUserSessionManager.endUserSession();
       expect(mockDelegate.endUserSession).to.have.been.calledOnce;
+    });
+
+    it('should delegate rolloverSessionPartInternal to the userSessionManager', () => {
+      const options = {
+        endReason: 'web_soft_navigation' as const,
+        startReason: 'web_soft_navigation' as const,
+      };
+      proxyUserSessionManager.rolloverSessionPartInternal(options);
+      expect(
+        mockDelegate.rolloverSessionPartInternal,
+      ).to.have.been.calledOnceWith(options);
     });
 
     it('should delegate addBreadcrumb to the userSessionManager', () => {

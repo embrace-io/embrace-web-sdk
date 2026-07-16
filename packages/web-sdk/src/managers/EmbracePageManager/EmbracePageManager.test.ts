@@ -1,12 +1,47 @@
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import { UUID_PATTERN } from '../../../tests/utils/constants.ts';
 import type { Route } from '../../api-page/index.ts';
-import type { TitleDocument } from '../../common/index.ts';
+import type { NavigationHost, TitleDocument } from '../../common/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
+import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import { EmbracePageManager } from './EmbracePageManager.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
+
+class FakeNavigation {
+  private readonly _listeners: Array<
+    (event: NavigationCurrentEntryChangeEvent) => void
+  > = [];
+
+  public addEventListener(
+    _type: 'currententrychange',
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
+  ): void {
+    this._listeners.push(listener);
+  }
+
+  public removeEventListener(
+    _type: 'currententrychange',
+    listener: (event: NavigationCurrentEntryChangeEvent) => void,
+  ): void {
+    const i = this._listeners.indexOf(listener);
+    if (i !== -1) {
+      this._listeners.splice(i, 1);
+    }
+  }
+
+  public fire(from: string): void {
+    const event = Object.assign(new Event('currententrychange'), {
+      from: { url: from },
+    }) as NavigationCurrentEntryChangeEvent;
+    for (const listener of [...this._listeners]) {
+      listener(event);
+    }
+  }
+}
 
 describe('EmbracePageManager', () => {
   let pageManager: EmbracePageManager;
@@ -17,12 +52,15 @@ describe('EmbracePageManager', () => {
     pageManager = new EmbracePageManager({ titleDocument: mockDocument });
   });
 
-  it('should initialize with null values', () => {
+  it('should initialize with the current location as the initial route', () => {
     const route = pageManager.getCurrentRoute();
     const pageId = pageManager.getCurrentPageId();
 
-    void expect(pageId).to.be.null;
-    void expect(route).to.be.null;
+    expect(route).to.deep.equal({
+      path: window.location.pathname,
+      url: window.location.pathname,
+    });
+    expect(pageId).to.match(UUID_PATTERN);
   });
 
   it('should set and get current route', () => {
@@ -116,5 +154,183 @@ describe('EmbracePageManager', () => {
     pageManager.setPageLabel('custom-label');
     pageManager.clearCurrentRoute();
     expect(pageManager.getPageLabel()).to.equal('My Page Title');
+  });
+
+  it('should notify route changed listeners on every setCurrentRoute call', () => {
+    const listener = sinon.spy();
+    pageManager.addRouteChangedListener(listener);
+
+    const route: Route = { path: '/products/:id', url: '/products/123' };
+    pageManager.setCurrentRoute(route);
+
+    void expect(listener.calledOnceWith(route)).to.be.true;
+
+    pageManager.setCurrentRoute(route);
+    void expect(listener.calledTwice).to.be.true;
+  });
+
+  it('should stop notifying a route changed listener after unsubscribing', () => {
+    const listener = sinon.spy();
+    const unsubscribe = pageManager.addRouteChangedListener(listener);
+
+    unsubscribe();
+    pageManager.setCurrentRoute({
+      path: '/products/:id',
+      url: '/products/123',
+    });
+
+    void expect(listener.notCalled).to.be.true;
+  });
+
+  it('should isolate a throwing route changed listener from other listeners', () => {
+    const throwingListener = sinon.stub().throws(new Error('boom'));
+    const otherListener = sinon.spy();
+    pageManager.addRouteChangedListener(throwingListener);
+    pageManager.addRouteChangedListener(otherListener);
+
+    expect(() =>
+      pageManager.setCurrentRoute({
+        path: '/products/:id',
+        url: '/products/123',
+      }),
+    ).to.not.throw();
+
+    void expect(otherListener.calledOnce).to.be.true;
+  });
+
+  describe('soft navigation (currententrychange)', () => {
+    let navigation: FakeNavigation;
+    let userSessionManager: UserSessionManagerInternal;
+    let rolloverStub: sinon.SinonStub;
+    let navigationHost: NavigationHost;
+
+    const createPageManager = (
+      overrides: { userSessionManager?: UserSessionManagerInternal } = {},
+    ) =>
+      new EmbracePageManager({
+        navigationHost,
+        userSessionManager: overrides.userSessionManager ?? userSessionManager,
+      });
+
+    beforeEach(() => {
+      navigation = new FakeNavigation();
+      rolloverStub = sinon.stub();
+      userSessionManager = {
+        rolloverSessionPartInternal: rolloverStub,
+      } as unknown as UserSessionManagerInternal;
+      navigationHost = {
+        navigation: navigation as unknown as Navigation,
+        location: {
+          href: 'http://current.example.com/products/123',
+          pathname: '/products/123',
+        },
+      };
+    });
+
+    it('sets the initial route from the current location on construction', () => {
+      const manager = new EmbracePageManager({
+        navigationHost: {
+          location: { href: 'http://current.example.com/', pathname: '/' },
+        },
+      });
+
+      expect(manager.getCurrentRoute()).to.deep.equal({
+        path: '/',
+        url: '/',
+      });
+    });
+
+    it('sets the route from the raw pathname on soft navigation', () => {
+      const manager = createPageManager();
+
+      navigation.fire('http://previous.example.com/');
+
+      expect(manager.getCurrentRoute()).to.deep.equal({
+        path: '/products/123',
+        url: '/products/123',
+      });
+    });
+
+    it('rolls over the session part with web_soft_navigation reasons', () => {
+      createPageManager();
+
+      navigation.fire('http://previous.example.com/');
+
+      void expect(rolloverStub.calledOnce).to.be.true;
+      expect(rolloverStub.firstCall.args[0]).to.deep.equal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+    });
+
+    it('advances the SDK zero time on soft navigation, like a bfcache restore does', () => {
+      createPageManager();
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      navigation.fire('http://previous.example.com/');
+
+      expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
+    });
+
+    it('does not advance the SDK zero time on a same-URL replacement (e.g. hydration)', () => {
+      createPageManager();
+      const perf = new OTelPerformanceManager();
+      const zeroTimeBefore = perf.getZeroTime();
+
+      navigation.fire('http://current.example.com/products/123');
+
+      expect(perf.getZeroTime()).to.equal(zeroTimeBefore);
+    });
+
+    it('rolls over the session part before setting the new route', () => {
+      const calls: string[] = [];
+      const manager = createPageManager();
+      manager.addRouteChangedListener(() => calls.push('routeChanged'));
+      rolloverStub.callsFake(() => calls.push('rollover'));
+
+      navigation.fire('http://previous.example.com/');
+
+      // NavigationInstrumentation ends its route span from the
+      // session-part-ended listener, which fires before the outgoing
+      // session-part span itself ends. Rolling over first ends the outgoing
+      // route span while it's still the correct one — setting the new route
+      // first would end it too late for that listener to still be pointing
+      // at it.
+      expect(calls).to.deep.equal(['rollover', 'routeChanged']);
+    });
+
+    it('is a no-op when navigating to the same URL', () => {
+      const manager = createPageManager();
+      const routeAtConstruction = manager.getCurrentRoute();
+
+      navigation.fire('http://current.example.com/products/123');
+
+      // Unaffected by the same-url replacement — no re-set, no rollover.
+      expect(manager.getCurrentRoute()).to.equal(routeAtConstruction);
+      void expect(rolloverStub.notCalled).to.be.true;
+    });
+
+    it('still updates the route when no userSessionManager is provided', () => {
+      const manager = new EmbracePageManager({ navigationHost });
+
+      expect(() => {
+        navigation.fire('http://previous.example.com/');
+      }).to.not.throw();
+
+      expect(manager.getCurrentRoute()).to.deep.equal({
+        path: '/products/123',
+        url: '/products/123',
+      });
+    });
+
+    it('does not throw when constructed without a Navigation API (old browser)', () => {
+      expect(() => {
+        new EmbracePageManager({
+          navigationHost: { location: navigationHost.location },
+          userSessionManager,
+        });
+      }).to.not.throw();
+    });
   });
 });

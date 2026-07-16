@@ -37,4 +37,8 @@ export class ProxyPageManager implements PageManager {
   public clearCurrentRoute(): void {
     this.getDelegate().clearCurrentRoute();
   }
+
+  public addRouteChangedListener(listener: (route: Route) => void): () => void {
+    return this.getDelegate().addRouteChangedListener(listener);
+  }
 }

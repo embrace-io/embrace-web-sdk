@@ -2,8 +2,7 @@ import hoistNonReactStatics from 'hoist-non-react-statics';
 import type React from 'react';
 import { createElement } from 'react';
 import type { Route } from '../../../../../api-page/index.ts';
-import { EMB_NAVIGATION_INSTRUMENTATIONS } from '../../../../../constants/index.ts';
-import { getNavigationInstrumentation } from '../../index.ts';
+import { page } from '../../../../../api-page/index.ts';
 import type { RoutesFunctionalComponentReturn } from './types.ts';
 
 // Routes can be nested, we need to traverse the routeContext to find the last route
@@ -37,11 +36,6 @@ const getLastRoute = (
 export const withEmbraceRouting = <P extends object>(
   WrappedComponent: React.FunctionComponent<P>,
 ) => {
-  const navigationInstrumentation = getNavigationInstrumentation();
-  navigationInstrumentation.setInstrumentationType(
-    EMB_NAVIGATION_INSTRUMENTATIONS.Declarative,
-  );
-
   const RoutesWithEmbraceRouting: React.FC<P> = (props: P) => {
     /**
      * React-router v6+ implementation is very different from v5
@@ -61,7 +55,7 @@ export const withEmbraceRouting = <P extends object>(
     if (matchedComponent.props.match?.route) {
       const lastRoute = getLastRoute(matchedComponent, null);
       if (lastRoute) {
-        navigationInstrumentation.setCurrentRoute(lastRoute);
+        page.setCurrentRoute(lastRoute);
       }
     }
 

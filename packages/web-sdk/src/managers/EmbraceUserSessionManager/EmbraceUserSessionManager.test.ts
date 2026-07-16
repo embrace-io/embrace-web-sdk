@@ -287,6 +287,62 @@ describe('EmbraceUserSessionManager', () => {
     expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
   });
 
+  describe('rolloverSessionPartInternal', () => {
+    it('ends the active part and starts a new one with the given reasons', () => {
+      const manager = createManager();
+      const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+      const startSpy = sinon.spy(manager, 'startSessionPartInternal');
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partIdBefore = manager.getSessionPartId();
+
+      manager.rolloverSessionPartInternal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+
+      expect(lastEndCall(endSpy)).to.deep.include({
+        reason: 'web_soft_navigation',
+      });
+      expect(startSpy.lastCall.args[0]).to.deep.include({
+        reason: 'web_soft_navigation',
+      });
+      void expect(manager.getSessionPartId()).to.not.be.null;
+      void expect(manager.getSessionPartId()).to.not.equal(partIdBefore);
+    });
+
+    it('keeps the same user session across the rollover', () => {
+      const manager = createManager();
+      manager.startSessionPartInternal({ reason: 'init' });
+      const attrsBefore = manager.getUserSessionAttributes();
+
+      manager.rolloverSessionPartInternal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+
+      const attrsAfter = manager.getUserSessionAttributes();
+      expect(attrsAfter?.['emb.user_session_id']).to.equal(
+        attrsBefore?.['emb.user_session_id'],
+      );
+      expect(attrsAfter?.['emb.user_session_part_index']).to.equal(
+        (attrsBefore?.['emb.user_session_part_index'] ?? 0) + 1,
+      );
+    });
+
+    it('is a no-op when no part is active', () => {
+      const manager = createManager();
+
+      expect(() =>
+        manager.rolloverSessionPartInternal({
+          endReason: 'web_soft_navigation',
+          startReason: 'web_soft_navigation',
+        }),
+      ).to.not.throw();
+      void expect(manager.getSessionPartId()).to.be.null;
+    });
+  });
+
   describe('storage unavailable', () => {
     it('creates an in-memory user session and reports the write failure once', () => {
       const manager = createFailingStorageManager();

@@ -8,19 +8,7 @@ instrumentation to make it easier to instrument some common React libraries and 
 
 ## React Router
 
-To instrument React Router, add the React Router navigation instrumentation when you init the Embrace Web SDK.
-
-```typescript
-import { initSDK } from '@embrace-io/web-sdk';
-import { createReactRouterNavigationInstrumentation } from '@embrace-io/web-sdk/react-instrumentation';
-
-initSDK({
-  // ...Other configs
-  instrumentations: [
-    createReactRouterNavigationInstrumentation(),
-  ],
-})
-```
+Route tracking is enabled by default once `initSDK` runs — pick the helper below that matches your React Router setup and call it from your routing code. No separate instrumentation needs to be registered.
 
 ### React Router V4/V5
 
@@ -117,9 +105,22 @@ const App = () => {
 
 ### Configuration
 
-You can configure the React Router instrumentation by passing options to the `createReactRouterNavigationInstrumentation` function.
+You can configure route tracking through `initSDK`'s `defaultInstrumentationConfig.navigation` option.
 For now, the only option available is `shouldCleanupPathOptionsFromRouteName`.
-If set to `true`, the instrumentation will remove path options from the route name, e.g. it will convert `/order/:orderState(pending|shipped|delivered)` to `/order/:orderState`.
+If set to `true` (the default), it will remove path options from the route name, e.g. it will convert `/order/:orderState(pending|shipped|delivered)` to `/order/:orderState`.
+
+```typescript
+import { initSDK } from '@embrace-io/web-sdk';
+
+initSDK({
+  // ...Other configs
+  defaultInstrumentationConfig: {
+    navigation: {
+      shouldCleanupPathOptionsFromRouteName: false,
+    },
+  },
+})
+```
 
 ## Error Boundary
 
