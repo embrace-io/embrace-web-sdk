@@ -380,6 +380,7 @@ export interface SetupPageArgs {
   useDocumentTitleAsPageLabel?: boolean;
   registerGlobally?: boolean;
   userSessionManager: UserSessionManagerInternal;
+  perf: PerformanceManager;
 }
 
 type OptionalInstrumentations =

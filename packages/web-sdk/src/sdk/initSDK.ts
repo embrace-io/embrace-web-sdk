@@ -128,7 +128,7 @@ export const initSDK = (
     const initSDKStart = perf.getNowMillis();
 
     window.addEventListener('pageshow', (event) =>
-      updateZeroTimeMillis(window.performance.timeOrigin + event.timeStamp),
+      updateZeroTimeMillis(perf.epochMillisFromOrigin(event.timeStamp)),
     );
 
     const validatedAppID = validateAppID(appID);
@@ -260,6 +260,7 @@ export const initSDK = (
       useDocumentTitleAsPageLabel,
       registerGlobally,
       userSessionManager,
+      perf,
     });
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
@@ -517,10 +518,12 @@ const setupPage = ({
   useDocumentTitleAsPageLabel,
   registerGlobally,
   userSessionManager,
+  perf,
 }: SetupPageArgs) => {
   const embracePageManager = new EmbracePageManager({
     useDocumentTitleAsPageLabel,
     userSessionManager,
+    perf,
   });
 
   if (registerGlobally) {

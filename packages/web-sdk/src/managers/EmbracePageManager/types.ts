@@ -1,5 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { NavigationHost, TitleDocument } from '../../common/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 
 export interface EmbracePageManagerArgs {
@@ -19,4 +20,6 @@ export interface EmbracePageManagerArgs {
    * skips the rollover.
    */
   userSessionManager?: UserSessionManagerInternal;
+  /** Used to convert a soft navigation's event.timeStamp to an epoch time when resetting the SDK's zero time. */
+  perf?: PerformanceManager;
 }
