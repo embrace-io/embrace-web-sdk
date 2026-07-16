@@ -1,5 +1,6 @@
 import { DiagLogLevel, diag } from '@opentelemetry/api';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import {
   fakeFetchGetKeepalive,
   fakeFetchInstall,
@@ -386,6 +387,45 @@ describe('FetchTransport', () => {
 
       expect(result.status).to.equal('retryable');
     });
+
+    it('should return failure when fetch throws a non-retryable error', async () => {
+      reinstallFetch().rejects(new Error('Some other network error'));
+
+      const transport = makeTransport();
+      const result = await transport.send(smallPayload, 1000);
+
+      expect(result.status).to.equal('failure');
+    });
+  });
+
+  describe('AbortSignal.timeout fallback', () => {
+    let originalTimeout: typeof AbortSignal.timeout | undefined;
+
+    beforeEach(() => {
+      // Simulates a browser without AbortSignal.timeout, forcing the
+      // AbortController + setTimeout fallback path.
+      originalTimeout = AbortSignal.timeout;
+      // @ts-expect-error deleting a normally-present static method
+      delete AbortSignal.timeout;
+    });
+
+    afterEach(() => {
+      AbortSignal.timeout = originalTimeout as typeof AbortSignal.timeout;
+    });
+
+    it('should clear the fallback timer once the request completes', async () => {
+      fakeFetchRespondWith('ok', { status: 200 });
+      const clearTimeoutSpy = sinon.spy(globalThis, 'clearTimeout');
+
+      try {
+        const transport = makeTransport();
+        await transport.send(smallPayload, 1000);
+
+        void expect(clearTimeoutSpy.calledOnce).to.be.true;
+      } finally {
+        clearTimeoutSpy.restore();
+      }
+    });
   });
 
   describe('HTTP status classification', () => {
@@ -463,6 +503,17 @@ describe('FetchTransport', () => {
       const match = debugs.find((msg) =>
         msg.includes('Fetch transport failed'),
       );
+      expect(match).to.be.a('string');
+    });
+
+    it('should warn via diag when fetch throws a non-retryable error', async () => {
+      reinstallFetch().rejects(new Error('Some other network error'));
+
+      const transport = makeTransport();
+      await transport.send(smallPayload, 1000);
+
+      const warns = diagLogger.getWarnLogs();
+      const match = warns.find((msg) => msg.includes('Fetch transport failed'));
       expect(match).to.be.a('string');
     });
 
