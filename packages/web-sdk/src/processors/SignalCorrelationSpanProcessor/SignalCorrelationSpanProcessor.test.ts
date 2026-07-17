@@ -1,6 +1,9 @@
+import { DiagLogLevel, diag } from '@opentelemetry/api';
 import { millisToHrTime } from '@opentelemetry/core';
 import type { Span } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
+import { InMemoryDiagLogger } from '../../../tests/utils/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
 import { KEY_EMB_SOFT_NAVIGATION_SOURCE } from '../../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
 import { SignalBuffer } from '../utils/SignalBuffer.ts';
@@ -24,6 +27,17 @@ const fakeSpan = (opts: {
   }) as unknown as Span;
 
 describe('SignalCorrelationSpanProcessor', () => {
+  let diagLogger: InMemoryDiagLogger;
+
+  beforeEach(() => {
+    diagLogger = new InMemoryDiagLogger();
+    diag.setLogger(diagLogger, DiagLogLevel.ALL);
+  });
+
+  afterEach(() => {
+    diag.disable();
+  });
+
   it('records a normal span at onStart', () => {
     const buffer = new SignalBuffer();
     const processor = new SignalCorrelationSpanProcessor({ buffer });
@@ -86,5 +100,37 @@ describe('SignalCorrelationSpanProcessor', () => {
     processor.onStart(fakeSpan({ spanId: 'span-a', startEpochMillis: 1000 }));
 
     expect(buffer.collectWindow(1000, 1000).spanTypes).to.deep.equal(['']);
+  });
+
+  it('logs an error when recording the span throws', () => {
+    const buffer = new SignalBuffer();
+    sinon.stub(buffer, 'record').throws(new Error('boom'));
+    const processor = new SignalCorrelationSpanProcessor({ buffer });
+
+    processor.onStart(fakeSpan({ spanId: 'span-a', startEpochMillis: 1000 }));
+
+    expect(diagLogger.getErrorLogs()).to.include(
+      'failed to record span for soft-navigation correlation',
+    );
+  });
+
+  it('should make sure forceFlush no-op does not fail', () => {
+    const processor = new SignalCorrelationSpanProcessor({
+      buffer: new SignalBuffer(),
+    });
+
+    expect(async () => {
+      await processor.forceFlush();
+    }).to.not.throw();
+  });
+
+  it('should make sure shutdown no-op does not fail', () => {
+    const processor = new SignalCorrelationSpanProcessor({
+      buffer: new SignalBuffer(),
+    });
+
+    expect(async () => {
+      await processor.shutdown();
+    }).to.not.throw();
   });
 });
