@@ -249,19 +249,19 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromZeroTime(225),
+      startTime: perf.epochMillisFromOrigin(225),
       type: 'perf.network_request',
     });
     signalBuffer.record({
       kind: 'log',
       id: 'child-log',
-      startTime: perf.epochMillisFromZeroTime(240),
+      startTime: perf.epochMillisFromOrigin(240),
       type: 'sys.log',
     });
     signalBuffer.record({
       kind: 'span',
       id: 'outside-window',
-      startTime: perf.epochMillisFromZeroTime(300),
+      startTime: perf.epochMillisFromOrigin(300),
     });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
@@ -294,7 +294,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromZeroTime(225),
+      startTime: perf.epochMillisFromOrigin(225),
     });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
@@ -631,7 +631,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       signalBuffer,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
-        location: { href: 'https://example.com' },
+        location: { href: 'https://example.com', pathname: '/' },
       },
     });
 
@@ -639,19 +639,19 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromZeroTime(120),
+      startTime: perf.epochMillisFromOrigin(120),
       type: 'perf.network_request',
     });
     signalBuffer.record({
       kind: 'log',
       id: 'child-log',
-      startTime: perf.epochMillisFromZeroTime(140),
+      startTime: perf.epochMillisFromOrigin(140),
       type: 'sys.log',
     });
     signalBuffer.record({
       kind: 'span',
       id: 'outside-window',
-      startTime: perf.epochMillisFromZeroTime(200),
+      startTime: perf.epochMillisFromOrigin(200),
     });
 
     clock.tick(150);
