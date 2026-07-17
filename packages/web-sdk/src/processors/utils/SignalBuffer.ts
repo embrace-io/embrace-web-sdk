@@ -1,45 +1,51 @@
-export interface SoftNavigationSignalEntry {
+export interface SignalEntry {
   readonly kind: 'span' | 'log';
   readonly id: string;
   readonly startTime: number;
+  // The signal's emb.type, e.g. EMB_TYPES.Network - tells the backend which
+  // table to look the id up in. Undefined if the signal has no type at the
+  // point it's recorded (e.g. some spans settle their type only later).
+  readonly type?: string;
 }
 
-export interface SoftNavigationSignalBufferArgs {
+export interface SignalBufferArgs {
   maxAgeMillis?: number;
   maxEntries?: number;
 }
 
-export interface SoftNavigationWindowResult {
+export interface SignalWindowResult {
   spanIds: string[];
+  spanTypes: string[];
   logIds: string[];
+  logTypes: string[];
 }
 
-// Best-effort correlation ceiling: a soft-navigation span whose window is
-// still open 60s after the newest recorded signal will under-report early
-// signals, since those signals have already been evicted by then.
+// Best-effort correlation ceiling: a window still open 60s after the newest
+// recorded signal will under-report early signals, since those signals have
+// already been evicted by then.
 const DEFAULT_MAX_AGE_MILLIS = 60_000;
 const DEFAULT_MAX_ENTRIES = 4096;
 
 /**
  * A bounded, in-memory rolling buffer of span and log signals. Used to back-fill
- * a soft-navigation span with the ids of signals that started within its window,
- * since that span is built after its window has already closed.
+ * a span with the ids of signals that started within its window, since that
+ * span is built after its window has already closed.
  */
-export class SoftNavigationSignalBuffer {
+export class SignalBuffer {
   private readonly _maxAgeMillis: number;
   private readonly _maxEntries: number;
-  private readonly _entries: SoftNavigationSignalEntry[] = [];
+  private readonly _entries: SignalEntry[] = [];
   private _latestStartTime = 0;
 
   public constructor({
     maxAgeMillis = DEFAULT_MAX_AGE_MILLIS,
     maxEntries = DEFAULT_MAX_ENTRIES,
-  }: SoftNavigationSignalBufferArgs = {}) {
+  }: SignalBufferArgs = {}) {
     this._maxAgeMillis = maxAgeMillis;
     this._maxEntries = maxEntries;
   }
 
-  public record(entry: SoftNavigationSignalEntry): void {
+  public record(entry: SignalEntry): void {
     this._entries.push(entry);
     if (entry.startTime > this._latestStartTime) {
       this._latestStartTime = entry.startTime;
@@ -47,22 +53,23 @@ export class SoftNavigationSignalBuffer {
     this._evict();
   }
 
-  public collectWindow(
-    startTime: number,
-    endTime: number,
-  ): SoftNavigationWindowResult {
+  public collectWindow(startTime: number, endTime: number): SignalWindowResult {
     const spanIds: string[] = [];
+    const spanTypes: string[] = [];
     const logIds: string[] = [];
+    const logTypes: string[] = [];
     for (const entry of this._entries) {
       if (entry.startTime >= startTime && entry.startTime <= endTime) {
         if (entry.kind === 'span') {
           spanIds.push(entry.id);
+          spanTypes.push(entry.type ?? '');
         } else {
           logIds.push(entry.id);
+          logTypes.push(entry.type ?? '');
         }
       }
     }
-    return { spanIds, logIds };
+    return { spanIds, spanTypes, logIds, logTypes };
   }
 
   // Age eviction is relative to the newest entry seen so the buffer needs no

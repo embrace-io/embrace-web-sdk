@@ -11,6 +11,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../../../managers/index.ts';
+import { SignalBuffer } from '../../../processors/utils/SignalBuffer.ts';
 import {
   getNavigationEventTrigger,
   SoftNavigationPerformanceInstrumentation,
@@ -233,6 +234,121 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     const span = spanExporter.getFinishedSpans()[0];
     expect(span.startTime).to.not.deep.equal(span.endTime);
+
+    instrumentation.disable();
+  });
+
+  it('stamps span_ids and log_ids collected from the signal buffer for its window', () => {
+    const signalBuffer = new SignalBuffer();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      signalBuffer,
+    });
+
+    signalBuffer.record({
+      kind: 'span',
+      id: 'child-span',
+      startTime: perf.epochMillisFromZeroTime(225),
+      type: 'perf.network_request',
+    });
+    signalBuffer.record({
+      kind: 'log',
+      id: 'child-log',
+      startTime: perf.epochMillisFromZeroTime(240),
+      type: 'sys.log',
+    });
+    signalBuffer.record({
+      kind: 'span',
+      id: 'outside-window',
+      startTime: perf.epochMillisFromZeroTime(300),
+    });
+
+    triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([
+      'child-span',
+    ]);
+    expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal([
+      'perf.network_request',
+    ]);
+    expect(span.attributes['emb.soft_navigation.log_ids']).to.deep.equal([
+      'child-log',
+    ]);
+    expect(span.attributes['emb.soft_navigation.log_id_types']).to.deep.equal([
+      'sys.log',
+    ]);
+
+    instrumentation.disable();
+  });
+
+  it('stamps an empty type when a correlated signal has no emb.type', () => {
+    const signalBuffer = new SignalBuffer();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      signalBuffer,
+    });
+
+    signalBuffer.record({
+      kind: 'span',
+      id: 'child-span',
+      startTime: perf.epochMillisFromZeroTime(225),
+    });
+
+    triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal([
+      '',
+    ]);
+
+    instrumentation.disable();
+  });
+
+  it('stamps empty arrays when the signal buffer has no matches in the window', () => {
+    const signalBuffer = new SignalBuffer();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      signalBuffer,
+    });
+
+    triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([]);
+    expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal(
+      [],
+    );
+    expect(span.attributes['emb.soft_navigation.log_ids']).to.deep.equal([]);
+    expect(span.attributes['emb.soft_navigation.log_id_types']).to.deep.equal(
+      [],
+    );
+
+    instrumentation.disable();
+  });
+
+  it('does not stamp span_ids/log_ids when no signal buffer is provided', () => {
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+    });
+
+    triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.span_ids',
+    );
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.span_id_types',
+    );
+    expect(span.attributes).not.to.have.property('emb.soft_navigation.log_ids');
+    expect(span.attributes).not.to.have.property(
+      'emb.soft_navigation.log_id_types',
+    );
 
     instrumentation.disable();
   });
@@ -503,6 +619,59 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     expect(span.attributes['emb.soft_navigation.start_time']).to.equal(100);
     expect(span.attributes['emb.soft_navigation.duration']).to.equal(50); // 150 - 100
     expect(span.attributes['emb.soft_navigation.interaction_id']).to.equal(42);
+
+    instrumentation.disable();
+  });
+
+  it('stamps span_ids and log_ids collected from the signal buffer for its window', () => {
+    const signalBuffer = new SignalBuffer();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation({
+      perf,
+      limitManager,
+      signalBuffer,
+      navigationHost: {
+        navigation: mockNavigation as unknown as Navigation,
+        location: { href: 'https://example.com' },
+      },
+    });
+
+    // Click window is [100, 150] (navigation commits at t=150 below).
+    signalBuffer.record({
+      kind: 'span',
+      id: 'child-span',
+      startTime: perf.epochMillisFromZeroTime(120),
+      type: 'perf.network_request',
+    });
+    signalBuffer.record({
+      kind: 'log',
+      id: 'child-log',
+      startTime: perf.epochMillisFromZeroTime(140),
+      type: 'sys.log',
+    });
+    signalBuffer.record({
+      kind: 'span',
+      id: 'outside-window',
+      startTime: perf.epochMillisFromZeroTime(200),
+    });
+
+    clock.tick(150);
+    triggerCurrentEntryChange();
+
+    triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([
+      'child-span',
+    ]);
+    expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal([
+      'perf.network_request',
+    ]);
+    expect(span.attributes['emb.soft_navigation.log_ids']).to.deep.equal([
+      'child-log',
+    ]);
+    expect(span.attributes['emb.soft_navigation.log_id_types']).to.deep.equal([
+      'sys.log',
+    ]);
 
     instrumentation.disable();
   });

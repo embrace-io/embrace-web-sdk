@@ -14,6 +14,12 @@ export const KEY_EMB_SOFT_NAVIGATION_PRESENTATION_TIME =
   'emb.soft_navigation.presentation_time';
 export const KEY_EMB_SOFT_NAVIGATION_SPAN_IDS = 'emb.soft_navigation.span_ids';
 export const KEY_EMB_SOFT_NAVIGATION_LOG_IDS = 'emb.soft_navigation.log_ids';
+// Parallel arrays to span_ids/log_ids: the emb.type of the id at the same
+// index, so the backend knows which table to look the id up in.
+export const KEY_EMB_SOFT_NAVIGATION_SPAN_ID_TYPES =
+  'emb.soft_navigation.span_id_types';
+export const KEY_EMB_SOFT_NAVIGATION_LOG_ID_TYPES =
+  'emb.soft_navigation.log_id_types';
 
 export const SOFT_NAVIGATION_SOURCES = {
   performanceObserver: 'performance_observer',

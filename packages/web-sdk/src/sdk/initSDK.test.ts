@@ -1513,50 +1513,6 @@ describe('initSDK', () => {
   });
 
   describe('soft navigation correlation', () => {
-    it('stamps correlated span ids on a soft-navigation span when enabled', async () => {
-      fakeFetchRespondWith('');
-      initSDK({
-        appID: 'abc12',
-        appVersion: 'my-app-version',
-        defaultInstrumentationConfig: {
-          omit: new Set([
-            '@opentelemetry/instrumentation-fetch',
-            'document-load',
-          ]),
-        },
-      });
-      await new Promise((r) => setTimeout(r, 1));
-
-      // Anchored to the real clock (rather than small offsets like 900/1000)
-      // so Span's start/end time heuristic always resolves these as absolute
-      // epoch timestamps, never as elapsed-performance.now() readings.
-      const base = Date.now();
-      const child = embtrace.startSpan('child', { startTime: base + 1000 });
-      const childId = child.spanContext().spanId;
-      child.end(base + 1500);
-
-      const softNav = embtrace.startSpan('Soft Navigation', {
-        startTime: base + 900,
-        attributes: { 'emb.soft_navigation.source': 'polyfill' },
-      });
-      softNav.end(base + 2000);
-      session
-        .getUserSessionManager()
-        .endSessionPartInternal({ reason: 'web_foreground_inactivity' });
-
-      const exportedSpans = await getLastSessionExportedSpans(0);
-      const softNavSpan = exportedSpans.find(
-        (s: { name: string }) => s.name === 'Soft Navigation',
-      );
-      const spanIdsAttr = softNavSpan?.attributes.find(
-        (a: { key: string }) => a.key === 'emb.soft_navigation.span_ids',
-      );
-      const spanIds = spanIdsAttr?.value.arrayValue.values.map(
-        (v) => v.stringValue,
-      );
-      expect(spanIds).to.deep.equal([childId]);
-    });
-
     it('does not stamp correlation attributes when soft-nav is omitted', async () => {
       fakeFetchRespondWith('');
       initSDK({
@@ -1590,64 +1546,6 @@ describe('initSDK', () => {
         (a: { key: string }) => a.key === 'emb.soft_navigation.span_ids',
       );
       void expect(spanIdsAttr).to.be.undefined;
-    });
-
-    it('stamps correlated log ids on a soft-navigation span when enabled', async () => {
-      fakeFetchRespondWith('');
-      const result = initSDK({
-        appID: 'abc12',
-        appVersion: 'my-app-version',
-        logExporters: [logExporter],
-        defaultInstrumentationConfig: {
-          omit: new Set([
-            '@opentelemetry/instrumentation-fetch',
-            'document-load',
-            'web-vital',
-            'max-scroll-depth',
-          ]),
-        },
-      });
-      void expect(result).not.to.be.false;
-      await new Promise((r) => setTimeout(r, 1));
-
-      // Anchored to the real clock (rather than small offsets like 900/1000)
-      // so Span's start/end time heuristic always resolves these as absolute
-      // epoch timestamps, never as elapsed-performance.now() readings. The
-      // log API has no timestamp override, so it stamps real "now": the
-      // window below is widened around `base` to comfortably contain it.
-      const base = Date.now();
-      const softNav = embtrace.startSpan('Soft Navigation', {
-        startTime: base - 5000,
-        attributes: { 'emb.soft_navigation.source': 'polyfill' },
-      });
-
-      log.message('correlated log', 'info');
-
-      softNav.end(base + 5000);
-      session
-        .getUserSessionManager()
-        .endSessionPartInternal({ reason: 'web_foreground_inactivity' });
-
-      if (result) {
-        await result.flush();
-      }
-
-      const finishedLogRecords = logExporter.getFinishedLogRecords();
-      expect(finishedLogRecords).to.have.lengthOf(1);
-      const logUid = finishedLogRecords[0].attributes['log.record.uid'];
-      void expect(logUid).to.be.a('string');
-
-      const exportedSpans = await getLastSessionExportedSpans(0);
-      const softNavSpan = exportedSpans.find(
-        (s: { name: string }) => s.name === 'Soft Navigation',
-      );
-      const logIdsAttr = softNavSpan?.attributes.find(
-        (a: { key: string }) => a.key === 'emb.soft_navigation.log_ids',
-      );
-      const logIds = logIdsAttr?.value.arrayValue.values.map(
-        (v) => v.stringValue,
-      );
-      expect(logIds).to.deep.equal([logUid]);
     });
   });
 

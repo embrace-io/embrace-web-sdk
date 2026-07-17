@@ -1,3 +1,3 @@
-import { SoftNavigationSignalBuffer } from './SoftNavigationSignalBuffer.ts';
+import { SignalBuffer } from './SignalBuffer.ts';
 
-export { SoftNavigationSignalBuffer };
+export { SignalBuffer };

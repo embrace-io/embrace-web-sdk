@@ -30,6 +30,7 @@ export const setupDefaultInstrumentations = (
     userSessionManager,
     pageManager,
     limitManager,
+    signalBuffer,
   }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
   const instrumentations: Instrumentation[] = [];
@@ -87,6 +88,7 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new SoftNavigationPerformanceInstrumentation({
         limitManager,
+        signalBuffer,
         ...config['soft-navigation-performance'],
       }),
     );

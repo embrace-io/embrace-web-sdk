@@ -2,22 +2,19 @@ import { diag } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
-import type { SoftNavigationSignalBuffer } from '../utils/SoftNavigationSignalBuffer.ts';
-import type { SoftNavigationCorrelationLogRecordProcessorArgs } from './types.ts';
+import { KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { SignalBuffer } from '../utils/SignalBuffer.ts';
+import type { SignalCorrelationLogRecordProcessorArgs } from './types.ts';
 
 /**
  * Records each emitted log's synthetic id (log.record.uid) into the shared
  * signal buffer so soft-navigation spans can correlate logs from their window.
  * Must run after UserSessionLogRecordProcessor, which stamps the uid.
  */
-export class SoftNavigationCorrelationLogRecordProcessor
-  implements LogRecordProcessor
-{
-  private readonly _buffer: SoftNavigationSignalBuffer;
+export class SignalCorrelationLogRecordProcessor implements LogRecordProcessor {
+  private readonly _buffer: SignalBuffer;
 
-  public constructor({
-    buffer,
-  }: SoftNavigationCorrelationLogRecordProcessorArgs) {
+  public constructor({ buffer }: SignalCorrelationLogRecordProcessorArgs) {
     this._buffer = buffer;
   }
 
@@ -31,6 +28,7 @@ export class SoftNavigationCorrelationLogRecordProcessor
           kind: 'log',
           id: uid,
           startTime: hrTimeToMilliseconds(logRecord.hrTime),
+          type: logRecord.attributes[KEY_EMB_TYPE] as string | undefined,
         });
       }
     } catch (e) {
