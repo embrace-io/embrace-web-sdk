@@ -110,7 +110,7 @@ describe('SignalCorrelationSpanProcessor', () => {
     processor.onStart(fakeSpan({ spanId: 'span-a', startEpochMillis: 1000 }));
 
     expect(diagLogger.getErrorLogs()).to.include(
-      'failed to record span for soft-navigation correlation',
+      'failed to record span for correlation',
     );
   });
 
