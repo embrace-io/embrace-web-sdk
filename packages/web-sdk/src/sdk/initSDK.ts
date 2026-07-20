@@ -503,8 +503,14 @@ const setupLogs = ({
     new UserSessionLogRecordProcessor({
       userSessionManager,
     }),
+    new BrowserLogRecordProcessor(),
+    new EmbraceLogRecordProcessor(),
+    new UserLogRecordProcessor({ userManager }),
+    new LogRecordScrubProcessor({ attributeScrubbers }),
+    new PageLogRecordProcessor({ pageManager }),
     // Must run after UserSessionLogRecordProcessor, which stamps the
     // synthetic log id this processor records into the shared buffer.
+    // Keeping it last to prevent any ordering issues.
     ...(signalBuffer
       ? [
           new SignalCorrelationLogRecordProcessor({
@@ -512,11 +518,6 @@ const setupLogs = ({
           }),
         ]
       : []),
-    new BrowserLogRecordProcessor(),
-    new EmbraceLogRecordProcessor(),
-    new UserLogRecordProcessor({ userManager }),
-    new LogRecordScrubProcessor({ attributeScrubbers }),
-    new PageLogRecordProcessor({ pageManager }),
   ];
 
   logExporters?.forEach((exporter) => {

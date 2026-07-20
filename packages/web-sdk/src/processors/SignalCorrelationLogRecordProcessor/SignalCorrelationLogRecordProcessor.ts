@@ -32,7 +32,7 @@ export class SignalCorrelationLogRecordProcessor implements LogRecordProcessor {
         });
       }
     } catch (e) {
-      diag.error('failed to record log for soft-navigation correlation', e);
+      diag.error('failed to record log for signal correlation', e);
     }
   }
 

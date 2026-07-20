@@ -54,22 +54,18 @@ export class SignalBuffer {
   }
 
   public collectWindow(startTime: number, endTime: number): SignalWindowResult {
-    const spanIds: string[] = [];
-    const spanTypes: string[] = [];
-    const logIds: string[] = [];
-    const logTypes: string[] = [];
-    for (const entry of this._entries) {
-      if (entry.startTime >= startTime && entry.startTime <= endTime) {
-        if (entry.kind === 'span') {
-          spanIds.push(entry.id);
-          spanTypes.push(entry.type ?? '');
-        } else {
-          logIds.push(entry.id);
-          logTypes.push(entry.type ?? '');
-        }
-      }
-    }
-    return { spanIds, spanTypes, logIds, logTypes };
+    const matched = this._entries.filter(
+      (entry) => entry.startTime >= startTime && entry.startTime <= endTime,
+    );
+    const spans = matched.filter((entry) => entry.kind === 'span');
+    const logs = matched.filter((entry) => entry.kind === 'log');
+
+    return {
+      spanIds: spans.map((entry) => entry.id),
+      spanTypes: spans.map((entry) => entry.type ?? ''),
+      logIds: logs.map((entry) => entry.id),
+      logTypes: logs.map((entry) => entry.type ?? ''),
+    };
   }
 
   // Age eviction is relative to the newest entry seen so the buffer needs no
