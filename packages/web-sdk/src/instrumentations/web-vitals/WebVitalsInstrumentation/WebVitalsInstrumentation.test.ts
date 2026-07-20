@@ -23,6 +23,10 @@ import {
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { EmbracePageManager } from '../../../managers/index.ts';
+import {
+  _resetZeroTimeMillisForTesting,
+  updateZeroTimeMillis,
+} from '../../../utils/PerformanceManager/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 
@@ -66,6 +70,7 @@ describe('WebVitalsInstrumentation', () => {
   afterEach(() => {
     clock.restore();
     instrumentation.disable();
+    _resetZeroTimeMillisForTesting();
   });
 
   it('should report CLS metrics as a log record', () => {
@@ -157,6 +162,69 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['largestShiftValue']).to.equal(3.0);
     expect(body['largestShiftTarget']).to.equal('some-target');
     expect(body['loadState']).to.equal('complete');
+  });
+
+  it('should use the layout shift window start as the timestamp for CLS', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'CLS',
+      value: 0.1,
+      rating: 'good',
+      delta: 0.1,
+      id: 'm1',
+      // The window spans two shifts; the timestamp must mark the first, not the
+      // largest shift (2000) or the report time (5000).
+      entries: [{ startTime: 1000 }, { startTime: 2000 }] as LayoutShift[],
+      navigationType: 'navigate',
+      navigationId: 1,
+      attribution: { largestShiftTime: 2000 },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal([1, 0]);
+  });
+
+  it('should use the metric entry start time as the timestamp for LCP', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    // Tick the clock forward so the event startTime and report time are different.
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      entries: [{ startTime: 3000 } as PerformanceEntry],
+      navigationType: 'navigate',
+      attribution: {
+        timeToFirstByte: 0,
+        resourceLoadDelay: 0,
+        resourceLoadDuration: 0,
+        elementRenderDelay: 0,
+      },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal([3, 0]);
   });
 
   it('should report FCP metrics as a log record', () => {
@@ -484,6 +552,9 @@ describe('WebVitalsInstrumentation', () => {
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
     clock.tick(5000);
+    // Distinct from both the time origin (0) and the report time (5000) so the
+    // assertion below can only match the session part's zero time.
+    updateZeroTimeMillis(2000);
 
     metricReportFunc({
       name: 'TTFB',
@@ -535,7 +606,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 20,
       'emb.web_vital.attribution.unattributed': 20,
     });
-    expect(record.hrTime).to.deep.equal([5, 0]);
+    expect(record.hrTime).to.deep.equal([2, 0]);
     const ttfbBody = JSON.parse(record.body as string) as Record<
       string,
       unknown
@@ -1612,6 +1683,9 @@ describe('WebVitalsInstrumentation', () => {
     const emitFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
 
     clock.tick(5000);
+    // Distinct from both the time origin (0) and the report time (5000) so the
+    // assertion below can only match the session part's zero time.
+    updateZeroTimeMillis(2000);
 
     const metric = {
       name: 'TTFB',
@@ -1666,7 +1740,7 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.serverResponse': 20,
       'emb.web_vital.attribution.unattributed': 20,
     });
-    expect(record.hrTime).to.deep.equal([5, 0]);
+    expect(record.hrTime).to.deep.equal([2, 0]);
     const body = JSON.parse(record.body as string) as Record<string, unknown>;
     expect(body['waitingDuration']).to.equal(20);
     expect(body['cacheDuration']).to.equal(40);

@@ -170,9 +170,11 @@ One log per web-vital report.
 
 | Telemetry field | Source | Method |
 | --- | --- | --- |
-| log timestamp (CLS) | `attribution.largestShiftTime` | `epochMillisFromOrigin` |
 | log timestamp (INP) | `attribution.interactionTime` | `epochMillisFromOrigin` |
-| log timestamp (LCP / FCP / TTFB) | — (no per-event offset in attribution) | `getNowMillis()` at emission |
+| log timestamp (CLS) | earliest `entries[].startTime` — the layout shift window's start (fallback: `attribution.largestShiftTime`) | `epochMillisFromOrigin` |
+| log timestamp (TTFB) | — (the moment the user started viewing the current view) | `getZeroTime()` |
+| log timestamp (LCP / FCP) | last `entries[].startTime` | `epochMillisFromOrigin` |
+| log timestamp (no entries) | — | `getNowMillis()` at emission |
 | `browser.web_vital.value` / `.delta` | computed by the `web-vitals` library | none — see below |
 | TTFB sub-part attributes (`redirect`, `domainLookup`, `tcpConnection`, `tlsNegotiation`, `serverResponse`, `unattributed`) | differences of `PerformanceNavigationTiming` fields | none — pure durations |
 | raw attribution body (`includeRawAttribution`) | `metric.attribution` primitives, verbatim | none — intentionally a raw debug dump |
