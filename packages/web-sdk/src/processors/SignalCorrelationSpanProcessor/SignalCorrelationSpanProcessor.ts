@@ -1,20 +1,10 @@
 import { diag } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import type {
-  ReadableSpan,
-  Span,
-  SpanProcessor,
-} from '@opentelemetry/sdk-trace';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
-import { KEY_EMB_SOFT_NAVIGATION_SOURCE } from '../../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
+import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
+import { KEY_EMB_TYPE } from '../../constants/index.ts';
+import { isSessionPartSpan, isSoftNavigationSpan } from '../../utils/index.ts';
 import type { SignalBuffer } from '../utils/SignalBuffer.ts';
 import type { SignalCorrelationSpanProcessorArgs } from './types.ts';
-
-const isSoftNavigationSpan = (span: ReadableSpan | Span): boolean =>
-  span.attributes[KEY_EMB_SOFT_NAVIGATION_SOURCE] !== undefined;
-
-const isSessionPartSpan = (span: ReadableSpan | Span): boolean =>
-  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.SessionPart;
 
 /**
  * Records eligible spans as they start into a shared buffer, so a
@@ -44,7 +34,7 @@ export class SignalCorrelationSpanProcessor implements SpanProcessor {
         type: span.attributes[KEY_EMB_TYPE] as string | undefined,
       });
     } catch (e) {
-      diag.error('failed to record span for soft-navigation correlation', e);
+      diag.error('failed to record span for correlation', e);
     }
   }
 

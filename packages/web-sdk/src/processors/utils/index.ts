@@ -1,3 +1,1 @@
-import { SignalBuffer } from './SignalBuffer.ts';
-
-export { SignalBuffer };
+export { SignalBuffer } from './SignalBuffer.ts';

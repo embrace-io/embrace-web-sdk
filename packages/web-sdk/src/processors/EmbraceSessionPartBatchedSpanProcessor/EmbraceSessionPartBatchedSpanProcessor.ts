@@ -12,18 +12,12 @@ import type {
   SpanExporter,
   SpanProcessor,
 } from '@opentelemetry/sdk-trace';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
-import type { SessionPartSpan } from '../../instrumentations/index.ts';
 import type {
   LimitManagerInternal,
   UserSessionManagerInternal,
 } from '../../managers/index.ts';
+import { isSessionPartSpan } from '../../utils/index.ts';
 import type { EmbraceSessionPartBatchedSpanProcessorArgs } from './types.ts';
-
-const isSessionPartSpan = (
-  span: ReadableSpan | SessionPartSpan,
-): span is SessionPartSpan =>
-  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.SessionPart;
 
 type ExportFailureReason = 'concurrent_limit' | 'fetch_error' | 'unknown';
 

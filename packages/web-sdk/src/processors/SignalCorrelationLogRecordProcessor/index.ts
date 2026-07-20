@@ -1,3 +1,1 @@
-import { SignalCorrelationLogRecordProcessor } from './SignalCorrelationLogRecordProcessor.ts';
-
-export { SignalCorrelationLogRecordProcessor };
+export { SignalCorrelationLogRecordProcessor } from './SignalCorrelationLogRecordProcessor.ts';

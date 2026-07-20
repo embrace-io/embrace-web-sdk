@@ -430,7 +430,7 @@ const setupTraces = ({
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
     new SpanScrubProcessor({ attributeScrubbers }),
-    // WHY: placement in this chain does not affect the stamp: every
+    // Placement in this chain does not affect the stamp: every
     // processor's onEnding runs before any onEnd (the batcher exports at
     // onEnd), so the soft-navigation span still sees the full window.
     ...(signalBuffer
@@ -503,7 +503,7 @@ const setupLogs = ({
     new UserSessionLogRecordProcessor({
       userSessionManager,
     }),
-    // WHY: must run after UserSessionLogRecordProcessor, which stamps the
+    // Must run after UserSessionLogRecordProcessor, which stamps the
     // synthetic log id this processor records into the shared buffer.
     ...(signalBuffer
       ? [

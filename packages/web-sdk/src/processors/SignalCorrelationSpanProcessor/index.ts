@@ -1,3 +1,1 @@
-import { SignalCorrelationSpanProcessor } from './SignalCorrelationSpanProcessor.ts';
-
-export { SignalCorrelationSpanProcessor };
+export { SignalCorrelationSpanProcessor } from './SignalCorrelationSpanProcessor.ts';
