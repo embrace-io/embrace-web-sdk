@@ -312,18 +312,43 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
-    if (metric.name === 'CLS' && metric.attribution.largestShiftTime) {
-      return this.perf.epochMillisFromOrigin(
-        metric.attribution.largestShiftTime,
-      );
-    }
-
-    if (metric.name === 'INP' && metric.attribution.interactionTime) {
+    // For INP use interactionTime, which is the start time of the user's interaction
+    if (metric.name === 'INP') {
       return this.perf.epochMillisFromOrigin(
         metric.attribution.interactionTime,
       );
     }
 
+    // For CLS use the first layout shift's startTime, which is the beginning of
+    // the  session window. Fall back to largestShiftTime if the entries aren't
+    // available for some reason.
+    if (metric.name === 'CLS') {
+      const windowStart =
+        metric.entries.length > 0
+          ? Math.min(...metric.entries.map((entry) => entry.startTime))
+          : metric.attribution.largestShiftTime;
+
+      if (windowStart !== undefined) {
+        return this.perf.epochMillisFromOrigin(windowStart);
+      }
+    }
+
+    // For TTFB use the "zero" time of the current session part
+    if (metric.name === 'TTFB') {
+      return this.perf.getZeroTime();
+    }
+
+    // For other metrics, use the startTime of the last entry. Note: in practice, web-vitals does
+    // not emit multiple entries for metrics other than CLS. However to future-proof this code,
+    // we are assuming that the last entry is the most relevant one.
+    const metricStartTime =
+      metric.entries[metric.entries.length - 1]?.startTime;
+
+    if (metricStartTime !== undefined) {
+      return this.perf.epochMillisFromOrigin(metricStartTime);
+    }
+
+    // Fall back to when the metric was reported
     return this.perf.getNowMillis();
   }
 
