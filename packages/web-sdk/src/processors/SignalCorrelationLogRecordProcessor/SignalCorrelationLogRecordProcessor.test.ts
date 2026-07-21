@@ -93,7 +93,7 @@ describe('SignalCorrelationLogRecordProcessor', () => {
     processor.onEmit(fakeLogRecord({ [ATTR_LOG_RECORD_UID]: 'uid-1' }, 1500));
 
     expect(diagLogger.getErrorLogs()).to.include(
-      'failed to record log for soft-navigation correlation',
+      'failed to record log for signal correlation',
     );
   });
 
