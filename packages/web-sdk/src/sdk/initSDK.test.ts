@@ -437,6 +437,7 @@ describe('initSDK', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution;
 

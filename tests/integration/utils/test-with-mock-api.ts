@@ -124,6 +124,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.web_vital.value',
   'browser.web_vital.delta',
   'browser.web_vital.id',
+  'browser.web_vital.navigation_id',
   'browser.web_vital.value',
   'tap.coords',
   'first_interaction.x',
