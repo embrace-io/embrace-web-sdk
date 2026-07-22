@@ -29,15 +29,9 @@ const test = testWithMockApi.extend<SPAFixture>({
     });
   },
 
-  triggerSessionEnd: async ({ page }, use) => {
+  triggerSessionEnd: async ({ setPageVisibility }, use) => {
     await use(async () => {
-      await page.evaluate(() => {
-        Object.defineProperty(document, 'visibilityState', {
-          value: 'hidden',
-          writable: true,
-        });
-        document.dispatchEvent(new Event('visibilitychange'));
-      });
+      await setPageVisibility('hidden');
     });
   },
 });

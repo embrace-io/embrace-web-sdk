@@ -60,6 +60,7 @@ type TestWithMockApi = {
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
+  setPageVisibility: (visibilityState: 'visible' | 'hidden') => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
   validateThatSessionPartsEnded: (
     expectedCount?: number,
@@ -246,6 +247,19 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       }),
     { scope: 'test' },
   ],
+  // Fakes visibility rather than actually hiding the tab, which Playwright
+  // cannot do reliably.
+  setPageVisibility: async ({ page }, use) => {
+    await use(async (visibilityState) => {
+      await page.evaluate((value) => {
+        Object.defineProperty(document, 'visibilityState', {
+          value,
+          writable: true,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, visibilityState);
+    });
+  },
   getCurrentUserSessionId: async ({ page }, use) => {
     await use(async () => {
       const userSessionId = await page.evaluate(
