@@ -1,0 +1,19 @@
+{
+  "name": "vite-test-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
+    "@opentelemetry/sdk-logs": "^0",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5",
+    "vite": "^7"
+  }
+}
