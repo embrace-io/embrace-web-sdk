@@ -20,5 +20,11 @@ export {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from './performanceObserver/index.ts';
+export {
+  isNetworkSpan,
+  isSessionPartSpan,
+  isSoftNavigationSpan,
+  type NetworkSpan,
+} from './spanPredicates.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';

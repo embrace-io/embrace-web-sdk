@@ -1,6 +1,7 @@
 /* eslint-disable baseline-js/use-baseline */
 import type { NavigationHost } from '../../../common/index.ts';
 import { KEY_BROWSER_URL_FULL } from '../../../constants/index.ts';
+import type { SignalBuffer } from '../../../processors/utils/SignalBuffer.ts';
 import {
   createPerformanceObserver,
   isEntryTypeSupported,
@@ -9,10 +10,14 @@ import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/ind
 import {
   KEY_EMB_SOFT_NAVIGATION_DURATION,
   KEY_EMB_SOFT_NAVIGATION_INTERACTION_ID,
+  KEY_EMB_SOFT_NAVIGATION_LOG_ID_TYPES,
+  KEY_EMB_SOFT_NAVIGATION_LOG_IDS,
   KEY_EMB_SOFT_NAVIGATION_NAVIGATION_ID,
   KEY_EMB_SOFT_NAVIGATION_PAINT_TIME,
   KEY_EMB_SOFT_NAVIGATION_PRESENTATION_TIME,
   KEY_EMB_SOFT_NAVIGATION_SOURCE,
+  KEY_EMB_SOFT_NAVIGATION_SPAN_ID_TYPES,
+  KEY_EMB_SOFT_NAVIGATION_SPAN_IDS,
   KEY_EMB_SOFT_NAVIGATION_START_TIME,
   SOFT_NAVIGATION_SOURCES,
   SOFT_NAVIGATION_SPAN_NAME,
@@ -50,6 +55,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   private _pendingNavigations: PendingNavigation[] = [];
   private _usePolyfill = false;
   private readonly _navigationHost: NavigationHost;
+  private readonly _signalBuffer: SignalBuffer | undefined;
 
   private readonly _handleCurrentEntryChange = (event: Event): void => {
     const url = this._navigationHost.navigation?.currentEntry?.url;
@@ -66,6 +72,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     perf,
     limitManager,
     navigationHost = window as NavigationHost,
+    signalBuffer,
   }: SoftNavigationPerformanceInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SoftNavigationPerformanceInstrumentation',
@@ -77,6 +84,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     });
 
     this._navigationHost = navigationHost;
+    this._signalBuffer = signalBuffer;
 
     if (this._config.enabled) {
       this.enable();
@@ -178,6 +186,31 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     this._pendingNavigations.length = 0;
   }
 
+  // A soft-navigation span is only ever built after its window has already
+  // closed, so this is the sole opportunity to back-fill it with the ids of
+  // the spans and logs that started within that window.
+  private _correlationAttributes(
+    startTimeEpochMillis: number,
+    endTimeEpochMillis: number,
+  ): Record<string, string[]> {
+    if (!this._signalBuffer) {
+      return {};
+    }
+
+    const { spanIds, spanTypes, logIds, logTypes } =
+      this._signalBuffer.collectWindow(
+        startTimeEpochMillis,
+        endTimeEpochMillis,
+      );
+
+    return {
+      [KEY_EMB_SOFT_NAVIGATION_SPAN_IDS]: spanIds,
+      [KEY_EMB_SOFT_NAVIGATION_SPAN_ID_TYPES]: spanTypes,
+      [KEY_EMB_SOFT_NAVIGATION_LOG_IDS]: logIds,
+      [KEY_EMB_SOFT_NAVIGATION_LOG_ID_TYPES]: logTypes,
+    };
+  }
+
   private _processEntry(entry: PerformanceSoftNavigationTiming): void {
     if (!this._isEnabled) {
       return;
@@ -187,8 +220,15 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
+    const startTimeEpochMillis = this.perf.epochMillisFromOrigin(
+      entry.startTime,
+    );
+    const endTimeEpochMillis = this.perf.epochMillisFromOrigin(
+      entry.startTime + entry.duration,
+    );
+
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
-      startTime: this.perf.epochMillisFromOrigin(entry.startTime),
+      startTime: startTimeEpochMillis,
       attributes: {
         [KEY_BROWSER_URL_FULL]: entry.name,
         [KEY_EMB_SOFT_NAVIGATION_SOURCE]:
@@ -207,9 +247,13 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
           entry.presentationTime != null
             ? this.perf.millisFromZeroTime(entry.presentationTime)
             : undefined,
+        ...this._correlationAttributes(
+          startTimeEpochMillis,
+          endTimeEpochMillis,
+        ),
       },
     });
-    span.end(this.perf.epochMillisFromOrigin(entry.startTime + entry.duration));
+    span.end(endTimeEpochMillis);
   }
 
   private _processClickEntry(entry: PerformanceEventTiming): void {
@@ -253,8 +297,14 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
+    const startTimeEpochMillis = this.perf.epochMillisFromOrigin(
+      clickEntry.startTime,
+    );
+    const endTimeEpochMillis =
+      this.perf.epochMillisFromOrigin(navigationTimestamp);
+
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
-      startTime: this.perf.epochMillisFromOrigin(clickEntry.startTime),
+      startTime: startTimeEpochMillis,
       attributes: {
         [KEY_BROWSER_URL_FULL]: url,
         [KEY_EMB_SOFT_NAVIGATION_SOURCE]: SOFT_NAVIGATION_SOURCES.polyfill,
@@ -265,8 +315,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
           navigationTimestamp - clickEntry.startTime,
         [KEY_EMB_SOFT_NAVIGATION_INTERACTION_ID]:
           clickEntry.interactionId !== 0 ? clickEntry.interactionId : undefined,
+        ...this._correlationAttributes(
+          startTimeEpochMillis,
+          endTimeEpochMillis,
+        ),
       },
     });
-    span.end(this.perf.epochMillisFromOrigin(navigationTimestamp));
+    span.end(endTimeEpochMillis);
   }
 }

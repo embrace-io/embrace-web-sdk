@@ -43,6 +43,7 @@ import type {
   LimitManagerInternal,
   UserSessionManagerInternal,
 } from '../managers/index.ts';
+import type { SignalBuffer } from '../processors/index.ts';
 import type { NamespacedStorage, PerformanceManager } from '../utils/index.ts';
 
 export interface DynamicSDKConfig {
@@ -358,6 +359,7 @@ export interface SetupTracesArgs {
   registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
   pageManager: PageManager;
+  signalBuffer?: SignalBuffer;
 }
 
 export interface SetupLogsArgs {
@@ -374,6 +376,7 @@ export interface SetupLogsArgs {
   sdkLocalStorage: NamespacedStorage;
   pageManager: PageManager;
   visibilityDoc: VisibilityStateDocument;
+  signalBuffer?: SignalBuffer;
 }
 
 export interface SetupPageArgs {
@@ -408,6 +411,7 @@ export interface SetupDefaultInstrumentationsArgs {
   userSessionManager?: UserSessionManagerInternal;
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
+  signalBuffer?: SignalBuffer;
 }
 
 export interface DefaultInstrumentationConfig {

@@ -1,5 +1,5 @@
 import type { Attributes, AttributeValue } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace';
+import type { ReadableSpan, Span } from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
@@ -8,6 +8,9 @@ import {
   SEMATTRS_HTTP_STATUS_CODE,
   SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../constants/index.ts';
+import type { SessionPartSpan } from '../instrumentations/index.ts';
+import { KEY_EMB_SOFT_NAVIGATION_SOURCE } from '../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
 
 // NetworkSpanAttributesDeprecated and NetworkSpanAttributesNewest are the types for network spans attributes based on the otel conventions.
 // The SEMATTRS_HTTP_METHOD attribute is deprecated in favor of ATTR_HTTP_REQUEST_METHOD,
@@ -25,7 +28,7 @@ type NetworkSpanAttributes =
   | NetworkSpanAttributesNewest
   | NetworkSpanAttributesDeprecated;
 
-interface NetworkSpan extends ReadableSpan {
+export interface NetworkSpan extends ReadableSpan {
   attributes: NetworkSpanAttributes;
 }
 
@@ -47,10 +50,10 @@ export const isNetworkSpan = (
   return false;
 };
 
-// not used yet, but added for clarity. This is the type for Embrace tagged network spans
-// interface EmbraceNetworkSpanAttributes extends Attributes {
-//   [KEY_EMB_TYPE]: EMB_TYPES.Network;
-// }
-// interface EmbraceNetworkSpan extends NetworkSpan {
-//   attributes: NetworkSpanAttributes & EmbraceNetworkSpanAttributes;
-// }
+export const isSessionPartSpan = (
+  span: ReadableSpan | SessionPartSpan,
+): span is SessionPartSpan =>
+  span.attributes[KEY_EMB_TYPE] === EMB_TYPES.SessionPart;
+
+export const isSoftNavigationSpan = (span: ReadableSpan | Span): boolean =>
+  span.attributes[KEY_EMB_SOFT_NAVIGATION_SOURCE] !== undefined;

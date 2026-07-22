@@ -81,6 +81,10 @@ type ExportedSpan = ReadableSpan & {
       doubleValue: number;
     } & {
       boolValue: boolean;
+    } & {
+      arrayValue: {
+        values: { stringValue: string }[];
+      };
     };
   }[];
 };
@@ -1505,6 +1509,43 @@ describe('initSDK', () => {
 
       expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+  });
+
+  describe('soft navigation correlation', () => {
+    it('does not stamp correlation attributes when soft-nav is omitted', async () => {
+      fakeFetchRespondWith('');
+      initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            '@opentelemetry/instrumentation-fetch',
+            'document-load',
+            'soft-navigation-performance',
+          ]),
+        },
+      });
+      await new Promise((r) => setTimeout(r, 1));
+
+      const base = Date.now();
+      const softNav = embtrace.startSpan('Soft Navigation', {
+        startTime: base + 900,
+        attributes: { 'emb.soft_navigation.source': 'polyfill' },
+      });
+      softNav.end(base + 2000);
+      session
+        .getUserSessionManager()
+        .endSessionPartInternal({ reason: 'web_foreground_inactivity' });
+
+      const exportedSpans = await getLastSessionExportedSpans(0);
+      const softNavSpan = exportedSpans.find(
+        (s: { name: string }) => s.name === 'Soft Navigation',
+      );
+      const spanIdsAttr = softNavSpan?.attributes.find(
+        (a: { key: string }) => a.key === 'emb.soft_navigation.span_ids',
+      );
+      void expect(spanIdsAttr).to.be.undefined;
     });
   });
 
