@@ -1,5 +1,6 @@
 import { session } from '@embrace-io/web-sdk';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { MAIN_THREAD_BLOCK_MS } from '../soft/constants.ts';
 import { getCapturedSpans, subscribe } from '../waterfall/telemetryCapture.ts';
 import logo from './logo.png';
 import type { WebVitalReport } from './webVitalsStore.ts';
@@ -197,7 +198,7 @@ const WebVitals = () => {
   const insertLargeImage = setBoolAfterTimeout(setLargeImageVisible);
 
   const blockMainThread = () => {
-    const end = performance.now() + 350;
+    const end = performance.now() + MAIN_THREAD_BLOCK_MS;
 
     while (performance.now() < end) {
       // Intentionally spin to hold the main thread.
@@ -224,20 +225,34 @@ const WebVitals = () => {
 
       <p>
         <small>
-          <b>Note:</b> INP and CLS are only fired when the tab is hidden. LCP is
-          fired after the first interaction, so the button below is only
-          meaningful for soft navigations.
+          <b>Note:</b> INP and CLS are only reported when the tab is hidden. LCP
+          only counts paints from the page load or the navigating interaction,
+          so the image button below only affects the initial page load (and only
+          before the first interaction). For soft navigation LCP use the Delayed
+          LCP page.
         </small>
       </p>
 
       <div className="actions">
-        <button type="button" onClick={triggerLayoutShift}>
+        <button
+          type="button"
+          onClick={triggerLayoutShift}
+          data-testid="trigger-layout-shift"
+        >
           Trigger layout shift (CLS)
         </button>
-        <button type="button" onClick={blockMainThread}>
+        <button
+          type="button"
+          onClick={blockMainThread}
+          data-testid="block-main-thread"
+        >
           Block main thread (INP)
         </button>
-        <button type="button" onClick={insertLargeImage}>
+        <button
+          type="button"
+          onClick={insertLargeImage}
+          data-testid="insert-large-image"
+        >
           Insert large image (LCP)
         </button>
         <button type="button" onClick={clear}>
