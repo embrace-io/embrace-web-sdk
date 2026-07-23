@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
 // Headed-only config for manual verification of features that require real
 // browser interaction (e.g. the soft navigation polyfill, which depends on
@@ -13,12 +14,14 @@ export default defineConfig({
       command: 'cd platforms/vite-react-router && npx vite preview --port 3016',
       url: 'http://localhost:3016',
       reuseExistingServer: true,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'api',
       command: 'npm run server --prefix ../..',
       url: 'http://localhost:3001/health-check',
       reuseExistingServer: true,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
   ],
   projects: [
