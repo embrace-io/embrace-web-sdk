@@ -1526,6 +1526,255 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['loadState']).to.equal('complete');
   });
 
+  it('should include CLS layout shifts under the cap without a dropped count', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    const nodeA = document.createElement('span');
+    nodeA.id = 'a';
+    const nodeB = document.createElement('span');
+    nodeB.id = 'b';
+
+    emitFunc({
+      name: 'CLS',
+      value: 0.1,
+      rating: 'good',
+      delta: 0.1,
+      id: 'm1',
+      navigationType: 'navigate',
+      navigationId: 1,
+      entries: [
+        {
+          startTime: 1000,
+          sources: [
+            {
+              node: nodeA,
+              previousRect: { x: 0.4, y: 1.6, width: 10.5, height: 20 },
+              currentRect: { x: 5, y: 6, width: 10, height: 20 },
+            },
+          ],
+        },
+        {
+          startTime: 1001,
+          sources: [
+            {
+              node: nodeB,
+              previousRect: { x: 100, y: 200, width: 30, height: 40 },
+              currentRect: { x: 110, y: 205, width: 30, height: 40 },
+            },
+          ],
+        },
+      ],
+      attribution: {},
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const attrs = records[0].attributes;
+    expect(attrs).to.not.have.property(
+      'emb.web_vital.attribution.clsLayoutShiftsDroppedCount',
+    );
+    const shifts = JSON.parse(
+      attrs['emb.web_vital.attribution.clsLayoutShifts'] as string,
+    ) as unknown[];
+    expect(shifts).to.deep.equal([
+      {
+        selector: '#a',
+        startRect: { x: 0, y: 2, width: 11, height: 20 },
+        endRect: { x: 5, y: 6, width: 10, height: 20 },
+      },
+      {
+        selector: '#b',
+        startRect: { x: 100, y: 200, width: 30, height: 40 },
+        endRect: { x: 110, y: 205, width: 30, height: 40 },
+      },
+    ]);
+  });
+
+  it('should cap CLS layout shifts at 50 and report the dropped count', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    const entries = Array.from({ length: 60 }, (_unused, index) => ({
+      startTime: 1000 + index,
+      sources: [
+        {
+          node: document.createElement('div'),
+          previousRect: { x: 0, y: 0, width: 1, height: 1 },
+          currentRect: { x: 1, y: 1, width: 1, height: 1 },
+        },
+      ],
+    }));
+
+    emitFunc({
+      name: 'CLS',
+      value: 0.5,
+      rating: 'poor',
+      delta: 0.5,
+      id: 'm1',
+      navigationType: 'navigate',
+      navigationId: 1,
+      entries,
+      attribution: {},
+    } as unknown as MetricWithAttribution);
+
+    const attrs = memoryExporter.getFinishedLogRecords()[0].attributes;
+    const shifts = JSON.parse(
+      attrs['emb.web_vital.attribution.clsLayoutShifts'] as string,
+    ) as unknown[];
+    expect(shifts).to.have.lengthOf(50);
+    expect(
+      attrs['emb.web_vital.attribution.clsLayoutShiftsDroppedCount'],
+    ).to.equal(10);
+  });
+
+  it('should fall back to an empty selector when a layout shift has no sources', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    emitFunc({
+      name: 'CLS',
+      value: 0.1,
+      rating: 'good',
+      delta: 0.1,
+      id: 'm1',
+      navigationType: 'navigate',
+      navigationId: 1,
+      entries: [{ startTime: 1000, sources: [] }],
+      attribution: {},
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const shifts = JSON.parse(
+      records[0].attributes[
+        'emb.web_vital.attribution.clsLayoutShifts'
+      ] as string,
+    ) as Array<{ selector: string; startRect: unknown; endRect: unknown }>;
+    expect(shifts).to.deep.equal([
+      {
+        selector: '',
+        startRect: { x: 0, y: 0, width: 0, height: 0 },
+        endRect: { x: 0, y: 0, width: 0, height: 0 },
+      },
+    ]);
+  });
+
+  it('should capture the first (most impactful) source of a multi-source layout shift', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    const first = document.createElement('span');
+    first.id = 'first';
+    const second = document.createElement('span');
+    second.id = 'second';
+
+    emitFunc({
+      name: 'CLS',
+      value: 0.1,
+      rating: 'good',
+      delta: 0.1,
+      id: 'm1',
+      navigationType: 'navigate',
+      navigationId: 1,
+      entries: [
+        {
+          startTime: 1000,
+          sources: [
+            {
+              node: first,
+              previousRect: { x: 0, y: 0, width: 10, height: 10 },
+              currentRect: { x: 5, y: 5, width: 10, height: 10 },
+            },
+            {
+              node: second,
+              previousRect: { x: 20, y: 20, width: 30, height: 30 },
+              currentRect: { x: 25, y: 25, width: 30, height: 30 },
+            },
+          ],
+        },
+      ],
+      attribution: {},
+    } as unknown as MetricWithAttribution);
+
+    const shifts = JSON.parse(
+      memoryExporter.getFinishedLogRecords()[0].attributes[
+        'emb.web_vital.attribution.clsLayoutShifts'
+      ] as string,
+    ) as unknown[];
+    expect(shifts).to.deep.equal([
+      {
+        selector: '#first',
+        startRect: { x: 0, y: 0, width: 10, height: 10 },
+        endRect: { x: 5, y: 5, width: 10, height: 10 },
+      },
+    ]);
+  });
+
+  it('should not emit CLS layout shift attributes for non-CLS metrics', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    emitFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'good',
+      delta: 0,
+      id: 'm1',
+      navigationType: 'navigate',
+      entries: [{ startTime: 3000 } as PerformanceEntry],
+      attribution: {
+        timeToFirstByte: 0,
+        resourceLoadDelay: 0,
+        resourceLoadDuration: 0,
+        elementRenderDelay: 0,
+      },
+    } as MetricWithAttribution);
+
+    const attrs = memoryExporter.getFinishedLogRecords()[0].attributes;
+    expect(attrs).to.not.have.property(
+      'emb.web_vital.attribution.clsLayoutShifts',
+    );
+    expect(attrs).to.not.have.property(
+      'emb.web_vital.attribution.clsLayoutShiftsDroppedCount',
+    );
+  });
+
   it('should report FCP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,

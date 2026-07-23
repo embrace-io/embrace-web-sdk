@@ -3,6 +3,7 @@ import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals/attribution';
 export const WEB_VITAL_EVENT_NAME = 'browser.web_vital';
 export const MAX_LOAF_SCRIPT_URL_LENGTH = 2048;
 export const MAX_LOAF_SCRIPT_ENTRIES = 250;
+export const MAX_CLS_LAYOUT_SHIFTS = 50;
 export const ALL_WEB_VITALS = ['CLS', 'INP', 'LCP', 'FCP', 'TTFB'] as const;
 export const WEB_VITALS_ID_TO_LISTENER = {
   /**
