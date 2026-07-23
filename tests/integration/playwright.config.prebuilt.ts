@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
 // Config for fast iteration: assumes all platforms are already built and servers are already running.
 // Use with the --serve / --test modes of scripts/test-integration-podman.sh.
@@ -12,6 +13,7 @@ export default defineConfig({
       url: 'http://localhost:3010',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'next-15-turbopack-pages',
@@ -19,6 +21,7 @@ export default defineConfig({
       url: 'http://localhost:3011',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'next-15-webpack-app',
@@ -26,6 +29,7 @@ export default defineConfig({
       url: 'http://localhost:3012',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'next-15-webpack-pages',
@@ -33,6 +37,7 @@ export default defineConfig({
       url: 'http://localhost:3013',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'next-16-app',
@@ -40,6 +45,7 @@ export default defineConfig({
       url: 'http://localhost:3014',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'next-16-pages',
@@ -47,6 +53,7 @@ export default defineConfig({
       url: 'http://localhost:3015',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'vite-react-router',
@@ -54,6 +61,7 @@ export default defineConfig({
       url: 'http://localhost:3016',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
     {
       name: 'api',
@@ -61,6 +69,7 @@ export default defineConfig({
       url: 'http://localhost:3001/health-check',
       reuseExistingServer: true,
       timeout: 30 * 1000,
+      gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
   ],
   testMatch: '**/*.spec.ts',
