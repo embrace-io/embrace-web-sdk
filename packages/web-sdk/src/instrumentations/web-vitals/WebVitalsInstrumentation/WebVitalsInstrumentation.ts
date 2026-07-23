@@ -206,10 +206,10 @@ const lcpElementAttribution = (
     if (element) {
       const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
       const rect = element.getBoundingClientRect();
-      attributes[`${prefix}LCPElementType`] = element.tagName.toLowerCase();
+      attributes[`${prefix}lcpElementType`] = element.tagName.toLowerCase();
       // x/y are intentionally not clamped: an element scrolled above the
       // viewport legitimately has a negative position.
-      attributes[`${prefix}LCPElementBoundingRect`] = JSON.stringify({
+      attributes[`${prefix}lcpElementBoundingRect`] = JSON.stringify({
         x: Math.round(rect.x),
         y: Math.round(rect.y),
         width: Math.round(rect.width),
