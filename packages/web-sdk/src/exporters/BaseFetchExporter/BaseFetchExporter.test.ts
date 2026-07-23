@@ -15,6 +15,7 @@ describe('BaseFetchExporter', () => {
     delegate = {
       export: sinon.stub(),
       forceFlush: sinon.stub().resolves(),
+      setMetrics: sinon.stub(),
       shutdown: sinon.stub().resolves(),
     };
     exporter = new BaseFetchExporter(delegate);
