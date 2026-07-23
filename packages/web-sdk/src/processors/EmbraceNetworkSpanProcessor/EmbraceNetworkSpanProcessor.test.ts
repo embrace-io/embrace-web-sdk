@@ -48,37 +48,6 @@ describe('EmbraceNetworkSpanProcessor', () => {
     });
   });
 
-  it('should copy over deprecated network attributes', () => {
-    tracer
-      .startSpan('network-request', {
-        attributes: {
-          'http.method': 'GET',
-          'http.status_code': 200,
-          'http.response_content_length': 10,
-          'http.request_content_length': 20,
-          'http.url': 'https://example.com',
-        },
-      })
-      .end();
-
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(1);
-    const networkRequest = finishedSpans[0];
-    expect(networkRequest.attributes).to.be.deep.equal({
-      'emb.type': 'perf.network_request',
-      'http.request.method': 'GET',
-      'http.response.status_code': 200,
-      'http.response.body.size': 10,
-      'http.request.body.size': 20,
-      'url.full': 'https://example.com',
-      'http.method': 'GET',
-      'http.status_code': 200,
-      'http.response_content_length': 10,
-      'http.request_content_length': 20,
-      'http.url': 'https://example.com',
-    });
-  });
-
   it('should do nothing for a non-network span', () => {
     tracer
       .startSpan('some-span', {

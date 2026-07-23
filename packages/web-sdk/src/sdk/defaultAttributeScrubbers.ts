@@ -2,7 +2,6 @@ import {
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_URL_QUERY,
-  SEMATTRS_HTTP_URL,
 } from '@opentelemetry/semantic-conventions';
 import type { AttributeScrubber } from '../common/index.ts';
 
@@ -68,12 +67,6 @@ export const getDefaultAttributeScrubbers = (
     {
       // https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L30
       key: ATTR_URL_FULL,
-      scrub: (value: string) =>
-        scrubURL({ value, queryParamRegex, scrubPath: true, scrubQuery: true }),
-    },
-    {
-      // Adding to catch the deprecated attribute that was replaced by ATTR_URL_FULL
-      key: SEMATTRS_HTTP_URL,
       scrub: (value: string) =>
         scrubURL({ value, queryParamRegex, scrubPath: true, scrubQuery: true }),
     },

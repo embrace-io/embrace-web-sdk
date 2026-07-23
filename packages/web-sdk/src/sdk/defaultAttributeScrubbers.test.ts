@@ -24,12 +24,6 @@ describe('getDefaultAttributeScrubbers', () => {
       expected: 'https://REDACTED:REDACTED@www.example.com/some/other/path',
     },
     {
-      name: 'scrub credentials from deprecated url attribute',
-      key: 'http.url',
-      value: 'https://username:password@www.example.com/some/other/path',
-      expected: 'https://REDACTED:REDACTED@www.example.com/some/other/path',
-    },
-    {
       name: 'scrub sensitive params from query string',
       key: 'url.query',
       value: '?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
@@ -44,14 +38,6 @@ describe('getDefaultAttributeScrubbers', () => {
     {
       name: 'scrub sensitive query string params from full url',
       key: 'url.full',
-      value:
-        'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
-      expected:
-        'https://example.com/some/path/?foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
-    },
-    {
-      name: 'scrub sensitive query string params from deprecated url attribute',
-      key: 'http.url',
       value:
         'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
       expected:
