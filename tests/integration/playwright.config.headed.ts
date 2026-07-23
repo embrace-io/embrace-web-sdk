@@ -8,6 +8,9 @@ import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
 //   npx playwright test --config playwright.config.headed.ts
 export default defineConfig({
   timeout: 6 * 60 * 1000,
+  // Concurrent headed windows occlude each other, which makes Chrome mark
+  // them hidden and drop pending paint metrics.
+  workers: 1,
   webServer: [
     {
       name: 'vite-react-router',
@@ -23,6 +26,13 @@ export default defineConfig({
       reuseExistingServer: true,
       gracefulShutdown: GRACEFUL_SHUTDOWN,
     },
+    {
+      name: 'vite-test-harness',
+      command:
+        'cd platforms/vite-test-harness && npm install --silent && npm run build && npx vite preview --port 3017',
+      url: 'http://localhost:3017',
+      reuseExistingServer: true,
+    },
   ],
   projects: [
     // Standard Chrome: no SoftNavigationHeuristics flag, so the polyfill path
@@ -37,9 +47,16 @@ export default defineConfig({
     // soft-navigation PerformanceObserver entry type.
     {
       name: 'chromium-soft-nav-heuristics',
-      testMatch: '**/e2e-headed/soft-navigation-native.spec.ts',
+      testMatch: [
+        '**/e2e-headed/soft-navigation-native.spec.ts',
+        '**/e2e-headed/soft-navigation-web-vitals.spec.ts',
+      ],
       use: {
         ...devices['Desktop Chrome'],
+        // At the time of writing, Playwright bundles a version of Chromium with
+        // older soft navigation APIs. This test requires Chrome 151+, or 150
+        // with --enable-features=SoftNavigationHeuristics.
+        channel: 'chrome',
         headless: false,
         launchOptions: {
           args: ['--enable-features=SoftNavigationHeuristics'],

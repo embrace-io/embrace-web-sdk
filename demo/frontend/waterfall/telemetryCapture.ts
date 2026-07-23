@@ -27,6 +27,7 @@ export interface CapturedLog {
   severityText: string;
   body: string;
   spanId: string | null;
+  attributes: ReadableLogRecord['attributes'];
 }
 
 const capturedSpans: CapturedSpan[] = [];
@@ -102,6 +103,7 @@ export class CapturingLogExporter implements LogRecordExporter {
         body: record.body == null ? '' : String(record.body),
         // biome-ignore lint/suspicious/noUnnecessaryConditions: a log emitted with no active span has an undefined spanContext at runtime, despite the non-optional type
         spanId: record.spanContext?.spanId ?? null,
+        attributes: record.attributes,
       });
     }
     resultCallback({ code: ExportResultCode.SUCCESS });

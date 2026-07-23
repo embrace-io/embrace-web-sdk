@@ -60,6 +60,7 @@ type TestWithMockApi = {
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
+  setPageVisibility: (visibilityState: 'visible' | 'hidden') => Promise<void>;
   getCurrentUserSessionId: () => Promise<string>;
   validateThatSessionPartsEnded: (
     expectedCount?: number,
@@ -124,6 +125,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.web_vital.value',
   'browser.web_vital.delta',
   'browser.web_vital.id',
+  'browser.web_vital.navigation_id',
   'browser.web_vital.value',
   'tap.coords',
   'first_interaction.x',
@@ -245,6 +247,19 @@ const testWithMockApi = base.extend<TestWithMockApi>({
       }),
     { scope: 'test' },
   ],
+  // Fakes visibility rather than actually hiding the tab, which Playwright
+  // cannot do reliably.
+  setPageVisibility: async ({ page }, use) => {
+    await use(async (visibilityState) => {
+      await page.evaluate((value) => {
+        Object.defineProperty(document, 'visibilityState', {
+          value,
+          writable: true,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, visibilityState);
+    });
+  },
   getCurrentUserSessionId: async ({ page }, use) => {
     await use(async () => {
       const userSessionId = await page.evaluate(

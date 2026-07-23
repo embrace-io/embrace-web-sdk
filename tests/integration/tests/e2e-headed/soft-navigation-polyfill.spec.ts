@@ -29,15 +29,9 @@ const test = testWithMockApi.extend<SPAFixture>({
     });
   },
 
-  triggerSessionEnd: async ({ page }, use) => {
+  triggerSessionEnd: async ({ setPageVisibility }, use) => {
     await use(async () => {
-      await page.evaluate(() => {
-        Object.defineProperty(document, 'visibilityState', {
-          value: 'hidden',
-          writable: true,
-        });
-        document.dispatchEvent(new Event('visibilitychange'));
-      });
+      await setPageVisibility('hidden');
     });
   },
 });
@@ -99,12 +93,12 @@ test.describe('Soft Navigation Polyfill', () => {
         )?.value.stringValue,
       )
       .toBe('polyfill');
+    // A whole-number duration is serialized as intValue rather than doubleValue.
+    const durationAttr = polyfillSpan?.attributes?.find(
+      (a) => a.key === 'emb.soft_navigation.duration',
+    )?.value;
     test
-      .expect(
-        polyfillSpan?.attributes?.find(
-          (a) => a.key === 'emb.soft_navigation.duration',
-        )?.value.doubleValue,
-      )
+      .expect(durationAttr?.intValue ?? durationAttr?.doubleValue)
       .toBeGreaterThan(0);
   });
 });

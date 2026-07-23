@@ -94,6 +94,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution);
 
@@ -104,6 +105,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'cls',
@@ -133,6 +135,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         largestShiftTime: 3000,
         largestShiftValue: 3.0,
@@ -147,6 +150,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'cls',
@@ -247,6 +251,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 20,
         firstByteToFCP: 40,
@@ -261,6 +266,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 99,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'fcp',
@@ -296,6 +302,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 999,
         resourceLoadDelay: 1000,
@@ -311,6 +318,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'lcp',
@@ -346,6 +354,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         interactionTarget: 'some-target',
         interactionTargetElement: undefined,
@@ -368,6 +377,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'inp',
@@ -415,6 +425,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm2',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           interactionTarget: 'button',
           interactionTargetElement: undefined,
@@ -564,6 +575,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 20,
         cacheDuration: 40,
@@ -593,6 +605,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 99,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'ttfb',
@@ -637,6 +650,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm2',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 20,
         cacheDuration: 0,
@@ -695,6 +709,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm3',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -757,6 +772,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm4',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -816,6 +832,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm4',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -875,6 +892,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm5',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -934,6 +952,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm6',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -997,6 +1016,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm8',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -1055,6 +1075,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm8b',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -1113,6 +1134,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm-sum',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -1190,6 +1212,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm7',
       entries: [],
       navigationType: 'back-forward',
+      navigationId: 1,
       attribution: {
         waitingDuration: 0,
         cacheDuration: 0,
@@ -1252,6 +1275,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution);
 
@@ -1263,6 +1287,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 0,
         resourceLoadDelay: 0,
@@ -1336,6 +1361,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution);
 
@@ -1349,6 +1375,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm2',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution);
 
@@ -1378,6 +1405,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution);
 
@@ -1421,6 +1449,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution;
 
@@ -1464,6 +1493,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         largestShiftTime: 3000,
         largestShiftValue: 3.0,
@@ -1518,6 +1548,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 20,
         firstByteToFCP: 40,
@@ -1571,6 +1602,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 999,
         resourceLoadDelay: 1000,
@@ -1626,6 +1658,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         interactionTarget: 'some-target',
         interactionTargetElement: undefined,
@@ -1695,6 +1728,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         waitingDuration: 20,
         cacheDuration: 40,
@@ -1772,6 +1806,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {},
     } as MetricWithAttribution;
 
@@ -1783,6 +1818,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         timeToFirstByte: 999,
         resourceLoadDelay: 1000,
@@ -1844,6 +1880,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         interactionTarget: 'some-target',
         interactionTime: 19000,
@@ -1859,6 +1896,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'inp',
@@ -1892,6 +1930,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         largestShiftValue: 0,
         loadState: '',
@@ -1927,6 +1966,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: null,
     } as unknown as MetricWithAttribution);
 
@@ -1935,6 +1975,7 @@ describe('WebVitalsInstrumentation', () => {
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+      'browser.web_vital.navigation_id': 1,
       'browser.web_vital.delta': 0,
       'browser.web_vital.id': 'm1',
       'browser.web_vital.name': 'fcp',
@@ -1965,6 +2006,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: {
         largestShiftValue: 0,
         hadRecentInput: false,
@@ -1999,6 +2041,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: { largestShiftValue: 1.5 },
     } as MetricWithAttribution);
 
@@ -2045,6 +2088,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           interactionTarget: 'some-target',
           interactionTime: 19000,
@@ -2111,6 +2155,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           timeToFirstByte: 999,
           resourceLoadDelay: 1000,
@@ -2169,6 +2214,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: { largestShiftTarget: 'some-target-1' },
       } as CLSMetricWithAttribution;
 
@@ -2221,6 +2267,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           timeToFirstByte: 0,
           firstByteToFCP: 0,
@@ -2277,6 +2324,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           waitingDuration: 20,
           cacheDuration: 40,
@@ -2353,6 +2401,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2394,6 +2443,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2432,6 +2482,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2479,6 +2530,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2514,6 +2566,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2548,6 +2601,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2599,6 +2653,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution;
 
@@ -2636,6 +2691,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution);
 
@@ -2663,6 +2719,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution);
 
@@ -2725,6 +2782,7 @@ describe('WebVitalsInstrumentation', () => {
       id: 'm1',
       entries: [],
       navigationType: 'navigate',
+      navigationId: 1,
       attribution: { largestShiftTarget: 'el' },
     } as MetricWithAttribution;
 
@@ -2765,6 +2823,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution);
 
@@ -2794,6 +2853,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm1',
         entries: [],
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {},
       } as MetricWithAttribution);
 
@@ -2802,6 +2862,380 @@ describe('WebVitalsInstrumentation', () => {
       expect(diag.getErrorLogs()).to.include(
         'applyCustomLogRecordData hook failed',
       );
+    });
+  });
+
+  describe('soft navigations', () => {
+    describe('listener registration', () => {
+      let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+      const stubSupportedEntryTypes = (types: string[]) => {
+        (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+          public static supportedEntryTypes = types;
+        };
+      };
+
+      beforeEach(() => {
+        originalPerformanceObserver = globalThis.PerformanceObserver;
+      });
+
+      afterEach(() => {
+        (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+          originalPerformanceObserver;
+      });
+
+      it('should pass reportSoftNavs: true to both listener registrations when supported', () => {
+        stubSupportedEntryTypes(['soft-navigation']);
+        instrumentation = new WebVitalsInstrumentation({
+          diag,
+          perf,
+          listeners: mockWebVitalListeners,
+          urlDocument,
+        });
+
+        void expect(clsStub.calledTwice).to.be.true;
+        expect(clsStub.getCall(0).args[1]).to.deep.equal({
+          reportAllChanges: true,
+          reportSoftNavs: true,
+        });
+        expect(clsStub.getCall(1).args[1]).to.deep.equal({
+          reportSoftNavs: true,
+        });
+      });
+
+      it('should pass reportSoftNavs: false to the TTFB listener registrations, since web-vitals reports a dummy zero TTFB for soft navigations', () => {
+        stubSupportedEntryTypes(['soft-navigation']);
+        instrumentation = new WebVitalsInstrumentation({
+          diag,
+          perf,
+          listeners: mockWebVitalListeners,
+          urlDocument,
+        });
+
+        void expect(ttfbStub.calledTwice).to.be.true;
+        expect(ttfbStub.getCall(0).args[1]).to.deep.equal({
+          reportAllChanges: true,
+          reportSoftNavs: false,
+        });
+        expect(ttfbStub.getCall(1).args[1]).to.deep.equal({
+          reportSoftNavs: false,
+        });
+      });
+
+      it('should pass reportSoftNavs: false to both listener registrations when disabled', () => {
+        stubSupportedEntryTypes(['soft-navigation']);
+        instrumentation = new WebVitalsInstrumentation({
+          diag,
+          perf,
+          listeners: mockWebVitalListeners,
+          urlDocument,
+          reportSoftNavs: false,
+        });
+
+        expect(clsStub.getCall(0).args[1]).to.deep.equal({
+          reportAllChanges: true,
+          reportSoftNavs: false,
+        });
+        expect(clsStub.getCall(1).args[1]).to.deep.equal({
+          reportSoftNavs: false,
+        });
+      });
+
+      it('should pass reportSoftNavs: false to both listener registrations when unsupported', () => {
+        stubSupportedEntryTypes([]);
+        instrumentation = new WebVitalsInstrumentation({
+          diag,
+          perf,
+          listeners: mockWebVitalListeners,
+          urlDocument,
+        });
+
+        expect(clsStub.getCall(0).args[1]).to.deep.equal({
+          reportAllChanges: true,
+          reportSoftNavs: false,
+        });
+        expect(clsStub.getCall(1).args[1]).to.deep.equal({
+          reportSoftNavs: false,
+        });
+      });
+    });
+
+    it('should emit non-TTFB metrics for soft navigations', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm2',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 3,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(
+        records[0].attributes['browser.web_vital.navigation_type'],
+      ).to.equal('soft-navigation');
+    });
+
+    it('should include navigation_id and interaction_id when present on the metric', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'INP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm3',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 7,
+        navigationInteractionId: 42,
+        attribution: {
+          interactionTarget: 'some-target',
+          interactionTime: 19000,
+          nextPaintTime: 18000,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: [],
+          inputDelay: 1000,
+          processingDuration: 2000,
+          presentationDelay: 3000,
+          loadState: 'complete',
+        },
+      } as MetricWithAttribution);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes['browser.web_vital.navigation_id']).to.equal(7);
+      expect(record.attributes['browser.web_vital.interaction_id']).to.equal(
+        42,
+      );
+    });
+
+    it('should omit interaction_id when absent from the metric', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'LCP',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm4',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes['browser.web_vital.navigation_id']).to.equal(1);
+      void expect(record.attributes['browser.web_vital.interaction_id']).to.be
+        .undefined;
+    });
+
+    it('should prefer navigationURL for browser.url.full on soft navigations', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const metric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm5',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 2,
+        navigationURL: 'https://example.com/page-b',
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-b',
+      );
+    });
+
+    it('should keep the attributed-page URL for hard navigations even when navigationURL is set', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const metric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm6',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        navigationURL: 'https://example.com/page-b',
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-a',
+      );
+    });
+
+    it('should fall back to the attributed-page URL for soft navigations without navigationURL', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const metric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm7',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 2,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-a',
+      );
+    });
+
+    it('should refresh the attributed page for CLS when the metric id changes with an unchanged largestShiftTarget', () => {
+      const testDocument = { URL: 'https://first.com' };
+      const pageManager = new EmbracePageManager();
+      pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+
+      const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      // Initial page load metric.
+      changeFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: { largestShiftTarget: 'same-target' },
+      } as CLSMetricWithAttribution);
+
+      // Soft navigation resets CLS: a fresh metric id but the same target selector.
+      testDocument.URL = 'https://second.com';
+      pageManager.setCurrentRoute({ path: '/second/:id', url: '/second/123' });
+      const attributedPageID = pageManager.getCurrentPageId();
+
+      const softNavMetric = {
+        name: 'CLS',
+        value: 0.2,
+        rating: 'good',
+        delta: 0.2,
+        id: 'm2',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 2,
+        attribution: { largestShiftTarget: 'same-target' },
+      } as CLSMetricWithAttribution;
+
+      changeFunc(softNavMetric);
+      finalFunc(softNavMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [KEY_EMB_PAGE_PATH]: '/second/:id',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
     });
   });
 });

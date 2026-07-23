@@ -33,6 +33,15 @@ export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
   includeRawAttribution?: boolean;
   applyCustomLogRecordData?: (logRecord: LogRecord) => void;
 
+  /**
+   * When true, reports web vitals for each soft navigation in single-page apps
+   * (SPAs), in addition to the initial hard navigation. Does not have any effect
+   * in browsers that do not support the Soft Navigations API.
+   *
+   * Defaults to `true`.
+   */
+  reportSoftNavs?: boolean;
+
   // Embrace-specific (testability + SPA page attribution)
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;

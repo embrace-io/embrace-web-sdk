@@ -21,11 +21,14 @@ import {
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
+import { isEntryTypeSupported } from '../../../utils/performanceObserver/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_BROWSER_WEB_VITAL_DELTA,
   KEY_BROWSER_WEB_VITAL_ID,
+  KEY_BROWSER_WEB_VITAL_INTERACTION_ID,
   KEY_BROWSER_WEB_VITAL_NAME,
+  KEY_BROWSER_WEB_VITAL_NAVIGATION_ID,
   KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE,
   KEY_BROWSER_WEB_VITAL_RATING,
   KEY_BROWSER_WEB_VITAL_VALUE,
@@ -194,6 +197,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
   private readonly _includeRawAttribution: boolean;
+  private readonly _softNavsActive: boolean;
   private readonly _pageManager: PageManager;
   private readonly _attributedPage: Record<
     Metric['name'],
@@ -206,6 +210,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     TTFB: undefined,
   };
   private _largestShiftTargetForCLS: string | undefined | null = null;
+  private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
   private _listenersRegistered = false;
 
@@ -216,6 +221,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     urlDocument,
     urlAttribution = true,
     includeRawAttribution = true,
+    reportSoftNavs = true,
     pageManager,
     applyCustomLogRecordData,
     ...config
@@ -231,6 +237,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._urlDocument = urlDocument ?? window.document;
     this._urlAttribution = urlAttribution;
     this._includeRawAttribution = includeRawAttribution;
+    this._softNavsActive =
+      reportSoftNavs && isEntryTypeSupported('soft-navigation');
     this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
 
@@ -266,6 +274,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._listenersRegistered = true;
 
     ALL_WEB_VITALS.forEach((name) => {
+      // web-vitals reports a hardcoded dummy value of zero for TTFB on soft navigations. That
+      // is not a real measurement and would skew the data, so TTFB listeners keep soft
+      // navigation reporting off.
+      const reportSoftNavs = name !== 'TTFB' && this._softNavsActive;
+
       if (this._urlAttribution) {
         this._listeners[name]?.(
           (metric) => {
@@ -274,31 +287,36 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
             }
             if (metric.name === 'CLS') {
               const clsMetric = metric as CLSMetricWithAttribution;
-              // CLS is cumulative — the rating can update without the shift target changing pages.
-              // Only update the attributed page when largestShiftTarget changes so the URL reflects
-              // the page where the dominant shift element actually appeared.
-              if (
-                this._largestShiftTargetForCLS !==
-                clsMetric.attribution.largestShiftTarget
-              ) {
-                this._largestShiftTargetForCLS =
-                  clsMetric.attribution.largestShiftTarget;
+              const target = clsMetric.attribution.largestShiftTarget;
+
+              if (this._clsMetricId !== clsMetric.id) {
+                // A new metric ID means CLS has reset for a soft navigation.
+                this._clsMetricId = clsMetric.id;
+                this._largestShiftTargetForCLS = target;
+                this._attributedPage.CLS = this._currentAttributedPage();
+              } else if (this._largestShiftTargetForCLS !== target) {
+                // When the largest shift target changes, make sure the attributed page is updated
+                // to reflect the page where that shift occurred.
+                this._largestShiftTargetForCLS = target;
                 this._attributedPage.CLS = this._currentAttributedPage();
               }
             } else {
               this._attributedPage[metric.name] = this._currentAttributedPage();
             }
           },
-          { reportAllChanges: true },
+          { reportAllChanges: true, reportSoftNavs },
         );
       }
 
-      this._listeners[name]?.((metric) => {
-        if (!this._isEnabled) {
-          return;
-        }
-        this._emitWebVital(metric);
-      });
+      this._listeners[name]?.(
+        (metric) => {
+          if (!this._isEnabled) {
+            return;
+          }
+          this._emitWebVital(metric);
+        },
+        { reportSoftNavs },
+      );
     });
   }
 
@@ -313,7 +331,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
     // For INP use interactionTime, which is the start time of the user's interaction
-    if (metric.name === 'INP') {
+    if (
+      metric.name === 'INP' &&
+      metric.attribution.interactionTime !== undefined
+    ) {
       return this.perf.epochMillisFromOrigin(
         metric.attribution.interactionTime,
       );
@@ -365,9 +386,26 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         [KEY_BROWSER_WEB_VITAL_RATING]: metric.rating,
         [KEY_BROWSER_WEB_VITAL_ID]: metric.id,
         [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
+        ...(metric.navigationId !== undefined
+          ? { [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId }
+          : {}),
+        ...(metric.navigationInteractionId !== undefined
+          ? {
+              [KEY_BROWSER_WEB_VITAL_INTERACTION_ID]:
+                metric.navigationInteractionId,
+            }
+          : {}),
         ...(attributedPage
           ? {
-              [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
+              // The navigationURL emitted by web-vitals is authoritative for which URL the metric
+              // belongs to, since it was captured when the metric occurred. When soft navigations
+              // are not supported, we fall back to the attributed page.
+              [KEY_BROWSER_URL_FULL]:
+                metric.navigationURL != null &&
+                (metric.navigationType === 'soft-navigation' ||
+                  this._softNavsActive)
+                  ? metric.navigationURL
+                  : attributedPage.fullURL,
               [KEY_EMB_PAGE_PATH]: attributedPage.path,
               [KEY_EMB_PAGE_ID]: attributedPage.pageID,
               [KEY_APP_SURFACE_LABEL]: attributedPage.label,
