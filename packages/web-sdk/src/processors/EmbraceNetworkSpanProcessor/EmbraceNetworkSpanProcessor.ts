@@ -1,19 +1,4 @@
 import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
-import {
-  ATTR_HTTP_REQUEST_METHOD,
-  ATTR_HTTP_RESPONSE_STATUS_CODE,
-  ATTR_URL_FULL,
-  SEMATTRS_HTTP_METHOD,
-  SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
-  SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH,
-  SEMATTRS_HTTP_STATUS_CODE,
-  SEMATTRS_HTTP_URL,
-} from '@opentelemetry/semantic-conventions';
-
-import {
-  ATTR_HTTP_REQUEST_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_BODY_SIZE,
-} from '@opentelemetry/semantic-conventions/incubating';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
 import { isNetworkSpan } from '../../utils/index.ts';
 
@@ -30,23 +15,6 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   public onEnding(span: Span): void {
     if (isNetworkSpan(span)) {
       span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
-
-      /*
-        Fallback on deprecated attribute names in case the span is using those instead of the latest ones
-
-        The current versions of @opentelemetry/instrumentation-xml-http-request and @opentelemetry/instrumentation-fetch
-        that we're getting from @opentelemetry/auto-instrumentations-web are using these, once we update we'll remove
-        this fallback and only support a single version of the semantic convention
-       */
-      span.attributes[ATTR_URL_FULL] ??= span.attributes[SEMATTRS_HTTP_URL];
-      span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] ??=
-        span.attributes[SEMATTRS_HTTP_STATUS_CODE];
-      span.attributes[ATTR_HTTP_REQUEST_METHOD] ??=
-        span.attributes[SEMATTRS_HTTP_METHOD];
-      span.attributes[ATTR_HTTP_RESPONSE_BODY_SIZE] ??=
-        span.attributes[SEMATTRS_HTTP_RESPONSE_CONTENT_LENGTH];
-      span.attributes[ATTR_HTTP_REQUEST_BODY_SIZE] ??=
-        span.attributes[SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH];
     }
   }
 

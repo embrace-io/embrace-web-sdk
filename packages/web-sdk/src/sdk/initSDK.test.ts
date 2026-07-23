@@ -1905,15 +1905,13 @@ describe('initSDK', () => {
             test.networkType === 'fetch'
               ? '@opentelemetry/instrumentation-fetch'
               : '@opentelemetry/instrumentation-xml-http-request',
-          version: '0.220.0',
+          version: '0.221.0',
         });
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
         const expectedTraceparent = `00-${networkSpan.traceId}-${networkSpan.spanId}-01`;
 
-        expect(networkSpan.name).to.be.equal(
-          test.networkType === 'fetch' ? 'HTTP GET' : 'GET',
-        );
+        expect(networkSpan.name).to.be.equal('GET');
         let foundW3CAttr = false;
         networkSpan.attributes.forEach((attr) => {
           if (attr.key === 'emb.w3c_traceparent') {

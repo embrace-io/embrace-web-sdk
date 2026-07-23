@@ -26,18 +26,6 @@ describe('isNetworkSpan', () => {
     ).to.be.true;
   });
 
-  it('returns true using the deprecated semconv attributes', () => {
-    expect(
-      isNetworkSpan(
-        fakeSpan({
-          'http.method': 'GET',
-          'http.status_code': 200,
-          'http.url': 'https://example.com',
-        }),
-      ),
-    ).to.be.true;
-  });
-
   it('returns true for a 0 status code', () => {
     expect(
       isNetworkSpan(
