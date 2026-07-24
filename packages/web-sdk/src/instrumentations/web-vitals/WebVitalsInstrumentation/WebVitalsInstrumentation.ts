@@ -6,6 +6,7 @@ import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import type {
   CLSMetricWithAttribution,
   INPAttribution,
+  LCPAttribution,
   Metric,
   MetricWithAttribution,
   TTFBAttribution,
@@ -238,6 +239,36 @@ const ttfbSubPartsAttribution = (
   return attributes;
 };
 
+const lcpElementAttribution = (
+  metric: MetricWithAttribution,
+  diag: DiagLogger,
+): Attributes => {
+  const attributes: Attributes = {};
+
+  try {
+    const attribution = metric.attribution as LCPAttribution;
+    const element = attribution.lcpEntry?.element;
+
+    if (element) {
+      const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+      const rect = element.getBoundingClientRect();
+      attributes[`${prefix}elementType`] = element.tagName.toLowerCase();
+      // x/y are intentionally not clamped: an element scrolled above the
+      // viewport legitimately has a negative position.
+      attributes[`${prefix}elementBoundingRect`] = JSON.stringify({
+        x: Math.round(rect.x),
+        y: Math.round(rect.y),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      });
+    }
+  } catch (e) {
+    diag.error('error building LCP element attribution', e);
+  }
+
+  return attributes;
+};
+
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;
@@ -465,6 +496,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           : {}),
         ...(metric.name === 'CLS'
           ? clsLayoutShiftsAttribution(metric, this._diag)
+          : {}),
+        ...(metric.name === 'LCP'
+          ? lcpElementAttribution(metric, this._diag)
           : {}),
       },
       body:
