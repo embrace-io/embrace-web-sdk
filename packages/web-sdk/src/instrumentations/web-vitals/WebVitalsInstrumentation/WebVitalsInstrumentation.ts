@@ -511,11 +511,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
             }
           : {}),
         ...(metric.name === 'INP'
-          ? {
-              ...loafScriptsAttribution(metric, this._diag),
-              ...inpAttribution(metric, this._diag),
-            }
+          ? loafScriptsAttribution(metric, this._diag)
           : {}),
+        ...(metric.name === 'INP' ? inpAttribution(metric, this._diag) : {}),
         ...(metric.name === 'TTFB'
           ? ttfbSubPartsAttribution(metric, this._diag)
           : {}),
