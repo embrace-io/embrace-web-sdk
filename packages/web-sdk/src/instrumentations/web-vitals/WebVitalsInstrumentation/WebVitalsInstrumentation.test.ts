@@ -683,6 +683,120 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
+  describe('element_type attribution', () => {
+    const fireINPWithEntries = (
+      metricReportFunc: WebVitalOnReport,
+      entries: PerformanceEventTiming[],
+    ) => {
+      metricReportFunc({
+        name: 'INP',
+        value: 200,
+        rating: 'needs-improvement',
+        delta: 200,
+        id: 'm3',
+        entries,
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: {
+          interactionTarget: 'button',
+          interactionTargetElement: undefined,
+          interactionTime: 1000,
+          nextPaintTime: 1200,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: [],
+          inputDelay: 10,
+          processingDuration: 150,
+          presentationDelay: 40,
+          loadState: 'complete',
+        },
+      } as INPMetricWithAttribution);
+    };
+
+    it('should include element_type when the entry has a resolvable target', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      fireINPWithEntries(metricReportFunc, [
+        { target: { tagName: 'BUTTON' } } as unknown as PerformanceEventTiming,
+      ]);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(
+        records[0].attributes['emb.web_vital.attribution.element_type'],
+      ).to.equal('button');
+    });
+
+    it('should use the tag name from the first entry with a resolvable target when earlier entries have none', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      fireINPWithEntries(metricReportFunc, [
+        { target: null } as unknown as PerformanceEventTiming,
+        { target: { tagName: 'A' } } as unknown as PerformanceEventTiming,
+      ]);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(
+        records[0].attributes['emb.web_vital.attribution.element_type'],
+      ).to.equal('a');
+    });
+
+    it('should omit element_type when no entry has a resolvable target', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      fireINPWithEntries(metricReportFunc, [
+        { target: null } as unknown as PerformanceEventTiming,
+      ]);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
+        .be.undefined;
+    });
+
+    it('should log an error and omit element_type when computing it throws', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      fireINPWithEntries(
+        metricReportFunc,
+        null as unknown as PerformanceEventTiming[],
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
+        .be.undefined;
+      expect(diag.getErrorLogs()).to.include(
+        'error building INP element type attribution',
+      );
+    });
+  });
+
   it('should report TTFB metrics with sub-part attributes', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
