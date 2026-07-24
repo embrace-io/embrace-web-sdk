@@ -772,6 +772,29 @@ describe('WebVitalsInstrumentation', () => {
       expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
         .be.undefined;
     });
+
+    it('should log an error and omit element_type when computing it throws', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      fireINPWithEntries(
+        metricReportFunc,
+        null as unknown as PerformanceEventTiming[],
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
+        .be.undefined;
+      expect(diag.getErrorLogs()).to.include(
+        'error building INP element type attribution',
+      );
+    });
   });
 
   it('should report TTFB metrics with sub-part attributes', () => {
