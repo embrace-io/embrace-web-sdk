@@ -696,6 +696,7 @@ describe('WebVitalsInstrumentation', () => {
         id: 'm3',
         entries,
         navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           interactionTarget: 'button',
           interactionTargetElement: undefined,
