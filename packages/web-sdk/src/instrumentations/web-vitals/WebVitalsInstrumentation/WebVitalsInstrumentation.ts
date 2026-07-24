@@ -58,6 +58,13 @@ type AttributedPage = {
 
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
 
+const roundRect = (rect?: DOMRectReadOnly) => ({
+  x: Math.round(rect?.x ?? 0),
+  y: Math.round(rect?.y ?? 0),
+  width: Math.round(rect?.width ?? 0),
+  height: Math.round(rect?.height ?? 0),
+});
+
 const isPrimitiveValue = (
   value: unknown,
 ): value is string | number | boolean => {
@@ -143,12 +150,6 @@ const clsLayoutShiftsAttribution = (
   try {
     /* eslint-disable baseline-js/use-baseline */
     const entries = metric.entries as LayoutShift[];
-    const roundRect = (rect?: DOMRectReadOnly) => ({
-      x: Math.round(rect?.x ?? 0),
-      y: Math.round(rect?.y ?? 0),
-      width: Math.round(rect?.width ?? 0),
-      height: Math.round(rect?.height ?? 0),
-    });
 
     if (entries.length > 0) {
       const shifts = entries.slice(0, MAX_CLS_LAYOUT_SHIFTS).map((entry) => {
@@ -251,16 +252,10 @@ const lcpElementAttribution = (
 
     if (element) {
       const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
-      const rect = element.getBoundingClientRect();
       attributes[`${prefix}elementType`] = element.tagName.toLowerCase();
-      // x/y are intentionally not clamped: an element scrolled above the
-      // viewport legitimately has a negative position.
-      attributes[`${prefix}elementBoundingRect`] = JSON.stringify({
-        x: Math.round(rect.x),
-        y: Math.round(rect.y),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-      });
+      attributes[`${prefix}elementBoundingRect`] = JSON.stringify(
+        roundRect(element.getBoundingClientRect()),
+      );
     }
   } catch (e) {
     diag.error('error building LCP element attribution', e);
