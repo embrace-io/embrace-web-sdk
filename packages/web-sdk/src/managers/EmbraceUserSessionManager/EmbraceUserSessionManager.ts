@@ -112,8 +112,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _hasStoredState = false;
 
   private _activeSessionPartId: string | null = null;
-  // Rollover history backing getSessionPartIdAt, cleared once the tab
-  // becomes visible again
+  // Rollover history backing getSessionPartIdAt, cleared once the user
+  // session ends, so it covers as much ground as possible before eviction
+  // rather than resetting on every visibility cycle.
   private _sessionPartHistory: Array<{
     id: string;
     startTimeEpochMillis: number;
@@ -512,6 +513,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._state = null;
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
       this._clearMaxDurationTimer();
+      this._sessionPartHistory = [];
     } else {
       this._continueUserSessionAfterPartEnd(now);
     }
@@ -928,9 +930,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   // Tab visibility flipped (switch tabs, minimize, OS app switch). Drives
   // the engagement transition off the current visibilityState/hasFocus pair.
   private readonly _onVisibilityChange = (): void => {
-    if (getVisibilityState(this._visibilityDoc) !== EMB_STATES.Background) {
-      this._sessionPartHistory = [];
-    }
     this._handleEngagementTransition('visibilitychange');
   };
 

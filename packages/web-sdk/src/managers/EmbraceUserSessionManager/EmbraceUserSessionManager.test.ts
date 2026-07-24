@@ -9,7 +9,6 @@ import {
   InMemoryStorage,
   MockPerformanceManager,
 } from '../../../tests/utils/index.ts';
-import type { VisibilityStateDocument } from '../../common/index.ts';
 import type { DynamicSDKConfig } from '../../sdk/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import {
@@ -34,17 +33,6 @@ const lastEndCall = (
   }
   return spy.lastCall.args[0] as EndSessionPartOptions;
 };
-
-// Backed by a real EventTarget so tests can dispatch an actual
-// `visibilitychange` event and exercise the manager's real listener wiring,
-// rather than reaching into private handlers.
-class FakeVisibilityDocument
-  extends EventTarget
-  implements VisibilityStateDocument
-{
-  public visibilityState: DocumentVisibilityState = 'visible';
-  public hasFocus = (): boolean => true;
-}
 
 describe('EmbraceUserSessionManager', () => {
   let inMemoryStorage: InMemoryStorage;
@@ -417,34 +405,20 @@ describe('EmbraceUserSessionManager', () => {
       expect(manager.getSessionPartIdAt(1500)).to.equal(partId);
     });
 
-    it('clears the rollover history once the tab becomes visible again, so a stale query falls back to the live part', () => {
-      const visibilityDoc = new FakeVisibilityDocument();
-      const manager = new EmbraceUserSessionManager({
-        diag,
-        perf: new MockPerformanceManager(clock),
-        storage,
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        visibilityDoc,
-        dynamicConfigManager: createTestDynamicConfigManager(),
-      });
-      manager.setTracerProvider(new TracerProvider());
+    it('clears the rollover history once the user session ends', () => {
+      const manager = createManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
       const partAId = manager.getSessionPartId();
 
       clock.tick(1000);
-      manager.endSessionPartInternal({ reason: 'background' });
-      manager.startSessionPartInternal({ reason: 'foreground' });
+      manager.endUserSession();
       const partBId = manager.getSessionPartId();
+      expect(partBId).to.not.equal(partAId);
 
-      // Before any visibility event, the history still resolves the
-      // pre-rollover timestamp to part A.
-      expect(manager.getSessionPartIdAt(0)).to.equal(partAId);
-
-      // Tab becomes visible again — anything pending from before this point
-      // is guaranteed to have already flushed, so the history clears.
-      visibilityDoc.dispatchEvent(new Event('visibilitychange'));
-
+      // The user session part A belonged to has ended, so nothing will
+      // ever need to resolve a timestamp against it again — the history
+      // clears and a stale query falls back to the new user session's part.
       expect(manager.getSessionPartIdAt(0)).to.equal(partBId);
     });
   });
