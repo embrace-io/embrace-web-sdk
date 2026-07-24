@@ -376,8 +376,8 @@ describe('WebVitalsInstrumentation', () => {
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
     const attrs = records[0].attributes;
-    expect(attrs['emb.web_vital.attribution.lcpElementType']).to.equal('img');
-    expect(attrs['emb.web_vital.attribution.lcpElementBoundingRect']).to.equal(
+    expect(attrs['emb.web_vital.attribution.elementType']).to.equal('img');
+    expect(attrs['emb.web_vital.attribution.elementBoundingRect']).to.equal(
       JSON.stringify({ x: -12, y: 101, width: 300, height: 151 }),
     );
   });
@@ -413,8 +413,8 @@ describe('WebVitalsInstrumentation', () => {
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
     expect(records[0].attributes).to.not.have.any.keys([
-      'emb.web_vital.attribution.lcpElementType',
-      'emb.web_vital.attribution.lcpElementBoundingRect',
+      'emb.web_vital.attribution.elementType',
+      'emb.web_vital.attribution.elementBoundingRect',
     ]);
   });
 
@@ -457,8 +457,8 @@ describe('WebVitalsInstrumentation', () => {
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
     expect(records[0].attributes).to.not.have.any.keys([
-      'emb.web_vital.attribution.lcpElementType',
-      'emb.web_vital.attribution.lcpElementBoundingRect',
+      'emb.web_vital.attribution.elementType',
+      'emb.web_vital.attribution.elementBoundingRect',
     ]);
     expect(diag.getErrorLogs()).to.include(
       'error building LCP element attribution',
