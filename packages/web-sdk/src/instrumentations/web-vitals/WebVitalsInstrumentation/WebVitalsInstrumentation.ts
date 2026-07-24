@@ -132,6 +132,33 @@ const loafScriptsAttribution = (
   return attributes;
 };
 
+const inpAttribution = (
+  metric: MetricWithAttribution,
+  diag: DiagLogger,
+): Attributes => {
+  const attributes: Attributes = {};
+
+  try {
+    /* eslint-disable baseline-js/use-baseline */
+    const target = (metric.entries as PerformanceEventTiming[]).find(
+      (entry) => entry.target,
+    )?.target as Element | null | undefined;
+
+    const tagName = target?.tagName?.toLowerCase();
+
+    if (tagName) {
+      attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}element_type`] =
+        tagName;
+    }
+
+    /* eslint-enable baseline-js/use-baseline */
+  } catch (e) {
+    diag.error('error building INP element type attribution', e);
+  }
+
+  return attributes;
+};
+
 const ttfbSubPartsAttribution = (
   metric: MetricWithAttribution,
   diag: DiagLogger,
@@ -445,6 +472,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         ...(metric.name === 'INP'
           ? loafScriptsAttribution(metric, this._diag)
           : {}),
+        ...(metric.name === 'INP' ? inpAttribution(metric, this._diag) : {}),
         ...(metric.name === 'TTFB'
           ? ttfbSubPartsAttribution(metric, this._diag)
           : {}),
