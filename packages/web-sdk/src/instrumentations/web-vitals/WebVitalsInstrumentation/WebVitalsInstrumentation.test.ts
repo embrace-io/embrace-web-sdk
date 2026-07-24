@@ -683,7 +683,7 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
-  describe('INPElementType attribution', () => {
+  describe('element_type attribution', () => {
     const fireINPWithEntries = (
       metricReportFunc: WebVitalOnReport,
       entries: PerformanceEventTiming[],
@@ -712,7 +712,7 @@ describe('WebVitalsInstrumentation', () => {
       } as INPMetricWithAttribution);
     };
 
-    it('should include INPElementType when the entry has a resolvable target', () => {
+    it('should include element_type when the entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
@@ -728,7 +728,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(
-        records[0].attributes['emb.web_vital.attribution.INPElementType'],
+        records[0].attributes['emb.web_vital.attribution.element_type'],
       ).to.equal('button');
     });
 
@@ -749,11 +749,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(
-        records[0].attributes['emb.web_vital.attribution.INPElementType'],
+        records[0].attributes['emb.web_vital.attribution.element_type'],
       ).to.equal('a');
     });
 
-    it('should omit INPElementType when no entry has a resolvable target', () => {
+    it('should omit element_type when no entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
@@ -768,8 +768,8 @@ describe('WebVitalsInstrumentation', () => {
       ]);
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records[0].attributes['emb.web_vital.attribution.INPElementType'])
-        .to.be.undefined;
+      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
+        .be.undefined;
     });
   });
 

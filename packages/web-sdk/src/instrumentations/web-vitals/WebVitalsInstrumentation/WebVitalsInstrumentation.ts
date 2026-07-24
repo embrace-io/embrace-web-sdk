@@ -147,7 +147,7 @@ const inpAttribution = (
     const tagName = target?.tagName?.toLowerCase();
 
     if (tagName) {
-      attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}INPElementType`] =
+      attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}element_type`] =
         tagName;
     }
 
