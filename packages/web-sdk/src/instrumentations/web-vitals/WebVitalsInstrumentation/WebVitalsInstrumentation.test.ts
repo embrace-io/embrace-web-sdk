@@ -334,6 +334,137 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['elementRenderDelay']).to.equal(3000);
   });
 
+  it('should include LCP element type and bounding rect when the element is available', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      navigationId: 1,
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+        lcpEntry: {
+          element: {
+            tagName: 'IMG',
+            getBoundingClientRect: () => ({
+              x: -12.4,
+              y: 100.6,
+              width: 300.2,
+              height: 150.8,
+            }),
+          },
+        },
+      },
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    const attrs = records[0].attributes;
+    expect(attrs['emb.web_vital.attribution.elementType']).to.equal('img');
+    expect(attrs['emb.web_vital.attribution.elementBoundingRect']).to.equal(
+      JSON.stringify({ x: -12, y: 101, width: 300, height: 151 }),
+    );
+  });
+
+  it('should omit LCP element attributes when the element is unavailable', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      navigationId: 1,
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+      },
+    } as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    expect(records[0].attributes).to.not.have.any.keys([
+      'emb.web_vital.attribution.elementType',
+      'emb.web_vital.attribution.elementBoundingRect',
+    ]);
+  });
+
+  it('should still emit the LCP record and log when reading the element throws', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+
+    const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'LCP',
+      value: 22,
+      rating: 'poor',
+      delta: 0,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      navigationId: 1,
+      attribution: {
+        timeToFirstByte: 999,
+        resourceLoadDelay: 1000,
+        resourceLoadDuration: 2000,
+        elementRenderDelay: 3000,
+        lcpEntry: {
+          element: {
+            tagName: 'IMG',
+            getBoundingClientRect: () => {
+              throw new Error('boom');
+            },
+          },
+        },
+      },
+    } as unknown as MetricWithAttribution);
+
+    const records = memoryExporter.getFinishedLogRecords();
+    expect(records).to.have.lengthOf(1);
+    expect(records[0].attributes).to.not.have.any.keys([
+      'emb.web_vital.attribution.elementType',
+      'emb.web_vital.attribution.elementBoundingRect',
+    ]);
+    expect(diag.getErrorLogs()).to.include(
+      'error building LCP element attribution',
+    );
+  });
+
   it('should report INP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
