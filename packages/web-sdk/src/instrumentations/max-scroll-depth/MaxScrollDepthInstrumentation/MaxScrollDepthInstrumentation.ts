@@ -1,5 +1,7 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
+import type { DocumentMeasurement } from '../../../utils/index.ts';
+import { measureDocument } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   ATTR_MAX_SCROLL_DEPTH_DID_SCROLL,
@@ -63,18 +65,15 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _emit(): void {
-    // Read scrollHeight once here since it forces a layout reflow rather than on every scroll event.
+    // The scroll position is readable at any time, so a document that loaded at
+    // a restored offset has already reached that depth even though no scroll
+    // event ever fired for it.
+    this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
+
+    // Measure once here rather than on every scroll event, since reading the
+    // scroll root's dimensions forces a layout reflow.
     // https://developer.chrome.com/docs/performance/insights/forced-reflow
-    const documentHeight = document.documentElement.scrollHeight;
-    const viewportHeight = window.innerHeight;
-    const scrollBottom = documentHeight - viewportHeight;
-    const scrollPercent =
-      scrollBottom > 0
-        ? Math.min(
-            100,
-            Math.max(0, Math.round((this._maxScrollY / scrollBottom) * 100)),
-          )
-        : 0;
+    const measurement = measureDocument();
 
     this.logger.emit({
       eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
@@ -82,14 +81,44 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
         [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
-        [ATTR_MAX_SCROLL_DEPTH_PERCENT]: scrollPercent,
         [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
-        [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]: documentHeight,
+        // Depth as a percentage and the document height both need a measurable
+        // scroll root, which a document or a frame can lack. Omit those keys in
+        // that case so consumers read absence rather than a fabricated 0. The
+        // pixel depth comes from the scroll position alone, so it stands on its
+        // own.
+        ...(measurement
+          ? {
+              [ATTR_MAX_SCROLL_DEPTH_PERCENT]: this._scrollPercent(measurement),
+              [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
+                measurement.documentHeight,
+            }
+          : {}),
       },
     });
 
     // Initial state for the next part will be wherever the user left off the scroll position
     this._hasScrolled = false;
     this._maxScrollY = window.scrollY;
+  }
+
+  private _scrollPercent({
+    documentHeight,
+    viewportHeight,
+  }: DocumentMeasurement): number {
+    // Both boxes are read off the same scroll root, so the document is never
+    // shorter than the viewport and the range is never negative.
+    const scrollBottom = documentHeight - viewportHeight;
+    if (scrollBottom === 0) {
+      // The document fits the viewport, so there was no depth to reach.
+      return 0;
+    }
+
+    // Elastic overscroll reports a negative scroll position past the top of the
+    // document, which is still the top.
+    return Math.min(
+      100,
+      Math.max(0, Math.round((this._maxScrollY / scrollBottom) * 100)),
+    );
   }
 }
