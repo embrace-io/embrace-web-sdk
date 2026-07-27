@@ -9,6 +9,10 @@ export { getSelector } from './getSelector.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';
 export { isDeviceIdEnabled } from './isDeviceIdEnabled.ts';
+export {
+  type DocumentMeasurement,
+  measureDocument,
+} from './measureDocument.ts';
 export { NamespacedStorage } from './NamespacedStorage/index.ts';
 export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
