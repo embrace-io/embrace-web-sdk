@@ -278,11 +278,14 @@ const lcpElementAttribution = (
     const element = attribution.lcpEntry?.element;
 
     if (element) {
-      const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
-      attributes[`${prefix}elementType`] = element.tagName.toLowerCase();
-      attributes[`${prefix}elementBoundingRect`] = JSON.stringify(
+      const elementType = element.tagName.toLowerCase();
+      const elementBoundingRect = JSON.stringify(
         roundRect(element.getBoundingClientRect()),
       );
+
+      const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+      attributes[`${prefix}elementType`] = elementType;
+      attributes[`${prefix}elementBoundingRect`] = elementBoundingRect;
     }
   } catch (e) {
     diag.error('error building LCP element attribution', e);
