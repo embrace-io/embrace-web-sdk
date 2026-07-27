@@ -22,6 +22,7 @@ import {
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
+import { getSelector } from '../../../utils/index.ts';
 import { isEntryTypeSupported } from '../../../utils/performanceObserver/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
@@ -37,6 +38,7 @@ import {
 } from './attributes.ts';
 import {
   ALL_WEB_VITALS,
+  MAX_CLS_LAYOUT_SHIFTS,
   MAX_LOAF_SCRIPT_ENTRIES,
   MAX_LOAF_SCRIPT_URL_LENGTH,
   WEB_VITAL_EVENT_NAME,
@@ -55,6 +57,13 @@ type AttributedPage = {
 };
 
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
+
+const roundRect = (rect?: DOMRectReadOnly) => ({
+  x: Math.round(rect?.x ?? 0),
+  y: Math.round(rect?.y ?? 0),
+  width: Math.round(rect?.width ?? 0),
+  height: Math.round(rect?.height ?? 0),
+});
 
 const isPrimitiveValue = (
   value: unknown,
@@ -127,6 +136,44 @@ const loafScriptsAttribution = (
     /* eslint-enable baseline-js/use-baseline */
   } catch (e) {
     diag.error('error building loaf scripts for INP', e);
+  }
+
+  return attributes;
+};
+
+const clsLayoutShiftsAttribution = (
+  metric: MetricWithAttribution,
+  diag: DiagLogger,
+): Attributes => {
+  const attributes: Attributes = {};
+
+  try {
+    /* eslint-disable baseline-js/use-baseline */
+    const entries = metric.entries as LayoutShift[];
+
+    if (entries.length > 0) {
+      const shifts = entries.slice(0, MAX_CLS_LAYOUT_SHIFTS).map((entry) => {
+        // web-vitals exposes sources sorted by impact area descending, so the
+        // first source is the element that contributed most to the shift.
+        const source = entry.sources[0];
+        return {
+          selector: getSelector(source?.node ?? null),
+          startRect: roundRect(source?.previousRect),
+          endRect: roundRect(source?.currentRect),
+        };
+      });
+
+      const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+      attributes[`${prefix}clsLayoutShifts`] = JSON.stringify(shifts);
+
+      if (entries.length > MAX_CLS_LAYOUT_SHIFTS) {
+        attributes[`${prefix}clsLayoutShiftsDroppedCount`] =
+          entries.length - MAX_CLS_LAYOUT_SHIFTS;
+      }
+    }
+    /* eslint-enable baseline-js/use-baseline */
+  } catch (e) {
+    diag.error('error building CLS layout shifts', e);
   }
 
   return attributes;
@@ -231,17 +278,14 @@ const lcpElementAttribution = (
     const element = attribution.lcpEntry?.element;
 
     if (element) {
+      const elementType = element.tagName.toLowerCase();
+      const elementBoundingRect = JSON.stringify(
+        roundRect(element.getBoundingClientRect()),
+      );
+
       const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
-      const rect = element.getBoundingClientRect();
-      attributes[`${prefix}elementType`] = element.tagName.toLowerCase();
-      // x/y are intentionally not clamped: an element scrolled above the
-      // viewport legitimately has a negative position.
-      attributes[`${prefix}elementBoundingRect`] = JSON.stringify({
-        x: Math.round(rect.x),
-        y: Math.round(rect.y),
-        width: Math.round(rect.width),
-        height: Math.round(rect.height),
-      });
+      attributes[`${prefix}elementType`] = elementType;
+      attributes[`${prefix}elementBoundingRect`] = elementBoundingRect;
     }
   } catch (e) {
     diag.error('error building LCP element attribution', e);
@@ -475,6 +519,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         ...(metric.name === 'INP' ? inpAttribution(metric, this._diag) : {}),
         ...(metric.name === 'TTFB'
           ? ttfbSubPartsAttribution(metric, this._diag)
+          : {}),
+        ...(metric.name === 'CLS'
+          ? clsLayoutShiftsAttribution(metric, this._diag)
           : {}),
         ...(metric.name === 'LCP'
           ? lcpElementAttribution(metric, this._diag)
