@@ -19,8 +19,8 @@ export interface DocumentMeasurement {
  * Measures the document's content size and the viewport size off
  * `document.scrollingElement`, which is the document root in standards mode,
  * and in quirks mode is `<body>` only when `<body>` is not itself potentially
- * scrollable. Reading `documentElement` or `<body>` directly is correct in only
- * one of the two modes.
+ * scrollable. `documentElement` is correct in standards mode only and `<body>`
+ * in quirks mode only, so neither is safe to read directly.
  *
  * Returns `null` in the remaining quirks-mode cases, and when the scroll root
  * has no layout box. The document may still scroll in the quirks-mode case, but
