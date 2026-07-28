@@ -106,8 +106,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     documentHeight,
     viewportHeight,
   }: DocumentMeasurement): number {
-    // Both boxes are read off the same scroll root, so the document is never
-    // shorter than the viewport and the range is never negative.
     const scrollBottom = documentHeight - viewportHeight;
     if (scrollBottom === 0) {
       // The document fits the viewport, so there was no depth to reach.
