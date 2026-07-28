@@ -34,6 +34,9 @@ export const measureDocument = (): DocumentMeasurement | null => {
     return null;
   }
 
+  // Reading a dimension forces a synchronous layout reflow, so all four are read
+  // together with nothing written in between, and returned as one snapshot.
+  // https://developer.chrome.com/docs/performance/insights/forced-reflow
   const viewportHeight = scrollRoot.clientHeight;
   const viewportWidth = scrollRoot.clientWidth;
   // A non-rendered or zero-sized frame has a scroll root with no layout box.
