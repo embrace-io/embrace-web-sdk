@@ -16,41 +16,15 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 
 ## Quick Reference
 
-```bash
-# Build all packages (turbo)
-npm run build
+Commands are root `package.json` scripts. What those don't tell you:
 
-# Lint with Biome (add :fix to auto-fix)
-npm run lint
-npm run lint:fix
-
-# Typecheck + ESLint baseline (tsc + eslint --max-warnings 0)
-npm run check
-
-# Validate built artifacts (es-check, bundle size, ESM/CJS split); run after build
-npm run validate
-
-# Run demo dev server (http://localhost:4847)
-npm run dev
-```
-
-Run `lint`/`check` from the repo root so turbo and Biome cover every workspace. Scoping them to one package leaves the others unchecked.
+- Run `lint`/`check` from the repo root so turbo and Biome cover every workspace. Scoping them to one package leaves the others unchecked.
+- `validate` checks built artifacts, so it only means anything after `build`.
+- `dev` serves the demo at http://localhost:4847.
 
 ## Architecture
 
-Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, and the source layout below is rooted there.
-
-### Source Layout (`packages/web-sdk/src/`)
-
-```
-api-*/          Public APIs with no-op defaults (traces, logs, sessions, users, page)
-managers/       Concrete implementations (EmbraceTraceManager, EmbraceLogManager, etc.)
-processors/     Span/Log processing chain (scrubbing, batching, session correlation)
-exporters/      OTLP serialization for Embrace backend
-instrumentations/  Auto-capture plugins (web-vitals, clicks, rage-click, navigation, exceptions, etc.); fetch/XHR use upstream OTel instrumentations
-sdk/            Entry point (initSDK) and configuration
-transport/      HTTP transport with retry logic
-```
+Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, rooted at `packages/web-sdk/src/`.
 
 ### Key Patterns
 
@@ -59,14 +33,6 @@ transport/      HTTP transport with retry logic
 **Processor Chain**: Spans and logs flow through processors that add attributes, scrub sensitive data, and batch for export.
 
 **Layered Architecture**: `api-*` (interfaces/proxies) → `managers/` (implementations) → `processors/exporters/` (infrastructure)
-
-### Distribution
-
-| Format | Target | Use Case                                |
-| ------ | ------ | --------------------------------------- |
-| ESM    | ES2022 | npm package (import)                    |
-| CJS    | ES2022 | npm package (require)                   |
-| IIFE   | ES6    | CDN script tag (`window.EmbraceWebSdk`) |
 
 ## Code Conventions
 
@@ -100,13 +66,7 @@ transport/      HTTP transport with retry logic
 
 ### Unit Tests
 
-Framework: @web/test-runner + Playwright + Mocha + Chai
-
-```bash
-npm run test                  # Headless (from packages/web-sdk/)
-npm run test:manual           # Browser with DevTools
-npm run test:watch            # Watch mode
-```
+Framework: @web/test-runner + Playwright + Mocha + Chai. Run `test`, `test:manual`, and `test:watch` from `packages/web-sdk/`, not the repo root.
 
 **Run a single test file** (paths are workspace-relative, i.e. relative to `packages/web-sdk/`):
 
@@ -116,13 +76,7 @@ npx turbo run test --filter=@embrace-io/web-sdk -- --files "src/utils/throttle.t
 
 ### Integration Tests
 
-Test SDK against bundlers (Webpack 5, Vite 6/7, Next.js 15/16):
-
-```bash
-npm run build                             # Build first
-npm run test:integration                  # Run tests
-npm run test:integration:update-golden    # Update golden files
-```
+Test SDK against bundlers (Webpack 5, Vite 6/7, Next.js 15/16). `test:integration` runs against built artifacts, so `build` first.
 
 Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps regenerate on every run. Never hand-edit them. Regenerate with the update-golden script and review the semantic diff.
 
