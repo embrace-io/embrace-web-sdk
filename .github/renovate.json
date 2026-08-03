@@ -49,7 +49,11 @@
     },
     {
       "description": "Playwright",
-      "matchDepNames": ["playwright"],
+      "matchDepNames": [
+        "@playwright/test",
+        "mcr.microsoft.com/playwright",
+        "playwright"
+      ],
       "groupName": "playwright"
     },
     {
