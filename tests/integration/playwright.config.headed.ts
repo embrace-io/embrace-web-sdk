@@ -35,13 +35,20 @@ export default defineConfig({
     },
   ],
   projects: [
-    // Standard Chrome: no SoftNavigationHeuristics flag, so the polyfill path
-    // is active. Only Chromium generates PerformanceEventTiming for synthetic
-    // clicks; Firefox and WebKit do not.
+    // Only Chromium generates PerformanceEventTiming for synthetic
+    // clicks; Firefox and WebKit do not. Explicitly disable
+    // SoftNavigationHeuristics to exercise the polyfill path like Chrome <151
     {
-      name: 'chromium',
+      name: 'chromium-soft-nav-polyfill',
       testMatch: '**/e2e-headed/soft-navigation-polyfill.spec.ts',
-      use: { ...devices['Desktop Chrome'], headless: false },
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+        headless: false,
+        launchOptions: {
+          args: ['--disable-features=SoftNavigationHeuristics'],
+        },
+      },
     },
     // Chrome with SoftNavigationHeuristics enabled: exercises the native
     // soft-navigation PerformanceObserver entry type.
@@ -53,14 +60,8 @@ export default defineConfig({
       ],
       use: {
         ...devices['Desktop Chrome'],
-        // At the time of writing, Playwright bundles a version of Chromium with
-        // older soft navigation APIs. This test requires Chrome 151+, or 150
-        // with --enable-features=SoftNavigationHeuristics.
         channel: 'chrome',
         headless: false,
-        launchOptions: {
-          args: ['--enable-features=SoftNavigationHeuristics'],
-        },
       },
     },
   ],
