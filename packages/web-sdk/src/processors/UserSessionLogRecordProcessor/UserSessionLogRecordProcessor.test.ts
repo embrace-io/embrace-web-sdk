@@ -149,6 +149,37 @@ describe('UserSessionLogRecordProcessor', () => {
     );
   });
 
+  it('should pass customer-set session.id and session.previous_id through untouched', () => {
+    ({ memoryExporter, logger } = setup(
+      createMockUserSessionManager(mockAttributes, {
+        getPreviousUserSessionId: () => 'PREVIOUS_USER_SESSION',
+      }),
+    ));
+
+    logger.emit({
+      body: 'test log',
+      attributes: {
+        'session.id': 'CUSTOMER_SESSION',
+        'session.previous_id': 'CUSTOMER_PREVIOUS_SESSION',
+      },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const logRecord = finishedLogs[0];
+    expect(logRecord.attributes['session.id']).to.equal('CUSTOMER_SESSION');
+    expect(logRecord.attributes['session.previous_id']).to.equal(
+      'CUSTOMER_PREVIOUS_SESSION',
+    );
+    // The Embrace ids travel alongside, on their own keys.
+    expect(logRecord.attributes['emb.user_session_id']).to.equal(
+      'USER_SESSION_ABC',
+    );
+    expect(logRecord.attributes['emb.user_session_previous_id']).to.equal(
+      'PREVIOUS_USER_SESSION',
+    );
+  });
+
   it('should emit the previous user session id on emb.user_session_previous_id when available', () => {
     ({ memoryExporter, logger } = setup(
       createMockUserSessionManager(mockAttributes, {

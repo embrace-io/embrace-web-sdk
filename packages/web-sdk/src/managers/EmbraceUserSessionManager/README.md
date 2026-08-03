@@ -355,6 +355,7 @@ another window).
 | `emb.session_part_start_reason` | One of `SessionPartStartReason`. |
 | `emb.cold_start` | `true` on the first part started by this manager instance, `false` thereafter. |
 | `emb.user_session_id` | UUID of the enclosing user session. |
+| `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first user session for this browser. |
 | `emb.user_session_number` | 1-indexed monotonic count across all visits since the first visit. |
 | `emb.user_session_part_index` | 1-indexed within the user session. |
 | `emb.user_session_start_ts` | Milliseconds since Unix epoch. |
@@ -382,8 +383,20 @@ emitted by `EmbraceSessionPartBatchedSpanProcessor`, not by per-span ID stamping
 
 ### Stamped on log records
 
-`UserSessionLogRecordProcessor` writes the same set as spans, plus
-`log.record.uid` (a fresh UUID per record).
+`UserSessionLogRecordProcessor` writes exactly these four:
+
+| Attribute | Value |
+| --- | --- |
+| `log.record.uid` | Fresh UUID per record. |
+| `emb.user_session_id` | UUID of the enclosing user session; `''` when there is none. |
+| `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first. |
+| `emb.session_part_id` | Part active at emit time, keeping a value an earlier processor already stamped; `''` when no part is active. |
+
+### Never stamped
+
+The OTel semantic-convention keys `session.id` and `session.previous_id`, on
+spans or on logs. That key space is left free for customers, who may carry their
+own notion of a session there; values they set pass through untouched.
 
 ## Known gaps
 

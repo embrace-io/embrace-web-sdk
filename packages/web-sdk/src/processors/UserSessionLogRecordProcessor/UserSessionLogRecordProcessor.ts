@@ -33,6 +33,8 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
       this._userSessionManager.getSessionPartId() ??
       '';
 
+    // `session.id` / `session.previous_id` are left to the customer;
+    // setAttributes would overwrite whatever they put there.
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
       [KEY_EMB_USER_SESSION_ID]: userSessionId,

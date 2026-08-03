@@ -294,6 +294,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return null;
     }
     const previousUserSessionId = this.getPreviousUserSessionId() ?? '';
+    // `session.id` / `session.previous_id` are left to the customer.
     return {
       [KEY_EMB_USER_SESSION_ID]: this._state.userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
