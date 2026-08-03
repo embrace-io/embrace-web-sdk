@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc",
-    "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh && npx playwright install",
+    "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh && npx playwright install --with-deps",
     "build-platforms": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000 --test-concurrency=1",
     "test": "npx playwright test",
     "test:headed": "npx playwright test --headed --config playwright.config.headed.ts",
