@@ -5,10 +5,6 @@ import type {
   TracerProvider,
 } from '@opentelemetry/api';
 import { diag, trace } from '@opentelemetry/api';
-import {
-  ATTR_SESSION_ID,
-  ATTR_SESSION_PREVIOUS_ID,
-} from '@opentelemetry/semantic-conventions/incubating';
 import type {
   PropertyOptions,
   SessionPartStartedEvent,
@@ -300,9 +296,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const previousUserSessionId = this.getPreviousUserSessionId() ?? '';
     return {
       [KEY_EMB_USER_SESSION_ID]: this._state.userSessionId,
-      [ATTR_SESSION_ID]: this._state.userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
-      [ATTR_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_USER_SESSION_NUMBER]: this._state.userSessionNumber,
       [KEY_EMB_USER_SESSION_PART_INDEX]: this._state.userSessionPartIndex,
       [KEY_EMB_SESSION_PART_NUMBER]: this._currentSessionPartNumber ?? 0,

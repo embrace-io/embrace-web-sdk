@@ -14,7 +14,7 @@ export const mockSpan: ReadableSpan = {
   endTime: [1756138004, 499000000],
   status: { code: 1 },
   attributes: {
-    'session.id': '80537B7CA8D748D88A6A9D01DE9EDA8E',
+    'test.attribute': 'test-value',
   },
   links: [],
   events: [],

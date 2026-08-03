@@ -96,10 +96,10 @@ Each test creates spans and logs with dynamic data (timestamps, IDs). Golden fil
 - `observedTimeUnixNano`
 
 **Attributes (ignored):**
-- `session.id`
-- `log.record.uid`
-- `emb.sdk_startup_duration`
 - `emb.app_instance_id`
+- `emb.sdk_startup_duration`
+- `emb.user_session_id`
+- `log.record.uid`
 
 When SDK changes affect the test output, update golden files:
 

@@ -12,9 +12,7 @@ const { expect } = chai;
 
 const mockAttributes: UserSessionAttributes = {
   'emb.user_session_id': 'USER_SESSION_ABC',
-  'session.id': 'USER_SESSION_ABC',
   'emb.user_session_previous_id': '',
-  'session.previous_id': '',
   'emb.user_session_number': 1,
   'emb.user_session_part_index': 3,
   'emb.session_part_number': 7,
