@@ -33,6 +33,7 @@ import {
   KEY_BROWSER_WEB_VITAL_NAME,
   KEY_BROWSER_WEB_VITAL_NAVIGATION_ID,
   KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE,
+  KEY_BROWSER_WEB_VITAL_NAVIGATION_URL,
   KEY_BROWSER_WEB_VITAL_RATING,
   KEY_BROWSER_WEB_VITAL_VALUE,
   KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX,
@@ -506,20 +507,21 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
                 metric.navigationInteractionId,
             }
           : {}),
+        // The URL of the navigation the metric value is anchored to, which is not
+        // always the page the measured content rendered on. Kept separate from
+        // browser.url.full so a record never describes two pages at once.
+        ...(metric.navigationURL != null
+          ? { [KEY_BROWSER_WEB_VITAL_NAVIGATION_URL]: metric.navigationURL }
+          : {}),
         ...(sessionPartId !== null
           ? { [KEY_EMB_SESSION_PART_ID]: sessionPartId }
           : {}),
         ...(attributedPage
           ? {
-              // The navigationURL emitted by web-vitals is authoritative for which URL the metric
-              // belongs to, since it was captured when the metric occurred. When soft navigations
-              // are not supported, we fall back to the attributed page.
-              [KEY_BROWSER_URL_FULL]:
-                metric.navigationURL != null &&
-                (metric.navigationType === 'soft-navigation' ||
-                  this._softNavsActive)
-                  ? metric.navigationURL
-                  : attributedPage.fullURL,
+              // All four describe one page: the one visible when the metric was
+              // measured. Sourcing the URL from anywhere else lets a single record
+              // claim one URL while identifying a different page.
+              [KEY_BROWSER_URL_FULL]: attributedPage.fullURL,
               [KEY_EMB_PAGE_PATH]: attributedPage.path,
               [KEY_EMB_PAGE_ID]: attributedPage.pageID,
               [KEY_APP_SURFACE_LABEL]: attributedPage.label,
