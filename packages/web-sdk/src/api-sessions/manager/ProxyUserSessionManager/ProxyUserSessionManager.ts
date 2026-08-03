@@ -114,6 +114,10 @@ export class ProxyUserSessionManager implements UserSessionManagerInternal {
     return this.getDelegate().getSessionPartId();
   }
 
+  public getSessionPartIdAt(timestampEpochMillis: number): string | null {
+    return this.getDelegate().getSessionPartIdAt(timestampEpochMillis);
+  }
+
   public getSessionPartSpan(): ExtendedSpan | null {
     return this.getDelegate().getSessionPartSpan();
   }

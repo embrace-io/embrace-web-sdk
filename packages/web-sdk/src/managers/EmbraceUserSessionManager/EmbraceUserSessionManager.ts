@@ -112,6 +112,13 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _hasStoredState = false;
 
   private _activeSessionPartId: string | null = null;
+  // Rollover history backing getSessionPartIdAt, cleared once the user
+  // session ends, so it covers as much ground as possible before eviction
+  // rather than resetting on every visibility cycle.
+  private _sessionPartHistory: Array<{
+    id: string;
+    startTimeEpochMillis: number;
+  }> = [];
   // Held for the part's lifetime so getUserSessionAttributes() reads
   // during the part return its starting value, even if another tab bumps
   // the shared counter while this tab is mid-disengagement.
@@ -340,6 +347,17 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return this._activeSessionPartId;
   }
 
+  public getSessionPartIdAt(timestampEpochMillis: number): string | null {
+    for (let i = this._sessionPartHistory.length - 1; i >= 0; i--) {
+      if (
+        this._sessionPartHistory[i].startTimeEpochMillis <= timestampEpochMillis
+      ) {
+        return this._sessionPartHistory[i].id;
+      }
+    }
+    return this.getSessionPartId();
+  }
+
   public getSessionPartSpan(): ExtendedSpan | null {
     return this._sessionPartSpan;
   }
@@ -400,6 +418,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._activeSessionPartCounts = {};
     this._nextSessionPartCounts = {};
     this._sessionPartSpan = span;
+    this._sessionPartHistory.push({
+      id: activeSessionPartId,
+      startTimeEpochMillis: timestamp ?? this._perf.getNowMillis(),
+    });
 
     this._startSessionPartInactivityTimer();
 
@@ -491,6 +513,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._state = null;
       this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
       this._clearMaxDurationTimer();
+      this._sessionPartHistory = [];
     } else {
       this._continueUserSessionAfterPartEnd(now);
     }

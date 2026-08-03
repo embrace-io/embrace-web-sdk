@@ -12,7 +12,9 @@ import {
   InMemoryDiagLogger,
   MockPerformanceManager,
   setupTestLogExporter,
+  setupTestStorage,
   setupTestWebVitalListeners,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
 import {
   EMB_TYPES,
@@ -22,7 +24,12 @@ import {
   KEY_EMB_PAGE_PATH,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
-import { EmbracePageManager } from '../../../managers/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbracePageManager,
+  EmbraceUserSessionManager,
+} from '../../../managers/index.ts';
 import {
   _resetZeroTimeMillisForTesting,
   updateZeroTimeMillis,
@@ -3730,6 +3737,136 @@ describe('WebVitalsInstrumentation', () => {
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
+    });
+  });
+
+  describe('session part attribution', () => {
+    let userSessionManager: EmbraceUserSessionManager;
+
+    beforeEach(() => {
+      const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+      const storage = setupTestStorage();
+      userSessionManager = new EmbraceUserSessionManager({
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        limitManager,
+        perf,
+        storage,
+        visibilityDoc: window.document,
+      });
+    });
+
+    it('should stamp the session part id active when the metric occurred, not the one active when the log is finally emitted', () => {
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      const partAId = userSessionManager.getSessionPartId();
+      expect(partAId).to.not.be.null;
+
+      // Roll over to a second part before the metric is ever reported —
+      // web-vitals can defer CLS's report well past when the underlying
+      // shift occurred (e.g. until the tab backgrounds).
+      clock.tick(1000);
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+      const partBId = userSessionManager.getSessionPartId();
+      expect(partBId).to.not.equal(partAId);
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.setUserSessionManager(userSessionManager);
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      // The underlying shift happened at time 0, during part A, even though
+      // the log is only emitted now, well into part B.
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: { largestShiftTime: 0 },
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['emb.session_part_id']).to.equal(partAId);
+    });
+
+    it('should stamp the new part id for a metric whose event happened after the rollover', () => {
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      const partAId = userSessionManager.getSessionPartId();
+
+      clock.tick(1000);
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+      const partBId = userSessionManager.getSessionPartId();
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.setUserSessionManager(userSessionManager);
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      // Shift happened at time 1500, after part B started at 1000.
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: { largestShiftTime: 1500 },
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['emb.session_part_id']).to.equal(partBId);
+      expect(records[0].attributes['emb.session_part_id']).to.not.equal(
+        partAId,
+      );
+    });
+
+    it('should stamp session_part_id even when urlAttribution is disabled', () => {
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      const partId = userSessionManager.getSessionPartId();
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.setUserSessionManager(userSessionManager);
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: { largestShiftTime: 0 },
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['emb.session_part_id']).to.equal(partId);
     });
   });
 });

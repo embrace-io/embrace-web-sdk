@@ -343,6 +343,86 @@ describe('EmbraceUserSessionManager', () => {
     });
   });
 
+  describe('getSessionPartIdAt', () => {
+    it('resolves the part active at a given timestamp across multiple rollovers', () => {
+      const manager = createManager();
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partAId = manager.getSessionPartId();
+
+      clock.tick(1000);
+      manager.rolloverSessionPartInternal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+      const partBId = manager.getSessionPartId();
+
+      clock.tick(1000);
+      manager.rolloverSessionPartInternal({
+        endReason: 'web_soft_navigation',
+        startReason: 'web_soft_navigation',
+      });
+      const partCId = manager.getSessionPartId();
+
+      expect(manager.getSessionPartIdAt(500)).to.equal(partAId);
+      expect(manager.getSessionPartIdAt(1500)).to.equal(partBId);
+      expect(manager.getSessionPartIdAt(2500)).to.equal(partCId);
+    });
+
+    it('falls back to the currently active part when the timestamp predates any recorded rollover', () => {
+      const manager = createManager();
+
+      clock.tick(1000);
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partId = manager.getSessionPartId();
+
+      expect(manager.getSessionPartIdAt(0)).to.equal(partId);
+    });
+
+    it('falls back to null when no part has ever started', () => {
+      const manager = createManager();
+
+      void expect(manager.getSessionPartIdAt(0)).to.be.null;
+    });
+
+    it('resolves to the most recently created part even after it has closed, when nothing new has started since', () => {
+      const manager = createManager();
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partId = manager.getSessionPartId();
+
+      clock.tick(1000);
+      manager.endSessionPartInternal({ reason: 'background' });
+      // A genuine gap: nothing is active, and nothing new has started yet
+      // (e.g. inactivity closed the part while a background script kept
+      // producing layout shifts with no real user activity to restart one).
+      void expect(manager.getSessionPartId()).to.be.null;
+
+      // The history only tracks start times, not end times, so a query for
+      // any time at/after the closed part's start — including one past its
+      // actual end — still resolves to it, since it remains the most
+      // recently created part as of that timestamp.
+      expect(manager.getSessionPartIdAt(1500)).to.equal(partId);
+    });
+
+    it('clears the rollover history once the user session ends', () => {
+      const manager = createManager();
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partAId = manager.getSessionPartId();
+
+      clock.tick(1000);
+      manager.endUserSession();
+      const partBId = manager.getSessionPartId();
+      expect(partBId).to.not.equal(partAId);
+
+      // The user session part A belonged to has ended, so nothing will
+      // ever need to resolve a timestamp against it again — the history
+      // clears and a stale query falls back to the new user session's part.
+      expect(manager.getSessionPartIdAt(0)).to.equal(partBId);
+    });
+  });
+
   describe('storage unavailable', () => {
     it('creates an in-memory user session and reports the write failure once', () => {
       const manager = createFailingStorageManager();
