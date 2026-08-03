@@ -132,6 +132,25 @@ describe('UserSessionLogRecordProcessor', () => {
     ).to.be.undefined;
   });
 
+  it('should honor a session_part_id already stamped by an earlier processor instead of overwriting it with the live value', () => {
+    ({ memoryExporter, logger } = setup(
+      createMockUserSessionManager(mockAttributes, {
+        getSessionPartId: () => null,
+      }),
+    ));
+
+    logger.emit({
+      body: 'test log',
+      attributes: { 'emb.session_part_id': 'PART_SNAPSHOT' },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].attributes['emb.session_part_id']).to.equal(
+      'PART_SNAPSHOT',
+    );
+  });
+
   it('should emit the previous user session id on emb.user_session_previous_id when available', () => {
     ({ memoryExporter, logger } = setup(
       createMockUserSessionManager(mockAttributes, {

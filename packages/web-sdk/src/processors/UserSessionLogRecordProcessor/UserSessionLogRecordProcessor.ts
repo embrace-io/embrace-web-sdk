@@ -31,6 +31,11 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
     const userSessionId = this._userSessionManager.getUserSessionId() ?? '';
     const previousUserSessionId =
       this._userSessionManager.getPreviousUserSessionId() ?? '';
+    // If the log record already has a session part id, we use that
+    const sessionPartId =
+      logRecord.attributes[KEY_EMB_SESSION_PART_ID] ??
+      this._userSessionManager.getSessionPartId() ??
+      '';
 
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
@@ -38,8 +43,7 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
       [ATTR_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_USER_SESSION_ID]: userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
-      [KEY_EMB_SESSION_PART_ID]:
-        this._userSessionManager.getSessionPartId() ?? '',
+      [KEY_EMB_SESSION_PART_ID]: sessionPartId,
     });
   }
 

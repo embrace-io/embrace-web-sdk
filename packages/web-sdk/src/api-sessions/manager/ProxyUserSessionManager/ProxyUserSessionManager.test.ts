@@ -17,6 +17,7 @@ describe('ProxyUserSessionManager', () => {
     mockDelegate = {
       // Part identity
       getSessionPartId: sinon.stub().returns('part-id'),
+      getSessionPartIdAt: sinon.stub().returns('part-id'),
       getSessionPartSpan: sinon.stub().returns({} as Span),
       // Part lifecycle
       startSessionPartInternal: sinon.stub(),

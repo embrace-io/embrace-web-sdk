@@ -83,6 +83,10 @@ export class NoOpUserSessionManager implements UserSessionManagerInternal {
     return null;
   }
 
+  public getSessionPartIdAt(_timestampEpochMillis: number): string | null {
+    return null;
+  }
+
   public getSessionPartSpan(): ExtendedSpan | null {
     return null;
   }

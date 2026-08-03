@@ -130,6 +130,17 @@ export interface UserSessionManagerInternal extends UserSessionManager {
 
   getSessionPartId: () => string | null;
 
+  /**
+   * Resolves the session part active at a given timestamp, based on a
+   * rollover history rather than live state. This lets a caller that only
+   * learns of an event well after it happened (e.g. a metric library that
+   * defers its own reporting) attribute it to the part it actually
+   * occurred in, instead of whichever part happens to be active by the
+   * time it asks. Falls back to the currently active part (or null) when
+   * the timestamp predates any part recorded in the retained history.
+   */
+  getSessionPartIdAt: (timestampEpochMillis: number) => string | null;
+
   startSessionPartInternal: (options: StartSessionPartOptions) => void;
   endSessionPartInternal: (options: EndSessionPartOptions) => void;
   /**
