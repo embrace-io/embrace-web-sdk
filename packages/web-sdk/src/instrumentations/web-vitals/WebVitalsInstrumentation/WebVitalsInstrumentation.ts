@@ -20,6 +20,7 @@ import {
   KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
+  KEY_EMB_SESSION_PART_ID,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
 import { getSelector } from '../../../utils/index.ts';
@@ -477,6 +478,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   private _emitWebVital(metric: MetricWithAttribution): void {
     const attributedPage = this._attributedPage[metric.name];
+    // Resolve by the metric's own event time rather than reading the
+    // currently active part: web-vitals can defer a metric's report well
+    // past when its underlying entry occurred (e.g. INP/CLS finalize on
+    // visibilitychange), by which point the part active at report time may
+    // not be the one the entry actually happened in.
+    const metricTimeMillis = this._getTimeForMetric(metric);
+    const sessionPartId =
+      this.userSessionManager.getSessionPartIdAt(metricTimeMillis);
     const logRecord: LogRecord = {
       eventName: WEB_VITAL_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
@@ -496,6 +505,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
               [KEY_BROWSER_WEB_VITAL_INTERACTION_ID]:
                 metric.navigationInteractionId,
             }
+          : {}),
+        ...(sessionPartId !== null
+          ? { [KEY_EMB_SESSION_PART_ID]: sessionPartId }
           : {}),
         ...(attributedPage
           ? {
@@ -537,7 +549,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
               ),
             )
           : undefined,
-      timestamp: millisToHrTime(this._getTimeForMetric(metric)),
+      timestamp: millisToHrTime(metricTimeMillis),
     };
 
     if (this._applyCustomLogRecordData) {

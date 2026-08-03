@@ -17,6 +17,7 @@ afterEach(() => {
 const createMockUserSessionManager = (): UserSessionManagerInternal => ({
   // Part identity
   getSessionPartId: sinon.stub().returns('partId'),
+  getSessionPartIdAt: sinon.stub().returns('partId'),
   getSessionPartSpan: sinon.stub().returns({} as Span),
   // Part lifecycle
   startSessionPartInternal: sinon.stub(),
