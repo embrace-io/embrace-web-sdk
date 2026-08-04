@@ -7,6 +7,7 @@
 // that flag automatically.
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
+import { waitForEntry } from '../../utils/waitForEntry.ts';
 
 const BASE_URL = 'http://localhost:3016';
 
@@ -42,34 +43,16 @@ test.describe('Soft Navigation Native', () => {
   }) => {
     await loadHome();
 
-    // The SDK emits its span when the browser delivers this entry, so gate on
-    // the same delivery. Registered before the click rather than after, so the
-    // wait never depends on a past entry being replayed to a late observer. The
-    // SDK's own observer is registered at init, ahead of this one, and observers
-    // run in registration order, so the span exists once this resolves.
-    const softNavigationEntry = page.evaluate(
-      () =>
-        new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(
-            () => reject(new Error('no soft-navigation entry within 10s')),
-            10_000,
-          );
-          new PerformanceObserver((list, observer) => {
-            if (list.getEntries().length > 0) {
-              clearTimeout(timeout);
-              observer.disconnect();
-              resolve();
-            }
-          }).observe({ type: 'soft-navigation' });
-        }),
-    );
-
     await page.getByRole('link', { name: 'Products' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
 
-    await softNavigationEntry;
+    // The SDK emits its span when the browser delivers this entry, so gate on
+    // the same delivery. Its own observer is registered at init, ahead of this
+    // one, and observers run in registration order, so the span exists once
+    // this resolves.
+    await waitForEntry(page, ['soft-navigation']);
 
     await triggerSessionEnd();
 
