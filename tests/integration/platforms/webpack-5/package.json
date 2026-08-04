@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "tsc --noEmit",
     "dev": "webpack serve --config webpack.config.es2015.mjs --mode development",
     "build": "npm run build:clean && npm run build:es2015",
     "build:clean": "emb-rm dist .sonda",

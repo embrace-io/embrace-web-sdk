@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc",
+    "check-platforms": "for d in platforms/*/; do npm run check --prefix \"$d\" || exit 1; done",
     "install-dependencies": "bash scripts/installE2EPlatformDependencies.sh && npx playwright install --with-deps",
     "build-platforms": "npx tsx --test \"tests/build-platform/*.test.ts\" --test-timeout=20000 --test-concurrency=1",
     "test": "npx playwright test",
