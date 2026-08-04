@@ -19,8 +19,8 @@ const test = testWithMockApi.extend<SPAFixture>({
   loadHome: async ({ page }, use) => {
     await use(async () => {
       await page.goto(BASE_URL);
-      await page.waitForFunction(
-        () => window.EMBRACE_CURRENT_USER_SESSION_ID !== null,
+      await page.waitForFunction(() =>
+        window.EMBRACE_SDK?.session.getUserSessionId(),
       );
     });
   },

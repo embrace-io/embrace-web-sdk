@@ -207,7 +207,7 @@ const runE2ETests = ({
     );
 
     testE2E(
-      'it should init the SDK if it is sampled out by remote config',
+      'it should init on first load then skip init on reload once remote config samples the device out',
       async ({
         page,
         navigateAndWaitUntilReady,
@@ -218,20 +218,18 @@ const runE2ETests = ({
           threshold: 0,
         });
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
-        let currentUserSessionId: string | null =
-          await getCurrentUserSessionId();
 
         // First load works as expected as we don't wait for the remote config to be applied
-        testE2E.expect(currentUserSessionId).toHaveLength(32);
+        testE2E.expect(await getCurrentUserSessionId()).toHaveLength(32);
 
         await page.reload();
 
-        // After reload, the session id should not be set as it is sampled out
-        currentUserSessionId = await page.evaluate(
-          () => window.EMBRACE_CURRENT_USER_SESSION_ID,
-          {},
+        // Sampled out, so initSDK bails and returns false before building a
+        // control object, leaving the harness with nothing to expose.
+        const sdkInitialized = await page.evaluate(
+          () => window.EMBRACE_SDK !== undefined,
         );
-        testE2E.expect(currentUserSessionId).toBeFalsy();
+        testE2E.expect(sdkInitialized).toBe(false);
       },
     );
 

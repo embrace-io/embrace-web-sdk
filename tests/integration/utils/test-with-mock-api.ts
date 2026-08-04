@@ -41,6 +41,20 @@ const SIMULATED_REQUEST_REGEX = /simulated/;
 const URL_ATTRIBUTE_KEYS = new Set(['http.url', 'url.full']);
 const NEXTJS_URL_SUFFIX_REGEX = /\/_clientMiddlewareManifest\.json$/;
 
+// Every platform harness hangs its initSDK return value here, since
+// page.evaluate cannot reach the bundle's module scope. Typed from source
+// rather than the built package so a typecheck does not require a build.
+declare global {
+  interface Window {
+    EMBRACE_SDK: Exclude<
+      ReturnType<
+        typeof import('../../../packages/web-sdk/src/index.ts').initSDK
+      >,
+      false
+    >;
+  }
+}
+
 type EmbraceDataRequest = {
   url: string;
   headers: Record<string, string>;
@@ -260,8 +274,8 @@ const testWithMockApi = base.extend<TestWithMockApi>({
   },
   getCurrentUserSessionId: async ({ page }, use) => {
     await use(async () => {
-      const userSessionId = await page.evaluate(
-        () => window.EMBRACE_CURRENT_USER_SESSION_ID,
+      const userSessionId = await page.evaluate(() =>
+        window.EMBRACE_SDK.session.getUserSessionId(),
       );
 
       if (!userSessionId) {

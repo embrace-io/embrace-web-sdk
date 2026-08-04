@@ -1,20 +1,20 @@
 'use client';
 
 import { log, session } from '@embrace-io/web-sdk';
-import { embraceWebSdk } from './EmbraceWebSdk.tsx';
+import { sdkControl } from './EmbraceWebSdk.tsx';
 
 const SDKTest = () => {
   const handleEndSession = async () => {
     session.endUserSession();
-    if (embraceWebSdk) {
-      await embraceWebSdk.flush();
+    if (sdkControl) {
+      await sdkControl.flush();
     }
   };
 
   const handleSendLog = async () => {
     log.message('This is a test log message', 'warning');
-    if (embraceWebSdk) {
-      await embraceWebSdk.flush();
+    if (sdkControl) {
+      await sdkControl.flush();
     }
   };
 
