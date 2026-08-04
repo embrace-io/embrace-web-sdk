@@ -16,17 +16,17 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 
 ## Quick Reference
 
-Commands are root `package.json` scripts. What those don't tell you:
+Commands are npm scripts, mostly at the repo root; the web-sdk-only ones (`test:manual`, `test:watch`, `test:coverage`, `check:dist`, `docs`) live in `packages/web-sdk/package.json`. What those files don't tell you:
 
 - Run `lint`/`check` from the repo root so turbo and Biome cover every workspace. Scoping them to one package leaves the others unchecked.
-- `validate` checks built artifacts, so it only means anything after `build`.
-- `dev` serves the demo at http://localhost:4847.
+- `validate` builds first on its own, so ordering is not your problem. Its first two stages are, though: `validate:versions` and a `THIRD_PARTY_NOTICES.txt` that must be diff-clean, both of which fail for reasons unrelated to the build.
+- `dev` serves the demo at http://localhost:4847 and also starts the debug collector at http://localhost:3001 (point telemetry at it with `VITE_DATA_URL`).
 
 ## Architecture
 
 Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, with source under `packages/web-sdk/src/`.
 
-Two things the layout does not show: `instrumentations/` covers auto-capture, but fetch/XHR use the upstream OTel instrumentations rather than our own, and only span/log emitters belong there (detectors that emit no telemetry go in `utils/`).
+Two non-obvious things about `instrumentations/`, which covers auto-capture: fetch/XHR use the upstream OTel instrumentations rather than our own, and only span/log emitters belong there (detectors that emit no telemetry go in `utils/`).
 
 ### Key Patterns
 
@@ -68,7 +68,13 @@ Two things the layout does not show: `instrumentations/` covers auto-capture, bu
 
 ### Unit Tests
 
-Framework: @web/test-runner + Playwright + Mocha + Chai. Run `test`, `test:manual`, and `test:watch` from `packages/web-sdk/`, not the repo root.
+Framework: @web/test-runner + Playwright + Mocha + Chai. `test:manual`, `test:watch`, and `test:coverage` exist only in `packages/web-sdk/`.
+
+A root `npm run test` expands to 14 tasks: the web-cli and integration suites as well, plus a `clean` and `build` on both packages and a `build-platforms` that rebuilds every integration bundler. Scope to the SDK from the root instead, which runs exactly one:
+
+```bash
+npx turbo run test --filter=@embrace-io/web-sdk
+```
 
 **Run a single test file** (paths are workspace-relative, i.e. relative to `packages/web-sdk/`):
 
@@ -80,7 +86,9 @@ npx turbo run test --filter=@embrace-io/web-sdk -- --files "src/utils/throttle.t
 
 Test SDK against bundlers (Webpack 5, Vite 6/7, Next.js 15/16). `test:integration` runs against built artifacts, so `build` first.
 
-Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps regenerate on every run. Never hand-edit them. Regenerate with the update-golden script and review the semantic diff.
+Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps regenerate on every run, so a hand edit is indistinguishable from a real change on the next regeneration. Never hand-edit them.
+
+Regenerating has a procedure that is easy to get wrong (which script, and how to read a diff that reorders thousands of lines). Use the `regenerating-golden-files` skill rather than working it out from the scripts.
 
 ### Conventions
 
