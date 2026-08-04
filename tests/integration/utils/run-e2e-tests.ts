@@ -4,6 +4,8 @@ import testWithMockApi, {
 
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionPartBatchedSpanProcessor non-session-part span ended';
+// What every platform's 'Send Log' button emits.
+const TEST_LOG_MESSAGE = 'This is a test log message';
 
 type E2ETestFixture = {
   waitUntilSpanLogged: () => Promise<void>;
@@ -174,16 +176,48 @@ const runE2ETests = ({
       },
     );
 
+    // The other tests drain page-load telemetry so they can assert their own
+    // traffic in isolation, which hides the behavior real users get. This keeps
+    // that behavior covered: an interaction landing after the batch window ships
+    // in a separate request rather than sharing one. Waiting for the page-load
+    // flush before clicking makes that ordering certain instead of racing it.
+    testE2E(
+      'it should ship page-load telemetry separately from a later interaction',
+      async ({
+        page,
+        requests,
+        waitForOTelRequest,
+        navigateAndWaitUntilReady,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+
+        await waitForOTelRequest();
+        const pageLoadRequestCount = requests.length;
+        const pageLoadPayload = JSON.stringify(requests);
+
+        await page.getByRole('button', { name: 'Send Log' }).click();
+        await waitForOTelRequest();
+
+        testE2E.expect(requests.length).toBeGreaterThan(pageLoadRequestCount);
+        testE2E.expect(pageLoadPayload).not.toContain(TEST_LOG_MESSAGE);
+        testE2E
+          .expect(JSON.stringify(requests.slice(pageLoadRequestCount)))
+          .toContain(TEST_LOG_MESSAGE);
+      },
+    );
+
     testE2E(
       'it should send a log',
       async ({
         page,
         requests,
         waitForOTelRequest,
+        settleAndResetRequests,
         navigateAndWaitUntilReady,
         browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await settleAndResetRequests();
 
         const button = page.getByRole('button', { name: 'Send Log' });
         await button.click();
@@ -348,6 +382,7 @@ const runE2ETests = ({
       async ({
         page,
         waitForOTelRequest,
+        settleAndResetRequests,
         withSimulatedResponse,
         navigateAndWaitUntilReady,
         waitUntilSpanLogged,
@@ -355,6 +390,7 @@ const runE2ETests = ({
         browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await settleAndResetRequests();
         await withSimulatedResponse({
           body: 'something',
           status: 204,

@@ -70,6 +70,7 @@ type TestWithMockApi = {
   requests: EmbraceDataRequest[];
   waitForRequest: (url: RegExp) => Promise<void>;
   waitForOTelRequest: (count?: number) => Promise<void>;
+  settleAndResetRequests: () => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
@@ -168,6 +169,19 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           .poll(() => requests.length, { timeout: testInfo.timeout })
           .toBeGreaterThanOrEqual(consumed + count);
         consumed += count;
+      });
+    },
+    { scope: 'test' },
+  ],
+  settleAndResetRequests: [
+    // Drain page-load telemetry through the SDK rather than waiting out
+    // BatchLogRecordProcessor's 1s schedule: once flush resolves the buffer is
+    // empty as a fact, so clearing here leaves later assertions counting only
+    // their own interaction's traffic with no timing assumption.
+    async ({ page, requests }, use) => {
+      await use(async () => {
+        await page.evaluate(() => window.EMBRACE_SDK.log.flush());
+        requests.length = 0;
       });
     },
     { scope: 'test' },

@@ -33,6 +33,7 @@ describe('LogAPI', () => {
       // Mock implementation of LogManager
       message: sinon.stub(),
       logException: sinon.stub(),
+      flush: sinon.stub().resolves(),
     };
     logAPI.setGlobalLogManager(logManager);
     const result = logAPI.getLogManager();
@@ -45,6 +46,7 @@ describe('LogAPI', () => {
       // Mock implementation of LogManager
       message: sinon.stub(),
       logException: sinon.stub(),
+      flush: sinon.stub().resolves(),
     };
     logAPI.setGlobalLogManager(mockLogManager);
 

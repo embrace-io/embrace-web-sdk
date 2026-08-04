@@ -2,6 +2,7 @@ import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
@@ -49,10 +50,22 @@ const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
 const getJSFileBundleIDs = () =>
   JSON.stringify(GLOBAL_CONFIG._EmbraceFileBundleIDs || {});
 
+/**
+ * The logs API surface only guarantees `getLogger`, so a provider reached
+ * through the global registry has to be probed before flushing it.
+ */
+type FlushableLoggerProvider = { forceFlush: () => Promise<void> };
+
+const isFlushable = (provider: unknown): provider is FlushableLoggerProvider =>
+  typeof provider === 'object' &&
+  provider !== null &&
+  typeof (provider as FlushableLoggerProvider).forceFlush === 'function';
+
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
+  private readonly _loggerProviderOverride?: LoggerProvider;
   private readonly _userSessionManager: UserSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -76,10 +89,27 @@ export class EmbraceLogManager implements LogManager {
       });
     this._perf = perf;
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
+    this._loggerProviderOverride = globalLoggerProviderOverride;
     this._userSessionManager = userSessionManager;
     this._limitManager = limitManager;
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
+  }
+
+  public async flush(): Promise<void> {
+    try {
+      // Resolved here rather than in the constructor because when the SDK
+      // registers globally the provider is set after this manager is built.
+      const provider = this._loggerProviderOverride ?? logs.getLoggerProvider();
+
+      if (isFlushable(provider)) {
+        await provider.forceFlush();
+      }
+    } catch (e) {
+      this._diag.error(
+        `flush: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      );
+    }
   }
 
   private _validateAttributes(attributes: unknown): Attributes {
