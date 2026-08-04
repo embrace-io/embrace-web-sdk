@@ -7,8 +7,16 @@
       "inputs": ["platforms/*/package.json", "../../package-lock.json"],
       "outputs": ["platforms/*/node_modules/**"]
     },
-    "build-platforms": {
+    "check-platforms": {
       "dependsOn": ["^build", "install-dependencies"],
+      "inputs": [
+        "platforms/*/src/**",
+        "platforms/*/tsconfig*.json",
+        "platforms/*/package.json"
+      ]
+    },
+    "build-platforms": {
+      "dependsOn": ["^build", "install-dependencies", "check-platforms"],
       "outputs": ["platforms/**/.next", "platforms/**/dist/**"]
     },
     "test": {
