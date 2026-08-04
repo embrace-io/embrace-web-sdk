@@ -12,7 +12,7 @@ Both walkthroughs below have registration steps that are easy to miss: a compone
 1. Create in `packages/web-sdk/src/instrumentations/<name>/`
 2. Extend `EmbraceInstrumentationBase`
 3. Export from `packages/web-sdk/src/instrumentations/index.ts`
-4. Add its name to the `OptionalInstrumentations` union in `packages/web-sdk/src/sdk/types.ts`, and give it a key in `DefaultInstrumentationConfig` in the same file
+4. If optional add its name to the `OptionalInstrumentations` union in `packages/web-sdk/src/sdk/types.ts`, and give it a key in `DefaultInstrumentationConfig` in the same file
 5. Register in `packages/web-sdk/src/sdk/setupDefaultInstrumentations.ts` if auto-enabled
 6. Catalog its timing frame (zero-time / time-origin / none) in `packages/web-sdk/src/utils/PerformanceManager/README.md`
 
