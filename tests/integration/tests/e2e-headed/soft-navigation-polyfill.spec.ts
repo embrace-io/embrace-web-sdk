@@ -46,12 +46,34 @@ test.describe('Soft Navigation Polyfill', () => {
   }) => {
     await loadHome();
 
+    // The polyfill emits its span once the click's event entry is delivered, so
+    // gate on that rather than on a fixed delay. Registered before the click
+    // rather than after, so the wait never depends on a past entry being
+    // replayed to a late observer. The threshold has to be lowered because a
+    // router that commits synchronously produces a very short event.
+    const clickEntry = page.evaluate(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error('no click event entry within 10s')),
+            10_000,
+          );
+          new PerformanceObserver((list, observer) => {
+            if (list.getEntries().some((entry) => entry.name === 'click')) {
+              clearTimeout(timeout);
+              observer.disconnect();
+              resolve();
+            }
+          }).observe({ type: 'event', durationThreshold: 0 });
+        }),
+    );
+
     await page.getByRole('link', { name: 'Products' }).click();
     await test
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
 
-    await page.waitForTimeout(1000); // wait for the polyfill span to be emitted
+    await clickEntry;
 
     await triggerSessionEnd();
 
