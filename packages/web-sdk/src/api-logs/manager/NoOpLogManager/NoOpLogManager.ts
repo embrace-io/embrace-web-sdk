@@ -17,4 +17,8 @@ export class NoOpLogManager implements LogManager {
   ) {
     // no op
   }
+
+  public flush(): Promise<void> {
+    return Promise.resolve();
+  }
 }

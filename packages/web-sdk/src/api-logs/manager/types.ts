@@ -21,6 +21,17 @@ export interface LogManager {
   ) => void;
 
   logException: (error: unknown, options?: LogExceptionOptions) => void;
+
+  /**
+   * Exports any logs still held in the batch buffer instead of waiting for the
+   * next scheduled export. Useful before a deliberate teardown, and gives tests
+   * a known point to drain from rather than racing the export schedule.
+   *
+   * Resolves once the export settles and never rejects: failures are reported
+   * on the diagnostic channel. Note the safe-proxy wrapper around the public
+   * API only traps synchronous throws, so this must absorb its own rejections.
+   */
+  flush: () => Promise<void>;
 }
 
 export type LogSeverity = 'info' | 'warning' | 'error';

@@ -30,4 +30,8 @@ export class ProxyLogManager implements LogManager {
   ) {
     this.getDelegate().message(message, level, options);
   }
+
+  public flush(): Promise<void> {
+    return this.getDelegate().flush();
+  }
 }
