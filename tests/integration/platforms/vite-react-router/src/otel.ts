@@ -1,4 +1,4 @@
-import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK, log, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 
@@ -20,9 +20,12 @@ const sdkControl = initSDK({
 declare global {
   interface Window {
     EMBRACE_CURRENT_USER_SESSION_ID: string | null;
+    EMBRACE_FLUSH: () => Promise<void>;
   }
 }
 
 window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
+
+window.EMBRACE_FLUSH = () => log.flush();
 
 export { sdkControl };

@@ -41,6 +41,14 @@ const SIMULATED_REQUEST_REGEX = /simulated/;
 const URL_ATTRIBUTE_KEYS = new Set(['http.url', 'url.full']);
 const NEXTJS_URL_SUFFIX_REGEX = /\/_clientMiddlewareManifest\.json$/;
 
+// Exposed by every platform harness so tests can drain buffered telemetry at a
+// known point instead of inferring it from request timing.
+declare global {
+  interface Window {
+    EMBRACE_FLUSH: () => Promise<void>;
+  }
+}
+
 type EmbraceDataRequest = {
   url: string;
   headers: Record<string, string>;
@@ -56,6 +64,7 @@ type TestWithMockApi = {
   requests: EmbraceDataRequest[];
   waitForRequest: (url: RegExp) => Promise<void>;
   waitForOTelRequest: (count?: number) => Promise<void>;
+  settleAndResetRequests: () => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
@@ -156,6 +165,19 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           .poll(() => requests.length, { timeout: testInfo.timeout })
           .toBeGreaterThanOrEqual(consumed + count);
         consumed += count;
+      });
+    },
+    { scope: 'test' },
+  ],
+  settleAndResetRequests: [
+    // Drain page-load telemetry through the SDK rather than waiting out
+    // BatchLogRecordProcessor's 1s schedule: once flush resolves the buffer is
+    // empty as a fact, so clearing here leaves later assertions counting only
+    // their own interaction's traffic with no timing assumption.
+    async ({ page, requests }, use) => {
+      await use(async () => {
+        await page.evaluate(() => window.EMBRACE_FLUSH());
+        requests.length = 0;
       });
     },
     { scope: 'test' },

@@ -180,10 +180,12 @@ const runE2ETests = ({
         page,
         requests,
         waitForOTelRequest,
+        settleAndResetRequests,
         navigateAndWaitUntilReady,
         browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await settleAndResetRequests();
 
         const button = page.getByRole('button', { name: 'Send Log' });
         await button.click();
@@ -350,6 +352,7 @@ const runE2ETests = ({
       async ({
         page,
         waitForOTelRequest,
+        settleAndResetRequests,
         withSimulatedResponse,
         navigateAndWaitUntilReady,
         waitUntilSpanLogged,
@@ -357,6 +360,7 @@ const runE2ETests = ({
         browserName,
       }) => {
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+        await settleAndResetRequests();
         await withSimulatedResponse({
           body: 'something',
           status: 204,

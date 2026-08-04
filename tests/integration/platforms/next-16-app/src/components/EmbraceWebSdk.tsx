@@ -1,6 +1,6 @@
 'use client';
 
-import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK, log, session } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 
@@ -23,11 +23,13 @@ export const embraceWebSdk = initSDK({
 declare global {
   interface Window {
     EMBRACE_CURRENT_USER_SESSION_ID: string | null;
+    EMBRACE_FLUSH: () => Promise<void>;
   }
 }
 
 if (typeof window !== 'undefined') {
   window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
+  window.EMBRACE_FLUSH = () => log.flush();
 }
 
 export default function EmbraceWebSdk() {
