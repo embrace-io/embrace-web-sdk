@@ -24,7 +24,9 @@ Commands are root `package.json` scripts. What those don't tell you:
 
 ## Architecture
 
-Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, rooted at `packages/web-sdk/src/`.
+Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, with source under `packages/web-sdk/src/`.
+
+Two things the layout does not show: `instrumentations/` covers auto-capture, but fetch/XHR use the upstream OTel instrumentations rather than our own, and only span/log emitters belong there (detectors that emit no telemetry go in `utils/`).
 
 ### Key Patterns
 
@@ -105,23 +107,6 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 ### Time
 
 - Anything touching timestamps or timing attributes must convert through `OTelPerformanceManager` (`this.perf`), never by hand or with raw offsets. Read `packages/web-sdk/src/utils/PerformanceManager/README.md` first — it defines the two reference frames (time origin vs zero time) and which method fits each case
-
-## Common Tasks
-
-### Adding an Instrumentation
-
-1. Create in `packages/web-sdk/src/instrumentations/<name>/`
-2. Extend `EmbraceInstrumentationBase`
-3. Export from `packages/web-sdk/src/instrumentations/index.ts`
-4. Register in `sdk/setupDefaultInstrumentations.ts` if auto-enabled
-5. Catalog its timing frame (zero-time / time-origin / none) in `packages/web-sdk/src/utils/PerformanceManager/README.md`
-
-### Adding a Processor
-
-1. Create in `packages/web-sdk/src/processors/<Name>Processor/`
-2. Implement `SpanProcessor` or `LogRecordProcessor`
-3. Export from `packages/web-sdk/src/processors/index.ts`
-4. Wire into processor chain in `initSDK.ts`
 
 ## Git Workflow
 
