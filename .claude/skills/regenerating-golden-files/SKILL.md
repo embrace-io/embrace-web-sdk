@@ -1,6 +1,6 @@
 ---
 name: regenerating-golden-files
-description: Use when an SDK change alters emitted telemetry and the integration golden files need regenerating - covers building first, choosing the local or container run, and reviewing the diff semantically instead of by line.
+description: Use when an SDK change alters emitted telemetry and the integration golden files need regenerating - covers choosing the local or container run, which attributes churn on their own, and reviewing the diff semantically instead of by line.
 ---
 
 # Regenerating Golden Files
@@ -11,25 +11,21 @@ Golden files live in `tests/integration/tests/__golden__/` and capture the exact
 
 ## Procedure
 
-1. **Build first.** The integration harness tests the built artifacts, not `src/`. Skipping this regenerates goldens against a stale bundle and the diff will look wrong in ways that are hard to attribute.
-
-   ```bash
-   npm run build
-   ```
-
-2. **Regenerate.** Local is fast and fine for iterating:
+1. **Regenerate.** No separate build step: `update-golden` declares `dependsOn: ["^build", "install-dependencies", "build-platforms"]`, so turbo builds the SDK and every bundler platform first.
 
    ```bash
    npm run test:integration:update-golden
    ```
 
-   The container run matches CI exactly and is the safer choice before pushing:
+   The container run matches CI's browser and OS, so prefer it when a diff looks environment-dependent:
 
    ```bash
    npm run test:integration:container:update-golden
    ```
 
-3. **Review semantically, not by line.** This is the step that matters, and the line diff actively works against you: a regeneration rewrites and reorders large JSON blocks, so a one-attribute change can show up as hundreds of changed lines. Diff the attribute keys instead, with the script in "Diffing attribute keys" below.
+   The container path depends on `UPDATE_GOLDEN` reaching the test process, which needs `passThroughEnv` on the integration `test` task. Turbo runs in `envMode: strict`, so a var that is merely present in the environment is stripped from the task unless it is declared. If a container regeneration ever comes back with no golden changes but failing tests, check that declaration first: that is the signature of the run silently falling back to compare mode.
+
+2. **Review semantically, not by line.** This is the step that matters, and the line diff actively works against you: a regeneration rewrites and reorders large JSON blocks, so a one-attribute change can show up as hundreds of changed lines. Diff the attribute keys instead, with the script in "Diffing attribute keys" below.
 
    Confirm every added and removed key is one you meant to change, and that nothing was removed by accident.
 
@@ -99,4 +95,6 @@ A key appearing or disappearing is almost always a real behavior change. A value
 
 ## Sanity check before pushing
 
-Confirm `browser.url.full` and the `emb.page.*` attributes still describe the same page, and that record counts per file did not change unless the change intended that.
+Confirm `browser.url.full` and the page attributes still describe the same page, and that record counts per file did not change unless the change intended that.
+
+The page attributes are `app.surface.name`, `app.surface.label`, and `app.surface.id`. There is no `emb.page.*` prefix in the payloads, despite the constant names suggesting one: `KEY_EMB_PAGE_PATH` in `packages/web-sdk/src/constants/attributes.ts` holds `'app.surface.name'`. Grep the wire keys, not the constant names. (`emb.page_load` is unrelated, a session-span attribute.)

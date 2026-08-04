@@ -11,7 +11,9 @@ Any code path gated on feature detection makes its tests a function of the brows
 
 `isEntryTypeSupported` reads `PerformanceObserver.supportedEntryTypes`. A test that leaves it alone asserts against whatever the current browser supports, so the branch under test changes when the browser does.
 
-Stub it instead, and assert **both** branches:
+Stub it instead, and assert **both** branches. Which stub you need depends on whether the code under test only *checks* support or goes on to *create an observer*.
+
+**Detection only.** When the assertion is about which branch was taken, a class carrying just the static flag is enough:
 
 ```ts
 let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
@@ -32,13 +34,32 @@ afterEach(() => {
 });
 ```
 
-Stub before constructing the instrumentation: support flags are usually resolved once in the constructor.
+**Anything that observes.** The stub above is a trap for instrumentations that reach `createPerformanceObserver`, which is most of them (Loaf, ElementTiming, soft navigation). It calls `observer.observe(...)` inside a `try` whose `catch { return null }` swallows everything, so a stub with no `observe` method silently yields a null observer and the test asserts nothing. Mock the full shape and keep a handle to feed entries through:
+
+```ts
+class MockPerformanceObserver {
+  public static supportedEntryTypes = ['long-animation-frame'];
+  public constructor(callback: ObserverCallback) {
+    observerCallback = callback;
+  }
+  public observe(options: { type: string; buffered: boolean }): void {
+    observeOptions = options;
+  }
+  public disconnect(): void {
+    observerDisconnected = true;
+  }
+}
+```
+
+See `LoafInstrumentation.test.ts` and `performanceObserver.test.ts` for the full pattern. Stub before constructing the instrumentation either way: support flags are usually resolved once in the constructor.
 
 ## Prove the test is not vacuous
 
 A test whose branch is unreachable passes without asserting anything. Before trusting a new test on a feature-detected path, temporarily invert the implementation and confirm the test fails. If it still passes, it is not testing what its name claims.
 
-This is not hypothetical: a soft-navigation URL test in this repo passed for months only because the bundled Chromium never supported `soft-navigation`, and it asserted the opposite of what the code did.
+Soft navigation is the concrete case in this repo, and it runs the opposite way from what you might assume: the bundled Chromium (151) **does** support `soft-navigation`, so the native branch is the default and the polyfill branch is the one that goes unexercised unless you force it. `tests/integration/playwright.config.headed.ts` runs both as separate projects, passing `--disable-features=SoftNavigationHeuristics` to reach the polyfill path the way Chrome versions below 151 would.
+
+The lesson generalizes: check which way the default actually falls before assuming which branch your test is covering. Do not assume the unsupported path is the common one.
 
 ## Run the multi-browser suite
 
