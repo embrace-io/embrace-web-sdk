@@ -2,12 +2,12 @@ import type {
   IExportLogsServiceRequest,
   ILogRecord,
 } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type { Page } from 'playwright';
 import {
   DEFAULT_LCP_DELAY_MS,
   MAIN_THREAD_BLOCK_MS,
 } from '../../platforms/vite-test-harness/src/constants.ts';
 import test, { expect } from '../../utils/test-with-mock-api.ts';
+import { waitForEntry } from '../../utils/waitForEntry.ts';
 
 const BASE_URL = 'http://localhost:3017/';
 const DELAYED_LCP_URL = `http://localhost:3017/lcp?delay=${DEFAULT_LCP_DELAY_MS}`;
@@ -19,45 +19,6 @@ const RENDER_BUFFER = 67;
 
 // When asserting main thread blocking times, add a small tolerance
 const MAIN_THREAD_TOLERANCE = 20;
-
-/**
- * Resolves once the page has a paint entry of one of `types`. Entries already
- * delivered count, so this is safe to call after the paint it waits on; when
- * none has arrived it observes for the next. Rejects rather than hanging so a
- * missing entry fails in seconds instead of at the test timeout.
- */
-const waitForPaintEntry = (page: Page, types: string[]) =>
-  page.evaluate(
-    (entryTypes) =>
-      new Promise<void>((resolve, reject) => {
-        const delivered = () =>
-          entryTypes.some(
-            (type) => performance.getEntriesByType(type).length > 0,
-          );
-
-        if (delivered()) {
-          resolve();
-          return;
-        }
-
-        const timeout = setTimeout(
-          () =>
-            reject(new Error(`no ${entryTypes.join('/')} entry within 10s`)),
-          10_000,
-        );
-
-        for (const type of entryTypes) {
-          new PerformanceObserver((list, observer) => {
-            if (list.getEntries().length > 0) {
-              clearTimeout(timeout);
-              observer.disconnect();
-              resolve();
-            }
-          }).observe({ type, buffered: true });
-        }
-      }),
-    types,
-  );
 
 const attributeValue = (record: ILogRecord, key: string) => {
   const value = record.attributes.find(
@@ -82,7 +43,7 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     // has already happened by this point, so check for a delivered entry before
     // waiting on one.
     await expect(page.getByText('This is the landing page')).toBeVisible();
-    await waitForPaintEntry(page, ['largest-contentful-paint']);
+    await waitForEntry(page, ['largest-contentful-paint']);
 
     // Block the main thread so we can deterministically assert INP for the hard navigation.
     await page.getByTestId('block-main-thread').click();
@@ -124,10 +85,11 @@ test.describe('Web Vitals measurement in soft navigations', () => {
 
     // With soft navigations active the paint for this navigation arrives as an
     // interaction-contentful-paint entry, so accept either type.
-    await waitForPaintEntry(page, [
-      'interaction-contentful-paint',
-      'largest-contentful-paint',
-    ]);
+    // Candidates arrive smallest first and share a startTime, so waiting for any
+    // entry would settle on the text that painted before the image.
+    await waitForEntry(page, ['interaction-contentful-paint'], 1, {
+      elementTag: 'IMG',
+    });
 
     // The image has already painted, so this only affects INP, not LCP.
     await page.getByTestId('block-main-thread').click();
@@ -143,25 +105,9 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     // before the shift so it waits on that specific delivery rather than on an
     // entry an earlier shift may already have produced.
     await page.getByTestId('block-main-thread').click();
-    const layoutShiftEntry = page.evaluate(
-      () =>
-        new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(
-            () => reject(new Error('no layout-shift entry within 10s')),
-            10_000,
-          );
-          new PerformanceObserver((list, observer) => {
-            if (list.getEntries().length > 0) {
-              clearTimeout(timeout);
-              observer.disconnect();
-              resolve();
-            }
-          }).observe({ type: 'layout-shift' });
-        }),
-    );
     await page.getByTestId('trigger-layout-shift').click();
     await expect(page.getByText('Layout shift banner')).toBeVisible();
-    await layoutShiftEntry;
+    await waitForEntry(page, ['layout-shift']);
 
     // Trigger another soft navigation to finalise the previous soft navigation's metrics
     await page.getByRole('button', { name: 'Page B' }).click();
