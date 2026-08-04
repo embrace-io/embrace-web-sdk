@@ -17,6 +17,7 @@ describe('ProxyLogManager', () => {
     mockDelegate = {
       message: sinon.stub(),
       logException: sinon.stub(),
+      flush: sinon.stub().resolves(),
     };
   });
 
