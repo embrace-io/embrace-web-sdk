@@ -3367,24 +3367,26 @@ describe('WebVitalsInstrumentation', () => {
   });
 
   describe('soft navigations', () => {
-    describe('listener registration', () => {
-      let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+    let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
-      const stubSupportedEntryTypes = (types: string[]) => {
-        (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
-          public static supportedEntryTypes = types;
-        };
+    // Soft navigation support is browser dependent, so every test that depends on
+    // it stubs the entry type rather than inheriting whatever the runner bundles.
+    const stubSupportedEntryTypes = (types: string[]) => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = types;
       };
+    };
 
-      beforeEach(() => {
-        originalPerformanceObserver = globalThis.PerformanceObserver;
-      });
+    beforeEach(() => {
+      originalPerformanceObserver = globalThis.PerformanceObserver;
+    });
 
-      afterEach(() => {
-        (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-          originalPerformanceObserver;
-      });
+    afterEach(() => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        originalPerformanceObserver;
+    });
 
+    describe('listener registration', () => {
       it('should pass reportSoftNavs: true to both listener registrations when supported', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
@@ -3570,6 +3572,7 @@ describe('WebVitalsInstrumentation', () => {
     });
 
     it('should prefer navigationURL for browser.url.full on soft navigations', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
@@ -3607,7 +3610,12 @@ describe('WebVitalsInstrumentation', () => {
       );
     });
 
-    it('should keep the attributed-page URL for hard navigations even when navigationURL is set', () => {
+    // With soft navigations active the browser segments metrics per navigation, so
+    // navigationURL names the navigation the value is anchored to and wins even for
+    // hard navigations. Without them a single metric spans the whole SPA visit and
+    // navigationURL is stuck on the entry URL, so the attributed page is all we have.
+    it('should prefer navigationURL for hard navigations when soft navigations are active', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
@@ -3641,11 +3649,51 @@ describe('WebVitalsInstrumentation', () => {
 
       const record = memoryExporter.getFinishedLogRecords()[0];
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-b',
+      );
+    });
+
+    it('should keep the attributed-page URL for hard navigations when soft navigations are unsupported', () => {
+      stubSupportedEntryTypes([]);
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const metric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm6b',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        navigationURL: 'https://example.com/page-b',
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
     });
 
     it('should fall back to the attributed-page URL for soft navigations without navigationURL', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
