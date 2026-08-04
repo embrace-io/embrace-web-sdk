@@ -2,6 +2,7 @@
   "name": "next-15-webpack-app",
   "private": true,
   "scripts": {
+    "check": "tsc --noEmit",
     "dev": "next dev",
     "build": "npm run build:clean && npm run build:es2020 && npm run process-sourcemaps",
     "build:clean": "emb-rm .next",
