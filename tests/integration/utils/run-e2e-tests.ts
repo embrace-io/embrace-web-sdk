@@ -143,19 +143,19 @@ const runE2ETests = ({
         // Web vitals log requests may arrive first, so waiting for any OTel
         // request is not sufficient.
         await waitForOTelRequestMatching(/\/v2\/spans/);
-
-        // Give a short window for the concurrent log request (sent alongside the
-        // span flush) to finish being parsed from the gzip buffer.
-        if (!requests.find((req) => req.url.endsWith('/logs'))) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
+        // Session end sends a log request alongside the span request, and either
+        // can finish being parsed from its gzip buffer first, so wait for it
+        // rather than allowing a fixed window to expire.
+        await waitForOTelRequestMatching(/\/v2\/logs/);
 
         const sessionRequest = requests.find((req) =>
           req.url.endsWith('/spans'),
         );
-        // Web vitals may have flushed a log request before session end; use the
-        // last log request which corresponds to the session end flush.
-        const logRequest = requests.find((req) => req.url.endsWith('/logs'));
+        // Web vitals may have flushed a log request before session end, so take
+        // the last one, which is the session-end flush.
+        const logRequest = [...requests]
+          .reverse()
+          .find((req) => req.url.endsWith('/logs'));
 
         if (goldenFiles) {
           if (!sessionRequest) {
