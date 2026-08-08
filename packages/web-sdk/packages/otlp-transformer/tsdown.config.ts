@@ -1,7 +1,7 @@
-import type { Plugin } from 'rolldown';
+import type { TsdownPlugin } from 'tsdown';
 import { defineConfig } from 'tsdown';
 
-const failOnWarnPlugin: Plugin = {
+const failOnWarnPlugin: TsdownPlugin = {
   name: 'fail-on-warn',
   onLog(level, log) {
     // Suppress eval warning from protobufjs - tree-shaking removes it from output

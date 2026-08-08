@@ -47,14 +47,16 @@ export default {
         include: [
           'hoist-non-react-statics',
           'react',
-          'cookie',
-          'set-cookie-parser',
+          // transitive CJS deps, named through their parent so they resolve
+          // under an isolated linker as well as a hoisted one
+          'react-router-domv6plus > react-router > cookie',
+          'react-router-domv6plus > react-router > set-cookie-parser',
           'react-dom/client',
           'react-dom',
           'react/jsx-dev-runtime',
-          'prop-types',
-          'react-is',
-          'path-to-regexp',
+          'react-router-domv4v5 > prop-types',
+          'hoist-non-react-statics > react-is',
+          'react-router-domv4v5 > react-router > path-to-regexp',
           '@opentelemetry/otlp-transformer', // used by test utils for internal types
           '@opentelemetry/instrumentation-fetch',
         ],
