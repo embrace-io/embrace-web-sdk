@@ -50,8 +50,16 @@ describe('MaxScrollDepthInstrumentation', () => {
     // in this standards-mode document, scrollingElement *is* that root.
     const scrollRoot = document.createElement('div');
     scrollRootValue = scrollRoot;
+    // Both the scroll root and the real root carry the same sizes, and so does
+    // the window, so dropping the scroll root changes which element each side is
+    // read from without changing any value. What each source reports for a real
+    // document is measureDocument's own concern, covered by its tests.
     const targets: Array<[object, string, () => unknown]> = [
       [window, 'scrollY', () => scrollYValue],
+      [window, 'innerHeight', () => viewportHeightValue],
+      [window, 'innerWidth', () => HORIZONTAL_SIZE],
+      [document.documentElement, 'scrollHeight', () => documentHeightValue],
+      [document.documentElement, 'scrollWidth', () => HORIZONTAL_SIZE],
       [scrollRoot, 'scrollHeight', () => documentHeightValue],
       [scrollRoot, 'clientHeight', () => viewportHeightValue],
       [scrollRoot, 'scrollWidth', () => HORIZONTAL_SIZE],
@@ -241,10 +249,10 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
-  it('omits the unmeasurable keys when there is no scrolling element', () => {
+  it('keeps every attribute when there is no scrolling element', () => {
     // scrollingElement is null in quirks mode when the body is potentially
-    // scrollable, leaving nothing to measure the document against. The pixel
-    // depth still comes from window.scrollY, so it is still reported.
+    // scrollable. <html> stands in for the document there and the window knows
+    // the viewport, so the depth stays measurable.
     scroll({ scrollY: 450, viewportHeight: 100, documentHeight: 1000 });
     scrollRootValue = null;
 
@@ -257,13 +265,17 @@ describe('MaxScrollDepthInstrumentation', () => {
     expect(logs[0].attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 450,
+      'max_scroll_depth.percent': 50,
       'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 1000,
     });
   });
 
-  it('omits the unmeasurable keys when the scroll root has no layout box', () => {
-    // A non-rendered or zero-sized frame has a scrolling element whose client
-    // box is empty, so there is no viewport to take a percentage against.
+  it('omits the unmeasurable keys when the frame renders nothing', () => {
+    // A non-rendered or zero-sized frame has no viewport at all: neither the
+    // scroll root's client box nor the window reports one, so there is nothing to
+    // take a percentage against. The pixel depth comes from window.scrollY, so it
+    // is still reported.
     scroll({ scrollY: 450, viewportHeight: 0, documentHeight: 1000 });
 
     userSessionManager.endSessionPartInternal({
@@ -301,9 +313,29 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
+  it('reports 0 percent when the document is shorter than the viewport', () => {
+    // In quirks mode <body> can scroll inside itself while the document around it
+    // stays put, which leaves the document shorter than the viewport and the
+    // raw document-minus-viewport subtraction below zero.
+    setGeometry({ scrollY: 0, viewportHeight: 600, documentHeight: 400 });
+
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.percent': 0,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 400,
+    });
+  });
+
   it('reports 0 percent when the document is not scrollable', () => {
-    // The document exactly fills the viewport, leaving no scrollable range. It
-    // can never be shorter than that: both boxes come off the same scroll root.
+    // The document exactly fills the viewport, leaving no scrollable range.
     setGeometry({ scrollY: 0, viewportHeight: 500, documentHeight: 500 });
 
     userSessionManager.endSessionPartInternal({

@@ -70,8 +70,8 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     // event ever fired for it.
     this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
 
-    // Measure once here rather than on every scroll event, since reading the
-    // scroll root's dimensions forces a layout reflow.
+    // Measure once here rather than on every scroll event, since reading
+    // document geometry forces a layout reflow.
     // https://developer.chrome.com/docs/performance/insights/forced-reflow
     const measurement = measureDocument();
 
@@ -82,11 +82,10 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
         [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
         [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
         [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
-        // Depth as a percentage and the document height both need a measurable
-        // scroll root, which a document or a frame can lack. Omit those keys in
-        // that case so consumers read absence rather than a fabricated 0. The
-        // pixel depth comes from the scroll position alone, so it stands on its
-        // own.
+        // Depth as a percentage needs a viewport, which a document or a frame
+        // can lack. Omit it and the height together in that case so consumers
+        // read absence rather than a fabricated 0. The pixel depth comes from
+        // the scroll position alone, so it stands on its own.
         ...(measurement
           ? {
               [ATTR_MAX_SCROLL_DEPTH_PERCENT]: this._scrollPercent(measurement),
@@ -102,12 +101,8 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     this._maxScrollY = window.scrollY;
   }
 
-  private _scrollPercent({
-    documentHeight,
-    viewportHeight,
-  }: DocumentMeasurement): number {
-    const scrollBottom = documentHeight - viewportHeight;
-    if (scrollBottom === 0) {
+  private _scrollPercent({ scrollableHeight }: DocumentMeasurement): number {
+    if (scrollableHeight === 0) {
       // The document fits the viewport, so there was no depth to reach.
       return 0;
     }
@@ -116,7 +111,7 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     // document, which is still the top.
     return Math.min(
       100,
-      Math.max(0, Math.round((this._maxScrollY / scrollBottom) * 100)),
+      Math.max(0, Math.round((this._maxScrollY / scrollableHeight) * 100)),
     );
   }
 }
