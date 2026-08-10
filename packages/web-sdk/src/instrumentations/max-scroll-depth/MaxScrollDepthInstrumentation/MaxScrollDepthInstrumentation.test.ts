@@ -231,6 +231,40 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
+  it('clamps a rubber-band negative scroll position to the top, including across part ends', () => {
+    // Safari reports a negative scroll position during rubber-band overscroll
+    // past the top of the document, which is still the top.
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
+    scroll({ scrollY: -50, viewportHeight: 100, documentHeight: 1000 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    // A second part ending while still overscrolled: the depth carried over
+    // from the previous part must be the top, not the negative offset.
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.percent': 0,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 1000,
+    });
+    expect(logs[1].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.percent': 0,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 1000,
+    });
+  });
+
   it('clamps the percentage to 100 when the scroll position exceeds the scrollable range', () => {
     scroll({ scrollY: 1000, viewportHeight: 100, documentHeight: 1000 });
 

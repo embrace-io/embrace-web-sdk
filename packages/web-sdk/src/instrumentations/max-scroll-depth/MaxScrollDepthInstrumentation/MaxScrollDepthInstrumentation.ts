@@ -96,9 +96,12 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       },
     });
 
-    // Initial state for the next part will be wherever the user left off the scroll position
+    // Initial state for the next part will be wherever the user left off the
+    // scroll position, clamped because Safari reports a negative position past
+    // the top of the document during rubber-band overscroll, which is still the
+    // top. https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
     this._hasScrolled = false;
-    this._maxScrollY = window.scrollY;
+    this._maxScrollY = Math.max(0, window.scrollY);
   }
 
   private _scrollPercent({ scrollableHeight }: DocumentMeasurement): number {
@@ -107,11 +110,12 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       return 0;
     }
 
-    // Elastic overscroll reports a negative scroll position past the top of the
-    // document, which is still the top.
+    // The furthest point reached can exceed the range measured at part end: the
+    // document may have shrunk since, or the position came from overscroll past
+    // the bottom.
     return Math.min(
       100,
-      Math.max(0, Math.round((this._maxScrollY / scrollableHeight) * 100)),
+      Math.round((this._maxScrollY / scrollableHeight) * 100),
     );
   }
 }
