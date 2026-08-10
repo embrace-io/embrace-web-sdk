@@ -1,5 +1,7 @@
+import type { DiagLogger } from '@opentelemetry/api';
 import {
   context,
+  DiagConsoleLogger,
   DiagLogLevel,
   diag,
   propagation,
@@ -16,8 +18,6 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-// deep import needed to stub the cached console refs used by DiagConsoleLogger
-import { _originalConsoleMethods } from '../../../../node_modules/@opentelemetry/api/build/esm/diag/consoleLogger.js';
 import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
@@ -67,6 +67,21 @@ import type {
 
 chai.use(sinonChai);
 const { expect } = chai;
+
+// OTel's level filter binds the logger's methods eagerly inside setLogger, so
+// the stubs have to be swapped in on the way through rather than afterwards.
+const stubDiagLoggerMethods = (
+  stubs: Partial<Record<keyof DiagLogger, SinonStub>>,
+) => {
+  const setLogger = diag.setLogger.bind(diag);
+  return sinon.stub(diag, 'setLogger').callsFake((logger, options) => {
+    // stubbing whatever arrives would silently pass if initSDK stopped routing
+    // its diagnostics through the console logger
+    expect(logger).to.be.instanceOf(DiagConsoleLogger);
+    Object.assign(logger, stubs);
+    return setLogger(logger, options);
+  });
+};
 
 type ExportedSpan = ReadableSpan & {
   spanId: string;
@@ -1552,20 +1567,21 @@ describe('initSDK', () => {
     let consoleErrorStub: SinonStub;
     let consoleWarnStub: SinonStub;
     let consoleInfoStub: SinonStub;
+    let setLoggerStub: SinonStub;
 
     beforeEach(() => {
-      expect(_originalConsoleMethods.error).to.be.a('function');
-      expect(_originalConsoleMethods.warn).to.be.a('function');
-      expect(_originalConsoleMethods.info).to.be.a('function');
-      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
-      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
-      consoleInfoStub = sinon.stub(_originalConsoleMethods, 'info');
+      consoleErrorStub = sinon.stub();
+      consoleWarnStub = sinon.stub();
+      consoleInfoStub = sinon.stub();
+      setLoggerStub = stubDiagLoggerMethods({
+        error: consoleErrorStub,
+        warn: consoleWarnStub,
+        info: consoleInfoStub,
+      });
     });
 
     afterEach(() => {
-      consoleErrorStub.restore();
-      consoleWarnStub.restore();
-      consoleInfoStub.restore();
+      setLoggerStub.restore();
     });
 
     it('should allow sending info level logs to the console', () => {
@@ -1621,17 +1637,19 @@ describe('initSDK', () => {
   describe('multiple invocations', () => {
     let consoleErrorStub: SinonStub;
     let consoleWarnStub: SinonStub;
+    let setLoggerStub: SinonStub;
 
     beforeEach(() => {
-      expect(_originalConsoleMethods.error).to.be.a('function');
-      expect(_originalConsoleMethods.warn).to.be.a('function');
-      consoleErrorStub = sinon.stub(_originalConsoleMethods, 'error');
-      consoleWarnStub = sinon.stub(_originalConsoleMethods, 'warn');
+      consoleErrorStub = sinon.stub();
+      consoleWarnStub = sinon.stub();
+      setLoggerStub = stubDiagLoggerMethods({
+        error: consoleErrorStub,
+        warn: consoleWarnStub,
+      });
     });
 
     afterEach(() => {
-      consoleErrorStub.restore();
-      consoleWarnStub.restore();
+      setLoggerStub.restore();
     });
 
     it('should not cause the SDK to be initialized multiple times', () => {
