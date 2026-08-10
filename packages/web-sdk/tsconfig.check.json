@@ -1,0 +1,14 @@
+{
+  "$schema": "https://www.schemastore.org/tsconfig.json",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // react-router's declaration files import react's types without declaring
+    // @types/react. Package managers with an out-of-repo store (isolated installs)
+    // make the hoisted copy unreachable from there, so map it explicitly. This lives
+    // outside tsconfig.json because Biome's useImportExtensions misreads a path-mapped
+    // bare specifier as a local file and rewrites 'react' imports to 'react.ts'
+    "paths": {
+      "react": ["../../node_modules/@types/react"]
+    }
+  }
+}
