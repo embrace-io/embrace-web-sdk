@@ -25,7 +25,7 @@
     "test:manual": "npm run test -- --manual",
     "test:coverage": "npm run test -- --config=web-test-runner.coverage.config.js",
     "test:multiBrowsers": "npm run test -- --config=web-test-runner.multi-browser.config.js",
-    "check": "tsc && eslint --max-warnings 0",
+    "check": "tsc -p tsconfig.check.json && eslint --max-warnings 0",
     "check:dist": "eslint --max-warnings 0 --config eslint.dist.config.ts",
     "validate": "tsx scripts/validate.ts",
     "docs": "npx typedoc --readme none && touch docs/.nojekyll",
