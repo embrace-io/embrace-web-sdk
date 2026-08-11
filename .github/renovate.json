@@ -49,6 +49,11 @@
       "enabled": false
     },
     {
+      "description": "TypeScript - stay on 6.x",
+      "matchDepNames": ["typescript"],
+      "allowedVersions": "^6"
+    },
+    {
       "description": "Playwright",
       "matchDepNames": [
         "@playwright/test",
