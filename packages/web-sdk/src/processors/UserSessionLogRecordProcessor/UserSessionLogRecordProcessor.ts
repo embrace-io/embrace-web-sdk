@@ -1,9 +1,5 @@
 import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
-import {
-  ATTR_LOG_RECORD_UID,
-  ATTR_SESSION_ID,
-  ATTR_SESSION_PREVIOUS_ID,
-} from '@opentelemetry/semantic-conventions/incubating';
+import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
 import {
   KEY_EMB_SESSION_PART_ID,
   KEY_EMB_USER_SESSION_ID,
@@ -37,10 +33,10 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
       this._userSessionManager.getSessionPartId() ??
       '';
 
+    // `session.id` / `session.previous_id` are left to the customer;
+    // setAttributes would overwrite whatever they put there.
     logRecord.setAttributes({
       [ATTR_LOG_RECORD_UID]: generateUUID(),
-      [ATTR_SESSION_ID]: userSessionId,
-      [ATTR_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_USER_SESSION_ID]: userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_SESSION_PART_ID]: sessionPartId,

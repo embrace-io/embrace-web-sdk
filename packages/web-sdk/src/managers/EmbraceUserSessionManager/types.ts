@@ -64,12 +64,8 @@ export interface UserSessionState {
 /** Attributes emitted by the user-session layer. */
 export interface UserSessionAttributes {
   readonly 'emb.user_session_id': string;
-  /** OTel standard alias for `emb.user_session_id`. */
-  readonly 'session.id': string;
   /** Empty string on the first user session for this browser. */
   readonly 'emb.user_session_previous_id': string;
-  /** OTel standard alias for `emb.user_session_previous_id`. */
-  readonly 'session.previous_id': string;
   /** Monotonic from 1 across all visits by this browser. */
   readonly 'emb.user_session_number': number;
   /** 1-indexed within the user session. */

@@ -54,7 +54,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "1B47505EF6A788E522551A27B8F76043"
+              "stringValue": "D9D8DBBAEA335BC695F5901E4CF6614E"
             }
           },
           {
@@ -86,11 +86,125 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1784708694627000000",
-              "observedTimeUnixNano": "1784708694627000000",
+              "timeUnixNano": "1785776860228000000",
+              "observedTimeUnixNano": "1785776860231000000",
               "severityNumber": 9,
               "body": {
-                "stringValue": "{\"waitingDuration\":0,\"cacheDuration\":2,\"dnsDuration\":0,\"connectionDuration\":0,\"requestDuration\":1}"
+                "stringValue": "{\"timeToFirstByte\":5,\"firstByteToFCP\":80,\"loadState\":\"dom-interactive\"}"
+              },
+              "eventName": "browser.web_vital",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "ux.web_vital"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.name",
+                  "value": {
+                    "stringValue": "fcp"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.value",
+                  "value": {
+                    "intValue": 85
+                  }
+                },
+                {
+                  "key": "browser.web_vital.delta",
+                  "value": {
+                    "intValue": 85
+                  }
+                },
+                {
+                  "key": "browser.web_vital.rating",
+                  "value": {
+                    "stringValue": "good"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.id",
+                  "value": {
+                    "stringValue": "v6-1785776860218-9591464949333"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.navigation_type",
+                  "value": {
+                    "stringValue": "navigate"
+                  }
+                },
+                {
+                  "key": "browser.web_vital.navigation_id",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "2B441938B72EAB04FF1002DD6B91A8F4"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.name",
+                  "value": {
+                    "stringValue": "/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.id",
+                  "value": {
+                    "stringValue": "D3E8CAD9105375F76B2A81FC3132F240"
+                  }
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "6B104DD893BBD9B379A55D103F5F8497"
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "6B15AB9928237BCF56E9BCEFAED7E596"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            },
+            {
+              "timeUnixNano": "1785776860230000000",
+              "observedTimeUnixNano": "1785776860232000000",
+              "severityNumber": 9,
+              "body": {
+                "stringValue": "{\"waitingDuration\":0,\"cacheDuration\":4,\"dnsDuration\":0,\"connectionDuration\":0,\"requestDuration\":1}"
               },
               "eventName": "browser.web_vital",
               "attributes": [
@@ -109,13 +223,13 @@
                 {
                   "key": "browser.web_vital.value",
                   "value": {
-                    "intValue": 3
+                    "intValue": 5
                   }
                 },
                 {
                   "key": "browser.web_vital.delta",
                   "value": {
-                    "intValue": 3
+                    "intValue": 5
                   }
                 },
                 {
@@ -127,7 +241,7 @@
                 {
                   "key": "browser.web_vital.id",
                   "value": {
-                    "stringValue": "v6-1784708694623-9474900796021"
+                    "stringValue": "v6-1785776860218-1922213661788"
                   }
                 },
                 {
@@ -140,6 +254,12 @@
                   "key": "browser.web_vital.navigation_id",
                   "value": {
                     "intValue": 0
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "2B441938B72EAB04FF1002DD6B91A8F4"
                   }
                 },
                 {
@@ -157,7 +277,7 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "6FABA37A68EBC633CD2C5715F104531E"
+                    "stringValue": "D3E8CAD9105375F76B2A81FC3132F240"
                   }
                 },
                 {
@@ -199,169 +319,25 @@
                 {
                   "key": "emb.web_vital.attribution.unattributed",
                   "value": {
-                    "intValue": 2
+                    "intValue": 4
                   }
                 },
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "BC8DF9CC05032B818A5F2FA0A1374F83"
-                  }
-                },
-                {
-                  "key": "session.id",
-                  "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
-                  }
-                },
-                {
-                  "key": "session.previous_id",
-                  "value": {
-                    "stringValue": ""
+                    "stringValue": "75043D3DEE3D174C33CDDB8E32F9C280"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
+                    "stringValue": "6B15AB9928237BCF56E9BCEFAED7E596"
                   }
                 },
                 {
                   "key": "emb.user_session_previous_id",
                   "value": {
                     "stringValue": ""
-                  }
-                },
-                {
-                  "key": "emb.session_part_id",
-                  "value": {
-                    "stringValue": "C509D642BA015E79FEEFC33511BB4CFA"
-                  }
-                },
-                {
-                  "key": "url.full",
-                  "value": {
-                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
-                  }
-                }
-              ],
-              "droppedAttributesCount": 0
-            },
-            {
-              "timeUnixNano": "1784708694629000000",
-              "observedTimeUnixNano": "1784708694631000000",
-              "severityNumber": 9,
-              "body": {
-                "stringValue": "{\"timeToFirstByte\":3,\"firstByteToFCP\":40,\"loadState\":\"complete\"}"
-              },
-              "eventName": "browser.web_vital",
-              "attributes": [
-                {
-                  "key": "emb.type",
-                  "value": {
-                    "stringValue": "ux.web_vital"
-                  }
-                },
-                {
-                  "key": "browser.web_vital.name",
-                  "value": {
-                    "stringValue": "fcp"
-                  }
-                },
-                {
-                  "key": "browser.web_vital.value",
-                  "value": {
-                    "intValue": 43
-                  }
-                },
-                {
-                  "key": "browser.web_vital.delta",
-                  "value": {
-                    "intValue": 43
-                  }
-                },
-                {
-                  "key": "browser.web_vital.rating",
-                  "value": {
-                    "stringValue": "good"
-                  }
-                },
-                {
-                  "key": "browser.web_vital.id",
-                  "value": {
-                    "stringValue": "v6-1784708694623-3661093820111"
-                  }
-                },
-                {
-                  "key": "browser.web_vital.navigation_type",
-                  "value": {
-                    "stringValue": "navigate"
-                  }
-                },
-                {
-                  "key": "browser.web_vital.navigation_id",
-                  "value": {
-                    "intValue": 0
-                  }
-                },
-                {
-                  "key": "browser.url.full",
-                  "value": {
-                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
-                  }
-                },
-                {
-                  "key": "app.surface.name",
-                  "value": {
-                    "stringValue": "/platforms/vite-7/es2015/index.html"
-                  }
-                },
-                {
-                  "key": "app.surface.id",
-                  "value": {
-                    "stringValue": "6FABA37A68EBC633CD2C5715F104531E"
-                  }
-                },
-                {
-                  "key": "app.surface.label",
-                  "value": {
-                    "stringValue": "React + TS + Vite"
-                  }
-                },
-                {
-                  "key": "log.record.uid",
-                  "value": {
-                    "stringValue": "F627BEDB3AD4B3083F94CA8C60EF6AFE"
-                  }
-                },
-                {
-                  "key": "session.id",
-                  "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
-                  }
-                },
-                {
-                  "key": "session.previous_id",
-                  "value": {
-                    "stringValue": ""
-                  }
-                },
-                {
-                  "key": "emb.user_session_id",
-                  "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
-                  }
-                },
-                {
-                  "key": "emb.user_session_previous_id",
-                  "value": {
-                    "stringValue": ""
-                  }
-                },
-                {
-                  "key": "emb.session_part_id",
-                  "value": {
-                    "stringValue": "C509D642BA015E79FEEFC33511BB4CFA"
                   }
                 },
                 {
@@ -382,8 +358,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1784708694760000000",
-              "observedTimeUnixNano": "1784708694760000000",
+              "timeUnixNano": "1785776860391000000",
+              "observedTimeUnixNano": "1785776860392000000",
               "severityNumber": 9,
               "body": {},
               "eventName": "first-interaction",
@@ -415,7 +391,7 @@
                 {
                   "key": "first_interaction.time",
                   "value": {
-                    "intValue": 133
+                    "intValue": 161
                   }
                 },
                 {
@@ -427,31 +403,19 @@
                 {
                   "key": "first_interaction.y",
                   "value": {
-                    "intValue": 92
+                    "intValue": 419
                   }
                 },
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "0B1234E4F454435AFCE3579B77710DA8"
-                  }
-                },
-                {
-                  "key": "session.id",
-                  "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
-                  }
-                },
-                {
-                  "key": "session.previous_id",
-                  "value": {
-                    "stringValue": ""
+                    "stringValue": "839C9DFF981F2B3327E0FF0E413B831F"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
+                    "stringValue": "6B15AB9928237BCF56E9BCEFAED7E596"
                   }
                 },
                 {
@@ -463,7 +427,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "C509D642BA015E79FEEFC33511BB4CFA"
+                    "stringValue": "2B441938B72EAB04FF1002DD6B91A8F4"
                   }
                 },
                 {
@@ -487,7 +451,7 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "6FABA37A68EBC633CD2C5715F104531E"
+                    "stringValue": "D3E8CAD9105375F76B2A81FC3132F240"
                   }
                 },
                 {
@@ -507,8 +471,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1784708694761000000",
-              "observedTimeUnixNano": "1784708694760000000",
+              "timeUnixNano": "1785776860393000000",
+              "observedTimeUnixNano": "1785776860393000000",
               "severityNumber": 13,
               "severityText": "WARNING",
               "body": {
@@ -524,13 +488,13 @@
                 {
                   "key": "emb.stacktrace.js",
                   "value": {
-                    "stringValue": "message@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:97579\nmessage@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:38001\nZN</rs/get/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:37542\nZN</FN/i/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:257992\nBt/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:1:966\nBt@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:1:786\ni@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:257966\ndg@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:127506\nZN</jb/uc/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:132560\nSd@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:15162\nuc@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:128741\nTc@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:28581\nyb@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:28401\nEventListener.handleEvent*hg@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:128302\nsc@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:127702\nZN</jb/lc/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:127868\nlc@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:8:127813\nZN</jb/Br.createRoot@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:36448\nZN<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:258577\nUb/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:1:680\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:9:258631\n"
+                    "stringValue": "message@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:99939\nmessage@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:38001\nWM</is/get/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:37542\nWM</$M/i/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:263951\nPt/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:1:999\nPt@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:1:819\ni@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:263925\ndg@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:127508\nWM</Hb/rc/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:132562\nSd@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:15162\nrc@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:128743\nEc@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:28581\nvb@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:28401\nEventListener.handleEvent*hg@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:128304\nic@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:127704\nWM</Hb/ac/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:127870\nac@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:8:127815\nWM</Hb/zr.createRoot@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:36448\nWM<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:264574\nDb/<@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:1:691\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:9:264628\n"
                   }
                 },
                 {
                   "key": "emb.js_file_bundle_ids",
                   "value": {
-                    "stringValue": "{\"@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:11:33\\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-BHchCq0l.js:11:126\\n\":\"c4efd0af853a574128f8e142112e49a8\"}"
+                    "stringValue": "{\"@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:11:33\\n@http://localhost:3001/platforms/vite-7/es2015/assets/index-VQ0oftNp.js:11:126\\n\":\"9274659292b972ba96db246840f74172\"}"
                   }
                 },
                 {
@@ -542,25 +506,13 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "F560623F5AE000952DEDC3FEB1370B71"
-                  }
-                },
-                {
-                  "key": "session.id",
-                  "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
-                  }
-                },
-                {
-                  "key": "session.previous_id",
-                  "value": {
-                    "stringValue": ""
+                    "stringValue": "C5AFB95C15737A4EEDB79C0A94E46B50"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "23ACD72E69EEDA9F5F48AA3DEBC6CF46"
+                    "stringValue": "6B15AB9928237BCF56E9BCEFAED7E596"
                   }
                 },
                 {
@@ -572,7 +524,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "C509D642BA015E79FEEFC33511BB4CFA"
+                    "stringValue": "2B441938B72EAB04FF1002DD6B91A8F4"
                   }
                 },
                 {
@@ -596,7 +548,7 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "6FABA37A68EBC633CD2C5715F104531E"
+                    "stringValue": "D3E8CAD9105375F76B2A81FC3132F240"
                   }
                 },
                 {

@@ -847,8 +847,6 @@ describe('initSDK', () => {
         'emb.user_session_inactivity_timeout_seconds': 1800,
         'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
         'emb.sdk_startup_duration': sdkStartupDuration,
-        'session.id': userSessionId,
-        'session.previous_id': '',
         'browser.url.full': browserUrlFull,
         'app.surface.name': window.location.pathname,
         'app.surface.id': appSurfaceId,

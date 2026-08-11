@@ -68,13 +68,10 @@ describe('EmbraceTraceExporter', () => {
     expect((headers as Record<string, string>)['X-EM-DID']).to.equal(
       mockUserID,
     );
-    // Chrome, Webkit and Firefox have slightly different encoding processes- Content-Length values. 286 for Chrome, 287 for Firefox and Webkit.
-    const chromeContentLength = '294';
-    const firefoxWebkitContentLength = '293';
-    //TODO we should find a way to know if we are running in Chrome, Firefox or Webkit and just assert for the specific value for each browser
+    // Browser engines emit gzip streams that differ by a byte for the same input.
     expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
-      chromeContentLength,
-      firefoxWebkitContentLength,
+      '268',
+      '269',
     ]);
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.emb-api.com/v2/spans',
@@ -105,9 +102,9 @@ describe('EmbraceTraceExporter', () => {
                   endTimeUnixNano: '1756138004499000000',
                   attributes: [
                     {
-                      key: 'session.id',
+                      key: 'test.attribute',
                       value: {
-                        stringValue: '80537B7CA8D748D88A6A9D01DE9EDA8E',
+                        stringValue: 'test-value',
                       },
                     },
                   ],
