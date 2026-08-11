@@ -17,6 +17,7 @@ import {
   EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { DOM_STATE_MAX_TRAVERSED_ELEMENTS } from './constants.ts';
 import { DOMStateInstrumentation } from './DOMStateInstrumentation.ts';
 
 const { expect } = chai;
@@ -606,6 +607,32 @@ describe('DOMStateInstrumentation', () => {
       'dom_state.images_above_fold.timestamp',
     );
     expect(logs[1].attributes).to.have.property('dom_state.element_count');
+  });
+
+  it('omits the tree shape when the element count exceeds the traversal ceiling', () => {
+    // The walk runs synchronously on the pagehide path, so a pathological tree
+    // forfeits its tree keys rather than spend the unload budget.
+    const container = document.createElement('div');
+    container.innerHTML = '<i></i>'.repeat(DOM_STATE_MAX_TRAVERSED_ELEMENTS);
+    document.body.appendChild(container);
+    restorers.push(() => {
+      container.remove();
+    });
+    createInstrumentation();
+
+    endSessionPart();
+
+    const logs = getDomStateLogs();
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[1].attributes).to.have.property(
+      'dom_state.phase',
+      'session_part_end',
+    );
+    expect(logs[1].attributes).to.not.have.property('dom_state.element_count');
+    expect(logs[1].attributes).to.not.have.property('dom_state.average_depth');
+    // The document box does not depend on the walk, so it still reports.
+    expect(logs[1].attributes).to.have.property('dom_state.document_height');
+    expect(logs[1].attributes).to.have.property('dom_state.document_width');
   });
 
   it('still emits the part-end log when the document root is gone', () => {

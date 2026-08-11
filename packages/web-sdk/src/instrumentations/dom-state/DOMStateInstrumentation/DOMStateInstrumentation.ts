@@ -15,6 +15,7 @@ import {
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH,
   DOM_STATE_EVENT_NAME,
+  DOM_STATE_MAX_TRAVERSED_ELEMENTS,
 } from './constants.ts';
 import type { DOMStateInstrumentationArgs } from './types.ts';
 
@@ -224,24 +225,34 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  // Iterative depth-first traversal that computes element count and summed depth
-  // in one pass. The root passed in sits at depth 1.
+  // Iterative depth-first traversal that computes element count and summed
+  // depth in one pass. The root passed in sits at depth 1. Runs synchronously
+  // on the pagehide path, so it avoids per-node allocations (parallel stacks
+  // instead of entry objects) and bails at the ceiling rather than spend the
+  // unload budget on a pathological tree.
   private _traverse(root: Element): {
     elementCount: number;
     totalDepth: number;
-  } {
+  } | null {
     let elementCount = 0;
     let totalDepth = 0;
 
-    const stack: Array<{ element: Element; depth: number }> = [
-      { element: root, depth: 1 },
-    ];
-    for (let entry = stack.pop(); entry !== undefined; entry = stack.pop()) {
+    const elements: Element[] = [root];
+    const depths: number[] = [1];
+    for (
+      let element = elements.pop(), depth = depths.pop();
+      element !== undefined && depth !== undefined;
+      element = elements.pop(), depth = depths.pop()
+    ) {
       elementCount++;
-      totalDepth += entry.depth;
-      const { children } = entry.element;
+      if (elementCount > DOM_STATE_MAX_TRAVERSED_ELEMENTS) {
+        return null;
+      }
+      totalDepth += depth;
+      const { children } = element;
       for (let i = 0; i < children.length; i++) {
-        stack.push({ element: children[i], depth: entry.depth + 1 });
+        elements.push(children[i]);
+        depths.push(depth + 1);
       }
     }
 

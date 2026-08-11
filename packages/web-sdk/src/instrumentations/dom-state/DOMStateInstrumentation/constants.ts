@@ -1,4 +1,5 @@
 export const DOM_STATE_EVENT_NAME = 'dom-state';
+export const DOM_STATE_MAX_TRAVERSED_ELEMENTS = 50_000;
 
 export const ATTR_DOM_STATE_AVERAGE_DEPTH = 'dom_state.average_depth';
 export const ATTR_DOM_STATE_DOCUMENT_HEIGHT = 'dom_state.document_height';
