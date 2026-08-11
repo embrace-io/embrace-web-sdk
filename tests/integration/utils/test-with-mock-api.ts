@@ -85,8 +85,6 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // entries, making their presence in a session non-deterministic.
 const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
 const IGNORED_ATTRIBUTES_LIST = [
-  'session.id',
-  'session.previous_id',
   'log.record.uid',
   'emb.sdk_startup_duration',
   'emb.app_instance_id',

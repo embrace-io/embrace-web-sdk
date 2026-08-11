@@ -200,8 +200,6 @@ const SEVERITY_NUMBER_WARN = 13;
 const LOG_RECORD_IGNORED_KEYS = [
   'app.surface.label',
   'log.record.uid',
-  'session.id',
-  'session.previous_id',
   'emb.user_session_id',
   'emb.user_session_previous_id',
   'emb.session_part_id',

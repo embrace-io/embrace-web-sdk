@@ -81,9 +81,9 @@ Test results are compared against golden files stored in `tests/__golden__/`.
 
 ## Golden Files
 
-Golden files verify that SDK output matches the expected structure. They're stored in `tests/__golden__/` and organized by browser and test scenario (e.g., `chromium-next-15-webpack-app-session.json`).
+Golden files verify that SDK output matches the expected structure. They're stored in `tests/__golden__/` and organized by browser and test scenario (e.g., `chromium-vite-7-es2015-session.json`).
 
-Each test creates spans and logs with dynamic data (timestamps, IDs). Golden files ignore these fields during comparison:
+Each test creates spans and logs with dynamic data (timestamps, IDs). These fields are ignored during comparison:
 
 **Span fields (ignored):**
 - `traceId`
@@ -95,11 +95,7 @@ Each test creates spans and logs with dynamic data (timestamps, IDs). Golden fil
 - `timeUnixNano`
 - `observedTimeUnixNano`
 
-**Attributes (ignored):**
-- `session.id`
-- `log.record.uid`
-- `emb.sdk_startup_duration`
-- `emb.app_instance_id`
+**Attributes:** only the *values* are ignored, for the keys listed in `IGNORED_ATTRIBUTES_LIST` (`utils/test-with-mock-api.ts`). Key presence and count are still compared, so an attribute the SDK stops emitting fails the comparison until the goldens are regenerated.
 
 When SDK changes affect the test output, update golden files:
 
