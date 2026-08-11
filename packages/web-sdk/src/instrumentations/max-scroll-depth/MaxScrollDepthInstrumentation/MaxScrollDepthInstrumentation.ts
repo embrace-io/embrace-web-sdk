@@ -13,7 +13,7 @@ import {
 import type { MaxScrollDepthInstrumentationArgs } from './types.ts';
 
 /*
-  Tracks how far the user scrolls during and emits telemetry when the session part ends
+  Tracks how far the user scrolls during a session part and emits telemetry when the part ends
 */
 export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onScrollHandler: () => void;
@@ -31,7 +31,8 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
 
     this._onScrollHandler = (): void => {
       try {
-        // Reading scrollY here does not force a layout, so the work the listener does can stay minimal.
+        // The handler only reads scrollY; the layout-forcing document
+        // measurement is deferred to part end, once per part rather than per event.
         const scrollY = window.scrollY;
         if (scrollY > this._maxScrollY) {
           this._maxScrollY = scrollY;
@@ -62,46 +63,66 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     window.removeEventListener('scroll', this._onScrollHandler);
+    // A disabled window must not credit its depth to whichever part is open
+    // when the instrumentation comes back on.
+    this._resetTracking(null);
   }
 
   private _emit(): void {
-    // The scroll position is readable at any time, so a document that loaded at
-    // a restored offset has already reached that depth even though no scroll
-    // event ever fired for it.
-    this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
+    let measurement: DocumentMeasurement | null = null;
 
-    // Measure once here rather than on every scroll event, since reading
-    // document geometry forces a layout reflow.
-    // https://developer.chrome.com/docs/performance/insights/forced-reflow
-    const measurement = measureDocument();
+    try {
+      // The scroll position is readable at any time, so an offset set before
+      // this listener attached (e.g. a scroll restoration racing SDK init) is
+      // still caught here.
+      this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
 
-    this.logger.emit({
-      eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
-      severityNumber: SeverityNumber.INFO,
-      attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
-        [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
-        [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
-        // Depth as a percentage needs a viewport, which a document or a frame
-        // can lack. Omit it and the height together in that case so consumers
-        // read absence rather than a fabricated 0. The pixel depth comes from
-        // the scroll position alone, so it stands on its own.
-        ...(measurement
-          ? {
-              [ATTR_MAX_SCROLL_DEPTH_PERCENT]: this._scrollPercent(measurement),
-              [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
-                measurement.documentHeight,
-            }
-          : {}),
-      },
-    });
+      // Measure once here rather than on every scroll event, since reading
+      // document geometry forces a layout reflow.
+      // https://developer.chrome.com/docs/performance/insights/forced-reflow
+      measurement = measureDocument();
 
-    // Initial state for the next part will be wherever the user left off the
-    // scroll position, clamped because Safari reports a negative position past
-    // the top of the document during rubber-band overscroll, which is still the
-    // top. https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
+      this.logger.emit({
+        eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
+        severityNumber: SeverityNumber.INFO,
+        attributes: {
+          [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
+          [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
+          [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
+          // Depth as a percentage needs a viewport, which a document or a frame
+          // can lack. Omit it and the height together in that case so consumers
+          // read absence rather than a fabricated 0. The pixel depth comes from
+          // the scroll position alone, so it stands on its own.
+          ...(measurement
+            ? {
+                // A depth beyond the range can come from overscroll, a shrunk
+                // document, or a carried-over position; omit percent rather than fabricate it.
+                ...(this._maxScrollY <= measurement.scrollableHeight
+                  ? {
+                      [ATTR_MAX_SCROLL_DEPTH_PERCENT]:
+                        this._scrollPercent(measurement),
+                    }
+                  : {}),
+                [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
+                  measurement.documentHeight,
+              }
+            : {}),
+        },
+      });
+    } finally {
+      this._resetTracking(measurement);
+    }
+  }
+
+  // Initial state for the next part is wherever the user left off, bounded by
+  // the measured range: Safari can report a position past either edge during
+  // rubber-band overscroll, which the next part's document cannot hold.
+  // https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
+  private _resetTracking(measurement: DocumentMeasurement | null): void {
     this._hasScrolled = false;
-    this._maxScrollY = Math.max(0, window.scrollY);
+    this._maxScrollY = measurement
+      ? Math.max(0, Math.min(window.scrollY, measurement.scrollableHeight))
+      : Math.max(0, window.scrollY);
   }
 
   private _scrollPercent({ scrollableHeight }: DocumentMeasurement): number {
@@ -110,12 +131,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       return 0;
     }
 
-    // The furthest point reached can exceed the range measured at part end: the
-    // document may have shrunk since, or the position came from overscroll past
-    // the bottom.
-    return Math.min(
-      100,
-      Math.round((this._maxScrollY / scrollableHeight) * 100),
-    );
+    return Math.round((this._maxScrollY / scrollableHeight) * 100);
   }
 }
