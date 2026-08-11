@@ -5,9 +5,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),
-        host: resolve(__dirname, 'src/host.ts'),
-        app: resolve(__dirname, 'src/library.ts'),
+        index: resolve(import.meta.dirname, 'index.html'),
+        host: resolve(import.meta.dirname, 'src/host.ts'),
+        app: resolve(import.meta.dirname, 'src/library.ts'),
       },
       output: {
         dir: 'dist',

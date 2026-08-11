@@ -57,18 +57,21 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        'react-router-v5': resolve(__dirname, 'react-router-v5/index.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        'react-router-v5': resolve(
+          import.meta.dirname,
+          'react-router-v5/index.html',
+        ),
         'react-router-v6-declarative': resolve(
-          __dirname,
+          import.meta.dirname,
           'react-router-v6-declarative/index.html',
         ),
         'react-router-v6-data': resolve(
-          __dirname,
+          import.meta.dirname,
           'react-router-v6-data/index.html',
         ),
-        soft: resolve(__dirname, 'soft/index.html'),
-        waterfall: resolve(__dirname, 'waterfall/index.html'),
+        soft: resolve(import.meta.dirname, 'soft/index.html'),
+        waterfall: resolve(import.meta.dirname, 'waterfall/index.html'),
       },
       output: {
         sourcemapDebugIds: true,
