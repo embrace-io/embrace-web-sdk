@@ -51,15 +51,25 @@ const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
   'Script Evaluation Time': SCRIPT_EVAL_THRESHOLD_IN_MS,
 };
 
-const mapResultToMetric = (result: AuditResult): LighthouseMetric => ({
-  value: result.numericValue ?? 0,
-  description: result.description || '',
-});
-
-// Single lighthouse samples are too noisy for threshold checks: simulated
-// throttling multiplies observed CPU time by 4x, so any scheduling blip on the
-// runner is amplified. The median across runs rejects those outliers.
+// Lighthouse's default simulated throttling multiplies observed CPU time by
+// 4x, amplifying runner noise; the median across runs rejects those outliers.
 const LIGHTHOUSE_RUNS_PER_PAGE = 3;
+
+// An audit can complete without a numeric value (e.g. a tracing failure); it
+// must fail the run loudly rather than vote a silent 0 into the median
+const mapResultToMetric = (
+  auditName: string,
+  result: AuditResult,
+): LighthouseMetric => {
+  if (result.numericValue === undefined) {
+    throw new Error(`lighthouse audit ${auditName} produced no numeric value`);
+  }
+
+  return {
+    value: result.numericValue,
+    description: result.description || '',
+  };
+};
 
 const median = (values: number[]): number => {
   const sorted = [...values].sort((a, b) => a - b);
@@ -125,8 +135,8 @@ test.describe('Lighthouse Performance Tests', () => {
         runNumber <= LIGHTHOUSE_RUNS_PER_PAGE;
         runNumber++
       ) {
-        // Launch a new context for each run to ensure a clean slate: a shared
-        // profile would carry user session storage into later runs
+        // Lighthouse does not clear localStorage, so a shared profile would
+        // carry the SDK's persisted user session state into later runs
         const port = 60062;
         const userDataDir = path.join(os.tmpdir(), 'pw', String(Math.random()));
         const context = await chromium.launchPersistentContext(userDataDir, {
@@ -149,10 +159,10 @@ test.describe('Lighthouse Performance Tests', () => {
             pauseAfterLoadMs: 5000,
           });
 
-          test.expect(result).toBeDefined();
-
           if (!result) {
-            return;
+            throw new Error(
+              `lighthouse returned no result for ${url} (run ${runNumber.toString()})`,
+            );
           }
 
           fs.writeFileSync(
@@ -163,11 +173,15 @@ test.describe('Lighthouse Performance Tests', () => {
 
           const audits = result.lhr.audits;
           runs.push({
-            totalBlockingTime: mapResultToMetric(audits['total-blocking-time']),
+            totalBlockingTime: mapResultToMetric(
+              'total-blocking-time',
+              audits['total-blocking-time'],
+            ),
             mainThreadTime: mapResultToMetric(
+              'mainthread-work-breakdown',
               audits['mainthread-work-breakdown'],
             ),
-            scriptEval: mapResultToMetric(audits['bootup-time']),
+            scriptEval: mapResultToMetric('bootup-time', audits['bootup-time']),
           });
         } finally {
           // The next run reuses the debugging port, so this context must be gone

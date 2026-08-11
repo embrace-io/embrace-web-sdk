@@ -330,8 +330,7 @@ jobs:
           path: |
             ./tests/performance/test-results/cdp-performance-tests-baseline-tracing.json
             ./tests/performance/test-results/cdp-performance-tests-with-sdk-tracing.json
-            ./tests/performance/test-results/lighthouse-startup-performance-tests-baseline-lighthouse-report.html
-            ./tests/performance/test-results/lighthouse-startup-performance-tests-with-sdk-lighthouse-report.html
+            ./tests/performance/test-results/lighthouse-startup-performance-tests-*-lighthouse-report.html
 
   test-cli:
     needs:
