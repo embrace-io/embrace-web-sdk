@@ -149,6 +149,42 @@ describe('UserSessionLogRecordProcessor', () => {
     );
   });
 
+  it('should honor a user_session_id already stamped by an earlier processor instead of overwriting it with the live value', () => {
+    // A record held across a user-session rollover and stamped at capture must
+    // keep the id of the user session it describes, not the one emitting it.
+    ({ memoryExporter, logger } = setup(createMockUserSessionManager()));
+
+    logger.emit({
+      body: 'test log',
+      attributes: { 'emb.user_session_id': 'USER_SESSION_SNAPSHOT' },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].attributes['emb.user_session_id']).to.equal(
+      'USER_SESSION_SNAPSHOT',
+    );
+  });
+
+  it('should honor a user_session_previous_id already stamped by an earlier processor instead of overwriting it with the live value', () => {
+    ({ memoryExporter, logger } = setup(
+      createMockUserSessionManager(mockAttributes, {
+        getPreviousUserSessionId: () => 'PREVIOUS_LIVE',
+      }),
+    ));
+
+    logger.emit({
+      body: 'test log',
+      attributes: { 'emb.user_session_previous_id': 'PREVIOUS_SNAPSHOT' },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].attributes['emb.user_session_previous_id']).to.equal(
+      'PREVIOUS_SNAPSHOT',
+    );
+  });
+
   it('should pass customer-set session.id and session.previous_id through untouched', () => {
     ({ memoryExporter, logger } = setup(
       createMockUserSessionManager(mockAttributes, {
