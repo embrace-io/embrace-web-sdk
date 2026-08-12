@@ -24,10 +24,14 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
   }
 
   public onEmit(logRecord: SdkLogRecord) {
-    const userSessionId = this._userSessionManager.getUserSessionId() ?? '';
+    const userSessionId =
+      logRecord.attributes[KEY_EMB_USER_SESSION_ID] ??
+      this._userSessionManager.getUserSessionId() ??
+      '';
     const previousUserSessionId =
-      this._userSessionManager.getPreviousUserSessionId() ?? '';
-    // If the log record already has a session part id, we use that
+      logRecord.attributes[KEY_EMB_USER_SESSION_PREVIOUS_ID] ??
+      this._userSessionManager.getPreviousUserSessionId() ??
+      '';
     const sessionPartId =
       logRecord.attributes[KEY_EMB_SESSION_PART_ID] ??
       this._userSessionManager.getSessionPartId() ??
