@@ -630,6 +630,11 @@ describe('DOMStateInstrumentation', () => {
     );
     expect(logs[1].attributes).to.not.have.property('dom_state.element_count');
     expect(logs[1].attributes).to.not.have.property('dom_state.average_depth');
+    // The flag is what tells "too large to measure" apart from "no root".
+    expect(logs[1].attributes).to.have.property(
+      'dom_state.traversal_limit_reached',
+      true,
+    );
     // The document box does not depend on the walk, so it still reports.
     expect(logs[1].attributes).to.have.property('dom_state.document_height');
     expect(logs[1].attributes).to.have.property('dom_state.document_width');
@@ -656,6 +661,9 @@ describe('DOMStateInstrumentation', () => {
       'dom_state.element_count',
       DOM_STATE_MAX_TRAVERSED_ELEMENTS,
     );
+    expect(logs[1].attributes).to.not.have.property(
+      'dom_state.traversal_limit_reached',
+    );
   });
 
   it('still emits the part-end log when the document root is gone', () => {
@@ -673,6 +681,9 @@ describe('DOMStateInstrumentation', () => {
     // Nothing to walk and nothing to measure, so no key is fabricated from zero.
     expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
     expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.traversal_limit_reached',
+    );
     expect(logs[0].attributes).to.not.have.property(
       'dom_state.document_height',
     );

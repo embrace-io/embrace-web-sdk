@@ -14,6 +14,7 @@ import {
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH,
+  ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED,
   DOM_STATE_EVENT_NAME,
   DOM_STATE_MAX_TRAVERSED_ELEMENTS,
 } from './constants.ts';
@@ -178,7 +179,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
             // The traversal counts its root, so elementCount is at least 1.
             [ATTR_DOM_STATE_AVERAGE_DEPTH]: tree.totalDepth / tree.elementCount,
           }
-        : {}),
+        : root
+          ? { [ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED]: true }
+          : {}),
       ...(measurement
         ? {
             [ATTR_DOM_STATE_DOCUMENT_HEIGHT]: measurement.documentHeight,
