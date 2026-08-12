@@ -25,6 +25,7 @@ import type {
 } from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
+  DOMStateInstrumentationArgs,
   DocumentLoadInstrumentationConfig,
   ElementTimingInstrumentationArgs,
   EmptyRootInstrumentationArgs,
@@ -399,6 +400,7 @@ type OptionalInstrumentations =
   | 'server-timing'
   | 'soft-navigation-performance'
   | 'document-load'
+  | 'dom-state'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
@@ -428,6 +430,7 @@ export interface DefaultInstrumentationConfig {
   'server-timing'?: ServerTimingInstrumentationArgs;
   'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationConfig;
+  'dom-state'?: DOMStateInstrumentationArgs;
   navigation?: NavigationInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and

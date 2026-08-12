@@ -3,6 +3,7 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import {
   ClicksInstrumentation,
+  DOMStateInstrumentation,
   DocumentLoadInstrumentation,
   ElementTimingInstrumentation,
   EmbraceInstrumentationBase,
@@ -98,6 +99,10 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new DocumentLoadInstrumentation(config['document-load']),
     );
+  }
+
+  if (!config.omit?.has('dom-state')) {
+    instrumentations.push(new DOMStateInstrumentation(config['dom-state']));
   }
 
   instrumentations.push(
