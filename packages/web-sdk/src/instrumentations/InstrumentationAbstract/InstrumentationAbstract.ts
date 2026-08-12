@@ -7,7 +7,7 @@ import type {
   TracerProvider,
 } from '@opentelemetry/api';
 import { diag, metrics, trace } from '@opentelemetry/api';
-import type { Logger, LoggerProvider } from '@opentelemetry/api-logs';
+import type { Logger } from '@opentelemetry/api-logs';
 import { logs } from '@opentelemetry/api-logs';
 import type {
   Instrumentation,
@@ -15,6 +15,7 @@ import type {
   InstrumentationModuleDefinition,
   SpanCustomizationHook,
 } from '@opentelemetry/instrumentation';
+import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 
 // copied directly from https://github.com/open-telemetry/opentelemetry-js/blob/90afa2850c0690f7a18ecc511c04927a3183490b/experimental/packages/opentelemetry-instrumentation/src/instrumentation.ts
 // to avoid importing internal and experimental code. Some unused blocks removed.
