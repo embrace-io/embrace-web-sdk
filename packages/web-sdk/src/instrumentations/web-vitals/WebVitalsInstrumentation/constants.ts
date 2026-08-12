@@ -5,6 +5,13 @@ export const MAX_LOAF_SCRIPT_URL_LENGTH = 2048;
 export const MAX_LOAF_SCRIPT_ENTRIES = 250;
 export const MAX_CLS_LAYOUT_SHIFTS = 50;
 export const ALL_WEB_VITALS = ['CLS', 'INP', 'LCP', 'FCP', 'TTFB'] as const;
+
+/**
+ * Interaction Contentful Paint. ICP is not a `web-vitals` metric of its own: it
+ * is the soft navigation LCP report, emitted under its own name because it
+ * measures the paint that followed the navigating interaction.
+ */
+export const ICP_METRIC_NAME = 'icp';
 export const WEB_VITALS_ID_TO_LISTENER = {
   /**
    *  Cumulative Layout Shift (CLS)

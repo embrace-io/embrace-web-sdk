@@ -162,10 +162,11 @@ test.describe('Web Vitals measurement in soft navigations', () => {
         { timeout: 15_000 },
       )
       .toEqual({
-        // The hard navigation is the only page that emits TTFB
+        // The hard navigation is the only page that emits TTFB; ICP is only
+        // emitted for soft navigations.
         hardNav: ['cls', 'fcp', 'inp', 'lcp', 'ttfb'],
-        delayedLcpNav: ['cls', 'fcp', 'inp', 'lcp'],
-        pageANav: ['cls', 'fcp', 'inp', 'lcp'],
+        delayedLcpNav: ['cls', 'fcp', 'icp', 'inp', 'lcp'],
+        pageANav: ['cls', 'fcp', 'icp', 'inp', 'lcp'],
       });
 
     await test.step('all records are web vitals with valid ratings', () => {
@@ -252,6 +253,77 @@ test.describe('Web Vitals measurement in soft navigations', () => {
       const ids = navigationIds(DELAYED_LCP_URL);
       expect(ids.size).toBe(1);
       expect([...ids][0]).not.toBeUndefined();
+    });
+
+    await test.step('ICP for the delayed LCP soft navigation', () => {
+      const icpRecords = recordsForURL(DELAYED_LCP_URL).filter(
+        (record) => attributeValue(record, 'browser.web_vital.name') === 'icp',
+      );
+      expect(icpRecords).toHaveLength(1);
+      const icpRecord = icpRecords[0];
+
+      const lcpRecord = metricRecord(DELAYED_LCP_URL, 'lcp') as ILogRecord;
+      expect(icpRecord.timeUnixNano).toBe(lcpRecord.timeUnixNano);
+      // Same paint, measured from the same soft navigation start time.
+      expect(metricValue(icpRecord)).toBe(metricValue(lcpRecord));
+      expect(attributeValue(icpRecord, 'browser.web_vital.rating')).toBe(
+        attributeValue(lcpRecord, 'browser.web_vital.rating'),
+      );
+      expect(attributeValue(icpRecord, 'browser.web_vital.id')).toBe(
+        `icp-${String(attributeValue(lcpRecord, 'browser.web_vital.id'))}`,
+      );
+
+      const icpValue = metricValue(icpRecord);
+      expect(icpValue).toBeGreaterThanOrEqual(
+        DEFAULT_LCP_DELAY_MS - RENDER_BUFFER,
+      );
+      expect(icpValue).toBeLessThanOrEqual(
+        afterImageRender - beforeLcpNavigation,
+      );
+
+      expect(
+        attributeValue(icpRecord, 'browser.web_vital.navigation_type'),
+      ).toBe('soft-navigation');
+
+      const navigationId = attributeValue(
+        icpRecord,
+        'browser.web_vital.navigation_id',
+      );
+      expect(navigationIds(DELAYED_LCP_URL)).toEqual(new Set([navigationId]));
+      expect(
+        Number(attributeValue(icpRecord, 'browser.web_vital.interaction_id')),
+      ).toBeGreaterThan(0);
+
+      const renderTime = Number(
+        attributeValue(icpRecord, 'emb.web_vital.attribution.renderTime'),
+      );
+      expect(renderTime).toBe(icpValue);
+
+      expect(
+        attributeValue(icpRecord, 'emb.web_vital.attribution.elementType'),
+      ).toBe('img');
+      expect(
+        attributeValue(icpRecord, 'emb.web_vital.attribution.elementSelector'),
+      ).toMatch(/img$/);
+      const rect = JSON.parse(
+        String(
+          attributeValue(
+            icpRecord,
+            'emb.web_vital.attribution.elementBoundingRect',
+          ),
+        ),
+      ) as { x: number; y: number; width: number; height: number };
+      expect(rect.width).toBeGreaterThan(0);
+      expect(rect.height).toBeGreaterThan(0);
+
+      // The log timestamp is the absolute time of the paint.
+      const icpTimestampMs = Number(icpRecord.timeUnixNano) / 1e6;
+      expect(icpTimestampMs).toBeGreaterThanOrEqual(
+        timeOrigin + beforeLcpNavigation + DEFAULT_LCP_DELAY_MS - RENDER_BUFFER,
+      );
+      expect(icpTimestampMs).toBeLessThanOrEqual(
+        timeOrigin + afterImageRender + RENDER_BUFFER,
+      );
     });
 
     await test.step('soft navigation to Page A', () => {

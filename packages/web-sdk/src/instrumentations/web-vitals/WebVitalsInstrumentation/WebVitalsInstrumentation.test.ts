@@ -3491,10 +3491,15 @@ describe('WebVitalsInstrumentation', () => {
       } as MetricWithAttribution);
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records).to.have.lengthOf(1);
+      // A soft navigation LCP is also reported as ICP.
       expect(
-        records[0].attributes['browser.web_vital.navigation_type'],
-      ).to.equal('soft-navigation');
+        records.map((record) => record.attributes['browser.web_vital.name']),
+      ).to.deep.equal(['lcp', 'icp']);
+      for (const record of records) {
+        expect(record.attributes['browser.web_vital.navigation_type']).to.equal(
+          'soft-navigation',
+        );
+      }
     });
 
     it('should include navigation_id and interaction_id when present on the metric', () => {
@@ -3915,6 +3920,296 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes['emb.session_part_id']).to.equal(partId);
+    });
+  });
+
+  describe('ICP (Interaction Contentful Paint)', () => {
+    const makeElement = (): Element =>
+      ({
+        tagName: 'IMG',
+        getBoundingClientRect: () => ({
+          x: 10.4,
+          y: 20.6,
+          width: 30,
+          height: 40,
+        }),
+      }) as unknown as Element;
+
+    const softNavLCP = ({
+      renderTime = 3000,
+      loadTime = 2800,
+      element = makeElement() as Element | null,
+      id = 'm1',
+      navigationStartTime = 1000,
+    } = {}): MetricWithAttribution => {
+      const target = element ? '#hero' : undefined;
+      // startTime is renderTime, or loadTime when renderTime is withheld.
+      const startTime = renderTime > 0 ? renderTime : loadTime;
+      const lcpEntry = {
+        startTime,
+        renderTime,
+        loadTime,
+        size: 500,
+        url: '',
+        element,
+      };
+      // web-vitals reads renderTime alone.
+      const value = Math.max(0, renderTime - navigationStartTime);
+
+      return {
+        name: 'LCP',
+        value,
+        rating: 'good',
+        delta: value,
+        id,
+        entries: [lcpEntry],
+        navigationType: 'soft-navigation',
+        navigationId: 2,
+        navigationInteractionId: 7,
+        navigationStartTime,
+        navigationURL: 'https://example.com/checkout',
+        attribution: {
+          target,
+          lcpEntry,
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as unknown as MetricWithAttribution;
+    };
+
+    const createInstrumentation = () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      return lcpStub.getCall(0).args[0] as WebVitalOnReport;
+    };
+
+    it('should emit an ICP log alongside the soft navigation LCP log', () => {
+      const emitFunc = createInstrumentation();
+
+      emitFunc(softNavLCP());
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(2);
+      expect(records[0].attributes['browser.web_vital.name']).to.equal('lcp');
+
+      const record = records[1];
+      expect(record.eventName).to.equal('browser.web_vital');
+      expect(record.attributes).to.deep.include({
+        [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
+        'browser.web_vital.name': 'icp',
+        'browser.web_vital.value': 2000,
+        'browser.web_vital.delta': 2000,
+        'browser.web_vital.rating': 'good',
+        'browser.web_vital.id': 'icp-m1',
+        'browser.web_vital.navigation_type': 'soft-navigation',
+        'browser.web_vital.navigation_id': 2,
+        'browser.web_vital.interaction_id': 7,
+        'emb.web_vital.attribution.renderTime': 2000,
+        'emb.web_vital.attribution.loadTime': 1800,
+        'emb.web_vital.attribution.elementSelector': '#hero',
+        'emb.web_vital.attribution.elementType': 'img',
+        'emb.web_vital.attribution.elementBoundingRect': JSON.stringify({
+          x: 10,
+          y: 21,
+          width: 30,
+          height: 40,
+        }),
+      });
+      expect(record.hrTime).to.deep.equal([3, 0]);
+      expect(record.hrTime).to.deep.equal(records[0].hrTime);
+      void expect(record.body).to.be.undefined;
+
+      for (const key of [
+        'browser.web_vital.value',
+        'browser.web_vital.delta',
+        'browser.web_vital.rating',
+      ]) {
+        expect(record.attributes[key]).to.equal(records[0].attributes[key]);
+      }
+    });
+
+    it('should inherit the URL and page attribution of the LCP log', () => {
+      const pageManager = new EmbracePageManager({ perf });
+      pageManager.setCurrentRoute({ path: '/checkout', url: '/checkout' });
+      pageManager.setPageLabel('Checkout');
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+
+      const trackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+      const metric = softNavLCP();
+
+      trackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[1];
+      expect(record.attributes['browser.web_vital.name']).to.equal('icp');
+      expect(record.attributes).to.deep.include({
+        [KEY_BROWSER_URL_FULL]: 'https://example.com/checkout',
+        [KEY_EMB_PAGE_PATH]: '/checkout',
+        [KEY_APP_SURFACE_LABEL]: 'Checkout',
+      });
+    });
+
+    it('should rate ICP against the LCP thresholds', () => {
+      const emitFunc = createInstrumentation();
+
+      emitFunc(softNavLCP({ renderTime: 3600, loadTime: 0 }));
+      emitFunc(softNavLCP({ renderTime: 6000, loadTime: 0, id: 'm2' }));
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[1].attributes['browser.web_vital.value']).to.equal(2600);
+      expect(records[1].attributes['browser.web_vital.rating']).to.equal(
+        'needs-improvement',
+      );
+      expect(records[3].attributes['browser.web_vital.value']).to.equal(5000);
+      expect(records[3].attributes['browser.web_vital.rating']).to.equal(
+        'poor',
+      );
+    });
+
+    it('should measure ICP from loadTime when renderTime is withheld', () => {
+      const emitFunc = createInstrumentation();
+
+      // Cross-origin paints without `Timing-Allow-Origin` withhold renderTime.
+      emitFunc(softNavLCP({ renderTime: 0, loadTime: 2600 }));
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[0].attributes['browser.web_vital.value']).to.equal(0);
+
+      const record = records[1];
+      expect(record.attributes['browser.web_vital.value']).to.equal(1600);
+      expect(record.attributes['browser.web_vital.delta']).to.equal(1600);
+      expect(record.attributes['emb.web_vital.attribution.loadTime']).to.equal(
+        1600,
+      );
+      void expect(record.attributes['emb.web_vital.attribution.renderTime']).to
+        .be.undefined;
+      expect(record.hrTime).to.deep.equal([2, 600000000]);
+    });
+
+    it('should report the delta against the previous ICP for the same metric', () => {
+      const emitFunc = createInstrumentation();
+
+      emitFunc(softNavLCP({ renderTime: 2000, loadTime: 0 }));
+      // Same metric id: a larger paint re-reports it.
+      emitFunc(softNavLCP({ renderTime: 4000, loadTime: 0 }));
+      emitFunc(softNavLCP({ renderTime: 2500, loadTime: 0, id: 'm2' }));
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const icpRecords = records.filter(
+        (record) => record.attributes['browser.web_vital.name'] === 'icp',
+      );
+      expect(
+        icpRecords.map((record) => [
+          record.attributes['browser.web_vital.value'],
+          record.attributes['browser.web_vital.delta'],
+        ]),
+      ).to.deep.equal([
+        [1000, 1000],
+        [3000, 2000],
+        [1500, 1500],
+      ]);
+    });
+
+    it('should stamp the session part that was active when the paint happened', () => {
+      const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+      const storage = setupTestStorage();
+      const userSessionManager = new EmbraceUserSessionManager({
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+        limitManager,
+        perf,
+        storage,
+        visibilityDoc: window.document,
+      });
+
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      const partAId = userSessionManager.getSessionPartId();
+
+      // The part rolls over after the paint at 500, before the metric reports.
+      clock.tick(1000);
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+      expect(userSessionManager.getSessionPartId()).to.not.equal(partAId);
+
+      const emitFunc = createInstrumentation();
+      instrumentation.setUserSessionManager(userSessionManager);
+
+      emitFunc(
+        softNavLCP({ renderTime: 500, loadTime: 0, navigationStartTime: 100 }),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records[1].attributes['browser.web_vital.name']).to.equal('icp');
+      expect(records[1].attributes['emb.session_part_id']).to.equal(partAId);
+    });
+
+    it('should not emit ICP for a hard navigation LCP', () => {
+      const emitFunc = createInstrumentation();
+
+      emitFunc({
+        ...softNavLCP(),
+        navigationType: 'navigate',
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['browser.web_vital.name']).to.equal('lcp');
+    });
+
+    it('should not emit ICP for other soft navigation metrics', () => {
+      createInstrumentation();
+
+      const emitFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'FCP',
+        value: 300,
+        rating: 'good',
+        delta: 300,
+        id: 'm1',
+        entries: [],
+        navigationType: 'soft-navigation',
+        navigationId: 2,
+        navigationStartTime: 1000,
+        attribution: {},
+      } as unknown as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['browser.web_vital.name']).to.equal('fcp');
+    });
+
+    it('should omit element attribution when the entry has no element', () => {
+      const emitFunc = createInstrumentation();
+
+      emitFunc(softNavLCP({ element: null }));
+
+      const record = memoryExporter.getFinishedLogRecords()[1];
+      expect(record.attributes['browser.web_vital.name']).to.equal('icp');
+      void expect(
+        record.attributes['emb.web_vital.attribution.elementSelector'],
+      ).to.be.undefined;
+      void expect(record.attributes['emb.web_vital.attribution.elementType']).to
+        .be.undefined;
+      void expect(
+        record.attributes['emb.web_vital.attribution.elementBoundingRect'],
+      ).to.be.undefined;
+      expect(
+        record.attributes['emb.web_vital.attribution.renderTime'],
+      ).to.equal(2000);
     });
   });
 });

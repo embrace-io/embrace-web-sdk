@@ -11,6 +11,7 @@ import type {
   MetricWithAttribution,
   TTFBAttribution,
 } from 'web-vitals/attribution';
+import { LCPThresholds } from 'web-vitals/attribution';
 import type { PageManager } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
@@ -23,8 +24,7 @@ import {
   KEY_EMB_SESSION_PART_ID,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
-import { getSelector } from '../../../utils/index.ts';
-import { isEntryTypeSupported } from '../../../utils/performanceObserver/index.ts';
+import { getSelector, isEntryTypeSupported } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_BROWSER_WEB_VITAL_DELTA,
@@ -39,6 +39,7 @@ import {
 } from './attributes.ts';
 import {
   ALL_WEB_VITALS,
+  ICP_METRIC_NAME,
   MAX_CLS_LAYOUT_SHIFTS,
   MAX_LOAF_SCRIPT_ENTRIES,
   MAX_LOAF_SCRIPT_URL_LENGTH,
@@ -65,6 +66,33 @@ const roundRect = (rect?: DOMRectReadOnly) => ({
   width: Math.round(rect?.width ?? 0),
   height: Math.round(rect?.height ?? 0),
 });
+
+/**
+ * ICP entries always use renderTime as the value, but we want to use startTime
+ * since that automatically falls back to loadTime in the case where the
+ * timing-allow-origin header does not allow access to renderTime.
+ *
+ * @see https://github.com/GoogleChrome/web-vitals/issues/781
+ */
+const icpValue = (metric: MetricWithAttribution): number => {
+  const { lcpEntry } = metric.attribution as LCPAttribution;
+  const navigationStartTime = metric.navigationStartTime ?? 0;
+  const paintTime = lcpEntry?.startTime ?? 0;
+
+  return paintTime > 0
+    ? Math.max(0, paintTime - navigationStartTime)
+    : metric.value;
+};
+
+const icpRating = (value: number): Metric['rating'] => {
+  if (value > LCPThresholds[1]) {
+    return 'poor';
+  }
+  if (value > LCPThresholds[0]) {
+    return 'needs-improvement';
+  }
+  return 'good';
+};
 
 const isPrimitiveValue = (
   value: unknown,
@@ -316,6 +344,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
   private _listenersRegistered = false;
+  private _lastReportedICP: { metricId: string; value: number } | undefined =
+    undefined;
 
   public constructor({
     diag,
@@ -552,6 +582,21 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       timestamp: millisToHrTime(metricTimeMillis),
     };
 
+    // Built before emitting, since applyCustomLogRecordData may mutate the record.
+    const icpLogRecord =
+      metric.name === 'LCP' && metric.navigationType === 'soft-navigation'
+        ? this._buildICPLogRecord(metric, logRecord)
+        : undefined;
+
+    this._emitLogRecord(logRecord);
+
+    if (icpLogRecord) {
+      this._emitLogRecord(icpLogRecord);
+    }
+  }
+
+  // Runs the optional user hook, then emits. Shared by web-vital and ICP paths.
+  private _emitLogRecord(logRecord: LogRecord): void {
     if (this._applyCustomLogRecordData) {
       safeExecuteInTheMiddle(
         () => this._applyCustomLogRecordData?.(logRecord),
@@ -565,5 +610,62 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     }
 
     this.logger.emit(logRecord);
+  }
+
+  /**
+   * Despite being the soft nav equivalent of LCP, we want to surface ICP as a
+   * separate metric. We can derive all of the values from the LCP metric.
+   */
+  private _buildICPLogRecord(
+    metric: MetricWithAttribution,
+    lcpLogRecord: LogRecord,
+  ): LogRecord {
+    const { lcpEntry, target } = metric.attribution as LCPAttribution;
+    const navigationStartTime = metric.navigationStartTime ?? 0;
+    const prefix = KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX;
+
+    const value = icpValue(metric);
+    const renderTime = lcpEntry?.renderTime ?? 0;
+    const loadTime = lcpEntry?.loadTime ?? 0;
+
+    const previousValue =
+      this._lastReportedICP?.metricId === metric.id
+        ? this._lastReportedICP.value
+        : 0;
+
+    this._lastReportedICP = { metricId: metric.id, value };
+
+    return {
+      eventName: WEB_VITAL_EVENT_NAME,
+      severityNumber: SeverityNumber.INFO,
+      attributes: {
+        ...lcpLogRecord.attributes,
+        [KEY_BROWSER_WEB_VITAL_NAME]: ICP_METRIC_NAME,
+        [KEY_BROWSER_WEB_VITAL_VALUE]: value,
+        [KEY_BROWSER_WEB_VITAL_DELTA]: value - previousValue,
+        [KEY_BROWSER_WEB_VITAL_RATING]: icpRating(value),
+        [KEY_BROWSER_WEB_VITAL_ID]: `${ICP_METRIC_NAME}-${metric.id}`,
+        ...(target !== undefined
+          ? { [`${prefix}elementSelector`]: target }
+          : {}),
+        ...(renderTime > 0
+          ? {
+              [`${prefix}renderTime`]: Math.max(
+                0,
+                renderTime - navigationStartTime,
+              ),
+            }
+          : {}),
+        ...(loadTime > 0
+          ? {
+              [`${prefix}loadTime`]: Math.max(
+                0,
+                loadTime - navigationStartTime,
+              ),
+            }
+          : {}),
+      },
+      timestamp: lcpLogRecord.timestamp,
+    };
   }
 }

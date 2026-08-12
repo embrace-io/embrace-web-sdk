@@ -166,7 +166,8 @@ One exception log per uncaught error / unhandled rejection. Log timestamp:
 
 #### WebVitalsInstrumentation
 
-One log per web-vital report.
+One log per web-vital report, plus a second ICP log for every soft navigation
+LCP report (ICP is that same report under its own name).
 
 | Telemetry field | Source | Method |
 | --- | --- | --- |
@@ -175,17 +176,17 @@ One log per web-vital report.
 | log timestamp (TTFB) | — (the moment the user started viewing the current view) | `getZeroTime()` |
 | log timestamp (LCP / FCP) | last `entries[].startTime` | `epochMillisFromOrigin` |
 | log timestamp (no entries) | — | `getNowMillis()` at emission |
-| `browser.web_vital.value` / `.delta` | computed by the `web-vitals` library | none — see below |
+| log timestamp (ICP) | the LCP report it is derived from | `epochMillisFromOrigin` |
+| `browser.web_vital.value` / `.delta` (non-ICP) | computed by the `web-vitals` library | none — see below |
+| ICP `browser.web_vital.value`, `renderTime`, `loadTime` | `lcpEntry` paint time − `metric.navigationStartTime` (the soft navigation's start) | none — difference of two time-origin offsets |
 | TTFB sub-part attributes (`redirect`, `domainLookup`, `tcpConnection`, `tlsNegotiation`, `serverResponse`, `unattributed`) | differences of `PerformanceNavigationTiming` fields | none — pure durations |
 | raw attribution body (`includeRawAttribution`) | `metric.attribution` primitives, verbatim | none — intentionally a raw debug dump |
 
-`metric.value` for time-based vitals is "time since navigation start" as
-computed by the upstream `web-vitals` library, which has its own bfcache
-handling (each restore counts as a fresh page visit) independent of the SDK's
-zero time. Note that standard vitals (LCP, FCP, TTFB) do not re-report on a
-*soft* navigation at all — only CLS (cumulative) and INP (per-interaction)
-keep reporting through a soft-navigated visit. That is an upstream library
-boundary, not something the SDK's zero time influences.
+`metric.value` for FCP, LCP, and TTFB is "time since the current page visit
+started" as computed by the upstream `web-vitals` library, which tracks visit
+starts (prerender activation, bfcache restore, soft navigation) independently
+of the SDK's zero time. INP's value is an interaction latency duration; CLS
+is unitless.
 
 #### DocumentLoadInstrumentation
 
