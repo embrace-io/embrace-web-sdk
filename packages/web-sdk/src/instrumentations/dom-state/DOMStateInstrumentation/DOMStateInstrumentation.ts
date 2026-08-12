@@ -225,11 +225,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  // Iterative depth-first traversal that computes element count and summed
-  // depth in one pass. The root passed in sits at depth 1. Runs synchronously
-  // on the pagehide path, so it avoids per-node allocations (parallel stacks
-  // instead of entry objects) and bails at the ceiling rather than spend the
-  // unload budget on a pathological tree.
+  // The root passed in sits at depth 1. Runs synchronously on the pagehide
+  // path, so it uses parallel stacks over per-node entry objects and bails at
+  // the ceiling rather than spend the unload budget on a pathological tree.
   private _traverse(root: Element): {
     elementCount: number;
     totalDepth: number;
@@ -245,11 +243,21 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       element = elements.pop(), depth = depths.pop()
     ) {
       elementCount++;
-      if (elementCount > DOM_STATE_MAX_TRAVERSED_ELEMENTS) {
-        return null;
-      }
       totalDepth += depth;
       const { children } = element;
+      // Popped, queued and about-to-queue are disjoint, so their sum is a
+      // lower bound on the tree size: exceeding the ceiling here proves the
+      // tree is over it before the frontier is pushed, keeping the bail cost
+      // bounded by the ceiling even on wide trees.
+      if (
+        elementCount + elements.length + children.length >
+        DOM_STATE_MAX_TRAVERSED_ELEMENTS
+      ) {
+        this._diag.debug(
+          'dom-state tree walk bailed: the tree exceeds the traversal ceiling',
+        );
+        return null;
+      }
       for (let i = 0; i < children.length; i++) {
         elements.push(children[i]);
         depths.push(depth + 1);

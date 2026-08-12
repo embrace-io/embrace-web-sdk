@@ -635,6 +635,29 @@ describe('DOMStateInstrumentation', () => {
     expect(logs[1].attributes).to.have.property('dom_state.document_width');
   });
 
+  it('reports the tree shape when the element count sits exactly at the ceiling', () => {
+    // Pins the ceiling as an inclusive max: only genuinely larger trees
+    // forfeit their keys.
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    restorers.push(() => {
+      container.remove();
+    });
+    const remaining =
+      DOM_STATE_MAX_TRAVERSED_ELEMENTS - measureExpected().count;
+    container.innerHTML = '<i></i>'.repeat(remaining);
+    createInstrumentation();
+
+    endSessionPart();
+
+    const logs = getDomStateLogs();
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[1].attributes).to.have.property(
+      'dom_state.element_count',
+      DOM_STATE_MAX_TRAVERSED_ELEMENTS,
+    );
+  });
+
   it('still emits the part-end log when the document root is gone', () => {
     // document.documentElement is typed non-nullable but is null once the root
     // element is removed, taking the scroll root with it. The part still ends,
