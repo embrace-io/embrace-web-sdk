@@ -1,4 +1,4 @@
-import { DiagLogLevel, initSDK, session } from '@embrace-io/web-sdk';
+import { DiagLogLevel, initSDK } from '@embrace-io/web-sdk';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace';
 
@@ -18,12 +18,18 @@ const sdkControl = initSDK({
   },
 });
 
+// Playwright drives the SDK through this global: page.evaluate runs in the page
+// realm and cannot reach the bundle's module scope.
 declare global {
   interface Window {
-    EMBRACE_CURRENT_USER_SESSION_ID: string | null;
+    EMBRACE_SDK: Exclude<ReturnType<typeof initSDK>, false>;
   }
 }
 
-window.EMBRACE_CURRENT_USER_SESSION_ID = session.getUserSessionId();
+// Falsy during SSR, when remote config samples this device out, or on init
+// failure, so tests can assert on the global's absence.
+if (sdkControl) {
+  window.EMBRACE_SDK = sdkControl;
+}
 
 export { sdkControl };

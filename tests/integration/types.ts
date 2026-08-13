@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    EMBRACE_CURRENT_USER_SESSION_ID: string | null;
-  }
-}
-
 type SessionPartInfo = {
   endReason?: string;
 };
