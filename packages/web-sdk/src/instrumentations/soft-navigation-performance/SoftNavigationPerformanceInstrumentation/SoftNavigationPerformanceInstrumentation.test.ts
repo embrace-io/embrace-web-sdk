@@ -175,6 +175,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(observeOptions).to.deep.equal({
       type: 'soft-navigation',
@@ -189,6 +190,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({
@@ -229,6 +231,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -245,6 +248,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       limitManager,
       signalBuffer,
     });
+    instrumentation.enable();
 
     signalBuffer.record({
       kind: 'span',
@@ -290,6 +294,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       limitManager,
       signalBuffer,
     });
+    instrumentation.enable();
 
     signalBuffer.record({
       kind: 'span',
@@ -314,6 +319,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       limitManager,
       signalBuffer,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -335,6 +341,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -358,6 +365,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({ paintTime: undefined, presentationTime: undefined }),
@@ -379,6 +387,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ paintTime: null, presentationTime: null })]);
 
@@ -406,6 +415,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       diag: diagLogger,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(observerCallback).to.be.null;
 
@@ -417,6 +427,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     instrumentation.disable();
 
@@ -436,6 +447,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager: customLimitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({ navigationId: 0 }),
@@ -453,6 +465,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
     const firstCallback = observerCallback;
 
     instrumentation.enable();
@@ -478,6 +491,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       diag: diagLogger,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable');
 
@@ -490,6 +504,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     const firstCallback = observerCallback;
 
@@ -579,6 +594,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     expect(eventObserveOptions).to.deep.include({
       type: 'event',
@@ -599,6 +615,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     // Simulate: user clicks at t=100, navigation commits at t=150
     clock.tick(150);
@@ -634,6 +651,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     // Click window is [100, 150] (navigation commits at t=150 below).
     signalBuffer.record({
@@ -685,6 +703,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -706,6 +725,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     clock.tick(500);
     triggerCurrentEntryChange();
@@ -729,6 +749,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     mockNavigation.currentEntry = null;
     clock.tick(150);
@@ -753,6 +774,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     // Navigation at t=0 (will be older than 60 s by the time the click arrives).
     triggerCurrentEntryChange();
@@ -792,6 +814,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -817,6 +840,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -839,6 +863,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     instrumentation.disable();
 
@@ -864,6 +889,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -896,6 +922,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable polyfill');
     expect(currentEntryChangeListeners).to.have.length(0);
@@ -912,6 +939,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     mockNavigation.currentEntry = { url: 'https://example.com/first' };
     clock.tick(150);
@@ -945,6 +973,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
+    instrumentation.enable();
 
     // Two navigations at distinct timestamps so each click entry matches one.
     clock.tick(150); // t = 150

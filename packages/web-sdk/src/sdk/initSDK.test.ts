@@ -2214,27 +2214,30 @@ describe('isolated instances', () => {
       // Two emb-session-part spans are expected per instance: the init part
       // is ended explicitly, then a fresh activity part is opened and ended.
       // Each instance owns its own userSessionManager, so the parts are
-      // isolated per instance and not shared. The activity part resumes on
-      // the same route, so EmbracePageManager re-notifies NavigationInstrumentation
-      // on session-part-start, giving it its own route span too.
-      expect(finishedSpans).to.have.lengthOf(5);
+      // isolated per instance and not shared. Each part gets its own route
+      // span: the first when registerInstrumentations enables
+      // NavigationInstrumentation on the already-current route, the second
+      // because the activity part resumes on that same route and
+      // EmbracePageManager re-notifies on session-part-start.
+      expect(finishedSpans).to.have.lengthOf(6);
       expect(finishedSpans[0].name).to.equal('some span');
-      expect(finishedSpans[1].name).to.equal('emb-session-part');
+      expect(finishedSpans[1].name).to.equal(window.location.pathname);
+      expect(finishedSpans[2].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[1].attributes['emb.session_part_start_reason'],
+        finishedSpans[2].attributes['emb.session_part_start_reason'],
       ).to.equal('init');
       expect(
-        finishedSpans[1].attributes['emb.session_part_end_reason'],
+        finishedSpans[2].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[2].name).to.equal(window.location.pathname);
-      expect(finishedSpans[3].name).to.equal('emb-session-part');
+      expect(finishedSpans[3].name).to.equal(window.location.pathname);
+      expect(finishedSpans[4].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[3].attributes['emb.session_part_start_reason'],
+        finishedSpans[4].attributes['emb.session_part_start_reason'],
       ).to.equal('web_activity');
       expect(
-        finishedSpans[3].attributes['emb.session_part_end_reason'],
+        finishedSpans[4].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[4].name).to.equal('my span');
+      expect(finishedSpans[5].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

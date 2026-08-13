@@ -59,12 +59,14 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('does not emit any log when no interaction happens', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     expect(getLogs()).to.have.lengthOf(0);
   });
 
   it('emits a click event on click with pointerType=mouse', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     target.id = 'go';
@@ -96,6 +98,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('emits a tap event on click with pointerType=touch', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('a');
     target.id = 'home';
@@ -124,6 +127,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('emits a keypress event on keydown with no coordinates', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const input = document.createElement('input');
     input.id = 'search';
@@ -149,6 +153,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('emits a scroll event with element_type=document and empty selector', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     document.dispatchEvent(new Event('scroll', { bubbles: true }));
 
@@ -167,6 +172,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('emits only once across multiple interactions', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     target.id = 'first';
@@ -206,6 +212,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('re-registers listeners on session part start', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     target.id = 'a';
@@ -255,6 +262,7 @@ describe('FirstInteractionInstrumentation', () => {
     testContainer.append(target);
 
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
     instrumentation.disable();
 
     target.dispatchEvent(
@@ -271,6 +279,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('does not re-register on session part start after disable()', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
     instrumentation.disable();
 
     userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -291,6 +300,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('does not re-attach listeners when they are already attached', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     // Listeners are attached in the constructor; calling enable() again while
     // they are still attached must be a no-op rather than double-registering.
@@ -314,6 +324,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('ignores a second handler that fires after listeners are detached', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     testContainer.append(target);
@@ -345,6 +356,7 @@ describe('FirstInteractionInstrumentation', () => {
 
   it('logs a diagnostic error when emitting fails', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     testContainer.append(target);

@@ -108,6 +108,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(observeOptions).to.deep.equal({ type: 'element', buffered: true });
 
@@ -119,6 +120,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({
@@ -162,6 +164,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({ loadTime: 0, renderTime: 200, startTime: 200 }),
@@ -180,6 +183,7 @@ describe('ElementTimingInstrumentation', () => {
       perf: timeOriginPerf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ startTime: 250 })]);
 
@@ -204,6 +208,7 @@ describe('ElementTimingInstrumentation', () => {
       perf: timeOriginPerf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({ startTime: 700, renderTime: 700, loadTime: 650 }),
@@ -224,6 +229,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([makeEntry({ element: null })]);
 
@@ -246,6 +252,7 @@ describe('ElementTimingInstrumentation', () => {
       diag: diagLogger,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(observerCallback).to.be.null;
     expect(diagLogger.getDebugLogs().some((m) => m.includes('element'))).to.be
@@ -259,6 +266,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
 
     instrumentation.disable();
 
@@ -278,6 +286,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager: customLimitManager,
     });
+    instrumentation.enable();
 
     triggerEntries([
       makeEntry({ identifier: 'el-0' }),
@@ -295,6 +304,7 @@ describe('ElementTimingInstrumentation', () => {
       perf,
       limitManager,
     });
+    instrumentation.enable();
     const firstCallback = observerCallback;
 
     instrumentation.enable();
@@ -320,6 +330,7 @@ describe('ElementTimingInstrumentation', () => {
       diag: diagLogger,
       limitManager,
     });
+    instrumentation.enable();
 
     expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable');
 

@@ -348,10 +348,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       reportSoftNavs && isEntryTypeSupported('soft-navigation');
     this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
-
-    if (this._config.enabled !== false) {
-      this.enable();
-    }
   }
 
   public override onDisable(): void {

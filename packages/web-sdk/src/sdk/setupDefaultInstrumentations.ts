@@ -118,10 +118,18 @@ export const setupDefaultInstrumentations = (
     );
   }
 
+  /*
+   * The upstream instrumentations patch fetch and XHR from their constructors
+   * unless told to start disabled. registerInstrumentations attaches the
+   * providers and then enables them, which keeps any request made during
+   * start-up out of a tracer that records nothing. Embrace instrumentations get
+   * this from EmbraceInstrumentationBase and need no flag here.
+   */
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new FetchInstrumentation({
         ...config['@opentelemetry/instrumentation-fetch'],
+        enabled: false,
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
           ...(config['@opentelemetry/instrumentation-fetch']?.ignoreUrls ?? []),
@@ -134,6 +142,7 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new XMLHttpRequestInstrumentation({
         ...config['@opentelemetry/instrumentation-xml-http-request'],
+        enabled: false,
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
           ...(config['@opentelemetry/instrumentation-xml-http-request']
