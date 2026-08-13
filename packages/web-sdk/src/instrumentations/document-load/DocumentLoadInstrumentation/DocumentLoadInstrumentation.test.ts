@@ -313,6 +313,27 @@ describe('DocumentLoad Instrumentation', () => {
       });
       assert.ok(plugin instanceof DocumentLoadInstrumentation);
     });
+
+    /*
+     * The SDK enables through the constructor and wires the tracer provider
+     * afterwards, so collection has to outlast that gap to be recorded.
+     */
+    it('should collect when enabled through the constructor', async () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin = new DocumentLoadInstrumentation({ enabled: true });
+      plugin.setTracerProvider(provider);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      assert.strictEqual(
+        exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad')
+          .length,
+        1,
+      );
+    });
   });
 
   describe('when the document has already finished loading', () => {
@@ -556,6 +577,52 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
+  describe('when the navigation entry is missing timing fields', () => {
+    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
+
+    const stubNavigationEntry = (
+      missingField: keyof PerformanceNavigationTiming,
+    ) => {
+      const incomplete: Partial<PerformanceNavigationTiming> = { ...entries };
+      delete incomplete[missingField];
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([incomplete]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+    };
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    /* Every span hangs off the documentLoad span, which needs a start time. */
+    it('should export no spans when fetchStart is missing', (done) => {
+      stubNavigationEntry('fetchStart');
+
+      plugin.enable();
+
+      setTimeout(() => {
+        assert.strictEqual(exporter.getFinishedSpans().length, 0);
+        done();
+      });
+    });
+
+    it('should end the documentFetch span at the current time when responseEnd is missing', (done) => {
+      stubNavigationEntry('responseEnd');
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isAbove(hrTimeToMilliseconds(fetchSpan.endTime), 0);
+        done();
+      });
+    });
+  });
+
   const shouldExportCorrectSpan = () => {
     it('should export correct span with events', (done) => {
       plugin.enable();
@@ -746,6 +813,22 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
+
+    it('should still create the spans if the resourceFetch function throws error', (done) => {
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        applyCustomAttributesOnSpan: {
+          resourceFetch: (_span) => {
+            throw new Error('test error');
+          },
+        },
+      });
+      plugin.enable();
+      setTimeout(() => {
+        assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
   });
 
   describe('resource attributes and quality flags', () => {
@@ -850,6 +933,58 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           resourceSpan.attributes['http.request.prevented'],
           true,
+        );
+        done();
+      });
+    });
+
+    /*
+     * Safari omits size fields outright rather than reporting them as 0, so the
+     * quality flags have to read an absent field as no data.
+     */
+    it('should treat absent size and timing fields as zero', (done) => {
+      const resourceWithoutSizes: Partial<(typeof resources)[0]> = {
+        ...resources[0],
+        fetchStart: 20.985,
+      };
+      delete resourceWithoutSizes.transferSize;
+      delete resourceWithoutSizes.encodedBodySize;
+      delete resourceWithoutSizes.decodedBodySize;
+      delete resourceWithoutSizes.responseEnd;
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([resourceWithoutSizes]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.request.incomplete'],
+          true,
+        );
+        assert.isUndefined(
+          resourceSpan.attributes['http.response.cache_revalidated'],
+        );
+        done();
+      });
+    });
+
+    /* A resource with no fetchStart has no start time, so it gets no span. */
+    it('should skip a resource whose fetchStart is missing', (done) => {
+      const resourceWithoutFetchStart: Partial<(typeof resources)[0]> = {
+        ...resources[0],
+      };
+      delete resourceWithoutFetchStart.fetchStart;
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([resourceWithoutFetchStart]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        assert.isUndefined(
+          exporter.getFinishedSpans().find((s) => s.name === 'resourceFetch'),
         );
         done();
       });
@@ -1206,13 +1341,15 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(documentLoadSpans().length, 0);
     });
 
-    it('should collect only once across an enable, disable, enable cycle', () => {
+    it('should collect only once across an enable, disable, enable cycle', async () => {
       plugin.enable();
       completeLoadEvent();
       plugin.disable();
 
-      // Re-enabling now finds the finished entry already on the timeline.
+      // Re-enabling subscribes with buffered set, so the finished entry is
+      // replayed and reaches collection a second time.
       plugin.enable();
+      await afterPendingTasks();
 
       assert.strictEqual(documentLoadSpans().length, 1);
     });
