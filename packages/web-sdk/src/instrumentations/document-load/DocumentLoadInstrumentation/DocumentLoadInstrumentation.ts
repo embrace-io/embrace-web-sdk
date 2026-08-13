@@ -101,11 +101,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  protected override init() {
-    this._diag.debug('Initializing document load instrumentation');
-    return undefined;
-  }
-
   /**
    * Adds spans for all resources
    * @param rootSpan
