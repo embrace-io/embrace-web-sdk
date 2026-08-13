@@ -190,23 +190,15 @@ const ensureNetworkEventsExists = (
 };
 
 /*
- * Stands in for the real PerformanceObserver so tests control what the
- * navigation entry observer is told and when.
- *
- * The navigation entry reaches the timeline within a few milliseconds of
- * navigation start, long before `loadEventEnd` is written, and engines expose
- * it through two separate paths: a `buffered: true` replay of whatever the
- * buffer currently holds, and a notification once the load event completes.
+ * Models the two paths an engine exposes the navigation entry through: a
+ * buffered replay of whatever the buffer holds, and a notification once the
+ * load event completes.
  */
 class FakePerformanceObserver {
   public static supportedEntryTypes: string[] = ['navigation'];
   public static instances: FakePerformanceObserver[] = [];
-  /*
-   * WebKit answers a buffered subscription with the entry as it stands, and
-   * that answer consumes the observer's only notification, so the completed
-   * entry never arrives. Chromium and Gecko send both, which is exactly why a
-   * buffered subscription hides this fault everywhere except Safari.
-   */
+  /* In WebKit a buffered replay consumes the observer's one notification, so
+   * the completed entry never arrives. Chromium and Gecko send both. */
   public static webkitSemantics = false;
 
   public observedOptions: PerformanceObserverInit | null = null;
@@ -235,7 +227,8 @@ class FakePerformanceObserver {
       const [buffered] = window.performance.getEntriesByType('navigation');
       if (buffered) {
         this._notificationConsumed = FakePerformanceObserver.webkitSemantics;
-        this._deliver(buffered);
+        // Engines replay buffered entries in a later task, never inside observe().
+        setTimeout(() => this._deliver(buffered), 0);
       }
     }
   }
@@ -334,11 +327,7 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    /*
-     * The buffered replay of a completed entry is what lets an SDK that
-     * initializes after the load event still report the document load, so
-     * readyState takes no part in deciding when to collect.
-     */
+    /* The entry alone decides when to collect; readyState takes no part. */
     ['complete', 'loading', 'interactive'].forEach((readyState) => {
       it(`should collect from the replayed entry when readyState is ${readyState}`, (done) => {
         Object.defineProperty(window.document, 'readyState', {
@@ -554,10 +543,8 @@ describe('DocumentLoad Instrumentation', () => {
     });
 
     /*
-     * An entry with no loadEventEnd is one the browser has not finished
-     * writing, so it is never the signal to collect. Waiting costs nothing:
-     * the completed entry follows whenever the load event completes, and if it
-     * never completes there is no document load to report.
+     * A missing loadEventEnd means the browser has not finished writing the
+     * entry, and a load that never completes has nothing to report.
      */
     it('should not export any spans', (done) => {
       plugin.enable();
@@ -1116,11 +1103,8 @@ describe('DocumentLoad Instrumentation', () => {
     const afterPendingTasks = () =>
       new Promise((resolve) => setTimeout(resolve, 10));
 
-    /*
-     * One entry per document, mutated in place by the browser. It starts with
-     * loadEventEnd unwritten, and the load event completing fills it in on the
-     * very object already sitting on the timeline.
-     */
+    /* There is one entry per document and the browser mutates it in place, so
+     * completing the load fills in loadEventEnd on the object already there. */
     type MutableNavigationTiming = {
       -readonly [K in keyof PerformanceNavigationTiming]: PerformanceNavigationTiming[K];
     };
@@ -1151,11 +1135,8 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(documentLoadSpans().length, 0);
     });
 
-    /*
-     * Subscribing with buffered: true is answered with the incomplete entry,
-     * and in WebKit that answer consumes the observer's only notification, so
-     * the completed entry never arrives and the page load is lost.
-     */
+    /* A buffered subscription is answered with the incomplete entry, which in
+     * WebKit consumes the one notification and loses the page load. */
     it('should subscribe without the buffered flag', () => {
       plugin.enable();
 
@@ -1174,13 +1155,23 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(documentLoadSpans().length, 1);
     });
 
-    it('should collect under WebKit semantics, where a buffered replay would consume the notification', () => {
+    it('should collect under WebKit semantics, where a buffered replay would consume the notification', async () => {
+      const perf = new OTelPerformanceManager();
       FakePerformanceObserver.webkitSemantics = true;
 
       plugin.enable();
+      // Let any replay land first: engines replay the entry while the load is
+      // still in flight, well before loadEventEnd is written.
+      await afterPendingTasks();
       completeLoadEvent();
 
       assert.strictEqual(documentLoadSpans().length, 1);
+      // Collected after completion, so the span carries the real loadEventEnd
+      // rather than the wall clock fallback an incomplete entry would give.
+      assert.strictEqual(
+        hrTimeToMilliseconds(documentLoadSpans()[0].endTime),
+        perf.epochMillisFromOrigin(entries.loadEventEnd),
+      );
     });
 
     it('should disconnect the observer once it has collected', () => {
@@ -1251,20 +1242,31 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    /*
-     * The load-complete notification has already fired by the time a late SDK
-     * init subscribes, so the completed entry has to be read off the timeline
-     * instead of waited for.
-     */
-    it('should collect from the timeline without creating an observer', () => {
+    const documentLoadSpans = () =>
+      exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
+
+    /* The notification fired before a late SDK init subscribed, so only a
+     * buffered replay can still deliver the entry. */
+    it('should subscribe with the buffered flag', () => {
       plugin.enable();
 
-      assert.strictEqual(
-        exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad')
-          .length,
-        1,
-      );
-      assert.strictEqual(FakePerformanceObserver.instances.length, 0);
+      assert.deepStrictEqual(FakePerformanceObserver.latest().observedOptions, {
+        type: 'navigation',
+        buffered: true,
+      });
+    });
+
+    /* onEnable runs from the constructor, before the tracer provider is wired
+     * on, so a synchronous collect would record nothing. */
+    it('should not collect synchronously while enabling', (done) => {
+      plugin.enable();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
+
+      setTimeout(() => {
+        assert.strictEqual(documentLoadSpans().length, 1);
+        done();
+      });
     });
   });
 });

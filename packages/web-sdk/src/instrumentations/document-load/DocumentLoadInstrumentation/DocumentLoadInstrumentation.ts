@@ -529,36 +529,27 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   /* loadEventEnd is written immediately after the load event handlers finish. */
   private _hasLoadEventCompleted(): boolean {
-    const [navigationTiming] = performance.getEntriesByType('navigation');
+    const [navigationTiming] = performance.getEntriesByType(
+      'navigation',
+    ) as PerformanceNavigationTiming[];
 
-    return (
-      !!navigationTiming &&
-      (navigationTiming as PerformanceNavigationTiming).loadEventEnd > 0
-    );
+    return (navigationTiming?.loadEventEnd ?? 0) > 0;
   }
 
   public override onEnable(): void {
     this._stopObserving();
 
-    // A load that already completed is never announced again, so its entry has
-    // to be read off the timeline rather than waited for.
-    if (this._hasLoadEventCompleted()) {
-      this._collectPerformance();
-      return;
-    }
-
     /*
-     * The entry is on the timeline but the browser has not written
-     * loadEventEnd yet. An observer without the buffered flag is notified
-     * exactly once, when the load event completes, and serves purely as that
-     * signal: the values are read back off the timeline entry the browser has
-     * since filled in.
+     * Collection always waits for an observer notification: onEnable runs from
+     * the constructor, before the tracer provider is wired on, so spans started
+     * synchronously here would go unrecorded.
      *
-     * buffered: true must not be used here. It is answered with the entry as
-     * it currently stands, and in WebKit that answer consumes the observer's
-     * only notification, so the completed entry never arrives and the whole
-     * document load goes unreported.
+     * Buffering is only safe once the load has completed. Mid-flight, WebKit
+     * answers a buffered subscription with the incomplete entry and counts that
+     * as the observer's one notification, losing the load entirely.
      */
+    const buffered = this._hasLoadEventCompleted();
+
     this._navigationObserver =
       createPerformanceObserver<PerformanceNavigationTiming>(
         'navigation',
@@ -566,7 +557,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
           this._stopObserving();
           this._collectPerformance();
         },
-        { buffered: false, diag: this._diag },
+        { buffered, diag: this._diag },
       );
   }
 
