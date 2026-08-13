@@ -286,9 +286,7 @@ describe('DocumentLoad Instrumentation', () => {
     FakePerformanceObserver.supportedEntryTypes = ['navigation'];
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       FakePerformanceObserver;
-    plugin = new DocumentLoadInstrumentation({
-      enabled: false,
-    });
+    plugin = new DocumentLoadInstrumentation();
     plugin.setTracerProvider(provider);
     exporter.reset();
   });
@@ -317,31 +315,30 @@ describe('DocumentLoad Instrumentation', () => {
 
   describe('constructor', () => {
     it('should construct an instance', () => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-      });
+      plugin = new DocumentLoadInstrumentation();
       assert.ok(plugin instanceof DocumentLoadInstrumentation);
     });
 
     /*
-     * The SDK enables through the constructor and wires the tracer provider
-     * afterwards, so collection has to outlast that gap to be recorded.
+     * Construction only wires the instrumentation up; registerInstrumentations
+     * attaches the providers and enables it afterwards, so nothing may be
+     * collected until then.
      */
-    it('should collect when enabled through the constructor', async () => {
+    it('should not collect until it is enabled', async () => {
       const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
       spyEntries.withArgs('resource').returns([]);
       spyEntries.withArgs('paint').returns([]);
 
-      plugin = new DocumentLoadInstrumentation({ enabled: true });
+      plugin = new DocumentLoadInstrumentation();
       plugin.setTracerProvider(provider);
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await afterPendingTasks();
 
-      assert.strictEqual(
-        exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad')
-          .length,
-        1,
-      );
+      assert.strictEqual(documentLoadSpans().length, 0);
+
+      plugin.enable();
+
+      assert.strictEqual(documentLoadSpans().length, 1);
     });
   });
 
@@ -1015,7 +1012,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should add attribute to document load span', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         applyCustomAttributesOnSpan: {
           documentLoad: (span) => {
             span.setAttribute('custom-key', 'custom-val');
@@ -1033,7 +1029,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should add attribute to document fetch span', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         applyCustomAttributesOnSpan: {
           documentFetch: (span) => {
             span.setAttribute('custom-key', 'custom-val');
@@ -1051,7 +1046,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should add attribute to resource fetch spans', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         applyCustomAttributesOnSpan: {
           resourceFetch: (span, resource) => {
             span.setAttribute('custom-key', 'custom-val');
@@ -1088,7 +1082,6 @@ describe('DocumentLoad Instrumentation', () => {
     });
     it('should still create the spans if the function throws error', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         applyCustomAttributesOnSpan: {
           documentLoad: (_span) => {
             throw new Error('test error');
@@ -1104,7 +1097,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should still create the spans if the resourceFetch function throws error', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         applyCustomAttributesOnSpan: {
           resourceFetch: (_span) => {
             throw new Error('test error');
@@ -1350,7 +1342,7 @@ describe('DocumentLoad Instrumentation', () => {
     });
 
     it('should not collect performance twice when disabled and re-enabled', (done) => {
-      plugin = new DocumentLoadInstrumentation({ enabled: false });
+      plugin = new DocumentLoadInstrumentation();
 
       plugin.enable();
       plugin.disable();
@@ -1383,7 +1375,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should ignore network span events if ignoreNetworkEvents is set to true', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         ignoreNetworkEvents: true,
       });
       plugin.enable();
@@ -1416,7 +1407,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should ignore performance events if ignorePerformanceEvents is set to true', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         ignorePerformancePaintEvents: true,
       });
       plugin.enable();
@@ -1439,7 +1429,6 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', (done) => {
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         ignoreNetworkEvents: true,
       });
       plugin.enable();
@@ -1659,8 +1648,8 @@ describe('DocumentLoad Instrumentation', () => {
       completeLoadEvent();
       plugin.disable();
 
-      // Re-enabling sees the completed entry and defers a second read, which
-      // reaches collection again and is stopped by the collect-once guard.
+      // Re-enabling reads the completed entry again and is stopped by the
+      // collect-once guard.
       plugin.enable();
       await afterPendingTasks();
 
@@ -1671,7 +1660,6 @@ describe('DocumentLoad Instrumentation', () => {
       FakePerformanceObserver.supportedEntryTypes = [];
       const warnings: string[] = [];
       plugin = new DocumentLoadInstrumentation({
-        enabled: false,
         diag: {
           verbose: () => {},
           debug: () => {},
@@ -1713,26 +1701,12 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(FakePerformanceObserver.instances.length, 0);
     });
 
-    /* Under registerGlobally: false the tracer provider is wired after the
-     * constructor runs, so a synchronous collect would record nothing. */
-    it('should not collect synchronously while enabling', (done) => {
+    /* The load event already finished, so no notification is coming and
+     * enable() reads the entry itself. */
+    it('should collect while enabling', () => {
       plugin.enable();
 
-      assert.strictEqual(documentLoadSpans().length, 0);
-
-      setTimeout(() => {
-        assert.strictEqual(documentLoadSpans().length, 1);
-        done();
-      });
-    });
-
-    it('should collect nothing when disabled before the deferred read runs', async () => {
-      plugin.enable();
-      plugin.disable();
-
-      await afterPendingTasks();
-
-      assert.strictEqual(documentLoadSpans().length, 0);
+      assert.strictEqual(documentLoadSpans().length, 1);
     });
   });
 
@@ -1752,11 +1726,12 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    /* The constructor runs inside initSDK's try block, so throwing here fails
-     * the whole SDK init and takes every other instrumentation with it. */
-    it('should construct without throwing when enabled', () => {
+    /* Construction and enable() both run inside initSDK's try block, so a throw
+     * from either fails the whole SDK init and every other instrumentation. */
+    it('should construct and enable without throwing', () => {
       assert.doesNotThrow(() => {
-        const instance = new DocumentLoadInstrumentation({ enabled: true });
+        const instance = new DocumentLoadInstrumentation();
+        instance.enable();
         instance.disable();
       });
     });
