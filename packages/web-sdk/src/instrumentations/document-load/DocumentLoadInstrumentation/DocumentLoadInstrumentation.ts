@@ -472,12 +472,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
-    const fetchStart =
-      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
     const responseEnd =
       typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
 
-    return fetchStart > 0 && responseEnd > 0;
+    return resource.fetchStart > 0 && responseEnd > 0;
   }
 
   private _isCorsRestricted(
@@ -489,21 +487,20 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _isFetchIncomplete(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    const fetchStart =
-      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
     const responseEnd =
       typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
 
-    return this._hasNoSizeData(resource) && fetchStart > 0 && responseEnd === 0;
+    return (
+      this._hasNoSizeData(resource) &&
+      resource.fetchStart > 0 &&
+      responseEnd === 0
+    );
   }
 
   private _isFetchPrevented(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    const fetchStart =
-      typeof resource.fetchStart === 'number' ? resource.fetchStart : 0;
-
-    return this._hasNoSizeData(resource) && fetchStart === 0;
+    return this._hasNoSizeData(resource) && resource.fetchStart === 0;
   }
 
   /**
@@ -533,6 +530,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * - Cache revalidation (304 Not Modified responses)
    * - Request incomplete (started but didn't complete - network error, aborted)
    * - Request prevented (never started - blocked by CSP, browser, extension)
+   *
+   * Only a resource that produced a span reaches here, which already required a
+   * numeric fetchStart, so the checks below can read it without a guard.
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
