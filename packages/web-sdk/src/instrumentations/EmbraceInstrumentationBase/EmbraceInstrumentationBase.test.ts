@@ -25,6 +25,7 @@ describe('EmbraceInstrumentationBase', () => {
 
   beforeEach(() => {
     instrumentation = new FakeInstrumentation();
+    instrumentation.enable();
     // start Instrumentation in a disabled state so assertions are consistent
     instrumentation.disable();
     onEnableSpy = sinon.spy(instrumentation, 'onEnable');
@@ -75,6 +76,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('invokes the start listener when a session part starts', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
 
@@ -83,6 +85,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('invokes the end listener when a session part ends', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
       userSessionManager.endSessionPartInternal({
@@ -94,6 +97,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('stops invoking listeners after disable()', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
       instrumentation.disable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -107,6 +111,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('re-binds listeners to a user session manager set after enable', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       const replacementManager = new EmbraceUserSessionManager({
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,

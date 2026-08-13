@@ -41,10 +41,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
     this._allowedEntries = allowedEntries;
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onEnable(): void {
