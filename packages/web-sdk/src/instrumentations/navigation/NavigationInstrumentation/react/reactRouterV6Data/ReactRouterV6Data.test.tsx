@@ -132,13 +132,12 @@ describe('ReactRouterV6Data', () => {
       }),
     ]);
 
-    // In production this is wired up automatically by initSDK, after the
-    // tracer provider is set up; this test builds the pipeline manually, so
-    // it needs to construct it itself in the same order — otherwise the
-    // route span started immediately for the already-current route (see
-    // NavigationInstrumentation's constructor) would be created against the
-    // wrong tracer provider.
-    new NavigationInstrumentation({ pageManager });
+    // In production initSDK constructs this and registerInstrumentations
+    // enables it once the tracer provider is wired. This test builds the
+    // pipeline manually and has to follow the same order, or the route span
+    // opened for the already-current route on enable would go to the wrong
+    // tracer provider.
+    new NavigationInstrumentation({ pageManager }).enable();
   });
 
   it('create route spans', async () => {

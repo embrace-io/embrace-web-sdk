@@ -10,10 +10,6 @@ export class FakeInstrumentation extends EmbraceInstrumentationBase {
       instrumentationVersion: '1.0.0',
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onDisable(): void {

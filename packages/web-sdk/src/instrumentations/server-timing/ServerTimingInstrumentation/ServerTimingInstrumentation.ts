@@ -27,10 +27,6 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       limitManager,
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   private _disconnectObserver(): void {

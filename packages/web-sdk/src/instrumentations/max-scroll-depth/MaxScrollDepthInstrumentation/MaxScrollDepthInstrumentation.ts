@@ -41,10 +41,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
         this._diag.error('failed to process scroll', e);
       }
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onEnable(): void {

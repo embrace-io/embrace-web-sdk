@@ -202,4 +202,29 @@ describe('setupDefaultInstrumentations', () => {
       }
     });
   });
+
+  describe('enabling', () => {
+    /*
+     * registerInstrumentations wires the tracer and logger providers onto each
+     * instrumentation and only then enables the ones still reporting themselves
+     * disabled. Anything already enabled by the time it is returned from here
+     * would emit its start-up telemetry into a provider that records nothing,
+     * and the once-per-page guards these instrumentations use mean it would
+     * never be retried.
+     */
+    it('returns instrumentations that are not enabled yet', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        { 'empty-root': { rootNode: document.body } },
+        makeSetupArgs(),
+      );
+
+      expect(instrumentations).to.have.length.greaterThan(0);
+      for (const instrumentation of instrumentations) {
+        expect(
+          instrumentation.getConfig().enabled,
+          `${instrumentation.instrumentationName} should not be enabled yet`,
+        ).to.not.equal(true);
+      }
+    });
+  });
 });

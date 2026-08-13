@@ -137,9 +137,12 @@ describe('DOMStateInstrumentation', () => {
     appendedImages.push(image);
   };
 
+  // Mirrors the SDK: construction wires the instrumentation up and the managers
+  // onto it, then registerInstrumentations enables it.
   const createInstrumentation = (): void => {
     instrumentation = new DOMStateInstrumentation();
     instrumentation.setUserSessionManager(userSessionManager);
+    instrumentation.enable();
   };
 
   // Nothing is emitted until a part ends: each part end sends one log, and the
@@ -178,7 +181,7 @@ describe('DOMStateInstrumentation', () => {
 
   afterEach(() => {
     // Tests that register a manager on the global proxy must not leak it into
-    // the construction-time capture of later tests.
+    // the fold capture of later tests.
     session.setGlobalUserSessionManager(new NoOpUserSessionManager());
     instrumentation?.disable();
     for (const restore of restorers) {
@@ -193,7 +196,7 @@ describe('DOMStateInstrumentation', () => {
 
   it('emits nothing until the part ends, then one log carrying both measurements', () => {
     // @web/test-runner drives tests after the load event, so the navigation
-    // entry already reports it and the fold capture happens at wiring time.
+    // entry already reports it and the fold capture happens at enable.
     expect(
       (
         performance.getEntriesByType(
@@ -1035,10 +1038,10 @@ describe('DOMStateInstrumentation', () => {
     expect(foldLogs).to.have.lengthOf(1);
   });
 
-  it('contains a throw from the injected diag logger instead of escaping the constructor', () => {
-    // At construction the per-instance manager has not arrived, so the capture
-    // attempt takes the no-engaged-part skip, which logs through the injected
-    // diag: caller code, whose throw would otherwise abort SDK init.
+  it('contains a throw from the injected diag logger instead of escaping enable', () => {
+    // With no per-instance manager wired the capture attempt takes the
+    // no-engaged-part skip, which logs through the injected diag: caller code,
+    // whose throw would otherwise abort SDK init.
     let capturedErrors = 0;
     const throwingDiag = {
       verbose: () => {},
@@ -1053,6 +1056,7 @@ describe('DOMStateInstrumentation', () => {
     };
     expect(() => {
       instrumentation = new DOMStateInstrumentation({ diag: throwingDiag });
+      instrumentation.enable();
     }).to.not.throw();
     expect(capturedErrors).to.equal(1);
   });

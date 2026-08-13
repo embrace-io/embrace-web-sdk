@@ -78,7 +78,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   public constructor({
     diag,
     perf,
-    enabled,
     applyCustomAttributesOnSpan,
     ignorePerformancePaintEvents = false,
     ignoreNetworkEvents = false,
@@ -89,16 +88,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       diag,
       perf,
       config: {
-        enabled,
         applyCustomAttributesOnSpan,
         ignorePerformancePaintEvents,
         ignoreNetworkEvents,
       },
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   /**
