@@ -73,13 +73,9 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     const navEntries = performance.getEntriesByType(
       'navigation',
     ) as PerformanceNavigationTiming[];
-    const serverTiming = navEntries[0]?.serverTiming;
+    const serverTimingEntries = navEntries[0]?.serverTiming ?? [];
 
-    if (!serverTiming?.length) {
-      return;
-    }
-
-    for (const entry of serverTiming) {
+    for (const entry of serverTimingEntries) {
       if (this.limitManager?.limitServerTimingEntry()) {
         return;
       }
