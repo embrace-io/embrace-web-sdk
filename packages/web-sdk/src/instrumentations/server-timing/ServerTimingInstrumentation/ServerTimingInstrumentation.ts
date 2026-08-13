@@ -1,5 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_EMB_SERVER_TIMING_DESCRIPTION,
@@ -10,7 +11,7 @@ import {
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _onLoad: () => void;
+  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -27,28 +28,40 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
 
-    this._onLoad = () => {
-      this._readServerTiming();
-    };
-
     if (this._config.enabled) {
       this.enable();
     }
   }
 
+  private _stopObserving(): void {
+    this._navigationObserver?.disconnect();
+    this._navigationObserver = null;
+  }
+
   public override onEnable(): void {
-    window.removeEventListener('load', this._onLoad);
+    this._stopObserving();
 
-    if (window.document.readyState === 'complete') {
-      this._readServerTiming();
-      return;
-    }
-
-    window.addEventListener('load', this._onLoad);
+    /*
+     * Server timings arrive in the response headers, so they are on the
+     * navigation entry before any script runs and there is nothing to wait for
+     * beyond the entry itself. The observer is what keeps the read out of the
+     * constructor: onEnable runs from there, before the SDK wires the logger
+     * provider on, and logs emitted synchronously at that point are lost for
+     * good because the collection guard latches.
+     */
+    this._navigationObserver =
+      createPerformanceObserver<PerformanceNavigationTiming>(
+        'navigation',
+        () => {
+          this._stopObserving();
+          this._readServerTiming();
+        },
+        { diag: this._diag },
+      );
   }
 
   public override onDisable(): void {
-    window.removeEventListener('load', this._onLoad);
+    this._stopObserving();
   }
 
   private _readServerTiming(): void {
