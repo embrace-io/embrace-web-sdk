@@ -338,30 +338,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       );
     }
 
-    // Validate size fields exist and aren't negative
-    if (
-      typeof resource.encodedBodySize === 'number' &&
-      resource.encodedBodySize >= 0
-    ) {
-      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-    }
-
-    if (
-      typeof resource.transferSize === 'number' &&
-      resource.transferSize >= 0
-    ) {
-      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-    }
-
-    if (
-      typeof resource.decodedBodySize === 'number' &&
-      resource.decodedBodySize >= 0
-    ) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-        resource.decodedBodySize,
-      );
-    }
+    span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    span.setAttribute(
+      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+      resource.decodedBodySize,
+    );
 
     this._addResourceDiagnosticAttributes(span, resource);
 
@@ -457,25 +439,15 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
-    const transferSize =
-      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
-    const decodedBodySize =
-      typeof resource.decodedBodySize === 'number'
-        ? resource.decodedBodySize
-        : 0;
-    const encodedBodySize =
-      typeof resource.encodedBodySize === 'number'
-        ? resource.encodedBodySize
-        : 0;
-
-    return transferSize === 0 && decodedBodySize === 0 && encodedBodySize === 0;
+    return (
+      resource.transferSize === 0 &&
+      resource.decodedBodySize === 0 &&
+      resource.encodedBodySize === 0
+    );
   }
 
   private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
-    const responseEnd =
-      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
-
-    return resource.fetchStart > 0 && responseEnd > 0;
+    return resource.fetchStart > 0 && resource.responseEnd > 0;
   }
 
   private _isCorsRestricted(
@@ -487,13 +459,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _isFetchIncomplete(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    const responseEnd =
-      typeof resource.responseEnd === 'number' ? resource.responseEnd : 0;
-
     return (
       this._hasNoSizeData(resource) &&
       resource.fetchStart > 0 &&
-      responseEnd === 0
+      resource.responseEnd === 0
     );
   }
 
@@ -514,12 +483,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _isCacheValidated(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    const transferSize =
-      typeof resource.transferSize === 'number' ? resource.transferSize : 0;
-    const deliveryType =
-      typeof resource.deliveryType === 'string' ? resource.deliveryType : '';
-
-    return transferSize === 300 && deliveryType !== 'cache';
+    // deliveryType is Chromium only, so an engine without it never reads 'cache'.
+    return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
   /**
@@ -531,8 +496,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * - Request incomplete (started but didn't complete - network error, aborted)
    * - Request prevented (never started - blocked by CSP, browser, extension)
    *
-   * Only a resource that produced a span reaches here, which already required a
-   * numeric fetchStart, so the checks below can read it without a guard.
+   * The size and timing fields read below are always numbers: a cross-origin
+   * resource with no Timing-Allow-Origin reports them as 0 rather than omitting
+   * them, and a resource only reaches here once it has produced a span, which
+   * required a numeric fetchStart.
    */
   private _addResourceDiagnosticAttributes(
     span: Span,

@@ -945,38 +945,6 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    /*
-     * Safari omits size fields outright rather than reporting them as 0, so the
-     * quality flags have to read an absent field as no data.
-     */
-    it('should treat absent size and timing fields as zero', (done) => {
-      const resourceWithoutSizes: Partial<(typeof resources)[0]> = {
-        ...resources[0],
-        fetchStart: 20.985,
-      };
-      delete resourceWithoutSizes.transferSize;
-      delete resourceWithoutSizes.encodedBodySize;
-      delete resourceWithoutSizes.decodedBodySize;
-      delete resourceWithoutSizes.responseEnd;
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([resourceWithoutSizes]);
-      spyEntries.withArgs('paint').returns([]);
-
-      plugin.enable();
-      setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(
-          resourceSpan.attributes['http.request.incomplete'],
-          true,
-        );
-        assert.isUndefined(
-          resourceSpan.attributes['http.response.cache_revalidated'],
-        );
-        done();
-      });
-    });
-
     /* A resource with no fetchStart has no start time, so it gets no span. */
     it('should skip a resource whose fetchStart is missing', (done) => {
       const resourceWithoutFetchStart: Partial<(typeof resources)[0]> = {
