@@ -6,6 +6,7 @@
 import type { Attributes, HrTime } from '@opentelemetry/api';
 import { context, propagation, trace } from '@opentelemetry/api';
 import {
+  hrTimeToMilliseconds,
   TRACE_PARENT_HEADER,
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
@@ -23,8 +24,10 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
+import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
+import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor({ exporter });
@@ -186,10 +189,92 @@ const ensureNetworkEventsExists = (
   }
 };
 
+/*
+ * Stands in for the real PerformanceObserver so tests control what the
+ * navigation entry observer is told and when.
+ *
+ * The navigation entry reaches the timeline within a few milliseconds of
+ * navigation start, long before `loadEventEnd` is written, and engines expose
+ * it through two separate paths: a `buffered: true` replay of whatever the
+ * buffer currently holds, and a notification once the load event completes.
+ */
+class FakePerformanceObserver {
+  public static supportedEntryTypes: string[] = ['navigation'];
+  public static instances: FakePerformanceObserver[] = [];
+  /*
+   * WebKit answers a buffered subscription with the entry as it stands, and
+   * that answer consumes the observer's only notification, so the completed
+   * entry never arrives. Chromium and Gecko send both, which is exactly why a
+   * buffered subscription hides this fault everywhere except Safari.
+   */
+  public static webkitSemantics = false;
+
+  public observedOptions: PerformanceObserverInit | null = null;
+  public isDisconnected = false;
+  private _notificationConsumed = false;
+  private readonly _callback: PerformanceObserverCallback;
+
+  public constructor(callback: PerformanceObserverCallback) {
+    this._callback = callback;
+    FakePerformanceObserver.instances.push(this);
+  }
+
+  public static latest(): FakePerformanceObserver {
+    const observer =
+      FakePerformanceObserver.instances[
+        FakePerformanceObserver.instances.length - 1
+      ];
+    assert.isOk(observer, 'expected an observer to have been created');
+    return observer;
+  }
+
+  public observe(options: PerformanceObserverInit): void {
+    this.observedOptions = options;
+
+    if (options.buffered) {
+      const [buffered] = window.performance.getEntriesByType('navigation');
+      if (buffered) {
+        this._notificationConsumed = FakePerformanceObserver.webkitSemantics;
+        this._deliver(buffered);
+      }
+    }
+  }
+
+  /* The notification an engine sends once `loadEventEnd` has been written. */
+  public notifyLoadEventComplete(entry: object): void {
+    if (this._notificationConsumed) {
+      return;
+    }
+    this._deliver(entry);
+  }
+
+  public disconnect(): void {
+    this.isDisconnected = true;
+  }
+
+  public takeRecords(): PerformanceEntryList {
+    return [];
+  }
+
+  private _deliver(entry: object): void {
+    // A disconnected observer never hears from the timeline again.
+    if (this.isDisconnected) {
+      return;
+    }
+    this._callback(
+      {
+        getEntries: () => [entry],
+      } as unknown as PerformanceObserverEntryList,
+      this as unknown as PerformanceObserver,
+    );
+  }
+}
+
 describe('DocumentLoad Instrumentation', () => {
   let plugin: DocumentLoadInstrumentation;
   let contextManager: StackContextManager;
   const sandbox = sinon.createSandbox();
+  let realPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   beforeEach(() => {
     contextManager = new StackContextManager().enable();
@@ -199,6 +284,12 @@ describe('DocumentLoad Instrumentation', () => {
       value: 'complete',
     });
     sandbox.replaceGetter(navigator, 'userAgent', () => userAgent);
+    realPerformanceObserver = globalThis.PerformanceObserver;
+    FakePerformanceObserver.instances = [];
+    FakePerformanceObserver.webkitSemantics = false;
+    FakePerformanceObserver.supportedEntryTypes = ['navigation'];
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+      FakePerformanceObserver;
     plugin = new DocumentLoadInstrumentation({
       enabled: false,
     });
@@ -214,6 +305,8 @@ describe('DocumentLoad Instrumentation', () => {
       value: 'complete',
     });
     plugin.disable();
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+      realPerformanceObserver;
   });
 
   before(() => {
@@ -229,7 +322,7 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
-  describe('when document readyState is complete', () => {
+  describe('when the document has already finished loading', () => {
     let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
     beforeEach(() => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
@@ -240,51 +333,37 @@ describe('DocumentLoad Instrumentation', () => {
     afterEach(() => {
       spyEntries.restore();
     });
-    it('should start collecting the performance immediately', (done) => {
-      plugin.enable();
-      setTimeout(() => {
-        assert.strictEqual(window.document.readyState, 'complete');
-        assert.strictEqual(spyEntries.callCount, 3);
-        done();
+
+    /*
+     * The buffered replay of a completed entry is what lets an SDK that
+     * initializes after the load event still report the document load, so
+     * readyState takes no part in deciding when to collect.
+     */
+    ['complete', 'loading', 'interactive'].forEach((readyState) => {
+      it(`should collect from the replayed entry when readyState is ${readyState}`, (done) => {
+        Object.defineProperty(window.document, 'readyState', {
+          writable: true,
+          value: readyState,
+        });
+
+        plugin.enable();
+
+        setTimeout(() => {
+          const documentLoadSpans = exporter
+            .getFinishedSpans()
+            .filter((s) => s.name === 'documentLoad');
+          assert.strictEqual(documentLoadSpans.length, 1);
+          done();
+        });
       });
     });
-  });
 
-  describe('when document readyState is not complete', () => {
-    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
-    beforeEach(() => {
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
-
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([]);
-      spyEntries.withArgs('paint').returns([]);
-    });
-    afterEach(() => {
-      spyEntries.restore();
-    });
-
-    it('should collect performance after document load event', (done) => {
+    it('should not register a load event listener', () => {
       const spy = sandbox.spy(window, 'addEventListener');
-      plugin.enable();
-      assert.ok(spy.args.some((args) => args[0] === 'load'));
-      assert.ok(spyEntries.callCount === 0);
 
-      window.dispatchEvent(
-        new CustomEvent('load', {
-          bubbles: true,
-          cancelable: false,
-          composed: true,
-          detail: {},
-        }),
-      );
-      setTimeout(() => {
-        assert.strictEqual(spyEntries.callCount, 3);
-        done();
-      });
+      plugin.enable();
+
+      assert.isFalse(spy.args.some((args) => args[0] === 'load'));
     });
   });
 
@@ -474,17 +553,17 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    it('should still export rootSpan and fetchSpan', (done) => {
+    /*
+     * An entry with no loadEventEnd is one the browser has not finished
+     * writing, so it is never the signal to collect. Waiting costs nothing:
+     * the completed entry follows whenever the load event completes, and if it
+     * never completes there is no document load to report.
+     */
+    it('should not export any spans', (done) => {
       plugin.enable();
 
       setTimeout(() => {
-        const rootSpan = exporter.getFinishedSpans()[0];
-        const fetchSpan = exporter.getFinishedSpans()[1];
-
-        assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.strictEqual(fetchSpan.name, 'documentLoad');
-
-        assert.strictEqual(exporter.getFinishedSpans().length, 2);
+        assert.strictEqual(exporter.getFinishedSpans().length, 0);
         done();
       });
     });
@@ -999,6 +1078,193 @@ describe('DocumentLoad Instrumentation', () => {
         );
         done();
       });
+    });
+  });
+
+  describe('getPerformanceNavigationEntries', () => {
+    it('should read the timing fields off the timeline entry', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+
+      const result = getPerformanceNavigationEntries();
+
+      assert.strictEqual(result[PTN.FETCH_START], entries.fetchStart);
+      assert.strictEqual(result[PTN.LOAD_EVENT_END], entries.loadEventEnd);
+    });
+
+    it('should return no entries when the timeline has no navigation entry', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([]);
+
+      assert.deepStrictEqual(getPerformanceNavigationEntries(), {});
+    });
+  });
+
+  describe('navigation entry observer', () => {
+    let spyEntries: sinon.SinonStub;
+
+    const setReadyState = (value: string) => {
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value,
+      });
+    };
+
+    const documentLoadSpans = () =>
+      exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
+
+    const afterPendingTasks = () =>
+      new Promise((resolve) => setTimeout(resolve, 10));
+
+    /*
+     * One entry per document, mutated in place by the browser. It starts with
+     * loadEventEnd unwritten, and the load event completing fills it in on the
+     * very object already sitting on the timeline.
+     */
+    type MutableNavigationTiming = {
+      -readonly [K in keyof PerformanceNavigationTiming]: PerformanceNavigationTiming[K];
+    };
+    let timelineEntry: MutableNavigationTiming;
+
+    const completeLoadEvent = () => {
+      timelineEntry.loadEventEnd = entries.loadEventEnd;
+      FakePerformanceObserver.latest().notifyLoadEventComplete(timelineEntry);
+    };
+
+    beforeEach(() => {
+      timelineEntry = { ...entries, loadEventEnd: 0 };
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([timelineEntry]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+      // Collection must be driven by the entry, not by readyState or load.
+      setReadyState('loading');
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    it('should not collect before the load event completes', () => {
+      plugin.enable();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
+    });
+
+    /*
+     * Subscribing with buffered: true is answered with the incomplete entry,
+     * and in WebKit that answer consumes the observer's only notification, so
+     * the completed entry never arrives and the page load is lost.
+     */
+    it('should subscribe without the buffered flag', () => {
+      plugin.enable();
+
+      assert.deepStrictEqual(FakePerformanceObserver.latest().observedOptions, {
+        type: 'navigation',
+        buffered: false,
+      });
+    });
+
+    it('should collect when the load event completes', () => {
+      plugin.enable();
+      assert.strictEqual(documentLoadSpans().length, 0);
+
+      completeLoadEvent();
+
+      assert.strictEqual(documentLoadSpans().length, 1);
+    });
+
+    it('should collect under WebKit semantics, where a buffered replay would consume the notification', () => {
+      FakePerformanceObserver.webkitSemantics = true;
+
+      plugin.enable();
+      completeLoadEvent();
+
+      assert.strictEqual(documentLoadSpans().length, 1);
+    });
+
+    it('should disconnect the observer once it has collected', () => {
+      plugin.enable();
+      const observer = FakePerformanceObserver.latest();
+
+      completeLoadEvent();
+
+      assert.isTrue(observer.isDisconnected);
+    });
+
+    it('should end the documentLoad span at the delivered entry loadEventEnd', () => {
+      const perf = new OTelPerformanceManager();
+      plugin.enable();
+
+      completeLoadEvent();
+
+      const [documentLoad] = documentLoadSpans();
+      assert.strictEqual(
+        hrTimeToMilliseconds(documentLoad.endTime),
+        perf.epochMillisFromOrigin(entries.loadEventEnd),
+      );
+    });
+
+    it('should collect nothing when the notification arrives after disable', async () => {
+      plugin.enable();
+
+      plugin.disable();
+      completeLoadEvent();
+      await afterPendingTasks();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
+    });
+
+    it('should collect only once across an enable, disable, enable cycle', () => {
+      plugin.enable();
+      completeLoadEvent();
+      plugin.disable();
+
+      // Re-enabling now finds the finished entry already on the timeline.
+      plugin.enable();
+
+      assert.strictEqual(documentLoadSpans().length, 1);
+    });
+
+    it('should collect nothing when the navigation entry type is unobservable', async () => {
+      FakePerformanceObserver.supportedEntryTypes = [];
+
+      plugin.enable();
+      await afterPendingTasks();
+
+      assert.strictEqual(FakePerformanceObserver.instances.length, 0);
+      assert.strictEqual(documentLoadSpans().length, 0);
+    });
+  });
+
+  describe('when the load event has already finished', () => {
+    let spyEntries: sinon.SinonStub;
+
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    /*
+     * The load-complete notification has already fired by the time a late SDK
+     * init subscribes, so the completed entry has to be read off the timeline
+     * instead of waited for.
+     */
+    it('should collect from the timeline without creating an observer', () => {
+      plugin.enable();
+
+      assert.strictEqual(
+        exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad')
+          .length,
+        1,
+      );
+      assert.strictEqual(FakePerformanceObserver.instances.length, 0);
     });
   });
 });

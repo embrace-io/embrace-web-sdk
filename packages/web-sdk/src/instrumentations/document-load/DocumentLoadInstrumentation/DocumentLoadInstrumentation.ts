@@ -35,6 +35,7 @@ import {
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
@@ -71,7 +72,7 @@ const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request start
 const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
-  private readonly _onDocumentLoaded: () => void;
+  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -94,13 +95,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         ignoreNetworkEvents,
       },
     });
-
-    this._onDocumentLoaded = () => {
-      // Timeout needed because performance metrics for loadEnd aren't available until after the load event
-      window.setTimeout(() => {
-        this._collectPerformance();
-      }, 0);
-    };
 
     if (this._config.enabled) {
       this.enable();
@@ -380,17 +374,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Executes callback {_onDocumentLoaded} when the page is loaded
-   */
-  private _waitForPageLoad() {
-    if (window.document.readyState === 'complete') {
-      this._onDocumentLoaded();
-    } else {
-      window.addEventListener('load', this._onDocumentLoaded);
-    }
-  }
-
-  /**
    * Adds custom attributes to span if configured
    * Used for both documentFetch and documentLoad spans
    */
@@ -539,12 +522,55 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
+  private _stopObserving(): void {
+    this._navigationObserver?.disconnect();
+    this._navigationObserver = null;
+  }
+
+  /* loadEventEnd is written immediately after the load event handlers finish. */
+  private _hasLoadEventCompleted(): boolean {
+    const [navigationTiming] = performance.getEntriesByType('navigation');
+
+    return (
+      !!navigationTiming &&
+      (navigationTiming as PerformanceNavigationTiming).loadEventEnd > 0
+    );
+  }
+
   public override onEnable(): void {
-    window.removeEventListener('load', this._onDocumentLoaded);
-    this._waitForPageLoad();
+    this._stopObserving();
+
+    // A load that already completed is never announced again, so its entry has
+    // to be read off the timeline rather than waited for.
+    if (this._hasLoadEventCompleted()) {
+      this._collectPerformance();
+      return;
+    }
+
+    /*
+     * The entry is on the timeline but the browser has not written
+     * loadEventEnd yet. An observer without the buffered flag is notified
+     * exactly once, when the load event completes, and serves purely as that
+     * signal: the values are read back off the timeline entry the browser has
+     * since filled in.
+     *
+     * buffered: true must not be used here. It is answered with the entry as
+     * it currently stands, and in WebKit that answer consumes the observer's
+     * only notification, so the completed entry never arrives and the whole
+     * document load goes unreported.
+     */
+    this._navigationObserver =
+      createPerformanceObserver<PerformanceNavigationTiming>(
+        'navigation',
+        () => {
+          this._stopObserving();
+          this._collectPerformance();
+        },
+        { buffered: false, diag: this._diag },
+      );
   }
 
   public override onDisable(): void {
-    window.removeEventListener('load', this._onDocumentLoaded);
+    this._stopObserving();
   }
 }
