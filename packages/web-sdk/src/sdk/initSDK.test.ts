@@ -2118,12 +2118,14 @@ describe('isolated instances', () => {
 
     const record = isolatedLogExporter
       .getFinishedLogRecords()
-      .find((r) => r.attributes['dom_state.phase'] === 'after_load');
+      .find((r) => r.eventName === 'dom-state');
 
     // The view snapshot must reach this instance's own exporter even though its
     // logger provider is only wired onto the instrumentation after construction.
     void expect(record).not.to.be.undefined;
-    expect(record?.attributes['dom_state.images_above_fold']).to.be.a('number');
+    expect(record?.attributes['dom_state.images_above_fold.count']).to.be.a(
+      'number',
+    );
     // The part id rides from capture; hold-and-flush exists so the emit-stamped
     // user session and page correlation still match that part at send time.
     expect(record?.attributes['emb.session_part_id']).to.equal(sessionPartId);
