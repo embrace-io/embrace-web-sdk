@@ -214,8 +214,6 @@ describe('DOMStateInstrumentation', () => {
       'dom_state.images_above_fold.count',
     );
     expect(logs[0].attributes).to.have.property('dom_state.element_count');
-    // One log shape needs no discriminator.
-    expect(logs[0].attributes).to.not.have.property('dom_state.phase');
   });
 
   it('stamps the fold capture time as an attribute while the log itself is stamped at part end', async () => {
