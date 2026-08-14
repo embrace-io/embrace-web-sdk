@@ -39,9 +39,9 @@ const makeNavigationEntry = (
  * arrives. Engines replay a buffered entry in a later task, never inside
  * observe(), which is what keeps the read out of the constructor.
  */
-class FakeNavigationObserver {
+class FakePerformanceObserver {
   public static supportedEntryTypes: string[] = ['navigation'];
-  public static instances: FakeNavigationObserver[] = [];
+  public static instances: FakePerformanceObserver[] = [];
 
   public observedOptions: PerformanceObserverInit | null = null;
   public isDisconnected = false;
@@ -49,7 +49,16 @@ class FakeNavigationObserver {
 
   public constructor(callback: PerformanceObserverCallback) {
     this._callback = callback;
-    FakeNavigationObserver.instances.push(this);
+    FakePerformanceObserver.instances.push(this);
+  }
+
+  public static latest(): FakePerformanceObserver {
+    const observer =
+      FakePerformanceObserver.instances[
+        FakePerformanceObserver.instances.length - 1
+      ];
+    expect(observer, 'expected an observer to have been created').to.be.ok;
+    return observer;
   }
 
   public observe(options: PerformanceObserverInit): void {
@@ -128,10 +137,10 @@ describe('ServerTimingInstrumentation', () => {
     addEventListenerSpy = sinon.spy(window, 'addEventListener');
 
     realPerformanceObserver = globalThis.PerformanceObserver;
-    FakeNavigationObserver.instances = [];
-    FakeNavigationObserver.supportedEntryTypes = ['navigation'];
+    FakePerformanceObserver.instances = [];
+    FakePerformanceObserver.supportedEntryTypes = ['navigation'];
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-      FakeNavigationObserver;
+      FakePerformanceObserver;
 
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
@@ -254,8 +263,7 @@ describe('ServerTimingInstrumentation', () => {
         limitManager,
       });
 
-      const [observer] = FakeNavigationObserver.instances;
-      expect(observer.observedOptions).to.deep.equal({
+      expect(FakePerformanceObserver.latest().observedOptions).to.deep.equal({
         type: 'navigation',
         buffered: true,
       });
@@ -401,7 +409,7 @@ describe('ServerTimingInstrumentation', () => {
 
     /* Nothing else re-triggers the read, so this is the one chance to say so. */
     it('warns and emits nothing when the navigation entry type is unobservable', () => {
-      FakeNavigationObserver.supportedEntryTypes = [];
+      FakePerformanceObserver.supportedEntryTypes = [];
       getEntriesByTypeStub
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
@@ -421,7 +429,7 @@ describe('ServerTimingInstrumentation', () => {
 
       deliverNavigationEntry();
 
-      expect(FakeNavigationObserver.instances).to.have.length(0);
+      expect(FakePerformanceObserver.instances).to.have.length(0);
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
       expect(warnings.join(' ')).to.contain('navigation');
 

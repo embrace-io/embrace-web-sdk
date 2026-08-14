@@ -33,14 +33,12 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  private _stopObserving(): void {
+  private _disconnectObserver(): void {
     this._navigationObserver?.disconnect();
     this._navigationObserver = null;
   }
 
   public override onEnable(): void {
-    this._stopObserving();
-
     if (this._performanceCollected) {
       return;
     }
@@ -62,7 +60,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       createPerformanceObserver<PerformanceNavigationTiming>(
         'navigation',
         () => {
-          this._stopObserving();
+          this._disconnectObserver();
           this._readServerTiming();
         },
         { diag: this._diag },
@@ -76,7 +74,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onDisable(): void {
-    this._stopObserving();
+    this._disconnectObserver();
   }
 
   private _readServerTiming(): void {
