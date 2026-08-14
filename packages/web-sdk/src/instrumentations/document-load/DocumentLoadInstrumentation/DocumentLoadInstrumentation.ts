@@ -567,7 +567,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
     // buffered must stay false: mid-load, WebKit answers a buffered
     // subscription with the unfinished entry and counts it as the observer's
-    // one notification, so the finalized entry never arrives.
+    // one notification, so the finalized entry never arrives. Measured on
+    // Safari 26.6 and Playwright WebKit, 2026-08-13; the performance-timeline
+    // spec does not say whether a replay preempts a later notification, so
+    // treat neither engine's choice as guaranteed.
     this._navigationObserver = createPerformanceObserver(
       'navigation',
       () => {
