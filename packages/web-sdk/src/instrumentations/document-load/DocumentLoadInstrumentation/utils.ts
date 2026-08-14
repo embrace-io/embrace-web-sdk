@@ -13,6 +13,9 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
   const performanceNavigationTiming =
     window.performance.getEntriesByType('navigation')[0];
+  if (!performanceNavigationTiming) {
+    return entries;
+  }
 
   const keys = Object.values(PerformanceTimingNames);
   keys.forEach((key: PerformanceTimingNames) => {

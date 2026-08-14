@@ -35,6 +35,7 @@ import {
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
@@ -71,7 +72,7 @@ const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request start
 const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
-  private readonly _onDocumentLoaded: () => void;
+  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -95,21 +96,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       },
     });
 
-    this._onDocumentLoaded = () => {
-      // Timeout needed because performance metrics for loadEnd aren't available until after the load event
-      window.setTimeout(() => {
-        this._collectPerformance();
-      }, 0);
-    };
-
     if (this._config.enabled) {
       this.enable();
     }
-  }
-
-  protected override init() {
-    this._diag.debug('Initializing document load instrumentation');
-    return undefined;
   }
 
   /**
@@ -125,14 +114,45 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
+   * The one navigation entry per document is mutated in place as the load
+   * progresses, so collecting early would end the documentLoad span at time
+   * origin. Returning early leaves the observer subscribed for a later
+   * notification.
+   */
+  private _collectIfLoadEventFinished(): void {
+    if (this._performanceCollected || !this._isLoadEventFinished()) {
+      return;
+    }
+
+    // Latched before collecting so a throw part way through cannot emit a
+    // second set of spans on a later trigger.
+    this._performanceCollected = true;
+
+    try {
+      this._collectPerformance();
+    } catch (e) {
+      this._diag.error('failed to collect the document load', e);
+    } finally {
+      this._disconnectObserver();
+    }
+  }
+
+  /* loadEventEnd is written only after every load handler returns. WebKit
+   * reports no entry at all for about:blank, popups and srcdoc iframes. */
+  private _isLoadEventFinished(): boolean {
+    const [navigationTiming] = performance.getEntriesByType('navigation');
+    return (navigationTiming?.loadEventEnd ?? 0) > 0;
+  }
+
+  private _disconnectObserver(): void {
+    this._navigationObserver?.disconnect();
+    this._navigationObserver = null;
+  }
+
+  /**
    * Collects information about performance and creates appropriate spans
    */
   private _collectPerformance(): void {
-    if (this._performanceCollected) {
-      return;
-    }
-    this._performanceCollected = true;
-
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
@@ -145,6 +165,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         entries,
       );
       if (!rootSpan) {
+        this._diag.warn(
+          'navigation entry has no fetchStart, document load will not be collected',
+        );
         return;
       }
       context.with(trace.setSpan(context.active(), rootSpan), () => {
@@ -380,17 +403,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Executes callback {_onDocumentLoaded} when the page is loaded
-   */
-  private _waitForPageLoad() {
-    if (window.document.readyState === 'complete') {
-      this._onDocumentLoaded();
-    } else {
-      window.addEventListener('load', this._onDocumentLoaded);
-    }
-  }
-
-  /**
    * Adds custom attributes to span if configured
    * Used for both documentFetch and documentLoad spans
    */
@@ -540,11 +552,41 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   public override onEnable(): void {
-    window.removeEventListener('load', this._onDocumentLoaded);
-    this._waitForPageLoad();
+    // An unbuffered subscription registered after the load event is never
+    // notified, so collect straight away instead of observing. Deferred a
+    // microtask because under registerGlobally: false the tracer provider
+    // arrives later in this same task, and earlier spans reach a no-op tracer.
+    if (this._isLoadEventFinished()) {
+      queueMicrotask(() => {
+        if (this._isEnabled) {
+          this._collectIfLoadEventFinished();
+        }
+      });
+      return;
+    }
+
+    // buffered must stay false: mid-load, WebKit answers a buffered
+    // subscription with the unfinished entry and counts it as the observer's
+    // one notification, so the finalized entry never arrives. Measured on
+    // Safari 26.6 and Playwright WebKit, 2026-08-13; the performance-timeline
+    // spec does not say whether a replay preempts a later notification, so
+    // treat neither engine's choice as guaranteed.
+    this._navigationObserver = createPerformanceObserver(
+      'navigation',
+      () => {
+        this._collectIfLoadEventFinished();
+      },
+      { buffered: false, diag: this._diag },
+    );
+
+    if (!this._navigationObserver) {
+      this._diag.warn(
+        'navigation entries are not observable, document load will not be collected',
+      );
+    }
   }
 
   public override onDisable(): void {
-    window.removeEventListener('load', this._onDocumentLoaded);
+    this._disconnectObserver();
   }
 }

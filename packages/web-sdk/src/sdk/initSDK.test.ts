@@ -2027,6 +2027,17 @@ describe('isolated instances', () => {
       logExporters: [logExporter],
       spanExporters: [spanExporter],
       registerGlobally: false,
+      // The instance's own default instrumentations emit on their own schedule,
+      // so leaving them on makes a zero-signal assertion depend on whether they
+      // land before or after the flush.
+      defaultInstrumentationConfig: {
+        omit: new Set([
+          'document-load',
+          'loaf',
+          'web-vital',
+          'max-scroll-depth',
+        ]),
+      },
     });
 
     void expect(result).not.to.be.false;
