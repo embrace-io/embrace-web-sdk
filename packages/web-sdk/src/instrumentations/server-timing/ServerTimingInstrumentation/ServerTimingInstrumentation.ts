@@ -1,5 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_EMB_SERVER_TIMING_DESCRIPTION,
@@ -10,7 +11,7 @@ import {
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _onLoad: () => void;
+  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -27,28 +28,53 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
 
-    this._onLoad = () => {
-      this._readServerTiming();
-    };
-
     if (this._config.enabled) {
       this.enable();
     }
   }
 
-  public override onEnable(): void {
-    window.removeEventListener('load', this._onLoad);
+  private _disconnectObserver(): void {
+    this._navigationObserver?.disconnect();
+    this._navigationObserver = null;
+  }
 
-    if (window.document.readyState === 'complete') {
-      this._readServerTiming();
+  public override onEnable(): void {
+    if (this._performanceCollected) {
       return;
     }
 
-    window.addEventListener('load', this._onLoad);
+    /*
+     * The observer keeps the read out of the constructor. Under
+     * registerGlobally: false the logger provider arrives later in this same
+     * task, and a log emitted before it is lost for good because the
+     * collection guard latches.
+     *
+     * buffered stays at its default of true, the opposite of the navigation
+     * observer in DocumentLoadInstrumentation: server timings arrive in the
+     * response headers and are complete on the entry from the start, so a
+     * replay carries everything. It is also required, because the SDK usually
+     * starts after the entry was buffered and an unbuffered subscription would
+     * never be notified.
+     */
+    this._navigationObserver =
+      createPerformanceObserver<PerformanceNavigationTiming>(
+        'navigation',
+        () => {
+          this._disconnectObserver();
+          this._readServerTiming();
+        },
+        { diag: this._diag },
+      );
+
+    if (!this._navigationObserver) {
+      this._diag.warn(
+        'navigation entries are not observable, server timings will not be collected',
+      );
+    }
   }
 
   public override onDisable(): void {
-    window.removeEventListener('load', this._onLoad);
+    this._disconnectObserver();
   }
 
   private _readServerTiming(): void {
@@ -60,13 +86,9 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     const navEntries = performance.getEntriesByType(
       'navigation',
     ) as PerformanceNavigationTiming[];
-    const serverTiming = navEntries[0]?.serverTiming;
+    const serverTimingEntries = navEntries[0]?.serverTiming ?? [];
 
-    if (!serverTiming?.length) {
-      return;
-    }
-
-    for (const entry of serverTiming) {
+    for (const entry of serverTimingEntries) {
       if (this.limitManager?.limitServerTimingEntry()) {
         return;
       }
