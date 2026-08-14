@@ -350,7 +350,7 @@ describe('DocumentLoad Instrumentation', () => {
 
     /* The entry alone decides when to collect; readyState takes no part. */
     ['complete', 'loading', 'interactive'].forEach((readyState) => {
-      it(`should collect from the replayed entry when readyState is ${readyState}`, (done) => {
+      it(`should collect from the timeline entry when readyState is ${readyState}`, (done) => {
         Object.defineProperty(window.document, 'readyState', {
           writable: true,
           value: readyState,
@@ -1213,13 +1213,6 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(result[PTN.FETCH_START], entries.fetchStart);
       assert.strictEqual(result[PTN.LOAD_EVENT_END], entries.loadEventEnd);
     });
-
-    it('should return no entries when the timeline has no navigation entry', () => {
-      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([]);
-
-      assert.deepStrictEqual(getPerformanceNavigationEntries(), {});
-    });
   });
 
   describe('navigation entry observer', () => {
@@ -1346,22 +1339,35 @@ describe('DocumentLoad Instrumentation', () => {
       completeLoadEvent();
       plugin.disable();
 
-      // Re-enabling subscribes with buffered set, so the finished entry is
-      // replayed and reaches collection a second time.
+      // Re-enabling sees the completed entry on the timeline, so a deferred
+      // read reaches collection a second time.
       plugin.enable();
       await afterPendingTasks();
 
       assert.strictEqual(documentLoadSpans().length, 1);
     });
 
-    it('should collect nothing when the navigation entry type is unobservable', async () => {
+    it('should warn and collect nothing when the navigation entry type is unobservable', async () => {
       FakePerformanceObserver.supportedEntryTypes = [];
+      const warnings: string[] = [];
+      plugin = new DocumentLoadInstrumentation({
+        enabled: false,
+        diag: {
+          verbose: () => {},
+          debug: () => {},
+          info: () => {},
+          warn: (message: string) => warnings.push(message),
+          error: () => {},
+        },
+      });
+      plugin.setTracerProvider(provider);
 
       plugin.enable();
       await afterPendingTasks();
 
       assert.strictEqual(FakePerformanceObserver.instances.length, 0);
       assert.strictEqual(documentLoadSpans().length, 0);
+      assert.strictEqual(warnings.length, 1);
     });
   });
 
@@ -1382,15 +1388,15 @@ describe('DocumentLoad Instrumentation', () => {
     const documentLoadSpans = () =>
       exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
 
-    /* The notification fired before a late SDK init subscribed, so only a
-     * buffered replay can still deliver the entry. */
-    it('should subscribe with the buffered flag', () => {
+    const afterPendingTasks = () =>
+      new Promise((resolve) => setTimeout(resolve, 10));
+
+    /* The notification fired before a late SDK init subscribed, so the
+     * finished entry is read off the timeline instead of observed. */
+    it('should not subscribe an observer', () => {
       plugin.enable();
 
-      assert.deepStrictEqual(FakePerformanceObserver.latest().observedOptions, {
-        type: 'navigation',
-        buffered: true,
-      });
+      assert.strictEqual(FakePerformanceObserver.instances.length, 0);
     });
 
     /* onEnable runs from the constructor, before the tracer provider is wired
@@ -1404,6 +1410,15 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(documentLoadSpans().length, 1);
         done();
       });
+    });
+
+    it('should collect nothing when disabled before the deferred read runs', async () => {
+      plugin.enable();
+      plugin.disable();
+
+      await afterPendingTasks();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
     });
   });
 });

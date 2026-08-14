@@ -9,19 +9,9 @@ import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
 import type { PerformanceManager } from '../../../utils/index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
-/**
- * Reads the timing fields off the document's navigation timing entry. There is
- * one such entry per document and the browser mutates it in place as the load
- * progresses, so reading it after the load event completes is what yields the
- * completed values.
- */
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
-  const [navigationTiming] = window.performance.getEntriesByType('navigation');
-
-  if (!navigationTiming) {
-    return entries;
-  }
+  const [navigationTiming] = performance.getEntriesByType('navigation');
 
   const keys = Object.values(PerformanceTimingNames);
   keys.forEach((key: PerformanceTimingNames) => {
@@ -45,7 +35,7 @@ export const addSpanPerformancePaintEvents = (
   span: Span,
   perf: PerformanceManager,
 ) => {
-  const performancePaintTiming = window.performance.getEntriesByType('paint');
+  const performancePaintTiming = performance.getEntriesByType('paint');
   performancePaintTiming.forEach(({ name, startTime }) => {
     if (hasKey(performancePaintNames, name)) {
       span.addEvent(

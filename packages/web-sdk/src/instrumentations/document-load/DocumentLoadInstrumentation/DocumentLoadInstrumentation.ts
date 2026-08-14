@@ -114,18 +114,41 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Collects information about performance and creates appropriate spans
+   * The single entry point for collection, safe to call from any trigger and at
+   * most once in effect.
+   *
+   * The one navigation entry per document is mutated in place as the load
+   * progresses, so collecting before the load event finishes would record
+   * zeroed timings. Returning early instead leaves the observer subscribed for
+   * a later notification.
    */
-  private _collectPerformance(): void {
-    if (this._performanceCollected) {
+  private _collectIfLoadEventFinished(): void {
+    if (this._performanceCollected || !this._isLoadEventFinished()) {
       return;
     }
-    this._performanceCollected = true;
 
+    this._performanceCollected = true;
+    this._collectPerformance(getPerformanceNavigationEntries());
+    this._disconnectObserver();
+  }
+
+  /* loadEventEnd is written only after every load event handler returns. */
+  private _isLoadEventFinished(): boolean {
+    return performance.getEntriesByType('navigation')[0].loadEventEnd > 0;
+  }
+
+  private _disconnectObserver(): void {
+    this._navigationObserver?.disconnect();
+    this._navigationObserver = null;
+  }
+
+  /**
+   * Collects information about performance and creates appropriate spans
+   */
+  private _collectPerformance(entries: PerformanceEntries): void {
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
-    const entries = getPerformanceNavigationEntries();
     const traceparent = metaElement?.content || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
@@ -517,46 +540,39 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  private _stopObserving(): void {
-    this._navigationObserver?.disconnect();
-    this._navigationObserver = null;
-  }
-
-  /* loadEventEnd is written immediately after the load event handlers finish. */
-  private _hasLoadEventCompleted(): boolean {
-    const [navigationTiming] = performance.getEntriesByType(
-      'navigation',
-    ) as PerformanceNavigationTiming[];
-
-    return (navigationTiming?.loadEventEnd ?? 0) > 0;
-  }
-
   public override onEnable(): void {
-    this._stopObserving();
+    // An unbuffered subscription registered after the load event is never
+    // notified, so collect straight away instead of observing. Deferred because
+    // onEnable runs from the constructor, before the tracer provider is wired:
+    // spans started synchronously would go unrecorded.
+    if (this._isLoadEventFinished()) {
+      queueMicrotask(() => {
+        if (this._isEnabled) {
+          this._collectIfLoadEventFinished();
+        }
+      });
+      return;
+    }
 
-    /*
-     * Collection always waits for an observer notification: onEnable runs from
-     * the constructor, before the tracer provider is wired on, so spans started
-     * synchronously here would go unrecorded.
-     *
-     * Buffering is only safe once the load has completed. Mid-flight, WebKit
-     * answers a buffered subscription with the incomplete entry and counts that
-     * as the observer's one notification, losing the load entirely.
-     */
-    const buffered = this._hasLoadEventCompleted();
+    // buffered must stay false: mid-load, WebKit answers a buffered
+    // subscription with the unfinished entry and counts it as the observer's
+    // one notification, so the finalized entry never arrives.
+    this._navigationObserver = createPerformanceObserver(
+      'navigation',
+      () => {
+        this._collectIfLoadEventFinished();
+      },
+      { buffered: false, diag: this._diag },
+    );
 
-    this._navigationObserver =
-      createPerformanceObserver<PerformanceNavigationTiming>(
-        'navigation',
-        () => {
-          this._stopObserving();
-          this._collectPerformance();
-        },
-        { buffered, diag: this._diag },
+    if (!this._navigationObserver) {
+      this._diag.warn(
+        'navigation entries are not observable, document load will not be collected',
       );
+    }
   }
 
   public override onDisable(): void {
-    this._stopObserving();
+    this._disconnectObserver();
   }
 }
