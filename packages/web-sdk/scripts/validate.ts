@@ -188,7 +188,7 @@ function validateSourcemapReference() {
   const bundleFile = path.join(SDK_DIST_DIR, BUNDLE_FILE);
   const content = fs.readFileSync(bundleFile, 'utf-8');
   const lines = content.split('\n');
-  const lastLine = lines[lines.length - 1] || lines[lines.length - 2];
+  const lastLine = lines[lines.length - 1] || lines[lines.length - 2] || '';
 
   if (!lastLine.includes('sourceMappingURL=')) {
     log('  ✗ Missing sourcemap reference in bundle', COLORS.red);

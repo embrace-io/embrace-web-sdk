@@ -344,10 +344,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   public getSessionPartIdAt(timestampEpochMillis: number): string | null {
     for (let i = this._sessionPartHistory.length - 1; i >= 0; i--) {
+      const sessionPart = this._sessionPartHistory[i];
       if (
-        this._sessionPartHistory[i].startTimeEpochMillis <= timestampEpochMillis
+        sessionPart !== undefined &&
+        sessionPart.startTimeEpochMillis <= timestampEpochMillis
       ) {
-        return this._sessionPartHistory[i].id;
+        return sessionPart.id;
       }
     }
     return this.getSessionPartId();

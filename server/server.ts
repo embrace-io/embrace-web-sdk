@@ -202,10 +202,15 @@ const server = createServer((req, res) => {
 
   // /platforms/vite-7/esnext/index.html → platforms/vite-7/dist/esnext/index.html
   if (pathname?.startsWith('/platforms/')) {
-    const pathParts = pathname.replace('/platforms/', '').split('/');
-    const platformName = pathParts[0];
-    const rest = pathParts.slice(1).join('/');
-    serveFile(res, join(platformsDir, platformName, 'dist', rest));
+    const [platformName, ...rest] = pathname
+      .replace('/platforms/', '')
+      .split('/');
+    if (!platformName) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+      return;
+    }
+    serveFile(res, join(platformsDir, platformName, 'dist', rest.join('/')));
     return;
   }
 

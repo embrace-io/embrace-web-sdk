@@ -108,11 +108,11 @@ export class EmbraceLimitManager implements LimitManagerInternal {
 
     const truncatedAttributes: Record<string, AttributeValue | undefined> = {};
 
-    for (let i = 0; i < Math.min(keys.length, this._maxAttributes[type]); i++) {
-      const truncatedKey = this.truncateString(keyType, keys[i]);
+    for (const key of keys.slice(0, this._maxAttributes[type])) {
+      const truncatedKey = this.truncateString(keyType, key);
       truncatedAttributes[truncatedKey] = this.truncateString(
         valueType,
-        attributes[keys[i]]?.toString() || '',
+        attributes[key]?.toString() || '',
       );
     }
 

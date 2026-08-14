@@ -17,7 +17,9 @@ const getRouteFromMatches = (
     (match) => match.pathname === currentPathname,
   );
 
-  if (currentMatchIndex === -1 || !matches[currentMatchIndex].route.path) {
+  const currentMatch = matches[currentMatchIndex];
+
+  if (!currentMatch?.route.path) {
     return null;
   }
 
@@ -38,7 +40,7 @@ const getRouteFromMatches = (
         ? routePath
         : `${acc?.path ?? ''}/${routePath}`;
 
-      return { path, url: matches[currentMatchIndex].pathname };
+      return { path, url: currentMatch.pathname };
     }, null);
 };
 

@@ -275,12 +275,13 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     const index = this._pendingNavigations.findIndex(
       ({ timestamp }) => getNavigationEventTrigger(timestamp, entry) !== null,
     );
+    const matched = this._pendingNavigations[index];
 
-    if (index === -1) {
+    if (!matched) {
       return;
     }
 
-    const [matched] = this._pendingNavigations.splice(index, 1);
+    this._pendingNavigations.splice(index, 1);
     this._emitPolyfillSpan(entry, matched.timestamp, matched.url);
   }
 

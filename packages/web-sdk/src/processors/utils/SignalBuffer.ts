@@ -72,8 +72,10 @@ export class SignalBuffer {
   // injected clock and stays deterministic.
   private _evict(): void {
     const cutoff = this._latestStartTime - this._maxAgeMillis;
-    while (this._entries.length > 0 && this._entries[0].startTime < cutoff) {
+    let oldest = this._entries[0];
+    while (oldest !== undefined && oldest.startTime < cutoff) {
       this._entries.shift();
+      oldest = this._entries[0];
     }
     while (this._entries.length > this._maxEntries) {
       this._entries.shift();
