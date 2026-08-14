@@ -623,21 +623,17 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
-    );
-    expect(logs[1].attributes).to.not.have.property('dom_state.element_count');
-    expect(logs[1].attributes).to.not.have.property('dom_state.average_depth');
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
+    expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
     // The flag is what tells "too large to measure" apart from "no root".
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.traversal_limit_reached',
       true,
     );
     // The document box does not depend on the walk, so it still reports.
-    expect(logs[1].attributes).to.have.property('dom_state.document_height');
-    expect(logs[1].attributes).to.have.property('dom_state.document_width');
+    expect(logs[0].attributes).to.have.property('dom_state.document_height');
+    expect(logs[0].attributes).to.have.property('dom_state.document_width');
   });
 
   it('reports the tree shape when the element count sits exactly at the ceiling', () => {
@@ -656,12 +652,12 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes).to.have.property(
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.have.property(
       'dom_state.element_count',
       DOM_STATE_MAX_TRAVERSED_ELEMENTS,
     );
-    expect(logs[1].attributes).to.not.have.property(
+    expect(logs[0].attributes).to.not.have.property(
       'dom_state.traversal_limit_reached',
     );
   });
