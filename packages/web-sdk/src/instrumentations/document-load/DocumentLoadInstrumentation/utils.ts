@@ -11,15 +11,16 @@ import { EventNames } from './enums/EventNames.ts';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
-  const [navigationTiming] = performance.getEntriesByType('navigation');
-  if (!navigationTiming) {
+  const performanceNavigationTiming =
+    window.performance.getEntriesByType('navigation')[0];
+  if (!performanceNavigationTiming) {
     return entries;
   }
 
   const keys = Object.values(PerformanceTimingNames);
   keys.forEach((key: PerformanceTimingNames) => {
-    if (hasKey(navigationTiming, key)) {
-      const value = navigationTiming[key];
+    if (hasKey(performanceNavigationTiming, key)) {
+      const value = performanceNavigationTiming[key];
       if (typeof value === 'number') {
         entries[key] = value;
       }
@@ -38,7 +39,7 @@ export const addSpanPerformancePaintEvents = (
   span: Span,
   perf: PerformanceManager,
 ) => {
-  const performancePaintTiming = performance.getEntriesByType('paint');
+  const performancePaintTiming = window.performance.getEntriesByType('paint');
   performancePaintTiming.forEach(({ name, startTime }) => {
     if (hasKey(performancePaintNames, name)) {
       span.addEvent(

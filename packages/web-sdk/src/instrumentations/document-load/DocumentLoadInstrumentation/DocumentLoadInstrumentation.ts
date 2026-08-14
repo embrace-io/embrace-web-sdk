@@ -114,26 +114,22 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * The single entry point for collection, safe to call from any trigger and at
-   * most once in effect.
-   *
    * The one navigation entry per document is mutated in place as the load
-   * progresses, so collecting before the load event finishes would record
-   * zeroed timings. Returning early instead leaves the observer subscribed for
-   * a later notification.
+   * progresses, so collecting early would end the documentLoad span at time
+   * origin. Returning early leaves the observer subscribed for a later
+   * notification.
    */
   private _collectIfLoadEventFinished(): void {
     if (this._performanceCollected || !this._isLoadEventFinished()) {
       return;
     }
 
-    // Latched before collecting, not after: a throw part way through has
-    // already emitted spans, so retrying on a later trigger would duplicate
-    // them. Both triggers reach this method, so the catch covers both.
+    // Latched before collecting so a throw part way through cannot emit a
+    // second set of spans on a later trigger.
     this._performanceCollected = true;
 
     try {
-      this._collectPerformance(getPerformanceNavigationEntries());
+      this._collectPerformance();
     } catch (e) {
       this._diag.error('failed to collect the document load', e);
     } finally {
@@ -141,9 +137,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  /* loadEventEnd is written only after every load event handler returns. WebKit
-   * reports no navigation entry at all for about:blank, popups and srcdoc
-   * iframes, so the entry is optional rather than guaranteed. */
+  /* loadEventEnd is written only after every load handler returns. WebKit
+   * reports no entry at all for about:blank, popups and srcdoc iframes. */
   private _isLoadEventFinished(): boolean {
     const [navigationTiming] = performance.getEntriesByType('navigation');
     return (navigationTiming?.loadEventEnd ?? 0) > 0;
@@ -157,10 +152,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   /**
    * Collects information about performance and creates appropriate spans
    */
-  private _collectPerformance(entries: PerformanceEntries): void {
+  private _collectPerformance(): void {
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
+    const entries = getPerformanceNavigationEntries();
     const traceparent = metaElement?.content || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
@@ -169,8 +165,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         entries,
       );
       if (!rootSpan) {
-        // The only point where the SDK knows for certain that the page load is
-        // being dropped, and collection is latched so nothing will retry.
         this._diag.warn(
           'navigation entry has no fetchStart, document load will not be collected',
         );
@@ -559,10 +553,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public override onEnable(): void {
     // An unbuffered subscription registered after the load event is never
-    // notified, so collect straight away instead of observing. Deferred one
+    // notified, so collect straight away instead of observing. Deferred a
     // microtask because under registerGlobally: false the tracer provider
-    // arrives from registerInstrumentations later in the same task as this
-    // constructor, and spans started before it go to a no-op tracer.
+    // arrives later in this same task, and earlier spans reach a no-op tracer.
     if (this._isLoadEventFinished()) {
       queueMicrotask(() => {
         if (this._isEnabled) {
