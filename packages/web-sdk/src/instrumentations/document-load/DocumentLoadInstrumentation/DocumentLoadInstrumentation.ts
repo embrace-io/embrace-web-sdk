@@ -127,14 +127,26 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       return;
     }
 
+    // Latched before collecting, not after: a throw part way through has
+    // already emitted spans, so retrying on a later trigger would duplicate
+    // them. Both triggers reach this method, so the catch covers both.
     this._performanceCollected = true;
-    this._collectPerformance(getPerformanceNavigationEntries());
-    this._disconnectObserver();
+
+    try {
+      this._collectPerformance(getPerformanceNavigationEntries());
+    } catch (e) {
+      this._diag.error('failed to collect the document load', e);
+    } finally {
+      this._disconnectObserver();
+    }
   }
 
-  /* loadEventEnd is written only after every load event handler returns. */
+  /* loadEventEnd is written only after every load event handler returns. WebKit
+   * reports no navigation entry at all for about:blank, popups and srcdoc
+   * iframes, so the entry is optional rather than guaranteed. */
   private _isLoadEventFinished(): boolean {
-    return performance.getEntriesByType('navigation')[0].loadEventEnd > 0;
+    const [navigationTiming] = performance.getEntriesByType('navigation');
+    return (navigationTiming?.loadEventEnd ?? 0) > 0;
   }
 
   private _disconnectObserver(): void {
@@ -157,6 +169,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         entries,
       );
       if (!rootSpan) {
+        // The only point where the SDK knows for certain that the page load is
+        // being dropped, and collection is latched so nothing will retry.
+        this._diag.warn(
+          'navigation entry has no fetchStart, document load will not be collected',
+        );
         return;
       }
       context.with(trace.setSpan(context.active(), rootSpan), () => {
@@ -542,9 +559,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public override onEnable(): void {
     // An unbuffered subscription registered after the load event is never
-    // notified, so collect straight away instead of observing. Deferred because
-    // onEnable runs from the constructor, before the tracer provider is wired:
-    // spans started synchronously would go unrecorded.
+    // notified, so collect straight away instead of observing. Deferred one
+    // microtask because under registerGlobally: false the tracer provider
+    // arrives from registerInstrumentations later in the same task as this
+    // constructor, and spans started before it go to a no-op tracer.
     if (this._isLoadEventFinished()) {
       queueMicrotask(() => {
         if (this._isEnabled) {

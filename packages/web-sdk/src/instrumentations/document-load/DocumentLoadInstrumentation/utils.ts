@@ -12,6 +12,9 @@ import { EventNames } from './enums/EventNames.ts';
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
   const [navigationTiming] = performance.getEntriesByType('navigation');
+  if (!navigationTiming) {
+    return entries;
+  }
 
   const keys = Object.values(PerformanceTimingNames);
   keys.forEach((key: PerformanceTimingNames) => {

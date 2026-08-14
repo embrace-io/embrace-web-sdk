@@ -233,8 +233,9 @@ class FakePerformanceObserver {
     }
   }
 
-  /* The notification an engine sends once `loadEventEnd` has been written. */
-  public notifyLoadEventComplete(entry: object): void {
+  /* The engine's one notification for the document. It may carry the entry in
+   * any state, which is why collection re-checks loadEventEnd. */
+  public notify(entry: object): void {
     if (this._notificationConsumed) {
       return;
     }
@@ -305,6 +306,12 @@ describe('DocumentLoad Instrumentation', () => {
   before(() => {
     propagation.setGlobalPropagator(new W3CTraceContextPropagator());
   });
+
+  const documentLoadSpans = () =>
+    exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
+
+  const afterPendingTasks = () =>
+    new Promise((resolve) => setTimeout(resolve, 10));
 
   describe('constructor', () => {
     it('should construct an instance', () => {
@@ -1225,12 +1232,6 @@ describe('DocumentLoad Instrumentation', () => {
       });
     };
 
-    const documentLoadSpans = () =>
-      exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
-
-    const afterPendingTasks = () =>
-      new Promise((resolve) => setTimeout(resolve, 10));
-
     /* There is one entry per document and the browser mutates it in place, so
      * completing the load fills in loadEventEnd on the object already there. */
     type MutableNavigationTiming = {
@@ -1240,7 +1241,13 @@ describe('DocumentLoad Instrumentation', () => {
 
     const completeLoadEvent = () => {
       timelineEntry.loadEventEnd = entries.loadEventEnd;
-      FakePerformanceObserver.latest().notifyLoadEventComplete(timelineEntry);
+      FakePerformanceObserver.latest().notify(timelineEntry);
+    };
+
+    /* The engine spends its notification while the load is still in flight, so
+     * loadEventEnd is still zero on the entry it delivers. */
+    const notifyMidLoad = () => {
+      FakePerformanceObserver.latest().notify(timelineEntry);
     };
 
     beforeEach(() => {
@@ -1261,6 +1268,42 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
 
       assert.strictEqual(documentLoadSpans().length, 0);
+    });
+
+    it('should stay subscribed when notified before loadEventEnd is written', () => {
+      plugin.enable();
+      const observer = FakePerformanceObserver.latest();
+
+      notifyMidLoad();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
+      // Hanging up here would lose the page load: the finished entry is only
+      // ever delivered by a later notification on this same observer.
+      assert.isFalse(observer.isDisconnected);
+    });
+
+    it('should collect on the notification that follows an unfinished one', () => {
+      plugin.enable();
+
+      notifyMidLoad();
+      completeLoadEvent();
+
+      assert.strictEqual(documentLoadSpans().length, 1);
+    });
+
+    it('should not end the documentLoad span at time origin when notified mid load', () => {
+      const perf = new OTelPerformanceManager();
+      plugin.enable();
+
+      notifyMidLoad();
+      completeLoadEvent();
+
+      // Collecting off the unfinished entry would read loadEventEnd as 0 and
+      // end the span at time origin, before its own start.
+      assert.strictEqual(
+        hrTimeToMilliseconds(documentLoadSpans()[0].endTime),
+        perf.epochMillisFromOrigin(entries.loadEventEnd),
+      );
     });
 
     /* A buffered subscription is answered with the incomplete entry, which in
@@ -1339,8 +1382,8 @@ describe('DocumentLoad Instrumentation', () => {
       completeLoadEvent();
       plugin.disable();
 
-      // Re-enabling sees the completed entry on the timeline, so a deferred
-      // read reaches collection a second time.
+      // Re-enabling sees the completed entry and defers a second read, which
+      // reaches collection again and is stopped by the collect-once guard.
       plugin.enable();
       await afterPendingTasks();
 
@@ -1385,12 +1428,6 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.restore();
     });
 
-    const documentLoadSpans = () =>
-      exporter.getFinishedSpans().filter((s) => s.name === 'documentLoad');
-
-    const afterPendingTasks = () =>
-      new Promise((resolve) => setTimeout(resolve, 10));
-
     /* The notification fired before a late SDK init subscribed, so the
      * finished entry is read off the timeline instead of observed. */
     it('should not subscribe an observer', () => {
@@ -1399,8 +1436,8 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(FakePerformanceObserver.instances.length, 0);
     });
 
-    /* onEnable runs from the constructor, before the tracer provider is wired
-     * on, so a synchronous collect would record nothing. */
+    /* Under registerGlobally: false the tracer provider is wired after the
+     * constructor runs, so a synchronous collect would record nothing. */
     it('should not collect synchronously while enabling', (done) => {
       plugin.enable();
 
@@ -1416,6 +1453,41 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
       plugin.disable();
 
+      await afterPendingTasks();
+
+      assert.strictEqual(documentLoadSpans().length, 0);
+    });
+  });
+
+  /* WebKit reports no navigation entry at all for about:blank, popups and
+   * srcdoc iframes, so an empty timeline is a real case, not a defensive one. */
+  describe('when the document has no navigation entry', () => {
+    let spyEntries: sinon.SinonStub;
+
+    beforeEach(() => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([]);
+      spyEntries.withArgs('resource').returns([]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+
+    afterEach(() => {
+      spyEntries.restore();
+    });
+
+    /* The constructor runs inside initSDK's try block, so throwing here fails
+     * the whole SDK init and takes every other instrumentation with it. */
+    it('should construct without throwing when enabled', () => {
+      assert.doesNotThrow(() => {
+        const instance = new DocumentLoadInstrumentation({ enabled: true });
+        instance.disable();
+      });
+    });
+
+    it('should collect nothing when the observer notifies', async () => {
+      plugin.enable();
+
+      FakePerformanceObserver.latest().notify({});
       await afterPendingTasks();
 
       assert.strictEqual(documentLoadSpans().length, 0);
