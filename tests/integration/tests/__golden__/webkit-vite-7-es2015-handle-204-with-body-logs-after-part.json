@@ -54,7 +54,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "FC66DB6F53ADC9A11ECDAE27244F5E70"
+              "stringValue": "A95D72FE8403B24A82EA8B19F91DFEAA"
             }
           },
           {
@@ -86,8 +86,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1786484827935000000",
-              "observedTimeUnixNano": "1786484827935000000",
+              "timeUnixNano": "1786722598049000000",
+              "observedTimeUnixNano": "1786722598049000000",
               "severityNumber": 9,
               "body": {},
               "eventName": "max-scroll-depth",
@@ -125,13 +125,13 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "53E565F35784FD42346F783E113BD25B"
+                    "stringValue": "B27FE0520D9656E2862BFE21DAE6687E"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "5E783FBD4F7C20F9C972BA3C6FB89DC3"
+                    "stringValue": "2429C4E6B28F700EDE0C965D17EDD6D9"
                   }
                 },
                 {
@@ -143,7 +143,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "A9991136A5D52DF1D5DC13F4711038B1"
+                    "stringValue": "A229D64BB9014A47F0CD931B2C65435E"
                   }
                 },
                 {
@@ -167,7 +167,7 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "64DD087A7898A1A454E22DCF97D8E0A4"
+                    "stringValue": "8EEE5DFBAF381A06C2E227690F31F52C"
                   }
                 },
                 {
@@ -188,8 +188,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1786484827338000000",
-              "observedTimeUnixNano": "1786484827935000000",
+              "timeUnixNano": "1786722598049000000",
+              "observedTimeUnixNano": "1786722598049000000",
               "severityNumber": 9,
               "body": {},
               "eventName": "dom-state",
@@ -198,106 +198,6 @@
                   "key": "emb.type",
                   "value": {
                     "stringValue": "emb.otel_log"
-                  }
-                },
-                {
-                  "key": "dom_state.phase",
-                  "value": {
-                    "stringValue": "load"
-                  }
-                },
-                {
-                  "key": "dom_state.viewport_height",
-                  "value": {
-                    "intValue": 720
-                  }
-                },
-                {
-                  "key": "dom_state.viewport_width",
-                  "value": {
-                    "intValue": 1280
-                  }
-                },
-                {
-                  "key": "dom_state.images_above_fold",
-                  "value": {
-                    "intValue": 0
-                  }
-                },
-                {
-                  "key": "log.record.uid",
-                  "value": {
-                    "stringValue": "F10FFB3591C4ACACE7009DCDBEE05DAD"
-                  }
-                },
-                {
-                  "key": "emb.user_session_id",
-                  "value": {
-                    "stringValue": "5E783FBD4F7C20F9C972BA3C6FB89DC3"
-                  }
-                },
-                {
-                  "key": "emb.user_session_previous_id",
-                  "value": {
-                    "stringValue": ""
-                  }
-                },
-                {
-                  "key": "emb.session_part_id",
-                  "value": {
-                    "stringValue": "A9991136A5D52DF1D5DC13F4711038B1"
-                  }
-                },
-                {
-                  "key": "browser.url.full",
-                  "value": {
-                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
-                  }
-                },
-                {
-                  "key": "url.full",
-                  "value": {
-                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
-                  }
-                },
-                {
-                  "key": "app.surface.name",
-                  "value": {
-                    "stringValue": "/platforms/vite-7/es2015/index.html"
-                  }
-                },
-                {
-                  "key": "app.surface.id",
-                  "value": {
-                    "stringValue": "64DD087A7898A1A454E22DCF97D8E0A4"
-                  }
-                },
-                {
-                  "key": "app.surface.label",
-                  "value": {
-                    "stringValue": "React + TS + Vite"
-                  }
-                }
-              ],
-              "droppedAttributesCount": 0
-            },
-            {
-              "timeUnixNano": "1786484827935000000",
-              "observedTimeUnixNano": "1786484827935000000",
-              "severityNumber": 9,
-              "body": {},
-              "eventName": "dom-state",
-              "attributes": [
-                {
-                  "key": "emb.type",
-                  "value": {
-                    "stringValue": "emb.otel_log"
-                  }
-                },
-                {
-                  "key": "dom_state.phase",
-                  "value": {
-                    "stringValue": "session_part_end"
                   }
                 },
                 {
@@ -325,15 +225,39 @@
                   }
                 },
                 {
+                  "key": "dom_state.images_above_fold.count",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.viewport_height",
+                  "value": {
+                    "intValue": 720
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.viewport_width",
+                  "value": {
+                    "intValue": 1280
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.timestamp",
+                  "value": {
+                    "intValue": 1786722597432
+                  }
+                },
+                {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "D43C3DE7D101ACCDCBCD057913B68C05"
+                    "stringValue": "5AFD0C0AFA640B80FD7EEE84366C7C18"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "5E783FBD4F7C20F9C972BA3C6FB89DC3"
+                    "stringValue": "2429C4E6B28F700EDE0C965D17EDD6D9"
                   }
                 },
                 {
@@ -345,7 +269,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "A9991136A5D52DF1D5DC13F4711038B1"
+                    "stringValue": "A229D64BB9014A47F0CD931B2C65435E"
                   }
                 },
                 {
@@ -369,7 +293,7 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "64DD087A7898A1A454E22DCF97D8E0A4"
+                    "stringValue": "8EEE5DFBAF381A06C2E227690F31F52C"
                   }
                 },
                 {

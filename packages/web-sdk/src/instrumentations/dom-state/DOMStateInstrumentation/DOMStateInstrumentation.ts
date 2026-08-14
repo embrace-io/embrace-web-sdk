@@ -1,10 +1,6 @@
 import type { Attributes } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import {
-  EMB_TYPES,
-  KEY_EMB_SESSION_PART_ID,
-  KEY_EMB_TYPE,
-} from '../../../constants/attributes.ts';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import type { DocumentMeasurement } from '../../../utils/index.ts';
 import { measureDocument } from '../../../utils/index.ts';
@@ -14,37 +10,32 @@ import {
   ATTR_DOM_STATE_DOCUMENT_HEIGHT,
   ATTR_DOM_STATE_DOCUMENT_WIDTH,
   ATTR_DOM_STATE_ELEMENT_COUNT,
-  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD,
-  ATTR_DOM_STATE_PHASE,
-  ATTR_DOM_STATE_VIEWPORT_HEIGHT,
-  ATTR_DOM_STATE_VIEWPORT_WIDTH,
+  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT,
+  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP,
+  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT,
+  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH,
   DOM_STATE_EVENT_NAME,
 } from './constants.ts';
 import type { DOMStateInstrumentationArgs } from './types.ts';
 
-// The part-end log is the only other shape, phased 'session_part_end'.
-type DOMStateViewPhase = 'load' | 'after_load' | 'session_part_start';
-
 /*
-  Captures DOM-shape measurements as `dom-state` logs, all sent at session part
-  end and told apart by `dom_state.phase`.
+  Captures DOM-shape measurements as one `dom-state` log per session part end:
+  element count, average depth, and the document box, all measured at the part
+  end itself.
 
-  The view measurement (viewport size, images above the fold) describes what the
-  user sees first: at most one per page, timestamped at capture, taken only while
-  a session part is engaged. Its phase says where it was taken: the load event
-  (`load`), the first part start after a load nobody watched
-  (`session_part_start`), or attach to an already loaded page (`after_load`).
-
-  The `session_part_end` measurement (element count, average depth, document
-  box) goes out for every part that ends.
+  The fold measurement (images above the fold, the viewport they were judged
+  against, and its capture time as `images_above_fold.timestamp`) describes what
+  the user sees first: at most one per page, taken only while a session part is
+  engaged, at the load event, at the first part start after a load nobody
+  watched, or at attach to an already loaded page. It rides the first part-end
+  log sent after the capture.
 */
 export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoadHandler: () => void;
   // The page's one attempt, spent inside the first engaged part whatever it yields.
-  private _viewMeasured = false;
-  private _heldViewLog: {
+  private _foldMeasured = false;
+  private _pendingFoldMeasurement: {
     attributes: Attributes;
-    timestamp: number;
     sessionPartId: string;
   } | null = null;
 
@@ -58,7 +49,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     });
 
     this._onLoadHandler = (): void => {
-      this._captureViewLog('load');
+      this._captureFoldMeasurement();
     };
 
     if (this._config.enabled) {
@@ -66,7 +57,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       if (this._hasLoadEventFired()) {
         // Here rather than in onEnable so a re-enable takes no measurement of
         // its own.
-        this._captureViewLog('after_load');
+        this._captureFoldMeasurement();
       }
     }
   }
@@ -79,27 +70,22 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     this.setSessionPartListeners({
       start: () => {
         if (this._hasLoadEventFired()) {
-          // A page that loaded unwatched gets its first view here; a load still
-          // to come belongs to the armed listener. A part starting inside the
-          // load dispatch also lands here, in either listener order.
-          this._captureViewLog('session_part_start');
+          // A page that loaded unwatched gets its fold measured here; a load
+          // still to come belongs to the armed listener. A part starting inside
+          // the load dispatch also lands here, in either listener order.
+          this._captureFoldMeasurement();
         }
       },
       end: () => {
-        // Neither log's failure may cost the part the other one.
-        const heldViewLog = this._heldViewLog;
-        if (heldViewLog) {
-          // Cleared before the send so a throw cannot re-queue it.
-          this._heldViewLog = null;
-          try {
-            this._sendLog(heldViewLog.attributes, heldViewLog.timestamp);
-          } catch (e) {
-            this._diag.error('failed to flush the dom-state view log', e);
-          }
-        }
-
+        // The fold capture belongs to this part end alone: consumed up front,
+        // so a throw anywhere below cannot carry it into a later part's log.
+        const pendingFoldMeasurement = this._pendingFoldMeasurement;
+        this._pendingFoldMeasurement = null;
         try {
-          this._sendLog(this._buildSessionPartEndAttributes());
+          this._sendLog({
+            ...this._buildSessionPartEndAttributes(),
+            ...(pendingFoldMeasurement?.attributes ?? {}),
+          });
         } catch (e) {
           this._diag.error('failed to emit the dom-state part-end log', e);
         }
@@ -109,26 +95,27 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     window.removeEventListener('load', this._onLoadHandler);
-    this._heldViewLog = null;
+    this._pendingFoldMeasurement = null;
   }
 
   public override setUserSessionManager(
     userSessionManager: UserSessionManagerInternal,
   ): void {
     super.setUserSessionManager(userSessionManager);
-    // A snapshot captured through the global proxy can carry another
+    // A measurement captured through the global proxy can carry another
     // instance's part id; it must not survive the wiring of the real manager.
     if (
-      this._heldViewLog &&
-      this._heldViewLog.sessionPartId !== userSessionManager.getSessionPartId()
+      this._pendingFoldMeasurement &&
+      this._pendingFoldMeasurement.sessionPartId !==
+        userSessionManager.getSessionPartId()
     ) {
-      this._heldViewLog = null;
-      this._viewMeasured = false;
+      this._pendingFoldMeasurement = null;
+      this._foldMeasured = false;
     }
     // Per-instance wiring delivers the manager after construction, when the
     // capture attempt saw no engaged part. Try again.
     if (this._isEnabled && this._hasLoadEventFired()) {
-      this._captureViewLog('after_load');
+      this._captureFoldMeasurement();
     }
   }
 
@@ -144,9 +131,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     return navigation.loadEventStart > 0;
   }
 
-  private _captureViewLog(phase: DOMStateViewPhase): void {
+  private _captureFoldMeasurement(): void {
     try {
-      if (this._viewMeasured) {
+      if (this._foldMeasured) {
         return;
       }
 
@@ -155,37 +142,37 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         // Nobody is looking at the page; the part-start listener measures once
         // it is engaged.
         this._diag.debug(
-          'dom-state view measurement skipped: no engaged session part',
+          'dom-state fold measurement skipped: no engaged session part',
         );
         return;
       }
 
-      this._viewMeasured = true;
+      this._foldMeasured = true;
 
       const measurement = measureDocument();
       if (!measurement) {
         // A frame with no viewport has no view to describe.
         this._diag.debug(
-          'dom-state view measurement skipped: no viewport to measure',
+          'dom-state fold measurement skipped: no viewport to measure',
         );
         return;
       }
 
-      this._heldViewLog = {
+      this._pendingFoldMeasurement = {
         attributes: {
-          [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
-          [KEY_EMB_SESSION_PART_ID]: sessionPartId,
-          [ATTR_DOM_STATE_PHASE]: phase,
-          [ATTR_DOM_STATE_VIEWPORT_HEIGHT]: measurement.viewportHeight,
-          [ATTR_DOM_STATE_VIEWPORT_WIDTH]: measurement.viewportWidth,
-          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD]:
+          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT]:
             this._countImagesAboveFold(measurement),
+          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT]:
+            measurement.viewportHeight,
+          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH]:
+            measurement.viewportWidth,
+          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]:
+            this.perf.getNowMillis(),
         },
-        timestamp: this.perf.getNowMillis(),
         sessionPartId,
       };
     } catch (e) {
-      this._diag.error('failed to capture dom-state view measurement', e);
+      this._diag.error('failed to capture dom-state fold measurement', e);
     }
   }
 
@@ -200,7 +187,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
     return {
       [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
-      [ATTR_DOM_STATE_PHASE]: 'session_part_end',
       // Nothing to walk and nothing to measure both drop their keys rather than
       // report a zero, so the part still gets a log for whatever remains.
       ...(tree
@@ -248,12 +234,11 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     return count;
   }
 
-  private _sendLog(attributes: Attributes, timestamp?: number): void {
+  private _sendLog(attributes: Attributes): void {
     this.logger.emit({
       eventName: DOM_STATE_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,
-      timestamp,
     });
   }
 

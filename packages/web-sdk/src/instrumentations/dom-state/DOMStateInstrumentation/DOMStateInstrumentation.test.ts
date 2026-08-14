@@ -1,9 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import type {
-  InMemoryLogRecordExporter,
-  LogRecordProcessor,
-} from '@opentelemetry/sdk-logs';
+import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
   setupTestLogExporter,
@@ -144,9 +141,8 @@ describe('DOMStateInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
   };
 
-  // Nothing is emitted until a part ends: the view snapshot is held and flushed
-  // there, ahead of the part-end snapshot. So logs[0] is the view snapshot of the
-  // first part that ends, and logs[1] is that part's own snapshot.
+  // Nothing is emitted until a part ends: each part end sends one log, and the
+  // first one after the fold capture carries the images_above_fold keys.
   const endSessionPart = (): void => {
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
@@ -158,28 +154,9 @@ describe('DOMStateInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'dom-state');
 
-  // Fails the emission of view logs at the processor layer, upstream of the
-  // exporter, so a test can prove one log's failure does not take out another.
-  let failViewLogEmission = false;
-  const viewLogFailureProcessor: LogRecordProcessor = {
-    onEmit: (logRecord) => {
-      const phase = logRecord.attributes['dom_state.phase'];
-      if (
-        failViewLogEmission &&
-        (phase === 'load' ||
-          phase === 'after_load' ||
-          phase === 'session_part_start')
-      ) {
-        throw new Error('view log emission failed');
-      }
-    },
-    forceFlush: () => Promise.resolve(),
-    shutdown: () => Promise.resolve(),
-  };
-
   before(() => {
     setupTestTraceExporter();
-    memoryExporter = setupTestLogExporter([viewLogFailureProcessor]);
+    memoryExporter = setupTestLogExporter();
   });
 
   beforeEach(() => {
@@ -196,7 +173,6 @@ describe('DOMStateInstrumentation', () => {
     instrumentation = undefined;
     restorers = [];
     appendedImages = [];
-    failViewLogEmission = false;
   });
 
   afterEach(() => {
@@ -214,9 +190,9 @@ describe('DOMStateInstrumentation', () => {
     appendedImages = [];
   });
 
-  it('holds the view snapshot until the session part ends, phased after_load when the page had already loaded', () => {
+  it('emits nothing until the part ends, then one log carrying both measurements', () => {
     // @web/test-runner drives tests after the load event, so the navigation
-    // entry already reports it.
+    // entry already reports it and the fold capture happens at wiring time.
     expect(
       (
         performance.getEntriesByType(
@@ -230,36 +206,36 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
+    expect(logs).to.have.lengthOf(1);
     expect(logs[0].eventName).to.equal('dom-state');
     expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
     expect(logs[0].attributes).to.have.property('emb.type', 'emb.otel_log');
-    // Attaching after the load event says nothing about whether this is the
-    // user's first view, so it must not claim to be the load measurement.
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
+      'dom_state.images_above_fold.count',
     );
-    // The view snapshot is the only one carrying the images key.
-    expect(logs[0].attributes).to.have.property('dom_state.images_above_fold');
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
-    );
+    expect(logs[0].attributes).to.have.property('dom_state.element_count');
+    // One log shape needs no discriminator.
+    expect(logs[0].attributes).to.not.have.property('dom_state.phase');
   });
 
-  it('stamps the held load snapshot at capture time, not at the flush', async () => {
+  it('stamps the fold capture time as an attribute while the log itself is stamped at part end', async () => {
     createInstrumentation();
-    // Real elapsed time between capture and flush, so a snapshot stamped at
-    // either moment is tellable from one stamped at the other.
+    // Real elapsed time between capture and part end, so a stamp taken at
+    // either moment is tellable from one taken at the other.
     await new Promise((resolve) => setTimeout(resolve, 20));
-    const beforeFlush = performance.timeOrigin + performance.now();
+    const beforePartEnd = performance.timeOrigin + performance.now();
     endSessionPart();
 
     const logs = getDomStateLogs();
-    const loadMillis = hrTimeToMilliseconds(logs[0].hrTime);
-    expect(loadMillis).to.be.lessThan(beforeFlush);
-    expect(loadMillis).to.be.lessThan(hrTimeToMilliseconds(logs[1].hrTime));
+    const captureMillis = logs[0].attributes[
+      'dom_state.images_above_fold.timestamp'
+    ] as number;
+    expect(captureMillis).to.be.a('number');
+    expect(captureMillis).to.be.lessThan(beforePartEnd);
+    // The hrTime conversion truncates below the millisecond, so allow for it.
+    expect(hrTimeToMilliseconds(logs[0].hrTime)).to.be.at.least(
+      Math.floor(beforePartEnd),
+    );
   });
 
   it('reports document dimensions from the document root', () => {
@@ -272,23 +248,18 @@ describe('DOMStateInstrumentation', () => {
     createInstrumentation();
     endSessionPart();
 
-    // Document size belongs to the part-end measurement, not the view one.
     const logs = getDomStateLogs();
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.document_height',
       2400,
     );
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.document_width',
       1280,
     );
-    expect(logs[0].attributes).to.not.have.property(
-      'dom_state.document_height',
-    );
-    expect(logs[0].attributes).to.not.have.property('dom_state.document_width');
   });
 
-  it('reports the viewport size on the view measurement', () => {
+  it('reports the viewport size seen at the fold capture', () => {
     stubGeometry({
       documentHeight: 2400,
       documentWidth: 1280,
@@ -300,19 +271,13 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.viewport_height',
+      'dom_state.images_above_fold.viewport_height',
       800,
     );
     expect(logs[0].attributes).to.have.property(
-      'dom_state.viewport_width',
+      'dom_state.images_above_fold.viewport_width',
       600,
     );
-    // The viewport is context for the fold count, so it rides with it rather
-    // than repeating on every part end.
-    expect(logs[1].attributes).to.not.have.property(
-      'dom_state.viewport_height',
-    );
-    expect(logs[1].attributes).to.not.have.property('dom_state.viewport_width');
   });
 
   it('reports element count and average depth over the document root', () => {
@@ -321,17 +286,14 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.element_count',
       expected.count,
     );
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.average_depth',
       expected.averageDepth,
     );
-    // Tree shape belongs to the part-end measurement only.
-    expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
-    expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
   });
 
   it('keeps the document size when there is no scrolling element', () => {
@@ -346,22 +308,24 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.document_height',
       2400,
     );
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.document_width',
       1280,
     );
     // Neither the tree shape nor the fold depends on anything scrolling, so both
     // still report.
-    expect(logs[0].attributes).to.have.property('dom_state.images_above_fold');
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.images_above_fold.count',
+    );
+    expect(logs[0].attributes).to.have.property(
       'dom_state.element_count',
       expected.count,
     );
-    expect(logs[1].attributes).to.have.property(
+    expect(logs[0].attributes).to.have.property(
       'dom_state.average_depth',
       expected.averageDepth,
     );
@@ -391,7 +355,7 @@ describe('DOMStateInstrumentation', () => {
     // A zero-sized fallback viewport would have counted neither.
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
       1,
     );
   });
@@ -418,12 +382,12 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
       1,
     );
   });
 
-  it('omits the document size and skips the view measurement when nothing renders', () => {
+  it('omits the document size and the fold keys when nothing renders', () => {
     // A frame that renders nothing has no layout box on the scroll root and none
     // on the window either, so every box-derived key is unmeasurable. There is no
     // view to describe at all, while the tree shape still reports: the document
@@ -449,17 +413,19 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     // A zero-sized fold would have counted 0 of 1 images, which reads as a real
-    // measurement, so no view log goes out at all.
+    // measurement, so no fold key goes out at all.
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
-    );
     expect(logs[0].attributes).to.not.have.property(
       'dom_state.document_height',
     );
     expect(logs[0].attributes).to.not.have.property('dom_state.document_width');
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
+    );
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.timestamp',
+    );
     expect(logs[0].attributes).to.have.property(
       'dom_state.element_count',
       expected.count,
@@ -510,7 +476,7 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
       2,
     );
   });
@@ -556,7 +522,7 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
       2,
     );
   });
@@ -571,13 +537,11 @@ describe('DOMStateInstrumentation', () => {
     instrumentation?.enable();
     endSessionPart();
 
-    // Only the part's own snapshot: the load fired unheard, and re-enabling
-    // measured nothing on its own.
+    // The load fired unheard, and re-enabling measured nothing on its own.
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 
@@ -618,34 +582,32 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs[0].attributes).to.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
       2,
     );
   });
 
-  it('emits a part-end log without the images key on session part end', () => {
+  it('attaches the fold keys to the first part end only', () => {
     createInstrumentation();
+
+    endSessionPart();
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
     endSessionPart();
 
-    // logs[0] is the flushed view snapshot, the part's own snapshot follows it.
+    // The fold capture describes what was above the fold when measured, which a
+    // part ending later says nothing about.
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[1].eventName).to.equal('dom-state');
-    expect(logs[1].severityNumber).to.equal(SeverityNumber.INFO);
-    expect(logs[1].attributes).to.have.property('emb.type', 'emb.otel_log');
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.images_above_fold.count',
     );
-    expect(logs[1].attributes).to.have.property('dom_state.document_height');
-    expect(logs[1].attributes).to.have.property('dom_state.document_width');
-    expect(logs[1].attributes).to.have.property('dom_state.element_count');
-    expect(logs[1].attributes).to.have.property('dom_state.average_depth');
-    // The fold count belongs to the view snapshots: it describes what was above
-    // the fold when measured, which a part ending later says nothing about.
     expect(logs[1].attributes).to.not.have.property(
-      'dom_state.images_above_fold',
+      'dom_state.images_above_fold.count',
     );
+    expect(logs[1].attributes).to.not.have.property(
+      'dom_state.images_above_fold.timestamp',
+    );
+    expect(logs[1].attributes).to.have.property('dom_state.element_count');
   });
 
   it('still emits the part-end log when the document root is gone', () => {
@@ -659,37 +621,21 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
-    );
+    expect(logs).to.have.lengthOf(1);
     // Nothing to walk and nothing to measure, so no key is fabricated from zero.
-    expect(logs[1].attributes).to.not.have.property('dom_state.element_count');
-    expect(logs[1].attributes).to.not.have.property('dom_state.average_depth');
-    expect(logs[1].attributes).to.not.have.property(
+    expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
+    expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
+    expect(logs[0].attributes).to.not.have.property(
       'dom_state.document_height',
     );
-    expect(logs[1].attributes).to.not.have.property('dom_state.document_width');
-  });
-
-  it('emits the part-end measurement even when flushing the view measurement fails', () => {
-    createInstrumentation();
-    failViewLogEmission = true;
-
-    endSessionPart();
-
-    // The view log is lost to its own failure, and only it: the part still
-    // gets its own snapshot.
-    const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.not.have.property('dom_state.document_width');
+    // The fold was captured back when the root still existed.
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+      'dom_state.images_above_fold.count',
     );
   });
 
-  it('loses only the failing snapshot when a layout read throws at part end', () => {
+  it('spends the fold keys on the part end that fails, not the next one', () => {
     createInstrumentation();
     let scrollHeightThrows = true;
     stubProp(document.documentElement, 'scrollHeight', () => {
@@ -700,65 +646,43 @@ describe('DOMStateInstrumentation', () => {
     });
 
     endSessionPart();
-    // The view flush had already happened when the part-end measurement threw.
-    let logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
-    );
+    expect(getDomStateLogs()).to.have.lengthOf(0);
 
     // One bad layout read must not wedge the instrumentation for the rest of
-    // the page's life.
+    // the page's life, but the fold capture belonged to the part that failed
+    // and must not describe a later one.
     scrollHeightThrows = false;
     userSessionManager.startSessionPartInternal({ reason: 'web_activity' });
     endSessionPart();
 
-    logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
-    );
-  });
-
-  it('flushes the view snapshot once, not on every part end', () => {
-    createInstrumentation();
-
-    endSessionPart();
-    userSessionManager.startSessionPartInternal({ reason: 'init' });
-    endSessionPart();
-
     const logs = getDomStateLogs();
-    const viewSnapshots = logs.filter(
-      (l) => l.attributes['dom_state.phase'] === 'after_load',
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
-    expect(viewSnapshots).to.have.lengthOf(1);
-    expect(logs).to.have.lengthOf(3); // 1 view snapshot + 2 part ends
+    expect(logs[0].attributes).to.have.property('dom_state.element_count');
   });
 
   it('measures when it attaches while the load event is still dispatching', () => {
     // loadEventEnd stays 0 for the whole dispatch, and a load listener added
-    // during it never fires, so waiting on one would lose the view log for good.
-    // Reachable: initSDK called from a window load handler.
+    // during it never fires, so waiting on one would lose the fold capture for
+    // good. Reachable: initSDK called from a window load handler.
     stubNavigationEntry({ loadEventStart: 12, loadEventEnd: 0 });
     createInstrumentation();
 
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
+    expect(logs).to.have.lengthOf(1);
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
+      'dom_state.images_above_fold.count',
     );
-    expect(logs[0].attributes).to.have.property('dom_state.images_above_fold');
   });
 
   it('measures on readiness alone when the document has no navigation entry', () => {
     // WebKit reports no navigation entry for about:blank and srcdoc documents.
-    // Readiness is the only signal there, so the view log must not wait on a
-    // load event that has already gone by unrecorded.
+    // Readiness is the only signal there, so the fold capture must not wait on
+    // a load event that has already gone by unrecorded.
     stubNavigationEntry(null);
     expect(document.readyState).to.equal('complete');
     createInstrumentation();
@@ -766,46 +690,53 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
+    expect(logs).to.have.lengthOf(1);
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
+      'dom_state.images_above_fold.count',
     );
   });
 
-  it('captures the load snapshot via the load event when the load event has not fired', () => {
+  it('captures at the load event when the load event has not fired at attach time', () => {
     // Readiness already reads 'complete' here, ahead of the event, so an
     // instrumentation attaching inside that pre-dispatch gap must still wait
-    // for the event rather than call the page loaded and phase itself
-    // after_load.
+    // for the event rather than call the page loaded and measure immediately.
     expect(document.readyState).to.equal('complete');
+    const geometry = stubGeometry({
+      documentHeight: 2400,
+      documentWidth: 1280,
+      viewportHeight: 800,
+      viewportWidth: 600,
+    });
     stubPendingLoadEvent();
     createInstrumentation();
 
+    // Only a viewport read at the load dispatch can see this value.
+    geometry.viewportHeight = 900;
     window.dispatchEvent(new Event('load'));
-    expect(getDomStateLogs()).to.have.lengthOf(0); // held until the part ends
+    expect(getDomStateLogs()).to.have.lengthOf(0); // pending until the part ends
 
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.have.property('dom_state.phase', 'load');
-    expect(logs[0].attributes).to.have.property('dom_state.images_above_fold');
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.images_above_fold.viewport_height',
+      900,
+    );
   });
 
-  it('flushes the load snapshot at the next part end when a part ends before load', () => {
+  it('carries the fold keys on the next part end when a part ends before load', () => {
     // A part can end before the document finishes loading: the tab goes hidden,
     // or the load never happened inside an engaged part at all (background tab).
     stubPendingLoadEvent();
     createInstrumentation();
 
     endSessionPart();
-    // Only the ending part's own snapshot: there is no load capture to flush yet.
+    // Only the ending part's own measurement: there is no fold capture yet.
     let logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
 
     // A part end does not detach the load listener, so the capture still happens.
@@ -814,20 +745,16 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(3);
-    expect(logs[1].attributes).to.have.property('dom_state.phase', 'load');
-    expect(logs[1].attributes).to.have.property('dom_state.images_above_fold');
-    expect(logs[2].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[1].attributes).to.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 
-  it('defers the view measurement to the part start when the page loads without an engaged part', () => {
+  it('defers the fold capture to the part start when the page loads without an engaged part', () => {
     // The background-tab case: no session part is active, so nobody is looking
     // at the page and there is no view worth measuring yet. The first part
-    // start is when the user first sees the page, so the view is measured
-    // there and the phase says so.
+    // start is when the user first sees the page, so the fold is measured there.
     const geometry = stubGeometry({
       documentHeight: 2400,
       documentWidth: 1280,
@@ -841,21 +768,14 @@ describe('DOMStateInstrumentation', () => {
     userSessionManager.startSessionPartInternal({ reason: 'foreground' });
     endSessionPart();
 
+    // One log: the first part ended before the instrumentation attached.
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_start',
-    );
+    expect(logs).to.have.lengthOf(1);
     // The part-start viewport, proving nothing was measured while the page
     // sat unengaged.
     expect(logs[0].attributes).to.have.property(
-      'dom_state.viewport_height',
+      'dom_state.images_above_fold.viewport_height',
       900,
-    );
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
     );
   });
 
@@ -864,27 +784,34 @@ describe('DOMStateInstrumentation', () => {
     // starting in that pre-dispatch gap is not the deferred first view of a
     // load nobody watched: the load is still to come, and it comes inside
     // this part.
+    const geometry = stubGeometry({
+      documentHeight: 2400,
+      documentWidth: 1280,
+      viewportHeight: 800,
+      viewportWidth: 600,
+    });
     stubPendingLoadEvent();
     endSessionPart();
     createInstrumentation();
 
     userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+    // Only a viewport read at the load dispatch, not the part start, sees this.
+    geometry.viewportHeight = 900;
     window.dispatchEvent(new Event('load'));
     endSessionPart();
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.have.property('dom_state.phase', 'load');
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.images_above_fold.viewport_height',
+      900,
     );
   });
 
-  it('never flushes a measurement held before a disable into a part that started while disabled', () => {
-    // The listeners keeping the held measurement and the part lifecycle
-    // aligned are detached while disabled, so a measurement held across a
-    // disable could flush into a part that started after it was taken.
+  it('never carries a capture pending before a disable into a part that started while disabled', () => {
+    // The listeners keeping the pending capture and the part lifecycle aligned are
+    // detached while disabled, so a capture pending across a disable could ride a
+    // part that started after it was taken.
     createInstrumentation();
     instrumentation?.disable();
     endSessionPart();
@@ -895,9 +822,8 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 
@@ -914,7 +840,6 @@ describe('DOMStateInstrumentation', () => {
     stubProp(window, 'innerWidth', () => 0);
     createInstrumentation();
     endSessionPart();
-    // Only the part's own snapshot: there was no view to measure.
     expect(getDomStateLogs()).to.have.lengthOf(1);
 
     geometry.documentHeight = 2400;
@@ -926,17 +851,15 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[1].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 
-  it('emits nothing while disabled, even with a view snapshot held', () => {
+  it('emits nothing while disabled, even with a fold capture pending', () => {
     createInstrumentation();
     instrumentation?.disable();
 
@@ -945,8 +868,8 @@ describe('DOMStateInstrumentation', () => {
     expect(getDomStateLogs()).to.have.lengthOf(0);
   });
 
-  it('drops a held measurement on disable for good', () => {
-    // Nothing tracks the part lifecycle while disabled, so a held measurement
+  it('drops a pending capture on disable for good', () => {
+    // Nothing tracks the part lifecycle while disabled, so a pending capture
     // cannot be trusted to still belong to the active part by re-enable time.
     // The measurement attempt is spent, so nothing re-measures either.
     createInstrumentation();
@@ -957,20 +880,17 @@ describe('DOMStateInstrumentation', () => {
     userSessionManager.startSessionPartInternal({ reason: 'web_activity' });
     endSessionPart();
 
-    // Only the parts' own snapshots, on both sides of the next part start.
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[1].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 
-  it('takes one view measurement per page, not one per enable', () => {
+  it('takes one fold measurement per page, not one per enable', () => {
     createInstrumentation();
     endSessionPart();
 
@@ -979,10 +899,10 @@ describe('DOMStateInstrumentation', () => {
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     endSessionPart();
 
-    const viewSnapshots = getDomStateLogs().filter(
-      (l) => l.attributes['dom_state.phase'] === 'after_load',
+    const foldLogs = getDomStateLogs().filter(
+      (l) => 'dom_state.images_above_fold.count' in l.attributes,
     );
-    expect(viewSnapshots).to.have.lengthOf(1);
+    expect(foldLogs).to.have.lengthOf(1);
   });
 
   it('contains a throw from the injected diag logger instead of escaping the constructor', () => {
@@ -1007,9 +927,15 @@ describe('DOMStateInstrumentation', () => {
     expect(capturedErrors).to.equal(1);
   });
 
-  it('drops a snapshot captured under a replaced manager and re-measures under the new one', () => {
-    // The snapshot's part id and its manager must agree; a swap re-measures so
-    // the record describes the part that will flush it.
+  it('drops a capture taken under a replaced manager and re-measures under the new one', () => {
+    // The capture's part id and its manager must agree; a swap re-measures so
+    // the record describes a part of the manager that will flush it.
+    const geometry = stubGeometry({
+      documentHeight: 2400,
+      documentWidth: 1280,
+      viewportHeight: 800,
+      viewportWidth: 600,
+    });
     createInstrumentation();
 
     const otherManager = new EmbraceUserSessionManager({
@@ -1020,7 +946,8 @@ describe('DOMStateInstrumentation', () => {
       visibilityDoc: window.document,
     });
     otherManager.startSessionPartInternal({ reason: 'init' });
-    const otherPartId = otherManager.getSessionPartId();
+    // Only the post-swap re-measure can see this value.
+    geometry.viewportHeight = 900;
     instrumentation?.setUserSessionManager(otherManager);
 
     otherManager.endSessionPartInternal({
@@ -1028,28 +955,25 @@ describe('DOMStateInstrumentation', () => {
     });
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
+    expect(logs).to.have.lengthOf(1);
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
-    );
-    expect(logs[0].attributes).to.have.property(
-      'emb.session_part_id',
-      otherPartId,
-    );
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+      'dom_state.images_above_fold.viewport_height',
+      900,
     );
   });
 
   it('re-measures under its own manager when the construction-time capture came from another instance', () => {
     // The base class defaults to the global proxy, so a globally registered
     // SDK feeds the constructor capture another instance's part id. The wiring
-    // of the real manager must not let that snapshot reach the wire.
+    // of the real manager must not let that capture reach the wire.
+    const geometry = stubGeometry({
+      documentHeight: 2400,
+      documentWidth: 1280,
+      viewportHeight: 800,
+      viewportWidth: 600,
+    });
     session.setGlobalUserSessionManager(userSessionManager);
-    const foreignPartId = userSessionManager.getSessionPartId();
-    void expect(foreignPartId).not.to.be.null;
+    void expect(userSessionManager.getSessionPartId()).not.to.be.null;
     instrumentation = new DOMStateInstrumentation();
 
     const ownManager = new EmbraceUserSessionManager({
@@ -1060,24 +984,17 @@ describe('DOMStateInstrumentation', () => {
       visibilityDoc: window.document,
     });
     ownManager.startSessionPartInternal({ reason: 'init' });
-    const ownPartId = ownManager.getSessionPartId();
+    // Only the re-measure under the real manager can see this value.
+    geometry.viewportHeight = 900;
     instrumentation.setUserSessionManager(ownManager);
 
     ownManager.endSessionPartInternal({ reason: 'web_foreground_inactivity' });
 
     const logs = getDomStateLogs();
-    expect(logs).to.have.lengthOf(2);
+    expect(logs).to.have.lengthOf(1);
     expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'after_load',
-    );
-    expect(logs[0].attributes).to.have.property(
-      'emb.session_part_id',
-      ownPartId,
-    );
-    expect(logs[1].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+      'dom_state.images_above_fold.viewport_height',
+      900,
     );
   });
 
@@ -1101,9 +1018,9 @@ describe('DOMStateInstrumentation', () => {
 
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.have.property(
-      'dom_state.phase',
-      'session_part_end',
+    expect(logs[0].attributes).to.have.property('dom_state.element_count');
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.count',
     );
   });
 });
