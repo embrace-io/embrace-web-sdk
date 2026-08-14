@@ -73,7 +73,7 @@ describe('EmptyInstrumentation', () => {
 
     let finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    let sessionSpan = finishedSpans[0];
+    let sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
     memoryExporter.reset();
 
@@ -87,10 +87,10 @@ describe('EmptyInstrumentation', () => {
     });
     finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    sessionSpan = finishedSpans[0];
+    sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
 
-    const event = sessionSpan.events[0];
+    const event = sessionSpan.events[0]!;
     expect(event.name).to.be.equal('empty-root-node');
     expect(event.attributes).to.deep.equal({
       'emb.type': 'ux.empty_root_node',
@@ -124,7 +124,7 @@ describe('EmptyInstrumentation', () => {
     });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 
@@ -158,7 +158,7 @@ describe('EmptyInstrumentation', () => {
     });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 
@@ -188,7 +188,7 @@ describe('EmptyInstrumentation', () => {
     });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 
@@ -215,7 +215,7 @@ describe('EmptyInstrumentation', () => {
     });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 });

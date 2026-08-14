@@ -41,7 +41,7 @@ describe('EmbraceW3CTraceContextPropagator', () => {
     span.end();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const injectedSpan = finishedSpans[0];
+    const injectedSpan = finishedSpans[0]!;
     expect(injectedSpan.attributes).to.deep.equal({
       'emb.w3c_traceparent': expectedTraceparent,
     });

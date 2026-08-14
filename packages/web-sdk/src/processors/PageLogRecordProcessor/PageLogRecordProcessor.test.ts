@@ -47,7 +47,7 @@ describe('PageLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal(
       pageManager.getCurrentPageId(),
@@ -65,7 +65,7 @@ describe('PageLogRecordProcessor', () => {
     });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
-    const log = finishedLogs[finishedLogs.length - 1];
+    const log = finishedLogs[finishedLogs.length - 1]!;
 
     expect(log.attributes[KEY_APP_SURFACE_LABEL]).to.equal('CustomLabel');
   });
@@ -83,7 +83,7 @@ describe('PageLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal('custom-page-id');
     expect(log.attributes[KEY_EMB_PAGE_PATH]).to.equal('/custom/path');
@@ -101,7 +101,7 @@ describe('PageLogRecordProcessor', () => {
     });
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
-    const log = finishedLogs[finishedLogs.length - 1];
+    const log = finishedLogs[finishedLogs.length - 1]!;
 
     expect(log.attributes[KEY_APP_SURFACE_LABEL]).to.equal('ExistingLabel');
   });
@@ -115,7 +115,7 @@ describe('PageLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     void expect(log.attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
     void expect(log.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;

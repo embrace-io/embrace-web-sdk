@@ -407,7 +407,7 @@ describe('NamespacedStorage', () => {
       storage.setItem('k', value);
 
       expect(errorCalls).to.have.lengthOf(1);
-      const flat = errorCalls[0].map(String).join(' ');
+      const flat = errorCalls[0]!.map(String).join(' ');
       expect(flat).to.contain('QuotaExceededError');
       expect(flat).to.not.contain(value);
     });

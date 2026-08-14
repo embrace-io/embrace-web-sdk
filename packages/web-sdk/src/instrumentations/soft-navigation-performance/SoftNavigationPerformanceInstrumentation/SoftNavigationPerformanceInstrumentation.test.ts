@@ -204,7 +204,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
-    const span = spans[0];
+    const span = spans[0]!;
     expect(span.name).to.equal('Soft Navigation');
     expect(span.attributes['browser.url.full']).to.equal(
       'https://example.com/next-page',
@@ -232,7 +232,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.startTime).to.not.deep.equal(span.endTime);
 
     instrumentation.disable();
@@ -266,7 +266,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([
       'child-span',
     ]);
@@ -299,7 +299,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal([
       '',
     ]);
@@ -317,7 +317,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([]);
     expect(span.attributes['emb.soft_navigation.span_id_types']).to.deep.equal(
       [],
@@ -338,7 +338,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes).not.to.have.property(
       'emb.soft_navigation.span_ids',
     );
@@ -363,7 +363,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       makeEntry({ paintTime: undefined, presentationTime: undefined }),
     ]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes).not.to.have.property(
       'emb.soft_navigation.paint_time',
     );
@@ -382,7 +382,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     triggerEntries([makeEntry({ paintTime: null, presentationTime: null })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes).not.to.have.property(
       'emb.soft_navigation.paint_time',
     );
@@ -610,7 +610,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
-    const span = spans[0];
+    const span = spans[0]!;
     expect(span.name).to.equal('Soft Navigation');
     expect(span.attributes['browser.url.full']).to.equal(
       'https://example.com/new-page',
@@ -659,7 +659,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
     triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.soft_navigation.span_ids']).to.deep.equal([
       'child-span',
     ]);
@@ -691,7 +691,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
     triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.startTime).to.not.deep.equal(span.endTime);
 
     instrumentation.disable();
@@ -800,7 +800,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       makeClickEntry({ startTime: 100, duration: 200, interactionId: 0 }),
     ]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes).not.to.have.property(
       'emb.soft_navigation.interaction_id',
     );
@@ -925,7 +925,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
-    expect(spans[0].attributes['browser.url.full']).to.equal(
+    expect(spans[0]!.attributes['browser.url.full']).to.equal(
       'https://example.com/first',
     );
 

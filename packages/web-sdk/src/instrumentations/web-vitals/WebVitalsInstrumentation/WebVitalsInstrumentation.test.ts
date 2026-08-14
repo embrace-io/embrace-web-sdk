@@ -107,7 +107,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
@@ -153,7 +153,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
@@ -201,7 +201,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: { largestShiftTime: 2000 },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
     expect(record.hrTime).to.deep.equal([1, 0]);
   });
 
@@ -234,7 +234,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
     expect(record.hrTime).to.deep.equal([3, 0]);
   });
 
@@ -268,7 +268,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
@@ -320,7 +320,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
@@ -382,7 +382,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const attrs = records[0].attributes;
+    const attrs = records[0]!.attributes;
     expect(attrs['emb.web_vital.attribution.elementType']).to.equal('img');
     expect(attrs['emb.web_vital.attribution.elementBoundingRect']).to.equal(
       JSON.stringify({ x: -12, y: 101, width: 300, height: 151 }),
@@ -419,7 +419,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    expect(records[0].attributes).to.not.have.any.keys([
+    expect(records[0]!.attributes).to.not.have.any.keys([
       'emb.web_vital.attribution.elementType',
       'emb.web_vital.attribution.elementBoundingRect',
     ]);
@@ -463,7 +463,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    expect(records[0].attributes).to.not.have.any.keys([
+    expect(records[0]!.attributes).to.not.have.any.keys([
       'emb.web_vital.attribution.elementType',
       'emb.web_vital.attribution.elementBoundingRect',
     ]);
@@ -510,7 +510,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
@@ -610,7 +610,7 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       const loafScripts = JSON.parse(
-        records[0].attributes[
+        records[0]!.attributes[
           'emb.web_vital.attribution.loaf_scripts'
         ] as string,
       ) as Record<string, unknown>;
@@ -660,7 +660,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       const loafScripts = JSON.parse(
-        records[0].attributes[
+        records[0]!.attributes[
           'emb.web_vital.attribution.loaf_scripts'
         ] as string,
       ) as Record<string, unknown>;
@@ -685,8 +685,8 @@ describe('WebVitalsInstrumentation', () => {
       fireINP(metricReportFunc, []);
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records[0].attributes['emb.web_vital.attribution.loaf_scripts']).to
-        .be.undefined;
+      expect(records[0]!.attributes['emb.web_vital.attribution.loaf_scripts'])
+        .to.be.undefined;
     });
   });
 
@@ -736,7 +736,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(
-        records[0].attributes['emb.web_vital.attribution.element_type'],
+        records[0]!.attributes['emb.web_vital.attribution.element_type'],
       ).to.equal('button');
     });
 
@@ -757,7 +757,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(
-        records[0].attributes['emb.web_vital.attribution.element_type'],
+        records[0]!.attributes['emb.web_vital.attribution.element_type'],
       ).to.equal('a');
     });
 
@@ -776,8 +776,8 @@ describe('WebVitalsInstrumentation', () => {
       ]);
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
-        .be.undefined;
+      expect(records[0]!.attributes['emb.web_vital.attribution.element_type'])
+        .to.be.undefined;
     });
 
     it('should log an error and omit element_type when computing it throws', () => {
@@ -796,8 +796,8 @@ describe('WebVitalsInstrumentation', () => {
       );
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
-        .be.undefined;
+      expect(records[0]!.attributes['emb.web_vital.attribution.element_type'])
+        .to.be.undefined;
       expect(diag.getErrorLogs()).to.include(
         'error building INP element type attribution',
       );
@@ -852,7 +852,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.equal({
@@ -916,7 +916,7 @@ describe('WebVitalsInstrumentation', () => {
     emitFunc(metric);
 
     const records = memoryExporter.getFinishedLogRecords();
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.attributes).to.deep.include({
       'browser.web_vital.delta': 33,
@@ -984,7 +984,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // TLS: tcpConnection = secureConnectionStart - connectStart = 40 - 20 = 20
     //      tlsNegotiation = connectEnd - secureConnectionStart = 50 - 40 = 10
@@ -1050,7 +1050,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // finalResponseHeadersStart (70) > responseStart (50), so serverResponse = 70 - 10 = 60
     // other = max(0, 80 - 0 - 0 - 0 - 0 - 0 - 60) = 20
@@ -1110,7 +1110,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // finalResponseHeadersStart (30) < responseStart (50), falls back to responseStart
     // serverResponse = responseStart - requestStart = 50 - 10 = 40
@@ -1167,7 +1167,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // redirect: 25 - 5 = 20, dns: 10, tcp: 10 (no TLS), server: 30, other: 30
     expect(record.attributes).to.deep.include({
@@ -1227,7 +1227,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // total: round(7.3 - 5.123) = round(2.177) = 2
     // dns: round(5.6 - 5.2) = round(0.4) = 0
@@ -1291,7 +1291,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     expect(record.attributes).to.deep.include({
       'emb.web_vital.attribution.redirect': 0,
@@ -1350,7 +1350,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     expect(record.attributes).to.deep.include({
       'emb.web_vital.attribution.redirect': 0,
@@ -1409,14 +1409,14 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const attrs = memoryExporter.getFinishedLogRecords()[0]
+    const attrs = memoryExporter.getFinishedLogRecords()[0]!
       .attributes as Record<string, number>;
-    const redirect = attrs['emb.web_vital.attribution.redirect'];
-    const domainLookup = attrs['emb.web_vital.attribution.domainLookup'];
-    const tcpConnection = attrs['emb.web_vital.attribution.tcpConnection'];
-    const tlsNegotiation = attrs['emb.web_vital.attribution.tlsNegotiation'];
-    const serverResponse = attrs['emb.web_vital.attribution.serverResponse'];
-    const unattributed = attrs['emb.web_vital.attribution.unattributed'];
+    const redirect = attrs['emb.web_vital.attribution.redirect']!;
+    const domainLookup = attrs['emb.web_vital.attribution.domainLookup']!;
+    const tcpConnection = attrs['emb.web_vital.attribution.tcpConnection']!;
+    const tlsNegotiation = attrs['emb.web_vital.attribution.tlsNegotiation']!;
+    const serverResponse = attrs['emb.web_vital.attribution.serverResponse']!;
+    const unattributed = attrs['emb.web_vital.attribution.unattributed']!;
 
     // total: round(8.7 - 0.2) = round(8.5) = 9
     // dns: 1, tcp: 1, tls: 2, server: 3, unattributed: 2
@@ -1437,7 +1437,7 @@ describe('WebVitalsInstrumentation', () => {
     expect(sum).to.equal(Math.round(8.7 - 0.2));
 
     const body = JSON.parse(
-      memoryExporter.getFinishedLogRecords()[0].body as string,
+      memoryExporter.getFinishedLogRecords()[0]!.body as string,
     ) as Record<string, unknown>;
     expect(body['waitingDuration']).to.equal(0);
     expect(body['cacheDuration']).to.equal(0);
@@ -1487,7 +1487,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
 
     // dns: 10, tcp: 10, server: 20, other: 80 - 10 - 0 - 10 - 10 - 0 - 20 = 30
     expect(record.attributes).to.deep.include({
@@ -1633,7 +1633,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    expect(records[0].attributes['browser.web_vital.id']).to.equal('m1');
+    expect(records[0]!.attributes['browser.web_vital.id']).to.equal('m1');
   });
 
   it('should resume emission when enable() is called after disable()', () => {
@@ -1710,7 +1710,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.include({
@@ -1759,7 +1759,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.attributes).to.deep.include({
       'browser.web_vital.delta': 0,
@@ -1829,7 +1829,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const attrs = records[0].attributes;
+    const attrs = records[0]!.attributes;
     expect(attrs).to.not.have.property(
       'emb.web_vital.attribution.clsLayoutShiftsDroppedCount',
     );
@@ -1884,7 +1884,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: {},
     } as unknown as MetricWithAttribution);
 
-    const attrs = memoryExporter.getFinishedLogRecords()[0].attributes;
+    const attrs = memoryExporter.getFinishedLogRecords()[0]!.attributes;
     const shifts = JSON.parse(
       attrs['emb.web_vital.attribution.clsLayoutShifts'] as string,
     ) as unknown[];
@@ -1920,7 +1920,7 @@ describe('WebVitalsInstrumentation', () => {
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
     const shifts = JSON.parse(
-      records[0].attributes[
+      records[0]!.attributes[
         'emb.web_vital.attribution.clsLayoutShifts'
       ] as string,
     ) as Array<{ selector: string; startRect: unknown; endRect: unknown }>;
@@ -1978,7 +1978,7 @@ describe('WebVitalsInstrumentation', () => {
     } as unknown as MetricWithAttribution);
 
     const shifts = JSON.parse(
-      memoryExporter.getFinishedLogRecords()[0].attributes[
+      memoryExporter.getFinishedLogRecords()[0]!.attributes[
         'emb.web_vital.attribution.clsLayoutShifts'
       ] as string,
     ) as unknown[];
@@ -2018,7 +2018,7 @@ describe('WebVitalsInstrumentation', () => {
       },
     } as MetricWithAttribution);
 
-    const attrs = memoryExporter.getFinishedLogRecords()[0].attributes;
+    const attrs = memoryExporter.getFinishedLogRecords()[0]!.attributes;
     expect(attrs).to.not.have.property(
       'emb.web_vital.attribution.clsLayoutShifts',
     );
@@ -2062,7 +2062,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.include({
@@ -2117,7 +2117,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.include({
@@ -2180,7 +2180,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.include({
@@ -2257,7 +2257,7 @@ describe('WebVitalsInstrumentation', () => {
 
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.eventName).to.equal('browser.web_vital');
     expect(record.attributes).to.deep.include({
@@ -2393,7 +2393,7 @@ describe('WebVitalsInstrumentation', () => {
     } as unknown as MetricWithAttribution);
 
     const records = memoryExporter.getFinishedLogRecords();
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
@@ -2439,7 +2439,7 @@ describe('WebVitalsInstrumentation', () => {
     } as unknown as MetricWithAttribution);
 
     const records = memoryExporter.getFinishedLogRecords();
-    const body = JSON.parse(records[0].body as string) as Record<
+    const body = JSON.parse(records[0]!.body as string) as Record<
       string,
       unknown
     >;
@@ -2472,7 +2472,7 @@ describe('WebVitalsInstrumentation', () => {
     } as unknown as MetricWithAttribution);
 
     const records = memoryExporter.getFinishedLogRecords();
-    const record = records[0];
+    const record = records[0]!;
 
     expect(record.attributes).to.deep.equal({
       [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
@@ -2515,7 +2515,7 @@ describe('WebVitalsInstrumentation', () => {
     } as unknown as MetricWithAttribution);
 
     const records = memoryExporter.getFinishedLogRecords();
-    const body = JSON.parse(records[0].body as string) as Record<
+    const body = JSON.parse(records[0]!.body as string) as Record<
       string,
       unknown
     >;
@@ -2546,7 +2546,7 @@ describe('WebVitalsInstrumentation', () => {
       attribution: { largestShiftValue: 1.5 },
     } as MetricWithAttribution);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
     expect(record.body).to.be.undefined;
   });
 
@@ -2615,11 +2615,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
-      const inpBody = JSON.parse(records[0].body as string) as Record<
+      const inpBody = JSON.parse(records[0]!.body as string) as Record<
         string,
         unknown
       >;
@@ -2676,11 +2676,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
-      const lcpBody = JSON.parse(records[0].body as string) as Record<
+      const lcpBody = JSON.parse(records[0]!.body as string) as Record<
         string,
         unknown
       >;
@@ -2732,11 +2732,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
-      const clsBody = JSON.parse(records[0].body as string) as Record<
+      const clsBody = JSON.parse(records[0]!.body as string) as Record<
         string,
         unknown
       >;
@@ -2787,11 +2787,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
-      const fcpBody = JSON.parse(records[0].body as string) as Record<
+      const fcpBody = JSON.parse(records[0]!.body as string) as Record<
         string,
         unknown
       >;
@@ -2859,11 +2859,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
-      const ttfbBody = JSON.parse(records[0].body as string) as Record<
+      const ttfbBody = JSON.parse(records[0]!.body as string) as Record<
         string,
         unknown
       >;
@@ -2911,7 +2911,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/test/:id',
         [KEY_EMB_PAGE_ID]: pageManager.getCurrentPageId(),
       });
@@ -2952,7 +2952,7 @@ describe('WebVitalsInstrumentation', () => {
       emitFunc(metric);
 
       const records = memoryExporter.getFinishedLogRecords();
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_APP_SURFACE_LABEL]: 'MyLabel',
       });
     });
@@ -2991,7 +2991,8 @@ describe('WebVitalsInstrumentation', () => {
       emitFunc(metric);
 
       const records = memoryExporter.getFinishedLogRecords();
-      void expect(records[0].attributes[KEY_APP_SURFACE_LABEL]).to.be.undefined;
+      void expect(records[0]!.attributes[KEY_APP_SURFACE_LABEL]).to.be
+        .undefined;
     });
 
     it('should not attach page attributes when route is not set', () => {
@@ -3040,8 +3041,8 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      void expect(records[0].attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
-      void expect(records[0].attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
+      void expect(records[0]!.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
+      void expect(records[0]!.attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
     });
   });
 
@@ -3076,7 +3077,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      expect(records[0]!.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
     });
@@ -3117,7 +3118,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      expect(records[0]!.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
     });
@@ -3163,11 +3164,11 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[KEY_EMB_PAGE_PATH]).to.equal(
+      expect(records[0]!.attributes[KEY_EMB_PAGE_PATH]).to.equal(
         '/products/:id',
       );
-      expect(records[0].attributes[KEY_EMB_PAGE_ID]).to.equal('page-id-123');
-      expect(records[0].attributes[KEY_APP_SURFACE_LABEL]).to.equal(
+      expect(records[0]!.attributes[KEY_EMB_PAGE_ID]).to.equal('page-id-123');
+      expect(records[0]!.attributes[KEY_APP_SURFACE_LABEL]).to.equal(
         'Product Page',
       );
     });
@@ -3198,7 +3199,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
+      expect(records[0]!.attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
     });
 
     it('should not include page attributes when no reportAllChanges callback has fired', () => {
@@ -3227,7 +3228,7 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       // No _attributedPage set yet → no page attrs
-      expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
+      expect(records[0]!.attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
     });
   });
 
@@ -3296,7 +3297,7 @@ describe('WebVitalsInstrumentation', () => {
     const records = memoryExporter.getFinishedLogRecords();
     expect(records).to.have.lengthOf(1);
     // attributed page was never captured (guard returned early) → no URL attr
-    expect(records[0].attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
+    expect(records[0]!.attributes[KEY_BROWSER_URL_FULL]).to.be.undefined;
   });
 
   describe('applyCustomLogRecordData hook', () => {
@@ -3330,7 +3331,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes['custom.attr']).to.equal('custom-value');
+      expect(records[0]!.attributes['custom.attr']).to.equal('custom-value');
     });
 
     it('should log an error when the hook throws', () => {
@@ -3493,7 +3494,7 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
       expect(
-        records[0].attributes['browser.web_vital.navigation_type'],
+        records[0]!.attributes['browser.web_vital.navigation_type'],
       ).to.equal('soft-navigation');
     });
 
@@ -3531,7 +3532,7 @@ describe('WebVitalsInstrumentation', () => {
         },
       } as MetricWithAttribution);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes['browser.web_vital.navigation_id']).to.equal(7);
       expect(record.attributes['browser.web_vital.interaction_id']).to.equal(
         42,
@@ -3565,7 +3566,7 @@ describe('WebVitalsInstrumentation', () => {
         },
       } as MetricWithAttribution);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes['browser.web_vital.navigation_id']).to.equal(1);
       void expect(record.attributes['browser.web_vital.interaction_id']).to.be
         .undefined;
@@ -3604,7 +3605,7 @@ describe('WebVitalsInstrumentation', () => {
       pageTrackFunc(metric);
       emitFunc(metric);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-b',
       );
@@ -3647,7 +3648,7 @@ describe('WebVitalsInstrumentation', () => {
       pageTrackFunc(metric);
       emitFunc(metric);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-b',
       );
@@ -3686,7 +3687,7 @@ describe('WebVitalsInstrumentation', () => {
       pageTrackFunc(metric);
       emitFunc(metric);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
@@ -3724,7 +3725,7 @@ describe('WebVitalsInstrumentation', () => {
       pageTrackFunc(metric);
       emitFunc(metric);
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
+      const record = memoryExporter.getFinishedLogRecords()[0]!;
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
@@ -3781,7 +3782,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes).to.deep.include({
+      expect(records[0]!.attributes).to.deep.include({
         [KEY_EMB_PAGE_PATH]: '/second/:id',
         [KEY_EMB_PAGE_ID]: attributedPageID,
       });
@@ -3843,7 +3844,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes['emb.session_part_id']).to.equal(partAId);
+      expect(records[0]!.attributes['emb.session_part_id']).to.equal(partAId);
     });
 
     it('should stamp the new part id for a metric whose event happened after the rollover', () => {
@@ -3880,8 +3881,8 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes['emb.session_part_id']).to.equal(partBId);
-      expect(records[0].attributes['emb.session_part_id']).to.not.equal(
+      expect(records[0]!.attributes['emb.session_part_id']).to.equal(partBId);
+      expect(records[0]!.attributes['emb.session_part_id']).to.not.equal(
         partAId,
       );
     });
@@ -3914,7 +3915,7 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      expect(records[0].attributes['emb.session_part_id']).to.equal(partId);
+      expect(records[0]!.attributes['emb.session_part_id']).to.equal(partId);
     });
   });
 });

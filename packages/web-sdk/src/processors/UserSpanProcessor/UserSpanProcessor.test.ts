@@ -40,7 +40,7 @@ describe('UserSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
     expect(readableSpan.attributes).to.have.property('user.id', 'test-user-id');
   });
 });

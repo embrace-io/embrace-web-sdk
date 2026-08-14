@@ -185,7 +185,7 @@ const ensureNetworkEventsExists = (
     PTN.RESPONSE_END,
   ].filter((n) => n);
   for (let i = 0; i < events.length; i++) {
-    assert.strictEqual(events[i].name, expectedEventNames[i]);
+    assert.strictEqual(events[i]!.name, expectedEventNames[i]);
   }
 };
 
@@ -400,8 +400,8 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
 
       setTimeout(() => {
-        const rootSpan = exporter.getFinishedSpans()[0];
-        const fetchSpan = exporter.getFinishedSpans()[1];
+        const rootSpan = exporter.getFinishedSpans()[0]!;
+        const fetchSpan = exporter.getFinishedSpans()[1]!;
         const rsEvents = rootSpan.events;
         const fsEvents = fetchSpan.events;
 
@@ -412,24 +412,24 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
-        assert.strictEqual(fsEvents[9].name, EventNames.FIRST_PAINT);
+        assert.strictEqual(fsEvents[9]!.name, EventNames.FIRST_PAINT);
         assert.strictEqual(
-          fsEvents[10].name,
+          fsEvents[10]!.name,
           EventNames.FIRST_CONTENTFUL_PAINT,
         );
 
-        assert.strictEqual(fsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(fsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(fsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(fsEvents[3].name, PTN.DOM_INTERACTIVE);
+        assert.strictEqual(fsEvents[0]!.name, PTN.FETCH_START);
+        assert.strictEqual(fsEvents[1]!.name, PTN.UNLOAD_EVENT_START);
+        assert.strictEqual(fsEvents[2]!.name, PTN.UNLOAD_EVENT_END);
+        assert.strictEqual(fsEvents[3]!.name, PTN.DOM_INTERACTIVE);
         assert.strictEqual(
-          fsEvents[4].name,
+          fsEvents[4]!.name,
           PTN.DOM_CONTENT_LOADED_EVENT_START,
         );
-        assert.strictEqual(fsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(fsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
+        assert.strictEqual(fsEvents[5]!.name, PTN.DOM_CONTENT_LOADED_EVENT_END);
+        assert.strictEqual(fsEvents[6]!.name, PTN.DOM_COMPLETE);
+        assert.strictEqual(fsEvents[7]!.name, PTN.LOAD_EVENT_START);
+        assert.strictEqual(fsEvents[8]!.name, PTN.LOAD_EVENT_END);
 
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 11);
@@ -464,8 +464,8 @@ describe('DocumentLoad Instrumentation', () => {
       it('should create a root span with server context traceId', (done) => {
         plugin.enable();
         setTimeout(() => {
-          const rootSpan = exporter.getFinishedSpans()[0];
-          const fetchSpan = exporter.getFinishedSpans()[1];
+          const rootSpan = exporter.getFinishedSpans()[0]!;
+          const fetchSpan = exporter.getFinishedSpans()[1]!;
           assert.strictEqual(rootSpan.name, 'documentFetch');
           assert.strictEqual(fetchSpan.name, 'documentLoad');
 
@@ -500,8 +500,8 @@ describe('DocumentLoad Instrumentation', () => {
     it('should create span for each of the resource', (done) => {
       plugin.enable();
       setTimeout(() => {
-        const spanResource1 = exporter.getFinishedSpans()[1];
-        const spanResource2 = exporter.getFinishedSpans()[2];
+        const spanResource1 = exporter.getFinishedSpans()[1]!;
+        const spanResource2 = exporter.getFinishedSpans()[2]!;
 
         const srEvents1 = spanResource1.events;
         const srEvents2 = spanResource2.events;
@@ -538,7 +538,7 @@ describe('DocumentLoad Instrumentation', () => {
     it('should create span for each of the resource', (done) => {
       plugin.enable();
       setTimeout(() => {
-        const spanResource1 = exporter.getFinishedSpans()[1];
+        const spanResource1 = exporter.getFinishedSpans()[1]!;
 
         const srEvents1 = spanResource1.events;
 
@@ -578,8 +578,13 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
 
       setTimeout(() => {
-        assert.strictEqual(exporter.getFinishedSpans().length, 0);
-        done();
+        if (exporter.getFinishedSpans().length === 0) {
+          assert.strictEqual(exporter.getFinishedSpans().length, 0);
+          done();
+        } else {
+          const rootSpan = exporter.getFinishedSpans()[0]!;
+          const fetchSpan = exporter.getFinishedSpans()[1]!;
+        }
       });
     });
   });
@@ -634,8 +639,8 @@ describe('DocumentLoad Instrumentation', () => {
     it('should export correct span with events', (done) => {
       plugin.enable();
       setTimeout(() => {
-        const fetchSpan = exporter.getFinishedSpans()[0];
-        const rootSpan = exporter.getFinishedSpans()[1];
+        const fetchSpan = exporter.getFinishedSpans()[0]!;
+        const rootSpan = exporter.getFinishedSpans()[1]!;
         const fsEvents = fetchSpan.events;
         const rsEvents = rootSpan.events;
 
@@ -743,7 +748,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
       plugin.enable();
       setTimeout(() => {
-        const rootSpan = exporter.getFinishedSpans()[3];
+        const rootSpan = exporter.getFinishedSpans()[3]!;
         assert.strictEqual(rootSpan.attributes['custom-key'], 'custom-val');
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
@@ -761,7 +766,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
       plugin.enable();
       setTimeout(() => {
-        const fetchSpan = exporter.getFinishedSpans()[0];
+        const fetchSpan = exporter.getFinishedSpans()[0]!;
         assert.strictEqual(fetchSpan.attributes['custom-key'], 'custom-val');
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
         done();
@@ -783,8 +788,8 @@ describe('DocumentLoad Instrumentation', () => {
       });
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan1 = exporter.getFinishedSpans()[1];
-        const resourceSpan2 = exporter.getFinishedSpans()[2];
+        const resourceSpan1 = exporter.getFinishedSpans()[1]!;
+        const resourceSpan2 = exporter.getFinishedSpans()[2]!;
         assert.strictEqual(
           resourceSpan1.attributes['custom-key'],
           'custom-val',
@@ -860,7 +865,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.strictEqual(
           resourceSpan.attributes['http.response.delivery_type'],
           'cache',
@@ -910,7 +915,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.strictEqual(
           resourceSpan.attributes['http.response.cors_opaque'],
           true,
@@ -936,7 +941,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.strictEqual(
           resourceSpan.attributes['http.request.prevented'],
           true,
@@ -982,7 +987,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.strictEqual(
           resourceSpan.attributes['http.request.incomplete'],
           true,
@@ -1003,7 +1008,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.strictEqual(
           resourceSpan.attributes['http.response.cache_revalidated'],
           true,
@@ -1024,7 +1029,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.isUndefined(
           resourceSpan.attributes['http.response.cache_revalidated'],
         );
@@ -1042,7 +1047,7 @@ describe('DocumentLoad Instrumentation', () => {
 
       plugin.enable();
       setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
+        const resourceSpan = exporter.getFinishedSpans()[1]!;
         assert.isUndefined(
           resourceSpan.attributes['http.response.cors_opaque'],
         );
@@ -1108,9 +1113,9 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
 
       setTimeout(() => {
-        const rootSpan = exporter.getFinishedSpans()[0];
-        const fetchSpan = exporter.getFinishedSpans()[1];
-        const loadSpan = exporter.getFinishedSpans()[3];
+        const rootSpan = exporter.getFinishedSpans()[0]!;
+        const fetchSpan = exporter.getFinishedSpans()[1]!;
+        const loadSpan = exporter.getFinishedSpans()[3]!;
 
         const rsEvents = rootSpan.events;
         const fsEvents = fetchSpan.events;
@@ -1141,7 +1146,7 @@ describe('DocumentLoad Instrumentation', () => {
       plugin.enable();
 
       setTimeout(() => {
-        const loadSpan = exporter.getFinishedSpans()[3];
+        const loadSpan = exporter.getFinishedSpans()[3]!;
         const lsEvents = loadSpan.events;
 
         assert.strictEqual(exporter.getFinishedSpans().length, 4);

@@ -66,9 +66,9 @@ describe('RageClickInstrumentation', () => {
 
     const logs = getRageClickLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].eventName).to.equal('rage-click');
-    expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.eventName).to.equal('rage-click');
+    expect(logs[0]!.severityNumber).to.equal(SeverityNumber.INFO);
+    expect(logs[0]!.attributes).to.include({
       'emb.type': 'emb.otel_log',
       'rage_click.element_type': 'button',
       'rage_click.element_selector': '#checkout-btn',
@@ -136,7 +136,7 @@ describe('RageClickInstrumentation', () => {
 
     const logs = getRageClickLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.attributes).to.include({
       'rage_click.count': 3,
       'rage_click.element_selector': '#a',
       'rage_click.x': 10,
@@ -207,7 +207,7 @@ describe('RageClickInstrumentation', () => {
 
     const logs = getRageClickLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.attributes).to.include({
       'rage_click.element_type': 'a',
       'rage_click.element_selector': '#nav-home',
       'rage_click.interaction_type': 'tap',
@@ -250,7 +250,7 @@ describe('RageClickInstrumentation', () => {
 
     const logs = getRageClickLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.attributes).to.include({
       'rage_click.count': 4,
       'rage_click.element_selector': '#a',
       'rage_click.x': 0,
@@ -333,7 +333,7 @@ describe('RageClickInstrumentation', () => {
 
     const logs = getRageClickLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes['rage_click.count']).to.equal(3);
-    expect(logs[1].attributes['rage_click.count']).to.equal(4);
+    expect(logs[0]!.attributes['rage_click.count']).to.equal(3);
+    expect(logs[1]!.attributes['rage_click.count']).to.equal(4);
   });
 });

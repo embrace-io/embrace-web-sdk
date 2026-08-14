@@ -81,9 +81,9 @@ describe('FirstInteractionInstrumentation', () => {
     const logs = getLogs();
 
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].eventName).to.equal('first-interaction');
-    expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.eventName).to.equal('first-interaction');
+    expect(logs[0]!.severityNumber).to.equal(SeverityNumber.INFO);
+    expect(logs[0]!.attributes).to.include({
       'emb.type': 'emb.otel_log',
       'first_interaction.interaction_type': 'click',
       'first_interaction.element_type': 'button',
@@ -113,7 +113,7 @@ describe('FirstInteractionInstrumentation', () => {
     const logs = getLogs();
 
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.attributes).to.include({
       'first_interaction.interaction_type': 'tap',
       'first_interaction.element_type': 'a',
       'first_interaction.element_selector': '#home',
@@ -135,7 +135,7 @@ describe('FirstInteractionInstrumentation', () => {
     );
 
     const logs = getLogs();
-    const attrs = logs[0].attributes;
+    const attrs = logs[0]!.attributes;
 
     expect(logs).to.have.lengthOf(1);
     expect(attrs).to.include({
@@ -153,7 +153,7 @@ describe('FirstInteractionInstrumentation', () => {
     document.dispatchEvent(new Event('scroll', { bubbles: true }));
 
     const logs = getLogs();
-    const attrs = logs[0].attributes;
+    const attrs = logs[0]!.attributes;
 
     expect(logs).to.have.lengthOf(1);
     expect(attrs).to.include({
@@ -196,7 +196,7 @@ describe('FirstInteractionInstrumentation', () => {
     const logs = getLogs();
 
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.include({
+    expect(logs[0]!.attributes).to.include({
       'first_interaction.interaction_type': 'click',
       'first_interaction.element_selector': '#first',
       'first_interaction.x': 1,
@@ -221,7 +221,7 @@ describe('FirstInteractionInstrumentation', () => {
     );
 
     expect(getLogs()).to.have.lengthOf(1);
-    expect(getLogs()[0].attributes).to.include({
+    expect(getLogs()[0]!.attributes).to.include({
       'first_interaction.interaction_type': 'click',
     });
 
@@ -242,7 +242,7 @@ describe('FirstInteractionInstrumentation', () => {
     const logs = getLogs();
 
     expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes).to.include({
+    expect(logs[1]!.attributes).to.include({
       'first_interaction.interaction_type': 'tap',
       'first_interaction.element_selector': '#b',
       'first_interaction.x': 10,

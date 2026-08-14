@@ -81,7 +81,7 @@ describe('EmbraceErrorBoundary', () => {
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
 
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
     void expect(exceptionLog.severityNumber).to.be.equal(SeverityNumber.ERROR);
     void expect(exceptionLog.severityText).to.be.equal('ERROR');
     void expect(exceptionLog.body).to.be.equal('Some error, at some component');

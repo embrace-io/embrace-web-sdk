@@ -66,10 +66,10 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -94,7 +94,7 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(0);
   });
 
@@ -114,10 +114,10 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -143,10 +143,10 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -179,7 +179,7 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(3);
 
     void expect(
@@ -237,9 +237,9 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -271,9 +271,9 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -306,10 +306,10 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(1);
 
-    const clickEvent = sessionSpan.events[0];
+    const clickEvent = sessionSpan.events[0]!;
 
     void expect(clickEvent.name).to.be.equal('click');
 
@@ -345,18 +345,18 @@ describe('ClicksInstrumentation', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.events).to.have.lengthOf(2);
 
-    void expect(sessionSpan.events[0].name).to.be.equal('click');
-    void expect(sessionSpan.events[0].attributes).to.deep.equal({
+    void expect(sessionSpan.events[0]!.name).to.be.equal('click');
+    void expect(sessionSpan.events[0]!.attributes).to.deep.equal({
       'emb.type': 'ux.tap',
       'tap.coords': '0,0',
       'view.name': '<div>[REDACTED]</div>',
     });
 
-    void expect(sessionSpan.events[1].name).to.be.equal('click');
-    void expect(sessionSpan.events[1].attributes).to.deep.equal({
+    void expect(sessionSpan.events[1]!.name).to.be.equal('click');
+    void expect(sessionSpan.events[1]!.attributes).to.deep.equal({
       'emb.type': 'ux.tap',
       'tap.coords': '0,0',
       'view.name': '<div>should track</div>',

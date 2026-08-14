@@ -548,7 +548,7 @@ describe('LoafInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'emb-loaf-report');
     expect(reports).to.have.lengthOf(1);
-    expect(reports[0].attributes['emb.tbd.loaf_total_duration']).to.equal(150);
+    expect(reports[0]!.attributes['emb.tbd.loaf_total_duration']).to.equal(150);
 
     instrumentation.disable();
   });

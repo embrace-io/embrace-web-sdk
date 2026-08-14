@@ -99,7 +99,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
     processor.onEnd(mockSessionSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.attributes).to.have.property(
       'emb.type',
       'ux.session_part',
@@ -112,7 +112,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
     processor.onEnd(mockSessionSpan);
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     const nonSessionSpan = finishedSpans[1];
     expect(sessionSpan.attributes).to.have.property(
       'emb.type',
@@ -189,7 +189,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      const sessionSpan = finishedSpans[0];
+      const sessionSpan = finishedSpans[0]!;
       expect(sessionSpan.attributes).to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`,
         1,
@@ -198,7 +198,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
         `emb.previous_export_failed.${test.expectedAttributeSuffix}`,
       );
 
-      const nextSessionSpan = finishedSpans[1];
+      const nextSessionSpan = finishedSpans[1]!;
       expect(nextSessionSpan.attributes).not.to.have.property(
         `emb.export_failed.${test.expectedAttributeSuffix}`,
       );

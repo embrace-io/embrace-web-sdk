@@ -93,5 +93,20 @@
         "recommended": true
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      // Assertion files index collections whose length the preceding
+      // expectation already pins, so noUncheckedIndexedAccess needs a
+      // suppression per read there. Production code keeps the ban.
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
 }

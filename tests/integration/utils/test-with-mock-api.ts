@@ -24,6 +24,7 @@ import chalk from 'chalk';
 import { diff } from 'jest-diff';
 import type { Request, Route } from 'playwright';
 import type { ReceivedSpans } from '../types.ts';
+import { expectDefined } from './expectDefined.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -465,7 +466,7 @@ const expect = testWithMockApi.expect.extend({
 
     // Compare each attribute
     for (const [index, receivedAttr] of sortedReceived.entries()) {
-      const expectedAttr = sortedExpected[index];
+      const expectedAttr = expectDefined(sortedExpected[index]);
 
       if (
         IGNORED_ATTRIBUTES_LIST.includes(receivedAttr.key) ||
@@ -530,7 +531,7 @@ const expect = testWithMockApi.expect.extend({
       }
 
       for (const [index, receivedEvent] of received.entries()) {
-        const expectedEvent = expected[index];
+        const expectedEvent = expectDefined(expected[index]);
 
         // Ignore fields that change on every run like timeUnixNano
         expect(receivedEvent).toEqual(
@@ -683,14 +684,15 @@ const expect = testWithMockApi.expect.extend({
         const receivedEntities = isResourceSpan(receivedResource)
           ? receivedResource.scopeSpans
           : receivedResource.scopeLogs;
-        const expectedEntities = isResourceSpan(expected[resourceIndex])
-          ? expected[resourceIndex].scopeSpans
-          : expected[resourceIndex].scopeLogs;
+        const expectedResource = expectDefined(expected[resourceIndex]);
+        const expectedEntities = isResourceSpan(expectedResource)
+          ? expectedResource.scopeSpans
+          : expectedResource.scopeLogs;
 
-        if (receivedResource.resource && expected[resourceIndex].resource) {
+        if (receivedResource.resource && expectedResource.resource) {
           try {
             expect(receivedResource.resource).toMatchResource(
-              expected[resourceIndex].resource,
+              expectedResource.resource,
             );
           } catch (e) {
             return {
@@ -701,92 +703,104 @@ const expect = testWithMockApi.expect.extend({
           }
         }
 
+        if (receivedEntities.length !== expectedEntities.length) {
+          return {
+            pass: false,
+            message: () =>
+              `Expected ${chalk.green(expectedEntities.length)} scopes in resource ${resourceIndex.toString()}, but got ${chalk.red(receivedEntities.length)}${INTENDED_CHANGE_MESSAGE}\n${
+                diff(expectedEntities, receivedEntities, {
+                  expand: true,
+                  aAnnotation: 'Expected',
+                  bAnnotation: 'Received',
+                }) || ''
+              }`,
+          };
+        }
+
         for (const [scopeIndex, receivedScope] of receivedEntities.entries()) {
-          const receivedScopes = isScopeSpan(receivedScope)
-            ? receivedScope.spans
-            : receivedScope.logRecords;
-          const expectedScopes = isScopeSpan(expectedEntities[scopeIndex])
-            ? expectedEntities[scopeIndex].spans
-            : expectedEntities[scopeIndex].logRecords;
+          // An absent entity list and an empty one mean the same thing, so
+          // normalize rather than skipping the comparison when either is unset.
+          const receivedScopes =
+            (isScopeSpan(receivedScope)
+              ? receivedScope.spans
+              : receivedScope.logRecords) ?? [];
+          const expectedScope = expectDefined(expectedEntities[scopeIndex]);
+          const expectedScopes =
+            (isScopeSpan(expectedScope)
+              ? expectedScope.spans
+              : expectedScope.logRecords) ?? [];
+          const scopeName = receivedScope.scope?.name;
 
-          if (receivedScope.scope) {
-            if (receivedScopes && expectedScopes) {
-              const filteredReceived = receivedScopes.filter(
-                (e) => !isExcludedSpan(e),
-              );
-              const filteredExpected = expectedScopes.filter(
-                (e) => !isExcludedSpan(e),
-              );
+          const filteredReceived = receivedScopes.filter(
+            (e) => !isExcludedSpan(e),
+          );
+          const filteredExpected = expectedScopes.filter(
+            (e) => !isExcludedSpan(e),
+          );
 
-              if (filteredReceived.length !== filteredExpected.length) {
-                return {
-                  pass: false,
-                  message: () =>
-                    `Expected ${chalk.green(filteredExpected.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(filteredReceived.length)}${INTENDED_CHANGE_MESSAGE}\n${
-                      diff(filteredExpected, filteredReceived, {
-                        expand: true,
-                        aAnnotation: 'Expected',
-                        bAnnotation: 'Received',
-                      }) || ''
-                    }`,
-                };
+          if (filteredReceived.length !== filteredExpected.length) {
+            return {
+              pass: false,
+              message: () =>
+                `Expected ${chalk.green(filteredExpected.length)} entities in scope ${resourceIndex.toString()}, but got ${chalk.red(filteredReceived.length)}${INTENDED_CHANGE_MESSAGE}\n${
+                  diff(filteredExpected, filteredReceived, {
+                    expand: true,
+                    aAnnotation: 'Expected',
+                    bAnnotation: 'Received',
+                  }) || ''
+                }`,
+            };
+          }
+
+          // For some instrumentation is not possible to compare spans/logs by name and attributes
+          // as spans/logs are created in different orders and there's no way of matching them with the previous results
+          if (
+            scopeName !== undefined &&
+            INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON.includes(scopeName)
+          ) {
+            continue;
+          }
+
+          const shouldSort =
+            scopeName !== undefined &&
+            SCOPES_WITH_SORTED_COMPARISON.has(scopeName);
+          const sortedReceived = shouldSort
+            ? [...filteredReceived].sort((a, b) =>
+                getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
+              )
+            : filteredReceived;
+          const sortedExpected = shouldSort
+            ? [...filteredExpected].sort((a, b) =>
+                getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
+              )
+            : filteredExpected;
+
+          for (const [
+            entityIndex,
+            receivedEntity,
+          ] of sortedReceived.entries()) {
+            const expectedEntity = expectDefined(sortedExpected[entityIndex]);
+
+            try {
+              if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
+                expect(receivedEntity).toMatchSpan(expectedEntity);
+              } else if (!isSpan(receivedEntity) && !isSpan(expectedEntity)) {
+                expect(receivedEntity).toMatchLog(expectedEntity);
+              } else {
+                throw new Error(
+                  `Entity type mismatch: received is ${isSpan(receivedEntity) ? 'a span' : 'a log'} but expected is ${isSpan(expectedEntity) ? 'a span' : 'a log'}`,
+                );
               }
+            } catch (e) {
+              const entityName = isSpan(receivedEntity)
+                ? receivedEntity.name
+                : receivedEntity.body?.stringValue || '';
 
-              // For some instrumentation is not possible to compare spans/logs by name and attributes
-              // as spans/logs are created in different orders and there's no way of matching them with the previous results
-              if (
-                INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON.includes(
-                  receivedScope.scope.name,
-                )
-              ) {
-                continue;
-              }
-
-              const shouldSort = SCOPES_WITH_SORTED_COMPARISON.has(
-                receivedScope.scope.name,
-              );
-              const sortedReceived = shouldSort
-                ? [...filteredReceived].sort((a, b) =>
-                    getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
-                  )
-                : filteredReceived;
-              const sortedExpected = shouldSort
-                ? [...filteredExpected].sort((a, b) =>
-                    getEntitySortKey(a).localeCompare(getEntitySortKey(b)),
-                  )
-                : filteredExpected;
-
-              for (const [
-                entityIndex,
-                receivedEntity,
-              ] of sortedReceived.entries()) {
-                const expectedEntity = sortedExpected[entityIndex];
-
-                try {
-                  if (isSpan(receivedEntity) && isSpan(expectedEntity)) {
-                    expect(receivedEntity).toMatchSpan(expectedEntity);
-                  } else if (
-                    !isSpan(receivedEntity) &&
-                    !isSpan(expectedEntity)
-                  ) {
-                    expect(receivedEntity).toMatchLog(expectedEntity);
-                  } else {
-                    throw new Error(
-                      `Entity type mismatch: received is ${isSpan(receivedEntity) ? 'a span' : 'a log'} but expected is ${isSpan(expectedEntity) ? 'a span' : 'a log'}`,
-                    );
-                  }
-                } catch (e) {
-                  const entityName = isSpan(receivedEntity)
-                    ? receivedEntity.name
-                    : receivedEntity.body?.stringValue || '';
-
-                  return {
-                    pass: false,
-                    message: () =>
-                      `Entity ${entityName} in scope ${resourceIndex.toString()} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
-                  };
-                }
-              }
+              return {
+                pass: false,
+                message: () =>
+                  `Entity ${entityName} in scope ${resourceIndex.toString()} does not match:\n${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`,
+              };
             }
           }
         }

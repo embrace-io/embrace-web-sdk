@@ -87,11 +87,11 @@ console.log('test');
       assert.strictEqual(results.length, 1, 'Should accept valid source maps');
       // Use realpathSync to normalize paths for comparison (handles /private prefix on macOS)
       assert.strictEqual(
-        fs.realpathSync(results[0].jsFilePath),
+        fs.realpathSync(results[0]!.jsFilePath),
         fs.realpathSync(jsFile),
       );
       assert.strictEqual(
-        fs.realpathSync(results[0].mapFilePath),
+        fs.realpathSync(results[0]!.mapFilePath),
         fs.realpathSync(mapFile),
       );
     });
@@ -163,7 +163,7 @@ console.log('nested');
         'Should find source maps in subdirectories',
       );
       assert.strictEqual(
-        fs.realpathSync(results[0].jsFilePath),
+        fs.realpathSync(results[0]!.jsFilePath),
         fs.realpathSync(jsFile),
       );
     });
@@ -225,11 +225,11 @@ console.log('nested with relative path');
         'Should accept relative paths that stay within the search tree',
       );
       assert.strictEqual(
-        fs.realpathSync(results[0].jsFilePath),
+        fs.realpathSync(results[0]!.jsFilePath),
         fs.realpathSync(jsFile),
       );
       assert.strictEqual(
-        fs.realpathSync(results[0].mapFilePath),
+        fs.realpathSync(results[0]!.mapFilePath),
         fs.realpathSync(mapFile),
       );
     });
@@ -254,11 +254,11 @@ console.log('nested with relative path');
 
       assert.strictEqual(results.length, 1, 'Should use fallback .js.map file');
       assert.strictEqual(
-        fs.realpathSync(results[0].jsFilePath),
+        fs.realpathSync(results[0]!.jsFilePath),
         fs.realpathSync(jsFile),
       );
       assert.strictEqual(
-        fs.realpathSync(results[0].mapFilePath),
+        fs.realpathSync(results[0]!.mapFilePath),
         fs.realpathSync(mapFile),
       );
     });
@@ -299,7 +299,7 @@ console.log('nested with relative path');
       // Should only include the valid file
       assert.strictEqual(results.length, 1, 'Should only include valid files');
       assert.strictEqual(
-        fs.realpathSync(results[0].jsFilePath),
+        fs.realpathSync(results[0]!.jsFilePath),
         fs.realpathSync(validJs),
       );
     });

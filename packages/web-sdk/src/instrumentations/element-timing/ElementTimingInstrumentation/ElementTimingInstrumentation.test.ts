@@ -135,7 +135,7 @@ describe('ElementTimingInstrumentation', () => {
 
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
-    const span = spans[0];
+    const span = spans[0]!;
     expect(span.name).to.equal('hero-image');
     expect(span.attributes['emb.type']).to.equal('ux.element_timing');
     expect(span.attributes['emb.element_timing.identifier']).to.equal(
@@ -152,7 +152,7 @@ describe('ElementTimingInstrumentation', () => {
     expect(span.attributes['emb.element_timing.natural_height']).to.equal(800);
 
     expect(span.events).to.have.length(1);
-    expect(span.events[0].name).to.equal('load');
+    expect(span.events[0]!.name).to.equal('load');
 
     instrumentation.disable();
   });
@@ -167,7 +167,7 @@ describe('ElementTimingInstrumentation', () => {
       makeEntry({ loadTime: 0, renderTime: 200, startTime: 200 }),
     ]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.events).to.have.length(0);
 
     instrumentation.disable();
@@ -183,7 +183,7 @@ describe('ElementTimingInstrumentation', () => {
 
     triggerEntries([makeEntry({ startTime: 250 })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     // start = getZeroTime() = navigation epoch (no reset has occurred)
     // end   = epochMillisFromOrigin(250) = navigation epoch + 250ms
     expect(span.startTime).to.not.deep.equal(span.endTime);
@@ -209,7 +209,7 @@ describe('ElementTimingInstrumentation', () => {
       makeEntry({ startTime: 700, renderTime: 700, loadTime: 650 }),
     ]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(hrTimeToMilliseconds(span.startTime)).to.equal(resetEpoch);
     // gap between timeOrigin and zero time is 500ms, so each raw offset is rebased by 500ms
     expect(span.attributes['emb.element_timing.render_time']).to.equal(200);
@@ -227,7 +227,7 @@ describe('ElementTimingInstrumentation', () => {
 
     triggerEntries([makeEntry({ element: null })]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.element_timing.element']).to.be.undefined;
 
     instrumentation.disable();

@@ -56,21 +56,21 @@ describe('LogRecordScrubProcessor', () => {
     expect(finishedLogs).to.have.lengthOf(3);
 
     // Scrubbing applied
-    expect(finishedLogs[0].attributes).to.deep.equal({
+    expect(finishedLogs[0]!.attributes).to.deep.equal({
       'my-attr1': 'SCRUBBED!',
       'my-attr2': '*****',
       'my-attr3': 'value3',
     });
 
     // Non-string attributes are ignored
-    expect(finishedLogs[1].attributes).to.deep.equal({
+    expect(finishedLogs[1]!.attributes).to.deep.equal({
       'my-attr1': 1,
       'my-attr2': true,
       'my-attr3': 'value3',
     });
 
     // No relevant attributes to scrub
-    expect(finishedLogs[2].attributes).to.deep.equal({
+    expect(finishedLogs[2]!.attributes).to.deep.equal({
       'my-attr3': 'value3',
     });
   });

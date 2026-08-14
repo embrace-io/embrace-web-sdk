@@ -1,3 +1,4 @@
+import { expectDefined } from './expectDefined.ts';
 import testWithMockApi, {
   expect as extendedMockApiTestExpect,
   logRecordsOf,
@@ -201,9 +202,9 @@ const runE2ETests = ({
 
         testE2E.expect(requests).toHaveLength(1);
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-            `${browserName}-${codifiedName}-send-log.json`,
-          );
+          extendedMockApiTestExpect(
+            expectDefined(requests[0]),
+          ).toMatchGoldenFile(`${browserName}-${codifiedName}-send-log.json`);
         }
       },
     );
@@ -397,6 +398,12 @@ const runE2ETests = ({
           .toEqual([]);
 
         if (goldenFiles) {
+          extendedMockApiTestExpect(
+            expectDefined(requests[0]),
+          ).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
+          );
+
           extendedMockApiTestExpect(logRecord).toMatchGoldenLogRecord(
             `${browserName}-${codifiedName}-handle-204-with-body-log-record.json`,
           );
@@ -424,6 +431,7 @@ const runE2ETests = ({
             firstInteractionRecord,
           ).toMatchGoldenLogRecord(
             `${browserName}-${codifiedName}-first-interaction-record.json`,
+
           );
         }
 
@@ -452,11 +460,24 @@ const runE2ETests = ({
             throw new Error('Part end log request was not sent to the API');
           }
 
+          extendedMockApiTestExpect(
+            expectDefined(requests[1]),
+          ).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
+          );
+          extendedMockApiTestExpect(
+            expectDefined(requests[2]),
+          ).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-logs-after-part.json`,
+          );
+
           // Should contain a span capturing the fetch request
           extendedMockApiTestExpect(sessionPartRequests[0]).toMatchGoldenFile(
             `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
           );
           extendedMockApiTestExpect(partEndLogRequest).toMatchGoldenFile(
+            `${browserName}-${codifiedName}-handle-204-with-body-logs-after-part.json`,
+          );
             `${browserName}-${codifiedName}-handle-204-with-body-logs-after-part.json`,
           );
         }

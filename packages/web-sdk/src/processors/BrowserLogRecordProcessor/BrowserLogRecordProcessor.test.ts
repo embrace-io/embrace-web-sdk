@@ -34,7 +34,7 @@ describe('BrowserLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/products/123',
@@ -47,7 +47,7 @@ describe('BrowserLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/page-2',
@@ -63,7 +63,7 @@ describe('BrowserLogRecordProcessor', () => {
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
 
-    expect(finishedLogs[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+    expect(finishedLogs[0]!.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://existing.com/path',
     );
   });

@@ -62,7 +62,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['log.record.uid']).to.have.lengthOf(32);
     expect(logRecord.attributes['emb.session_part_id']).to.equal('PART_XYZ');
   });
@@ -74,7 +74,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['log.record.uid']).to.have.lengthOf(32);
     expect(logRecord.attributes['emb.session_part_id']).to.equal('');
     expect(logRecord.attributes['emb.user_session_id']).to.equal('');
@@ -94,7 +94,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['emb.session_part_id']).to.equal('');
     expect(logRecord.attributes['emb.user_session_id']).to.equal(
       'USER_SESSION_ABC',
@@ -108,7 +108,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['emb.user_session_id']).to.equal(
       'USER_SESSION_ABC',
     );
@@ -144,7 +144,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].attributes['emb.session_part_id']).to.equal(
+    expect(finishedLogs[0]!.attributes['emb.session_part_id']).to.equal(
       'PART_SNAPSHOT',
     );
   });
@@ -161,7 +161,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].attributes['emb.user_session_id']).to.equal(
+    expect(finishedLogs[0]!.attributes['emb.user_session_id']).to.equal(
       'USER_SESSION_SNAPSHOT',
     );
   });
@@ -180,9 +180,9 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].attributes['emb.user_session_previous_id']).to.equal(
-      'PREVIOUS_SNAPSHOT',
-    );
+    expect(
+      finishedLogs[0]!.attributes['emb.user_session_previous_id'],
+    ).to.equal('PREVIOUS_SNAPSHOT');
   });
 
   it('should pass customer-set session.id and session.previous_id through untouched', () => {
@@ -202,7 +202,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['session.id']).to.equal('CUSTOMER_SESSION');
     expect(logRecord.attributes['session.previous_id']).to.equal(
       'CUSTOMER_PREVIOUS_SESSION',
@@ -227,7 +227,7 @@ describe('UserSessionLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const logRecord = finishedLogs[0];
+    const logRecord = finishedLogs[0]!;
     expect(logRecord.attributes['emb.user_session_previous_id']).to.equal(
       'PREVIOUS_USER_SESSION',
     );

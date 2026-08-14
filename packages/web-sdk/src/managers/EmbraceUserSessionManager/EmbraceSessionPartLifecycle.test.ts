@@ -109,7 +109,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     void expect(manager.getSessionPartId()).to.be.null;
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.session_part_end_reason',
       'background',
@@ -142,14 +142,14 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+    expect(hrTimeToMilliseconds(finishedSpans[0]!.endTime)).to.equal(
       boundaryTimestamp,
     );
-    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+    expect(hrTimeToMilliseconds(finishedSpans[1]!.startTime)).to.equal(
       boundaryTimestamp,
     );
     // An omitted timestamp still anchors to now.
-    expect(hrTimeToMilliseconds(finishedSpans[1].endTime)).to.equal(
+    expect(hrTimeToMilliseconds(finishedSpans[1]!.endTime)).to.equal(
       boundaryTimestamp + 1250,
     );
   });
@@ -175,10 +175,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     expect(finishedSpans).to.have.lengthOf(2);
     // The end stamp is captured upfront even without an anchor; the
     // start-side assertion is the one the shared boundary timestamp owns.
-    expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
+    expect(hrTimeToMilliseconds(finishedSpans[0]!.endTime)).to.equal(
       boundaryTimestamp,
     );
-    expect(hrTimeToMilliseconds(finishedSpans[1].startTime)).to.equal(
+    expect(hrTimeToMilliseconds(finishedSpans[1]!.startTime)).to.equal(
       boundaryTimestamp,
     );
   });
@@ -228,11 +228,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
     expect(sessionPartSpan.events).to.have.lengthOf(1);
 
-    expect(sessionPartSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(sessionPartSpan.events[0].attributes).to.have.property(
+    expect(sessionPartSpan.events[0]!.name).to.equal('emb-breadcrumb');
+    expect(sessionPartSpan.events[0]!.attributes).to.have.property(
       'message',
       'some breadcrumb',
     );
@@ -249,7 +249,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].attributes).to.have.property(
+    expect(finishedSpans[0]!.attributes).to.have.property(
       'emb.properties.queued-property',
       'queued-value',
     );
@@ -264,7 +264,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
 
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.properties.custom-property-1',
@@ -301,7 +301,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.state',
       'foreground',
@@ -410,12 +410,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
     expect(sessionPartSpan.events).to.have.lengthOf(3);
 
     for (let i = 0; i < 3; i++) {
-      expect(sessionPartSpan.events[i].name).to.equal('emb-breadcrumb');
-      expect(sessionPartSpan.events[i].attributes).to.have.property(
+      expect(sessionPartSpan.events[i]!.name).to.equal('emb-breadcrumb');
+      expect(sessionPartSpan.events[i]!.attributes).to.have.property(
         'message',
         'this is a breadcrumb',
       );
@@ -440,10 +440,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nextSessionPartSpan = nextSessionFinishedSpans[0];
+    const nextSessionPartSpan = nextSessionFinishedSpans[0]!;
     expect(nextSessionPartSpan.events).to.have.lengthOf(1);
-    expect(nextSessionPartSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(nextSessionPartSpan.events[0].attributes).to.have.property(
+    expect(nextSessionPartSpan.events[0]!.name).to.equal('emb-breadcrumb');
+    expect(nextSessionPartSpan.events[0]!.attributes).to.have.property(
       'message',
       'this is a breadcrumb',
     );
@@ -460,15 +460,15 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
     expect(sessionPartSpan.events).to.have.lengthOf(2);
-    expect(sessionPartSpan.events[0].name).to.equal('emb-breadcrumb');
-    expect(sessionPartSpan.events[0].attributes).to.have.property(
+    expect(sessionPartSpan.events[0]!.name).to.equal('emb-breadcrumb');
+    expect(sessionPartSpan.events[0]!.attributes).to.have.property(
       'message',
       'this is a breadcrumb',
     );
-    expect(sessionPartSpan.events[1].name).to.equal('emb-breadcrumb');
-    expect(sessionPartSpan.events[1].attributes).to.have.property(
+    expect(sessionPartSpan.events[1]!.name).to.equal('emb-breadcrumb');
+    expect(sessionPartSpan.events[1]!.attributes).to.have.property(
       'message',
       'this is a breadcrumb which has a name longer than ',
     );
@@ -495,7 +495,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
 
     for (let i = 0; i < 10; i++) {
       const prop = `emb.properties.property${i.toString()}`;
@@ -530,7 +530,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const nextSessionFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextSessionFinishedSpans).to.have.lengthOf(1);
-    const nextSessionPartSpan = nextSessionFinishedSpans[0];
+    const nextSessionPartSpan = nextSessionFinishedSpans[0]!;
     expect(nextSessionPartSpan.attributes).to.have.property(
       'emb.properties.my-new-prop',
       'new',
@@ -549,7 +549,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionPartSpan = finishedSpans[0];
+    const sessionPartSpan = finishedSpans[0]!;
 
     expect(sessionPartSpan.attributes).to.have.property(
       'emb.properties.session-property-wit',
@@ -655,7 +655,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    expect(finishedSpans[1].attributes).to.have.property(attributeKey, value);
+    expect(finishedSpans[1]!.attributes).to.have.property(attributeKey, value);
   });
 
   it('should leave the persisted user-session-scoped entry intact when a permanent flip fails to write', () => {
@@ -1003,7 +1003,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      const sessionPartSpan = finishedSpans[0];
+      const sessionPartSpan = finishedSpans[0]!;
       expect(sessionPartSpan.attributes)
         .to.have.property('emb.user_session_id')
         .that.is.a('string');
@@ -1046,7 +1046,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // endUserSession ends the dying part and starts a rollover part;
       // the test assertion only checks the dying part's attributes.
       expect(finishedSpans.length).to.be.at.least(1);
-      const endedSpan = finishedSpans[0];
+      const endedSpan = finishedSpans[0]!;
       expect(endedSpan.attributes).to.have.property(
         'emb.is_final_session_part',
         1,
@@ -1120,7 +1120,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans.length).to.be.at.least(1);
-      const endedSpan = finishedSpans[0];
+      const endedSpan = finishedSpans[0]!;
       expect(endedSpan.attributes).to.have.property(
         'emb.is_final_session_part',
         1,
@@ -1183,11 +1183,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       void expect(localManager.getSessionPartId()).to.be.null;
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.is_final_session_part',
         1,
       );
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.user_session_termination_reason',
         'max_duration_reached',
       );
@@ -1269,7 +1269,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = exporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      const rolloverPartSpan = finishedSpans[1];
+      const rolloverPartSpan = finishedSpans[1]!;
       expect(rolloverPartSpan.attributes).to.have.property(
         'emb.user_session_previous_id',
         firstUserSessionId,
@@ -1284,7 +1284,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'init',
       );
@@ -1296,7 +1296,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'web_activity',
       );
@@ -1311,11 +1311,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'init',
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'user_session_rollover',
       );
@@ -1343,11 +1343,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'init',
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.session_part_start_reason',
         'user_session_rollover',
       );
@@ -1361,7 +1361,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_end_reason',
         'background',
       );
@@ -1373,7 +1373,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_end_reason',
         'web_foreground_inactivity',
       );
@@ -1386,11 +1386,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_end_reason',
         'user_session_ended',
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.session_part_end_reason',
         'background',
       );
@@ -1406,11 +1406,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.session_part_number',
         1,
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.session_part_number',
         2,
       );
@@ -1565,15 +1565,15 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(3);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.cold_start',
         true,
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.cold_start',
         false,
       );
-      expect(finishedSpans[2].attributes).to.have.property(
+      expect(finishedSpans[2]!.attributes).to.have.property(
         'emb.cold_start',
         false,
       );
@@ -1596,11 +1596,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0]!.attributes).to.have.property(
         'emb.cold_start',
         true,
       );
-      expect(finishedSpans[1].attributes).to.have.property(
+      expect(finishedSpans[1]!.attributes).to.have.property(
         'emb.cold_start',
         true,
       );
@@ -1628,7 +1628,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       localManager.startSessionPartInternal({ reason: 'init' });
       localManager.endSessionPartInternal({ reason: 'background' });
 
-      const [span] = memoryExporter.getFinishedSpans();
+      const span = memoryExporter.getFinishedSpans()[0]!;
       expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, true);
     });
 
@@ -1644,7 +1644,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       localManager.startSessionPartInternal({ reason: 'init' });
       localManager.endSessionPartInternal({ reason: 'background' });
 
-      const [span] = memoryExporter.getFinishedSpans();
+      const span = memoryExporter.getFinishedSpans()[0]!;
       expect(span.attributes).to.have.property(KEY_EMB_PAGE_LOAD, false);
     });
 
@@ -1664,7 +1664,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(2);
-      expect(finishedSpans[1].attributes).to.not.have.property(
+      expect(finishedSpans[1]!.attributes).to.not.have.property(
         KEY_EMB_PAGE_LOAD,
       );
     });

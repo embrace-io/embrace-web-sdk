@@ -41,7 +41,7 @@ describe('EmbraceTraceManager', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const perfSpan = finishedSpans[0];
+    const perfSpan = finishedSpans[0]!;
     expect(perfSpan.name).to.equal('perf-span');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
     expect(hrTimeToMilliseconds(perfSpan.endTime)).to.be.greaterThanOrEqual(
@@ -55,7 +55,7 @@ describe('EmbraceTraceManager', () => {
     span.fail();
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const perfSpan = finishedSpans[0];
+    const perfSpan = finishedSpans[0]!;
     expect(perfSpan.name).to.equal('perf-span');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_ERROR_CODE, 'FAILURE');
@@ -72,7 +72,7 @@ describe('EmbraceTraceManager', () => {
     });
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const perfSpan = finishedSpans[0];
+    const perfSpan = finishedSpans[0]!;
     expect(perfSpan.name).to.equal('perf-span');
     expect(perfSpan.attributes).to.have.property(KEY_EMB_TYPE, 'perf');
     expect(perfSpan.attributes).to.have.property(
@@ -96,8 +96,8 @@ describe('EmbraceTraceManager', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const finishedChildSpan = finishedSpans[0];
-    const finishedParentSpan = finishedSpans[1];
+    const finishedChildSpan = finishedSpans[0]!;
+    const finishedParentSpan = finishedSpans[1]!;
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
@@ -120,8 +120,8 @@ describe('EmbraceTraceManager', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const finishedChildSpan = finishedSpans[0];
-    const finishedParentSpan = finishedSpans[1];
+    const finishedChildSpan = finishedSpans[0]!;
+    const finishedParentSpan = finishedSpans[1]!;
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(
@@ -153,8 +153,8 @@ describe('EmbraceTraceManager', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const finishedChildSpan = finishedSpans[0];
-    const finishedParentSpan = finishedSpans[1];
+    const finishedChildSpan = finishedSpans[0]!;
+    const finishedParentSpan = finishedSpans[1]!;
     expect(finishedChildSpan.name).to.be.equal('child-perf-span');
     expect(finishedParentSpan.name).to.be.equal('parent-perf-span');
     expect(finishedChildSpan.parentSpanContext?.spanId).to.equal(

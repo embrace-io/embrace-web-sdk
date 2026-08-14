@@ -58,7 +58,7 @@ class FakePerformanceObserver {
         FakePerformanceObserver.instances.length - 1
       ];
     expect(observer, 'expected an observer to have been created').to.be.ok;
-    return observer;
+    return observer!;
   }
 
   public observe(options: PerformanceObserverInit): void {
@@ -188,16 +188,16 @@ describe('ServerTimingInstrumentation', () => {
       const logs = memoryExporter.getFinishedLogRecords();
       expect(logs).to.have.length(2);
 
-      expect(logs[0].eventName).to.equal('emb-server-timing');
-      expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
-      expect(logs[0].attributes['emb.type']).to.equal('ux.server_timing');
-      expect(logs[0].attributes['emb.server_timing.name']).to.equal('db');
-      expect(logs[0].attributes['emb.server_timing.duration']).to.equal(78);
-      expect(logs[0].attributes['emb.server_timing.description']).to.equal('');
+      expect(logs[0]!.eventName).to.equal('emb-server-timing');
+      expect(logs[0]!.severityNumber).to.equal(SeverityNumber.INFO);
+      expect(logs[0]!.attributes['emb.type']).to.equal('ux.server_timing');
+      expect(logs[0]!.attributes['emb.server_timing.name']).to.equal('db');
+      expect(logs[0]!.attributes['emb.server_timing.duration']).to.equal(78);
+      expect(logs[0]!.attributes['emb.server_timing.description']).to.equal('');
 
-      expect(logs[1].attributes['emb.server_timing.name']).to.equal('cache');
-      expect(logs[1].attributes['emb.server_timing.duration']).to.equal(0);
-      expect(logs[1].attributes['emb.server_timing.description']).to.equal(
+      expect(logs[1]!.attributes['emb.server_timing.name']).to.equal('cache');
+      expect(logs[1]!.attributes['emb.server_timing.duration']).to.equal(0);
+      expect(logs[1]!.attributes['emb.server_timing.description']).to.equal(
         'HIT',
       );
 
@@ -302,7 +302,7 @@ describe('ServerTimingInstrumentation', () => {
 
         const logs = memoryExporter.getFinishedLogRecords();
         expect(logs).to.have.length(1);
-        expect(logs[0].attributes['emb.server_timing.name']).to.equal('api');
+        expect(logs[0]!.attributes['emb.server_timing.name']).to.equal('api');
 
         instrumentation.disable();
       });

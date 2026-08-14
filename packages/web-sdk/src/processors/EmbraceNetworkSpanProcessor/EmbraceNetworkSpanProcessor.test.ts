@@ -37,7 +37,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const networkRequest = finishedSpans[0];
+    const networkRequest = finishedSpans[0]!;
     expect(networkRequest.attributes).to.be.deep.equal({
       'emb.type': 'perf.network_request',
       'http.request.method': 'GET',
@@ -59,7 +59,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const networkRequest = finishedSpans[0];
+    const networkRequest = finishedSpans[0]!;
     expect(networkRequest.attributes).to.be.deep.equal({
       foo: 'bar',
     });
@@ -80,7 +80,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const networkRequest = finishedSpans[0];
+    const networkRequest = finishedSpans[0]!;
     expect(networkRequest.attributes).to.be.deep.equal({
       'http.request.method': 'GET',
       'http.response.status_code': 200,
@@ -105,7 +105,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const networkRequest = finishedSpans[0];
+    const networkRequest = finishedSpans[0]!;
     expect(networkRequest.attributes).to.be.deep.equal({
       'emb.type': 'perf.network_request',
       'http.request.method': 'GET',

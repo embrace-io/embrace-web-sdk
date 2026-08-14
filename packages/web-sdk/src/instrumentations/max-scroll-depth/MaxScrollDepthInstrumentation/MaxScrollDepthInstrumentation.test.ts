@@ -149,9 +149,9 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].eventName).to.equal('max-scroll-depth');
-    expect(logs[0].severityNumber).to.equal(SeverityNumber.INFO);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.eventName).to.equal('max-scroll-depth');
+    expect(logs[0]!.severityNumber).to.equal(SeverityNumber.INFO);
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 450,
       // scrollable range = documentHeight - viewportHeight = 1000 - 100 = 900; scrollY / 900 = 450 / 900 = 50%
@@ -171,7 +171,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 700,
       'max_scroll_depth.percent': 78,
@@ -189,7 +189,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
@@ -214,7 +214,7 @@ describe('MaxScrollDepthInstrumentation', () => {
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(2);
     // First part reports the furthest point reached (900).
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 900,
       'max_scroll_depth.percent': 100,
@@ -222,7 +222,7 @@ describe('MaxScrollDepthInstrumentation', () => {
       'max_scroll_depth.document_height': 1000,
     });
     // Second part starts from where the user left off (100), not the previous part's 900.
-    expect(logs[1].attributes).to.deep.equal({
+    expect(logs[1]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 100,
       'max_scroll_depth.percent': 11,
@@ -249,14 +249,14 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
       'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
     });
-    expect(logs[1].attributes).to.deep.equal({
+    expect(logs[1]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
@@ -274,7 +274,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 1000,
       'max_scroll_depth.percent': 100,
@@ -296,7 +296,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 450,
       'max_scroll_depth.percent': 50,
@@ -318,7 +318,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 450,
       'max_scroll_depth.did_scroll': true,
@@ -336,7 +336,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 800,
       // scrollable range = 1000 - 100 = 900; 800 / 900 = 89%
@@ -359,7 +359,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,
@@ -378,7 +378,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.deep.equal({
+    expect(logs[0]!.attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 0,
       'max_scroll_depth.percent': 0,

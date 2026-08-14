@@ -165,7 +165,7 @@ const getLastSessionExportedSpans = async (
   );
   void expect(sessionScopeSpan).not.to.be.undefined;
   expect(sessionScopeSpan?.spans).to.have.lengthOf(1);
-  expect(sessionScopeSpan?.spans[0]['name']).to.be.equal('emb-session-part');
+  expect(sessionScopeSpan?.spans[0]?.['name']).to.be.equal('emb-session-part');
 
   const otherScopeSpan = scopeSpans.find((s) => matchesScope(s.scope, scope));
   void expect(otherScopeSpan).not.to.be.undefined;
@@ -387,11 +387,11 @@ describe('initSDK', () => {
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    void expect(finishedSpans[0].name).to.be.equal('my span');
+    void expect(finishedSpans[0]!.name).to.be.equal('my span');
 
     const finishedLogRecords = logExporter.getFinishedLogRecords();
     expect(finishedLogRecords).to.have.lengthOf(1);
-    void expect(finishedLogRecords[0].body).to.be.equal('my log');
+    void expect(finishedLogRecords[0]!.body).to.be.equal('my log');
   });
 
   it('should allow setting custom processors', async () => {
@@ -414,13 +414,13 @@ describe('initSDK', () => {
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    void expect(finishedSpans[0].name).to.be.equal('my span');
-    void expect(finishedSpans[0].attributes['fake']).to.be.equal('my-attr');
+    void expect(finishedSpans[0]!.name).to.be.equal('my span');
+    void expect(finishedSpans[0]!.attributes['fake']).to.be.equal('my-attr');
 
     const finishedLogRecords = logExporter.getFinishedLogRecords();
     expect(finishedLogRecords).to.have.lengthOf(1);
-    void expect(finishedLogRecords[0].body).to.be.equal('my log');
-    void expect(finishedLogRecords[0].attributes['fake']).to.be.equal(
+    void expect(finishedLogRecords[0]!.body).to.be.equal('my log');
+    void expect(finishedLogRecords[0]!.attributes['fake']).to.be.equal(
       'my-attr',
     );
   });
@@ -575,11 +575,11 @@ describe('initSDK', () => {
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    void expect(finishedSpans[0].name).to.be.equal('my performance span');
+    void expect(finishedSpans[0]!.name).to.be.equal('my performance span');
 
     const finishedLogRecords = logExporter.getFinishedLogRecords();
     expect(finishedLogRecords).to.have.lengthOf(1);
-    void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
+    void expect(finishedLogRecords[0]!.body).to.be.equal('my custom log');
   });
 
   it('should allow setting dynamic config through the SDK', () => {
@@ -633,8 +633,8 @@ describe('initSDK', () => {
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    const active = finishedSpans[1];
-    const child = finishedSpans[0];
+    const active = finishedSpans[1]!;
+    const child = finishedSpans[0]!;
 
     expect(active.name).to.be.equal('my active span');
     expect(active.attributes['active-span-attribute']).to.be.equal('foo');
@@ -936,7 +936,7 @@ describe('initSDK', () => {
 
       const exportedSpans = await getLastSessionExportedSpans(0);
 
-      expect(exportedSpans[0]['name']).to.be.equal('my performance span');
+      expect(exportedSpans[0]!['name']).to.be.equal('my performance span');
     });
 
     it('should apply a max on the number of spans recorded per session', async () => {
@@ -970,7 +970,7 @@ describe('initSDK', () => {
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1000);
       for (let i = 0; i < exportedSpans.length; i++) {
-        expect(exportedSpans[i]['name']).to.equal(`my-span-${i.toString()}`);
+        expect(exportedSpans[i]!['name']).to.equal(`my-span-${i.toString()}`);
       }
 
       fakeFetchResetHistory();
@@ -991,7 +991,7 @@ describe('initSDK', () => {
       const nextSessionExportedSpans = await getLastSessionExportedSpans(0);
       expect(nextSessionExportedSpans).to.have.lengthOf(100);
       for (let i = 0; i < nextSessionExportedSpans.length; i++) {
-        expect(nextSessionExportedSpans[i]['name']).to.equal(
+        expect(nextSessionExportedSpans[i]!['name']).to.equal(
           `my-next-session-span-${i.toString()}`,
         );
       }
@@ -1031,7 +1031,7 @@ describe('initSDK', () => {
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
-      const exportedEvents = exportedSpans[0].events;
+      const exportedEvents = exportedSpans[0]!.events;
       expect(exportedEvents).to.have.lengthOf(200);
 
       for (let i = 0; i < exportedEvents.length; i++) {
@@ -1039,7 +1039,7 @@ describe('initSDK', () => {
         // is reached, because we went 100 over the limit that means we dropped the first 100:
         // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
         const expected = i + 100;
-        expect(exportedEvents[i]['name']).to.equal(
+        expect(exportedEvents[i]!['name']).to.equal(
           `span-event-${expected.toString()}`,
         );
       }
@@ -1079,7 +1079,7 @@ describe('initSDK', () => {
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
-      const exportedAttributes = exportedSpans[0].attributes;
+      const exportedAttributes = exportedSpans[0]!.attributes;
       // 200 is the span attribute cap; three additional attributes are
       // written directly to span.attributes by later processors at onEnd,
       // bypassing the cap: browser.url.full (BrowserSpanProcessor) and
@@ -1093,13 +1093,13 @@ describe('initSDK', () => {
       // everything else happens server-side via the batched envelope. Newest
       // attributes are dropped when the limit is reached, so the first 199
       // span-attribute-N entries survive.
-      expect(exportedAttributes[0].key).to.equal('emb.type');
+      expect(exportedAttributes[0]!.key).to.equal('emb.type');
       for (let i = 1; i < 200; i++) {
         const expected = i - 1;
-        expect(exportedAttributes[i].key).to.equal(
+        expect(exportedAttributes[i]!.key).to.equal(
           `span-attribute-${expected.toString()}`,
         );
-        expect(exportedAttributes[i].value).to.deep.equal({
+        expect(exportedAttributes[i]!.value).to.deep.equal({
           stringValue: expected.toString(),
         });
       }
@@ -1154,10 +1154,10 @@ describe('initSDK', () => {
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
 
-      const exportedEvents = exportedSpans[0].events;
+      const exportedEvents = exportedSpans[0]!.events;
       expect(exportedEvents).to.have.lengthOf(1);
 
-      expect(exportedEvents[0].attributes).to.have.lengthOf(20);
+      expect(exportedEvents[0]!.attributes).to.have.lengthOf(20);
     });
 
     it('should apply default data scrubbing to span and log url attribute values', async () => {
@@ -1213,14 +1213,14 @@ describe('initSDK', () => {
 
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
-      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[0]).to.deep.equal({
         key: 'url.full',
         value: {
           stringValue:
             'https://example.com/some/path/?foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
         },
       });
-      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[1]).to.deep.equal({
         key: 'safe',
         value: {
           stringValue: 'some other attr',
@@ -1229,13 +1229,13 @@ describe('initSDK', () => {
 
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
-      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.path']).to.be.equal(
         'https://REDACTED:REDACTED@www.example.com/some/other/path',
       );
-      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.query']).to.be.equal(
         'foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
       );
-      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['safe']).to.be.equal(
         'some other attr',
       );
     });
@@ -1294,14 +1294,14 @@ describe('initSDK', () => {
 
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
-      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[0]).to.deep.equal({
         key: 'url.full',
         value: {
           stringValue:
             'https://example.com/some/path/?foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
         },
       });
-      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[1]).to.deep.equal({
         key: 'safe',
         value: {
           stringValue: 'some other attr',
@@ -1310,13 +1310,13 @@ describe('initSDK', () => {
 
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
-      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.path']).to.be.equal(
         'https://username:password@www.example.com/some/other/path',
       );
-      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.query']).to.be.equal(
         'foo=bar&pw=my-pass&foopw=safe&AWSAccessKeyId=mykey',
       );
-      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['safe']).to.be.equal(
         'some other attr',
       );
     });
@@ -1378,14 +1378,14 @@ describe('initSDK', () => {
 
       const exportedSpans = await getLastSessionExportedSpans(0);
       expect(exportedSpans).to.have.lengthOf(1);
-      expect(exportedSpans[0].attributes[0]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[0]).to.deep.equal({
         key: 'url.full',
         value: {
           stringValue:
             'https://example.com/some/path/?foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
         },
       });
-      expect(exportedSpans[0].attributes[1]).to.deep.equal({
+      expect(exportedSpans[0]!.attributes[1]).to.deep.equal({
         key: 'safe',
         value: {
           stringValue: 'some other attr ALTERED',
@@ -1394,13 +1394,13 @@ describe('initSDK', () => {
 
       const finishedLogRecords = logExporter.getFinishedLogRecords();
       expect(finishedLogRecords).to.have.lengthOf(1);
-      expect(finishedLogRecords[0].attributes['url.path']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.path']).to.be.equal(
         'https://REDACTED:REDACTED@www.example.com/some/other/path',
       );
-      expect(finishedLogRecords[0].attributes['url.query']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['url.query']).to.be.equal(
         'foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
       );
-      expect(finishedLogRecords[0].attributes['safe']).to.be.equal(
+      expect(finishedLogRecords[0]!.attributes['safe']).to.be.equal(
         'some other attr ALTERED',
       );
     });
@@ -1928,7 +1928,7 @@ describe('initSDK', () => {
           version: '0.221.0',
         });
         expect(exportedSpans).to.have.lengthOf(1);
-        const networkSpan = exportedSpans[0];
+        const networkSpan = exportedSpans[0]!;
         const expectedTraceparent = `00-${networkSpan.traceId}-${networkSpan.spanId}-01`;
 
         expect(networkSpan.name).to.be.equal('GET');
@@ -2206,8 +2206,8 @@ describe('isolated instances', () => {
       const finishedLogRecords = logExporter.getFinishedLogRecords();
 
       expect(finishedLogRecords).to.have.lengthOf(2);
-      expect(finishedLogRecords[0].body).to.equal('some log');
-      expect(finishedLogRecords[1].body).to.equal('my log');
+      expect(finishedLogRecords[0]!.body).to.equal('some log');
+      expect(finishedLogRecords[1]!.body).to.equal('my log');
 
       const finishedSpans = spanExporter.getFinishedSpans();
 
@@ -2218,23 +2218,23 @@ describe('isolated instances', () => {
       // the same route, so EmbracePageManager re-notifies NavigationInstrumentation
       // on session-part-start, giving it its own route span too.
       expect(finishedSpans).to.have.lengthOf(5);
-      expect(finishedSpans[0].name).to.equal('some span');
-      expect(finishedSpans[1].name).to.equal('emb-session-part');
+      expect(finishedSpans[0]!.name).to.equal('some span');
+      expect(finishedSpans[1]!.name).to.equal('emb-session-part');
       expect(
-        finishedSpans[1].attributes['emb.session_part_start_reason'],
+        finishedSpans[1]!.attributes['emb.session_part_start_reason'],
       ).to.equal('init');
       expect(
-        finishedSpans[1].attributes['emb.session_part_end_reason'],
+        finishedSpans[1]!.attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[2].name).to.equal(window.location.pathname);
-      expect(finishedSpans[3].name).to.equal('emb-session-part');
+      expect(finishedSpans[2]!.name).to.equal(window.location.pathname);
+      expect(finishedSpans[3]!.name).to.equal('emb-session-part');
       expect(
-        finishedSpans[3].attributes['emb.session_part_start_reason'],
+        finishedSpans[3]!.attributes['emb.session_part_start_reason'],
       ).to.equal('web_activity');
       expect(
-        finishedSpans[3].attributes['emb.session_part_end_reason'],
+        finishedSpans[3]!.attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[4].name).to.equal('my span');
+      expect(finishedSpans[4]!.name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

@@ -132,9 +132,9 @@ describe('ReactRouterV5Legacy', () => {
       .getFinishedSpans()
       .filter((span) => span.name !== 'emb-session-part');
     expect(routeSpans.length).to.equal(4);
-    expect(routeSpans[0].name).to.equal('/');
-    expect(routeSpans[1].name).to.equal('/product/:id');
-    expect(routeSpans[2].name).to.equal('/product/:id/details');
-    expect(routeSpans[3].name).to.equal('/product/:id/more-details');
+    expect(routeSpans[0]!.name).to.equal('/');
+    expect(routeSpans[1]!.name).to.equal('/product/:id');
+    expect(routeSpans[2]!.name).to.equal('/product/:id/details');
+    expect(routeSpans[3]!.name).to.equal('/product/:id/more-details');
   });
 });

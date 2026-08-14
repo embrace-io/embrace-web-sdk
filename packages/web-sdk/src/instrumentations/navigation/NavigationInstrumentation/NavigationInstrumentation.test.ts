@@ -70,8 +70,8 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/test/:id');
-    expect(finishedSpans[0].attributes).to.deep.equal({
+    expect(finishedSpans[0]!.name).to.equal('/test/:id');
+    expect(finishedSpans[0]!.attributes).to.deep.equal({
       'emb.type': 'ux.surface',
       'app.surface.name': '/test/:id',
       'app.surface.id': pageId,
@@ -105,7 +105,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/already-set');
+    expect(finishedSpans[0]!.name).to.equal('/already-set');
   });
 
   it('should fall back to the global page manager when none is provided', () => {
@@ -117,7 +117,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/test/:id');
+    expect(finishedSpans[0]!.name).to.equal('/test/:id');
   });
 
   it('should not start a new span or log anything for a redundant report of the same route', () => {
@@ -164,8 +164,8 @@ describe('NavigationInstrumentation', () => {
     // extra span from the raw-pathname-to-template transition.
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/products/:id');
-    expect(finishedSpans[0].attributes['app.surface.name']).to.equal(
+    expect(finishedSpans[0]!.name).to.equal('/products/:id');
+    expect(finishedSpans[0]!.attributes['app.surface.name']).to.equal(
       '/products/:id',
     );
 
@@ -193,8 +193,8 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/third', url: '/third' });
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    expect(finishedSpans[0].name).to.equal('/first');
-    expect(finishedSpans[1].name).to.equal('/second');
+    expect(finishedSpans[0]!.name).to.equal('/first');
+    expect(finishedSpans[1]!.name).to.equal('/second');
   });
 
   it('should clean up the path options from the route name if configured', () => {
@@ -211,7 +211,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/test/:time/:type');
+    expect(finishedSpans[0]!.name).to.equal('/test/:time/:type');
   });
 
   it('should not clean up the path options from the route name if configured', () => {
@@ -229,7 +229,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal(
+    expect(finishedSpans[0]!.name).to.equal(
       '/test/:time(hourly|daily|weekly|monthly)',
     );
   });
@@ -248,7 +248,7 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
     const finishedSpans = surfaceSpans();
-    expect(finishedSpans[0].name).to.equal('/test/:time');
+    expect(finishedSpans[0]!.name).to.equal('/test/:time');
   });
 
   it('should be a no-op when not enabled', () => {
@@ -277,7 +277,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/test/:id');
+    expect(finishedSpans[0]!.name).to.equal('/test/:id');
   });
 
   it('should end an open route span when the session part ends, even without a url change', () => {
@@ -294,7 +294,7 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/test/:id');
+    expect(finishedSpans[0]!.name).to.equal('/test/:id');
 
     expect(diag.getDebugLogs()).to.include('Session ended, ending route span.');
   });
@@ -315,8 +315,8 @@ describe('NavigationInstrumentation', () => {
 
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(2);
-    expect(finishedSpans[0].name).to.equal('/test/:id');
-    expect(finishedSpans[1].name).to.equal('/test/:id');
+    expect(finishedSpans[0]!.name).to.equal('/test/:id');
+    expect(finishedSpans[1]!.name).to.equal('/test/:id');
   });
 
   it('should not open a spurious span for the outgoing route when a session part starts from a soft-navigation rollover', () => {
@@ -342,13 +342,13 @@ describe('NavigationInstrumentation', () => {
     // immediately closed for '/first' in between.
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(finishedSpans[0].name).to.equal('/first');
+    expect(finishedSpans[0]!.name).to.equal('/first');
 
     userSessionManager.endSessionPartInternal({ reason: 'background' });
 
     const allFinishedSpans = surfaceSpans();
     expect(allFinishedSpans).to.have.lengthOf(2);
-    expect(allFinishedSpans[1].name).to.equal('/second');
+    expect(allFinishedSpans[1]!.name).to.equal('/second');
   });
 
   it('should not throw when a session part ends with no open route span', () => {

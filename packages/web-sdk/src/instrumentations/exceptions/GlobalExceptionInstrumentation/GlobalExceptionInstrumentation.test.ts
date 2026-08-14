@@ -103,7 +103,7 @@ describe('GlobalExceptionInstrumentation', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
 
     void expect(exceptionLog.hrTime).to.deep.equal(
       timeInputToHrTime(clock.now + evt.timeStamp),
@@ -134,7 +134,7 @@ describe('GlobalExceptionInstrumentation', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
 
     void expect(exceptionLog.hrTime).to.deep.equal(
       timeInputToHrTime(clock.now + evt.timeStamp),
@@ -166,7 +166,7 @@ describe('GlobalExceptionInstrumentation', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
 
     void expect(exceptionLog.hrTime).to.deep.equal(
       timeInputToHrTime(clock.now + evt.timeStamp),
@@ -197,7 +197,7 @@ describe('GlobalExceptionInstrumentation', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
 
     void expect(exceptionLog.hrTime).to.deep.equal(
       timeInputToHrTime(clock.now + evt.timeStamp),
@@ -227,7 +227,7 @@ describe('GlobalExceptionInstrumentation', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const exceptionLog = finishedLogs[0];
+    const exceptionLog = finishedLogs[0]!;
 
     void expect(exceptionLog.hrTime).to.deep.equal(
       timeInputToHrTime(clock.now + evt.timeStamp),

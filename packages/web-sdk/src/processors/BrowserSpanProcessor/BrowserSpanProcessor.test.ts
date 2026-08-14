@@ -35,7 +35,7 @@ describe('BrowserSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
 
     expect(readableSpan.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/products/123',
@@ -49,7 +49,7 @@ describe('BrowserSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
 
     expect(readableSpan.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://example.com/page-2',
@@ -64,7 +64,7 @@ describe('BrowserSpanProcessor', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
 
-    expect(finishedSpans[0].attributes[KEY_BROWSER_URL_FULL]).to.equal(
+    expect(finishedSpans[0]!.attributes[KEY_BROWSER_URL_FULL]).to.equal(
       'https://existing.com/path',
     );
   });

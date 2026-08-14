@@ -192,8 +192,8 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(1);
 
     // Should still log but with empty attributes (array rejected)
-    expect(finishedLogs[0].attributes).to.not.have.property('0');
-    expect(finishedLogs[0].attributes).to.not.have.property('1');
+    expect(finishedLogs[0]!.attributes).to.not.have.property('0');
+    expect(finishedLogs[0]!.attributes).to.not.have.property('1');
 
     const warningLogs = testDiag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(1);
@@ -220,8 +220,8 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(1);
 
     // Should still log but with empty attributes (array rejected)
-    expect(finishedLogs[0].attributes).to.not.have.property('0');
-    expect(finishedLogs[0].attributes).to.not.have.property('1');
+    expect(finishedLogs[0]!.attributes).to.not.have.property('0');
+    expect(finishedLogs[0]!.attributes).to.not.have.property('1');
 
     const warningLogs = testDiag.getWarnLogs();
     expect(warningLogs).to.have.lengthOf(1);
@@ -257,7 +257,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal(
       'this is an info log without stacktrace and one attribute',
@@ -283,7 +283,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is a warning log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.WARN);
@@ -303,7 +303,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is a warning log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.WARN);
@@ -326,7 +326,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is a warning log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.WARN);
@@ -352,7 +352,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an error log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -370,7 +370,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an error log with stacktrace');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -398,7 +398,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -428,7 +428,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -456,7 +456,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -483,7 +483,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -515,7 +515,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -563,7 +563,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.attributes[KEY_EMB_ERROR_LOG_COUNT]).to.be.equal(2);
     expect(
       sessionSpan.attributes[KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT],
@@ -585,7 +585,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(sessionSpan.attributes).not.to.have.property(
       KEY_EMB_ERROR_LOG_COUNT,
     );
@@ -610,12 +610,12 @@ describe('EmbraceLogManager', () => {
 
     // The warning logs should be limited
     for (let i = 0; i < 4; i++) {
-      expect(finishedLogs[i].body).to.equal('this is a warning log');
+      expect(finishedLogs[i]!.body).to.equal('this is a warning log');
     }
 
     // All the error logs should be available
     for (let i = 4; i < 14; i++) {
-      expect(finishedLogs[i].body).to.equal('this is an error log');
+      expect(finishedLogs[i]!.body).to.equal('this is an error log');
     }
 
     userSessionManager.endSessionPartInternal({
@@ -623,7 +623,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes['emb.app.applied_limit.warning_log.drop.count'],
     ).to.be.equal(6);
@@ -645,7 +645,7 @@ describe('EmbraceLogManager', () => {
     manager.message('this is a warning log', 'warning');
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
-    expect(nextSessionFinishedLogs[0].body).to.equal('this is a warning log');
+    expect(nextSessionFinishedLogs[0]!.body).to.equal('this is a warning log');
   });
 
   it('should truncate log messages', () => {
@@ -659,8 +659,8 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(2);
-    expect(finishedLogs[0].body).to.equal('this is an info log');
-    expect(finishedLogs[1].body).to.equal(
+    expect(finishedLogs[0]!.body).to.equal('this is an info log');
+    expect(finishedLogs[1]!.body).to.equal(
       'this is an info log which has a message longer than the allo',
     );
 
@@ -669,7 +669,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.info_log.truncate_string.count'
@@ -702,25 +702,25 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(2);
-    expect(finishedLogs[0].body).to.equal('this is an error log');
-    expect(finishedLogs[1].body).to.equal(
+    expect(finishedLogs[0]!.body).to.equal('this is an error log');
+    expect(finishedLogs[1]!.body).to.equal(
       'this is an error log with truncated attributes',
     );
 
-    expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
-    expect(finishedLogs[0].attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[0]!.attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[0]!.attributes['key2']).to.be.equal('2');
 
-    expect(finishedLogs[1].attributes['key1']).to.be.equal('1');
-    expect(finishedLogs[1].attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[1]!.attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[1]!.attributes['key2']).to.be.equal('2');
     // Seems to be deterministic that this is always the one to be removed, adding sorting if the test becomes flaky
-    expect(finishedLogs[1].attributes).not.to.have.property('key3');
+    expect(finishedLogs[1]!.attributes).not.to.have.property('key3');
 
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.error_log.truncate_attributes.count'
@@ -744,9 +744,9 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].body).to.equal('this is an error log');
+    expect(finishedLogs[0]!.body).to.equal('this is an error log');
 
-    expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
+    expect(finishedLogs[0]!.attributes['a-very-lon']).to.be.equal(
       'a-very-long-',
     );
 
@@ -755,7 +755,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.log_attribute_key.truncate_string.count'
@@ -787,7 +787,7 @@ describe('EmbraceLogManager', () => {
     expect(finishedLogs).to.have.lengthOf(3);
 
     for (let i = 0; i < 3; i++) {
-      expect(finishedLogs[i].body).to.equal('this is an exception');
+      expect(finishedLogs[i]!.body).to.equal('this is an exception');
     }
 
     userSessionManager.endSessionPartInternal({
@@ -795,7 +795,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes['emb.app.applied_limit.exception.drop.count'],
     ).to.be.equal(7);
@@ -814,7 +814,7 @@ describe('EmbraceLogManager', () => {
     manager.logException(new Error('this is an exception'));
     const nextSessionFinishedLogs = memoryExporter.getFinishedLogRecords();
     expect(nextSessionFinishedLogs).to.have.lengthOf(1);
-    expect(nextSessionFinishedLogs[0].body).to.equal('this is an exception');
+    expect(nextSessionFinishedLogs[0]!.body).to.equal('this is an exception');
   });
 
   it('should truncate exception messages', () => {
@@ -828,7 +828,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].body).to.equal(
+    expect(finishedLogs[0]!.body).to.equal(
       'this is an exception which has a message longer th',
     );
 
@@ -837,7 +837,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception.truncate_string.count'
@@ -872,26 +872,26 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(2);
-    expect(finishedLogs[0].body).to.equal('this is an exception');
-    expect(finishedLogs[1].body).to.equal(
+    expect(finishedLogs[0]!.body).to.equal('this is an exception');
+    expect(finishedLogs[1]!.body).to.equal(
       'this is an exception with truncated attributes',
     );
 
-    expect(finishedLogs[0].attributes['key1']).to.be.equal('1');
-    expect(finishedLogs[0].attributes['key2']).to.be.equal('2');
-    expect(finishedLogs[0].attributes['key3']).to.be.equal('3');
+    expect(finishedLogs[0]!.attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[0]!.attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[0]!.attributes['key3']).to.be.equal('3');
 
-    expect(finishedLogs[1].attributes['key1']).to.be.equal('1');
-    expect(finishedLogs[1].attributes['key2']).to.be.equal('2');
-    expect(finishedLogs[1].attributes['key3']).to.be.equal('3');
-    expect(finishedLogs[1].attributes).not.to.have.property('key4');
+    expect(finishedLogs[1]!.attributes['key1']).to.be.equal('1');
+    expect(finishedLogs[1]!.attributes['key2']).to.be.equal('2');
+    expect(finishedLogs[1]!.attributes['key3']).to.be.equal('3');
+    expect(finishedLogs[1]!.attributes).not.to.have.property('key4');
 
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception.truncate_attributes.count'
@@ -916,9 +916,9 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    expect(finishedLogs[0].body).to.equal('this is an exception');
+    expect(finishedLogs[0]!.body).to.equal('this is an exception');
 
-    expect(finishedLogs[0].attributes['a-very-lon']).to.be.equal(
+    expect(finishedLogs[0]!.attributes['a-very-lon']).to.be.equal(
       'a-very-long-',
     );
 
@@ -927,7 +927,7 @@ describe('EmbraceLogManager', () => {
     });
     const finishedSpans = spanExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const sessionSpan = finishedSpans[0];
+    const sessionSpan = finishedSpans[0]!;
     expect(
       sessionSpan.attributes[
         'emb.app.applied_limit.exception_attribute_key.truncate_string.count'
@@ -954,11 +954,11 @@ describe('EmbraceLogManager', () => {
     const finishedLogs = memoryExporter.getFinishedLogRecords();
 
     expect(finishedLogs).to.have.lengthOf(2);
-    expect(finishedLogs[0].attributes).to.have.property(
+    expect(finishedLogs[0]!.attributes).to.have.property(
       'emb.state',
       'foreground',
     );
-    expect(finishedLogs[1].attributes).to.have.property(
+    expect(finishedLogs[1]!.attributes).to.have.property(
       'emb.state',
       'foreground',
     );
@@ -982,11 +982,11 @@ describe('EmbraceLogManager', () => {
     const finishedLogs = memoryExporter.getFinishedLogRecords();
 
     expect(finishedLogs).to.have.lengthOf(2);
-    expect(finishedLogs[0].attributes).to.have.property(
+    expect(finishedLogs[0]!.attributes).to.have.property(
       'emb.state',
       'background',
     );
-    expect(finishedLogs[1].attributes).to.have.property(
+    expect(finishedLogs[1]!.attributes).to.have.property(
       'emb.state',
       'background',
     );
@@ -1041,7 +1041,7 @@ describe('EmbraceLogManager', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.body).to.equal('this is an exception');
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1068,7 +1068,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('this is a string error');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1096,7 +1096,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('123');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1128,7 +1128,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal(
         '{"key1":"value1","key2":"value2","key3":"value3","',
@@ -1165,7 +1165,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('[object Object]');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1193,7 +1193,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('null');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1219,7 +1219,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('undefined');
       expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
@@ -1251,7 +1251,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('this is an info log with a stacktrace');
       expect(log.severityNumber).to.be.equal(SeverityNumber.INFO);
@@ -1272,7 +1272,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('this is a warning log with a stacktrace');
       expect(log.severityText).to.be.equal('WARNING');
@@ -1293,7 +1293,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('this is an error log with a stacktrace');
       expect(log.severityText).to.be.equal('ERROR');
@@ -1312,7 +1312,7 @@ describe('EmbraceLogManager', () => {
 
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(1);
-      const log = finishedLogs[0];
+      const log = finishedLogs[0]!;
 
       expect(log.body).to.equal('error log without stacktrace');
       expect(log.attributes).to.not.have.property(
@@ -1352,15 +1352,15 @@ describe('EmbraceLogManager', () => {
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(3);
 
-      expect(finishedLogs[0].attributes).to.have.property(
+      expect(finishedLogs[0]!.attributes).to.have.property(
         'emb.exception_number',
         1,
       );
-      expect(finishedLogs[1].attributes).to.have.property(
+      expect(finishedLogs[1]!.attributes).to.have.property(
         'emb.exception_number',
         2,
       );
-      expect(finishedLogs[2].attributes).to.have.property(
+      expect(finishedLogs[2]!.attributes).to.have.property(
         'emb.exception_number',
         3,
       );
@@ -1380,11 +1380,11 @@ describe('EmbraceLogManager', () => {
       const finishedLogs = memoryExporter.getFinishedLogRecords();
       expect(finishedLogs).to.have.lengthOf(2);
 
-      expect(finishedLogs[0].attributes).to.have.property(
+      expect(finishedLogs[0]!.attributes).to.have.property(
         'emb.exception_number',
         1,
       );
-      expect(finishedLogs[1].attributes).to.have.property(
+      expect(finishedLogs[1]!.attributes).to.have.property(
         'emb.exception_number',
         1,
       );

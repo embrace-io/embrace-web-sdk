@@ -23,7 +23,7 @@ describe('createRetryingTransport', () => {
       await Promise.resolve();
 
       // Should still be on the previous attempt before the backoff is reached
-      clock.tick(expectedBackoffs[i] - 100);
+      clock.tick(expectedBackoffs[i]! - 100);
       await Promise.resolve();
       expect(sendStub).callCount(attempts);
 

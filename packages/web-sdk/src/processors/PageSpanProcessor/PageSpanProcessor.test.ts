@@ -46,7 +46,7 @@ describe('PageSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
 
     expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.equal(
       pageManager.getCurrentPageId(),
@@ -65,7 +65,7 @@ describe('PageSpanProcessor', () => {
     span.end();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const readableSpan = finishedSpans[finishedSpans.length - 1];
+    const readableSpan = finishedSpans[finishedSpans.length - 1]!;
 
     expect(readableSpan.attributes[KEY_APP_SURFACE_LABEL]).to.equal(
       'SpanLabel',
@@ -79,7 +79,7 @@ describe('PageSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
 
     void expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
     void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
@@ -98,7 +98,7 @@ describe('PageSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    const readableSpan = finishedSpans[0];
+    const readableSpan = finishedSpans[0]!;
 
     void expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.be.equal(
       'some-other-page-id',
@@ -120,7 +120,7 @@ describe('PageSpanProcessor', () => {
     span.end();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
-    const readableSpan = finishedSpans[finishedSpans.length - 1];
+    const readableSpan = finishedSpans[finishedSpans.length - 1]!;
 
     expect(readableSpan.attributes[KEY_APP_SURFACE_LABEL]).to.be.equal(
       'ExistingLabel',

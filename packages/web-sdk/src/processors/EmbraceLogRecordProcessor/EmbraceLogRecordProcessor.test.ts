@@ -35,7 +35,7 @@ describe('EmbraceLogRecordProcessor', () => {
 
     expect(finishedLogs).to.have.lengthOf(1);
 
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes['emb.type']).to.be.equal('sys.log');
     expect(log.attributes['url.full']).to.be.equal(urlDocument.URL);
@@ -50,7 +50,7 @@ describe('EmbraceLogRecordProcessor', () => {
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
 
-    expect(finishedLogs[0].attributes['url.full']).to.equal(
+    expect(finishedLogs[0]!.attributes['url.full']).to.equal(
       'https://existing.com/path',
     );
   });

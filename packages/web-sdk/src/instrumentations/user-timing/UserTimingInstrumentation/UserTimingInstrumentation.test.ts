@@ -225,7 +225,7 @@ describe('UserTimingInstrumentation', () => {
 
     const logs = memoryExporter.getFinishedLogRecords();
     expect(logs).to.have.length(1);
-    const record = logs[0];
+    const record = logs[0]!;
     expect(record.eventName).to.equal('emb-user-timing');
     expect(record.severityNumber).to.equal(SeverityNumber.INFO);
     expect(record.attributes['emb.type']).to.equal('ux.user_timing');
@@ -248,7 +248,7 @@ describe('UserTimingInstrumentation', () => {
       makeMark({ name: 'timed-mark', startTime: 150, duration: 0 }),
     ]);
 
-    const record = memoryExporter.getFinishedLogRecords()[0];
+    const record = memoryExporter.getFinishedLogRecords()[0]!;
     expect(record.hrTime).to.deep.equal(timeInputToHrTime(1000 + 150));
 
     instrumentation.disable();
@@ -264,7 +264,7 @@ describe('UserTimingInstrumentation', () => {
     expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
     const spans = spanExporter.getFinishedSpans();
     expect(spans).to.have.length(1);
-    const span = spans[0];
+    const span = spans[0]!;
     expect(span.name).to.equal('my-measure');
     expect(span.attributes['emb.type']).to.equal('ux.user_timing');
     expect(span.attributes['emb.instrumentation']).to.equal('user_timing');
@@ -293,7 +293,7 @@ describe('UserTimingInstrumentation', () => {
       }),
     ]);
 
-    const span = spanExporter.getFinishedSpans()[0];
+    const span = spanExporter.getFinishedSpans()[0]!;
     expect(span.attributes['emb.user_timing.detail']).to.equal(
       JSON.stringify({ component: 'nav', phase: 'render' }),
     );
@@ -437,7 +437,7 @@ describe('UserTimingInstrumentation', () => {
 
     const logs = memoryExporter.getFinishedLogRecords();
     expect(logs).to.have.length(1);
-    expect(logs[0].body).to.equal(
+    expect(logs[0]!.body).to.equal(
       JSON.stringify({ phase: 'login', attempt: 2 }),
     );
 
@@ -451,7 +451,7 @@ describe('UserTimingInstrumentation', () => {
 
     const logs = memoryExporter.getFinishedLogRecords();
     expect(logs).to.have.length(1);
-    expect(logs[0].body).to.be.undefined;
+    expect(logs[0]!.body).to.be.undefined;
 
     instrumentation.disable();
   });
@@ -465,7 +465,7 @@ describe('UserTimingInstrumentation', () => {
 
     const logs = memoryExporter.getFinishedLogRecords();
     expect(logs).to.have.length(1);
-    expect(logs[0].body).to.be.undefined;
+    expect(logs[0]!.body).to.be.undefined;
 
     instrumentation.disable();
   });
@@ -590,8 +590,8 @@ describe('UserTimingInstrumentation', () => {
       triggerMarkEntries([mark]);
 
       expect(received).to.have.length(1);
-      expect(received[0].name).to.equal('app-start');
-      expect(received[0].startTime).to.equal(42);
+      expect(received[0]!.name).to.equal('app-start');
+      expect(received[0]!.startTime).to.equal(42);
 
       instrumentation.disable();
     });
@@ -624,7 +624,9 @@ describe('UserTimingInstrumentation', () => {
 
       const logs = memoryExporter.getFinishedLogRecords();
       expect(logs).to.have.length(1);
-      expect(logs[0].attributes['emb.user_timing.entry_type']).to.equal('mark');
+      expect(logs[0]!.attributes['emb.user_timing.entry_type']).to.equal(
+        'mark',
+      );
 
       instrumentation.disable();
     });

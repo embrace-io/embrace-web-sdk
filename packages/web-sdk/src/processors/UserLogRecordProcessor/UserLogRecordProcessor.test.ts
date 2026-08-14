@@ -41,7 +41,7 @@ describe('UserLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     expect(log.attributes['user.id']).to.be.equal('test-user-id');
   });
@@ -53,7 +53,7 @@ describe('UserLogRecordProcessor', () => {
 
     const finishedLogs = memoryExporter.getFinishedLogRecords();
     expect(finishedLogs).to.have.lengthOf(1);
-    const log = finishedLogs[0];
+    const log = finishedLogs[0]!;
 
     void expect(log.attributes['user.id']).to.be.undefined;
   });
