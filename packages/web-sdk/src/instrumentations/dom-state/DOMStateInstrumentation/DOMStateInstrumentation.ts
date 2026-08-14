@@ -31,7 +31,7 @@ import type { DOMStateInstrumentationArgs } from './types.ts';
   log sent after the capture.
 */
 export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _onLoadHandler: () => void;
+  private readonly _onLoad: () => void;
   // The page's one attempt, spent inside the first engaged part whatever it yields.
   private _foldMeasured = false;
   private _pendingFoldMeasurement: {
@@ -48,7 +48,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
 
-    this._onLoadHandler = (): void => {
+    this._onLoad = (): void => {
       this._captureFoldMeasurement();
     };
 
@@ -64,7 +64,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
   public override onEnable(): void {
     if (!this._hasLoadEventFired()) {
-      window.addEventListener('load', this._onLoadHandler, { once: true });
+      window.addEventListener('load', this._onLoad, { once: true });
     }
 
     this.setSessionPartListeners({
@@ -94,7 +94,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onDisable(): void {
-    window.removeEventListener('load', this._onLoadHandler);
+    window.removeEventListener('load', this._onLoad);
     this._pendingFoldMeasurement = null;
   }
 
