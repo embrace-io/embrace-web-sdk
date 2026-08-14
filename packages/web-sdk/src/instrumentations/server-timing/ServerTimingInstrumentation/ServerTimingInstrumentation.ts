@@ -41,13 +41,22 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   public override onEnable(): void {
     this._stopObserving();
 
+    if (this._performanceCollected) {
+      return;
+    }
+
     /*
-     * Server timings arrive in the response headers, so they are on the
-     * navigation entry before any script runs and there is nothing to wait for
-     * beyond the entry itself. The observer is what keeps the read out of the
-     * constructor: onEnable runs from there, before the SDK wires the logger
-     * provider on, and logs emitted synchronously at that point are lost for
-     * good because the collection guard latches.
+     * The observer keeps the read out of the constructor. Under
+     * registerGlobally: false the logger provider arrives later in this same
+     * task, and a log emitted before it is lost for good because the
+     * collection guard latches.
+     *
+     * buffered stays at its default of true, the opposite of the navigation
+     * observer in DocumentLoadInstrumentation: server timings arrive in the
+     * response headers and are complete on the entry from the start, so a
+     * replay carries everything. It is also required, because the SDK usually
+     * starts after the entry was buffered and an unbuffered subscription would
+     * never be notified.
      */
     this._navigationObserver =
       createPerformanceObserver<PerformanceNavigationTiming>(
@@ -58,6 +67,12 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
         },
         { diag: this._diag },
       );
+
+    if (!this._navigationObserver) {
+      this._diag.warn(
+        'navigation entries are not observable, server timings will not be collected',
+      );
+    }
   }
 
   public override onDisable(): void {
