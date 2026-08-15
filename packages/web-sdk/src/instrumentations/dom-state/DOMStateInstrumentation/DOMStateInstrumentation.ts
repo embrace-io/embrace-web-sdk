@@ -173,15 +173,16 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
       // Nothing to walk and nothing to measure both drop their keys rather than
       // report a zero, so the part still gets a log for whatever remains.
-      ...(tree
-        ? {
-            [ATTR_DOM_STATE_ELEMENT_COUNT]: tree.elementCount,
-            // The traversal counts its root, so elementCount is at least 1.
-            [ATTR_DOM_STATE_AVERAGE_DEPTH]: tree.totalDepth / tree.elementCount,
-          }
-        : root
+      ...(tree === null
+        ? {}
+        : tree.limitReached
           ? { [ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED]: true }
-          : {}),
+          : {
+              [ATTR_DOM_STATE_ELEMENT_COUNT]: tree.elementCount,
+              // The traversal counts its root, so elementCount is at least 1.
+              [ATTR_DOM_STATE_AVERAGE_DEPTH]:
+                tree.totalDepth / tree.elementCount,
+            }),
       ...(measurement
         ? {
             [ATTR_DOM_STATE_DOCUMENT_HEIGHT]: measurement.documentHeight,
@@ -229,12 +230,13 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   }
 
   // The root passed in sits at depth 1. Runs synchronously on the pagehide
-  // path, so it uses parallel stacks over per-node entry objects and bails at
-  // the ceiling rather than spend the unload budget on a pathological tree.
-  private _traverse(root: Element): {
-    elementCount: number;
-    totalDepth: number;
-  } | null {
+  // path, so it allocates nothing per node and bails at the ceiling rather
+  // than spend the unload budget on a pathological tree.
+  private _traverse(
+    root: Element,
+  ):
+    | { limitReached: false; elementCount: number; totalDepth: number }
+    | { limitReached: true } {
     let elementCount = 0;
     let totalDepth = 0;
 
@@ -248,18 +250,16 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       elementCount++;
       totalDepth += depth;
       const { children } = element;
-      // Popped, queued and about-to-queue are disjoint, so their sum is a
-      // lower bound on the tree size: exceeding the ceiling here proves the
-      // tree is over it before the frontier is pushed, keeping the bail cost
-      // bounded by the ceiling even on wide trees.
+      // Popped, queued and about-to-queue are disjoint, so their sum lower-bounds the
+      // tree size; checking before the push bounds the bail cost even on wide trees.
       if (
         elementCount + elements.length + children.length >
         DOM_STATE_MAX_TRAVERSED_ELEMENTS
       ) {
         this._diag.debug(
-          'dom-state tree walk bailed: the tree exceeds the traversal ceiling',
+          `dom-state tree walk bailed: the tree exceeds the ${String(DOM_STATE_MAX_TRAVERSED_ELEMENTS)}-element traversal ceiling`,
         );
-        return null;
+        return { limitReached: true };
       }
       for (let i = 0; i < children.length; i++) {
         elements.push(children[i]);
@@ -267,6 +267,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       }
     }
 
-    return { elementCount, totalDepth };
+    return { limitReached: false, elementCount, totalDepth };
   }
 }
