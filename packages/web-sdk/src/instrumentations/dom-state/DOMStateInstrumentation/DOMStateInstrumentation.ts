@@ -229,9 +229,10 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  // The root passed in sits at depth 1. Runs synchronously on the pagehide
-  // path, so it allocates nothing per node and bails at the ceiling rather
-  // than spend the unload budget on a pathological tree.
+  // Iterative depth-first traversal that computes element count and summed depth
+  // in one pass. The root passed in sits at depth 1. Runs synchronously on the
+  // pagehide path, so it bails at the ceiling rather than spend the unload
+  // budget on a pathological tree.
   private _traverse(
     root: Element,
   ):
@@ -240,20 +241,17 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     let elementCount = 0;
     let totalDepth = 0;
 
-    const elements: Element[] = [root];
-    const depths: number[] = [1];
-    for (
-      let element = elements.pop(), depth = depths.pop();
-      element !== undefined && depth !== undefined;
-      element = elements.pop(), depth = depths.pop()
-    ) {
+    const stack: Array<{ element: Element; depth: number }> = [
+      { element: root, depth: 1 },
+    ];
+    for (let entry = stack.pop(); entry !== undefined; entry = stack.pop()) {
       elementCount++;
-      totalDepth += depth;
-      const { children } = element;
+      totalDepth += entry.depth;
+      const { children } = entry.element;
       // Popped, queued and about-to-queue are disjoint, so their sum lower-bounds the
       // tree size; checking before the push bounds the bail cost even on wide trees.
       if (
-        elementCount + elements.length + children.length >
+        elementCount + stack.length + children.length >
         DOM_STATE_MAX_TRAVERSED_ELEMENTS
       ) {
         this._diag.debug(
@@ -262,8 +260,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         return { limitReached: true };
       }
       for (let i = 0; i < children.length; i++) {
-        elements.push(children[i]);
-        depths.push(depth + 1);
+        stack.push({ element: children[i], depth: entry.depth + 1 });
       }
     }
 
