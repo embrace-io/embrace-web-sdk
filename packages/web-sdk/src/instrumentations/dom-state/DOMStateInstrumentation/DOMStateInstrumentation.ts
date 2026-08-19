@@ -81,7 +81,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         try {
           this._sendLog({
             ...this._buildSessionPartEndAttributes(),
-            ...(pendingFoldAttributes ?? {}),
+            ...pendingFoldAttributes,
           });
         } catch (e) {
           this._diag.error('failed to emit the dom-state part-end log', e);
