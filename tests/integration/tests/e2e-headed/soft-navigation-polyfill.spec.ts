@@ -11,6 +11,7 @@
 // user interactions produce real entries.
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
+import { waitForEntry } from '../../utils/waitForEntry.ts';
 
 const BASE_URL = 'http://localhost:3016';
 
@@ -51,7 +52,10 @@ test.describe('Soft Navigation Polyfill', () => {
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
 
-    await page.waitForTimeout(1000); // wait for the polyfill span to be emitted
+    // The polyfill emits its span once the click's event entry is delivered, so
+    // gate on that. Its observer is registered at init, ahead of this one, so
+    // the span exists once this resolves.
+    await waitForEntry(page, ['event']);
 
     await triggerSessionEnd();
 

@@ -7,6 +7,7 @@
 // that flag automatically.
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
+import { waitForEntry } from '../../utils/waitForEntry.ts';
 
 const BASE_URL = 'http://localhost:3016';
 
@@ -47,9 +48,11 @@ test.describe('Soft Navigation Native', () => {
       .expect(page.getByRole('heading', { name: 'Products' }))
       .toBeVisible();
 
-    // Give the browser time to deliver the soft-navigation entry via
-    // PerformanceObserver before the session flush.
-    await page.waitForTimeout(1000);
+    // The SDK emits its span when the browser delivers this entry, so gate on
+    // the same delivery. Its own observer is registered at init, ahead of this
+    // one, and observers run in registration order, so the span exists once
+    // this resolves.
+    await waitForEntry(page, ['soft-navigation']);
 
     await triggerSessionEnd();
 

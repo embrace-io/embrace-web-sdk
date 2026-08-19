@@ -7,12 +7,12 @@ import {
   MAIN_THREAD_BLOCK_MS,
 } from '../../platforms/vite-test-harness/src/constants.ts';
 import test, { expect } from '../../utils/test-with-mock-api.ts';
+import { waitForEntry } from '../../utils/waitForEntry.ts';
 
 const BASE_URL = 'http://localhost:3017/';
 const DELAYED_LCP_URL = `http://localhost:3017/lcp?delay=${DEFAULT_LCP_DELAY_MS}`;
 const PAGE_A_URL = 'http://localhost:3017/a';
 const PAGE_B_URL = 'http://localhost:3017/b';
-const OBSERVER_DELAY_MS = 200;
 
 // When asserting render times, give a buffer of 2 frames @ 30 fps
 const RENDER_BUFFER = 67;
@@ -39,9 +39,11 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     await page.goto(BASE_URL);
 
     // LCP entries are only observed until the first input, so let the landing
-    // page's paint reach the PerformanceObserver before interacting.
+    // page's paint reach the PerformanceObserver before interacting. The paint
+    // has already happened by this point, so check for a delivered entry before
+    // waiting on one.
     await expect(page.getByText('This is the landing page')).toBeVisible();
-    await page.waitForTimeout(OBSERVER_DELAY_MS);
+    await waitForEntry(page, ['largest-contentful-paint']);
 
     // Block the main thread so we can deterministically assert INP for the hard navigation.
     await page.getByTestId('block-main-thread').click();
@@ -81,8 +83,13 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     });
     const afterImageRender = await page.evaluate(() => performance.now());
 
-    // A short necessary timeout to ensure the LCP entry reaches the PerformanceObserver.
-    await page.waitForTimeout(OBSERVER_DELAY_MS);
+    // With soft navigations active the paint for this navigation arrives as an
+    // interaction-contentful-paint entry, so accept either type.
+    // Candidates arrive smallest first and share a startTime, so waiting for any
+    // entry would settle on the text that painted before the image.
+    await waitForEntry(page, ['interaction-contentful-paint'], 1, {
+      elementTag: 'IMG',
+    });
 
     // The image has already painted, so this only affects INP, not LCP.
     await page.getByTestId('block-main-thread').click();
@@ -94,11 +101,13 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     const afterPageARender = await page.evaluate(() => performance.now());
     await waitForSoftNavigationEntry(PAGE_A_URL);
 
-    // Block the main thread and trigger a layout shift
+    // Block the main thread and trigger a layout shift. The observer is armed
+    // before the shift so it waits on that specific delivery rather than on an
+    // entry an earlier shift may already have produced.
     await page.getByTestId('block-main-thread').click();
     await page.getByTestId('trigger-layout-shift').click();
     await expect(page.getByText('Layout shift banner')).toBeVisible();
-    await page.waitForTimeout(OBSERVER_DELAY_MS);
+    await waitForEntry(page, ['layout-shift']);
 
     // Trigger another soft navigation to finalise the previous soft navigation's metrics
     await page.getByRole('button', { name: 'Page B' }).click();
