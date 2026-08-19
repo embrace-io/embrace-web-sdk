@@ -12,6 +12,7 @@ import {
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   FailingStorage,
@@ -1328,6 +1329,59 @@ describe('EmbraceLogManager', () => {
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(0);
       expect(secondMemoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
+    });
+
+    it('should force flush the overridden logger provider', async () => {
+      const loggerProvider = new LoggerProvider({
+        processors: [
+          new SimpleLogRecordProcessor({
+            exporter: new InMemoryLogRecordExporter(),
+          }),
+        ],
+      });
+      const forceFlush = sinon.spy(loggerProvider, 'forceFlush');
+
+      const testManager = new EmbraceLogManager({
+        perf,
+        userSessionManager,
+        limitManager,
+        loggerProvider,
+        storage,
+        visibilityDoc: window.document,
+      });
+
+      await testManager.flush();
+
+      void expect(forceFlush.calledOnce).to.be.true;
+    });
+
+    it('should resolve rather than reject when the flush fails', async () => {
+      const loggerProvider = new LoggerProvider({
+        processors: [
+          new SimpleLogRecordProcessor({
+            exporter: new InMemoryLogRecordExporter(),
+          }),
+        ],
+      });
+      sinon
+        .stub(loggerProvider, 'forceFlush')
+        .rejects(new Error('exporter unavailable'));
+
+      const testManager = new EmbraceLogManager({
+        diag,
+        perf,
+        userSessionManager,
+        limitManager,
+        loggerProvider,
+        storage,
+        visibilityDoc: window.document,
+      });
+
+      // The safe proxy around the public API only traps synchronous throws, so
+      // a rejection here would surface to user code.
+      await testManager.flush();
+
+      expect(diag.getErrorLogs().join(' ')).to.include('exporter unavailable');
     });
 
     it('should include exception number when logging an exception', () => {
