@@ -34,10 +34,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
   // The page's one attempt, spent inside the first engaged part whatever it yields.
   private _foldMeasured = false;
-  private _pendingFoldMeasurement: {
-    attributes: Attributes;
-    sessionPartId: string;
-  } | null = null;
+  private _pendingFoldAttributes: Attributes | null = null;
 
   public constructor({ diag, perf }: DOMStateInstrumentationArgs = {}) {
     super({
@@ -79,12 +76,12 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       end: () => {
         // The fold capture belongs to this part end alone: consumed up front,
         // so a throw anywhere below cannot carry it into a later part's log.
-        const pendingFoldMeasurement = this._pendingFoldMeasurement;
-        this._pendingFoldMeasurement = null;
+        const pendingFoldAttributes = this._pendingFoldAttributes;
+        this._pendingFoldAttributes = null;
         try {
           this._sendLog({
             ...this._buildSessionPartEndAttributes(),
-            ...(pendingFoldMeasurement?.attributes ?? {}),
+            ...(pendingFoldAttributes ?? {}),
           });
         } catch (e) {
           this._diag.error('failed to emit the dom-state part-end log', e);
@@ -95,23 +92,13 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     window.removeEventListener('load', this._onLoad);
-    this._pendingFoldMeasurement = null;
+    this._pendingFoldAttributes = null;
   }
 
   public override setUserSessionManager(
     userSessionManager: UserSessionManagerInternal,
   ): void {
     super.setUserSessionManager(userSessionManager);
-    // A measurement captured through the global proxy can carry another
-    // instance's part id; it must not survive the wiring of the real manager.
-    if (
-      this._pendingFoldMeasurement &&
-      this._pendingFoldMeasurement.sessionPartId !==
-        userSessionManager.getSessionPartId()
-    ) {
-      this._pendingFoldMeasurement = null;
-      this._foldMeasured = false;
-    }
     // Per-instance wiring delivers the manager after construction, when the
     // capture attempt saw no engaged part. Try again.
     if (this._isEnabled && this._hasLoadEventFired()) {
@@ -137,8 +124,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         return;
       }
 
-      const sessionPartId = this.userSessionManager.getSessionPartId();
-      if (sessionPartId === null) {
+      if (this.userSessionManager.getSessionPartId() === null) {
         // Nobody is looking at the page; the part-start listener measures once
         // it is engaged.
         this._diag.debug(
@@ -158,18 +144,14 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         return;
       }
 
-      this._pendingFoldMeasurement = {
-        attributes: {
-          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT]:
-            this._countImagesAboveFold(measurement),
-          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT]:
-            measurement.viewportHeight,
-          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH]:
-            measurement.viewportWidth,
-          [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]:
-            this.perf.getNowMillis(),
-        },
-        sessionPartId,
+      this._pendingFoldAttributes = {
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT]:
+          this._countImagesAboveFold(measurement),
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT]:
+          measurement.viewportHeight,
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH]:
+          measurement.viewportWidth,
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]: this.perf.getNowMillis(),
       };
     } catch (e) {
       this._diag.error('failed to capture dom-state fold measurement', e);
