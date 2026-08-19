@@ -4,6 +4,15 @@ import testWithMockApi, {
 
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionPartBatchedSpanProcessor non-session-part span ended';
+// OTel's floor for error-level records. The SDK emits exceptions here and every
+// other record it produces at INFO or WARN, so this doubles as "is an exception".
+// https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
+const SEVERITY_NUMBER_ERROR = 17;
+const TEST_LOG_MESSAGE = 'This is a test log message';
+const MAX_SCROLL_DEPTH_EVENT_NAME = 'max-scroll-depth';
+const WEB_VITAL_NAME_ATTRIBUTE_KEY = 'browser.web_vital.name';
+const LCP_WEB_VITAL_NAME = 'lcp';
+const FIRST_INTERACTION_EVENT_NAME = 'first-interaction';
 
 type E2ETestFixture = {
   waitUntilSpanLogged: () => Promise<void>;
@@ -347,10 +356,12 @@ const runE2ETests = ({
       'it should handle instrumenting a fetch that responds with 204 and a body',
       async ({
         page,
-        waitForOTelRequest,
+        waitForOTelRequestMatching,
+        waitForLogRecordMatching,
         withSimulatedResponse,
         navigateAndWaitUntilReady,
         waitUntilSpanLogged,
+        getLogRecords,
         requests,
         browserName,
       }) => {
@@ -369,27 +380,87 @@ const runE2ETests = ({
         await waitUntilSpanLogged();
 
         await page.getByRole('button', { name: 'Send Log' }).click();
-        await waitForOTelRequest();
+        // The record, not the request holding it: which page-load records share
+        // its export batch depends on where the batch window fell, so the request
+        // around it has no stable shape to assert.
+        const logRecord = await waitForLogRecordMatching(
+          (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
+        );
 
-        testE2E.expect(requests).toHaveLength(1);
-        // The request should contain just a single log from clicking 'Send Log' and not any exception generated
-        // from the fetch request
+        // The point of the test: a 204 carrying a body is not an error, so the
+        // fetch must not have produced an exception log. Waiting for the manual
+        // log above also drained everything the fetch emitted before it.
+        testE2E
+          .expect(
+            getLogRecords().filter(
+              (logRecord) =>
+                (logRecord.severityNumber ?? 0) >= SEVERITY_NUMBER_ERROR,
+            ),
+          )
+          .toEqual([]);
+
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
-            `${browserName}-${codifiedName}-handle-204-with-body-logs.json`,
+          extendedMockApiTestExpect(logRecord).toMatchGoldenLogRecord(
+            `${browserName}-${codifiedName}-handle-204-with-body-log-record.json`,
+          );
+
+          // Records the fetch click produces, goldened one by one. Which export
+          // batch carries them is timing, so a request golden holds them only by
+          // luck: lcp is reported once the first interaction finalizes it, and
+          // this is the only test that interacts and then waits, so everywhere
+          // else the batch goes out before lcp exists.
+          const lcpRecord = await waitForLogRecordMatching((record) =>
+            record.attributes.some(
+              (attribute) =>
+                attribute.key === WEB_VITAL_NAME_ATTRIBUTE_KEY &&
+                attribute.value.stringValue === LCP_WEB_VITAL_NAME,
+            ),
+          );
+          extendedMockApiTestExpect(lcpRecord).toMatchGoldenLogRecord(
+            `${browserName}-${codifiedName}-lcp-web-vital-record.json`,
+          );
+
+          const firstInteractionRecord = await waitForLogRecordMatching(
+            (record) => record.eventName === FIRST_INTERACTION_EVENT_NAME,
+          );
+          extendedMockApiTestExpect(
+            firstInteractionRecord,
+          ).toMatchGoldenLogRecord(
+            `${browserName}-${codifiedName}-first-interaction-record.json`,
           );
         }
 
         await page.getByRole('button', { name: 'End Session' }).click();
-        await waitForOTelRequest(2);
+        await waitForOTelRequestMatching(/\/v2\/spans/);
+        await waitForLogRecordMatching(
+          (logRecord) => logRecord.eventName === MAX_SCROLL_DEPTH_EVENT_NAME,
+        );
 
-        testE2E.expect(requests).toHaveLength(3);
-        // Should contain a span capturing the fetch request
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[1]).toMatchGoldenFile(
+          // Non-session-part spans are held until the part ends, so the only
+          // span request in the run is the one the session end just flushed.
+          const sessionRequest = requests.find((request) =>
+            request.url.endsWith('/spans'),
+          );
+          // Earlier log requests may or may not have flushed by now, so the
+          // part-end logs are the last of them rather than a fixed index.
+          const partEndLogRequest = requests
+            .filter((request) => request.url.endsWith('/logs'))
+            .at(-1);
+
+          if (!sessionRequest) {
+            throw new Error('Session request was not sent to the API');
+          }
+
+          if (!partEndLogRequest) {
+            throw new Error('Part end log request was not sent to the API');
+          }
+
+          // Should contain a span capturing the fetch request
+          extendedMockApiTestExpect(sessionRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-handle-204-with-body-session.json`,
           );
-          extendedMockApiTestExpect(requests[2]).toMatchGoldenFile(
+          extendedMockApiTestExpect(partEndLogRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-handle-204-with-body-logs-after-part.json`,
           );
         }

@@ -55,7 +55,7 @@ declare global {
   }
 }
 
-type EmbraceDataRequest = {
+export type EmbraceDataRequest = {
   url: string;
   headers: Record<string, string>;
   data: Record<string, unknown>;
@@ -71,6 +71,10 @@ type TestWithMockApi = {
   waitForRequest: (url: RegExp) => Promise<void>;
   waitForOTelRequest: (count?: number) => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
+  waitForLogRecordMatching: (
+    predicate: (logRecord: ILogRecord) => boolean,
+  ) => Promise<ILogRecord>;
+  getLogRecords: () => ILogRecord[];
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
@@ -96,8 +100,10 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // Resource spans whose url.full matches any of these patterns are excluded from
 // comparison entirely. Favicons are fetched asynchronously by the browser and
 // may or may not complete before the SDK captures PerformanceResourceTiming
-// entries, making their presence in a session non-deterministic.
-const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
+// entries, making their presence in a session non-deterministic. The SDK's own
+// uploads are instrumented like any other fetch, and whether one resolves before
+// the session part flushes comes down to how fast the test got there.
+const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/, /\/v2\/(logs|spans)$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
@@ -146,6 +152,21 @@ const IGNORED_ATTRIBUTES_LIST = [
   'app.surface.id',
 ];
 
+// Which export batch a log record rides in depends on where the exporter's
+// batch window happens to fall, so tests that care about a record address it by
+// content rather than by request index.
+const logRecordsOf = (request: EmbraceDataRequest): ILogRecord[] => {
+  if (!request.url.endsWith('/logs')) {
+    return [];
+  }
+
+  const { resourceLogs = [] } = request.data as IExportLogsServiceRequest;
+
+  return resourceLogs.flatMap((resourceLog) =>
+    resourceLog.scopeLogs.flatMap((scopeLog) => scopeLog.logRecords ?? []),
+  );
+};
+
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
     async ({ page }, use) => {
@@ -193,6 +214,33 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           }, 100);
         });
       });
+    },
+    { scope: 'test' },
+  ],
+  waitForLogRecordMatching: [
+    async ({ requests }, use, testInfo) => {
+      await use(async (predicate) => {
+        const findRecord = () => requests.flatMap(logRecordsOf).find(predicate);
+
+        await expect
+          .poll(() => findRecord() !== undefined, {
+            timeout: testInfo.timeout,
+          })
+          .toBe(true);
+
+        const logRecord = findRecord();
+        if (!logRecord) {
+          throw new Error('No log record matching the predicate was exported');
+        }
+
+        return logRecord;
+      });
+    },
+    { scope: 'test' },
+  ],
+  getLogRecords: [
+    async ({ requests }, use) => {
+      await use(() => requests.flatMap(logRecordsOf));
     },
     { scope: 'test' },
   ],
@@ -731,6 +779,47 @@ const expect = testWithMockApi.expect.extend({
     return {
       pass: true,
       message: () => `Entities matched`,
+    };
+  },
+  // A record's own content is fixed the moment it is emitted, unlike the request
+  // around it, whose composition depends on where the exporter's batch window fell.
+  toMatchGoldenLogRecord: (received: ILogRecord, fileName: string) => {
+    if (!fs.existsSync(GOLDEN_DIR)) {
+      fs.mkdirSync(GOLDEN_DIR, { recursive: true });
+    }
+
+    const filePath = path.join(GOLDEN_DIR, fileName);
+    const actualString = JSON.stringify(received, null, 2);
+
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, actualString);
+
+      return {
+        pass: true,
+        message: () => `Golden file created: ${filePath}`,
+      };
+    }
+
+    try {
+      expect(received).toMatchLog(
+        JSON.parse(fs.readFileSync(filePath, 'utf-8')) as ILogRecord,
+      );
+    } catch (e) {
+      if (shouldUpdateGolden) {
+        fs.writeFileSync(filePath, actualString);
+
+        return {
+          pass: true,
+          message: () => `Golden file updated: ${filePath}`,
+        };
+      } else {
+        throw e;
+      }
+    }
+
+    return {
+      pass: true,
+      message: () => `Golden file matched: ${fileName}`,
     };
   },
   toMatchGoldenFile: (received: EmbraceDataRequest, fileName: string) => {
