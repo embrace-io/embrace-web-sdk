@@ -480,7 +480,16 @@ For completeness, the non-instrumentation consumers of the clock:
   deadline and the remaining timeout. Internal duration math, not telemetry.
 - **initSDK** — `getNow()` difference for `emb.sdk_startup_duration`
   (a pure duration), the `pageshow` listener that resets zero time, and the
-  `blur` and `visibilitychange` listeners that call `checkDrift()`.
+  `blur` and `visibilitychange` listeners that call `checkDrift()`. It also
+  stamps `emb.sdk_init_timestamp` from `getNow()` and converts
+  `SDK_LOAD_ORIGIN_OFFSET_MILLIS` into `emb.sdk_load_timestamp` via
+  `offsetToAbsoluteTime()`. Both are time-origin values: they say when SDK
+  machinery ran, not what the user perceived, so they must not shift on a
+  bfcache restore or soft navigation.
+- **`utils/sdkLoadTime.ts`** — the one deliberate exception to routing clock
+  reads through this manager. It captures `performance.now()` at module
+  evaluation, earlier than any manager instance can exist, and holds the raw
+  origin offset so the conversion still happens here.
 - **PerfClockLagSpanProcessor / PerfClockLagLogRecordProcessor** —
   `getClockLag()` for `emb.perf_clock_lag_ms`. It counts every sleep since
   the page loaded, including those before the span or log.
