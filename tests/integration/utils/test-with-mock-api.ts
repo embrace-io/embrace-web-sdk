@@ -33,6 +33,7 @@ const shouldUpdateGolden = process.env['UPDATE_GOLDEN'] === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
 };
+const LOG_RECORD_TIMEOUT_MS = 5_000;
 const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
 const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
 const SIMULATED_REQUEST_REGEX = /simulated/;
@@ -72,6 +73,7 @@ type TestWithMockApi = {
   waitForOTelRequest: (count?: number) => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
   waitForLogRecordMatching: (
+    description: string,
     predicate: (logRecord: ILogRecord) => boolean,
   ) => Promise<ILogRecord>;
   getLogRecords: () => ILogRecord[];
@@ -101,8 +103,8 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // comparison entirely. Favicons are fetched asynchronously by the browser and
 // may or may not complete before the SDK captures PerformanceResourceTiming
 // entries, making their presence in a session non-deterministic. The SDK's own
-// uploads are instrumented like any other fetch, and whether one resolves before
-// the session part flushes comes down to how fast the test got there.
+// uploads are instrumented like any other fetch, so whether one has resolved by
+// the time the part flushes depends on how fast the test got there.
 const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/, /\/v2\/(logs|spans)$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
@@ -152,10 +154,9 @@ const IGNORED_ATTRIBUTES_LIST = [
   'app.surface.id',
 ];
 
-// Which export batch a log record rides in depends on where the exporter's
-// batch window happens to fall, so tests that care about a record address it by
-// content rather than by request index.
-const logRecordsOf = (request: EmbraceDataRequest): ILogRecord[] => {
+// Which export batch a record rides in depends on where the processor's batch
+// window fell, so tests address records by content rather than request index.
+export const logRecordsOf = (request: EmbraceDataRequest): ILogRecord[] => {
   if (!request.url.endsWith('/logs')) {
     return [];
   }
@@ -218,22 +219,35 @@ const testWithMockApi = base.extend<TestWithMockApi>({
     { scope: 'test' },
   ],
   waitForLogRecordMatching: [
-    async ({ requests }, use, testInfo) => {
-      await use(async (predicate) => {
-        const findRecord = () => requests.flatMap(logRecordsOf).find(predicate);
+    async ({ requests }, use) => {
+      await use(async (description, predicate) => {
+        const matches = await new Promise<ILogRecord[]>((resolve, reject) => {
+          const start = Date.now();
+          const interval = setInterval(() => {
+            const records = requests.flatMap(logRecordsOf);
+            const found = records.filter(predicate);
 
-        await expect
-          .poll(() => findRecord() !== undefined, {
-            timeout: testInfo.timeout,
-          })
-          .toBe(true);
+            if (found.length > 0) {
+              clearInterval(interval);
+              resolve(found);
+            } else if (Date.now() - start > LOG_RECORD_TIMEOUT_MS) {
+              clearInterval(interval);
+              // Rejecting rather than throwing from the timer, which would leave
+              // this promise pending until the whole test times out.
+              reject(
+                new Error(
+                  `Expected a log record matching ${description} within ${LOG_RECORD_TIMEOUT_MS.toString()}ms, saw ${records.length.toString()} records`,
+                ),
+              );
+            }
+          }, 100);
+        });
 
-        const logRecord = findRecord();
-        if (!logRecord) {
-          throw new Error('No log record matching the predicate was exported');
-        }
+        // Asserted outside the timer for the same reason. Returning the first
+        // match would hide a record the SDK emitted twice.
+        expect(matches, `log records matching ${description}`).toHaveLength(1);
 
-        return logRecord;
+        return matches[0];
       });
     },
     { scope: 'test' },
@@ -609,11 +623,13 @@ const expect = testWithMockApi.expect.extend({
     // Use this instead of objectContaining for a better error message
     expect({
       ...(ignoreBody ? {} : { body: received.body }),
+      eventName: received.eventName,
       severityNumber: received.severityNumber,
       severityText: received.severityText,
       droppedAttributesCount: received.droppedAttributesCount,
     }).toEqual({
       ...(ignoreBody ? {} : { body: expected.body }),
+      eventName: expected.eventName,
       severityNumber: expected.severityNumber,
       severityText: expected.severityText,
       droppedAttributesCount: expected.droppedAttributesCount,
@@ -781,8 +797,8 @@ const expect = testWithMockApi.expect.extend({
       message: () => `Entities matched`,
     };
   },
-  // A record's own content is fixed the moment it is emitted, unlike the request
-  // around it, whose composition depends on where the exporter's batch window fell.
+  // A record's content is fixed the moment it is emitted, so it can be
+  // snapshotted where the request carrying it cannot.
   toMatchGoldenLogRecord: (received: ILogRecord, fileName: string) => {
     if (!fs.existsSync(GOLDEN_DIR)) {
       fs.mkdirSync(GOLDEN_DIR, { recursive: true });
@@ -813,7 +829,7 @@ const expect = testWithMockApi.expect.extend({
           message: () => `Golden file updated: ${filePath}`,
         };
       } else {
-        throw e;
+        throw new Error(`${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`);
       }
     }
 
