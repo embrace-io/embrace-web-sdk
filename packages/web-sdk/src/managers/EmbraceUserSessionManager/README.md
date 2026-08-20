@@ -70,8 +70,18 @@ per-part counters, subscribing to part start/end, and wiring the tracer
 provider (required before the first part). Customer code only ever sees
 `UserSessionManager`.
 
-The SDK init flow also reports the measured startup duration once; the value
-is stamped as `emb.sdk_startup_duration` on every session-part end span.
+The SDK init flow also reports its startup timings once, via
+`recordSDKStartupTimings`. All three values are page-scoped constants stamped
+on every session-part end span: `emb.sdk_startup_duration` for how long
+`initSDK` itself ran, plus `emb.sdk_load_timestamp` and `emb.sdk_init_timestamp`
+marking when the SDK's code first evaluated and when `initSDK` was entered. The
+gap between the two timestamps is how long the page held the loaded SDK before
+initializing it.
+
+The duration is held internally as `_sdkInitDuration` because that is what it
+measures, while the attribute keeps the `startup` wording the Android SDK uses
+for the same measurement. Do not "fix" one to match the other: the mismatch is
+what keeps the wire key aligned across platforms.
 
 ## Session-part lifecycle
 
@@ -369,7 +379,9 @@ another window).
 | Attribute | Condition |
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
-| `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. |
+| `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. The `initSDK` duration. |
+| `emb.sdk_load_timestamp` | Always. Epoch millis when the SDK's code first ran. |
+| `emb.sdk_init_timestamp` | Always. Epoch millis when `initSDK` was entered. |
 | `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
