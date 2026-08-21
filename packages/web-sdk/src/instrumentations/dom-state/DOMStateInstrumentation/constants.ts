@@ -1,9 +1,14 @@
 export const DOM_STATE_EVENT_NAME = 'dom-state';
+// A full walk at this ceiling measures ~5-11ms in desktop engines, affordable
+// on the unload path; typical pages hold 1-2k elements.
+export const DOM_STATE_MAX_TRAVERSED_ELEMENTS = 50_000;
 
 export const ATTR_DOM_STATE_AVERAGE_DEPTH = 'dom_state.average_depth';
 export const ATTR_DOM_STATE_DOCUMENT_HEIGHT = 'dom_state.document_height';
 export const ATTR_DOM_STATE_DOCUMENT_WIDTH = 'dom_state.document_width';
 export const ATTR_DOM_STATE_ELEMENT_COUNT = 'dom_state.element_count';
+export const ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED =
+  'dom_state.traversal_limit_reached';
 
 export const ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT =
   'dom_state.images_above_fold.count';

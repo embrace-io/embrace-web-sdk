@@ -14,7 +14,9 @@ import {
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH,
+  ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED,
   DOM_STATE_EVENT_NAME,
+  DOM_STATE_MAX_TRAVERSED_ELEMENTS,
 } from './constants.ts';
 import type { DOMStateInstrumentationArgs } from './types.ts';
 
@@ -171,13 +173,16 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
       // Nothing to walk and nothing to measure both drop their keys rather than
       // report a zero, so the part still gets a log for whatever remains.
-      ...(tree
-        ? {
-            [ATTR_DOM_STATE_ELEMENT_COUNT]: tree.elementCount,
-            // The traversal counts its root, so elementCount is at least 1.
-            [ATTR_DOM_STATE_AVERAGE_DEPTH]: tree.totalDepth / tree.elementCount,
-          }
-        : {}),
+      ...(tree === null
+        ? {}
+        : tree.limitReached
+          ? { [ATTR_DOM_STATE_TRAVERSAL_LIMIT_REACHED]: true }
+          : {
+              [ATTR_DOM_STATE_ELEMENT_COUNT]: tree.elementCount,
+              // The traversal counts its root, so elementCount is at least 1.
+              [ATTR_DOM_STATE_AVERAGE_DEPTH]:
+                tree.totalDepth / tree.elementCount,
+            }),
       ...(measurement
         ? {
             [ATTR_DOM_STATE_DOCUMENT_HEIGHT]: measurement.documentHeight,
@@ -225,11 +230,14 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   }
 
   // Iterative depth-first traversal that computes element count and summed depth
-  // in one pass. The root passed in sits at depth 1.
-  private _traverse(root: Element): {
-    elementCount: number;
-    totalDepth: number;
-  } {
+  // in one pass. The root passed in sits at depth 1. Runs synchronously on the
+  // pagehide path, so it bails at the ceiling rather than spend the unload
+  // budget on a pathological tree.
+  private _traverse(
+    root: Element,
+  ):
+    | { limitReached: false; elementCount: number; totalDepth: number }
+    | { limitReached: true } {
     let elementCount = 0;
     let totalDepth = 0;
 
@@ -240,11 +248,22 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       elementCount++;
       totalDepth += entry.depth;
       const { children } = entry.element;
+      // Popped, queued and about-to-queue are disjoint, so their sum lower-bounds the
+      // tree size; checking before the push bounds the bail cost even on wide trees.
+      if (
+        elementCount + stack.length + children.length >
+        DOM_STATE_MAX_TRAVERSED_ELEMENTS
+      ) {
+        this._diag.debug(
+          `dom-state tree walk bailed: the tree exceeds the ${String(DOM_STATE_MAX_TRAVERSED_ELEMENTS)}-element traversal ceiling`,
+        );
+        return { limitReached: true };
+      }
       for (let i = 0; i < children.length; i++) {
         stack.push({ element: children[i], depth: entry.depth + 1 });
       }
     }
 
-    return { elementCount, totalDepth };
+    return { limitReached: false, elementCount, totalDepth };
   }
 }

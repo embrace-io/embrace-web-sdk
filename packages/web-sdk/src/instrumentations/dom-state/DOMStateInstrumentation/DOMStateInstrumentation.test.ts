@@ -17,6 +17,7 @@ import {
   EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
+import { DOM_STATE_MAX_TRAVERSED_ELEMENTS } from './constants.ts';
 import { DOMStateInstrumentation } from './DOMStateInstrumentation.ts';
 
 const { expect } = chai;
@@ -608,6 +609,134 @@ describe('DOMStateInstrumentation', () => {
     expect(logs[1].attributes).to.have.property('dom_state.element_count');
   });
 
+  it('omits the tree shape when the element count exceeds the traversal ceiling', () => {
+    // The walk runs synchronously on the pagehide path, so a pathological tree
+    // forfeits its tree keys rather than spend the unload budget.
+    const container = document.createElement('div');
+    container.innerHTML = '<i></i>'.repeat(DOM_STATE_MAX_TRAVERSED_ELEMENTS);
+    document.body.appendChild(container);
+    restorers.push(() => {
+      container.remove();
+    });
+    createInstrumentation();
+
+    endSessionPart();
+
+    const logs = getDomStateLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
+    expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
+    // The flag is what tells "too large to measure" apart from "no root".
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.traversal_limit_reached',
+      true,
+    );
+    // The document box does not depend on the walk, so it still reports.
+    expect(logs[0].attributes).to.have.property('dom_state.document_height');
+    expect(logs[0].attributes).to.have.property('dom_state.document_width');
+  });
+
+  it('reports the tree shape when the element count sits exactly at the ceiling', () => {
+    // Pins the ceiling as an inclusive max: only genuinely larger trees
+    // forfeit their keys.
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    restorers.push(() => {
+      container.remove();
+    });
+    const remaining =
+      DOM_STATE_MAX_TRAVERSED_ELEMENTS - measureExpected().count;
+    container.innerHTML = '<i></i>'.repeat(remaining);
+    createInstrumentation();
+
+    endSessionPart();
+
+    const logs = getDomStateLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.element_count',
+      DOM_STATE_MAX_TRAVERSED_ELEMENTS,
+    );
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.traversal_limit_reached',
+    );
+  });
+
+  it('omits the tree shape when a deep chain alone exceeds the ceiling', () => {
+    // The wide tree trips the bail on the about-to-queue term; a chain has one
+    // child per node, so only the visited count can trip the ceiling here.
+    const container = document.createElement('div');
+    // Hidden so the document measurement's forced layout never has to build a
+    // 50k-deep layout tree; the walk itself only reads children.
+    container.style.display = 'none';
+    document.body.appendChild(container);
+    restorers.push(() => {
+      container.remove();
+    });
+    // Unclosed <div> tags nest under the parser, chunked to stay inside engine
+    // parser-depth caps; per-node appendChild pays O(depth) in cycle checks.
+    let leaf: Element = container;
+    let remaining = DOM_STATE_MAX_TRAVERSED_ELEMENTS;
+    while (remaining > 0) {
+      const chunk = Math.min(400, remaining);
+      leaf.innerHTML = '<div>'.repeat(chunk);
+      remaining -= chunk;
+      while (leaf.firstElementChild) {
+        leaf = leaf.firstElementChild;
+      }
+    }
+    createInstrumentation();
+
+    endSessionPart();
+
+    const logs = getDomStateLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
+    expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
+    expect(logs[0].attributes).to.have.property(
+      'dom_state.traversal_limit_reached',
+      true,
+    );
+  });
+
+  it('shifts the average depth by the hand-computed contribution of an attached chain', () => {
+    createInstrumentation();
+    endSessionPart();
+    const before = getDomStateLogs()[0].attributes;
+    const beforeCount = before['dom_state.element_count'] as number;
+    const beforeTotalDepth =
+      (before['dom_state.average_depth'] as number) * beforeCount;
+
+    // <body> sits at depth 2, so a chain of N hung off it occupies depths 3
+    // through N + 2: a contribution of N * (N + 5) / 2 computed by hand, so it
+    // cannot share a semantic drift with the recursive oracle.
+    const chainLength = 4;
+    const chainRoot = document.createElement('div');
+    document.body.appendChild(chainRoot);
+    restorers.push(() => {
+      chainRoot.remove();
+    });
+    let parent: HTMLElement = chainRoot;
+    for (let i = 1; i < chainLength; i++) {
+      const child = document.createElement('div');
+      parent.appendChild(child);
+      parent = child;
+    }
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    endSessionPart();
+
+    const after = getDomStateLogs()[1].attributes;
+    expect(after).to.have.property(
+      'dom_state.element_count',
+      beforeCount + chainLength,
+    );
+    expect(after['dom_state.average_depth']).to.be.closeTo(
+      (beforeTotalDepth + (chainLength * (chainLength + 5)) / 2) /
+        (beforeCount + chainLength),
+      1e-9,
+    );
+  });
+
   it('still emits the part-end log when the document root is gone', () => {
     // document.documentElement is typed non-nullable but is null once the root
     // element is removed, taking the scroll root with it. The part still ends,
@@ -623,6 +752,9 @@ describe('DOMStateInstrumentation', () => {
     // Nothing to walk and nothing to measure, so no key is fabricated from zero.
     expect(logs[0].attributes).to.not.have.property('dom_state.element_count');
     expect(logs[0].attributes).to.not.have.property('dom_state.average_depth');
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.traversal_limit_reached',
+    );
     expect(logs[0].attributes).to.not.have.property(
       'dom_state.document_height',
     );
