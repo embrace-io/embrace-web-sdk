@@ -138,7 +138,8 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       end: this._onSessionPartEnded,
     });
 
-    // Starts the inital route span if the page manager already has a current route
+    // Route changes while disabled are dropped by the _isEnabled guard, so a
+    // route set before enabling is replayed here to open its span.
     const currentRoute = this._pageManager.getCurrentRoute();
     if (currentRoute) {
       this._onRouteChanged(currentRoute);

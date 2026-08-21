@@ -331,14 +331,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     reportSoftNavs = true,
     pageManager,
     applyCustomLogRecordData,
-    ...config
   }: WebVitalsInstrumentationConfig = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config,
+      config: {},
     });
     this._listeners = listeners;
     this._urlDocument = urlDocument ?? window.document;
