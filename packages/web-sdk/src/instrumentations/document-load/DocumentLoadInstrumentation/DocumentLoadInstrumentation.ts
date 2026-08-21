@@ -514,15 +514,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public override onEnable(): void {
     // An unbuffered subscription registered after the load event is never
-    // notified, so collect straight away instead of observing. Deferred a
-    // microtask because under registerGlobally: false the tracer provider
-    // arrives later in this same task, and earlier spans reach a no-op tracer.
+    // notified, so the finished entry is read off the timeline instead. Spans
+    // are recorded here: enabling happens once the providers are attached.
     if (this._isLoadEventFinished()) {
-      queueMicrotask(() => {
-        if (this._isEnabled) {
-          this._collectIfLoadEventFinished();
-        }
-      });
+      this._collectIfLoadEventFinished();
       return;
     }
 
