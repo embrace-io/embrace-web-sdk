@@ -465,8 +465,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         ...this._activeSessionPartCounts,
         ...this._limitManager.getDiagnosticCounts(),
       };
-      // The startup timings describe the page load that brought the SDK up, so
-      // they only mean anything on the part that covers it.
       if (this._coldStart) {
         endAttrs[KEY_EMB_PAGE_LOAD] =
           this._visibilityDoc.readyState === 'complete';
