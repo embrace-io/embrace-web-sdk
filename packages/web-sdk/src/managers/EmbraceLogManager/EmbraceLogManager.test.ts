@@ -228,6 +228,20 @@ describe('EmbraceLogManager', () => {
     expect(warningLogs[0]).to.equal('attributes must be a plain object');
   });
 
+  it('should name the message log record', () => {
+    manager.message('a message', 'info');
+
+    const [log] = memoryExporter.getFinishedLogRecords();
+    expect(log.eventName).to.equal('emb-log');
+  });
+
+  it('should name the exception log record', () => {
+    manager.logException(new Error('boom'));
+
+    const [log] = memoryExporter.getFinishedLogRecords();
+    expect(log.eventName).to.equal('emb-exception');
+  });
+
   it('should log an info log without stacktrace', () => {
     expect(() => {
       manager.message(

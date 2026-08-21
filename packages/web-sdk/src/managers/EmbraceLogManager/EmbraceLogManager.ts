@@ -39,6 +39,7 @@ import {
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
+import { EXCEPTION_EVENT_NAME, LOG_EVENT_NAME } from './constants.ts';
 import type { EmbraceLogManagerArgs } from './types.ts';
 
 const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
@@ -147,6 +148,7 @@ export class EmbraceLogManager implements LogManager {
     }
 
     this._logger.emit({
+      eventName: EXCEPTION_EVENT_NAME,
       timestamp,
       severityNumber: SeverityNumber.ERROR,
       severityText: 'ERROR',
@@ -243,6 +245,7 @@ export class EmbraceLogManager implements LogManager {
     }
 
     this._logger.emit({
+      eventName: LOG_EVENT_NAME,
       timestamp,
       severityNumber: EmbraceLogManager._logSeverityToSeverityNumber(severity),
       severityText: severity.toUpperCase(),
