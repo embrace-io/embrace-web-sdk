@@ -43,19 +43,23 @@ import type {
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
+import type { EmbracePerformanceResourceTiming } from './utils.ts';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
 } from './utils.ts';
 
-/**
- * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
- * - deliveryType: Chromium only (experimental) https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
- * - renderBlockingStatus: Chromium only https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
- */
-type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
+/** Fields shared by resource fetch spans and the document fetch span, which is emitted as a resource fetch for the main document request */
+type ResourceSpanData = {
   deliveryType?: 'cache' | '';
+  initiatorType?: string;
   renderBlockingStatus?: 'blocking' | 'non-blocking';
+  responseStatus?: number;
+  encodedBodySize?: number;
+  transferSize?: number;
+  decodedBodySize?: number;
+  fetchStart?: number;
+  responseEnd?: number;
 };
 
 // PerformanceResourceTiming attribute names
@@ -184,6 +188,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
               entries,
               this.getConfig().ignoreNetworkEvents,
             );
+            this._addResourceAttributesToSpan(fetchSpan, entries);
             this._addCustomAttributesOnSpan(
               fetchSpan,
               this.getConfig().applyCustomAttributesOnSpan?.documentFetch,
@@ -306,47 +311,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       return;
     }
 
-    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
     span.setAttribute(ATTR_URL_FULL, resource.name);
     addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
 
-    if (resource.deliveryType) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
-        resource.deliveryType,
-      );
-    }
-
-    if (resource.initiatorType) {
-      span.setAttribute(
-        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
-        resource.initiatorType,
-      );
-    }
-
-    if (resource.renderBlockingStatus) {
-      span.setAttribute(
-        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
-        resource.renderBlockingStatus,
-      );
-    }
-
-    if (resource.responseStatus) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_STATUS_CODE,
-        resource.responseStatus,
-      );
-    }
-
-    span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-      resource.decodedBodySize,
-    );
-
-    this._addResourceDiagnosticAttributes(span, resource);
-
+    this._addResourceAttributesToSpan(span, resource);
     this._addCustomAttributesOnResourceSpan(
       span,
       resource,
@@ -438,38 +406,84 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
+  /**
+   * Sets emb.type and the PerformanceResourceTiming-derived attributes shared
+   * by resource fetch spans and the document fetch span, which is emitted as
+   * a resource fetch for the main document request.
+   */
+  private _addResourceAttributesToSpan(
+    span: Span,
+    resource: ResourceSpanData,
+  ): void {
+    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
+
+    if (resource.deliveryType) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
+        resource.deliveryType,
+      );
+    }
+
+    if (resource.initiatorType) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
+        resource.initiatorType,
+      );
+    }
+
+    if (resource.renderBlockingStatus) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
+        resource.renderBlockingStatus,
+      );
+    }
+
+    if (resource.responseStatus) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_STATUS_CODE,
+        resource.responseStatus,
+      );
+    }
+
+    span.setAttribute(
+      ATTR_HTTP_RESPONSE_BODY_SIZE,
+      resource.encodedBodySize ?? 0,
+    );
+    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize ?? 0);
+    span.setAttribute(
+      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+      resource.decodedBodySize ?? 0,
+    );
+
+    this._addResourceDiagnosticAttributes(span, resource);
+  }
+
+  private _hasNoSizeData(resource: ResourceSpanData): boolean {
     return (
-      resource.transferSize === 0 &&
-      resource.decodedBodySize === 0 &&
-      resource.encodedBodySize === 0
+      (resource.transferSize ?? 0) === 0 &&
+      (resource.decodedBodySize ?? 0) === 0 &&
+      (resource.encodedBodySize ?? 0) === 0
     );
   }
 
-  private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
-    return resource.fetchStart > 0 && resource.responseEnd > 0;
+  private _hasTimingData(resource: ResourceSpanData): boolean {
+    return (resource.fetchStart ?? 0) > 0 && (resource.responseEnd ?? 0) > 0;
   }
 
-  private _isCorsRestricted(
-    resource: EmbracePerformanceResourceTiming,
-  ): boolean {
+  private _isCorsRestricted(resource: ResourceSpanData): boolean {
     return this._hasNoSizeData(resource) && this._hasTimingData(resource);
   }
 
-  private _isFetchIncomplete(
-    resource: EmbracePerformanceResourceTiming,
-  ): boolean {
+  private _isFetchIncomplete(resource: ResourceSpanData): boolean {
     return (
       this._hasNoSizeData(resource) &&
-      resource.fetchStart > 0 &&
-      resource.responseEnd === 0
+      (resource.fetchStart ?? 0) > 0 &&
+      (resource.responseEnd ?? 0) === 0
     );
   }
 
-  private _isFetchPrevented(
-    resource: EmbracePerformanceResourceTiming,
-  ): boolean {
-    return this._hasNoSizeData(resource) && resource.fetchStart === 0;
+  private _isFetchPrevented(resource: ResourceSpanData): boolean {
+    return this._hasNoSizeData(resource) && (resource.fetchStart ?? 0) === 0;
   }
 
   /**
@@ -480,11 +494,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    *
    * Spec: https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
    */
-  private _isCacheValidated(
-    resource: EmbracePerformanceResourceTiming,
-  ): boolean {
+  private _isCacheValidated(resource: ResourceSpanData): boolean {
     // deliveryType is Chromium only, so an engine without it never reads 'cache'.
-    return resource.transferSize === 300 && resource.deliveryType !== 'cache';
+    return (
+      (resource.transferSize ?? 0) === 300 && resource.deliveryType !== 'cache'
+    );
   }
 
   /**
@@ -496,14 +510,15 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * - Request incomplete (started but didn't complete - network error, aborted)
    * - Request prevented (never started - blocked by CSP, browser, extension)
    *
-   * The size and timing fields read below are always numbers: a cross-origin
-   * resource with no Timing-Allow-Origin reports them as 0 rather than omitting
-   * them, and a resource only reaches here once it has produced a span, which
-   * required a numeric fetchStart.
+   * The size and timing fields read below are always numbers on a genuine
+   * PerformanceResourceTiming/PerformanceNavigationTiming entry: a
+   * cross-origin resource with no Timing-Allow-Origin reports them as 0
+   * rather than omitting them, and a resource only reaches here once it has
+   * produced a span, which required a numeric fetchStart.
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
-    resource: EmbracePerformanceResourceTiming,
+    resource: ResourceSpanData,
   ): void {
     if (this._isCorsRestricted(resource)) {
       span.setAttribute(ATTR_HTTP_RESPONSE_CORS_OPAQUE, true);

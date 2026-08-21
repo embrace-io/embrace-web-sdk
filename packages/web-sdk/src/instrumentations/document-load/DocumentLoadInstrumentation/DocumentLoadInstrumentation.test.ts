@@ -24,9 +24,11 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
+import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
+import type { EmbracePerformanceResourceTiming } from './utils.ts';
 import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
@@ -434,6 +436,43 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
+        done();
+      });
+    });
+
+    it('should mark the documentFetch span as a resource fetch with the same attributes as other resource spans', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        assert.strictEqual(
+          fetchSpan?.attributes[KEY_EMB_TYPE],
+          EMB_TYPES.ResourceFetch,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.request.initiator_type'],
+          entries.initiatorType,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.status_code'],
+          entries.responseStatus,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.size'],
+          entries.transferSize,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.body.size'],
+          entries.encodedBodySize,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+          entries.decodedBodySize,
+        );
         done();
       });
     });
@@ -1187,6 +1226,25 @@ describe('DocumentLoad Instrumentation', () => {
 
       assert.strictEqual(result[PTN.FETCH_START], entries.fetchStart);
       assert.strictEqual(result[PTN.LOAD_EVENT_END], entries.loadEventEnd);
+    });
+
+    it('should read the resource-shaped fields that are not part of PerformanceTimingNames', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: 'cache',
+          renderBlockingStatus: 'non-blocking',
+        } as EmbracePerformanceResourceTiming,
+      ]);
+
+      const result = getPerformanceNavigationEntries();
+
+      assert.strictEqual(result.transferSize, entries.transferSize);
+      assert.strictEqual(result.initiatorType, entries.initiatorType);
+      assert.strictEqual(result.responseStatus, entries.responseStatus);
+      assert.strictEqual(result.deliveryType, 'cache');
+      assert.strictEqual(result.renderBlockingStatus, 'non-blocking');
     });
   });
 
