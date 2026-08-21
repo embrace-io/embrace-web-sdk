@@ -477,6 +477,35 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should default the documentFetch span sizes to 0 when the navigation entry lacks size fields', (done) => {
+      const {
+        transferSize,
+        encodedBodySize,
+        decodedBodySize,
+        ...entryWithoutSizes
+      } = entries;
+      spyEntries
+        .withArgs('navigation')
+        .returns([entryWithoutSizes as PerformanceNavigationTiming]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        assert.strictEqual(fetchSpan?.attributes['http.response.size'], 0);
+        assert.strictEqual(fetchSpan?.attributes['http.response.body.size'], 0);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+          0,
+        );
+        done();
+      });
+    });
+
     describe('AND window has information about server root span', () => {
       let spyGetElementsByTagName: SinonStubbedFunction<[string]>;
       beforeEach(() => {
@@ -1245,6 +1274,15 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(result.responseStatus, entries.responseStatus);
       assert.strictEqual(result.deliveryType, 'cache');
       assert.strictEqual(result.renderBlockingStatus, 'non-blocking');
+    });
+
+    it('should return an empty object when there is no navigation entry', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([]);
+
+      const result = getPerformanceNavigationEntries();
+
+      assert.deepStrictEqual(result, {});
     });
   });
 
