@@ -6,6 +6,10 @@ export {
   ClicksInstrumentation,
   type ClicksInstrumentationArgs,
 } from './clicks/index.ts';
+export {
+  DOMStateInstrumentation,
+  type DOMStateInstrumentationArgs,
+} from './dom-state/index.ts';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
 export {
   ElementTimingInstrumentation,

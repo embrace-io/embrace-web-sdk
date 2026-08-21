@@ -226,6 +226,7 @@ non-timing data, or OTel's default "now".
 | ServerTimingInstrumentation | `emb.server_timing.duration` — a duration reported by the server, frame-independent |
 | LoafInstrumentation | aggregated long-animation-frame durations (sums, maxima) — pure durations |
 | MaxScrollDepthInstrumentation | none — pixels, percent, booleans |
+| DOMStateInstrumentation | counts and pixels, plus one `getNowMillis()` read that pins the held view snapshot's log timestamp to the capture moment rather than to the session-part-end flush that sends it. Also reads `getNavigationEntry()` for `loadEventStart`, used only as a fired/not-fired predicate, never emitted |
 | EmptyRootInstrumentation | none — span event uses OTel's default "now" |
 | NavigationInstrumentation | route spans start/end at OTel's default "now", which is genuinely when the route change occurs |
 

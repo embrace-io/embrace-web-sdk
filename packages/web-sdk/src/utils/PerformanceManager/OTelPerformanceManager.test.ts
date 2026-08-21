@@ -125,6 +125,21 @@ describe('OTelPerformanceManager', () => {
     expect(performanceManager.getZeroTime()).to.equal(1000); // max wins
   });
 
+  it('exposes the navigation entry off its clock', () => {
+    const navigation = { activationStart: 200 } as PerformanceNavigationTiming;
+    const clockWithNavigation: PerformanceClock = {
+      timeOrigin: 1000,
+      now: sinon.stub().returns(500),
+      getEntriesByType: sinon.stub().returns([navigation]),
+    };
+    const perf = new OTelPerformanceManager(clockWithNavigation);
+    expect(perf.getNavigationEntry()).to.equal(navigation);
+  });
+
+  it('returns null from getNavigationEntry when the clock reports none', () => {
+    expect(performanceManager.getNavigationEntry()).to.equal(null);
+  });
+
   it('module-level state is shared across instances', () => {
     updateZeroTimeMillis(2000);
     const secondPerf = new OTelPerformanceManager(mockClock);

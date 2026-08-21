@@ -1,5 +1,6 @@
 export interface PerformanceManager {
   epochMillisFromOrigin: (originOffset: number) => number;
+  getNavigationEntry: () => PerformanceNavigationTiming | null;
   getNowMillis: () => number;
   millisFromZeroTime: (originOffset: number) => number;
   getZeroTime: () => number;

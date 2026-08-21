@@ -54,7 +54,7 @@
           {
             "key": "emb.app_instance_id",
             "value": {
-              "stringValue": "2A112E41EF0EECC9A7449C2DB3D596F8"
+              "stringValue": "915072AADA587996885CA7A0E05EC2DB"
             }
           },
           {
@@ -86,8 +86,8 @@
           },
           "logRecords": [
             {
-              "timeUnixNano": "1785776878635000000",
-              "observedTimeUnixNano": "1785776878635000000",
+              "timeUnixNano": "1787314533292000000",
+              "observedTimeUnixNano": "1787314533292000000",
               "severityNumber": 9,
               "body": {},
               "eventName": "max-scroll-depth",
@@ -125,13 +125,13 @@
                 {
                   "key": "log.record.uid",
                   "value": {
-                    "stringValue": "5C3860992B5C9C9A72ABF24BAB26847F"
+                    "stringValue": "CDFE1FDA11CE3BBC01F8A83AD2B1BB8B"
                   }
                 },
                 {
                   "key": "emb.user_session_id",
                   "value": {
-                    "stringValue": "B37A03C1AC4598A2FD17402EB0F32E2F"
+                    "stringValue": "060A72B26BCA21677810B6A1AA348CA9"
                   }
                 },
                 {
@@ -143,7 +143,7 @@
                 {
                   "key": "emb.session_part_id",
                   "value": {
-                    "stringValue": "D1D31C46119CCD2C135B80188CEDFF7E"
+                    "stringValue": "27D0343FB1D3E2FF7609F1FCA952C941"
                   }
                 },
                 {
@@ -167,7 +167,133 @@
                 {
                   "key": "app.surface.id",
                   "value": {
-                    "stringValue": "27CD159065306A50FB509CF4B74B0AF4"
+                    "stringValue": "28ADCF70A5D4F3BD289D4FC202D3D431"
+                  }
+                },
+                {
+                  "key": "app.surface.label",
+                  "value": {
+                    "stringValue": "React + TS + Vite"
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0
+            }
+          ]
+        },
+        {
+          "scope": {
+            "name": "DOMStateInstrumentation",
+            "version": "1.0.0"
+          },
+          "logRecords": [
+            {
+              "timeUnixNano": "1787314533292000000",
+              "observedTimeUnixNano": "1787314533292000000",
+              "severityNumber": 9,
+              "body": {},
+              "eventName": "dom-state",
+              "attributes": [
+                {
+                  "key": "emb.type",
+                  "value": {
+                    "stringValue": "emb.otel_log"
+                  }
+                },
+                {
+                  "key": "dom_state.element_count",
+                  "value": {
+                    "intValue": 13
+                  }
+                },
+                {
+                  "key": "dom_state.average_depth",
+                  "value": {
+                    "doubleValue": 3.4615384615384617
+                  }
+                },
+                {
+                  "key": "dom_state.document_height",
+                  "value": {
+                    "intValue": 720
+                  }
+                },
+                {
+                  "key": "dom_state.document_width",
+                  "value": {
+                    "intValue": 1280
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.count",
+                  "value": {
+                    "intValue": 0
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.viewport_height",
+                  "value": {
+                    "intValue": 720
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.viewport_width",
+                  "value": {
+                    "intValue": 1280
+                  }
+                },
+                {
+                  "key": "dom_state.images_above_fold.timestamp",
+                  "value": {
+                    "intValue": 1787314532496
+                  }
+                },
+                {
+                  "key": "log.record.uid",
+                  "value": {
+                    "stringValue": "9B727A6FDF2862070C37E3047AFF8B93"
+                  }
+                },
+                {
+                  "key": "emb.user_session_id",
+                  "value": {
+                    "stringValue": "060A72B26BCA21677810B6A1AA348CA9"
+                  }
+                },
+                {
+                  "key": "emb.user_session_previous_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "emb.session_part_id",
+                  "value": {
+                    "stringValue": "27D0343FB1D3E2FF7609F1FCA952C941"
+                  }
+                },
+                {
+                  "key": "browser.url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:3001/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.name",
+                  "value": {
+                    "stringValue": "/platforms/vite-7/es2015/index.html"
+                  }
+                },
+                {
+                  "key": "app.surface.id",
+                  "value": {
+                    "stringValue": "28ADCF70A5D4F3BD289D4FC202D3D431"
                   }
                 },
                 {

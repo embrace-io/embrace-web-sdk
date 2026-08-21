@@ -40,7 +40,10 @@ export class OTelPerformanceManager implements PerformanceManager {
       _zeroTimeMillis ?? 0,
     );
 
-  private _getNavigationEntry(): PerformanceNavigationTiming | null {
+  // The entry object is live (the browser updates its fields in place), so
+  // caching it never serves stale timings. A missing entry is not cached: it
+  // may simply not have been recorded yet.
+  public getNavigationEntry = (): PerformanceNavigationTiming | null => {
     if (this.navigationEntry) {
       return this.navigationEntry;
     }
@@ -54,10 +57,10 @@ export class OTelPerformanceManager implements PerformanceManager {
     }
 
     return null;
-  }
+  };
 
   private _getNavigationActivationStart(): number {
-    const entry = this._getNavigationEntry();
+    const entry = this.getNavigationEntry();
     return entry?.activationStart ?? 0;
   }
 

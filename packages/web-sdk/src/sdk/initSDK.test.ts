@@ -1172,6 +1172,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'dom-state',
             'loaf',
             'web-vital',
             'max-scroll-depth',
@@ -1252,6 +1253,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'dom-state',
             'loaf',
             'web-vital',
             'max-scroll-depth',
@@ -1335,6 +1337,7 @@ describe('initSDK', () => {
             '@opentelemetry/instrumentation-fetch',
             // These instrumentations generate entries in the test environment that interfere with assertions
             'document-load',
+            'dom-state',
             'loaf',
             'web-vital',
             'max-scroll-depth',
@@ -2082,6 +2085,52 @@ describe('isolated instances', () => {
     expect(spanExporter.getFinishedSpans()).to.have.lengthOf(0);
   });
 
+  it('should export the dom-state view snapshot for an isolated instance', async () => {
+    const isolatedLogExporter = new InMemoryLogRecordExporter();
+    const result = initSDK({
+      logExporters: [isolatedLogExporter],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set([
+          'document-load',
+          'loaf',
+          'web-vital',
+          'max-scroll-depth',
+        ]),
+      },
+    });
+
+    void expect(result).not.to.be.false;
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+
+    // The snapshot is captured when the instrumentation attaches (this page has
+    // already loaded) and held until a part ends, so end the instance's user
+    // session to flush it.
+    const sessionPartId = (
+      result.session as UserSessionManagerInternal
+    ).getSessionPartId();
+    void expect(sessionPartId).not.to.be.null;
+    result.session.endUserSession();
+    await result.flush();
+
+    const record = isolatedLogExporter
+      .getFinishedLogRecords()
+      .find((r) => r.eventName === 'dom-state');
+
+    // The view snapshot must reach this instance's own exporter even though its
+    // logger provider is only wired onto the instrumentation after construction.
+    void expect(record).not.to.be.undefined;
+    expect(record?.attributes['dom_state.images_above_fold.count']).to.be.a(
+      'number',
+    );
+    // The part id rides from capture; hold-and-flush exists so the emit-stamped
+    // user session and page correlation still match that part at send time.
+    expect(record?.attributes['emb.session_part_id']).to.equal(sessionPartId);
+  });
+
   it('should allow each instance to emit its own telemetry from the provided managers', async () => {
     const firstSDKInstrumentation = new FakeInstrumentation();
     const firstSDKInstance = initSDK({
@@ -2093,6 +2142,7 @@ describe('isolated instances', () => {
       defaultInstrumentationConfig: {
         omit: new Set([
           'document-load',
+          'dom-state',
           'loaf',
           'web-vital',
           'max-scroll-depth',
@@ -2111,6 +2161,7 @@ describe('isolated instances', () => {
       defaultInstrumentationConfig: {
         omit: new Set([
           'document-load',
+          'dom-state',
           'loaf',
           'web-vital',
           'max-scroll-depth',
