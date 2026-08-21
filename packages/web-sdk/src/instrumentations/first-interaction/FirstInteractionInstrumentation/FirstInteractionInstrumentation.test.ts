@@ -302,8 +302,8 @@ describe('FirstInteractionInstrumentation', () => {
     instrumentation = new FirstInteractionInstrumentation({ diag });
     instrumentation.enable();
 
-    // Listeners are attached in the constructor; calling enable() again while
-    // they are still attached must be a no-op rather than double-registering.
+    // Listeners are attached on enable(); calling enable() again while they
+    // are still attached must be a no-op rather than double-registering.
     instrumentation.enable();
 
     const target = document.createElement('button');

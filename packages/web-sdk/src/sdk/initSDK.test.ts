@@ -372,11 +372,15 @@ describe('initSDK', () => {
 
   it('should allow setting custom instrumentations', async () => {
     const instrumentation = new FakeInstrumentation();
+    // document-load is omitted here and below because it spans the harness
+    // page's real resource entries, which would swamp the exact span counts.
     const result = initSDK({
       logExporters: [logExporter],
       spanExporters: [spanExporter],
       instrumentations: [instrumentation],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -403,7 +407,9 @@ describe('initSDK', () => {
       logProcessors: [new FakeLogRecordProcessor()],
       spanProcessors: [new FakeSpanProcessor()],
       instrumentations: [instrumentation],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -529,7 +535,9 @@ describe('initSDK', () => {
       appID: 'abc12',
       logExporters: [logExporter],
       spanExporters: [spanExporter],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -616,6 +624,7 @@ describe('initSDK', () => {
   it('should setup a default context manager when none is provided', async () => {
     const result = initSDK({
       spanExporters: [spanExporter],
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
     });
     void expect(result).not.to.be.false;
 

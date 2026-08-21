@@ -223,7 +223,7 @@ describe('setupDefaultInstrumentations', () => {
         expect(
           instrumentation.getConfig().enabled,
           `${instrumentation.instrumentationName} should not be enabled yet`,
-        ).to.not.equal(true);
+        ).to.equal(false);
       }
     });
   });
