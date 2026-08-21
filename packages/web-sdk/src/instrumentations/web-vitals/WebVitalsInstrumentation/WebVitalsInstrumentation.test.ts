@@ -3905,8 +3905,8 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3944,8 +3944,8 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3980,8 +3980,8 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
