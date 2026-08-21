@@ -34,61 +34,6 @@ const makeNavigationEntry = (
 ): PerformanceNavigationTiming =>
   ({ serverTiming }) as unknown as PerformanceNavigationTiming;
 
-/*
- * Stands in for PerformanceObserver so tests control when the navigation entry
- * arrives. Engines replay a buffered entry in a later task, never inside
- * observe(), which is what keeps the read out of the constructor.
- */
-class FakePerformanceObserver {
-  public static supportedEntryTypes: string[] = ['navigation'];
-  public static instances: FakePerformanceObserver[] = [];
-
-  public observedOptions: PerformanceObserverInit | null = null;
-  public isDisconnected = false;
-  private readonly _callback: PerformanceObserverCallback;
-
-  public constructor(callback: PerformanceObserverCallback) {
-    this._callback = callback;
-    FakePerformanceObserver.instances.push(this);
-  }
-
-  public static latest(): FakePerformanceObserver {
-    const observer =
-      FakePerformanceObserver.instances[
-        FakePerformanceObserver.instances.length - 1
-      ];
-    expect(observer, 'expected an observer to have been created').to.be.ok;
-    return observer;
-  }
-
-  public observe(options: PerformanceObserverInit): void {
-    this.observedOptions = options;
-    const [entry] = window.performance.getEntriesByType('navigation');
-
-    if (options.buffered && entry) {
-      setTimeout(() => {
-        if (this.isDisconnected) {
-          return;
-        }
-        this._callback(
-          {
-            getEntries: () => [entry],
-          } as unknown as PerformanceObserverEntryList,
-          this as unknown as PerformanceObserver,
-        );
-      }, 0);
-    }
-  }
-
-  public disconnect(): void {
-    this.isDisconnected = true;
-  }
-
-  public takeRecords(): PerformanceEntryList {
-    return [];
-  }
-}
-
 describe('ServerTimingInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let perf: MockPerformanceManager;
@@ -96,7 +41,6 @@ describe('ServerTimingInstrumentation', () => {
   let getEntriesByTypeStub: sinon.SinonStub;
   let addEventListenerSpy: sinon.SinonSpy;
   let limitManager: EmbraceLimitManager;
-  let realPerformanceObserver: typeof globalThis.PerformanceObserver;
 
   before(() => {
     memoryExporter = setupTestLogExporter();
@@ -136,24 +80,13 @@ describe('ServerTimingInstrumentation', () => {
     });
     addEventListenerSpy = sinon.spy(window, 'addEventListener');
 
-    realPerformanceObserver = globalThis.PerformanceObserver;
-    FakePerformanceObserver.instances = [];
-    FakePerformanceObserver.supportedEntryTypes = ['navigation'];
-    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-      FakePerformanceObserver;
-
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',
     });
   });
 
-  /* Lets the queued buffered replay run. */
-  const deliverNavigationEntry = () => clock.tick(0);
-
   afterEach(() => {
-    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-      realPerformanceObserver;
     sinon.restore();
     Object.defineProperty(window.performance, 'getEntriesByType', {
       value: Performance.prototype.getEntriesByType,
@@ -184,7 +117,6 @@ describe('ServerTimingInstrumentation', () => {
         limitManager,
       });
       instrumentation.enable();
-      deliverNavigationEntry();
 
       const logs = memoryExporter.getFinishedLogRecords();
       expect(logs).to.have.length(2);
@@ -206,10 +138,10 @@ describe('ServerTimingInstrumentation', () => {
     });
 
     /*
-     * Under registerGlobally: false the logger provider is wired onto the
-     * instrumentation after the constructor returns, so anything emitted
-     * synchronously there goes to a logger that records nothing and is lost for
-     * good: the collection guard latches and never retries.
+     * The logger provider is wired onto the instrumentation after the
+     * constructor returns, so a log emitted there goes to a logger that records
+     * nothing and is lost for good: the collection guard latches and never
+     * retries.
      */
     it('does not emit while constructing', () => {
       getEntriesByTypeStub
@@ -224,7 +156,6 @@ describe('ServerTimingInstrumentation', () => {
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
       instrumentation.enable();
-      deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
@@ -246,31 +177,6 @@ describe('ServerTimingInstrumentation', () => {
         ([event]) => event === 'load',
       );
       expect(loadListenerAdded).to.be.false;
-
-      instrumentation.disable();
-    });
-
-    /*
-     * The opposite of DocumentLoadInstrumentation, which must subscribe
-     * unbuffered. Server timings are complete on the entry from the start, and
-     * the SDK usually starts after it was buffered, so dropping the replay
-     * would mean never being notified.
-     */
-    it('subscribes with the buffered flag', () => {
-      getEntriesByTypeStub
-        .withArgs('navigation')
-        .returns([makeNavigationEntry([makeServerTimingEntry()])]);
-
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
-
-      expect(FakePerformanceObserver.latest().observedOptions).to.deep.equal({
-        type: 'navigation',
-        buffered: true,
-      });
 
       instrumentation.disable();
     });
@@ -303,7 +209,6 @@ describe('ServerTimingInstrumentation', () => {
           limitManager,
         });
         instrumentation.enable();
-        deliverNavigationEntry();
 
         const logs = memoryExporter.getFinishedLogRecords();
         expect(logs).to.have.length(1);
@@ -311,23 +216,6 @@ describe('ServerTimingInstrumentation', () => {
 
         instrumentation.disable();
       });
-    });
-
-    it('emits no logs when disabled before the entry arrives', () => {
-      getEntriesByTypeStub
-        .withArgs('navigation')
-        .returns([makeNavigationEntry([makeServerTimingEntry()])]);
-
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
-      instrumentation.disable();
-
-      deliverNavigationEntry();
-
-      expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
     });
   });
 
@@ -349,7 +237,6 @@ describe('ServerTimingInstrumentation', () => {
         limitManager: customLimitManager,
       });
       instrumentation.enable();
-      deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(2);
 
@@ -368,13 +255,11 @@ describe('ServerTimingInstrumentation', () => {
         limitManager,
       });
       instrumentation.enable();
-      deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
       instrumentation.disable();
       instrumentation.enable();
-      deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
@@ -394,13 +279,12 @@ describe('ServerTimingInstrumentation', () => {
       });
       instrumentation.enable();
 
-      deliverNavigationEntry();
-
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
       instrumentation.disable();
     });
 
+    /* WebKit gives about:blank, popups and srcdoc iframes no navigation entry. */
     it('emits nothing when no navigation entry exists', () => {
       getEntriesByTypeStub.withArgs('navigation').returns([]);
 
@@ -410,39 +294,7 @@ describe('ServerTimingInstrumentation', () => {
       });
       instrumentation.enable();
 
-      deliverNavigationEntry();
-
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
-
-      instrumentation.disable();
-    });
-
-    /* Nothing else re-triggers the read, so this is the one chance to say so. */
-    it('warns and emits nothing when the navigation entry type is unobservable', () => {
-      FakePerformanceObserver.supportedEntryTypes = [];
-      getEntriesByTypeStub
-        .withArgs('navigation')
-        .returns([makeNavigationEntry([makeServerTimingEntry()])]);
-      const warnings: string[] = [];
-
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-        diag: {
-          verbose: () => {},
-          debug: () => {},
-          info: () => {},
-          warn: (message: string) => warnings.push(message),
-          error: () => {},
-        },
-      });
-      instrumentation.enable();
-
-      deliverNavigationEntry();
-
-      expect(FakePerformanceObserver.instances).to.have.length(0);
-      expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
-      expect(warnings.join(' ')).to.contain('navigation');
 
       instrumentation.disable();
     });

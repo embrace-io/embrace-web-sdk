@@ -1,6 +1,5 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
-import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_EMB_SERVER_TIMING_DESCRIPTION,
@@ -11,7 +10,6 @@ import {
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
-  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -29,46 +27,15 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  private _disconnectObserver(): void {
-    this._navigationObserver?.disconnect();
-    this._navigationObserver = null;
-  }
-
+  /*
+   * Server timings arrive in the response headers, so they are on the
+   * navigation entry before any script in the document runs: nothing has to be
+   * waited for. The logs are recorded because enabling happens after
+   * registerInstrumentations has attached the providers.
+   *
+   * The page's one read, so a disable and re-enable emits nothing further.
+   */
   public override onEnable(): void {
-    if (this._performanceCollected) {
-      return;
-    }
-
-    /*
-     * buffered stays at its default of true, the opposite of the navigation
-     * observer in DocumentLoadInstrumentation: server timings arrive in the
-     * response headers and are complete on the entry from the start, so a
-     * replay carries everything. It is also required, because the SDK usually
-     * starts after the entry was buffered and an unbuffered subscription would
-     * never be notified.
-     */
-    this._navigationObserver =
-      createPerformanceObserver<PerformanceNavigationTiming>(
-        'navigation',
-        () => {
-          this._disconnectObserver();
-          this._readServerTiming();
-        },
-        { diag: this._diag },
-      );
-
-    if (!this._navigationObserver) {
-      this._diag.warn(
-        'navigation entries are not observable, server timings will not be collected',
-      );
-    }
-  }
-
-  public override onDisable(): void {
-    this._disconnectObserver();
-  }
-
-  private _readServerTiming(): void {
     if (this._performanceCollected) {
       return;
     }
@@ -77,6 +44,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     const navEntries = performance.getEntriesByType(
       'navigation',
     ) as PerformanceNavigationTiming[];
+    // WebKit gives about:blank, popups and srcdoc iframes no navigation entry.
     const serverTimingEntries = navEntries[0]?.serverTiming ?? [];
 
     for (const entry of serverTimingEntries) {
@@ -96,4 +64,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       });
     }
   }
+
+  /* The read is spent while enabling, so nothing is left running to unwind. */
+  public override onDisable(): void {}
 }
