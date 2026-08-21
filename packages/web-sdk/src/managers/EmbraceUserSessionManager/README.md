@@ -71,11 +71,12 @@ provider (required before the first part). Customer code only ever sees
 `UserSessionManager`.
 
 The SDK init flow also reports its startup timings once, via
-`recordSDKStartupTimings`. All three values are page-scoped constants stamped
-on every session-part end span: `emb.sdk_startup_duration` for how long
-`initSDK` itself ran, plus `emb.sdk_load_timestamp` and `emb.sdk_init_timestamp`
-marking when the SDK's code first evaluated and when `initSDK` was entered. The
-gap between the two timestamps is how long the page held the loaded SDK before
+`recordSDKStartupTimings`. All three values are page-scoped constants, and they
+are stamped only on the end span of the cold-start part, the one part that
+covers the load they describe: `emb.sdk_startup_duration` for how long `initSDK`
+itself ran, plus `emb.sdk_load_timestamp` and `emb.sdk_init_timestamp` marking
+when the SDK's code first evaluated and when `initSDK` was entered. The gap
+between the two timestamps is how long the page held the loaded SDK before
 initializing it.
 
 The duration is held internally as `_sdkInitDuration` because that is what it
@@ -379,9 +380,10 @@ another window).
 | Attribute | Condition |
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
-| `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. The `initSDK` duration. |
-| `emb.sdk_load_timestamp` | Always. Epoch millis when the SDK's code first ran. |
-| `emb.sdk_init_timestamp` | Always. Epoch millis when `initSDK` was entered. |
+| `emb.sdk_startup_duration` | Cold-start part only. Milliseconds, ceiled. The `initSDK` duration. |
+| `emb.sdk_load_timestamp` | Cold-start part only. Epoch millis when the SDK's code first ran. |
+| `emb.sdk_init_timestamp` | Cold-start part only. Epoch millis when `initSDK` was entered. |
+| `emb.page_load` | Cold-start part only. `true` when `document.readyState` was `complete` at part end. |
 | `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
