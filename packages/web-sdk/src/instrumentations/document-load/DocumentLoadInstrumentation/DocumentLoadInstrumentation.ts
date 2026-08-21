@@ -75,13 +75,15 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
+  // 'enabled' is refused here: construction only wires the instrumentation up,
+  // and registerInstrumentations starts it regardless of any flag passed in.
   public constructor({
     diag,
     perf,
     applyCustomAttributesOnSpan,
     ignorePerformancePaintEvents = false,
     ignoreNetworkEvents = false,
-  }: DocumentLoadInstrumentationConfig = {}) {
+  }: Omit<DocumentLoadInstrumentationConfig, 'enabled'> = {}) {
     super({
       instrumentationName: 'DocumentLoadInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -516,8 +518,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     // An unbuffered subscription registered after the load event is never
     // notified, so the finished entry is read off the timeline instead. Spans
     // are recorded here: enabling happens once the providers are attached.
-    if (this._isLoadEventFinished()) {
-      this._collectIfLoadEventFinished();
+    this._collectIfLoadEventFinished();
+    if (this._performanceCollected) {
       return;
     }
 

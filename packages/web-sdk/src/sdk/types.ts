@@ -416,10 +416,10 @@ export interface SetupDefaultInstrumentationsArgs {
   signalBuffer?: SignalBuffer;
 }
 
-/*
-  'enabled' is not accepted anywhere in here. It is misleading, since we call
-  `registerInstrumentations` for every instrumentation we include and that
-  starts them regardless. Use `omit` to turn a default instrumentation off.
+/**
+ * 'enabled' is not accepted anywhere in here. It is misleading, since we call
+ * `registerInstrumentations` for every instrumentation we include and that
+ * starts them regardless. Use `omit` to turn a default instrumentation off.
  */
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;

@@ -76,6 +76,17 @@ export abstract class EmbraceInstrumentationBase<
     this._config.enabled = enabled;
   }
 
+  /*
+   * The base setConfig defaults enabled to true, which would flip _isEnabled
+   * without onEnable running. Lifecycle state moves only through
+   * enable()/disable(), so it survives config replacement.
+   */
+  public override setConfig(config: ConfigType): void {
+    const wasEnabled = this._isEnabled;
+    super.setConfig(config);
+    this._isEnabled = wasEnabled;
+  }
+
   /* Returns session provider */
   protected get userSessionManager(): UserSessionManagerInternal {
     return this._userSessionManager;
