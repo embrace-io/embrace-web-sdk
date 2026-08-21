@@ -53,9 +53,10 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
   public override onEnable(): void {
     if (this._hasLoadEventFired()) {
-      // Attaching to a page that already loaded: no load event is coming, so
-      // this is the only trigger left. The measurement is spent once, so a
-      // re-enable takes none of its own.
+      // Attaching to a page that already loaded: no load event is coming, and
+      // a part already running fired part-start before the listener below
+      // existed, so capture now. The measurement is spent once, so a re-enable
+      // takes none of its own.
       this._captureFoldMeasurement();
     } else {
       window.addEventListener('load', this._onLoad, { once: true });
