@@ -1393,26 +1393,11 @@ describe('DocumentLoad Instrumentation', () => {
       assert.strictEqual(FakePerformanceObserver.instances.length, 0);
     });
 
-    /* Under registerGlobally: false the tracer provider is wired after the
-     * constructor runs, so a synchronous collect would record nothing. */
-    it('should not collect synchronously while enabling', (done) => {
+    /* Nothing is coming to trigger a later read, so enabling collects. */
+    it('should collect while enabling', () => {
       plugin.enable();
 
-      assert.strictEqual(documentLoadSpans().length, 0);
-
-      setTimeout(() => {
-        assert.strictEqual(documentLoadSpans().length, 1);
-        done();
-      });
-    });
-
-    it('should collect nothing when disabled before the deferred read runs', async () => {
-      plugin.enable();
-      plugin.disable();
-
-      await afterPendingTasks();
-
-      assert.strictEqual(documentLoadSpans().length, 0);
+      assert.strictEqual(documentLoadSpans().length, 1);
     });
   });
 
