@@ -33,6 +33,7 @@ const shouldUpdateGolden = process.env['UPDATE_GOLDEN'] === '1';
 const DEFAULT_REMOTE_CONFIG: Record<string, unknown> = {
   threshold: 100, // Default to 100% for tests
 };
+const LOG_RECORD_TIMEOUT_MS = 5_000;
 const OTEL_REQUEST_REGEX = /http:\/\/localhost:3001\/v2\/(spans|logs)$/;
 const REMOTE_CONFIG_REGEX = /^https?:\/\/.*\/v2\/config\?.*/;
 const SIMULATED_REQUEST_REGEX = /simulated/;
@@ -55,7 +56,7 @@ declare global {
   }
 }
 
-type EmbraceDataRequest = {
+export type EmbraceDataRequest = {
   url: string;
   headers: Record<string, string>;
   data: Record<string, unknown>;
@@ -71,6 +72,11 @@ type TestWithMockApi = {
   waitForRequest: (url: RegExp) => Promise<void>;
   waitForOTelRequest: (count?: number) => Promise<void>;
   waitForOTelRequestMatching: (pattern: RegExp) => Promise<void>;
+  waitForLogRecordMatching: (
+    description: string,
+    predicate: (logRecord: ILogRecord) => boolean,
+  ) => Promise<ILogRecord>;
+  getLogRecords: () => ILogRecord[];
   waitForRemoteConfigRequest: () => Promise<void>;
   withRemoteConfig: (remoteConfig?: Record<string, unknown>) => Promise<void>;
   withSimulatedResponse: (response: SimulatedResponse) => Promise<void>;
@@ -96,8 +102,10 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // Resource spans whose url.full matches any of these patterns are excluded from
 // comparison entirely. Favicons are fetched asynchronously by the browser and
 // may or may not complete before the SDK captures PerformanceResourceTiming
-// entries, making their presence in a session non-deterministic.
-const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/];
+// entries, making their presence in a session non-deterministic. The SDK's own
+// uploads are instrumented like any other fetch, so whether one has resolved by
+// the time the part flushes depends on how fast the test got there.
+const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/, /\/v2\/(logs|spans)$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
@@ -146,6 +154,20 @@ const IGNORED_ATTRIBUTES_LIST = [
   'app.surface.id',
 ];
 
+// Which export batch a record rides in depends on where the processor's batch
+// window fell, so tests address records by content rather than request index.
+export const logRecordsOf = (request: EmbraceDataRequest): ILogRecord[] => {
+  if (!request.url.endsWith('/logs')) {
+    return [];
+  }
+
+  const { resourceLogs = [] } = request.data as IExportLogsServiceRequest;
+
+  return resourceLogs.flatMap((resourceLog) =>
+    resourceLog.scopeLogs.flatMap((scopeLog) => scopeLog.logRecords ?? []),
+  );
+};
+
 const testWithMockApi = base.extend<TestWithMockApi>({
   waitForRequest: [
     async ({ page }, use) => {
@@ -193,6 +215,46 @@ const testWithMockApi = base.extend<TestWithMockApi>({
           }, 100);
         });
       });
+    },
+    { scope: 'test' },
+  ],
+  waitForLogRecordMatching: [
+    async ({ requests }, use) => {
+      await use(async (description, predicate) => {
+        const matches = await new Promise<ILogRecord[]>((resolve, reject) => {
+          const start = Date.now();
+          const interval = setInterval(() => {
+            const records = requests.flatMap(logRecordsOf);
+            const found = records.filter(predicate);
+
+            if (found.length > 0) {
+              clearInterval(interval);
+              resolve(found);
+            } else if (Date.now() - start > LOG_RECORD_TIMEOUT_MS) {
+              clearInterval(interval);
+              // Rejecting rather than throwing from the timer, which would leave
+              // this promise pending until the whole test times out.
+              reject(
+                new Error(
+                  `Expected a log record matching ${description} within ${LOG_RECORD_TIMEOUT_MS.toString()}ms, saw ${records.length.toString()} records`,
+                ),
+              );
+            }
+          }, 100);
+        });
+
+        // Asserted outside the timer for the same reason. Returning the first
+        // match would hide a record the SDK emitted twice.
+        expect(matches, `log records matching ${description}`).toHaveLength(1);
+
+        return matches[0];
+      });
+    },
+    { scope: 'test' },
+  ],
+  getLogRecords: [
+    async ({ requests }, use) => {
+      await use(() => requests.flatMap(logRecordsOf));
     },
     { scope: 'test' },
   ],
@@ -561,11 +623,13 @@ const expect = testWithMockApi.expect.extend({
     // Use this instead of objectContaining for a better error message
     expect({
       ...(ignoreBody ? {} : { body: received.body }),
+      eventName: received.eventName,
       severityNumber: received.severityNumber,
       severityText: received.severityText,
       droppedAttributesCount: received.droppedAttributesCount,
     }).toEqual({
       ...(ignoreBody ? {} : { body: expected.body }),
+      eventName: expected.eventName,
       severityNumber: expected.severityNumber,
       severityText: expected.severityText,
       droppedAttributesCount: expected.droppedAttributesCount,
@@ -731,6 +795,47 @@ const expect = testWithMockApi.expect.extend({
     return {
       pass: true,
       message: () => `Entities matched`,
+    };
+  },
+  // A record's content is fixed the moment it is emitted, so it can be
+  // snapshotted where the request carrying it cannot.
+  toMatchGoldenLogRecord: (received: ILogRecord, fileName: string) => {
+    if (!fs.existsSync(GOLDEN_DIR)) {
+      fs.mkdirSync(GOLDEN_DIR, { recursive: true });
+    }
+
+    const filePath = path.join(GOLDEN_DIR, fileName);
+    const actualString = JSON.stringify(received, null, 2);
+
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, actualString);
+
+      return {
+        pass: true,
+        message: () => `Golden file created: ${filePath}`,
+      };
+    }
+
+    try {
+      expect(received).toMatchLog(
+        JSON.parse(fs.readFileSync(filePath, 'utf-8')) as ILogRecord,
+      );
+    } catch (e) {
+      if (shouldUpdateGolden) {
+        fs.writeFileSync(filePath, actualString);
+
+        return {
+          pass: true,
+          message: () => `Golden file updated: ${filePath}`,
+        };
+      } else {
+        throw new Error(`${(e as Error).message}${INTENDED_CHANGE_MESSAGE}`);
+      }
+    }
+
+    return {
+      pass: true,
+      message: () => `Golden file matched: ${fileName}`,
     };
   },
   toMatchGoldenFile: (received: EmbraceDataRequest, fileName: string) => {
