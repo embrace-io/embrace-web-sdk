@@ -28,7 +28,10 @@ import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
-import type { EmbracePerformanceResourceTiming } from './utils.ts';
+import type {
+  EmbracePerformanceNavigationTiming,
+  EmbracePerformanceResourceTiming,
+} from './utils.ts';
 import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
@@ -472,6 +475,83 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           fetchSpan?.attributes['http.response.decoded_body_size'],
           entries.decodedBodySize,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['browser.navigation_timing.type'],
+          entries.type,
+        );
+        done();
+      });
+    });
+
+    it('should not add navigation-only attributes to resourceFetch spans', (done) => {
+      spyEntries.withArgs('resource').returns(resources);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const resourceSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'resourceFetch');
+        assert.isOk(resourceSpan);
+        assert.isUndefined(
+          resourceSpan?.attributes['browser.navigation_timing.type'],
+        );
+        assert.isUndefined(
+          resourceSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should add browser.navigation_timing.not_restored_reasons when the navigation was blocked from the back/forward cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: {
+            reasons: [{ reason: 'unload-listener' }, { reason: 'websocket' }],
+          },
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.deepStrictEqual(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+          ['unload-listener', 'websocket'],
+        );
+        done();
+      });
+    });
+
+    it('should not add browser.navigation_timing.not_restored_reasons when the navigation was restored from the back/forward cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: null,
+        } as PerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
         );
         done();
       });

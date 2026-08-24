@@ -14,6 +14,10 @@
  * - http.response.cache_revalidated - 304 Not Modified response
  * - http.request.incomplete - Request started but didn't complete (network error, aborted)
  * - http.request.prevented - Request never started (blocked by CSP, browser, extension)
+ *
+ * Navigation-only attributes added to the document fetch span (no PerformanceResourceTiming equivalent):
+ * - browser.navigation_timing.type - how the browser arrived at the page (navigate, reload, back_forward)
+ * - browser.navigation_timing.not_restored_reasons - why the page couldn't be restored from the back/forward cache (Limited availability)
  */
 
 import type { Span } from '@opentelemetry/api';
@@ -43,7 +47,10 @@ import type {
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
-import type { EmbracePerformanceResourceTiming } from './utils.ts';
+import type {
+  EmbracePerformanceNavigationEntries,
+  EmbracePerformanceResourceTiming,
+} from './utils.ts';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
@@ -74,6 +81,11 @@ const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-rest
 const ATTR_HTTP_RESPONSE_CACHE_REVALIDATED = 'http.response.cache_revalidated'; // 304 Not Modified response
 const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request started but didn't complete
 const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
+
+// Navigation-only attribute names - no PerformanceResourceTiming equivalent, so these never apply to resource fetch spans
+const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
+const ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS =
+  'browser.navigation_timing.not_restored_reasons';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private _navigationObserver: PerformanceObserver | null = null;
@@ -189,6 +201,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
               this.getConfig().ignoreNetworkEvents,
             );
             this._addResourceAttributesToSpan(fetchSpan, entries);
+            this._addNavigationTimingAttributesToSpan(fetchSpan, entries);
             this._addCustomAttributesOnSpan(
               fetchSpan,
               this.getConfig().applyCustomAttributesOnSpan?.documentFetch,
@@ -456,6 +469,25 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     );
 
     this._addResourceDiagnosticAttributes(span, resource);
+  }
+
+  /**
+   * Adds attributes that only make sense for the document fetch span
+   */
+  private _addNavigationTimingAttributesToSpan(
+    span: Span,
+    entries: EmbracePerformanceNavigationEntries,
+  ): void {
+    if (entries.type) {
+      span.setAttribute(ATTR_BROWSER_NAVIGATION_TIMING_TYPE, entries.type);
+    }
+
+    if (entries.notRestoredReasons?.length) {
+      span.setAttribute(
+        ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
+        entries.notRestoredReasons,
+      );
+    }
   }
 
   private _hasNoSizeData(resource: ResourceSpanData): boolean {

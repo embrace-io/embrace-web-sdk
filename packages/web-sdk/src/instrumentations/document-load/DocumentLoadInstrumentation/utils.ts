@@ -20,11 +20,24 @@ export type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
 };
 
 /**
+ * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
+ * - notRestoredReasons: Limited availability https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming/notRestoredReasons
+ * Only the top-level document's own reasons are read; nested iframe reasons
+ * (the `children` field) aren't relevant to the document fetch span.
+ */
+export type EmbracePerformanceNavigationTiming = PerformanceNavigationTiming & {
+  deliveryType?: 'cache' | '';
+  renderBlockingStatus?: 'blocking' | 'non-blocking';
+  notRestoredReasons?: { reasons?: { reason: string }[] } | null;
+};
+
+/**
  * PerformanceTimingNames only covers navigation timing marks, so transferSize,
- * initiatorType, responseStatus, deliveryType and renderBlockingStatus - all
- * present on the underlying PerformanceNavigationTiming entry - are read
- * separately below. This lets the document fetch span carry the same
- * attributes as resource fetch spans.
+ * initiatorType, responseStatus, deliveryType, renderBlockingStatus, type and
+ * notRestoredReasons - all present on the underlying PerformanceNavigationTiming
+ * entry - are read separately below. This lets the document fetch span carry
+ * the same attributes as resource fetch spans, plus the navigation-specific
+ * ones no resource entry ever has.
  */
 export type EmbracePerformanceNavigationEntries = PerformanceEntries & {
   transferSize?: number;
@@ -32,6 +45,8 @@ export type EmbracePerformanceNavigationEntries = PerformanceEntries & {
   responseStatus?: number;
   deliveryType?: 'cache' | '';
   renderBlockingStatus?: 'blocking' | 'non-blocking';
+  type?: NavigationTimingType;
+  notRestoredReasons?: string[];
 };
 
 export const getPerformanceNavigationEntries =
@@ -39,7 +54,7 @@ export const getPerformanceNavigationEntries =
     const entries: EmbracePerformanceNavigationEntries = {};
     const performanceNavigationTiming = window.performance.getEntriesByType(
       'navigation',
-    )[0] as EmbracePerformanceResourceTiming | undefined;
+    )[0] as EmbracePerformanceNavigationTiming | undefined;
     if (!performanceNavigationTiming) {
       return entries;
     }
@@ -60,6 +75,12 @@ export const getPerformanceNavigationEntries =
     entries.deliveryType = performanceNavigationTiming.deliveryType;
     entries.renderBlockingStatus =
       performanceNavigationTiming.renderBlockingStatus;
+    entries.type = performanceNavigationTiming.type;
+    entries.notRestoredReasons =
+      // eslint-disable-next-line baseline-js/use-baseline
+      performanceNavigationTiming.notRestoredReasons?.reasons?.map(
+        (r) => r.reason,
+      );
 
     return entries;
   };
