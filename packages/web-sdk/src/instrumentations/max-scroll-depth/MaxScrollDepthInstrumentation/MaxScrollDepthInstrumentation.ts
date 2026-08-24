@@ -110,9 +110,8 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  // Initial state for the next part is wherever the user left off, bounded by
-  // the measured range: Safari can report a position past either edge during
-  // rubber-band overscroll, which the next part's document cannot hold.
+  // Seeds tracking from the live position. Safari reports a position past either
+  // edge mid-bounce, so it is bounded by the range when known, else only at the top.
   // https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
   private _resetTracking(measurement: DocumentMeasurement | null): void {
     this._hasScrolled = false;
