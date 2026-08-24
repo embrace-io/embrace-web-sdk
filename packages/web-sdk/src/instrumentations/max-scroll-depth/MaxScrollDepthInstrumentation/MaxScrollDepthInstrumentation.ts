@@ -81,6 +81,9 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       // document geometry forces a layout reflow.
       // https://developer.chrome.com/docs/performance/insights/forced-reflow
       measurement = measureDocument();
+      const percent = measurement
+        ? this._scrollPercent(measurement)
+        : undefined;
 
       this.logger.emit({
         eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
@@ -95,14 +98,9 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
           // the scroll position alone, so it stands on its own.
           ...(measurement
             ? {
-                // A depth beyond the range can come from overscroll, a shrunk
-                // document, or a carried-over position; omit percent rather than fabricate it.
-                ...(this._maxScrollY <= measurement.scrollableHeight
-                  ? {
-                      [ATTR_MAX_SCROLL_DEPTH_PERCENT]:
-                        this._scrollPercent(measurement),
-                    }
-                  : {}),
+                ...(percent === undefined
+                  ? {}
+                  : { [ATTR_MAX_SCROLL_DEPTH_PERCENT]: percent }),
                 [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
                   measurement.documentHeight,
               }
@@ -125,12 +123,31 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       : Math.max(0, window.scrollY);
   }
 
-  private _scrollPercent({ scrollableHeight }: DocumentMeasurement): number {
+  private _scrollPercent({
+    scrollableHeight,
+    viewportHeight,
+  }: DocumentMeasurement): number | undefined {
+    // Rubber-band overscroll cannot carry the content further than its own
+    // viewport, so a larger excess means the document shrank since the depth was
+    // reached; the range no longer describes it, so omit rather than fabricate.
+    const overshoot = this._maxScrollY - scrollableHeight;
+    if (overshoot > viewportHeight) {
+      this._diag.debug('omitting max-scroll-depth percent, range is stale', {
+        maxScrollY: this._maxScrollY,
+        scrollableHeight,
+        viewportHeight,
+      });
+      return undefined;
+    }
+
     if (scrollableHeight === 0) {
       // The document fits the viewport, so there was no depth to reach.
       return 0;
     }
 
-    return Math.round((this._maxScrollY / scrollableHeight) * 100);
+    return Math.min(
+      100,
+      Math.round((this._maxScrollY / scrollableHeight) * 100),
+    );
   }
 }

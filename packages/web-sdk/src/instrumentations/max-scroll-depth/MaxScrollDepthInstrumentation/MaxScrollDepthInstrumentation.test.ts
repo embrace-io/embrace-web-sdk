@@ -387,7 +387,9 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
-  it('omits percent when the scroll position exceeds the measured scrollable range', () => {
+  it('clamps percent to 100 on overscroll past the bottom', () => {
+    // Safari rubber-bands past the true bottom (900) by up to a viewport; the
+    // user did reach the bottom, so the excess is not a stale range.
     scroll({ scrollY: 1000, viewportHeight: 100, documentHeight: 1000 });
 
     userSessionManager.endSessionPartInternal({
@@ -396,11 +398,13 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.not.have.property('max_scroll_depth.percent');
-    expect(logs[0].attributes['max_scroll_depth.pixels']).to.equal(1000);
-    expect(logs[0].attributes['max_scroll_depth.document_height']).to.equal(
-      1000,
-    );
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 1000,
+      'max_scroll_depth.percent': 100,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 1000,
+    });
   });
 
   it('omits percent when the document shrank below the furthest point reached', () => {
