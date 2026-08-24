@@ -71,8 +71,8 @@ describe('MaxScrollDepthInstrumentation', () => {
         document,
         'scrollingElement',
         () => {
-          // Armed by failNextMeasurement(); this is measureDocument's first DOM
-          // read, so it's the cheapest seam to make measureDocument() throw.
+          // Armed by failNextMeasurement(); scrollingElement is the earliest
+          // measureDocument read this stub already owns, so it is the cheapest seam.
           if (failNextMeasurementArmed) {
             failNextMeasurementArmed = false;
             throw new Error('injected measureDocument failure');
