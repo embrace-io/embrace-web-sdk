@@ -306,9 +306,22 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(2);
-    expect(logs[1].attributes['max_scroll_depth.pixels']).to.equal(900);
-    expect(logs[1].attributes['max_scroll_depth.percent']).to.equal(100);
-    expect(logs[1].attributes['max_scroll_depth.did_scroll']).to.equal(false);
+    // Part 1 reports the overscrolled position itself, clamped to 100 percent.
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 960,
+      'max_scroll_depth.percent': 100,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 1000,
+    });
+    // Part 2 starts from the real bottom, not the 960 the rubber band reported.
+    expect(logs[1].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 900,
+      'max_scroll_depth.percent': 100,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 1000,
+    });
   });
 
   it('does not leak the ratchet across a disabled gap', () => {
@@ -418,20 +431,22 @@ describe('MaxScrollDepthInstrumentation', () => {
 
   it('omits percent when the document shrank below the furthest point reached', () => {
     scroll({ scrollY: 1500, viewportHeight: 100, documentHeight: 2000 });
-    // The document shrinks before the part ends: the measured range (300) no
-    // longer describes the document the user scrolled.
-    setGeometry({ scrollY: 1500, viewportHeight: 100, documentHeight: 400 });
+    // The document shrinks before the part ends and the browser clamps the live
+    // position to the new bottom; the measured range (300) no longer describes
+    // the document the user scrolled.
+    setGeometry({ scrollY: 300, viewportHeight: 100, documentHeight: 400 });
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
     });
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes).to.not.have.property('max_scroll_depth.percent');
-    expect(logs[0].attributes['max_scroll_depth.pixels']).to.equal(1500);
-    expect(logs[0].attributes['max_scroll_depth.document_height']).to.equal(
-      400,
-    );
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 1500,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 400,
+    });
   });
 
   it('omits percent when the document shrank to an unscrollable height', () => {
