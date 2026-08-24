@@ -319,7 +319,12 @@ describe('MaxScrollDepthInstrumentation', () => {
       reason: 'web_foreground_inactivity',
     }); // disabled: no listener, no log
 
-    // Part 2: re-enabled, the user stays put at 50 for the whole part.
+    // The user keeps scrolling while disabled; with no listener attached, neither
+    // the 700 nor the disable-time 50 may be credited to the next part.
+    setGeometry({ scrollY: 700, viewportHeight: 100, documentHeight: 1000 });
+    setGeometry({ scrollY: 20, viewportHeight: 100, documentHeight: 1000 });
+
+    // Part 2: re-enabled, the user stays put at 20 for the whole part.
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     instrumentation.enable();
     userSessionManager.endSessionPartInternal({
@@ -328,9 +333,13 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    expect(logs[0].attributes['max_scroll_depth.pixels']).to.equal(50);
-    expect(logs[0].attributes['max_scroll_depth.percent']).to.equal(6);
-    expect(logs[0].attributes['max_scroll_depth.did_scroll']).to.equal(false);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 20,
+      'max_scroll_depth.percent': 2,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 1000,
+    });
   });
 
   it('does not leak part state into the next session part when measureDocument throws', () => {

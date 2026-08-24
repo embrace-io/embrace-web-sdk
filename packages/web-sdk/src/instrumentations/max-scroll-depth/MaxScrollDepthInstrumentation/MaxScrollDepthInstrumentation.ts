@@ -49,6 +49,9 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onEnable(): void {
+    // Depth accrued before a disabled gap must not be credited to whichever
+    // part is open when tracking resumes, so the seed is taken here, not at disable.
+    this._resetTracking(null);
     window.addEventListener('scroll', this._onScrollHandler, { passive: true });
     this.setSessionPartListeners({
       end: () => {
@@ -63,9 +66,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     window.removeEventListener('scroll', this._onScrollHandler);
-    // A disabled window must not credit its depth to whichever part is open
-    // when the instrumentation comes back on.
-    this._resetTracking(null);
   }
 
   private _emit(): void {
