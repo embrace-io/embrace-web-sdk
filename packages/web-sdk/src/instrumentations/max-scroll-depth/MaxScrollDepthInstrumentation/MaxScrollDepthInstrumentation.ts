@@ -92,10 +92,8 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
           [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
           [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
           [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
-          // Depth as a percentage needs a viewport, which a document or a frame
-          // can lack. Omit it and the height together in that case so consumers
-          // read absence rather than a fabricated 0. The pixel depth comes from
-          // the scroll position alone, so it stands on its own.
+          // Absent beats a fabricated 0: percent needs a viewport and a current
+          // range, the height needs a viewport, and pixels need neither.
           ...(measurement
             ? {
                 ...(percent === undefined
