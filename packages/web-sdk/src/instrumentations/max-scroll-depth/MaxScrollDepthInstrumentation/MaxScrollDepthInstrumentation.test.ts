@@ -476,6 +476,33 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
+  it('clamps a rubber-band negative position to the top when the frame is unmeasurable', () => {
+    // With no measurement to bound the carried position, only the top can be
+    // clamped; a part ending mid-bounce must still hand the next one 0, not -50.
+    scroll({ scrollY: -50, viewportHeight: 0, documentHeight: 1000 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.did_scroll': true,
+    });
+    expect(logs[1].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.did_scroll': false,
+    });
+  });
+
   it('reports the depth of a restored scroll offset the user never scrolled to', () => {
     // A reload or back navigation restores the scroll position without firing a
     // scroll event, and that depth was still reached.
