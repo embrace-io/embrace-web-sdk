@@ -434,6 +434,25 @@ describe('MaxScrollDepthInstrumentation', () => {
     );
   });
 
+  it('omits percent when the document shrank to an unscrollable height', () => {
+    scroll({ scrollY: 500, viewportHeight: 100, documentHeight: 1000 });
+    // The document now fits the viewport and the browser has clamped the live
+    // position to 0; the 500 reached is far beyond a rubber-band, so it is stale.
+    setGeometry({ scrollY: 0, viewportHeight: 100, documentHeight: 100 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 500,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 100,
+    });
+  });
+
   it('keeps every attribute when there is no scrolling element', () => {
     // scrollingElement is null in quirks mode when the body is potentially
     // scrollable. <html> stands in for the document there and the window knows
