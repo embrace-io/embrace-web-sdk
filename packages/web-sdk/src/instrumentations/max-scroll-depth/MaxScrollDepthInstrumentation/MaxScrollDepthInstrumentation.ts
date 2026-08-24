@@ -31,8 +31,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
 
     this._onScrollHandler = (): void => {
       try {
-        // The handler only reads scrollY; the layout-forcing document
-        // measurement is deferred to part end, once per part rather than per event.
         const scrollY = window.scrollY;
         if (scrollY > this._maxScrollY) {
           this._maxScrollY = scrollY;
