@@ -65,8 +65,6 @@ type ResourceSpanData = {
   encodedBodySize?: number;
   transferSize?: number;
   decodedBodySize?: number;
-  fetchStart?: number;
-  responseEnd?: number;
 };
 
 // PerformanceResourceTiming attribute names
@@ -328,6 +326,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
 
     this._addResourceAttributesToSpan(span, resource);
+    this._addResourceDiagnosticAttributes(span, resource);
     this._addCustomAttributesOnResourceSpan(
       span,
       resource,
@@ -458,17 +457,20 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       );
     }
 
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_BODY_SIZE,
-      resource.encodedBodySize ?? 0,
-    );
-    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize ?? 0);
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-      resource.decodedBodySize ?? 0,
-    );
+    if (resource.encodedBodySize !== undefined) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    }
 
-    this._addResourceDiagnosticAttributes(span, resource);
+    if (resource.transferSize !== undefined) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    }
+
+    if (resource.decodedBodySize !== undefined) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+        resource.decodedBodySize,
+      );
+    }
   }
 
   /**
@@ -490,32 +492,38 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
   }
 
-  private _hasNoSizeData(resource: ResourceSpanData): boolean {
+  private _hasNoSizeData(resource: EmbracePerformanceResourceTiming): boolean {
     return (
-      (resource.transferSize ?? 0) === 0 &&
-      (resource.decodedBodySize ?? 0) === 0 &&
-      (resource.encodedBodySize ?? 0) === 0
+      resource.transferSize === 0 &&
+      resource.decodedBodySize === 0 &&
+      resource.encodedBodySize === 0
     );
   }
 
-  private _hasTimingData(resource: ResourceSpanData): boolean {
-    return (resource.fetchStart ?? 0) > 0 && (resource.responseEnd ?? 0) > 0;
+  private _hasTimingData(resource: EmbracePerformanceResourceTiming): boolean {
+    return resource.fetchStart > 0 && resource.responseEnd > 0;
   }
 
-  private _isCorsRestricted(resource: ResourceSpanData): boolean {
+  private _isCorsRestricted(
+    resource: EmbracePerformanceResourceTiming,
+  ): boolean {
     return this._hasNoSizeData(resource) && this._hasTimingData(resource);
   }
 
-  private _isFetchIncomplete(resource: ResourceSpanData): boolean {
+  private _isFetchIncomplete(
+    resource: EmbracePerformanceResourceTiming,
+  ): boolean {
     return (
       this._hasNoSizeData(resource) &&
-      (resource.fetchStart ?? 0) > 0 &&
-      (resource.responseEnd ?? 0) === 0
+      resource.fetchStart > 0 &&
+      resource.responseEnd === 0
     );
   }
 
-  private _isFetchPrevented(resource: ResourceSpanData): boolean {
-    return this._hasNoSizeData(resource) && (resource.fetchStart ?? 0) === 0;
+  private _isFetchPrevented(
+    resource: EmbracePerformanceResourceTiming,
+  ): boolean {
+    return this._hasNoSizeData(resource) && resource.fetchStart === 0;
   }
 
   /**
@@ -526,11 +534,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    *
    * Spec: https://w3c.github.io/resource-timing/#dom-performanceresourcetiming-transfersize
    */
-  private _isCacheValidated(resource: ResourceSpanData): boolean {
+  private _isCacheValidated(
+    resource: EmbracePerformanceResourceTiming,
+  ): boolean {
     // deliveryType is Chromium only, so an engine without it never reads 'cache'.
-    return (
-      (resource.transferSize ?? 0) === 300 && resource.deliveryType !== 'cache'
-    );
+    return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
   /**
@@ -542,15 +550,14 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
    * - Request incomplete (started but didn't complete - network error, aborted)
    * - Request prevented (never started - blocked by CSP, browser, extension)
    *
-   * The size and timing fields read below are always numbers on a genuine
-   * PerformanceResourceTiming/PerformanceNavigationTiming entry: a
-   * cross-origin resource with no Timing-Allow-Origin reports them as 0
-   * rather than omitting them, and a resource only reaches here once it has
-   * produced a span, which required a numeric fetchStart.
+   * The size and timing fields read below are always numbers: a cross-origin
+   * resource with no Timing-Allow-Origin reports them as 0 rather than omitting
+   * them, and a resource only reaches here once it has produced a span, which
+   * required a numeric fetchStart.
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
-    resource: ResourceSpanData,
+    resource: EmbracePerformanceResourceTiming,
   ): void {
     if (this._isCorsRestricted(resource)) {
       span.setAttribute(ATTR_HTTP_RESPONSE_CORS_OPAQUE, true);

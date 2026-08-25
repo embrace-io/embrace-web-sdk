@@ -24,7 +24,6 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
@@ -453,32 +452,29 @@ describe('DocumentLoad Instrumentation', () => {
         assert.isOk(fetchSpan);
 
         assert.strictEqual(
-          fetchSpan?.attributes[KEY_EMB_TYPE],
-          EMB_TYPES.ResourceFetch,
+          fetchSpan?.attributes['emb.type'],
+          'ux.resource_fetch',
         );
         assert.strictEqual(
           fetchSpan?.attributes['http.request.initiator_type'],
-          entries.initiatorType,
+          'navigation',
         );
         assert.strictEqual(
           fetchSpan?.attributes['http.response.status_code'],
-          entries.responseStatus,
+          200,
         );
-        assert.strictEqual(
-          fetchSpan?.attributes['http.response.size'],
-          entries.transferSize,
-        );
+        assert.strictEqual(fetchSpan?.attributes['http.response.size'], 655);
         assert.strictEqual(
           fetchSpan?.attributes['http.response.body.size'],
-          entries.encodedBodySize,
+          362,
         );
         assert.strictEqual(
           fetchSpan?.attributes['http.response.decoded_body_size'],
-          entries.decodedBodySize,
+          362,
         );
         assert.strictEqual(
           fetchSpan?.attributes['browser.navigation_timing.type'],
-          entries.type,
+          'reload',
         );
         done();
       });
@@ -557,7 +553,118 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should default the documentFetch span sizes to 0 when the navigation entry lacks size fields', (done) => {
+    /* An empty reasons array is why the guard is ?.length rather than a bare
+     * presence check - simplifying to `if (entries.notRestoredReasons)` would
+     * still be truthy for [] and ship an empty array attribute. */
+    it('should not add browser.navigation_timing.not_restored_reasons when reasons is an empty array', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: { reasons: [] },
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should not add browser.navigation_timing.not_restored_reasons when reasons is null', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: { reasons: null },
+        } as unknown as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should add http.response.delivery_type to the documentFetch span when the navigation was served from cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: 'cache',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.delivery_type'],
+          'cache',
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.delivery_type to the documentFetch span when the navigation was served over the network', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: '',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.delivery_type'],
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.delivery_type to the documentFetch span when the engine does not report it', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.delivery_type'],
+        );
+        done();
+      });
+    });
+
+    it('should omit the documentFetch span sizes when the navigation entry lacks size fields', (done) => {
       const {
         transferSize,
         encodedBodySize,
@@ -567,6 +674,34 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries
         .withArgs('navigation')
         .returns([entryWithoutSizes as PerformanceNavigationTiming]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        // undefined (not reported) must not be conflated with a reported 0
+        assert.isUndefined(fetchSpan?.attributes['http.response.size']);
+        assert.isUndefined(fetchSpan?.attributes['http.response.body.size']);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+        );
+        done();
+      });
+    });
+
+    it('should report the documentFetch span sizes as 0 when the navigation entry reports 0', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+        } as PerformanceNavigationTiming,
+      ]);
 
       plugin.enable();
 
