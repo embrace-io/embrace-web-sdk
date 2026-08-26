@@ -104,8 +104,12 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // may or may not complete before the SDK captures PerformanceResourceTiming
 // entries, making their presence in a session non-deterministic. The SDK's own
 // uploads are instrumented like any other fetch, so whether one has resolved by
-// the time the part flushes depends on how fast the test got there.
-const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/, /\/v2\/(logs|spans)$/];
+// the time the part flushes depends on how fast the test got there. The config
+// request is unanchored because its query string carries a per-run deviceId.
+const EXCLUDED_RESOURCE_URL_PATTERNS = [
+  /favicon\.ico$/,
+  /\/v2\/(logs|spans|config)/,
+];
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
