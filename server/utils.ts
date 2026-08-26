@@ -198,11 +198,12 @@ const logBreadcrumbs = (sessionPartSpan: ISpan) => {
 const SEVERITY_NUMBER_WARN = 13;
 
 const LOG_RECORD_IGNORED_KEYS = [
-  'app.surface.label',
-  'log.record.uid',
+  'emb.js_file_bundle_ids',
+  'emb.session_part_id',
+  'emb.stacktrace.js',
   'emb.user_session_id',
   'emb.user_session_previous_id',
-  'emb.session_part_id',
+  'log.record.uid',
   'user.id',
 ];
 
@@ -228,7 +229,7 @@ const logReceivedLogRecords = (logRecords: ILogRecord[]) => {
       : '';
     const log =
       (record.severityNumber ?? 0) >= SEVERITY_NUMBER_WARN ? logWarn : logInfo;
-    log(`Log record: ${eventName}\n  ${parts.join('\n  ')}${body}`);
+    log(`LOG eventName: ${eventName}\n  ${parts.join('\n  ')}${body}`);
   }
 };
 
