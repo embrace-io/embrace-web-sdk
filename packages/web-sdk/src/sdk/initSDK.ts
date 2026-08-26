@@ -60,6 +60,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
+  SDK_LOAD_ORIGIN_OFFSET_MILLIS,
   updateZeroTimeMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
@@ -363,9 +364,11 @@ export const initSDK = (
       registry.register(sdkControl);
     }
 
-    userSessionManager.recordSDKStartupDuration(
-      perf.getNowMillis() - initSDKStart,
-    );
+    userSessionManager.recordSDKStartupTimings({
+      initDurationMillis: perf.getNowMillis() - initSDKStart,
+      loadTimestamp: perf.epochMillisFromOrigin(SDK_LOAD_ORIGIN_OFFSET_MILLIS),
+      initTimestamp: initSDKStart,
+    });
 
     return sdkControl;
   } catch (e) {

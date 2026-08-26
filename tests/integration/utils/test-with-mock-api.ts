@@ -109,6 +109,8 @@ const EXCLUDED_RESOURCE_URL_PATTERNS = [/favicon\.ico$/, /\/v2\/(logs|spans)$/];
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
+  'emb.sdk_load_timestamp',
+  'emb.sdk_init_timestamp',
   'emb.app_instance_id',
   // UUIDs and timestamps regenerated on every run; compare key presence only.
   'emb.session_part_id',

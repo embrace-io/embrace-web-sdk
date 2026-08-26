@@ -244,4 +244,12 @@ For completeness, the non-instrumentation consumers of the clock:
   and the remaining timeout. Internal duration math, not telemetry.
 - **initSDK** — `getNowMillis()` difference for `emb.sdk_startup_duration`
   (a pure duration), plus the `pageshow` / `currententrychange` listeners
-  that reset zero time.
+  that reset zero time. It also stamps `emb.sdk_init_timestamp` from
+  `getNowMillis()` and converts `SDK_LOAD_ORIGIN_OFFSET_MILLIS` into
+  `emb.sdk_load_timestamp` via `epochMillisFromOrigin`. Both are time-origin
+  values: they say when SDK machinery ran, not what the user perceived, so
+  they must not shift on a bfcache restore or soft navigation.
+- **`utils/sdkLoadTime.ts`** — the one deliberate exception to routing clock
+  reads through this manager. It captures `performance.now()` at module
+  evaluation, earlier than any manager instance can exist, and holds the raw
+  origin offset so the conversion still happens here.
