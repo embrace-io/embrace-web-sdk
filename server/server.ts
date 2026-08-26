@@ -32,6 +32,21 @@ const mimeTypes: Record<string, string> = {
 
 const receivedSpans: ReceivedSpans = {};
 
+// Mirrors the production payload, narrowed to the fields this SDK reads. The
+// user_session values match the SDK's own defaults, so they change nothing at
+// runtime but do exercise parseRemoteConfig's optional branches and the manager's
+// clamping, which stay dead when the block is absent. The etag is fixed so a
+// reload takes the 304 path.
+const REMOTE_CONFIG = {
+  threshold: 100,
+  user_session: {
+    max_duration_seconds: 43200,
+    inactivity_timeout_seconds: 1800,
+    web_foreground_inactivity_timeout_seconds: 1800,
+  },
+};
+const REMOTE_CONFIG_ETAG = '"local-collector-1"';
+
 function serveFile(res: ServerResponse, filePath: string) {
   readFile(filePath, (err, data) => {
     if (err) {
@@ -78,6 +93,9 @@ const server = createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
   res.setHeader('Access-Control-Allow-Headers', '*');
+  // ETag is not CORS-safelisted, so without this the demo on another port reads
+  // it back as null and never sends If-None-Match.
+  res.setHeader('Access-Control-Expose-Headers', 'ETag');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -106,6 +124,21 @@ const server = createServer((req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(receivedSpans));
+    return;
+  }
+
+  if (pathname === '/v2/config') {
+    if (req.headers['if-none-match'] === REMOTE_CONFIG_ETAG) {
+      res.writeHead(304, { ETag: REMOTE_CONFIG_ETAG });
+      res.end();
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      ETag: REMOTE_CONFIG_ETAG,
+    });
+    res.end(JSON.stringify(REMOTE_CONFIG));
     return;
   }
 
@@ -213,6 +246,11 @@ const server = createServer((req, res) => {
     serveFile(res, join(__dirname, pathname));
     return;
   }
+
+  // Every branch above returns, so reaching here means nothing matched. Without
+  // this the request stays open with no response until the client gives up.
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Not Found');
 });
 
 server.listen(PORT, () => {
