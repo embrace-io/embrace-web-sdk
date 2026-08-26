@@ -32,9 +32,19 @@ const mimeTypes: Record<string, string> = {
 
 const receivedSpans: ReceivedSpans = {};
 
-// `threshold` is the only required field and maps to samplingPct; 100 keeps all
-// local telemetry flowing. The etag is fixed so a reload takes the 304 path.
-const REMOTE_CONFIG = { threshold: 100 };
+// Mirrors the production payload, narrowed to the fields this SDK reads. The
+// user_session values match the SDK's own defaults, so they change nothing at
+// runtime but do exercise parseRemoteConfig's optional branches and the manager's
+// clamping, which stay dead when the block is absent. The etag is fixed so a
+// reload takes the 304 path.
+const REMOTE_CONFIG = {
+  threshold: 100,
+  user_session: {
+    max_duration_seconds: 43200,
+    inactivity_timeout_seconds: 1800,
+    web_foreground_inactivity_timeout_seconds: 1800,
+  },
+};
 const REMOTE_CONFIG_ETAG = '"local-collector-1"';
 
 function serveFile(res: ServerResponse, filePath: string) {
