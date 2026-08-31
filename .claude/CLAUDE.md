@@ -16,41 +16,17 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 
 ## Quick Reference
 
-```bash
-# Build all packages (turbo)
-npm run build
+Commands are npm scripts, mostly at the repo root; the web-sdk-only ones (`test:manual`, `test:watch`, `test:coverage`, `check:dist`, `docs`) live in `packages/web-sdk/package.json`. What those files don't tell you:
 
-# Lint with Biome (add :fix to auto-fix)
-npm run lint
-npm run lint:fix
-
-# Typecheck + ESLint baseline (tsc + eslint --max-warnings 0)
-npm run check
-
-# Validate built artifacts (es-check, bundle size, ESM/CJS split); run after build
-npm run validate
-
-# Run demo dev server (http://localhost:4847)
-npm run dev
-```
-
-Run `lint`/`check` from the repo root so turbo and Biome cover every workspace. Scoping them to one package leaves the others unchecked.
+- Run `lint`/`check` from the repo root so turbo and Biome cover every workspace. Scoping them to one package leaves the others unchecked.
+- `validate` builds first on its own, so ordering is not your problem. Its first two stages are, though: `validate:versions` and a `THIRD_PARTY_NOTICES.txt` that must be diff-clean, both of which fail for reasons unrelated to the build.
+- `dev` serves the demo at http://localhost:4847 and also starts the debug collector at http://localhost:3001 (point telemetry at it with `VITE_DATA_URL`).
 
 ## Architecture
 
-Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, and the source layout below is rooted there.
+Turbo + npm-workspaces monorepo (`packages/*`, `demo/*`, `server`, `tests/integration`). The published SDK is `packages/web-sdk`, with source under `packages/web-sdk/src/`.
 
-### Source Layout (`packages/web-sdk/src/`)
-
-```
-api-*/          Public APIs with no-op defaults (traces, logs, sessions, users, page)
-managers/       Concrete implementations (EmbraceTraceManager, EmbraceLogManager, etc.)
-processors/     Span/Log processing chain (scrubbing, batching, session correlation)
-exporters/      OTLP serialization for Embrace backend
-instrumentations/  Auto-capture plugins (web-vitals, clicks, rage-click, navigation, exceptions, etc.); fetch/XHR use upstream OTel instrumentations
-sdk/            Entry point (initSDK) and configuration
-transport/      HTTP transport with retry logic
-```
+Two non-obvious things about `instrumentations/`, which covers auto-capture: fetch/XHR use the upstream OTel instrumentations rather than our own, and only span/log emitters belong there (detectors that emit no telemetry go in `utils/`).
 
 ### Key Patterns
 
@@ -59,14 +35,6 @@ transport/      HTTP transport with retry logic
 **Processor Chain**: Spans and logs flow through processors that add attributes, scrub sensitive data, and batch for export.
 
 **Layered Architecture**: `api-*` (interfaces/proxies) → `managers/` (implementations) → `processors/exporters/` (infrastructure)
-
-### Distribution
-
-| Format | Target | Use Case                                |
-| ------ | ------ | --------------------------------------- |
-| ESM    | ES2022 | npm package (import)                    |
-| CJS    | ES2022 | npm package (require)                   |
-| IIFE   | ES6    | CDN script tag (`window.EmbraceWebSdk`) |
 
 ## Code Conventions
 
@@ -100,12 +68,12 @@ transport/      HTTP transport with retry logic
 
 ### Unit Tests
 
-Framework: @web/test-runner + Playwright + Mocha + Chai
+Framework: @web/test-runner + Playwright + Mocha + Chai. `test:manual`, `test:watch`, and `test:coverage` exist only in `packages/web-sdk/`.
+
+A root `npm run test` expands to 14 tasks: the web-cli and integration suites as well, plus a `clean` and `build` on both packages and a `build-platforms` that rebuilds every integration bundler. Scope to the SDK from the root instead, which runs exactly one:
 
 ```bash
-npm run test                  # Headless (from packages/web-sdk/)
-npm run test:manual           # Browser with DevTools
-npm run test:watch            # Watch mode
+npx turbo run test --filter=@embrace-io/web-sdk
 ```
 
 **Run a single test file** (paths are workspace-relative, i.e. relative to `packages/web-sdk/`):
@@ -116,15 +84,11 @@ npx turbo run test --filter=@embrace-io/web-sdk -- --files "src/utils/throttle.t
 
 ### Integration Tests
 
-Test SDK against bundlers (Webpack 5, Vite 6/7, Next.js 15/16):
+Test SDK against bundlers (Webpack 5, Vite 6/7, Next.js 15/16). `test:integration` runs against built artifacts, so `build` first.
 
-```bash
-npm run build                             # Build first
-npm run test:integration                  # Run tests
-npm run test:integration:update-golden    # Update golden files
-```
+Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps regenerate on every run, so a hand edit is indistinguishable from a real change on the next regeneration. Never hand-edit them.
 
-Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps regenerate on every run. Never hand-edit them. Regenerate with the update-golden script and review the semantic diff.
+Regenerating has a procedure that is easy to get wrong (which script, and how to read a diff that reorders thousands of lines). Use the `regenerating-golden-files` skill rather than working it out from the scripts.
 
 ### Conventions
 
@@ -151,23 +115,6 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 ### Time
 
 - Anything touching timestamps or timing attributes must convert through `OTelPerformanceManager` (`this.perf`), never by hand or with raw offsets. Read `packages/web-sdk/src/utils/PerformanceManager/README.md` first — it defines the two reference frames (time origin vs zero time) and which method fits each case
-
-## Common Tasks
-
-### Adding an Instrumentation
-
-1. Create in `packages/web-sdk/src/instrumentations/<name>/`
-2. Extend `EmbraceInstrumentationBase`
-3. Export from `packages/web-sdk/src/instrumentations/index.ts`
-4. Register in `sdk/setupDefaultInstrumentations.ts` if auto-enabled
-5. Catalog its timing frame (zero-time / time-origin / none) in `packages/web-sdk/src/utils/PerformanceManager/README.md`
-
-### Adding a Processor
-
-1. Create in `packages/web-sdk/src/processors/<Name>Processor/`
-2. Implement `SpanProcessor` or `LogRecordProcessor`
-3. Export from `packages/web-sdk/src/processors/index.ts`
-4. Wire into processor chain in `initSDK.ts`
 
 ## Git Workflow
 
