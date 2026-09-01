@@ -14,6 +14,10 @@
  * - http.response.cache_revalidated - 304 Not Modified response
  * - http.request.incomplete - Request started but didn't complete (network error, aborted)
  * - http.request.prevented - Request never started (blocked by CSP, browser, extension)
+ *
+ * Navigation-only attributes added to the document fetch span (no PerformanceResourceTiming equivalent):
+ * - browser.navigation_timing.type - how the browser arrived at the page (navigate, reload, back_forward)
+ * - browser.navigation_timing.not_restored_reasons - why the page couldn't be restored from the back/forward cache (Limited availability)
  */
 
 import type { Span } from '@opentelemetry/api';
@@ -43,19 +47,24 @@ import type {
   DocumentLoadInstrumentationConfig,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
+import type {
+  EmbracePerformanceNavigationEntries,
+  EmbracePerformanceResourceTiming,
+} from './utils.ts';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
 } from './utils.ts';
 
-/**
- * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
- * - deliveryType: Chromium only (experimental) https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
- * - renderBlockingStatus: Chromium only https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
- */
-type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
+/** Fields shared by resource fetch spans and the document fetch span, which is emitted as a resource fetch for the main document request */
+type ResourceSpanData = {
   deliveryType?: 'cache' | '';
+  initiatorType?: string;
   renderBlockingStatus?: 'blocking' | 'non-blocking';
+  responseStatus?: number;
+  encodedBodySize?: number;
+  transferSize?: number;
+  decodedBodySize?: number;
 };
 
 // PerformanceResourceTiming attribute names
@@ -70,6 +79,11 @@ const ATTR_HTTP_RESPONSE_CORS_OPAQUE = 'http.response.cors_opaque'; // CORS-rest
 const ATTR_HTTP_RESPONSE_CACHE_REVALIDATED = 'http.response.cache_revalidated'; // 304 Not Modified response
 const ATTR_HTTP_REQUEST_INCOMPLETE = 'http.request.incomplete'; // Request started but didn't complete
 const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never started (blocked)
+
+// Navigation-only attribute names - no PerformanceResourceTiming equivalent, so these never apply to resource fetch spans
+const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
+const ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS =
+  'browser.navigation_timing.not_restored_reasons';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private _navigationObserver: PerformanceObserver | null = null;
@@ -184,6 +198,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
               entries,
               this.getConfig().ignoreNetworkEvents,
             );
+            this._addResourceAttributesToSpan(fetchSpan, entries);
+            this._addNavigationTimingAttributesToSpan(fetchSpan, entries);
             this._addCustomAttributesOnSpan(
               fetchSpan,
               this.getConfig().applyCustomAttributesOnSpan?.documentFetch,
@@ -306,47 +322,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
       return;
     }
 
-    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
     span.setAttribute(ATTR_URL_FULL, resource.name);
     addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
 
-    if (resource.deliveryType) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
-        resource.deliveryType,
-      );
-    }
-
-    if (resource.initiatorType) {
-      span.setAttribute(
-        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
-        resource.initiatorType,
-      );
-    }
-
-    if (resource.renderBlockingStatus) {
-      span.setAttribute(
-        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
-        resource.renderBlockingStatus,
-      );
-    }
-
-    if (resource.responseStatus) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_STATUS_CODE,
-        resource.responseStatus,
-      );
-    }
-
-    span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-      resource.decodedBodySize,
-    );
-
+    this._addResourceAttributesToSpan(span, resource);
     this._addResourceDiagnosticAttributes(span, resource);
-
     this._addCustomAttributesOnResourceSpan(
       span,
       resource,
@@ -434,6 +414,80 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
           this._diag.error('addCustomAttributesOnResourceSpan', error);
         },
         true,
+      );
+    }
+  }
+
+  /**
+   * Sets emb.type and the PerformanceResourceTiming-derived attributes shared
+   * by resource fetch spans and the document fetch span, which is emitted as
+   * a resource fetch for the main document request.
+   */
+  private _addResourceAttributesToSpan(
+    span: Span,
+    resource: ResourceSpanData,
+  ): void {
+    span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
+
+    if (resource.deliveryType) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
+        resource.deliveryType,
+      );
+    }
+
+    if (resource.initiatorType) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_INITIATOR_TYPE,
+        resource.initiatorType,
+      );
+    }
+
+    if (resource.renderBlockingStatus) {
+      span.setAttribute(
+        ATTR_HTTP_REQUEST_RENDER_BLOCKING_STATUS,
+        resource.renderBlockingStatus,
+      );
+    }
+
+    if (resource.responseStatus) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_STATUS_CODE,
+        resource.responseStatus,
+      );
+    }
+
+    if (resource.encodedBodySize !== undefined) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    }
+
+    if (resource.transferSize !== undefined) {
+      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    }
+
+    if (resource.decodedBodySize !== undefined) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+        resource.decodedBodySize,
+      );
+    }
+  }
+
+  /**
+   * Adds attributes that only make sense for the document fetch span
+   */
+  private _addNavigationTimingAttributesToSpan(
+    span: Span,
+    entries: EmbracePerformanceNavigationEntries,
+  ): void {
+    if (entries.type) {
+      span.setAttribute(ATTR_BROWSER_NAVIGATION_TIMING_TYPE, entries.type);
+    }
+
+    if (entries.notRestoredReasons?.length) {
+      span.setAttribute(
+        ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
+        entries.notRestoredReasons,
       );
     }
   }

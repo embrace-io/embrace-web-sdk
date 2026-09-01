@@ -27,6 +27,10 @@ import * as sinon from 'sinon';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
+import type {
+  EmbracePerformanceNavigationTiming,
+  EmbracePerformanceResourceTiming,
+} from './utils.ts';
 import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
@@ -434,6 +438,285 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
+        done();
+      });
+    });
+
+    it('should mark the documentFetch span as a resource fetch with the same attributes as other resource spans', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        assert.strictEqual(
+          fetchSpan?.attributes['emb.type'],
+          'ux.resource_fetch',
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.request.initiator_type'],
+          'navigation',
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.status_code'],
+          200,
+        );
+        assert.strictEqual(fetchSpan?.attributes['http.response.size'], 655);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.body.size'],
+          362,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+          362,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['browser.navigation_timing.type'],
+          'reload',
+        );
+        done();
+      });
+    });
+
+    it('should not add navigation-only attributes to resourceFetch spans', (done) => {
+      spyEntries.withArgs('resource').returns(resources);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const resourceSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'resourceFetch');
+        assert.isOk(resourceSpan);
+        assert.isUndefined(
+          resourceSpan?.attributes['browser.navigation_timing.type'],
+        );
+        assert.isUndefined(
+          resourceSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should add browser.navigation_timing.not_restored_reasons when the navigation was blocked from the back/forward cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: {
+            reasons: [{ reason: 'unload-listener' }, { reason: 'websocket' }],
+          },
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.deepStrictEqual(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+          ['unload-listener', 'websocket'],
+        );
+        done();
+      });
+    });
+
+    it('should not add browser.navigation_timing.not_restored_reasons when the navigation was restored from the back/forward cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: null,
+        } as PerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    /* An empty reasons array is why the guard is ?.length rather than a bare
+     * presence check - simplifying to `if (entries.notRestoredReasons)` would
+     * still be truthy for [] and ship an empty array attribute. */
+    it('should not add browser.navigation_timing.not_restored_reasons when reasons is an empty array', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: { reasons: [] },
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should not add browser.navigation_timing.not_restored_reasons when reasons is null', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          notRestoredReasons: { reasons: null },
+        } as unknown as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes[
+            'browser.navigation_timing.not_restored_reasons'
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should add http.response.delivery_type to the documentFetch span when the navigation was served from cache', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: 'cache',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.delivery_type'],
+          'cache',
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.delivery_type to the documentFetch span when the navigation was served over the network', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: '',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.delivery_type'],
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.delivery_type to the documentFetch span when the engine does not report it', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.delivery_type'],
+        );
+        done();
+      });
+    });
+
+    it('should omit the documentFetch span sizes when the navigation entry lacks size fields', (done) => {
+      const {
+        transferSize,
+        encodedBodySize,
+        decodedBodySize,
+        ...entryWithoutSizes
+      } = entries;
+      spyEntries
+        .withArgs('navigation')
+        .returns([entryWithoutSizes as PerformanceNavigationTiming]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        // undefined (not reported) must not be conflated with a reported 0
+        assert.isUndefined(fetchSpan?.attributes['http.response.size']);
+        assert.isUndefined(fetchSpan?.attributes['http.response.body.size']);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+        );
+        done();
+      });
+    });
+
+    it('should report the documentFetch span sizes as 0 when the navigation entry reports 0', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          transferSize: 0,
+          encodedBodySize: 0,
+          decodedBodySize: 0,
+        } as PerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+
+        assert.strictEqual(fetchSpan?.attributes['http.response.size'], 0);
+        assert.strictEqual(fetchSpan?.attributes['http.response.body.size'], 0);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response.decoded_body_size'],
+          0,
+        );
         done();
       });
     });
@@ -1187,6 +1470,34 @@ describe('DocumentLoad Instrumentation', () => {
 
       assert.strictEqual(result[PTN.FETCH_START], entries.fetchStart);
       assert.strictEqual(result[PTN.LOAD_EVENT_END], entries.loadEventEnd);
+    });
+
+    it('should read the resource-shaped fields that are not part of PerformanceTimingNames', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          deliveryType: 'cache',
+          renderBlockingStatus: 'non-blocking',
+        } as EmbracePerformanceResourceTiming,
+      ]);
+
+      const result = getPerformanceNavigationEntries();
+
+      assert.strictEqual(result.transferSize, entries.transferSize);
+      assert.strictEqual(result.initiatorType, entries.initiatorType);
+      assert.strictEqual(result.responseStatus, entries.responseStatus);
+      assert.strictEqual(result.deliveryType, 'cache');
+      assert.strictEqual(result.renderBlockingStatus, 'non-blocking');
+    });
+
+    it('should return an empty object when there is no navigation entry', () => {
+      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([]);
+
+      const result = getPerformanceNavigationEntries();
+
+      assert.deepStrictEqual(result, {});
     });
   });
 
