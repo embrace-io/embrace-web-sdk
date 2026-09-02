@@ -3,6 +3,7 @@ export interface PerformanceManager {
   getNavigationEntry: () => PerformanceNavigationTiming | null;
   getNowMillis: () => number;
   millisFromZeroTime: (originOffset: number) => number;
+  millisFromZeroTimeEpoch: (epochMillis: number) => number;
   getZeroTime: () => number;
 }
 

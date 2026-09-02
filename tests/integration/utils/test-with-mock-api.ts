@@ -157,6 +157,7 @@ const IGNORED_ATTRIBUTES_LIST = [
   'first_interaction.time',
   'app.surface.id',
   'dom_state.images_above_fold.timestamp',
+  'dom_state.images_above_fold.capture_time',
 ];
 
 // Which export batch a record rides in depends on where the processor's batch
