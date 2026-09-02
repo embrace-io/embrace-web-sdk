@@ -89,6 +89,46 @@ describe('OTelPerformanceManager', () => {
     expect(performanceManager.millisFromZeroTime(500)).to.equal(0); // 500 - 800 clamped to 0
   });
 
+  it('rebases millisFromZeroTimeEpoch onto timeOrigin when zero time equals timeOrigin', () => {
+    // zero time = timeOrigin (1000); getNowMillis() = 1000 + now() (500) = 1500
+    expect(performanceManager.millisFromZeroTimeEpoch(1500)).to.equal(500); // 1500 - 1000, matching now()
+  });
+
+  it('rebases millisFromZeroTimeEpoch onto activationStart on prerendered pages', () => {
+    const clockWithActivation: PerformanceClock = {
+      timeOrigin: 1000,
+      now: sinon.stub().returns(500),
+      getEntriesByType: sinon
+        .stub()
+        .returns([{ activationStart: 200 } as PerformanceNavigationTiming]),
+    };
+    const perf = new OTelPerformanceManager(clockWithActivation);
+    // zero time = timeOrigin (1000) + activationStart (200) = 1200
+    expect(perf.millisFromZeroTimeEpoch(1500)).to.equal(300); // 1500 - 1200
+  });
+
+  it('clamps millisFromZeroTimeEpoch to 0 for epoch values before activationStart', () => {
+    const clockWithActivation: PerformanceClock = {
+      timeOrigin: 1000,
+      now: sinon.stub().returns(500),
+      getEntriesByType: sinon
+        .stub()
+        .returns([{ activationStart: 200 } as PerformanceNavigationTiming]),
+    };
+    const perf = new OTelPerformanceManager(clockWithActivation);
+    expect(perf.millisFromZeroTimeEpoch(1100)).to.equal(0); // 1100 - 1200 clamped to 0
+  });
+
+  it('rebases millisFromZeroTimeEpoch onto the pageshow gap after a bfcache restore', () => {
+    updateZeroTimeMillis(1800); // gap from timeOrigin (1000) is 800ms
+    expect(performanceManager.millisFromZeroTimeEpoch(2000)).to.equal(200); // 2000 - 1800
+  });
+
+  it('clamps millisFromZeroTimeEpoch to 0 for epoch values before the bfcache restore', () => {
+    updateZeroTimeMillis(1800); // gap from timeOrigin (1000) is 800ms
+    expect(performanceManager.millisFromZeroTimeEpoch(1500)).to.equal(0); // 1500 - 1800 clamped to 0
+  });
+
   it('returns timeOrigin when clock has no getEntriesByType (activationStart = 0)', () => {
     expect(performanceManager.getZeroTime()).to.equal(1000); // timeOrigin (1000) + activationStart (0)
   });
