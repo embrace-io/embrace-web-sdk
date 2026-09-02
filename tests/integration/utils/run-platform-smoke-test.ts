@@ -57,6 +57,12 @@ const runPlatformBuildSmokeTest = async (
         try {
           const { stdout } = await execAsync(`npm run build:${target}`, {
             cwd: platformPath,
+            env: {
+              ...process.env,
+              // Adds OS Native trust certificates.
+              // Required for next to download fonts from Google.
+              NODE_USE_SYSTEM_CA: '1',
+            },
           });
 
           console.log('Build output:', stdout);

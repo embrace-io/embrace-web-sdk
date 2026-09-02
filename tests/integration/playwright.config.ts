@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
+// Adds OS Native trust certificates.
+// Required for next to download fonts from Google.
+process.env['NODE_USE_SYSTEM_CA'] = '1';
+
 export default defineConfig({
   timeout: 10 * 1000, // 10 seconds
   webServer: [
