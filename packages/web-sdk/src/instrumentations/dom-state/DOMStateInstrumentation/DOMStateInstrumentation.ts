@@ -10,6 +10,7 @@ import {
   ATTR_DOM_STATE_DOCUMENT_HEIGHT,
   ATTR_DOM_STATE_DOCUMENT_WIDTH,
   ATTR_DOM_STATE_ELEMENT_COUNT,
+  ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_CAPTURE_TIME,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP,
   ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_HEIGHT,
@@ -26,11 +27,14 @@ import type { DOMStateInstrumentationArgs } from './types.ts';
   end itself.
 
   The fold measurement (images above the fold, the viewport they were judged
-  against, and its capture time as `images_above_fold.timestamp`) describes what
-  the user sees first: at most one per page, taken only while a session part is
-  engaged, at the load event, at the first part start after a load nobody
-  watched, or at attach to an already loaded page. It rides the first part-end
-  log sent after the capture.
+  against, and its capture time as both `images_above_fold.timestamp` — wall
+  clock — and `images_above_fold.capture_time` — ms from zero time) describes
+  what the user sees first: at most one per page, taken only while a session
+  part is engaged, at the load event, at the first part start after a load
+  nobody watched, or at attach to an already loaded page. It rides the first
+  part-end log sent after the capture; the log itself keeps the part end's own
+  timestamp, since its other attributes (element count, document box, ...)
+  are measured at the flush, not at the earlier capture.
 */
 export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
@@ -146,6 +150,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         return;
       }
 
+      const captureEpochMillis = this.perf.getNowMillis();
       this._pendingFoldAttributes = {
         [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT]:
           this._countImagesAboveFold(measurement),
@@ -153,7 +158,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
           measurement.viewportHeight,
         [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH]:
           measurement.viewportWidth,
-        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]: this.perf.getNowMillis(),
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]: captureEpochMillis,
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_CAPTURE_TIME]:
+          this.perf.millisFromZeroTimeEpoch(captureEpochMillis),
       };
     } catch (e) {
       this._diag.error('failed to capture dom-state fold measurement', e);

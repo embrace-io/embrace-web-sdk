@@ -217,7 +217,7 @@ describe('DOMStateInstrumentation', () => {
     expect(logs[0].attributes).to.have.property('dom_state.element_count');
   });
 
-  it('stamps the fold capture time as an attribute while the log itself is stamped at part end', async () => {
+  it('stamps the fold capture time both as wall clock and relative to zero time, while the log itself is stamped at part end', async () => {
     createInstrumentation();
     // Real elapsed time between capture and part end, so a stamp taken at
     // either moment is tellable from one taken at the other.
@@ -226,12 +226,23 @@ describe('DOMStateInstrumentation', () => {
     endSessionPart();
 
     const logs = getDomStateLogs();
-    const captureMillis = logs[0].attributes[
+    const timestampMillis = logs[0].attributes[
       'dom_state.images_above_fold.timestamp'
     ] as number;
-    expect(captureMillis).to.be.a('number');
-    expect(captureMillis).to.be.lessThan(beforePartEnd);
-    // The hrTime conversion truncates below the millisecond, so allow for it.
+    const captureMillis = logs[0].attributes[
+      'dom_state.images_above_fold.capture_time'
+    ] as number;
+    expect(timestampMillis).to.be.a('number');
+    expect(timestampMillis).to.be.lessThan(beforePartEnd);
+    // No bfcache restore or soft navigation happens in this test, so zero time
+    // sits at time origin: the two attributes describe the same instant, one
+    // as wall clock and one as ms since zero time, so they agree once rebased.
+    expect(captureMillis).to.equal(timestampMillis - performance.timeOrigin);
+
+    // The log itself is stamped at the part-end flush, not the earlier fold
+    // capture, since its other attributes (element count, document box) are
+    // only measured at the flush. The hrTime conversion truncates below the
+    // millisecond, so allow for it.
     expect(hrTimeToMilliseconds(logs[0].hrTime)).to.be.at.least(
       Math.floor(beforePartEnd),
     );
@@ -425,6 +436,9 @@ describe('DOMStateInstrumentation', () => {
     expect(logs[0].attributes).to.not.have.property(
       'dom_state.images_above_fold.timestamp',
     );
+    expect(logs[0].attributes).to.not.have.property(
+      'dom_state.images_above_fold.capture_time',
+    );
     expect(logs[0].attributes).to.have.property(
       'dom_state.element_count',
       expected.count,
@@ -605,6 +619,9 @@ describe('DOMStateInstrumentation', () => {
     );
     expect(logs[1].attributes).to.not.have.property(
       'dom_state.images_above_fold.timestamp',
+    );
+    expect(logs[1].attributes).to.not.have.property(
+      'dom_state.images_above_fold.capture_time',
     );
     expect(logs[1].attributes).to.have.property('dom_state.element_count');
   });

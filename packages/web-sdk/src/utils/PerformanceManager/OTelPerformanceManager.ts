@@ -70,4 +70,11 @@ export class OTelPerformanceManager implements PerformanceManager {
   // prerendering activity captured before activationStart).
   public millisFromZeroTime = (originOffset: number) =>
     Math.max(0, originOffset - (this.getZeroTime() - this._clock.timeOrigin));
+
+  // Same rebase as millisFromZeroTime, but for a value that has already had
+  // timeOrigin added in (e.g. getNowMillis(), epochMillisFromOrigin(...)) rather
+  // than a raw offset still relative to it — feeding an epoch value into
+  // millisFromZeroTime would double-count timeOrigin.
+  public millisFromZeroTimeEpoch = (epochMillis: number) =>
+    Math.max(0, epochMillis - this.getZeroTime());
 }

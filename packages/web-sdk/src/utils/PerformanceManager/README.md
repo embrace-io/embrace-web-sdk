@@ -41,11 +41,19 @@ line.
 | `getZeroTime()` | What is the epoch timestamp of the current view's start? | `max(timeOrigin + activationStart, lastResetEpoch)` |
 | `millisFromZeroTime(offset)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - (getZeroTime() - timeOrigin))` |
 | `getNowMillis()` | What is the wall-clock epoch time right now? | `timeOrigin + performance.now()` |
+| `millisFromZeroTimeEpoch(epochMillis)` | How many ms after the current view started did this *epoch* value occur? | `max(0, epochMillis - getZeroTime())` |
 
 Zero time never participates in converting a raw offset to an epoch: the
 offset already contains the full distance from time origin, so
 `epochMillisFromOrigin` is a pure frame translation. Adding a raw offset to
 `getZeroTime()` instead would count the origin→zero-time gap twice.
+
+`millisFromZeroTime` and `millisFromZeroTimeEpoch` compute the same kind of
+answer but must not be swapped: the former takes a raw offset still relative
+to time origin (`entry.startTime`, `performance.now()`), the latter a value
+that already has `timeOrigin` added in (`getNowMillis()`,
+`epochMillisFromOrigin(...)`). Passing an epoch value to `millisFromZeroTime`
+counts `timeOrigin` twice — see the worked example below.
 
 **Durations need no conversion at all.** `entry.duration`, or any difference
 of two offsets in the same frame (`responseEnd - fetchStart`), is
@@ -71,12 +79,13 @@ Each method, applied to this scenario:
 | `getZeroTime()` | `1,700,000,060,000` (12:01:00.000) | the span **start** — anchoring the span to the current view's start so its duration reads "time from view start until render" |
 | `millisFromZeroTime(61_000)` | `61,000 - 60,000 = 1,000` | the `render_time` **attribute** — "rendered 1s into the current view" |
 | `getNowMillis()` | `1,700,000,061,500` (12:01:01.500) | the default **log timestamp** when there is no event-specific offset to convert |
+| `millisFromZeroTimeEpoch(getNowMillis())` | `1,700,000,061,500 - 1,700,000,060,000 = 1,500` | an attribute capturing "how far into the view is it right now" from an already-epoch reading |
 
 The resulting span: start `12:01:00`, end `12:01:01`, duration **1s**, with a
 `render_time` attribute of **1,000ms** — all four numbers telling the same
 story.
 
-The two ways to get this wrong, with the same inputs:
+The three ways to get this wrong, with the same inputs:
 
 - Recording the raw `61,000` as the attribute claims the render took **61s**,
   because it silently measures from the original hard navigation. Across a
@@ -84,6 +93,11 @@ The two ways to get this wrong, with the same inputs:
 - Computing the epoch as `getZeroTime() + 61,000` yields
   `1,700,000,121,000` (12:02:01) — one full minute in the future, because the
   60s origin→zero-time gap got counted twice.
+- Computing `millisFromZeroTime(getNowMillis())` yields
+  `1,700,000,061,500 - 60,000 = 1,700,000,001,500` — still trillion-scale,
+  because `getNowMillis()` already has `timeOrigin` added in and
+  `millisFromZeroTime` subtracts assuming it doesn't. `millisFromZeroTimeEpoch`
+  exists precisely so this input never needs `millisFromZeroTime` at all.
 
 ## Instrumentation catalog
 
@@ -140,6 +154,24 @@ One log for the first click/keydown/scroll per session part.
 | --- | --- | --- |
 | log timestamp | `event.timeStamp` | `epochMillisFromOrigin` |
 | `emb.first_interaction.time` | `event.timeStamp` | `millisFromZeroTime` |
+
+#### DOMStateInstrumentation
+
+One `dom-state` log per session part end.
+
+| Telemetry field | Source | Method |
+| --- | --- | --- |
+| `dom_state.images_above_fold.timestamp` | — (the moment the fold measurement is taken) | `getNowMillis()` |
+| `dom_state.images_above_fold.capture_time` | — (the same moment) | `millisFromZeroTimeEpoch(getNowMillis())` |
+
+Both attributes are derived from a single `getNowMillis()` read at fold-capture
+time and held until the session-part-end flush that actually sends the log —
+one as wall clock, one rebased onto zero time. The log's own timestamp is
+untouched by this: it still defaults to "now" at the flush, since the log's
+other attributes (element count, average depth, document box) are only
+measured at that later point, not at the earlier capture. Everything else is
+counts and pixels, not timing data. `getNavigationEntry()` is also read for
+`loadEventStart`, used only as a fired/not-fired predicate, never emitted.
 
 ### Time-origin instrumentations
 
@@ -226,7 +258,6 @@ non-timing data, or OTel's default "now".
 | ServerTimingInstrumentation | `emb.server_timing.duration` — a duration reported by the server, frame-independent |
 | LoafInstrumentation | aggregated long-animation-frame durations (sums, maxima) — pure durations |
 | MaxScrollDepthInstrumentation | none — pixels, percent, booleans |
-| DOMStateInstrumentation | counts and pixels, plus one `getNowMillis()` read that pins the held view snapshot's log timestamp to the capture moment rather than to the session-part-end flush that sends it. Also reads `getNavigationEntry()` for `loadEventStart`, used only as a fired/not-fired predicate, never emitted |
 | EmptyRootInstrumentation | none — span event uses OTel's default "now" |
 | NavigationInstrumentation | route spans start/end at OTel's default "now", which is genuinely when the route change occurs |
 
