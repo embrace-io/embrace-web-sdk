@@ -38,7 +38,11 @@ import {
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
 } from '@opentelemetry/semantic-conventions/incubating';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
+import {
+  EMB_TYPES,
+  KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
+  KEY_EMB_TYPE,
+} from '../../../constants/index.ts';
 import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
@@ -82,8 +86,6 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 
 // Navigation-only attribute names - no PerformanceResourceTiming equivalent, so these never apply to resource fetch spans
 const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
-const ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS =
-  'browser.navigation_timing.not_restored_reasons';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
   private _navigationObserver: PerformanceObserver | null = null;
@@ -486,7 +488,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
     if (entries.notRestoredReasons?.length) {
       span.setAttribute(
-        ATTR_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
+        KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
         entries.notRestoredReasons,
       );
     }

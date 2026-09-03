@@ -17,6 +17,8 @@ export const KEY_EMB_UNHANDLED_EXCEPTIONS_COUNT =
 export const KEY_EMB_JS_FILE_BUNDLE_IDS = 'emb.js_file_bundle_ids';
 export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 export const KEY_BROWSER_URL_FULL = 'browser.url.full';
+export const KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS =
+  'browser.navigation_timing.not_restored_reasons';
 // In the backend we use 'app.surface.name' and 'app.surface.id' for the page name and id
 // to be consistent with mobile where we use 'app.surface.*' for screen names and ids
 export const KEY_EMB_PAGE_PATH = 'app.surface.name';
