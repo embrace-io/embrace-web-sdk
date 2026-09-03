@@ -1,5 +1,8 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
+import type {
+  InMemoryLogRecordExporter,
+  LogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
   setupTestLogExporter,
@@ -64,7 +67,19 @@ describe('MaxScrollDepthInstrumentation', () => {
       [scrollRoot, 'clientHeight', () => viewportHeightValue],
       [scrollRoot, 'scrollWidth', () => HORIZONTAL_SIZE],
       [scrollRoot, 'clientWidth', () => HORIZONTAL_SIZE],
-      [document, 'scrollingElement', () => scrollRootValue],
+      [
+        document,
+        'scrollingElement',
+        () => {
+          // Armed by failNextMeasurement(); scrollingElement is the earliest
+          // measureDocument read this stub already owns, so it is the cheapest seam.
+          if (failNextMeasurementArmed) {
+            failNextMeasurementArmed = false;
+            throw new Error('injected measureDocument failure');
+          }
+          return scrollRootValue;
+        },
+      ],
     ];
     for (const [target, prop, get] of targets) {
       originalDescriptors.push({
@@ -110,12 +125,36 @@ describe('MaxScrollDepthInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'max-scroll-depth');
 
+  // Armed by failNextEmit(); placed ahead of the exporter in the processor
+  // chain so it can block a single log from reaching it without a real export failure.
+  let failNextEmitArmed = false;
+  const failingProcessor: LogRecordProcessor = {
+    onEmit: () => {
+      if (failNextEmitArmed) {
+        failNextEmitArmed = false;
+        throw new Error('injected onEmit failure');
+      }
+    },
+    forceFlush: () => Promise.resolve(),
+    shutdown: () => Promise.resolve(),
+  };
+  const failNextEmit = () => {
+    failNextEmitArmed = true;
+  };
+
+  let failNextMeasurementArmed = false;
+  const failNextMeasurement = () => {
+    failNextMeasurementArmed = true;
+  };
+
   before(() => {
     setupTestTraceExporter();
-    memoryExporter = setupTestLogExporter();
+    memoryExporter = setupTestLogExporter([failingProcessor]);
   });
 
   beforeEach(() => {
+    failNextEmitArmed = false;
+    failNextMeasurementArmed = false;
     memoryExporter.reset();
     const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     userSessionManager = new EmbraceUserSessionManager({
@@ -231,6 +270,111 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
+  it('does not leak part state into the next session part when the emit throws', () => {
+    scroll({ scrollY: 900, viewportHeight: 100, documentHeight: 1000 }); // furthest point reached this part
+    scroll({ scrollY: 100, viewportHeight: 100, documentHeight: 1000 }); // user scrolls back up before the part ends
+    failNextEmit();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    // The throwing emit produced no log, but the reset must still have run.
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes['max_scroll_depth.pixels']).to.equal(100);
+    expect(logs[0].attributes['max_scroll_depth.did_scroll']).to.equal(false);
+  });
+
+  it('clamps the carried position to the measured scrollable range on overscroll past the bottom', () => {
+    // Safari rubber-bands past the true bottom (900) of this document.
+    scroll({ scrollY: 960, viewportHeight: 100, documentHeight: 1000 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    // Part 2: the rubber band has snapped back to the real bottom; the user never scrolls.
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    setGeometry({ scrollY: 900, viewportHeight: 100, documentHeight: 1000 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(2);
+    // Part 1 reports the overscrolled position itself, clamped to 100 percent.
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 960,
+      'max_scroll_depth.percent': 100,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 1000,
+    });
+    // Part 2 starts from the real bottom, not the 960 the rubber band reported.
+    expect(logs[1].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 900,
+      'max_scroll_depth.percent': 100,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 1000,
+    });
+  });
+
+  it('does not leak the ratchet across a disabled gap', () => {
+    scroll({ scrollY: 900, viewportHeight: 100, documentHeight: 1000 }); // furthest point reached this part
+    scroll({ scrollY: 50, viewportHeight: 100, documentHeight: 1000 }); // user scrolls back up before disabling
+    instrumentation.disable();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    }); // disabled: no listener, no log
+
+    // The user keeps scrolling while disabled; with no listener attached, neither
+    // the 700 nor the disable-time 50 may be credited to the next part.
+    setGeometry({ scrollY: 700, viewportHeight: 100, documentHeight: 1000 });
+    setGeometry({ scrollY: 20, viewportHeight: 100, documentHeight: 1000 });
+
+    // Part 2: re-enabled, the user stays put at 20 for the whole part.
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    instrumentation.enable();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 20,
+      'max_scroll_depth.percent': 2,
+      'max_scroll_depth.did_scroll': false,
+      'max_scroll_depth.document_height': 1000,
+    });
+  });
+
+  it('does not leak part state into the next session part when measureDocument throws', () => {
+    scroll({ scrollY: 900, viewportHeight: 100, documentHeight: 1000 }); // furthest point reached this part
+    scroll({ scrollY: 100, viewportHeight: 100, documentHeight: 1000 }); // user scrolls back up before the part ends
+    failNextMeasurement();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    // The failed measurement produced no log, but the reset must still have run.
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes['max_scroll_depth.pixels']).to.equal(100);
+    expect(logs[0].attributes['max_scroll_depth.did_scroll']).to.equal(false);
+  });
+
   it('clamps a rubber-band negative scroll position to the top, including across part ends', () => {
     // Safari reports a negative scroll position during rubber-band overscroll
     // past the top of the document, which is still the top.
@@ -265,7 +409,9 @@ describe('MaxScrollDepthInstrumentation', () => {
     });
   });
 
-  it('clamps the percentage to 100 when the scroll position exceeds the scrollable range', () => {
+  it('clamps percent to 100 on overscroll past the bottom', () => {
+    // Safari rubber-bands past the true bottom (900) by up to a viewport; the
+    // user did reach the bottom, so the excess is not a stale range.
     scroll({ scrollY: 1000, viewportHeight: 100, documentHeight: 1000 });
 
     userSessionManager.endSessionPartInternal({
@@ -280,6 +426,45 @@ describe('MaxScrollDepthInstrumentation', () => {
       'max_scroll_depth.percent': 100,
       'max_scroll_depth.did_scroll': true,
       'max_scroll_depth.document_height': 1000,
+    });
+  });
+
+  it('omits percent when the document shrank below the furthest point reached', () => {
+    scroll({ scrollY: 1500, viewportHeight: 100, documentHeight: 2000 });
+    // The document shrinks before the part ends and the browser clamps the live
+    // position to the new bottom; the measured range (300) no longer describes
+    // the document the user scrolled.
+    setGeometry({ scrollY: 300, viewportHeight: 100, documentHeight: 400 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 1500,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 400,
+    });
+  });
+
+  it('omits percent when the document shrank to an unscrollable height', () => {
+    scroll({ scrollY: 500, viewportHeight: 100, documentHeight: 1000 });
+    // The document now fits the viewport and the browser has clamped the live
+    // position to 0; the 500 reached is far beyond a rubber-band, so it is stale.
+    setGeometry({ scrollY: 0, viewportHeight: 100, documentHeight: 100 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(1);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 500,
+      'max_scroll_depth.did_scroll': true,
+      'max_scroll_depth.document_height': 100,
     });
   });
 
@@ -322,6 +507,33 @@ describe('MaxScrollDepthInstrumentation', () => {
       'emb.type': 'emb.otel_log',
       'max_scroll_depth.pixels': 450,
       'max_scroll_depth.did_scroll': true,
+    });
+  });
+
+  it('clamps a rubber-band negative position to the top when the frame is unmeasurable', () => {
+    // With no measurement to bound the carried position, only the top can be
+    // clamped; a part ending mid-bounce must still hand the next one 0, not -50.
+    scroll({ scrollY: -50, viewportHeight: 0, documentHeight: 1000 });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const logs = getMaxScrollDepthLogs();
+    expect(logs).to.have.lengthOf(2);
+    expect(logs[0].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.did_scroll': true,
+    });
+    expect(logs[1].attributes).to.deep.equal({
+      'emb.type': 'emb.otel_log',
+      'max_scroll_depth.pixels': 0,
+      'max_scroll_depth.did_scroll': false,
     });
   });
 

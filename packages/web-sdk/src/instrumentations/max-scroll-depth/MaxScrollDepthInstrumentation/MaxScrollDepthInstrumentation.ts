@@ -13,7 +13,7 @@ import {
 import type { MaxScrollDepthInstrumentationArgs } from './types.ts';
 
 /*
-  Tracks how far the user scrolls during and emits telemetry when the session part ends
+  Tracks how far the user scrolls during a session part and emits telemetry when the part ends
 */
 export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onScrollHandler: () => void;
@@ -31,7 +31,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
 
     this._onScrollHandler = (): void => {
       try {
-        // Reading scrollY here does not force a layout, so the work the listener does can stay minimal.
         const scrollY = window.scrollY;
         if (scrollY > this._maxScrollY) {
           this._maxScrollY = scrollY;
@@ -48,6 +47,9 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onEnable(): void {
+    // Depth accrued before a disabled gap must not be credited to whichever
+    // part is open when tracking resumes, so the seed is taken here, not at disable.
+    this._resetTracking(null);
     window.addEventListener('scroll', this._onScrollHandler, { passive: true });
     this.setSessionPartListeners({
       end: () => {
@@ -65,54 +67,79 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _emit(): void {
-    // The scroll position is readable at any time, so a document that loaded at
-    // a restored offset has already reached that depth even though no scroll
-    // event ever fired for it.
-    this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
+    let measurement: DocumentMeasurement | null = null;
 
-    // Measure once here rather than on every scroll event, since reading
-    // document geometry forces a layout reflow.
-    // https://developer.chrome.com/docs/performance/insights/forced-reflow
-    const measurement = measureDocument();
+    try {
+      // The scroll position is readable at any time, so an offset set before
+      // this listener attached (e.g. a scroll restoration racing SDK init) is
+      // still caught here.
+      this._maxScrollY = Math.max(this._maxScrollY, window.scrollY);
 
-    this.logger.emit({
-      eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
-      severityNumber: SeverityNumber.INFO,
-      attributes: {
-        [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
-        [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
-        [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
-        // Depth as a percentage needs a viewport, which a document or a frame
-        // can lack. Omit it and the height together in that case so consumers
-        // read absence rather than a fabricated 0. The pixel depth comes from
-        // the scroll position alone, so it stands on its own.
-        ...(measurement
-          ? {
-              [ATTR_MAX_SCROLL_DEPTH_PERCENT]: this._scrollPercent(measurement),
-              [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
-                measurement.documentHeight,
-            }
-          : {}),
-      },
-    });
+      // Measure once here rather than on every scroll event, since reading
+      // document geometry forces a layout reflow.
+      // https://developer.chrome.com/docs/performance/insights/forced-reflow
+      measurement = measureDocument();
+      const percent = measurement
+        ? this._scrollPercent(measurement)
+        : undefined;
 
-    // Initial state for the next part will be wherever the user left off the
-    // scroll position, clamped because Safari reports a negative position past
-    // the top of the document during rubber-band overscroll, which is still the
-    // top. https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
-    this._hasScrolled = false;
-    this._maxScrollY = Math.max(0, window.scrollY);
+      this.logger.emit({
+        eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
+        severityNumber: SeverityNumber.INFO,
+        attributes: {
+          [KEY_EMB_TYPE]: EMB_TYPES.OTelLog,
+          [ATTR_MAX_SCROLL_DEPTH_PIXELS]: this._maxScrollY,
+          [ATTR_MAX_SCROLL_DEPTH_DID_SCROLL]: this._hasScrolled,
+          // Absent beats a fabricated 0: percent needs a viewport and a current
+          // range, the height needs a viewport, and pixels need neither.
+          ...(measurement
+            ? {
+                ...(percent === undefined
+                  ? {}
+                  : { [ATTR_MAX_SCROLL_DEPTH_PERCENT]: percent }),
+                [ATTR_MAX_SCROLL_DEPTH_DOCUMENT_HEIGHT]:
+                  measurement.documentHeight,
+              }
+            : {}),
+        },
+      });
+    } finally {
+      this._resetTracking(measurement);
+    }
   }
 
-  private _scrollPercent({ scrollableHeight }: DocumentMeasurement): number {
+  // Seeds tracking from the live position. Safari reports a position past either
+  // edge mid-bounce, so it is bounded by the range when known, else only at the top.
+  // https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollY
+  private _resetTracking(measurement: DocumentMeasurement | null): void {
+    this._hasScrolled = false;
+    this._maxScrollY = measurement
+      ? Math.max(0, Math.min(window.scrollY, measurement.scrollableHeight))
+      : Math.max(0, window.scrollY);
+  }
+
+  private _scrollPercent({
+    scrollableHeight,
+    viewportHeight,
+  }: DocumentMeasurement): number | undefined {
+    // Rubber-band overscroll cannot carry the content further than its own
+    // viewport, so a larger excess means the document shrank since the depth was
+    // reached; the range no longer describes it, so omit rather than fabricate.
+    const overshoot = this._maxScrollY - scrollableHeight;
+    if (overshoot > viewportHeight) {
+      this._diag.debug('omitting max-scroll-depth percent, range is stale', {
+        maxScrollY: this._maxScrollY,
+        scrollableHeight,
+        viewportHeight,
+      });
+      return undefined;
+    }
+
     if (scrollableHeight === 0) {
       // The document fits the viewport, so there was no depth to reach.
       return 0;
     }
 
-    // The furthest point reached can exceed the range measured at part end: the
-    // document may have shrunk since, or the position came from overscroll past
-    // the bottom.
     return Math.min(
       100,
       Math.round((this._maxScrollY / scrollableHeight) * 100),
