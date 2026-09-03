@@ -39,20 +39,10 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       shouldCleanupPathOptionsFromRouteName;
     this._pageManager = pageManager ?? page.getPageManager();
     this._pageManager.addRouteChangedListener(this._onRouteChanged);
-
-    if (this._config.enabled) {
-      this.enable();
-    }
-
-    // Starts the inital route span if the page manager already has a current route
-    const currentRoute = this._pageManager.getCurrentRoute();
-    if (currentRoute) {
-      this._onRouteChanged(currentRoute);
-    }
   }
 
   private readonly _onRouteChanged = (route: Route): void => {
-    if (!this._config.enabled) {
+    if (!this._isEnabled) {
       return;
     }
 
@@ -143,13 +133,18 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   };
 
   public override onEnable = () => {
-    this.setConfig({
-      enabled: true,
-    });
     this.setSessionPartListeners({
       start: this._onSessionPartStarted,
       end: this._onSessionPartEnded,
     });
+
+    // Route changes while disabled are dropped by the _isEnabled guard, so a
+    // route set before enabling is replayed here to open its span.
+    const currentRoute = this._pageManager.getCurrentRoute();
+    if (currentRoute) {
+      this._onRouteChanged(currentRoute);
+    }
+
     this._diag.debug(
       'NavigationInstrumentation enabled, listening for navigation events.',
     );
@@ -157,9 +152,6 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable = () => {
     this._endRouteSpan();
-    this.setConfig({
-      enabled: false,
-    });
     this._diag.debug(
       'NavigationInstrumentation disabled, stopped listening for navigation events.',
     );

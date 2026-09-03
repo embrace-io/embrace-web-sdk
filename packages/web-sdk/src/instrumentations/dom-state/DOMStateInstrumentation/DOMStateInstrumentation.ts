@@ -1,7 +1,6 @@
 import type { Attributes } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
-import type { UserSessionManagerInternal } from '../../../managers/index.ts';
 import type { DocumentMeasurement } from '../../../utils/index.ts';
 import { measureDocument } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
@@ -50,19 +49,16 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     this._onLoad = (): void => {
       this._captureFoldMeasurement();
     };
-
-    if (this._config.enabled) {
-      this.enable();
-      if (this._hasLoadEventFired()) {
-        // Here rather than in onEnable so a re-enable takes no measurement of
-        // its own.
-        this._captureFoldMeasurement();
-      }
-    }
   }
 
   public override onEnable(): void {
-    if (!this._hasLoadEventFired()) {
+    if (this._hasLoadEventFired()) {
+      // Attaching to a page that already loaded: no load event is coming, and
+      // a part already running fired part-start before the listener below
+      // existed, so capture now. The measurement is spent once, so a re-enable
+      // takes none of its own.
+      this._captureFoldMeasurement();
+    } else {
       window.addEventListener('load', this._onLoad, { once: true });
     }
 
@@ -95,17 +91,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   public override onDisable(): void {
     window.removeEventListener('load', this._onLoad);
     this._pendingFoldAttributes = null;
-  }
-
-  public override setUserSessionManager(
-    userSessionManager: UserSessionManagerInternal,
-  ): void {
-    super.setUserSessionManager(userSessionManager);
-    // Per-instance wiring delivers the manager after construction, when the
-    // capture attempt saw no engaged part. Try again.
-    if (this._isEnabled && this._hasLoadEventFired()) {
-      this._captureFoldMeasurement();
-    }
   }
 
   private _hasLoadEventFired(): boolean {

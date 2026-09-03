@@ -55,6 +55,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'HEY';
     testContainer.append(target);
@@ -84,6 +85,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
     const target = document.createElement('button');
     target.disabled = true;
     testContainer.append(target);
@@ -102,6 +104,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'HEY';
     target.className = 'my-css-class';
@@ -132,6 +135,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'my long inner text, plus some extra text';
     testContainer.append(target);
@@ -161,6 +165,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
 
     const t1 = document.createElement('button');
     t1.innerText = 'button1';
@@ -219,6 +224,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
 
     const t1 = document.createElement('button');
     t1.innerText = 'button1';
@@ -254,6 +260,7 @@ describe('ClicksInstrumentation', () => {
     instrumentation = new ClicksInstrumentation({
       diag,
     });
+    instrumentation.enable();
 
     const t1 = document.createElement('button');
     t1.innerText = 'button1';
@@ -289,6 +296,7 @@ describe('ClicksInstrumentation', () => {
       diag,
       shouldTrack: (element) => !element.hasAttribute('data-is-sensitive'),
     });
+    instrumentation.enable();
     const target1 = document.createElement('div');
     target1.setAttribute('data-is-sensitive', 'true');
     target1.innerText = 'should not track';
@@ -328,6 +336,7 @@ describe('ClicksInstrumentation', () => {
           ? '[REDACTED]'
           : element.innerText,
     });
+    instrumentation.enable();
     const target1 = document.createElement('div');
     target1.setAttribute('data-is-sensitive', 'true');
     target1.innerText = 'should not track';

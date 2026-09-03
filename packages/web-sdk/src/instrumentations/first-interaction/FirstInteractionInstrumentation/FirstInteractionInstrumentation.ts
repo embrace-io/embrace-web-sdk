@@ -66,10 +66,6 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
         timestamp: event.timeStamp,
       });
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onEnable(): void {

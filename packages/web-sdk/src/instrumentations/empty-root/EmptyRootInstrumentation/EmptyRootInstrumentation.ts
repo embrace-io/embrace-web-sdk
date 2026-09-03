@@ -32,10 +32,6 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
         this._observerCallback(mutationList);
       },
     );
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override enable(): void {

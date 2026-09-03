@@ -25,8 +25,6 @@ describe('EmbraceInstrumentationBase', () => {
 
   beforeEach(() => {
     instrumentation = new FakeInstrumentation();
-    // start Instrumentation in a disabled state so assertions are consistent
-    instrumentation.disable();
     onEnableSpy = sinon.spy(instrumentation, 'onEnable');
     onDisableSpy = sinon.spy(instrumentation, 'onDisable');
   });
@@ -59,6 +57,30 @@ describe('EmbraceInstrumentationBase', () => {
     expect(onDisableSpy).to.have.been.calledOnce;
   });
 
+  // registerInstrumentations only enables instrumentations whose config still
+  // reports them disabled, so a setConfig that flips the flag would leave the
+  // instrumentation permanently skipped with onEnable never run.
+  it('keeps a constructed instrumentation disabled across setConfig', () => {
+    instrumentation.setConfig({});
+
+    expect(instrumentation.getConfig().enabled).to.equal(false);
+
+    instrumentation.enable();
+
+    expect(onEnableSpy).to.have.been.calledOnce;
+  });
+
+  it('keeps an enabled instrumentation enabled across setConfig', () => {
+    instrumentation.enable();
+    instrumentation.setConfig({ enabled: false });
+
+    expect(instrumentation.getConfig().enabled).to.equal(true);
+
+    instrumentation.disable();
+
+    expect(onDisableSpy).to.have.been.calledOnce;
+  });
+
   describe('session part listeners', () => {
     let userSessionManager: UserSessionManagerInternal;
 
@@ -73,8 +95,21 @@ describe('EmbraceInstrumentationBase', () => {
       session.setGlobalUserSessionManager(userSessionManager);
     });
 
+    it('attaches no listeners while constructed but never enabled', () => {
+      instrumentation = new FakeInstrumentation();
+
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      userSessionManager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+      });
+
+      expect(instrumentation.startCount).to.equal(0);
+      expect(instrumentation.endCount).to.equal(0);
+    });
+
     it('invokes the start listener when a session part starts', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
 
@@ -83,6 +118,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('invokes the end listener when a session part ends', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
       userSessionManager.endSessionPartInternal({
@@ -94,6 +130,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('stops invoking listeners after disable()', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
       instrumentation.disable();
 
       userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -107,6 +144,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     it('re-binds listeners to a user session manager set after enable', () => {
       instrumentation = new FakeInstrumentation();
+      instrumentation.enable();
 
       const replacementManager = new EmbraceUserSessionManager({
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,

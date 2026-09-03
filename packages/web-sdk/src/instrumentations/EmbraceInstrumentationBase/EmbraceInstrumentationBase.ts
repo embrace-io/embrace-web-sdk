@@ -34,7 +34,6 @@ export abstract class EmbraceInstrumentationBase<
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
   private _limitManager: LimitManagerInternal | undefined;
-  protected _isEnabled = false;
   private _removeSessionPartListeners: RemoveSessionPartListeners = {};
   private _sessionPartListeners: SessionPartListeners = {};
 
@@ -47,6 +46,13 @@ export abstract class EmbraceInstrumentationBase<
     limitManager,
   }: EmbraceInstrumentationBaseArgs<ConfigType>) {
     super(instrumentationName, instrumentationVersion, config);
+    /*
+     * Construction only wires an instrumentation up; registerInstrumentations
+     * starts it. It attaches the tracer and logger providers first and then
+     * enables whatever still reports itself disabled, so enabling here would
+     * emit start-up telemetry into a provider that records nothing.
+     */
+    this._isEnabled = false;
     // optionally override the diag logger from the base class
     if (diag) {
       this._diag = diag;
@@ -55,6 +61,30 @@ export abstract class EmbraceInstrumentationBase<
     this._limitManager = limitManager;
     this._userSessionManager = session.getUserSessionManager();
     this._logManager = log.getLogManager();
+  }
+
+  /*
+   * Backed by config.enabled rather than a field of its own: that is the flag
+   * registerInstrumentations reads to decide whether an instrumentation still
+   * needs starting, so the two must never disagree.
+   */
+  protected get _isEnabled(): boolean {
+    return this._config.enabled === true;
+  }
+
+  protected set _isEnabled(enabled: boolean) {
+    this._config.enabled = enabled;
+  }
+
+  /*
+   * The base setConfig defaults enabled to true, which would flip _isEnabled
+   * without onEnable running. Lifecycle state moves only through
+   * enable()/disable(), so it survives config replacement.
+   */
+  public override setConfig(config: ConfigType): void {
+    const wasEnabled = this._isEnabled;
+    super.setConfig(config);
+    this._isEnabled = wasEnabled;
   }
 
   /* Returns session provider */

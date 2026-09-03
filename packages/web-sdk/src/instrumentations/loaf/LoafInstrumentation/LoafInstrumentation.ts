@@ -53,10 +53,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       perf,
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override enable(): void {
