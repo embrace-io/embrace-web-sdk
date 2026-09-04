@@ -23,6 +23,51 @@ export function _resetKeepaliveTracking(): void {
   inflightKeepaliveCount = 0;
 }
 
+/**
+ * Reads the response body to its end and discards it.
+ *
+ * Chromium returns the request's share of the keepalive quota only once the
+ * body has been read to the end, and it skips the buffering consumer that would
+ * otherwise drain it when the response carries `Cache-Control: no-store`, which
+ * collectors commonly send. Cancelling is the client-abort path and measures
+ * far slower, so the body is read rather than cancelled.
+ *
+ * @see https://fetch.spec.whatwg.org/#fetch-processresponseendofbody
+ * @see https://github.com/chromium/chromium/blob/1af7c3cde84323e827f77d8066ca23da811203b8/third_party/blink/renderer/core/fetch/fetch_manager.cc#L818-L836
+ */
+async function drainResponseBody(response: Response): Promise<void> {
+  try {
+    // Empty and opaque responses have no body to read.
+    const body = response.body;
+    if (!body) {
+      return;
+    }
+
+    // Throws when the body is already locked to another reader, which happens
+    // when the same response is handed to more than one export.
+    const reader = body.getReader();
+    try {
+      // Chunks are dropped as they arrive so a large response is never buffered.
+      let chunk = await reader.read();
+      while (!chunk.done) {
+        chunk = await reader.read();
+      }
+    } finally {
+      // A held reader keeps the body locked, and a later export handed the same
+      // response could then not drain it.
+      reader.releaseLock();
+    }
+  } catch (error) {
+    // The export outcome is decided by the response status, a body that cannot
+    // be read must not change it.
+    const drainError =
+      error instanceof Error ? error : new Error(String(error));
+    diag.debug(
+      `Fetch transport failed to drain response body: ${drainError.message}`,
+    );
+  }
+}
+
 export class FetchTransport implements IExporterTransport {
   public constructor(private readonly _config: FetchRequestParameters) {}
 
@@ -103,6 +148,21 @@ export class FetchTransport implements IExporterTransport {
     }
 
     let keepalive = false;
+    let reservedBytes = 0;
+
+    const clearTimeoutIfSet = () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+    };
+
+    // The quota frees only once the body drains, so the drain owns the release.
+    const releaseKeepalive = () => {
+      clearTimeoutIfSet();
+      inflightKeepaliveBytes -= reservedBytes;
+      inflightKeepaliveCount--;
+    };
+    let drainOwnsRelease = false;
 
     try {
       if (this._config.compression === 'gzip') {
@@ -126,7 +186,8 @@ export class FetchTransport implements IExporterTransport {
       keepalive = !wouldExceedBytes && !wouldExceedCount;
 
       if (keepalive) {
-        inflightKeepaliveBytes += request.byteLength;
+        reservedBytes = request.byteLength;
+        inflightKeepaliveBytes += reservedBytes;
         inflightKeepaliveCount++;
       } else {
         const reason = wouldExceedBytes
@@ -142,6 +203,18 @@ export class FetchTransport implements IExporterTransport {
         body: request,
         signal,
       });
+
+      // Not awaited: the status already decides the export outcome, and a
+      // collector that stalls mid-body must not hold up the caller.
+      const drained = drainResponseBody(response);
+      if (keepalive) {
+        // Set once the promise exists so an earlier throw still reaches the
+        // release in `finally`.
+        drainOwnsRelease = true;
+        // The abort signal stays armed, so a stalled body cannot hold the
+        // budget forever.
+        void drained.finally(releaseKeepalive);
+      }
 
       if (response.ok) {
         return { status: 'success' };
@@ -173,12 +246,12 @@ export class FetchTransport implements IExporterTransport {
         error: fetchError,
       };
     } finally {
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-      if (keepalive) {
-        inflightKeepaliveBytes -= request.byteLength;
-        inflightKeepaliveCount--;
+      if (!drainOwnsRelease) {
+        if (keepalive) {
+          releaseKeepalive();
+        } else {
+          clearTimeoutIfSet();
+        }
       }
     }
   }
