@@ -3,7 +3,6 @@ import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
-import { gzipSync } from 'fflate';
 import type { FetchRequestParameters } from './types.ts';
 
 // The fetch spec limits inflight keepalive request bodies to 64KiB total per
@@ -87,7 +86,6 @@ export class FetchTransport implements IExporterTransport {
     data: Uint8Array<ArrayBuffer>,
     timeoutMillis: number,
   ): Promise<ExportResponse> {
-    let request = data;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...this._config.headers,
@@ -128,25 +126,18 @@ export class FetchTransport implements IExporterTransport {
     let drainOwnsCleanup = false;
 
     try {
-      if (this._config.compression === 'gzip') {
-        // Synchronous so the unload-path keepalive fetch is issued in the same
-        // task; mtime 0 keeps the wall clock out of the gzip header.
-        request = gzipSync(data, { mtime: 0 });
-        headers['Content-Encoding'] = 'gzip';
-      }
-
       const wouldExceedBytes =
-        inflightKeepaliveBytes + request.byteLength > KEEPALIVE_BYTE_BUDGET;
+        inflightKeepaliveBytes + data.byteLength > KEEPALIVE_BYTE_BUDGET;
       const wouldExceedCount = inflightKeepaliveCount >= MAX_KEEPALIVE_REQUESTS;
       keepalive = !wouldExceedBytes && !wouldExceedCount;
 
       if (keepalive) {
-        reservedBytes = request.byteLength;
+        reservedBytes = data.byteLength;
         inflightKeepaliveBytes += reservedBytes;
         inflightKeepaliveCount++;
       } else {
         const reason = wouldExceedBytes
-          ? `inflight bytes (${inflightKeepaliveBytes} + ${request.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget`
+          ? `inflight bytes (${inflightKeepaliveBytes} + ${data.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget`
           : `concurrent count (${inflightKeepaliveCount}) at limit of ${MAX_KEEPALIVE_REQUESTS}`;
         diag.debug(`Sending without keepalive: ${reason}`);
       }
@@ -155,7 +146,7 @@ export class FetchTransport implements IExporterTransport {
         method: 'POST',
         keepalive,
         headers,
-        body: request,
+        body: data,
         signal,
       });
 
