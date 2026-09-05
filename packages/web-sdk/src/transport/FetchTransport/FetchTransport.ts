@@ -69,18 +69,9 @@ export class FetchTransport implements IExporterTransport {
 
     try {
       if (this._config.compression === 'gzip') {
-        try {
-          // Synchronous so the unload-path keepalive fetch is issued in the
-          // same task; mtime 0 keeps the wall clock out of the gzip header.
-          request = gzipSync(data, { mtime: 0 });
-        } catch (error) {
-          const compressError =
-            error instanceof Error ? error : new Error(String(error));
-          diag.warn(
-            `Fetch transport gzip compression failed: ${compressError.message}`,
-          );
-          return { status: 'failure', error: compressError };
-        }
+        // Synchronous so the unload-path keepalive fetch is issued in the same
+        // task; mtime 0 keeps the wall clock out of the gzip header.
+        request = gzipSync(data, { mtime: 0 });
         headers['Content-Encoding'] = 'gzip';
       }
 

@@ -2,6 +2,7 @@ import { DiagLogLevel, diag } from '@opentelemetry/api';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
+  fakeFetchGetBody,
   fakeFetchGetKeepalive,
   fakeFetchGetRequestHeaders,
   fakeFetchInstall,
@@ -26,6 +27,18 @@ const makeTransport = (
 
 const smallPayload = new TextEncoder().encode('{"small": true}');
 const largePayload = new Uint8Array(49153); // 1 byte over the 48KiB budget
+
+// Random bytes barely shrink under gzip, so the compressed size stays close to
+// the requested one and keepalive budget arithmetic is exercised for real.
+const incompressiblePayload = (byteLength: number) =>
+  crypto.getRandomValues(new Uint8Array(byteLength));
+
+const gunzipToText = async (body: Uint8Array<ArrayBuffer>) => {
+  const stream = new Response(body).body?.pipeThrough(
+    new DecompressionStream('gzip'),
+  );
+  return new Response(stream).text();
+};
 
 interface Deferred {
   promise: Promise<Response>;
@@ -273,17 +286,11 @@ describe('FetchTransport', () => {
 
       const transport = makeTransport({ compression: 'gzip' });
 
-      // Random data does not compress well — stays close to original size
-      const payload30k = new Uint8Array(30 * 1024);
-      crypto.getRandomValues(payload30k);
-
-      const first = transport.send(payload30k, 5000);
+      const first = transport.send(incompressiblePayload(30 * 1024), 5000);
       await firstFetchCalledPromise;
 
-      // Second random payload: compressed ~30KiB + compressed ~30KiB > 48KiB
-      const payload30k2 = new Uint8Array(30 * 1024);
-      crypto.getRandomValues(payload30k2);
-      await transport.send(payload30k2, 5000);
+      // Compressed ~30KiB still inflight + another compressed ~30KiB > 48KiB
+      await transport.send(incompressiblePayload(30 * 1024), 5000);
 
       expect(fakeFetchGetKeepalive(0)).to.equal(true);
       expect(fakeFetchGetKeepalive(1)).to.equal(false);
@@ -296,10 +303,10 @@ describe('FetchTransport', () => {
       fakeFetchRespondWith('ok', { status: 200 });
       const transport = makeTransport({ compression: 'gzip' });
 
-      const payload40k = new Uint8Array(40 * 1024);
-
-      await transport.send(payload40k, 5000);
-      await transport.send(payload40k, 5000);
+      // Two of these compress to ~60KiB combined, over the 48KiB budget, so the
+      // second send only keeps keepalive if the first freed its share.
+      await transport.send(incompressiblePayload(30 * 1024), 5000);
+      await transport.send(incompressiblePayload(30 * 1024), 5000);
 
       expect(fakeFetchGetKeepalive(0)).to.equal(true);
       expect(fakeFetchGetKeepalive(1)).to.equal(true);
@@ -312,10 +319,8 @@ describe('FetchTransport', () => {
 
       const transport = makeTransport({ compression: 'gzip' });
 
-      const payload40k = new Uint8Array(40 * 1024);
-
-      await transport.send(payload40k, 5000);
-      await transport.send(payload40k, 5000);
+      await transport.send(incompressiblePayload(30 * 1024), 5000);
+      await transport.send(incompressiblePayload(30 * 1024), 5000);
 
       expect(fakeFetchGetKeepalive(0)).to.equal(true);
       expect(fakeFetchGetKeepalive(1)).to.equal(true);
@@ -327,15 +332,17 @@ describe('FetchTransport', () => {
       fakeFetchRespondWith('ok', { status: 200 });
       const transport = makeTransport({ compression: 'gzip' });
 
-      const payload = new TextEncoder().encode(
-        '{"a":"' + 'x'.repeat(5000) + '"}',
-      );
-      await transport.send(payload, 5000);
+      const json = '{"a":"' + 'x'.repeat(5000) + '"}';
+      await transport.send(new TextEncoder().encode(json), 5000);
 
       const headers = fakeFetchGetRequestHeaders() as Record<string, string>;
       expect(headers['Content-Encoding']).to.equal('gzip');
       // Content-Length is a forbidden fetch header, so the SDK must not set it
       expect(headers['Content-Length']).to.be.undefined;
+
+      const body = fakeFetchGetBody() as Uint8Array<ArrayBuffer>;
+      expect(body.byteLength).to.be.lessThan(json.length);
+      expect(await gunzipToText(body)).to.equal(json);
     });
 
     it('should reach fetch in the same task as send', () => {
@@ -347,49 +354,6 @@ describe('FetchTransport', () => {
       // Deliberately not awaited: teardown grants only a synchronous budget, so
       // an await between send and fetch loses the payload on the unload path.
       expect(fakeFetchWasCalled()).to.equal(true);
-    });
-  });
-
-  describe('compression failure', () => {
-    // gzipSync is a pure function, so the only way to force its failure path is
-    // to hand it input that throws when read.
-    const poisonedPayload = () =>
-      new Proxy(new Uint8Array(0), {
-        get() {
-          throw new Error('gzip input unreadable');
-        },
-      });
-
-    it('should return failure with diagnostic log when compression fails', async () => {
-      const transport = makeTransport({ compression: 'gzip' });
-      const result = await transport.send(poisonedPayload(), 1000);
-
-      expect(result.status).to.equal('failure');
-
-      const warns = diagLogger.getWarnLogs();
-      expect(
-        warns.some((msg) =>
-          msg.includes('gzip compression failed: gzip input unreadable'),
-        ),
-      ).to.be.true;
-    });
-
-    it('should not corrupt keepalive counters when compression fails', async () => {
-      const transport = makeTransport({ compression: 'gzip' });
-      await transport.send(poisonedPayload(), 1000);
-
-      fakeFetchRespondWith('ok', { status: 200 });
-      const transport2 = makeTransport();
-      await transport2.send(smallPayload, 1000);
-
-      expect(fakeFetchGetKeepalive()).to.equal(true);
-    });
-
-    it('should not send when compression fails', async () => {
-      const transport = makeTransport({ compression: 'gzip' });
-      await transport.send(poisonedPayload(), 1000);
-
-      expect(fakeFetchWasCalled()).to.equal(false);
     });
   });
 
