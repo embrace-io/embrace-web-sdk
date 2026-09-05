@@ -3,9 +3,11 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   fakeFetchGetKeepalive,
+  fakeFetchGetRequestHeaders,
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
+  fakeFetchWasCalled,
   InMemoryDiagLogger,
 } from '../../../tests/utils/index.ts';
 import { _resetKeepaliveTracking, FetchTransport } from './FetchTransport.ts';
@@ -320,47 +322,74 @@ describe('FetchTransport', () => {
     });
   });
 
+  describe('gzip compression', () => {
+    it('should set Content-Encoding and send compressed bytes', async () => {
+      fakeFetchRespondWith('ok', { status: 200 });
+      const transport = makeTransport({ compression: 'gzip' });
+
+      const payload = new TextEncoder().encode(
+        '{"a":"' + 'x'.repeat(5000) + '"}',
+      );
+      await transport.send(payload, 5000);
+
+      const headers = fakeFetchGetRequestHeaders() as Record<string, string>;
+      expect(headers['Content-Encoding']).to.equal('gzip');
+      // Content-Length is a forbidden fetch header, so the SDK must not set it
+      expect(headers['Content-Length']).to.be.undefined;
+    });
+
+    it('should reach fetch in the same task as send', () => {
+      fakeFetchRespondWith('ok', { status: 200 });
+      const transport = makeTransport({ compression: 'gzip' });
+
+      void transport.send(smallPayload, 5000);
+
+      // Deliberately not awaited: teardown grants only a synchronous budget, so
+      // an await between send and fetch loses the payload on the unload path.
+      expect(fakeFetchWasCalled()).to.equal(true);
+    });
+  });
+
   describe('compression failure', () => {
+    // gzipSync is a pure function, so the only way to force its failure path is
+    // to hand it input that throws when read.
+    const poisonedPayload = () =>
+      new Proxy(new Uint8Array(0), {
+        get() {
+          throw new Error('gzip input unreadable');
+        },
+      });
+
     it('should return failure with diagnostic log when compression fails', async () => {
-      const original = globalThis.CompressionStream;
-      globalThis.CompressionStream = class {
-        constructor() {
-          throw new Error('CompressionStream not supported');
-        }
-      } as unknown as typeof CompressionStream;
+      const transport = makeTransport({ compression: 'gzip' });
+      const result = await transport.send(poisonedPayload(), 1000);
 
-      try {
-        const transport = makeTransport({ compression: 'gzip' });
-        const result = await transport.send(smallPayload, 1000);
+      expect(result.status).to.equal('failure');
 
-        expect(result.status).to.equal('failure');
-
-        const warns = diagLogger.getWarnLogs();
-        expect(warns.some((msg) => msg.includes('gzip compression failed'))).to
-          .be.true;
-      } finally {
-        globalThis.CompressionStream = original;
-      }
+      const warns = diagLogger.getWarnLogs();
+      expect(
+        warns.some((msg) =>
+          msg.includes('gzip compression failed: gzip input unreadable'),
+        ),
+      ).to.be.true;
     });
 
     it('should not corrupt keepalive counters when compression fails', async () => {
-      const original = globalThis.CompressionStream;
-      globalThis.CompressionStream = class {
-        constructor() {
-          throw new Error('CompressionStream not supported');
-        }
-      } as unknown as typeof CompressionStream;
-
       const transport = makeTransport({ compression: 'gzip' });
-      await transport.send(smallPayload, 1000);
-
-      globalThis.CompressionStream = original;
+      await transport.send(poisonedPayload(), 1000);
 
       fakeFetchRespondWith('ok', { status: 200 });
       const transport2 = makeTransport();
       await transport2.send(smallPayload, 1000);
 
       expect(fakeFetchGetKeepalive()).to.equal(true);
+    });
+
+    it('should not send when compression fails', async () => {
+      const transport = makeTransport({ compression: 'gzip' });
+      await transport.send(poisonedPayload(), 1000);
+
+      expect(fakeFetchWasCalled()).to.equal(false);
     });
   });
 
