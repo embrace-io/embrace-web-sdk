@@ -156,7 +156,7 @@ const STEPS: Step[] = [
     selector: '#startButtonClickTest',
   },
   {
-    name: 'Throw a 100 exceptions',
+    name: 'Throw 100 exceptions',
     selector: '#startExceptionTest',
   },
   {
