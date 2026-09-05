@@ -1,4 +1,3 @@
-import { diag } from '@opentelemetry/api';
 import { gzipSync } from 'fflate';
 import type { ISerializer } from '#embrace-io/otlp-transformer';
 
@@ -16,19 +15,8 @@ export class GzipSerializer<Request, Response>
     if (!serialized) {
       return undefined;
     }
-    try {
-      // mtime 0 keeps the wall clock out of the gzip header.
-      return gzipSync(serialized, { mtime: 0 });
-    } catch (error) {
-      // The export delegate turns undefined into a generic 'Nothing to send'
-      // failure, so this is the only place the real cause is reported.
-      diag.error(
-        `gzip compression failed, dropping export: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-      return undefined;
-    }
+    // mtime 0 keeps the wall clock out of the gzip header.
+    return gzipSync(serialized, { mtime: 0 });
   }
 
   public deserializeResponse(data: Uint8Array): Response {
