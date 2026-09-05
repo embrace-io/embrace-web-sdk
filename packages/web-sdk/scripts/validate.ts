@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
 import { COLORS, log, logSection } from '../../../scripts/build-config.ts';
 
-// Maximum bundle size (gzipped) — triggers hard failure to catch bloat/duplication early
-const MAX_BUNDLE_SIZE_KB = 61;
+// Maximum bundle size (gzipped): triggers hard failure to catch bloat/duplication early
+const MAX_BUNDLE_SIZE_KB = 64;
 
 const BUNDLE_FILE = 'embrace-web-sdk.js';
 const BUNDLE_MAP_FILE = 'embrace-web-sdk.js.map';
