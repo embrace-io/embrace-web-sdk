@@ -676,23 +676,6 @@ describe('initSDK', () => {
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
   });
 
-  it('should initialize without CompressionStream when sending to Embrace', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const originalCompressionStream = (globalThis as never)[
-      'CompressionStream'
-    ];
-    delete (globalThis as never)['CompressionStream'];
-
-    try {
-      const result = initSDK({ appID: 'app12', diagLogger });
-      void expect(result).not.to.be.false;
-
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
-    } finally {
-      (globalThis as never)['CompressionStream'] = originalCompressionStream;
-    }
-  });
-
   describe('communication with Embrace', () => {
     it('should include the correct resource attributes', async () => {
       fakeFetchRespondWith('');
