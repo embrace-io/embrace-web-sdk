@@ -3,6 +3,7 @@ import type {
   ExportResponse,
   IExporterTransport,
 } from '@opentelemetry/otlp-exporter-base';
+import { gzipSync } from 'fflate';
 import type { FetchRequestParameters } from './types.ts';
 
 // The fetch spec limits inflight keepalive request bodies to 64KiB total per
@@ -25,44 +26,6 @@ export function _resetKeepaliveTracking(): void {
 
 export class FetchTransport implements IExporterTransport {
   public constructor(private readonly _config: FetchRequestParameters) {}
-
-  // Embrace endpoints require request bodies to be compressed with gzip
-  private static async _compressRequest(
-    data: Uint8Array<ArrayBuffer>,
-  ): Promise<Uint8Array<ArrayBuffer>> {
-    const stream = new CompressionStream('gzip');
-    const writer = stream.writable.getWriter();
-
-    void writer.write(data);
-    void writer.close();
-
-    const compressedChunks: Uint8Array[] = [];
-    const reader = stream.readable.getReader();
-
-    let done = false;
-    while (!done) {
-      const result = await reader.read();
-
-      if (result.value) {
-        compressedChunks.push(result.value);
-      }
-
-      done = result.done;
-    }
-
-    const compressedData = new Uint8Array(
-      compressedChunks.reduce((acc, chunk) => acc + chunk.length, 0),
-    );
-
-    let offset = 0;
-
-    for (const chunk of compressedChunks) {
-      compressedData.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return compressedData;
-  }
 
   public send(
     data: Uint8Array<ArrayBuffer>,
@@ -106,18 +69,10 @@ export class FetchTransport implements IExporterTransport {
 
     try {
       if (this._config.compression === 'gzip') {
-        try {
-          request = await FetchTransport._compressRequest(data);
-        } catch (error) {
-          const compressError =
-            error instanceof Error ? error : new Error(String(error));
-          diag.warn(
-            `Fetch transport gzip compression failed: ${compressError.message}`,
-          );
-          return { status: 'failure', error: compressError };
-        }
+        // Synchronous so the unload-path keepalive fetch is issued in the same
+        // task; mtime 0 keeps the wall clock out of the gzip header.
+        request = gzipSync(data, { mtime: 0 });
         headers['Content-Encoding'] = 'gzip';
-        headers['Content-Length'] = request.length.toString();
       }
 
       const wouldExceedBytes =
