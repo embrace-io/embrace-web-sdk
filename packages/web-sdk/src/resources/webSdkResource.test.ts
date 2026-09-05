@@ -24,6 +24,19 @@ describe('webSdkResource', () => {
   let inMemoryStorage: InMemoryStorage;
   let storage: NamespacedStorage;
   let diagLogger: InMemoryDiagLogger;
+  let restorers: (() => void)[];
+
+  const stubProp = (target: object, property: string, get: () => unknown) => {
+    const original = Object.getOwnPropertyDescriptor(target, property);
+    Object.defineProperty(target, property, { configurable: true, get });
+    restorers.push(() => {
+      if (original) {
+        Object.defineProperty(target, property, original);
+      } else {
+        Reflect.deleteProperty(target, property);
+      }
+    });
+  };
 
   beforeEach(() => {
     inMemoryStorage = new InMemoryStorage();
@@ -32,10 +45,25 @@ describe('webSdkResource', () => {
       storage: inMemoryStorage,
       diag: diagLogger,
     });
+    restorers = [];
+  });
+
+  afterEach(() => {
+    for (const restore of restorers) {
+      restore();
+    }
   });
 
   describe('getWebSDKResource', () => {
     it('should include the correct sync attributes', () => {
+      stubProp(window, 'innerWidth', () => 1024);
+      stubProp(window, 'innerHeight', () => 768);
+      stubProp(window.navigator, 'connection', () => ({
+        effectiveType: '4g',
+      }));
+      stubProp(window.navigator, 'deviceMemory', () => 8);
+      stubProp(window.navigator, 'webdriver', () => true);
+
       const resource = getWebSDKResource({
         diagLogger,
         appVersion: 'EmbIOAppVersionX.X.X',
@@ -55,7 +83,27 @@ describe('webSdkResource', () => {
         'telemetry.sdk.version': SDK_VERSION,
         'user_agent.original': window.navigator.userAgent,
         screen_resolution: `${window.screen.width}x${window.screen.height}`,
+        viewport_resolution: '1024x768',
+        network_effective_type: '4g',
+        device_memory: 8,
+        webdriver: true,
       });
+    });
+
+    it('should omit network_effective_type and device_memory when the browser does not support them', () => {
+      stubProp(window.navigator, 'connection', () => undefined);
+      stubProp(window.navigator, 'deviceMemory', () => undefined);
+
+      const resource = getWebSDKResource({
+        diagLogger,
+        appVersion: '1.0.0',
+        tabStorage: storage,
+      });
+
+      expect(resource.attributes).to.not.have.property(
+        'network_effective_type',
+      );
+      expect(resource.attributes).to.not.have.property('device_memory');
     });
 
     it('should use the provided appVersion', () => {
