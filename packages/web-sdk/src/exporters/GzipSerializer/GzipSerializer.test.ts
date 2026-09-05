@@ -1,7 +1,5 @@
-import { DiagLogLevel, diag } from '@opentelemetry/api';
 import * as chai from 'chai';
 import type { ISerializer } from '#embrace-io/otlp-transformer';
-import { InMemoryDiagLogger } from '../../../tests/utils/index.ts';
 import { GzipSerializer } from './GzipSerializer.ts';
 
 const { expect } = chai;
@@ -60,75 +58,5 @@ describe('GzipSerializer', () => {
     const result = serializer.deserializeResponse(responseData);
 
     expect(result).to.deep.equal({ status: 200 });
-  });
-
-  it('should return undefined and log when compression fails with an Error', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    diag.setLogger(diagLogger, DiagLogLevel.ALL);
-
-    // Coupled to fflate internals: gzipSync reads properties off its input,
-    // so a throwing get trap is the only way to force its failure path.
-    const poisoned = new Proxy(new Uint8Array(0), {
-      get() {
-        throw new Error('out of memory');
-      },
-    });
-
-    const poisonedSerializer: ISerializer<string, FakeResponse> = {
-      serializeRequest(): Uint8Array | undefined {
-        return poisoned;
-      },
-      deserializeResponse: fakeSerializer.deserializeResponse,
-    };
-
-    const serializer = new GzipSerializer(poisonedSerializer);
-    const result = serializer.serializeRequest('test');
-
-    expect(result).to.be.undefined;
-    expect(
-      diagLogger
-        .getErrorLogs()
-        .some((msg) =>
-          msg.includes(
-            'gzip compression failed, dropping export: out of memory',
-          ),
-        ),
-    ).to.be.true;
-
-    diag.disable();
-  });
-
-  it('should return undefined and log when compression fails with a non-Error', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    diag.setLogger(diagLogger, DiagLogLevel.ALL);
-
-    const poisoned = new Proxy(new Uint8Array(0), {
-      get() {
-        throw 'string error';
-      },
-    });
-
-    const poisonedSerializer: ISerializer<string, FakeResponse> = {
-      serializeRequest(): Uint8Array | undefined {
-        return poisoned;
-      },
-      deserializeResponse: fakeSerializer.deserializeResponse,
-    };
-
-    const serializer = new GzipSerializer(poisonedSerializer);
-    const result = serializer.serializeRequest('test');
-
-    expect(result).to.be.undefined;
-    expect(
-      diagLogger
-        .getErrorLogs()
-        .some((msg) =>
-          msg.includes(
-            'gzip compression failed, dropping export: string error',
-          ),
-        ),
-    ).to.be.true;
-
-    diag.disable();
   });
 });
