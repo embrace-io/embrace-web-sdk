@@ -676,7 +676,7 @@ describe('initSDK', () => {
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
   });
 
-  it('should not initialize when CompressionStream is unavailable and sending to Embrace', () => {
+  it('should initialize without CompressionStream when sending to Embrace', () => {
     const diagLogger = new InMemoryDiagLogger();
     const originalCompressionStream = (globalThis as never)[
       'CompressionStream'
@@ -685,36 +685,10 @@ describe('initSDK', () => {
 
     try {
       const result = initSDK({ appID: 'app12', diagLogger });
-      void expect(result).to.be.false;
-
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
-        'failed to initialize the SDK: CompressionStream is not supported in this browser and required for data compression.',
-      );
-    } finally {
-      // Restore CompressionStream
-      (globalThis as never)['CompressionStream'] = originalCompressionStream;
-    }
-  });
-
-  it('should initialize when CompressionStream is unavailable but using custom exporters', () => {
-    const diagLogger = new InMemoryDiagLogger();
-    const originalCompressionStream = (globalThis as never)[
-      'CompressionStream'
-    ];
-    delete (globalThis as never)['CompressionStream'];
-
-    try {
-      const result = initSDK({
-        logExporters: [logExporter],
-        spanExporters: [spanExporter],
-        diagLogger,
-      });
       void expect(result).not.to.be.false;
 
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
     } finally {
-      // Restore CompressionStream
       (globalThis as never)['CompressionStream'] = originalCompressionStream;
     }
   });

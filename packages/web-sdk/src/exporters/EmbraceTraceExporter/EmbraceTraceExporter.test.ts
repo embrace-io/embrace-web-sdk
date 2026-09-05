@@ -68,11 +68,9 @@ describe('EmbraceTraceExporter', () => {
     expect((headers as Record<string, string>)['X-EM-DID']).to.equal(
       mockUserID,
     );
-    // Browser engines emit gzip streams that differ by a byte for the same input.
-    expect((headers as Record<string, string>)['Content-Length']).to.be.oneOf([
-      '268',
-      '269',
-    ]);
+    // Content-Length is a forbidden fetch header, so the SDK must not set it
+    void expect((headers as Record<string, string>)['Content-Length']).to.be
+      .undefined;
     expect(fakeFetchGetUrl()).to.equal(
       'https://a-testAppID.data.emb-api.com/v2/spans',
     );
