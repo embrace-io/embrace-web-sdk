@@ -17,13 +17,17 @@ import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
+  KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
   KEY_BROWSER_URL_FULL,
   KEY_EMB_PAGE_ID,
   KEY_EMB_PAGE_PATH,
   KEY_EMB_SESSION_PART_ID,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
-import { getSelector } from '../../../utils/index.ts';
+import {
+  getBfcacheNotRestoredReasons,
+  getSelector,
+} from '../../../utils/index.ts';
 import { isEntryTypeSupported } from '../../../utils/performanceObserver/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
@@ -486,6 +490,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     const metricTimeMillis = this._getTimeForMetric(metric);
     const sessionPartId =
       this.userSessionManager.getSessionPartIdAt(metricTimeMillis);
+    const notRestoredReasons = getBfcacheNotRestoredReasons();
     const logRecord: LogRecord = {
       eventName: WEB_VITAL_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
@@ -508,6 +513,12 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           : {}),
         ...(sessionPartId !== null
           ? { [KEY_EMB_SESSION_PART_ID]: sessionPartId }
+          : {}),
+        ...(notRestoredReasons?.length
+          ? {
+              [KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS]:
+                notRestoredReasons,
+            }
           : {}),
         ...(attributedPage
           ? {

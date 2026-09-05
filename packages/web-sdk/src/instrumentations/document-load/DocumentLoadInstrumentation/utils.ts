@@ -7,6 +7,10 @@ import type { Span } from '@opentelemetry/api';
 import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
 import { hasKey, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web';
 import type { PerformanceManager } from '../../../utils/index.ts';
+import {
+  getBfcacheNotRestoredReasons,
+  getNonBaselineNavigationTiming,
+} from '../../../utils/index.ts';
 import { EventNames } from './enums/EventNames.ts';
 
 /**
@@ -17,18 +21,6 @@ import { EventNames } from './enums/EventNames.ts';
 export type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
   deliveryType?: 'cache' | '';
   renderBlockingStatus?: 'blocking' | 'non-blocking';
-};
-
-/**
- * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
- * - notRestoredReasons: Limited availability https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming/notRestoredReasons
- * Only the top-level document's own reasons are read; nested iframe reasons
- * (the `children` field) aren't relevant to the document fetch span.
- */
-export type EmbracePerformanceNavigationTiming = PerformanceNavigationTiming & {
-  deliveryType?: 'cache' | '';
-  renderBlockingStatus?: 'blocking' | 'non-blocking';
-  notRestoredReasons?: { reasons?: { reason: string }[] } | null;
 };
 
 /**
@@ -52,9 +44,7 @@ export type EmbracePerformanceNavigationEntries = PerformanceEntries & {
 export const getPerformanceNavigationEntries =
   (): EmbracePerformanceNavigationEntries => {
     const entries: EmbracePerformanceNavigationEntries = {};
-    const performanceNavigationTiming = window.performance.getEntriesByType(
-      'navigation',
-    )[0] as EmbracePerformanceNavigationTiming | undefined;
+    const performanceNavigationTiming = getNonBaselineNavigationTiming();
     if (!performanceNavigationTiming) {
       return entries;
     }
@@ -76,11 +66,9 @@ export const getPerformanceNavigationEntries =
     entries.renderBlockingStatus =
       performanceNavigationTiming.renderBlockingStatus;
     entries.type = performanceNavigationTiming.type;
-    entries.notRestoredReasons =
-      // eslint-disable-next-line baseline-js/use-baseline
-      performanceNavigationTiming.notRestoredReasons?.reasons?.map(
-        (r) => r.reason,
-      );
+    entries.notRestoredReasons = getBfcacheNotRestoredReasons(
+      performanceNavigationTiming,
+    );
 
     return entries;
   };
