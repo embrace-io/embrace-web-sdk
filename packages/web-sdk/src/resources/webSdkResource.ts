@@ -14,7 +14,10 @@ import {
   NATIVE_FRAMEWORK,
   SDK_VERSION,
 } from './constants/index.ts';
-import type { GetWebSDKResourceArgs } from './types.ts';
+import type {
+  GetWebSDKResourceArgs,
+  NavigatorWithExtensions,
+} from './types.ts';
 
 /**
  * Returns resource attributes that users are allowed to override via the `resource` option in `initSDK`.
@@ -35,6 +38,8 @@ export const getWebSDKResource = ({
   appVersion,
   tabStorage,
 }: GetWebSDKResourceArgs): Resource => {
+  const navigator = window.navigator as NavigatorWithExtensions;
+
   return resourceFromAttributes({
     [ATTR_TELEMETRY_SDK_NAME]: EMBRACE_SERVICE_NAME,
     // NOTE: `appVersion` may originate from TEMPLATE_APP_VERSION, which is padded
@@ -49,7 +54,11 @@ export const getWebSDKResource = ({
     sdk_platform: 'web',
     [ATTR_TELEMETRY_SDK_LANGUAGE]: 'webjs',
     [KEY_EMB_APP_INSTANCE_ID]: getAppInstanceId(tabStorage, diagLogger),
-    [ATTR_USER_AGENT_ORIGINAL]: window.navigator.userAgent,
+    [ATTR_USER_AGENT_ORIGINAL]: navigator.userAgent,
     screen_resolution: `${window.screen.width}x${window.screen.height}`,
+    viewport_resolution: `${window.innerWidth}x${window.innerHeight}`,
+    network_effective_type: navigator.connection?.effectiveType,
+    device_memory: navigator.deviceMemory,
+    webdriver: navigator.webdriver,
   });
 };
