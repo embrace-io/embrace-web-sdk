@@ -24,13 +24,11 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
+import type { EmbracePerformanceNavigationTiming } from '../../../utils/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
-import type {
-  EmbracePerformanceNavigationTiming,
-  EmbracePerformanceResourceTiming,
-} from './utils.ts';
+import type { EmbracePerformanceResourceTiming } from './utils.ts';
 import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();

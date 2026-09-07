@@ -4,7 +4,12 @@ export { clampNumber } from './clampNumber.ts';
 export { createSafeProxy } from './createSafeProxy/index.ts';
 export { generateUUID } from './generateUUID.ts';
 export { generateWebVitalID } from './generateWebVitalID.ts';
+export { getBfcacheNotRestoredReasons } from './getBfcacheNotRestoredReasons.ts';
 export { getIncrementedCount } from './getIncrementedCount.ts';
+export {
+  type EmbracePerformanceNavigationTiming,
+  getNonBaselineNavigationTiming,
+} from './getNonBaselineNavigationTiming.ts';
 export { getSelector } from './getSelector.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';

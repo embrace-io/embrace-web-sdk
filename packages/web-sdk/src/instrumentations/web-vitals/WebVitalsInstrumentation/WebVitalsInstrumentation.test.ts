@@ -3366,6 +3366,108 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
+  describe('bfcache not restored reasons', () => {
+    let getEntriesByTypeStub: sinon.SinonStub;
+
+    // Installed via Object.defineProperty rather than sinon.stub(object, method) —
+    // the latter calls object.hasOwnProperty(), unavailable on host objects in
+    // some Chromium builds (see ServerTimingInstrumentation.test.ts).
+    beforeEach(() => {
+      getEntriesByTypeStub = sinon.stub();
+      Object.defineProperty(window.performance, 'getEntriesByType', {
+        value: getEntriesByTypeStub,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window.performance, 'getEntriesByType', {
+        value: Performance.prototype.getEntriesByType,
+        writable: true,
+        configurable: true,
+      });
+    });
+
+    it('should include browser.navigation_timing.not_restored_reasons when the navigation was blocked from the back/forward cache', () => {
+      getEntriesByTypeStub.withArgs('navigation').returns([
+        {
+          notRestoredReasons: {
+            reasons: [{ reason: 'unload-listener' }, { reason: 'websocket' }],
+          },
+        },
+      ]);
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'LCP',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(
+        record.attributes['browser.navigation_timing.not_restored_reasons'],
+      ).to.deep.equal(['unload-listener', 'websocket']);
+    });
+
+    it('should omit browser.navigation_timing.not_restored_reasons when the navigation was restored from the back/forward cache', () => {
+      getEntriesByTypeStub
+        .withArgs('navigation')
+        .returns([{ notRestoredReasons: null }]);
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+
+      const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'LCP',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm2',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      void expect(
+        record.attributes['browser.navigation_timing.not_restored_reasons'],
+      ).to.be.undefined;
+    });
+  });
+
   describe('soft navigations', () => {
     let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
 
