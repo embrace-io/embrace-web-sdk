@@ -90,9 +90,10 @@ describe('webSdkResource', () => {
       });
     });
 
-    it('should omit network_effective_type and device_memory when the browser does not support them', () => {
+    it('should omit keys when the browser does not support them ', () => {
       stubProp(window.navigator, 'connection', () => undefined);
       stubProp(window.navigator, 'deviceMemory', () => undefined);
+      stubProp(window.navigator, 'webdriver', () => undefined);
 
       const resource = getWebSDKResource({
         diagLogger,
@@ -104,6 +105,7 @@ describe('webSdkResource', () => {
         'network_effective_type',
       );
       expect(resource.attributes).to.not.have.property('device_memory');
+      expect(resource.attributes).to.not.have.property('webdriver');
     });
 
     it('should use the provided appVersion', () => {
