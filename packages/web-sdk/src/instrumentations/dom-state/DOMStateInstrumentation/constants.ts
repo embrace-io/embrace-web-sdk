@@ -18,3 +18,5 @@ export const ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH =
   'dom_state.images_above_fold.viewport_width';
 export const ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP =
   'dom_state.images_above_fold.timestamp';
+export const ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_CAPTURE_TIME =
+  'dom_state.images_above_fold.capture_time';
