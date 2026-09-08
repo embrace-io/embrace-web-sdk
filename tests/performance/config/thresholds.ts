@@ -16,9 +16,10 @@ const TOTAL_TASK_DURATION_THRESHOLD_IN_MS = getFromEnv(
   'TOTAL_TASK_DURATION_THRESHOLD_IN_MS',
   1000,
 );
+// Includes headroom for the bundled fflate gzip dependency.
 const TOTAL_HEAP_SIZE_THRESHOLD_IN_MB = getFromEnv(
   'TOTAL_HEAP_SIZE_THRESHOLD_IN_MB',
-  16,
+  20,
 );
 const TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS = getFromEnv(
   'TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS',
@@ -28,9 +29,10 @@ const MAIN_THREAD_TIME_THRESHOLD_IN_MS = getFromEnv(
   'MAIN_THREAD_TIME_THRESHOLD_IN_MS',
   175,
 );
+// Includes headroom for evaluating the bundled fflate gzip dependency.
 const SCRIPT_EVAL_THRESHOLD_IN_MS = getFromEnv(
   'SCRIPT_EVAL_THRESHOLD_IN_MS',
-  175,
+  200,
 );
 
 export {
