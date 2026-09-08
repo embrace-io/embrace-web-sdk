@@ -44,13 +44,12 @@ const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
     path: '/lighthouse-test.html?use_sdk=true',
   },
 };
-// Main Thread Time is reported but deliberately not gated: it aggregates style,
-// layout, paint and GC alongside the SDK's own JS, so runner scheduling noise
-// swamps the signal. Measured over 50 paired runs its spread was 38% of its
-// median against 9% for Script Evaluation Time, which covers the same JS cost.
-const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
-  'Total Blocking Time': TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
-  'Script Evaluation Time': SCRIPT_EVAL_THRESHOLD_IN_MS,
+// Infinity means reported but not gated: Main Thread Time also folds in style,
+// layout, paint and GC, so its spread dwarfs Script Eval's JS cost (EMBR-13909).
+const METRIC_TO_THRESHOLD_IN_MS: Record<keyof LighthouseResult, number> = {
+  totalBlockingTime: TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
+  mainThreadTime: Infinity,
+  scriptEval: SCRIPT_EVAL_THRESHOLD_IN_MS,
 };
 
 // Lighthouse's default simulated throttling multiplies observed CPU time by
@@ -235,11 +234,8 @@ test.describe('Lighthouse Performance Tests', () => {
         LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[
           metricName as keyof LighthouseResult
         ];
-      const threshold = METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name];
-
-      if (threshold === undefined) {
-        continue;
-      }
+      const threshold =
+        METRIC_TO_THRESHOLD_IN_MS[metricName as keyof LighthouseResult];
 
       test
         .expect(
