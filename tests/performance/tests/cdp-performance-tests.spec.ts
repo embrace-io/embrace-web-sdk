@@ -15,6 +15,14 @@ import { BASE_URL, EMBRACE_API_REGEX } from '../constants/index.ts';
 import type { Metric, TestPage } from '../types/index.ts';
 
 type PerformanceMetric = 'taskDuration' | 'scriptDuration' | 'heapUsedSize';
+// The names the report and the gate agree on. Requests come from route interception
+// rather than a CDP snapshot, so they have no PerformanceMetric of their own.
+type ReportedMetric =
+  | 'Script Duration'
+  | 'Task Duration'
+  | 'Heap Used Size'
+  | 'Number of Requests'
+  | 'Size of Requests';
 type PerformanceSnapshot = Record<PerformanceMetric, number>;
 type Results = Record<TestPage, Record<string, PerformanceSnapshot>>;
 type Step = {
@@ -55,23 +63,27 @@ const METRIC_NAME_UNIT_MAP: Record<PerformanceMetric, string> = {
   taskDuration: 'ms',
   heapUsedSize: 'MB',
 };
-const METRIC_NAME_TO_HUMAN_READABLE_MAP: Record<PerformanceMetric, string> = {
+const METRIC_NAME_TO_HUMAN_READABLE_MAP: Record<
+  PerformanceMetric,
+  ReportedMetric
+> = {
   scriptDuration: 'Script Duration',
   taskDuration: 'Task Duration',
   heapUsedSize: 'Heap Used Size',
 };
-const METRIC_HUMAN_READABLE_TO_UNIT_MAP: Record<string, string> = {
+const METRIC_HUMAN_READABLE_TO_UNIT_MAP: Record<ReportedMetric, string> = {
   'Script Duration': 'ms',
   'Task Duration': 'ms',
   'Heap Used Size': 'MB',
   'Number of Requests': ' requests',
   'Size of Requests': 'KB',
 };
-const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
+// Infinity means reported but not gated, as in the lighthouse spec
+const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<ReportedMetric, number> = {
   'Script Duration': TOTAL_SCRIPT_DURATION_THRESHOLD_IN_MS,
   'Task Duration': TOTAL_TASK_DURATION_THRESHOLD_IN_MS,
   'Heap Used Size': TOTAL_HEAP_SIZE_THRESHOLD_IN_MB,
-  'Number of Requests': Infinity, // No threshold for number of requests
+  'Number of Requests': Infinity,
   'Size of Requests': TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB,
 };
 
@@ -156,7 +168,7 @@ const STEPS: Step[] = [
     selector: '#startButtonClickTest',
   },
   {
-    name: 'Throw a 100 exceptions',
+    name: 'Throw 100 exceptions',
     selector: '#startExceptionTest',
   },
   {
@@ -181,95 +193,98 @@ test.describe('CDP Performance Tests', () => {
         args: [`--remote-debugging-port=${port.toString()}`],
         headless: true,
       });
-      const context = await chromeBrowser.newContext();
-      const page = await context.newPage();
-      const cdpSession = await context.newCDPSession(page);
+      try {
+        const context = await chromeBrowser.newContext();
+        const page = await context.newPage();
+        const cdpSession = await context.newCDPSession(page);
 
-      await context.route(EMBRACE_API_REGEX, async (route) => {
-        const buffer = route.request().postDataBuffer();
+        await context.route(EMBRACE_API_REGEX, async (route) => {
+          const buffer = route.request().postDataBuffer();
 
-        if (!buffer) {
-          console.warn('Invalid request from SDK');
-          await route.fulfill({ status: 200, body: '0' });
-          return;
-        }
-
-        numberOfRequests++;
-        sizeOfRequests += buffer.length;
-
-        // Decompress the gzipped data
-        zlib.gunzip(buffer, (err, result) => {
-          if (err) {
-            console.error('Failed to decompress request from SDK:', err);
-          } else {
-            try {
-              const json = result.toString('utf-8');
-
-              fs.writeFileSync(
-                `./test-results/cdp-performance-tests-${Date.now().toString()}-request.json`,
-                JSON.stringify(JSON.parse(json), null, 2),
-              );
-            } catch (e) {
-              console.error('Failed to save JSON:', e);
-            }
+          if (!buffer) {
+            console.warn('Invalid request from SDK');
+            await route.fulfill({ status: 200, body: '0' });
+            return;
           }
+
+          numberOfRequests++;
+          sizeOfRequests += buffer.length;
+
+          // Decompress the gzipped data
+          zlib.gunzip(buffer, (err, result) => {
+            if (err) {
+              console.error('Failed to decompress request from SDK:', err);
+            } else {
+              try {
+                const json = result.toString('utf-8');
+
+                fs.writeFileSync(
+                  `./test-results/cdp-performance-tests-${Date.now().toString()}-request.json`,
+                  JSON.stringify(JSON.parse(json), null, 2),
+                );
+              } catch (e) {
+                console.error('Failed to save JSON:', e);
+              }
+            }
+          });
+
+          await route.fulfill({ status: 200, body: '0' });
         });
 
-        await route.fulfill({ status: 200, body: '0' });
-      });
+        await cdpSession.send('Performance.enable');
 
-      await cdpSession.send('Performance.enable');
+        const url = `${BASE_URL}${testPage.path}`;
+        const outputPath = `./test-results/cdp-performance-tests-${testPage.name}-tracing.json`;
 
-      const url = `${BASE_URL}${testPage.path}`;
-      const outputPath = `./test-results/cdp-performance-tests-${testPage.name}-tracing.json`;
+        const traceEvents: unknown[] = [];
+        cdpSession.on('Tracing.dataCollected', (event) => {
+          traceEvents.push(...event.value);
+        });
 
-      const traceEvents: unknown[] = [];
-      cdpSession.on('Tracing.dataCollected', (event) => {
-        traceEvents.push(...event.value);
-      });
-
-      await page.goto(url);
-      await waitForPageToBeIdle(page);
-
-      results[testPage.name]['Page Loaded'] =
-        await getPerformanceSnapshot(cdpSession);
-
-      await startTrace(cdpSession);
-
-      let previousSnapshot = results[testPage.name]['Page Loaded'];
-
-      for (const step of STEPS) {
-        await page.click(step.selector);
+        await page.goto(url);
         await waitForPageToBeIdle(page);
 
-        await cdpSession.send('Tracing.requestMemoryDump');
-        const afterSnapshot = await getPerformanceSnapshot(cdpSession);
+        results[testPage.name]['Page Loaded'] =
+          await getPerformanceSnapshot(cdpSession);
 
-        results[testPage.name][step.name] = {
-          scriptDuration:
-            afterSnapshot.scriptDuration - previousSnapshot.scriptDuration,
-          taskDuration:
-            afterSnapshot.taskDuration - previousSnapshot.taskDuration,
-          heapUsedSize: afterSnapshot.heapUsedSize, // not cumulative
+        await startTrace(cdpSession);
+
+        let previousSnapshot = results[testPage.name]['Page Loaded'];
+
+        for (const step of STEPS) {
+          await page.click(step.selector);
+          await waitForPageToBeIdle(page);
+
+          await cdpSession.send('Tracing.requestMemoryDump');
+          const afterSnapshot = await getPerformanceSnapshot(cdpSession);
+
+          results[testPage.name][step.name] = {
+            scriptDuration:
+              afterSnapshot.scriptDuration - previousSnapshot.scriptDuration,
+            taskDuration:
+              afterSnapshot.taskDuration - previousSnapshot.taskDuration,
+            heapUsedSize: afterSnapshot.heapUsedSize, // not cumulative
+          };
+
+          previousSnapshot = afterSnapshot;
+        }
+
+        await page.waitForTimeout(1000); // Give it some time to settle
+        await cdpSession.send('Tracing.end');
+
+        await new Promise((resolve) =>
+          cdpSession.once('Tracing.tracingComplete', resolve),
+        );
+
+        const traceJson = {
+          traceEvents,
         };
 
-        previousSnapshot = afterSnapshot;
+        fs.writeFileSync(outputPath, JSON.stringify(traceJson, null, 2));
+      } finally {
+        // The other page's test reuses the debugging port, so the browser must be gone
+        await chromeBrowser.close();
       }
-
-      await page.waitForTimeout(1000); // Give it some time to settle
-      await cdpSession.send('Tracing.end');
-
-      await new Promise((resolve) =>
-        cdpSession.once('Tracing.tracingComplete', resolve),
-      );
-
-      const traceJson = {
-        traceEvents,
-      };
-
-      fs.writeFileSync(outputPath, JSON.stringify(traceJson, null, 2));
-
-      await context.close();
     });
   }
 
@@ -302,7 +317,7 @@ test.describe('CDP Performance Tests', () => {
     difference['Total'] = Object.entries(total).map(([name, value]) => ({
       name,
       value,
-      unit: METRIC_HUMAN_READABLE_TO_UNIT_MAP[name],
+      unit: METRIC_HUMAN_READABLE_TO_UNIT_MAP[name as ReportedMetric],
     }));
 
     fs.writeFileSync(
@@ -312,10 +327,13 @@ test.describe('CDP Performance Tests', () => {
 
     // Check thresholds
     for (const metric of Object.values(difference['Total'])) {
+      const threshold =
+        METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name as ReportedMetric];
+
       test
         .expect(
-          metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name],
-          `Threshold exceeded for ${metric.name}: ${metric.value.toString()} ${metric.unit} (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[metric.name].toString()} ${metric.unit})`,
+          metric.value <= threshold,
+          `Threshold exceeded for ${metric.name}: ${metric.value.toString()} ${metric.unit} (threshold: ${threshold.toString()} ${metric.unit})`,
         )
         .toBeTruthy();
     }

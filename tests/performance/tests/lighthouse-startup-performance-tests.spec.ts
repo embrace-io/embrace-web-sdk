@@ -6,7 +6,6 @@ import lighthouse from 'lighthouse';
 import { chromium } from 'playwright';
 import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
 import {
-  MAIN_THREAD_TIME_THRESHOLD_IN_MS,
   SCRIPT_EVAL_THRESHOLD_IN_MS,
   TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
 } from '../config/index.ts';
@@ -45,10 +44,12 @@ const PAGES: Record<TestPage, { name: TestPage; path: string }> = {
     path: '/lighthouse-test.html?use_sdk=true',
   },
 };
-const METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP: Record<string, number> = {
-  'Total Blocking Time': TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
-  'Main Thread Time': MAIN_THREAD_TIME_THRESHOLD_IN_MS,
-  'Script Evaluation Time': SCRIPT_EVAL_THRESHOLD_IN_MS,
+// Infinity means reported but not gated: Main Thread Time also folds in style,
+// layout, paint and GC, so its spread dwarfs Script Eval's JS cost (EMBR-13909).
+const METRIC_TO_THRESHOLD_IN_MS: Record<keyof LighthouseResult, number> = {
+  totalBlockingTime: TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS,
+  mainThreadTime: Infinity,
+  scriptEval: SCRIPT_EVAL_THRESHOLD_IN_MS,
 };
 
 // Lighthouse's default simulated throttling multiplies observed CPU time by
@@ -233,16 +234,17 @@ test.describe('Lighthouse Performance Tests', () => {
         LIGHTHOUSE_METRIC_TO_HUMAN_READABLE[
           metricName as keyof LighthouseResult
         ];
+      const threshold =
+        METRIC_TO_THRESHOLD_IN_MS[metricName as keyof LighthouseResult];
 
       test
         .expect(
-          metric.value <= METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name],
-          `Threshold exceeded for ${name}: ${metric.value} ms (threshold: ${METRIC_HUMAN_READABLE_TO_THRESHOLD_MAP[name]} ms)`,
+          metric.value <= threshold,
+          `Threshold exceeded for ${name}: ${metric.value} ms (threshold: ${threshold} ms)`,
         )
         .toBeTruthy();
     }
 
-    // TODO: add thresholds for each metric and fail the test if they are not met
     console.table(
       Object.values(difference).map((metric) => ({
         Value: `${metric.value > 0 ? '+' : ''}${metric.value.toFixed(2)}ms`,
