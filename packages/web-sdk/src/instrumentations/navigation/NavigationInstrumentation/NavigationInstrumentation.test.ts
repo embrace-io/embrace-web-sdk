@@ -60,6 +60,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     const pageId = pageManager.getCurrentPageId();
@@ -98,6 +99,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     expect(surfaceSpans()).to.have.lengthOf(0);
 
@@ -111,6 +113,7 @@ describe('NavigationInstrumentation', () => {
   it('should fall back to the global page manager when none is provided', () => {
     page.setGlobalPageManager(pageManager);
     navigationInstrumentation = new NavigationInstrumentation({ diag });
+    navigationInstrumentation.enable();
 
     page.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     page.setCurrentRoute({ path: '/other', url: '/other' });
@@ -125,6 +128,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -145,6 +149,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     // The raw pathname reported first (e.g. by EmbracePageManager on soft
     // nav — a complete, valid route on its own), then a react-router
@@ -183,6 +188,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
     expect(surfaceSpans()).to.have.lengthOf(0);
@@ -202,6 +208,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
@@ -220,6 +227,7 @@ describe('NavigationInstrumentation', () => {
       pageManager,
       shouldCleanupPathOptionsFromRouteName: false,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)',
@@ -239,6 +247,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/test/hourly', url: '/test/hourly' });
     pageManager.setCurrentRoute({
@@ -256,6 +265,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
     navigationInstrumentation.disable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -269,6 +279,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     expect(surfaceSpans()).to.have.lengthOf(0);
@@ -285,6 +296,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -304,6 +316,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -324,6 +337,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
@@ -356,6 +370,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     expect(() => {
       userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -370,6 +385,7 @@ describe('NavigationInstrumentation', () => {
       diag,
       pageManager,
     });
+    navigationInstrumentation.enable();
 
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
 
@@ -379,6 +395,9 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/second', url: '/second' });
     pageManager.setCurrentRoute({ path: '/third', url: '/third' });
 
-    expect(surfaceSpans()).to.have.lengthOf(2);
+    // Re-enabling picks the current route back up rather than waiting for the
+    // next navigation, so '/first' is covered by a span on either side of the
+    // disable.
+    expect(surfaceSpans()).to.have.lengthOf(3);
   });
 });

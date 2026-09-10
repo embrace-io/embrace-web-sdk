@@ -87,6 +87,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     void expect(clsStub.calledOnce).to.be.true;
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -131,6 +132,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -182,6 +184,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -212,6 +215,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -245,6 +249,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -296,6 +301,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -348,6 +354,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -396,6 +403,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -432,6 +440,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -479,6 +488,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -587,6 +597,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -634,6 +645,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -679,6 +691,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -727,6 +740,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -747,6 +761,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -768,6 +783,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -787,6 +803,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -811,6 +828,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -890,6 +908,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
@@ -950,6 +969,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1013,6 +1033,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1073,6 +1094,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1133,6 +1155,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1193,6 +1216,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1257,6 +1281,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1316,6 +1341,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1375,6 +1401,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1453,6 +1480,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1513,6 +1541,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const clsReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const lcpReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -1571,6 +1600,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     // Call enable() multiple times
     instrumentation.enable();
@@ -1586,6 +1616,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     instrumentation.disable();
     instrumentation.enable();
@@ -1602,6 +1633,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1643,6 +1675,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1671,6 +1704,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     instrumentation.disable();
 
@@ -1686,6 +1720,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     void expect(clsStub.calledTwice).to.be.true;
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -1733,6 +1768,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -1785,6 +1821,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1857,6 +1894,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1901,6 +1939,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1940,6 +1979,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1998,6 +2038,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -2034,6 +2075,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     void expect(fcpStub.calledTwice).to.be.true;
     const pageTrackFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2088,6 +2130,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     void expect(lcpStub.calledTwice).to.be.true;
     const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2144,6 +2187,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     void expect(inpStub.calledTwice).to.be.true;
     const pageTrackFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2211,6 +2255,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     void expect(ttfbStub.calledTwice).to.be.true;
     const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2291,6 +2336,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     const clsPageTrack = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const clsEmit = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -2368,6 +2414,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2418,6 +2465,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2454,6 +2502,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2494,6 +2543,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2531,6 +2581,7 @@ describe('WebVitalsInstrumentation', () => {
       urlAttribution: false,
       includeRawAttribution: false,
     });
+    instrumentation.enable();
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2557,6 +2608,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
+    instrumentation.enable();
 
     expect(inpStub.callCount).to.equal(1);
     expect(lcpStub.callCount).to.equal(1);
@@ -2576,6 +2628,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(inpStub.callCount).to.equal(2);
       const changeFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2643,6 +2696,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(lcpStub.callCount).to.equal(2);
       const changeFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2702,6 +2756,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(clsStub.callCount).to.equal(2);
       const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2755,6 +2810,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(fcpStub.callCount).to.equal(2);
       const changeFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2812,6 +2868,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(ttfbStub.callCount).to.equal(2);
       const changeFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2887,6 +2944,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       void expect(clsStub.calledTwice).to.be.true;
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2930,6 +2988,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -2969,6 +3028,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3017,6 +3077,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3053,6 +3114,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       // reportAllChanges listener registered first, emission listener second
       void expect(clsStub.calledTwice).to.be.true;
@@ -3090,6 +3152,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument,
       });
+      instrumentation.enable();
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3142,6 +3205,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: { URL: 'https://example.com/products/123' },
         pageManager: mockPageManager,
       });
+      instrumentation.enable();
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3180,6 +3244,7 @@ describe('WebVitalsInstrumentation', () => {
         urlAttribution: false,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       void expect(clsStub.calledOnce).to.be.true;
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -3208,6 +3273,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       // Only call the emission listener, skip the reportAllChanges listener
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3252,6 +3318,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       expect(clsStub.callCount).to.equal(0);
       expect(diag.getDebugLogs()).to.include(
@@ -3269,6 +3336,7 @@ describe('WebVitalsInstrumentation', () => {
       listeners: mockWebVitalListeners,
       urlDocument,
     });
+    instrumentation.enable();
 
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3313,6 +3381,7 @@ describe('WebVitalsInstrumentation', () => {
           };
         },
       });
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3343,6 +3412,7 @@ describe('WebVitalsInstrumentation', () => {
           throw new Error('hook error');
         },
       });
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3497,6 +3567,7 @@ describe('WebVitalsInstrumentation', () => {
           listeners: mockWebVitalListeners,
           urlDocument,
         });
+        instrumentation.enable();
 
         void expect(clsStub.calledTwice).to.be.true;
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
@@ -3516,6 +3587,7 @@ describe('WebVitalsInstrumentation', () => {
           listeners: mockWebVitalListeners,
           urlDocument,
         });
+        instrumentation.enable();
 
         void expect(ttfbStub.calledTwice).to.be.true;
         expect(ttfbStub.getCall(0).args[1]).to.deep.equal({
@@ -3536,6 +3608,7 @@ describe('WebVitalsInstrumentation', () => {
           urlDocument,
           reportSoftNavs: false,
         });
+        instrumentation.enable();
 
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
           reportAllChanges: true,
@@ -3554,6 +3627,7 @@ describe('WebVitalsInstrumentation', () => {
           listeners: mockWebVitalListeners,
           urlDocument,
         });
+        instrumentation.enable();
 
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
           reportAllChanges: true,
@@ -3572,6 +3646,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3606,6 +3681,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3647,6 +3723,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
+      instrumentation.enable();
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3681,6 +3758,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3724,6 +3802,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3763,6 +3842,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3802,6 +3882,7 @@ describe('WebVitalsInstrumentation', () => {
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
+      instrumentation.enable();
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3844,6 +3925,7 @@ describe('WebVitalsInstrumentation', () => {
         urlDocument: testDocument,
         pageManager,
       });
+      instrumentation.enable();
 
       const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const finalFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3926,6 +4008,7 @@ describe('WebVitalsInstrumentation', () => {
         urlAttribution: false,
       });
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3964,6 +4047,7 @@ describe('WebVitalsInstrumentation', () => {
         urlAttribution: false,
       });
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3999,6 +4083,7 @@ describe('WebVitalsInstrumentation', () => {
         urlAttribution: false,
       });
       instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 

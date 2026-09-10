@@ -91,30 +91,26 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
+  // 'enabled' is refused here: construction only wires the instrumentation up,
+  // and registerInstrumentations starts it regardless of any flag passed in.
   public constructor({
     diag,
     perf,
-    enabled,
     applyCustomAttributesOnSpan,
     ignorePerformancePaintEvents = false,
     ignoreNetworkEvents = false,
-  }: DocumentLoadInstrumentationConfig = {}) {
+  }: Omit<DocumentLoadInstrumentationConfig, 'enabled'> = {}) {
     super({
       instrumentationName: 'DocumentLoadInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
       config: {
-        enabled,
         applyCustomAttributesOnSpan,
         ignorePerformancePaintEvents,
         ignoreNetworkEvents,
       },
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   /**
@@ -576,15 +572,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public override onEnable(): void {
     // An unbuffered subscription registered after the load event is never
-    // notified, so collect straight away instead of observing. Deferred a
-    // microtask because under registerGlobally: false the tracer provider
-    // arrives later in this same task, and earlier spans reach a no-op tracer.
-    if (this._isLoadEventFinished()) {
-      queueMicrotask(() => {
-        if (this._isEnabled) {
-          this._collectIfLoadEventFinished();
-        }
-      });
+    // notified, so the finished entry is read off the timeline instead. Spans
+    // are recorded here: enabling happens once the providers are attached.
+    this._collectIfLoadEventFinished();
+    if (this._performanceCollected) {
       return;
     }
 

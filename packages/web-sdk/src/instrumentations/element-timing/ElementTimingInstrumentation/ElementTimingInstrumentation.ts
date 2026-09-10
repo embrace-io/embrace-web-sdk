@@ -35,10 +35,6 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
       limitManager,
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override enable(): void {

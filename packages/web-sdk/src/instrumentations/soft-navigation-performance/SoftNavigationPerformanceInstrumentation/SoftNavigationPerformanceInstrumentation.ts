@@ -85,10 +85,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
 
     this._navigationHost = navigationHost;
     this._signalBuffer = signalBuffer;
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override enable(): void {

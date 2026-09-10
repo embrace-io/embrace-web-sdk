@@ -183,6 +183,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
       deliverNavigationEntry();
 
       const logs = memoryExporter.getFinishedLogRecords();
@@ -222,6 +223,7 @@ describe('ServerTimingInstrumentation', () => {
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
+      instrumentation.enable();
       deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
@@ -238,6 +240,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
 
       const loadListenerAdded = addEventListenerSpy.args.some(
         ([event]) => event === 'load',
@@ -262,6 +265,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
 
       expect(FakePerformanceObserver.latest().observedOptions).to.deep.equal({
         type: 'navigation',
@@ -298,6 +302,7 @@ describe('ServerTimingInstrumentation', () => {
           perf,
           limitManager,
         });
+        instrumentation.enable();
         deliverNavigationEntry();
 
         const logs = memoryExporter.getFinishedLogRecords();
@@ -317,6 +322,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
       instrumentation.disable();
 
       deliverNavigationEntry();
@@ -342,6 +348,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager: customLimitManager,
       });
+      instrumentation.enable();
       deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(2);
@@ -360,6 +367,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
       deliverNavigationEntry();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
@@ -384,6 +392,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
 
       deliverNavigationEntry();
 
@@ -399,6 +408,7 @@ describe('ServerTimingInstrumentation', () => {
         perf,
         limitManager,
       });
+      instrumentation.enable();
 
       deliverNavigationEntry();
 
@@ -426,6 +436,7 @@ describe('ServerTimingInstrumentation', () => {
           error: () => {},
         },
       });
+      instrumentation.enable();
 
       deliverNavigationEntry();
 

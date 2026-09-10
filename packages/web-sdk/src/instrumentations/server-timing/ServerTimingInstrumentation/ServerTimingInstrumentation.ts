@@ -27,10 +27,6 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       limitManager,
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   private _disconnectObserver(): void {
@@ -44,11 +40,6 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     /*
-     * The observer keeps the read out of the constructor. Under
-     * registerGlobally: false the logger provider arrives later in this same
-     * task, and a log emitted before it is lost for good because the
-     * collection guard latches.
-     *
      * buffered stays at its default of true, the opposite of the navigation
      * observer in DocumentLoadInstrumentation: server timings arrive in the
      * response headers and are complete on the entry from the start, so a

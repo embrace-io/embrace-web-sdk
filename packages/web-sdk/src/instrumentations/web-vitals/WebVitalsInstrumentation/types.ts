@@ -20,7 +20,10 @@ export type WebVitalListeners = Record<
   ((onReport: WebVitalOnReport, opts?: ReportOpts) => void) | undefined
 >;
 
-export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
+// 'enabled' is excluded: construction only wires the instrumentation up, and
+// registerInstrumentations starts it regardless of any flag passed here.
+export interface WebVitalsInstrumentationConfig
+  extends Omit<InstrumentationConfig, 'enabled'> {
   // OTel upstream options
   /**
    * @experimental
