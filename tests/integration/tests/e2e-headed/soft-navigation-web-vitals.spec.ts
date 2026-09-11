@@ -290,4 +290,72 @@ test.describe('Web Vitals measurement in soft navigations', () => {
       expect(ids).not.toEqual(navigationIds(DELAYED_LCP_URL));
     });
   });
+
+  // Regression: browser.url.full used to come from web-vitals' navigationURL whenever
+  // soft navigations were active, which for a hard navigation is the entry URL. A
+  // bootstrap redirect then split one record across two pages.
+  test('attributes a bootstrap redirect to the page the content rendered on', async ({
+    page,
+    requests,
+    setPageVisibility,
+    withRemoteConfig,
+  }) => {
+    await withRemoteConfig();
+
+    const entryURL = `${BASE_URL}?bootstrapRedirect=lcp`;
+    await page.goto(entryURL);
+
+    // The redirect runs on mount with no interaction before it, so the LCP image
+    // renders on /lcp while web-vitals is still reporting the hard navigation.
+    await expect(page.getByAltText('Large logo for delayed LCP')).toBeVisible();
+    // LCP for an image is only a candidate once the image has actually painted.
+    await page.waitForFunction(() => {
+      const image = document.querySelector('img');
+      return image !== null && image.complete && image.naturalWidth > 0;
+    });
+    await page.waitForTimeout(OBSERVER_DELAY_MS);
+
+    // With soft navigations active the hard navigation's metrics finalise at the
+    // next navigation boundary, so move off the page to close them out.
+    await page.getByRole('button', { name: 'Page B' }).click();
+    await expect(page.getByText('You navigated to Page B')).toBeVisible();
+
+    await setPageVisibility('hidden');
+
+    const lcpRecord = () =>
+      requests
+        .filter((request) => request.url.endsWith('/v2/logs'))
+        .flatMap(
+          (request) =>
+            (request.data as IExportLogsServiceRequest).resourceLogs ?? [],
+        )
+        .flatMap((resourceLogs) => resourceLogs.scopeLogs ?? [])
+        .flatMap((scopeLogs) => scopeLogs.logRecords ?? [])
+        .filter((record) => record.eventName === 'browser.web_vital')
+        .find(
+          (record) =>
+            attributeValue(record, 'browser.web_vital.name') === 'lcp',
+        );
+
+    await expect
+      .poll(() => lcpRecord() !== undefined, { timeout: 15_000 })
+      .toBe(true);
+
+    const record = lcpRecord() as ILogRecord;
+
+    // The redirect is not a soft navigation, so this is still the hard navigation.
+    expect(attributeValue(record, 'browser.web_vital.navigation_type')).toBe(
+      'navigate',
+    );
+
+    // One page: the URL and the page keys agree on where the image rendered.
+    expect(attributeValue(record, 'browser.url.full')).toBe(DELAYED_LCP_URL);
+    expect(attributeValue(record, 'app.surface.name')).toBe('/lcp');
+
+    // The navigation is still queryable, and it is a different URL. This is the
+    // pair that the old code collapsed into browser.url.full.
+    expect(attributeValue(record, 'browser.web_vital.navigation_url')).toBe(
+      entryURL,
+    );
+  });
 });
