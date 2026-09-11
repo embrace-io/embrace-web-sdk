@@ -1607,6 +1607,36 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
   });
 
+  describe('SDK startup timings', () => {
+    it('should stamp them on the cold-start part only', () => {
+      manager.recordSDKStartupTimings({
+        initDurationMillis: 12.4,
+        loadTimestamp: 1_700_000_000_000,
+        initTimestamp: 1_700_000_000_500,
+      });
+
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      expect(finishedSpans).to.have.lengthOf(2);
+      expect(finishedSpans[0].attributes).to.deep.include({
+        'emb.sdk_startup_duration': 13,
+        'emb.sdk_load_timestamp': 1_700_000_000_000,
+        'emb.sdk_init_timestamp': 1_700_000_000_500,
+      });
+      for (const key of [
+        'emb.sdk_startup_duration',
+        'emb.sdk_load_timestamp',
+        'emb.sdk_init_timestamp',
+      ]) {
+        expect(finishedSpans[1].attributes).to.not.have.property(key);
+      }
+    });
+  });
+
   describe('emb.page_load attribute', () => {
     const makeDoc = (
       readyState: DocumentReadyState,
