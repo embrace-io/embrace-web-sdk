@@ -483,6 +483,28 @@ describe('FetchTransport', () => {
         clearTimeoutSpy.restore();
       }
     });
+
+    it('should hold the fallback timer until a non-keepalive body drains', async () => {
+      const body = createPendingBody();
+      reinstallFetch().resolves(new Response(body.stream, { status: 200 }));
+      const clearTimeoutSpy = sinon.spy(globalThis, 'clearTimeout');
+
+      try {
+        const transport = makeTransport();
+        // Over the budget, so this request is sent without keepalive.
+        await transport.send(largePayload, 1000);
+        await flushBodyDrain();
+
+        void expect(clearTimeoutSpy.called).to.be.false;
+
+        body.close();
+        await flushBodyDrain();
+
+        void expect(clearTimeoutSpy.calledOnce).to.be.true;
+      } finally {
+        clearTimeoutSpy.restore();
+      }
+    });
   });
 
   describe('HTTP status classification', () => {

@@ -162,7 +162,7 @@ export class FetchTransport implements IExporterTransport {
       inflightKeepaliveBytes -= reservedBytes;
       inflightKeepaliveCount--;
     };
-    let drainOwnsRelease = false;
+    let drainOwnsCleanup = false;
 
     try {
       if (this._config.compression === 'gzip') {
@@ -207,14 +207,12 @@ export class FetchTransport implements IExporterTransport {
       // Not awaited: the status already decides the export outcome, and a
       // collector that stalls mid-body must not hold up the caller.
       const drained = drainResponseBody(response);
-      if (keepalive) {
-        // Set once the promise exists so an earlier throw still reaches the
-        // release in `finally`.
-        drainOwnsRelease = true;
-        // The abort signal stays armed, so a stalled body cannot hold the
-        // budget forever.
-        void drained.finally(releaseKeepalive);
-      }
+      // Set once the promise exists so an earlier throw still reaches the
+      // cleanup in `finally`.
+      drainOwnsCleanup = true;
+      // Trailing the drain keeps the abort signal armed, so a stalled body can
+      // hold neither the budget nor the timer forever.
+      void drained.finally(keepalive ? releaseKeepalive : clearTimeoutIfSet);
 
       if (response.ok) {
         return { status: 'success' };
@@ -246,7 +244,9 @@ export class FetchTransport implements IExporterTransport {
         error: fetchError,
       };
     } finally {
-      if (!drainOwnsRelease) {
+      // Only the paths that threw before a response reach this: once the drain
+      // exists it owns the cleanup.
+      if (!drainOwnsCleanup) {
         if (keepalive) {
           releaseKeepalive();
         } else {
