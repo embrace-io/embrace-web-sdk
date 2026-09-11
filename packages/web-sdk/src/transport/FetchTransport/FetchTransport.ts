@@ -33,7 +33,7 @@ export function _resetKeepaliveTracking(): void {
  * far slower, so the body is read rather than cancelled.
  *
  * @see https://fetch.spec.whatwg.org/#fetch-processresponseendofbody
- * @see https://github.com/chromium/chromium/blob/1af7c3cde84323e827f77d8066ca23da811203b8/third_party/blink/renderer/core/fetch/fetch_manager.cc#L818-L836
+ * @see https://issues.chromium.org/issues/546438373
  */
 async function drainResponseBody(response: Response): Promise<void> {
   try {
