@@ -29,10 +29,6 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
         handler: 'promise_rejection',
       });
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public onDisable(): void {
