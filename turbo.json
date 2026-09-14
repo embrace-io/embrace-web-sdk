@@ -41,7 +41,8 @@
     },
     "//#server": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["EMB_NO_STORE"]
     }
   }
 }

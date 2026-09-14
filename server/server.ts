@@ -22,6 +22,18 @@ const platformsDir = join(__dirname, '..', 'tests', 'integration', 'platforms');
 
 const PORT = 3001;
 
+// Opt-in mode for reproducing the keepalive quota leak: a no-store response
+// holds keepalive budget until the body is read. Off by default so the normal
+// response stays byte-identical to production.
+const SIMULATE_NO_STORE = process.env['EMB_NO_STORE'] === '1';
+
+// Mirrors the real ingest, which answers 200 with a literal 0 body under a
+// text/html content type. The SDK never reads it.
+const ingestResponseHeaders = (): Record<string, string> => ({
+  'Content-Type': 'text/html; charset=utf-8',
+  ...(SIMULATE_NO_STORE && { 'Cache-Control': 'no-store' }),
+});
+
 const mimeTypes: Record<string, string> = {
   '.html': 'text/html',
   '.js': 'application/javascript',
@@ -152,8 +164,8 @@ const server = createServer((req, res) => {
 
         logReceivedLogRecords(logRecords);
 
-        res.writeHead(200);
-        res.end('OK');
+        res.writeHead(200, ingestResponseHeaders());
+        res.end('0');
       })
       .catch((e: unknown) => {
         console.error('Error handling log request:', e);
@@ -212,8 +224,8 @@ const server = createServer((req, res) => {
           }
         }
 
-        res.writeHead(200);
-        res.end('OK');
+        res.writeHead(200, ingestResponseHeaders());
+        res.end('0');
       })
       .catch((e: unknown) => {
         console.error('Error parsing gzip request:', e);
@@ -255,6 +267,9 @@ const server = createServer((req, res) => {
 
 server.listen(PORT, () => {
   logInfo(`Debug collector running on http://localhost:${PORT}`);
+  if (SIMULATE_NO_STORE) {
+    logWarn('EMB_NO_STORE=1: ingest responses carry Cache-Control: no-store');
+  }
   logInfo('To send telemetry to the debug collector, add your');
   logInfo(`appID to ./demo/frontend/.env:`);
   logInfo(`  VITE_APP_ID=your-app-id`);

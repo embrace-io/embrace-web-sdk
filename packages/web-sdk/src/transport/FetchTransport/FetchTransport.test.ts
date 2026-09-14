@@ -41,6 +41,61 @@ function createDeferred(): Deferred {
   return { promise, resolve, reject };
 }
 
+// A body whose chunks are produced only when a reader pulls them, so a fully
+// drained stream is distinguishable from one that was left alone or cancelled.
+function createTrackedBody(chunkCount: number) {
+  let pulls = 0;
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (pulls === chunkCount) {
+        controller.close();
+        return;
+      }
+      pulls++;
+      controller.enqueue(new TextEncoder().encode(`chunk-${pulls}`));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+
+  return {
+    stream,
+    pullCount: () => pulls,
+    wasCancelled: () => cancelled,
+  };
+}
+
+// A body that stays open until the test closes or errors it.
+function createPendingBody() {
+  let controller!: ReadableStreamDefaultController<Uint8Array>;
+  const stream = new ReadableStream<Uint8Array>({
+    start(streamController) {
+      controller = streamController;
+    },
+  });
+
+  return {
+    stream,
+    close: () => controller.close(),
+    fail: (error: Error) => controller.error(error),
+  };
+}
+
+// The drain settles after `send()` resolves; a macrotask turn flushes it.
+function flushBodyDrain(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function createFailingBody(message: string) {
+  return new ReadableStream<Uint8Array>({
+    pull(controller) {
+      controller.error(new Error(message));
+    },
+  });
+}
+
 function reinstallFetch() {
   fakeFetchRestore();
   return fakeFetchInstall();
@@ -179,6 +234,7 @@ describe('FetchTransport', () => {
       // Resolve first request to free up budget
       deferred.resolve(new Response('ok', { status: 200 }));
       await first;
+      await flushBodyDrain();
 
       // Third request should fit now
       await transport.send(payload30k, 5000);
@@ -420,6 +476,7 @@ describe('FetchTransport', () => {
       try {
         const transport = makeTransport();
         await transport.send(smallPayload, 1000);
+        await flushBodyDrain();
 
         void expect(clearTimeoutSpy.calledOnce).to.be.true;
       } finally {
@@ -538,6 +595,121 @@ describe('FetchTransport', () => {
       const warns = diagLogger.getWarnLogs();
       const match = warns.find((msg) => msg.includes('HTTP 401'));
       expect(match).to.be.a('string');
+    });
+  });
+
+  describe('response body draining', () => {
+    it('should read the body to its end without cancelling on success', async () => {
+      const body = createTrackedBody(3);
+      fakeFetchRespondWith(body.stream, { status: 200 });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+      await flushBodyDrain();
+
+      expect(result.status).to.equal('success');
+      expect(body.pullCount()).to.equal(3);
+      expect(body.wasCancelled()).to.equal(false);
+    });
+
+    it('should read the body to its end on a retryable response', async () => {
+      const body = createTrackedBody(3);
+      fakeFetchRespondWith(body.stream, { status: 503 });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+      await flushBodyDrain();
+
+      expect(result.status).to.equal('retryable');
+      expect(body.pullCount()).to.equal(3);
+      expect(body.wasCancelled()).to.equal(false);
+    });
+
+    it('should settle the export before the body reaches its end', async () => {
+      const body = createPendingBody();
+      fakeFetchRespondWith(body.stream, { status: 200 });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+
+      expect(result.status).to.equal('success');
+
+      body.close();
+      await flushBodyDrain();
+    });
+
+    it('should leave the export result untouched when the body fails to read', async () => {
+      fakeFetchRespondWith(createFailingBody('body read failed'), {
+        status: 200,
+      });
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+      await flushBodyDrain();
+
+      expect(result.status).to.equal('success');
+      const match = diagLogger
+        .getDebugLogs()
+        .find((msg) => msg.includes('failed to drain response body'));
+      expect(match).to.be.a('string');
+    });
+
+    it('should leave the export result untouched when the body is locked by another reader', async () => {
+      // A fetch wrapper may hold the body's reader. The export already reached
+      // the collector, so an undrainable body must not fail it.
+      const response = new Response('ok', { status: 200 });
+      response.body?.getReader();
+      reinstallFetch().resolves(response);
+      const transport = makeTransport();
+
+      const result = await transport.send(smallPayload, 1000);
+      await flushBodyDrain();
+
+      expect(result.status).to.equal('success');
+      const match = diagLogger
+        .getDebugLogs()
+        .find((msg) => msg.includes('failed to drain response body'));
+      expect(match).to.be.a('string');
+    });
+
+    it('should hold the keepalive budget until the body drains', async () => {
+      const body = createPendingBody();
+      const stub = reinstallFetch();
+      stub.onCall(0).resolves(new Response(body.stream, { status: 200 }));
+      stub.onCall(1).resolves(new Response('ok', { status: 200 }));
+      stub.onCall(2).resolves(new Response('ok', { status: 200 }));
+
+      const transport = makeTransport();
+      const payload30k = new Uint8Array(30 * 1024);
+
+      await transport.send(payload30k, 5000);
+      await flushBodyDrain();
+      await transport.send(payload30k, 5000);
+
+      expect(fakeFetchGetKeepalive(1)).to.equal(false);
+
+      body.close();
+      await flushBodyDrain();
+      await transport.send(payload30k, 5000);
+
+      expect(fakeFetchGetKeepalive(2)).to.equal(true);
+    });
+
+    it('should release the keepalive budget when the body drain fails', async () => {
+      const body = createPendingBody();
+      const stub = reinstallFetch();
+      stub.onCall(0).resolves(new Response(body.stream, { status: 200 }));
+      stub.onCall(1).resolves(new Response('ok', { status: 200 }));
+
+      const transport = makeTransport();
+      const payload30k = new Uint8Array(30 * 1024);
+
+      await transport.send(payload30k, 5000);
+      body.fail(new Error('body errored'));
+      await flushBodyDrain();
+      await transport.send(payload30k, 5000);
+
+      expect(fakeFetchGetKeepalive(1)).to.equal(true);
     });
   });
 });
