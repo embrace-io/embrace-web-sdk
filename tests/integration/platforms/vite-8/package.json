@@ -1,0 +1,25 @@
+{
+  "name": "vite-8",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:clean && npm run build:es2015",
+    "build:clean": "emb-rm dist .sonda",
+    "build:es2015": "vite build && npm run process-sourcemaps",
+    "process-sourcemaps": "embrace-web-cli upload -a NOEMB -p ./dist/es2015 --no-upload"
+  },
+  "dependencies": {
+    "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
+    "@opentelemetry/sdk-logs": "^0",
+    "@opentelemetry/sdk-trace": "^2",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@embrace-io/web-cli": "file:../../../../packages/web-cli",
+    "@vitejs/plugin-react": "^6",
+    "sonda": "^0",
+    "vite": "^8"
+  }
+}
