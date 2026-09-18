@@ -1,4 +1,5 @@
-import ReactDOM from 'react-dom/client';
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 
 import SDKTest from './SDKTest.tsx';
 
@@ -16,8 +17,8 @@ const App = () => {
   );
 };
 
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<App />);
-}
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
