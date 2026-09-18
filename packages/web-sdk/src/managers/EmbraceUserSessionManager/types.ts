@@ -132,8 +132,9 @@ export interface UserSessionManagerInternal extends UserSessionManager {
    * learns of an event well after it happened (e.g. a metric library that
    * defers its own reporting) attribute it to the part it actually
    * occurred in, instead of whichever part happens to be active by the
-   * time it asks. Falls back to the currently active part (or null) when
-   * the timestamp predates any part recorded in the retained history.
+   * time it asks. Clamps to the first part available when the requested
+   * timestamp is earlier than the earliest recorded part. Returns null only
+   * when the history is empty and no part is active.
    */
   getSessionPartIdAt: (timestampEpochMillis: number) => string | null;
 

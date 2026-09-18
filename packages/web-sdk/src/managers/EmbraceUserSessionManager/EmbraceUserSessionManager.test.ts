@@ -379,6 +379,20 @@ describe('EmbraceUserSessionManager', () => {
       expect(manager.getSessionPartIdAt(0)).to.equal(partId);
     });
 
+    it('clamps to the first recorded part when the timestamp predates it and no part is active', () => {
+      const manager = createManager();
+
+      clock.tick(1000);
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partId = manager.getSessionPartId();
+
+      clock.tick(500);
+      manager.endSessionPartInternal({ reason: 'background' });
+      void expect(manager.getSessionPartId()).to.be.null;
+
+      expect(manager.getSessionPartIdAt(0)).to.equal(partId);
+    });
+
     it('falls back to null when no part has ever started', () => {
       const manager = createManager();
 
