@@ -350,6 +350,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         return this._sessionPartHistory[i].id;
       }
     }
+    // The requested timestamp is earlier than the earliest recorded part. This would
+    // happen for metrics that were measured before the SDK initialized, in that case choose
+    // the earliest available part to associate it with.
+    if (this._sessionPartHistory.length > 0) {
+      return this._sessionPartHistory[0].id;
+    }
     return this.getSessionPartId();
   }
 
