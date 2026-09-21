@@ -96,11 +96,12 @@
     "packageManager": {
       "name": "npm",
       "version": ">=11.16",
-      "onFail": "error"
+      "onFail": "download"
     },
     "runtime": {
       "name": "node",
-      "version": "^24 || ^26.3.0"
+      "version": "^26.3.0",
+      "onFail": "download"
     }
   },
   "allowScripts": {
