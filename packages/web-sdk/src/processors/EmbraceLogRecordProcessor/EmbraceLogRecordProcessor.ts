@@ -35,7 +35,7 @@ export class EmbraceLogRecordProcessor implements LogRecordProcessor {
       logRecord.setAttribute(ATTR_URL_FULL, this._urlDocument.URL);
     }
 
-    if (!logRecord.attributes[KEY_EMB_TAB_IS_TAB_ENGAGED]) {
+    if (logRecord.attributes[KEY_EMB_TAB_IS_TAB_ENGAGED] === undefined) {
       logRecord.setAttribute(
         KEY_EMB_TAB_IS_TAB_ENGAGED,
         isTabEngaged(this._visibilityDocument),
