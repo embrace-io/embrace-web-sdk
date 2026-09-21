@@ -47,6 +47,7 @@ import {
   generateUUID,
   getIncrementedCount,
   getVisibilityState,
+  isTabEngaged,
   throttle,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
@@ -83,7 +84,6 @@ import type {
 import {
   addActivityListeners,
   createUserSessionState,
-  isTabEngaged,
   isUserSessionExpired,
   readPermanentProperties,
   readUserSessionState,

@@ -45,6 +45,7 @@ export const KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS =
   'emb.user_session_inactivity_timeout_seconds';
 export const KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
   'emb.user_session_foreground_inactivity_timeout_seconds';
+export const KEY_EMB_TAB_IS_TAB_ENGAGED = 'emb.is_tab_engaged';
 
 export enum EMB_TYPES {
   SessionPart = 'ux.session_part',
