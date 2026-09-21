@@ -247,11 +247,6 @@ jobs:
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
           chown root:root /github/home
 
-      - name: Install GitHub CLI
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
-
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
         run: |
@@ -434,11 +429,6 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           mkdir -p /github/home/.cache && ln -s /ms-playwright /github/home/.cache/ms-playwright
           chown root:root /github/home
-
-      - name: Install GitHub CLI
-        if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
-        run: |
-          curl -fsSL "https://github.com/cli/cli/releases/latest/download/gh_$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep tag_name | cut -d '"' -f4 | sed 's/v//')_linux_amd64.deb" -o /tmp/gh.deb && dpkg -i /tmp/gh.deb
 
       - name: Install npm dependencies
         if: ${{ env.TEST_PREVIOUSLY_PASSED != 'true' }}
