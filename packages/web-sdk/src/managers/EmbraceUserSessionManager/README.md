@@ -71,18 +71,12 @@ provider (required before the first part). Customer code only ever sees
 `UserSessionManager`.
 
 The SDK init flow also reports its startup timings once, via
-`recordSDKStartupTimings`. All three values are page-scoped constants, and they
-are stamped only on the end span of the cold-start part, the one part that
-covers the load they describe: `emb.sdk_startup_duration` for how long `initSDK`
-itself ran, plus `emb.sdk_load_origin_offset` and `emb.sdk_init_origin_offset`
-marking, in milliseconds since time origin, when the SDK's code first evaluated
-and when `initSDK` was entered. The gap between the two offsets is how long the
-page held the loaded SDK before initializing it.
+`recordSDKStartupTimings`. They are page-scoped constants, so they are stamped
+only on the end span of the cold-start part, the one part that covers the load
+they describe. See the end-attribute table below for each key.
 
-The duration is held internally as `_sdkInitDuration` because that is what it
-measures, while the attribute keeps the `startup` wording the Android SDK uses
-for the same measurement. Do not "fix" one to match the other: the mismatch is
-what keeps the wire key aligned across platforms.
+If `initSDK` throws before recording them, the cold-start part omits the keys
+entirely. Zeros would read as "loaded at navigation start".
 
 ## Session-part lifecycle
 
@@ -380,9 +374,9 @@ another window).
 | Attribute | Condition |
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
-| `emb.sdk_startup_duration` | Cold-start part only. Milliseconds, ceiled. The `initSDK` duration. |
-| `emb.sdk_load_origin_offset` | Cold-start part only. Milliseconds since time origin when the SDK's code first ran. |
-| `emb.sdk_init_origin_offset` | Cold-start part only. Milliseconds since time origin when `initSDK` was entered. |
+| `emb.sdk_startup_duration` | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration. |
+| `emb.sdk_load_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran. |
+| `emb.sdk_init_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered. |
 | `emb.page_load` | Cold-start part only. `true` when `document.readyState` was `complete` at part end. |
 | `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |

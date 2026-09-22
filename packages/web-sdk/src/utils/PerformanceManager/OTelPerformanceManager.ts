@@ -28,8 +28,11 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   public getNowMillis = () => this.epochMillisFromOrigin(this._clock.now());
 
-  // For duration-shaped attributes measured from time origin (e.g. "how long
-  // after navigation did X happen"), not for anything presented as wall clock.
+  /**
+   * Raw milliseconds since time origin. Unaffected by bfcache restores and soft
+   * navigations, so it suits origin-relative attributes and durations, never
+   * wall clock.
+   */
   public getNowOriginOffset = () => this._clock.now();
 
   /**

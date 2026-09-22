@@ -827,8 +827,7 @@ describe('initSDK', () => {
         .to.be.a('number')
         .and.greaterThan(0)
         .and.lessThan(100);
-      // Both are milliseconds since time origin, so they're non-negative, and
-      // the SDK cannot be initialized before its code has loaded.
+      // initSDK cannot run before the SDK's module has evaluated.
       expect(sdkLoadOriginOffset).to.be.a('number').and.at.least(0);
       expect(sdkInitOriginOffset)
         .to.be.a('number')

@@ -128,9 +128,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   // cold start.
   private _coldStart = true;
   private _nextSessionPartCounts: Record<string, number> = {};
-  private _sdkInitDuration = 0;
-  private _sdkLoadOriginOffset = 0;
-  private _sdkInitOriginOffset = 0;
+  // Stays null if initSDK throws before recording, so the cold-start part
+  // omits the keys rather than reporting zeros that read as real offsets.
+  private _sdkStartupTimings: SDKStartupTimings | null = null;
   private readonly _sessionPartStartedListeners: Array<
     (event: SessionPartStartedEvent) => void
   > = [];
@@ -276,14 +276,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
   }
 
-  public recordSDKStartupTimings({
-    initDuration,
-    loadOriginOffset,
-    initOriginOffset,
-  }: SDKStartupTimings): void {
-    this._sdkInitDuration = Math.ceil(initDuration);
-    this._sdkLoadOriginOffset = loadOriginOffset;
-    this._sdkInitOriginOffset = initOriginOffset;
+  public recordSDKStartupTimings(timings: SDKStartupTimings): void {
+    this._sdkStartupTimings = timings;
   }
 
   public getUserSessionId(): string | null {
@@ -468,9 +462,13 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (this._coldStart) {
         endAttrs[KEY_EMB_PAGE_LOAD] =
           this._visibilityDoc.readyState === 'complete';
-        endAttrs[KEY_EMB_SDK_STARTUP_DURATION] = this._sdkInitDuration;
-        endAttrs[KEY_EMB_SDK_LOAD_ORIGIN_OFFSET] = this._sdkLoadOriginOffset;
-        endAttrs[KEY_EMB_SDK_INIT_ORIGIN_OFFSET] = this._sdkInitOriginOffset;
+        if (this._sdkStartupTimings) {
+          const { initDuration, loadOriginOffset, initOriginOffset } =
+            this._sdkStartupTimings;
+          endAttrs[KEY_EMB_SDK_STARTUP_DURATION] = Math.ceil(initDuration);
+          endAttrs[KEY_EMB_SDK_LOAD_ORIGIN_OFFSET] = loadOriginOffset;
+          endAttrs[KEY_EMB_SDK_INIT_ORIGIN_OFFSET] = initOriginOffset;
+        }
       }
       if (isFinalSessionPart) {
         endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;
