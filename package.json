@@ -95,15 +95,16 @@
   "devEngines": {
     "packageManager": {
       "name": "npm",
-      "version": ">=11.16",
+      "version": ">=11.16.0",
       "onFail": "error"
     },
     "runtime": {
       "name": "node",
-      "version": "^24 || ^26.3.0"
+      "version": "^26.3.0",
+      "onFail": "error"
     }
   },
   "allowScripts": {
-    "lefthook@2.1.8": true
+    "lefthook@2.1.14": true
   }
 }
