@@ -14,7 +14,7 @@
     "build": "tsdown",
     "dev": "tsdown --watch --no-clean",
     "check": "tsc",
-    "test": "node --test src/**/*.test.ts",
+    "test": "node --test \"src/**/*.test.ts\"",
     "validate": "node scripts/validate.ts",
     "licenses": "generate-license-file"
   },
