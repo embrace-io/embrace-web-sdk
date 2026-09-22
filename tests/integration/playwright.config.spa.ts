@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { FIREFOX_PROJECT, GRACEFUL_SHUTDOWN } from './constants/test.ts';
+import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
 export default defineConfig({
   timeout: 10 * 1000, // 10 seconds
@@ -26,7 +26,10 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    FIREFOX_PROJECT,
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
