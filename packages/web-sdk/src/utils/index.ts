@@ -30,7 +30,7 @@ export {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from './performanceObserver/index.ts';
-export { SDK_LOAD_ORIGIN_OFFSET_MILLIS } from './sdkLoadTime.ts';
+export { SDK_LOAD_ORIGIN_OFFSET } from './sdkLoadOriginOffset.ts';
 export {
   isNetworkSpan,
   isSessionPartSpan,

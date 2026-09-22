@@ -1610,9 +1610,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   describe('SDK startup timings', () => {
     it('should stamp them on the cold-start part only', () => {
       manager.recordSDKStartupTimings({
-        initDurationMillis: 12.4,
-        loadTimestamp: 1_700_000_000_000,
-        initTimestamp: 1_700_000_000_500,
+        initDuration: 12.4,
+        loadOriginOffset: 1_000,
+        initOriginOffset: 1_500,
       });
 
       manager.startSessionPartInternal({ reason: 'init' });
@@ -1624,13 +1624,13 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(finishedSpans).to.have.lengthOf(2);
       expect(finishedSpans[0].attributes).to.deep.include({
         'emb.sdk_startup_duration': 13,
-        'emb.sdk_load_timestamp': 1_700_000_000_000,
-        'emb.sdk_init_timestamp': 1_700_000_000_500,
+        'emb.sdk_load_origin_offset': 1_000,
+        'emb.sdk_init_origin_offset': 1_500,
       });
       for (const key of [
         'emb.sdk_startup_duration',
-        'emb.sdk_load_timestamp',
-        'emb.sdk_init_timestamp',
+        'emb.sdk_load_origin_offset',
+        'emb.sdk_init_origin_offset',
       ]) {
         expect(finishedSpans[1].attributes).to.not.have.property(key);
       }

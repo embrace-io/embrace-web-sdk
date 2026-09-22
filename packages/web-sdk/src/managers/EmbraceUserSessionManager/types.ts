@@ -204,9 +204,9 @@ export interface EmbraceUserSessionManagerArgs {
 
 export interface SDKStartupTimings {
   /** How long initSDK itself took, in milliseconds. */
-  initDurationMillis: number;
-  /** Epoch millisecond stamp for when the SDK's code first ran on the page. */
-  loadTimestamp: number;
-  /** Epoch millisecond stamp for when initSDK was entered. */
-  initTimestamp: number;
+  initDuration: number;
+  /** Milliseconds from time origin to the SDK's code first running on the page. */
+  loadOriginOffset: number;
+  /** Milliseconds from time origin to initSDK being entered. */
+  initOriginOffset: number;
 }

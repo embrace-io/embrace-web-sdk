@@ -60,7 +60,7 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  SDK_LOAD_ORIGIN_OFFSET_MILLIS,
+  SDK_LOAD_ORIGIN_OFFSET,
   updateZeroTimeMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
@@ -129,7 +129,7 @@ export const initSDK = (
     }
 
     const perf = new OTelPerformanceManager();
-    const initSDKStart = perf.getNowMillis();
+    const initOriginOffset = perf.getNowOriginOffset();
 
     window.addEventListener('pageshow', (event) =>
       updateZeroTimeMillis(perf.epochMillisFromOrigin(event.timeStamp)),
@@ -365,9 +365,9 @@ export const initSDK = (
     }
 
     userSessionManager.recordSDKStartupTimings({
-      initDurationMillis: perf.getNowMillis() - initSDKStart,
-      loadTimestamp: perf.epochMillisFromOrigin(SDK_LOAD_ORIGIN_OFFSET_MILLIS),
-      initTimestamp: initSDKStart,
+      initDuration: perf.getNowOriginOffset() - initOriginOffset,
+      loadOriginOffset: SDK_LOAD_ORIGIN_OFFSET,
+      initOriginOffset,
     });
 
     return sdkControl;

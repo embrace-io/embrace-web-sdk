@@ -28,6 +28,10 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   public getNowMillis = () => this.epochMillisFromOrigin(this._clock.now());
 
+  // For duration-shaped attributes measured from time origin (e.g. "how long
+  // after navigation did X happen"), not for anything presented as wall clock.
+  public getNowOriginOffset = () => this._clock.now();
+
   /**
    * To measure the way a user experienced a metric, we measure metrics relative to the time the user
    * started viewing the current page or view. On prerendered pages, this is activationStart. On bfcache
