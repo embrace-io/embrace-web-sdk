@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
+import { FIREFOX_PROJECT, GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
 // Adds OS Native trust certificates.
 // Required for next to download fonts from Google.
@@ -79,10 +79,7 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+    FIREFOX_PROJECT,
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
