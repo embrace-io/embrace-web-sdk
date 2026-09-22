@@ -6,7 +6,7 @@ export default defineConfig({
   // drives hundreds of requests at it, so running them at once distorts the results
   workers: 1,
   webServer: {
-    command: 'npx tsx api/server.ts',
+    command: 'node api/server.ts',
     url: 'http://localhost:3000/health-check',
   },
 });

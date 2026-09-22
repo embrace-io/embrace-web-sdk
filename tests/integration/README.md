@@ -28,6 +28,7 @@ Build tests verify the SDK can be built correctly for each platform and checks b
 - Webpack 5 (es2015)
 - Vite 6 (es2015)
 - Vite 7 (es2015)
+- Vite 8 (es2015)
 - Next.js 15 (Webpack, Turbopack) with Pages Router and App Router
 - Next.js 16 (Webpack, Turbopack) with Pages Router and App Router
 

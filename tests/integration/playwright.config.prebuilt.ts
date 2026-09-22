@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-import { GRACEFUL_SHUTDOWN } from './constants/test.ts';
+import { FIREFOX_PROJECT, GRACEFUL_SHUTDOWN } from './constants/test.ts';
 
 // Config for fast iteration: assumes all platforms are already built and servers are already running.
 // Use with the --serve / --test modes of scripts/test-integration-podman.sh.
@@ -78,10 +78,7 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+    FIREFOX_PROJECT,
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
