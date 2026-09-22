@@ -884,8 +884,8 @@ describe('initSDK', () => {
       const userSessionId = attrRecord['emb.user_session_id'];
       const userSessionStartTs = attrRecord['emb.user_session_start_ts'];
       const sdkStartupDuration = attrRecord['emb.sdk_startup_duration'];
-      const sdkLoadTimestamp = attrRecord['emb.sdk_load_timestamp'];
-      const sdkInitTimestamp = attrRecord['emb.sdk_init_timestamp'];
+      const sdkLoadOriginOffset = attrRecord['emb.sdk_load_origin_offset'];
+      const sdkInitOriginOffset = attrRecord['emb.sdk_init_origin_offset'];
       const browserUrlFull = attrRecord['browser.url.full'];
       const perfClockLag = attrRecord['emb.perf_clock_lag_ms'];
       const perfClockLagDelta = attrRecord['emb.perf_clock_lag_delta_ms'];
@@ -899,15 +899,13 @@ describe('initSDK', () => {
         .to.be.a('number')
         .and.greaterThan(0)
         .and.lessThan(100);
-      // Both are epoch millis, so they sit past timeOrigin rather than near
-      // zero, and the SDK cannot be initialized before its code has loaded.
-      expect(sdkLoadTimestamp)
+      // Both are milliseconds since time origin, so they're non-negative, and
+      // the SDK cannot be initialized before its code has loaded.
+      expect(sdkLoadOriginOffset).to.be.a('number').and.at.least(0);
+      expect(sdkInitOriginOffset)
         .to.be.a('number')
-        .and.greaterThan(performance.timeOrigin);
-      expect(sdkInitTimestamp)
-        .to.be.a('number')
-        .and.at.least(sdkLoadTimestamp as number)
-        .and.at.most(Date.now());
+        .and.at.least(sdkLoadOriginOffset as number)
+        .and.at.most(performance.now());
       expect(browserUrlFull).to.be.a('string').and.match(/^http/);
       expect(perfClockLag).to.be.a('number');
       expect(perfClockLagDelta).to.be.a('number');
@@ -932,8 +930,8 @@ describe('initSDK', () => {
         'emb.user_session_inactivity_timeout_seconds': 1800,
         'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
         'emb.sdk_startup_duration': sdkStartupDuration,
-        'emb.sdk_load_timestamp': sdkLoadTimestamp,
-        'emb.sdk_init_timestamp': sdkInitTimestamp,
+        'emb.sdk_load_origin_offset': sdkLoadOriginOffset,
+        'emb.sdk_init_origin_offset': sdkInitOriginOffset,
         'browser.url.full': browserUrlFull,
         'app.surface.id': appSurfaceId,
         'emb.perf_clock_lag_ms': perfClockLag,
