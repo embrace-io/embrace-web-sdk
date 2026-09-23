@@ -196,7 +196,7 @@ const runE2ETests = ({
       async ({
         page,
         requests,
-        waitForOTelRequest,
+        waitForLogRecordMatching,
         navigateAndWaitUntilReady,
         browserName,
       }) => {
@@ -204,11 +204,23 @@ const runE2ETests = ({
 
         const button = page.getByRole('button', { name: 'Send Log' });
         await button.click();
-        await waitForOTelRequest();
+        await waitForLogRecordMatching(
+          'the manual log',
+          (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
+        );
 
-        testE2E.expect(requests).toHaveLength(1);
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          const logRequest = requests.find((request) =>
+            logRecordsOf(request).some(
+              (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
+            ),
+          );
+
+          if (!logRequest) {
+            throw new Error('Log request was not sent to the API');
+          }
+
+          extendedMockApiTestExpect(logRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-send-log.json`,
           );
         }
