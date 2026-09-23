@@ -1,6 +1,5 @@
 export {
   addActivityListeners,
-  isTabEngaged,
   removeActivityListeners,
 } from './activity.ts';
 export {

@@ -1,3 +1,4 @@
+export { isTabEngaged } from './activity.ts';
 export { bulkAddEventListener } from './bulkAddEventListener/index.ts';
 export { bulkRemoveEventListener } from './bulkRemoveEventListener/index.ts';
 export { clampNumber } from './clampNumber.ts';
