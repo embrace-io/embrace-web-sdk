@@ -8,6 +8,27 @@ cd embrace-web-sdk
 npm install
 ```
 
+### Working behind a corporate proxy
+
+If your network blocks the public npm registry and Playwright CDN, point at
+internal mirrors with two environment variables. Set them in your shell's
+environment file (`~/.zshenv` for zsh, `~/.bash_profile` for bash) so
+non-interactive shells pick them up too:
+
+```sh
+export NPM_CONFIG_REGISTRY=<npm-registry-mirror>
+export PLAYWRIGHT_DOWNLOAD_HOST=<playwright-cdn-mirror>
+```
+
+Use environment variables rather than editing the tracked `.npmrc`, which is
+shared with everyone else and with CI.
+
+Open a new shell and verify with `npm view npm version`.
+
+The e2e scripts forward both variables into the integration test container
+automatically. The image is only rebuilt when missing, so after changing either
+value run `bash scripts/e2e-reset-deps.sh`.
+
 ## Development
 
 To start developing with automatic rebuilding and hot reloading:

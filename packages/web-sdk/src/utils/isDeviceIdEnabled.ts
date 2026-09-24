@@ -1,10 +1,9 @@
 const DIGITS = 6;
 
 /**
- * Determines whether a deviceId is enabled for the given pctEnabled. This is achieved
- * by taking a normalized hex value from the last 6 digits of the device ID, and comparing
- * it against the enabled percentage. This ensures that devices are consistently in a given
- * group for beta functionality.
+ * Determines whether a deviceId is enabled for the given pctEnabled. It maps the last 6 hex
+ * digits of the device ID to a value from 0 to 100 and compares it against the percentage,
+ * so a device is always in the same group for beta functionality.
  *
  * This can be used to:
  * - Select sample devices for telemetry collection

@@ -192,16 +192,15 @@ describe('measureDocument', () => {
   });
 
   /*
-    Real documents rather than stubbed getters. Every case below builds an actual
+    Real documents rather than stubbed getters. Every case below builds a
     document in an iframe and checks the measurement against what the browser
-    itself does, so engine differences surface here instead of in production.
+    does, so engine differences show up here instead of in production.
 
-    The load-bearing assertion is `scrollableHeight === maxScrollY`: the range we
-    report has to be the range the document can actually scroll through. That is
-    the property max-scroll-depth divides by. The fixtures deliberately include
-    the shapes where the wrong source element stops satisfying it, since a suite
-    built only from reset, in-flow content is one where every element happens to
-    agree.
+    The key assertion is `scrollableHeight === maxScrollY`: the range we report
+    has to be the range the document can scroll through, because max-scroll-depth
+    divides by it. The fixtures include the shapes where the wrong source element
+    breaks this. With only reset, in-flow content, every element gives the same
+    value.
   */
   describe('across document states', () => {
     const frames: HTMLIFrameElement[] = [];
