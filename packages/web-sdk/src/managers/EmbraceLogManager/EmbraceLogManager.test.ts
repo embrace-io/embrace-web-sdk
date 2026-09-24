@@ -682,6 +682,34 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  it('should truncate log messages longer than 4000 characters with the default limits', () => {
+    const defaultLimitManager = new EmbraceLimitManager({
+      diag,
+      ...DEFAULT_LIMITS,
+    });
+    const defaultLimitLogManager = new EmbraceLogManager({
+      perf,
+      userSessionManager,
+      limitManager: defaultLimitManager,
+      storage,
+      visibilityDoc: window.document,
+    });
+    userSessionManager.startSessionPartInternal({ reason: 'init' });
+
+    const maxLengthMessage = 'a'.repeat(4000);
+    for (const severity of ['info', 'warning', 'error'] as const) {
+      defaultLimitLogManager.message(maxLengthMessage, severity);
+      defaultLimitLogManager.message(`${maxLengthMessage}b`, severity);
+    }
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(6);
+    for (const finishedLog of finishedLogs) {
+      expect(finishedLog.body).to.equal(maxLengthMessage);
+    }
+    expect(diag.getWarnLogs()).to.have.lengthOf(3);
+  });
+
   it('should truncate the number of log attributes', () => {
     userSessionManager.startSessionPartInternal({ reason: 'init' });
 
