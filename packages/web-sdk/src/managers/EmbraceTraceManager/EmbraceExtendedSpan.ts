@@ -15,9 +15,8 @@ import type {
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.ts';
 
 /**
- * EmbraceSpan for the most part simply delegates to the underlying Span it receives on initialization so
- * that it satisfies the Span interface. In addition, it gives us a spot where we can implement helpers that are part
- * of the EmbraceSpan interface.
+ * Delegates most calls to the Span it receives in its constructor, so that it satisfies the Span interface.
+ * It also implements the helpers that are part of the EmbraceSpan interface.
  */
 export class EmbraceExtendedSpan implements ExtendedSpan {
   private readonly _span: ExtendedSpan;

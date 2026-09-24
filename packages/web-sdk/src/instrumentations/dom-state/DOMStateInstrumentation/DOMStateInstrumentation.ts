@@ -74,8 +74,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       start: () => {
         if (this._hasLoadEventFired()) {
           // A page that loaded unwatched gets its fold measured here; a load
-          // still to come belongs to the armed listener. A part starting inside
-          // the load dispatch also lands here, in either listener order.
+          // still to come belongs to the armed listener. A part that starts
+          // during the load dispatch is also handled here, in either listener
+          // order.
           this._captureFoldMeasurement();
         }
       },

@@ -1058,11 +1058,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should not write a continuation snapshot to storage during endUserSession', () => {
-      // Regression: termination used to flow through an inactivity-deadline
-      // write that races the state-clear and emits a stray storage event.
-      // The merged manager skips the deadline write when reason is
-      // 'user_session_ended', so termination produces only a clear followed
-      // by the new session's first write.
+      // An inactivity-deadline write during termination races the state clear
+      // and emits a stray storage event. The manager skips the deadline write
+      // when the reason is 'user_session_ended', so termination produces only
+      // a clear followed by the new user session's first write.
       const stateOps: Array<'set' | 'remove'> = [];
       const spyBacking = new InMemoryStorage();
       const originalSet = spyBacking.setItem.bind(spyBacking);

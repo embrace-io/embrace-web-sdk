@@ -1614,8 +1614,8 @@ describe('DocumentLoad Instrumentation', () => {
       completeLoadEvent();
 
       assert.strictEqual(documentLoadSpans().length, 1);
-      // Collected after completion, so the span carries the real loadEventEnd
-      // rather than the wall clock fallback an incomplete entry would give.
+      // Collected after completion, so the span ends at the real loadEventEnd
+      // rather than at the wall clock fallback an incomplete entry would give.
       assert.strictEqual(
         hrTimeToMilliseconds(documentLoadSpans()[0].endTime),
         perf.epochMillisFromOrigin(entries.loadEventEnd),

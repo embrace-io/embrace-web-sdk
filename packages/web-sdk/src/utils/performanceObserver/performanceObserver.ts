@@ -14,10 +14,9 @@ export function isEntryTypeSupported(type: string): boolean {
  * Each entry is passed individually to `processEntry`. Errors thrown by `processEntry` are caught
  * and logged via `diag` (if provided) so that one bad entry does not block the rest.
  *
- * Note: "buffered" defaults to true, so the observer will receive entries that were recorded
- * before the observer was created. Callers may override it.
- * buffered: true is not supported when observing multiple entry types, so if you need to observe
- * multiple types, you should create separate observers for each type with buffered: true.
+ * `buffered` defaults to true, so the observer also receives entries recorded before it was
+ * created. Callers may override it. `buffered: true` does not work when observing multiple entry
+ * types, so create one observer per type instead.
  * See https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver/observe#entrytypes
  */
 export function createPerformanceObserver<T extends PerformanceEntry>(

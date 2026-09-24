@@ -9,7 +9,6 @@
     const stack = new globalObj.Error().stack;
 
     if (stack) {
-      // Initialize the global map if it doesn't exist
       globalObj[globalKey] = globalObj[globalKey] || {};
 
       // Store a mapping of the stack trace to a placeholder (this is actually replaced in packages/web-cli/src/processSourceFiles.ts)
