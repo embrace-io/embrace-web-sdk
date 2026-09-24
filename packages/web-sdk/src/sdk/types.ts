@@ -109,8 +109,8 @@ type BaseSDKInitConfig = {
   appVersion?: string;
 
   /**
-   * defaultInstrumentationConfig can be used pass options to the default instrumentations by Embrace or turn certain
-   * ones off entirely. Note that only some default instrumentations support configuration in this manner.
+   * defaultInstrumentationConfig passes options to the default instrumentations by Embrace, or turns some of them off.
+   * Only some default instrumentations support configuration.
    *
    * **default**: undefined
    */

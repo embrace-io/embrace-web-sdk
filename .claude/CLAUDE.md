@@ -95,6 +95,8 @@ transport/      HTTP transport with retry logic
 
 - **TSDoc** on public APIs. **WHY-only** on internals (the code shows the what)
 - No performance trivia, and no bare "§X.Y" / "per section N" spec reference without a link (drop the marker if there is none)
+- Plain, literal prose in comments and docs: no "Note that" / "keep in mind" frames, no "This ensures" riders, no labels that restate the code ("Helper function"), and no metaphors ("travels", "lands", "sits") where a literal verb fits
+- Keep each comment to the shortest text that still holds every fact (constraint, edge case, reason, link)
 
 ## Testing
 
