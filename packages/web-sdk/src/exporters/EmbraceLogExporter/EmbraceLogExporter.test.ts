@@ -17,7 +17,7 @@ import type { EmbraceLogExporterArgs } from './types.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
-// NOTE: this tests just validates that the right headers and url are used. It works as a simple integration tests.
+// This test validates only that the right headers and url are used. It works as a simple integration test.
 // For detailed testing about the transport check the transport components and their unit tests
 describe('EmbraceLogExporter', () => {
   const mockAppID = 'testAppID';

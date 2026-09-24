@@ -23,7 +23,7 @@ The manager tracks two distinct things:
   the tab is both visible and focused.
 
 A user session contains one or more session parts, indexed within the user
-session by `emb.user_session_part_index`. Each session part also carries
+session by `emb.user_session_part_index`. Each session part also has
 `emb.session_part_number`, a monotonically increasing counter across all
 parts ever generated in this browser since the first visit. Each session
 part is bound to a user session at start time.
@@ -41,7 +41,7 @@ The `UserSessionManager` interface exposes the following methods.
 | `getUserSessionStartTime()` | Returns wall-clock milliseconds since Unix epoch, or `null`. |
 | `endUserSession()` | Ends the current user session. Subject to a 5 second cooldown. No-op if no user session is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason. |
 | `addBreadcrumb(name)` | Adds an `emb-breadcrumb` event to the active session-part span. Dropped if no part is active. |
-| `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry lives inside the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it begins. |
+| `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry is stored in the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it begins. |
 | `removeProperty(key)` | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute. |
 
 ### Deprecated forwarders
@@ -78,7 +78,7 @@ is stamped as `emb.sdk_startup_duration` on every session-part end span.
 ### Start
 
 A session part starts only when the tab is engaged at call time, meaning
-**both** of the following are true:
+both of the following are true:
 
 - `document.visibilityState === 'visible'`
 - `document.hasFocus()` returns `true`
@@ -194,9 +194,9 @@ silently no-ops if not (the next engagement event will create it).
 `userSessionForegroundInactivityTimeoutSeconds` are driven by remote config
 (`DynamicConfigManager.getConfig()`), read at each user-session creation. Each
 value is clamped to its own range; out-of-range values fall back to their
-default and emit a warning. In addition, each inactivity timeout must be `<=`
+default and emit a warning. Each inactivity timeout must also be `<=`
 `userSessionMaxDurationSeconds`; if remote config violates that, the offending
-timeout falls back to its **default**, not to the max-duration value.
+timeout falls back to its default, not to the max-duration value.
 `userSessionForegroundInactivityTimeoutSeconds` drives the live part timer.
 `userSessionInactivityTimeoutSeconds` drives the lazy post-part-end deadline.
 
@@ -226,7 +226,7 @@ session creation. A remote-config change does not affect a user session already
 in progress. It takes effect when the next user session is created. To keep the
 cached config current, the manager fires a remote-config refresh whenever it
 creates a new user session (except on cold start, where `initSDK` already
-refreshes at startup). That fetch is async, so its result lands in the cache for
+refreshes at startup). That fetch is async, so its result is stored in the cache for
 the following user session rather than the one being created.
 
 ### Failure handling
@@ -416,16 +416,16 @@ Why it happens:
 3. Until the next engagement event fires (`focus`/`visibilitychange`), no part
    is active. Logs that pass through `UserSessionLogRecordProcessor` in that
    window end up with `emb.session_part_id: ''`. Spans are not affected; only
-   the session-part span itself carries IDs, and other spans are correlated
+   the session-part span itself has IDs, and other spans are correlated
    server-side via the batched envelope.
 
 How to reproduce: open the demo in a non-focused tab (or under headless
 Playwright). The vite dev server stamps `Server-Timing` headers on every
 served file; `ServerTimingInstrumentation` turns each into an
 `emb-server-timing` log. The log batch flushed when the first user
-interaction finally promotes the tab to engaged carries `emb.user_session_id`
+interaction finally promotes the tab to engaged has `emb.user_session_id`
 but `emb.session_part_id=''`, while subsequent batches in the same
-collector flush carry a real part id.
+collector flush have a real part id.
 
 The wire contract still holds (key is always present; `''` means "no part
 active"), so this is not a serialization bug. Open question whether to

@@ -7,7 +7,7 @@ import {
 } from '@opentelemetry/sdk-logs';
 
 /**
- * setupTestLogExporter is a utility function that sets up a test log exporter for use in testing.
+ * Sets up an in-memory log exporter for tests.
  * It returns an instance of InMemoryLogRecordExporter, hooked into a SimpleLogRecordProcessor, and a LoggerProvider.
  * */
 export const setupTestLogExporter = (

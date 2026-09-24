@@ -88,8 +88,8 @@ type TestWithMockApi = {
   ) => Promise<void>;
 };
 
-// Instrumentation on this list will only compare that the same amount of spans
-// are created, but not their attributes, since there's no way of ordering them properly to match the previous results.
+// Instrumentation on this list only compares the number of spans created, and skips
+// their attributes, since there's no way to order them to match the previous results.
 const INSTRUMENTATION_WITH_SIMPLIFIED_COMPARISON = [
   'DocumentLoadInstrumentation',
 ];
@@ -105,7 +105,7 @@ const LOGS_WITH_IGNORED_BODY = new Set(['browser.web_vital.name']);
 // entries, making their presence in a session non-deterministic. The SDK's own
 // uploads are instrumented like any other fetch, so whether one has resolved by
 // the time the part flushes depends on how fast the test got there. The config
-// request is unanchored because its query string carries a per-run deviceId.
+// request is unanchored because its query string contains a per-run deviceId.
 const EXCLUDED_RESOURCE_URL_PATTERNS = [
   /favicon\.ico$/,
   /\/v2\/(logs|spans|config)/,
@@ -804,7 +804,7 @@ const expect = testWithMockApi.expect.extend({
     };
   },
   // A record's content is fixed the moment it is emitted, so it can be
-  // snapshotted where the request carrying it cannot.
+  // snapshotted where the request containing it cannot.
   toMatchGoldenLogRecord: (received: ILogRecord, fileName: string) => {
     if (!fs.existsSync(GOLDEN_DIR)) {
       fs.mkdirSync(GOLDEN_DIR, { recursive: true });

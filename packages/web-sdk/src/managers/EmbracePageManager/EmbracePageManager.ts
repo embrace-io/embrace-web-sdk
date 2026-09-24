@@ -118,7 +118,7 @@ export class EmbracePageManager implements PageManager {
     updateZeroTimeMillis(this._perf.epochMillisFromOrigin(event.timeStamp));
 
     // Order matters: rolling over first ends the outgoing route span (via the
-    // session-part-ended listener) while it's still open, so it's correctly
+    // session-part-ended listener) while it's still open, so it's
     // attributed to the outgoing part.
     this._userSessionManager?.rolloverSessionPartInternal({
       endReason: 'web_soft_navigation',

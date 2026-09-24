@@ -311,7 +311,7 @@ export const initSDK = (
       signalBuffer,
     });
 
-    // NOTE: we require setupInstrumentation to run the last, after setupLogs and setupTraces. This is how OTel works wrt
+    // We require setupInstrumentation to run last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
     // setup before we enable instrumentations.
     if (!registerGlobally) {

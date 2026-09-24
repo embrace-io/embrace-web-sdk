@@ -17,9 +17,9 @@ export const TEST_DYNAMIC_CONFIG_MANAGER: DynamicConfigManager = {
 };
 
 /**
- * Builds a DynamicConfigManager stub whose getConfig() returns the given
- * overrides. Lets tests drive remote-config-sourced values (e.g. user-session
- * durations) through the same channel production uses.
+ * Builds a DynamicConfigManager stub whose getConfig() returns fixed defaults
+ * merged with `config`. Lets tests drive remote-config-sourced values (e.g.
+ * user-session durations) through the same channel production uses.
  */
 export const createTestDynamicConfigManager = (
   config: Partial<DynamicSDKConfig> = {},

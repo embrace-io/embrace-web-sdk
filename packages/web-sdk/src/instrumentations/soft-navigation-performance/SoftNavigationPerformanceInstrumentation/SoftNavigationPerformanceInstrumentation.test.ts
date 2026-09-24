@@ -757,14 +757,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     // Navigation at t=0 (will be older than 60 s by the time the click arrives).
     triggerCurrentEntryChange();
 
-    // Navigation at t=100 (recent, should survive).
+    // Navigation at t=100 (exactly at the TTL when the click arrives).
     clock.tick(100);
     triggerCurrentEntryChange();
 
-    // Click arrives at t=60_100, so t=0 navigation is exactly 60_100 ms old (> 60_000)
-    // and t=100 navigation is 60_000 ms old (not > 60_000, so it stays).
-    // The click window covers [60_000, 60_200], which matches t=100... wait, 100 < 60_000.
-    // Use a click at startTime=60_100 with a very large duration to match t=100.
+    // Click arrives at t=60_100. The t=0 navigation is 60_100 ms old and the t=100
+    // navigation is 60_000 ms old, so both are at or past the 60_000 ms TTL.
     clock.tick(60_000); // t = 60_100
     triggerClickEntries([makeClickEntry({ startTime: 60_100, duration: 200 })]);
 

@@ -53,7 +53,7 @@ describe('MaxScrollDepthInstrumentation', () => {
     // in this standards-mode document, scrollingElement *is* that root.
     const scrollRoot = document.createElement('div');
     scrollRootValue = scrollRoot;
-    // Both the scroll root and the real root carry the same sizes, and so does
+    // Both the scroll root and the real root have the same sizes, and so does
     // the window, so dropping the scroll root changes which element each side is
     // read from without changing any value. What each source reports for a real
     // document is measureDocument's own concern, covered by its tests.
@@ -72,7 +72,7 @@ describe('MaxScrollDepthInstrumentation', () => {
         'scrollingElement',
         () => {
           // Armed by failNextMeasurement(); scrollingElement is the earliest
-          // measureDocument read this stub already owns, so it is the cheapest seam.
+          // measureDocument read this stub already replaces, so it is the cheapest seam.
           if (failNextMeasurementArmed) {
             failNextMeasurementArmed = false;
             throw new Error('injected measureDocument failure');
@@ -422,7 +422,7 @@ describe('MaxScrollDepthInstrumentation', () => {
   });
 
   it('reports the reachable bottom on overscroll past it', () => {
-    // The position sits past the true bottom (900) but within the document, so
+    // The position is past the true bottom (900) but within the document, so
     // the user did reach the bottom and the excess is overscroll, not staleness.
     scroll({ scrollY: 1000, viewportHeight: 100, documentHeight: 1000 });
 
@@ -432,7 +432,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     const logs = getMaxScrollDepthLogs();
     expect(logs).to.have.lengthOf(1);
-    // The reported pixels sit at the true bottom of the scrollable range, not at
+    // The reported pixels are at the true bottom of the scrollable range, not at
     // the overscrolled offset, so percent reaches 100 without being capped.
     expect(logs[0].attributes).to.deep.equal({
       'emb.type': 'emb.otel_log',
@@ -445,7 +445,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
   it('omits percent when the last reachable position is one pixel past the document', () => {
     // One pixel beyond the whole document is past anything overscroll can reach
-    // inside it, which is the boundary the test above sits on the other side of.
+    // inside it, which is the boundary the test above is on the other side of.
     scroll({ scrollY: 1001, viewportHeight: 100, documentHeight: 1000 });
 
     userSessionManager.endSessionPartInternal({

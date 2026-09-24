@@ -18,7 +18,7 @@ export const WEB_VITALS_ID_TO_LISTENER = {
    *  a single page load.
    *
    *  SPA Note: Since this is cumulative it could be misleading in a SPA, e.g. you might cross the threshold from
-   *  good -> bad on Page 3 but the largest contributor to your score might have actually occurred on Page 1
+   *  good -> bad on Page 3 but the largest contributor to your score might have occurred on Page 1
    */
   CLS: onCLS,
 

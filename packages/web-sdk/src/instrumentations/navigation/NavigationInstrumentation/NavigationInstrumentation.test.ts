@@ -338,8 +338,8 @@ describe('NavigationInstrumentation', () => {
     });
     pageManager.setCurrentRoute({ path: '/second', url: '/second' });
 
-    // Only the outgoing span is finished — no extra span opened and
-    // immediately closed for '/first' in between.
+    // Only the outgoing span is finished. No span for '/first' is opened
+    // and closed in between.
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].name).to.equal('/first');

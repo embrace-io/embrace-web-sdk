@@ -20,7 +20,7 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   // originOffset (entry.startTime, event.timeStamp, performance.now()) is always
   // "milliseconds since timeOrigin" by spec, a fixed relationship for the page's
-  // whole life, so converting to an epoch timestamp is just adding timeOrigin
+  // whole life, so converting to an epoch timestamp means adding timeOrigin
   // back in. getZeroTime() answers a different question (how long the user has
   // been looking at the current view) and has no bearing on this conversion.
   public epochMillisFromOrigin = (originOffset: number) =>
@@ -32,7 +32,7 @@ export class OTelPerformanceManager implements PerformanceManager {
    * To measure the way a user experienced a metric, we measure metrics relative to the time the user
    * started viewing the current page or view. On prerendered pages, this is activationStart. On bfcache
    * restores and soft navigations, this is the time of the restore or navigation. On all other pages
-   * this value will be zero.
+   * this value is timeOrigin.
    */
   public getZeroTime = (): number =>
     Math.max(
@@ -42,7 +42,7 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   // The entry object is live (the browser updates its fields in place), so
   // caching it never serves stale timings. A missing entry is not cached: it
-  // may simply not have been recorded yet.
+  // may not have been recorded yet.
   public getNavigationEntry = (): PerformanceNavigationTiming | null => {
     if (this.navigationEntry) {
       return this.navigationEntry;
@@ -64,7 +64,7 @@ export class OTelPerformanceManager implements PerformanceManager {
     return entry?.activationStart ?? 0;
   }
 
-  // originOffset is relative to timeOrigin, but zero time may sit later than
+  // originOffset is relative to timeOrigin, but zero time may be later than
   // timeOrigin (activation start, bfcache restore). Subtract that gap to rebase the
   // offset onto zero time; clamp to 0 for anything that predates zero time (e.g.
   // prerendering activity captured before activationStart).
