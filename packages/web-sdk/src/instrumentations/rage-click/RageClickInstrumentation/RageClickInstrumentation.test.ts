@@ -48,12 +48,14 @@ describe('RageClickInstrumentation', () => {
 
   it('does not emit any rage-click log when no clicks happen', () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
 
     expect(getRageClickLogs()).to.have.lengthOf(0);
   });
 
   it('emits a rage-click log after 3 clicks on the same target within the window', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'checkout-btn';
     testContainer.append(target);
@@ -81,6 +83,7 @@ describe('RageClickInstrumentation', () => {
 
   it('does not emit when fewer than 3 clicks occur in the window', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
 
@@ -94,6 +97,7 @@ describe('RageClickInstrumentation', () => {
 
   it('counts clicks within a radius of the first click, even on different targets', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const a = document.createElement('button');
     a.id = 'a';
     a.style.position = 'fixed';
@@ -146,6 +150,7 @@ describe('RageClickInstrumentation', () => {
 
   it('does not count clicks outside the radius and on a different target', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
 
     const a = document.createElement('button');
     a.id = 'a';
@@ -187,6 +192,7 @@ describe('RageClickInstrumentation', () => {
 
   it('marks interaction_type=tap when the first click is a touch PointerEvent', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('a');
     target.id = 'nav-home';
@@ -219,6 +225,7 @@ describe('RageClickInstrumentation', () => {
 
   it('does not emit any log for clicks after disable()', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'a';
     testContainer.append(target);
@@ -235,6 +242,7 @@ describe('RageClickInstrumentation', () => {
 
   it('emits the in-progress window if disable() is called in the middle of a rage click', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
 
     const target = document.createElement('button');
     target.id = 'a';
@@ -260,6 +268,7 @@ describe('RageClickInstrumentation', () => {
 
   it('ignores click events whose target is not an Element', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
 
     for (let i = 0; i < 3; i++) {
       const evt = new MouseEvent('click', { bubbles: true });
@@ -274,6 +283,7 @@ describe('RageClickInstrumentation', () => {
 
   it('logs an error if processing a click throws', () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
 
@@ -302,6 +312,7 @@ describe('RageClickInstrumentation', () => {
       diag,
       perf: throwingPerf,
     });
+    instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
 
@@ -316,6 +327,7 @@ describe('RageClickInstrumentation', () => {
 
   it('emits one log per window across consecutive windows', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'a';
     testContainer.append(target);

@@ -66,6 +66,7 @@ describe('GlobalExceptionInstrumentation', () => {
     instrumentation = new GlobalExceptionInstrumentation({
       perf,
     });
+    instrumentation.enable();
     // The runner will fail our tests if it detects an unhandled error / rejection, temporarily ignore the ones we're
     // artificially triggering from this suite
     existingRejectionHandler = window.onunhandledrejection;
