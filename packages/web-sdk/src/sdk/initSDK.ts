@@ -151,12 +151,6 @@ export const initSDK = (
       );
     }
 
-    if (sendingToEmbrace && typeof CompressionStream === 'undefined') {
-      throw new Error(
-        'CompressionStream is not supported in this browser and required for data compression.',
-      );
-    }
-
     const namespace = appID ?? undefined;
     const sdkLocalStorage = new NamespacedStorage({
       namespace,
