@@ -27,7 +27,7 @@ export type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
  * PerformanceTimingNames only covers navigation timing marks, so transferSize,
  * initiatorType, responseStatus, deliveryType, renderBlockingStatus, type and
  * notRestoredReasons - all present on the underlying PerformanceNavigationTiming
- * entry - are read separately below. This lets the document fetch span carry
+ * entry - are read separately below. This lets the document fetch span have
  * the same attributes as resource fetch spans, plus the navigation-specific
  * ones no resource entry ever has.
  */

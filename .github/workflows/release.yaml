@@ -17,7 +17,7 @@ jobs:
       - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7.7.0
         id: release_drafter
         with:
-          # dry run, we just want to identify the next version, not publish it yet
+          # dry run: identify the next version without publishing it yet
           dry-release: true
           disable-autolabeler: true
         env:

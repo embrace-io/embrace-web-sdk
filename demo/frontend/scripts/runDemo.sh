@@ -36,7 +36,7 @@ if [ -f .env ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-# process the bundle to replace the bundle id. NOTE: we don't upload source maps on each run, to avoid spamming s3, so symbolication won't work
+# process the bundle to replace the bundle id. We don't upload source maps on each run, to avoid spamming s3, so symbolication won't work
 # If you need to upload source maps for testing, remove the "--no-upload" flag
 if [ -n "$VITE_APP_ID" ]; then
     npm run upload-sourcemaps -- -a $VITE_APP_ID -p ./dist/assets --no-upload

@@ -11,7 +11,7 @@
     if (stack) {
       globalObj[globalKey] = globalObj[globalKey] || {};
 
-      // Store a mapping of the stack trace to a placeholder (this is actually replaced in packages/web-cli/src/processSourceFiles.ts)
+      // Store a mapping of the stack trace to a placeholder (replaced in packages/web-cli/src/processSourceFiles.ts)
       globalObj[globalKey][stack] =
         // biome-ignore lint/suspicious/noTemplateCurlyInString: template string is replaced during build process
         '${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}';

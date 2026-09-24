@@ -7,7 +7,7 @@ import {
 } from '@opentelemetry/sdk-trace';
 
 /**
- * setupTestTraceExporter is a utility function that sets up a test trace exporter for use in testing.
+ * Sets up an in-memory trace exporter for tests.
  * It returns an instance of InMemorySpanExporter, hooked into a SimpleSpanProcessor, and a TracerProvider.
  * */
 export const setupTestTraceExporter = (

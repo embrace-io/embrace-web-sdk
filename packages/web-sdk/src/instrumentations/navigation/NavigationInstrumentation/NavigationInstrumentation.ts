@@ -59,7 +59,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     if (this._currentRouteSpan && this._currentRouteSpanUrl === route.url) {
       // Same url as the currently open span: either the templated path just
       // resolved (rename in place), or a redundant re-render — no-op if the
-      // path hasn't actually changed.
+      // path hasn't changed.
       if (this._currentRouteSpanPath !== route.path) {
         this._renameCurrentRouteSpan(route.path);
       }

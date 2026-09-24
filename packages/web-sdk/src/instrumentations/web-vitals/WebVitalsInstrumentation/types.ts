@@ -27,7 +27,7 @@ export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
    * When true, sets the log record body to the JSON-stringified
    * `web-vitals` attribution object for the metric.
    *
-   * Note: `applyCustomLogRecordData` runs after the body is set.
+   * `applyCustomLogRecordData` runs after the body is set.
    * If the hook assigns a new `body`, it will overwrite the attribution data.
    */
   includeRawAttribution?: boolean;

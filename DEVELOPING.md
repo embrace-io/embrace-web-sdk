@@ -184,9 +184,9 @@ To release a new version of the SDK:
    the draft and publish it, this will trigger a publish of the updated SDK
    packages to NPM.
 
-Note: the level of the version bump (major, minor, patch) is determined by the
-type of changes made to the SDK since the last release. You can see the
-requirements for each type of bump in our
+The level of the version bump (major, minor, patch) is determined by the type
+of changes made to the SDK since the last release. You can see the requirements
+for each type of bump in our
 [release-drafter config -> autolabeler](./.github/release-drafter.yml)
 
 The release version will be generated based on the content of the pull requests
@@ -204,8 +204,8 @@ npm unpublish @embrace-io/<package-name>@<version>
 
 Or through their UI, see [Unpublishing a single version of a package](https://docs.npmjs.com/unpublishing-packages-from-the-registry#unpublishing-a-single-version-of-a-package)
 
-NOTE: We should only take this option in cases where there are security concerns since we want to consider release
-artifacts as immutable.
+We should only take this option in cases where there are security concerns since we want to consider release artifacts
+as immutable.
 
 ### Deprecating
 

@@ -11,7 +11,7 @@ class MapSecurityError extends Error {
   }
 }
 
-// The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET lives in packages/web-cli/snippet/fileBundleIDsSnippet.js
+// The un-minified version of FILE_BUNDLE_IDS_CODE_SNIPPET is in packages/web-cli/snippet/fileBundleIDsSnippet.js
 // To regenerate the minified version, run: npx terser ./packages/web-cli/snippet/fileBundleIDsSnippet.js -c -m
 export const FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE = 'EmbIOFileBundleID';
 export const FILE_BUNDLE_IDS_CODE_SNIPPET = `;(E=>{try{const _=globalThis,c=(new _.Error).stack;c&&(_[E]=_[E]||{},_[E][c]="${FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE}")}catch(E){}})("_EmbraceFileBundleIDs");`;
@@ -178,7 +178,7 @@ export const findJSFilesRecursively = (
       if (err instanceof MapSecurityError) {
         throw err;
       }
-      // For other errors, just warn and continue
+      // For other errors, warn and continue
       console.warn(`Error reading ${jsFileName}:`, err);
     }
   }

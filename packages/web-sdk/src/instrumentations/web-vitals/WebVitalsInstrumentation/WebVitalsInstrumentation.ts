@@ -355,7 +355,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onDisable(): void {
-    // web-vitals library doesn't support removing listeners, so we just pause emission
+    // web-vitals library doesn't support removing listeners, so we pause emission
     // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
@@ -466,7 +466,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       return this.perf.getZeroTime();
     }
 
-    // For other metrics, use the startTime of the last entry. Note: in practice, web-vitals does
+    // For other metrics, use the startTime of the last entry. In practice, web-vitals does
     // not emit multiple entries for metrics other than CLS. However to future-proof this code,
     // we are assuming that the last entry is the most relevant one.
     const metricStartTime =
@@ -486,7 +486,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     // currently active part: web-vitals can defer a metric's report well
     // past when its underlying entry occurred (e.g. INP/CLS finalize on
     // visibilitychange), by which point the part active at report time may
-    // not be the one the entry actually happened in.
+    // not be the one the entry happened in.
     const metricTimeMillis = this._getTimeForMetric(metric);
     const sessionPartId =
       this.userSessionManager.getSessionPartIdAt(metricTimeMillis);

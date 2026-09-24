@@ -25,7 +25,7 @@ const { expect } = chai;
 // Oracle for element count + average depth: recursive where production uses an
 // iterative stack, and rooted at document.documentElement literally rather than
 // through production's root selection, so drift in either the math or the root
-// surfaces as a mismatch. The root sits at depth 1.
+// shows up as a mismatch. The root is at depth 1.
 const measureExpected = (): { count: number; averageDepth: number } => {
   let count = 0;
   let totalDepth = 0;
@@ -143,7 +143,7 @@ describe('DOMStateInstrumentation', () => {
   };
 
   // Nothing is emitted until a part ends: each part end sends one log, and the
-  // first one after the fold capture carries the images_above_fold keys.
+  // first one after the fold capture has the images_above_fold keys.
   const endSessionPart = (): void => {
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
@@ -235,7 +235,7 @@ describe('DOMStateInstrumentation', () => {
     expect(timestampMillis).to.be.a('number');
     expect(timestampMillis).to.be.lessThan(beforePartEnd);
     // No bfcache restore or soft navigation happens in this test, so zero time
-    // sits at time origin: the two attributes describe the same instant, one
+    // is at time origin: the two attributes describe the same instant, one
     // as wall clock and one as ms since zero time, so they agree once rebased.
     expect(captureMillis).to.equal(timestampMillis - performance.timeOrigin);
 
@@ -422,7 +422,7 @@ describe('DOMStateInstrumentation', () => {
     createInstrumentation();
     endSessionPart();
 
-    // A zero-sized fold would have counted 0 of 1 images, which reads as a real
+    // A zero-sized fold would have counted 0 of 1 images, which looks like a real
     // measurement, so no fold key goes out at all.
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
@@ -450,7 +450,7 @@ describe('DOMStateInstrumentation', () => {
   });
 
   it('measures the fold from the top of the document, not the restored scroll offset', () => {
-    // A reload restores the scroll position, so images above the fold can sit
+    // A reload restores the scroll position, so images above the fold can be
     // above the current viewport by then.
     stubGeometry({
       documentHeight: 5000,
@@ -628,7 +628,7 @@ describe('DOMStateInstrumentation', () => {
 
   it('omits the tree shape when the element count exceeds the traversal ceiling', () => {
     // The walk runs synchronously on the pagehide path, so a pathological tree
-    // forfeits its tree keys rather than spend the unload budget.
+    // drops its tree keys rather than spend the unload budget.
     const container = document.createElement('div');
     container.innerHTML = '<i></i>'.repeat(DOM_STATE_MAX_TRAVERSED_ELEMENTS);
     document.body.appendChild(container);
@@ -655,7 +655,7 @@ describe('DOMStateInstrumentation', () => {
 
   it('reports the tree shape when the element count sits exactly at the ceiling', () => {
     // Pins the ceiling as an inclusive max: only genuinely larger trees
-    // forfeit their keys.
+    // drop their keys.
     const container = document.createElement('div');
     document.body.appendChild(container);
     restorers.push(() => {
@@ -680,8 +680,8 @@ describe('DOMStateInstrumentation', () => {
   });
 
   it('omits the tree shape when a deep chain alone exceeds the ceiling', () => {
-    // The wide tree trips the bail on the about-to-queue term; a chain has one
-    // child per node, so only the visited count can trip the ceiling here.
+    // The wide tree trips the early return on the about-to-queue term. A chain has
+    // one child per node, so only the visited count can trip the ceiling here.
     const container = document.createElement('div');
     // Hidden so the document measurement's forced layout never has to build a
     // 50k-deep layout tree; the walk itself only reads children.
@@ -724,7 +724,7 @@ describe('DOMStateInstrumentation', () => {
     const beforeTotalDepth =
       (before['dom_state.average_depth'] as number) * beforeCount;
 
-    // <body> sits at depth 2, so a chain of N hung off it occupies depths 3
+    // <body> is at depth 2, so a chain of N hung off it occupies depths 3
     // through N + 2: a contribution of N * (N + 5) / 2 computed by hand, so it
     // cannot share a semantic drift with the recursive oracle.
     const chainLength = 4;
@@ -757,7 +757,7 @@ describe('DOMStateInstrumentation', () => {
   it('still emits the part-end log when the document root is gone', () => {
     // document.documentElement is typed non-nullable but is null once the root
     // element is removed, taking the scroll root with it. The part still ends,
-    // so the log goes out carrying only what remains measurable.
+    // so the log goes out with only what remains measurable.
     createInstrumentation();
     stubProp(document, 'documentElement', () => null);
     stubProp(document, 'scrollingElement', () => null);
@@ -919,7 +919,7 @@ describe('DOMStateInstrumentation', () => {
     const logs = getDomStateLogs();
     expect(logs).to.have.lengthOf(1);
     // The part-start viewport, proving nothing was measured while the page
-    // sat unengaged.
+    // was unengaged.
     expect(logs[0].attributes).to.have.property(
       'dom_state.images_above_fold.viewport_height',
       900,
