@@ -23,6 +23,26 @@ PODMAN_BASE_FLAGS=(
   -e HOME=/root
 )
 
+# Forward the host's package mirror configuration into the container so the
+# image builds on networks that block the public npm registry and Playwright
+# CDN. A variable that is unset on the host contributes nothing: no --build-arg,
+# no ARG line, so the Dockerfile and its build cache are byte-identical to what
+# an unrestricted network produces. See "Working behind a corporate proxy" in
+# DEVELOPING.md.
+PROXY_BUILD_ARGS=()
+PROXY_DOCKERFILE_ARGS=""
+add_proxy_var() {
+  local name="$1" value="$2"
+  [[ -n "${value}" ]] || return 0
+  PROXY_BUILD_ARGS+=(--build-arg "${name}=${value}")
+  PODMAN_BASE_FLAGS+=(-e "${name}=${value}")
+  # A bare ARG makes the --build-arg value an environment variable for every
+  # following RUN, without baking it into the built image.
+  PROXY_DOCKERFILE_ARGS+="ARG ${name}"$'\n'
+}
+add_proxy_var NPM_CONFIG_REGISTRY "${NPM_CONFIG_REGISTRY:-}"
+add_proxy_var PLAYWRIGHT_DOWNLOAD_HOST "${PLAYWRIGHT_DOWNLOAD_HOST:-}"
+
 build_integration_image() {
   if podman image exists "${IMAGE_TAG}" 2>/dev/null; then
     echo "Image '${IMAGE_TAG}' already exists (use e2e-reset-deps.sh to force rebuild)"
@@ -36,10 +56,11 @@ build_integration_image() {
     -exec rm -rf {} + 2>/dev/null || true
   echo "Building integration image (${IMAGE_TAG})..."
   if ! podman build --platform "${PLATFORM}" \
+    ${PROXY_BUILD_ARGS[@]+"${PROXY_BUILD_ARGS[@]}"} \
     -t "${IMAGE_TAG}" \
     -f - "${WORKSPACE}" <<DOCKERFILE
 FROM ${PLAYWRIGHT_IMAGE}
-WORKDIR /workspace
+${PROXY_DOCKERFILE_ARGS}WORKDIR /workspace
 COPY . .
 RUN mkdir -p /root/.cache && ln -sf /ms-playwright /root/.cache/ms-playwright
 RUN npm i -g npm@11 && npm ci
