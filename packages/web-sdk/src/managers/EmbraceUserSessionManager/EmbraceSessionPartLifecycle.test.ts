@@ -47,7 +47,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    // Clear storage before constructing the manager: the constructor now
+    // Clear storage before constructing the manager: the constructor
     // reads the permanent-properties blob, so leftover state from a
     // previous test would otherwise leak into _permanentProperties.
     inMemoryStorage.clear();
@@ -174,7 +174,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
     // The end stamp is captured upfront even without an anchor; the
-    // start-side assertion is the one the shared boundary timestamp owns.
+    // start-side assertion is the one that checks the shared boundary
+    // timestamp.
     expect(hrTimeToMilliseconds(finishedSpans[0].endTime)).to.equal(
       boundaryTimestamp,
     );
@@ -241,7 +242,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should queue properties added before any part is active and apply them to the next part', () => {
     // Properties are user-session-scoped, not part-scoped. addProperty
     // eager-initializes user-session state if none exists yet, so a write
-    // made before the first part lands in the state row and gets stamped
+    // made before the first part is stored in the state row and gets stamped
     // on the part span when it starts.
     manager.addProperty('queued-property', 'queued-value');
     manager.startSessionPartInternal({ reason: 'init' });
@@ -616,7 +617,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.addProperty(propertyKey, value);
 
     // Not a top-level entry: that path is reserved for permanent properties,
-    // and even there the value lives inside a blob, never as its own key.
+    // and even there the value is stored inside a blob, never as its own key.
     void expect(inMemoryStorage.getItem(`emb.properties.${propertyKey}`)).to.be
       .null;
 
@@ -765,7 +766,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should carry both permanent and non-permanent properties across part transitions within the same user session', () => {
     // Non-permanent properties survive part end and apply to the next part:
     // they are persisted inside the user-session state blob alongside the
-    // rest of the user-session state, while permanent properties live in
+    // rest of the user-session state, while permanent properties are stored in
     // the permanent-properties blob. Without a user-session boundary,
     // ending the part is a part transition only, so both kinds carry over.
     const sessionOnlyPropertyKey = 'session-only-key';
@@ -1136,7 +1137,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // is no-op because startSessionPartInternal refuses to begin a part
       // while the tab is hidden / unfocused. The next engagement event
       // (handled by the manager's browser-activity listeners in production) is
-      // what actually starts the new part.
+      // what starts the new part.
       const visibilityState: {
         current: 'visible' | 'hidden';
         focused: boolean;
@@ -1261,7 +1262,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       void expect(firstUserSessionId).to.not.be.null;
 
       // Triggers endUserSession -> rollover -> a fresh user session and a
-      // brand new part span. The new part span must carry the previous user
+      // brand new part span. The new part span must have the previous user
       // session's id on emb.user_session_previous_id.
       localManager.endUserSession();
       localManager.endSessionPartInternal({ reason: 'background' });

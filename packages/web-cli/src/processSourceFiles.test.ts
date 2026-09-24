@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { minify } from 'terser';
 
-// Import the function we're testing
 import {
   FILE_BUNDLE_ID_CODE_SNIPPET_TEMPLATE,
   FILE_BUNDLE_IDS_CODE_SNIPPET,

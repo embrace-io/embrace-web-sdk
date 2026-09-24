@@ -25,8 +25,8 @@ PODMAN_BASE_FLAGS=(
 
 # Forward the host's package mirror configuration into the container so the
 # image builds on networks that block the public npm registry and Playwright
-# CDN. A variable that is unset on the host contributes nothing: no --build-arg,
-# no ARG line, so the Dockerfile and its build cache are byte-identical to what
+# CDN. A variable that is unset on the host adds no --build-arg and no ARG
+# line, so the Dockerfile and its build cache are byte-identical to what
 # an unrestricted network produces. See "Working behind a corporate proxy" in
 # DEVELOPING.md.
 PROXY_BUILD_ARGS=()

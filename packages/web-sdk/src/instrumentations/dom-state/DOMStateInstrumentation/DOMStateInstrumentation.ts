@@ -238,8 +238,8 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   }
 
   // Iterative depth-first traversal that computes element count and summed depth
-  // in one pass. The root passed in sits at depth 1. Runs synchronously on the
-  // pagehide path, so it bails at the ceiling rather than spend the unload
+  // in one pass. The root passed in is at depth 1. Runs synchronously on the
+  // pagehide path, so it returns early at the ceiling rather than spend the unload
   // budget on a pathological tree.
   private _traverse(
     root: Element,
@@ -257,7 +257,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       totalDepth += entry.depth;
       const { children } = entry.element;
       // Popped, queued and about-to-queue are disjoint, so their sum lower-bounds the
-      // tree size; checking before the push bounds the bail cost even on wide trees.
+      // tree size; checking before the push bounds the early-return cost even on wide trees.
       if (
         elementCount + stack.length + children.length >
         DOM_STATE_MAX_TRAVERSED_ELEMENTS

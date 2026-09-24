@@ -287,7 +287,7 @@ describe('EmbracePageManager', () => {
 
       navigation.fire('http://current.example.com/products/123');
 
-      // Unaffected by the same-url replacement — no re-set, no rollover.
+      // The same-url replacement keeps the route and does not roll over.
       expect(manager.getCurrentRoute()).to.equal(routeAtConstruction);
       void expect(rolloverStub.notCalled).to.be.true;
     });

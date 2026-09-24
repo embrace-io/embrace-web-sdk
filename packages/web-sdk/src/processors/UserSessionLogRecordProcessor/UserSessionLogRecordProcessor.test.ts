@@ -207,7 +207,7 @@ describe('UserSessionLogRecordProcessor', () => {
     expect(logRecord.attributes['session.previous_id']).to.equal(
       'CUSTOMER_PREVIOUS_SESSION',
     );
-    // The Embrace ids travel alongside, on their own keys.
+    // The Embrace ids are also set, on their own keys.
     expect(logRecord.attributes['emb.user_session_id']).to.equal(
       'USER_SESSION_ABC',
     );

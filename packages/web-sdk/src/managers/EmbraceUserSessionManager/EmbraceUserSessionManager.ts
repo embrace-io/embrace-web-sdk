@@ -578,7 +578,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    // Ensure a state row exists so the write has somewhere to land;
+    // Ensure a state row exists to hold the write.
     // addProperty can fire before any part has started.
     const { state } = this._loadOrCreateUserSessionState(
       this._perf.getNowMillis(),
@@ -712,7 +712,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         this._diag,
       );
       // Refresh remote config for the next user session. The fetch is async,
-      // so it lands in the cache after this session's durations are frozen
+      // so it is written to the cache after this session's durations are frozen
       // below; this session uses the currently cached config. Skipped on cold
       // start, where initSDK already refreshes at startup.
       if (!this._coldStart) {

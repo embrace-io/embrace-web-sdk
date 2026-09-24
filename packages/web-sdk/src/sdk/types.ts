@@ -249,8 +249,8 @@ type BaseSDKInitConfig = {
 
   /**
    * restrictedProtocols defines a set of protocols where the SDK should not operate. In `initSDK` if the current
-   * `window.location` is on one of these protocols the SDK will stop initialization. Note that when adding protocols
-   * the final ":" should be included as per https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
+   * `window.location` is on one of these protocols the SDK will stop initialization. When adding protocols, include
+   * the final ":" as per https://developer.mozilla.org/en-US/docs/Web/API/URL/protocol
    *
    * **default**: new Set(['file:'])
    */
@@ -434,7 +434,7 @@ export interface DefaultInstrumentationConfig {
   navigation?: NavigationInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and
-  // '@opentelemetry/instrumentation-xml-http-request' to just be specified once
+  // '@opentelemetry/instrumentation-xml-http-request' to be specified once
   network?: NetworkInstrumentationArgs;
 
   /*

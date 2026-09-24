@@ -35,7 +35,7 @@ export const resultsToMarkdownTable = (
   const headerRow = `| ${headers.map((header) => (header === 'Section' ? '' : header)).join(' | ')} |\n`;
   const separatorRow = `| ${headers.map(() => '---').join(' | ')} |\n`;
 
-  // Make sure empty rows are handled correctly
+  // Missing values become empty cells
   const bodyRows = rows
     .map(
       (row) =>

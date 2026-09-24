@@ -2997,7 +2997,7 @@ describe('WebVitalsInstrumentation', () => {
     it('should not attach page attributes when route is not set', () => {
       // EmbracePageManager always has a current route (it sets the initial
       // route from the current location on construction), so this is a
-      // manual stub instead — the one case that actually exercises "no
+      // manual stub instead — the one case that exercises "no
       // route info available" (NoOpPageManager.getCurrentPageId() returns
       // '', not null).
       const pageManager = {

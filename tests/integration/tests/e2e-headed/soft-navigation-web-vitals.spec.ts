@@ -132,7 +132,7 @@ test.describe('Web Vitals measurement in soft navigations', () => {
     const metricValue = (record: ILogRecord | undefined) =>
       Number(attributeValue(record as ILogRecord, 'browser.web_vital.value'));
 
-    // Note this is de-duplicated because CLS can emit several
+    // This is de-duplicated because CLS can emit several
     // records for one navigation as its value grows.
     const metricNames = (url: string) =>
       [

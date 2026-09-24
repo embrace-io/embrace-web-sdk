@@ -338,7 +338,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Helper function for starting a span
+   * Starts a span at the time of the performance entry named `performanceName`.
+   * Returns undefined when that entry has no numeric time.
    * @param spanName name of span
    * @param performanceName name of performance entry for time start
    * @param entries
