@@ -4018,5 +4018,46 @@ describe('WebVitalsInstrumentation', () => {
       expect(records).to.have.lengthOf(1);
       expect(records[0].attributes['emb.session_part_id']).to.equal(partId);
     });
+
+    it('should use the first available part id if a metric was measured before the SDK started', () => {
+      // Simulate the page running for 2s before SDK start
+      clock.tick(2000);
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      const partAId = userSessionManager.getSessionPartId();
+      expect(partAId).to.not.be.null;
+
+      // Simulate the tab being hidden...
+      clock.tick(1000);
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      void expect(userSessionManager.getSessionPartId()).to.be.null;
+
+      // ...and then web-vitals emitting right after
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.setUserSessionManager(userSessionManager);
+
+      const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+
+      // Simulate the shift happening at time 0, before the first part started at 2000.
+      emitFunc({
+        name: 'CLS',
+        value: 0.1,
+        rating: 'good',
+        delta: 0.1,
+        id: 'm1',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: { largestShiftTime: 0 },
+      } as MetricWithAttribution);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes['emb.session_part_id']).to.equal(partAId);
+    });
   });
 });

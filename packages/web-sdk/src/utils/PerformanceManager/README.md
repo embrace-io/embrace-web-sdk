@@ -96,8 +96,7 @@ Each method, applied to this scenario:
 | `millisFromZeroTimeEpoch(getNowMillis())` | `1,700,000,061,500 - 1,700,000,060,000 = 1,500` | an attribute capturing "how far into the view is it right now" from an already-epoch reading |
 
 The resulting span: start `12:01:00`, end `12:01:01`, duration **1s**, with a
-`render_time` attribute of **1,000ms** — all four numbers telling the same
-story.
+`render_time` attribute of **1,000ms** — all four numbers agree.
 
 The three ways to get this wrong, with the same inputs:
 
@@ -228,7 +227,7 @@ One log per web-vital report.
 `metric.value` for time-based vitals is "time since navigation start" as
 computed by the upstream `web-vitals` library, which has its own bfcache
 handling (each restore counts as a fresh page visit) independent of the SDK's
-zero time. Note that standard vitals (LCP, FCP, TTFB) do not re-report on a
+zero time. Standard vitals (LCP, FCP, TTFB) do not re-report on a
 *soft* navigation at all — only CLS (cumulative) and INP (per-interaction)
 keep reporting through a soft-navigated visit. That is an upstream library
 boundary, not something the SDK's zero time influences.

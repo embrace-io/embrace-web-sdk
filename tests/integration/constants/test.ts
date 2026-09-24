@@ -1,3 +1,8 @@
+import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { devices } from '@playwright/test';
+
 const EMBRACE_API_REGEX =
   /^https:\/\/[a-z]-[a-z0-9]{5}\.data\.emb-api\.com\/v2\/(spans|logs)$/;
 const BASE_URL = 'http://localhost:3000';
@@ -12,4 +17,20 @@ const GRACEFUL_SHUTDOWN = {
   timeout: 3000,
 } as const;
 
-export { BASE_URL, EMBRACE_API_REGEX, GRACEFUL_SHUTDOWN };
+// macOS 27 TCC-protects ~/Library/Application Support/Firefox, which the bundled
+// Firefox reads even with -profile, so point its home elsewhere.
+// https://github.com/microsoft/playwright/issues/42768
+const FIREFOX_USER_HOME = join(tmpdir(), 'playwright-firefox-home');
+mkdirSync(FIREFOX_USER_HOME, { recursive: true });
+
+const FIREFOX_PROJECT = {
+  name: 'firefox',
+  use: {
+    ...devices['Desktop Firefox'],
+    launchOptions: {
+      env: { ...process.env, CFFIXED_USER_HOME: FIREFOX_USER_HOME },
+    },
+  },
+};
+
+export { BASE_URL, EMBRACE_API_REGEX, FIREFOX_PROJECT, GRACEFUL_SHUTDOWN };

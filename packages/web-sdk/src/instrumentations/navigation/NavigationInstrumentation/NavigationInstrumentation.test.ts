@@ -160,8 +160,8 @@ describe('NavigationInstrumentation', () => {
 
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
-    // Exactly one span for /products/123, correctly renamed — no spurious
-    // extra span from the raw-pathname-to-template transition.
+    // One span for /products/123, renamed to the route template. The
+    // raw-pathname-to-template change does not open a second span.
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].name).to.equal('/products/:id');

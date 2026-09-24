@@ -282,7 +282,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
   }
 
   /**
-   * Helper function for ending a span
+   * Ends the span at the time of the performance entry named `performanceName`.
    * @param span
    * @param performanceName name of performance entry for end time
    * @param entries

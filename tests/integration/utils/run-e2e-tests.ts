@@ -66,17 +66,24 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
 
       await page.goto(url);
 
-      // Set a 5 seconds timeout for the page to load
-      const timeout = setTimeout(() => {
-        throw new Error('Page did not load within 5 seconds');
-      }, 5000);
+      // Throwing from the timer would surface as an uncaught exception while
+      // this promise stayed pending, so reject instead. Reporting the count we
+      // reached is what makes a wrong expectation diagnosable.
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          clearInterval(interval);
+          reject(
+            new Error(
+              `Page did not load within 5 seconds: saw ${autoInstrumentedSpansCount} of ${numberOfExpectedSpans} expected auto-instrumented spans`,
+            ),
+          );
+        }, 5000);
 
-      await new Promise((resolve) => {
         const interval = setInterval(() => {
           if (autoInstrumentedSpansCount >= numberOfExpectedSpans) {
             clearInterval(interval);
             clearTimeout(timeout);
-            resolve(null);
+            resolve();
           }
         }, 100);
       });
@@ -189,7 +196,7 @@ const runE2ETests = ({
       async ({
         page,
         requests,
-        waitForOTelRequest,
+        waitForLogRecordMatching,
         navigateAndWaitUntilReady,
         browserName,
       }) => {
@@ -197,11 +204,23 @@ const runE2ETests = ({
 
         const button = page.getByRole('button', { name: 'Send Log' });
         await button.click();
-        await waitForOTelRequest();
+        await waitForLogRecordMatching(
+          'the manual log',
+          (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
+        );
 
-        testE2E.expect(requests).toHaveLength(1);
         if (goldenFiles) {
-          extendedMockApiTestExpect(requests[0]).toMatchGoldenFile(
+          const logRequest = requests.find((request) =>
+            logRecordsOf(request).some(
+              (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
+            ),
+          );
+
+          if (!logRequest) {
+            throw new Error('Log request was not sent to the API');
+          }
+
+          extendedMockApiTestExpect(logRequest).toMatchGoldenFile(
             `${browserName}-${codifiedName}-send-log.json`,
           );
         }
