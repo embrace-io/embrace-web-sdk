@@ -13,7 +13,8 @@
     },
     "test": {
       "dependsOn": ["^build", "install-dependencies", "build-platforms"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["UPDATE_GOLDEN"]
     },
     "update-golden": {
       "dependsOn": ["^build", "install-dependencies", "build-platforms"],
