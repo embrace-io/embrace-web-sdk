@@ -10,7 +10,7 @@ method converts between them, and how each instrumentation maps onto them.
 
 ## Two reference frames
 
-Every timing value the SDK handles lives in one of two frames:
+Every timing value the SDK handles is in one of two frames:
 
 - **Time origin.** `performance.timeOrigin` is the epoch timestamp of the
   original hard navigation. It is fixed for the entire life of the page. Every time value from the Performance API is a [DOMHighResTimeStamp](https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/High_precision_timing#domhighrestimestamp) defined as *milliseconds since time origin*.
@@ -55,7 +55,7 @@ that already has `timeOrigin` added in (`getNowMillis()`,
 `epochMillisFromOrigin(...)`). Passing an epoch value to `millisFromZeroTime`
 counts `timeOrigin` twice — see the worked example below.
 
-**Durations need no conversion at all.** `entry.duration`, or any difference
+Durations need no conversion at all. `entry.duration`, or any difference
 of two offsets in the same frame (`responseEnd - fetchStart`), is
 origin-independent — the origins cancel. Values like these are recorded as-is
 without touching `perf`.
@@ -76,7 +76,7 @@ Each method, applied to this scenario:
 | Call | Result | What it's for here |
 | --- | --- | --- |
 | `epochMillisFromOrigin(61_000)` | `1,700,000,061,000` (12:01:01.000) | the span **end** — the real instant the render happened |
-| `getZeroTime()` | `1,700,000,060,000` (12:01:00.000) | the span **start** — anchoring the span to the current view's start so its duration reads "time from view start until render" |
+| `getZeroTime()` | `1,700,000,060,000` (12:01:00.000) | the span **start** — anchoring the span to the current view's start so its duration is "time from view start until render" |
 | `millisFromZeroTime(61_000)` | `61,000 - 60,000 = 1,000` | the `render_time` **attribute** — "rendered 1s into the current view" |
 | `getNowMillis()` | `1,700,000,061,500` (12:01:01.500) | the default **log timestamp** when there is no event-specific offset to convert |
 | `millisFromZeroTimeEpoch(getNowMillis())` | `1,700,000,061,500 - 1,700,000,060,000 = 1,500` | an attribute capturing "how far into the view is it right now" from an already-epoch reading |
@@ -174,7 +174,7 @@ counts and pixels, not timing data. `getNavigationEntry()` is also read for
 
 ### Time-origin instrumentations
 
-These only convert raw offsets into absolute epoch timestamps. They carry no
+These only convert raw offsets into absolute epoch timestamps. They have no
 "time since view start" values, either because none is meaningful for them or
 because the measurement is inherently about the original hard navigation.
 

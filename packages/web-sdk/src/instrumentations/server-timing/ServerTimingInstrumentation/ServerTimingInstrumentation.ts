@@ -52,7 +52,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
      * buffered stays at its default of true, the opposite of the navigation
      * observer in DocumentLoadInstrumentation: server timings arrive in the
      * response headers and are complete on the entry from the start, so a
-     * replay carries everything. It is also required, because the SDK usually
+     * replay contains everything. It is also required, because the SDK usually
      * starts after the entry was buffered and an unbuffered subscription would
      * never be notified.
      */

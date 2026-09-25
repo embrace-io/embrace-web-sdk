@@ -132,7 +132,7 @@ const getLastSessionExportedSpans = async (
   spansExportNumber = 0,
   scope: SpanScope = { name: 'embrace-web-sdk-traces' },
 ) => {
-  // Needed to allow the transport to actually send its data off to fetch
+  // Needed to allow the transport to send its data off to fetch
   await new Promise((r) => setTimeout(r, 1));
 
   // Address the export by its position among spans sends, skipping interleaved
@@ -652,8 +652,8 @@ describe('initSDK', () => {
     const result = initSDK({
       appID: 'app12',
       diagLogger,
-      // we can't easily override window.location.protocol for this test, instead
-      // leverage the fact we know it will run under http:
+      // we can't easily override window.location.protocol for this test, so
+      // rely on the fact that it runs under http:
       restrictedProtocols: new Set(['http:']),
     });
     void expect(result).to.be.false;
@@ -669,8 +669,8 @@ describe('initSDK', () => {
     const diagLogger = new InMemoryDiagLogger();
     const result = initSDK({ appID: 'app12', diagLogger });
 
-    // ideally we would fake the protocol to be 'file:' but since we can't easily override window.location.protocol then
-    // just verify that the protocol was checked against the right default set
+    // Faking the protocol as 'file:' would be a better test, but we can't easily override window.location.protocol, so
+    // verify that the protocol was checked against the right default set
     expect(spy.getCall(0).thisValue).to.deep.equal(new Set(['file:']));
     void expect(result).not.to.be.false;
     expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
@@ -749,7 +749,7 @@ describe('initSDK', () => {
       const appSurfaceId = page.getCurrentPageId();
       session.endUserSession();
 
-      // Needed to allow the transport to actually send its data off to fetch
+      // Needed to allow the transport to send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
 
       const headers = fakeFetchGetSpansRequestHeaders();
@@ -880,7 +880,7 @@ describe('initSDK', () => {
 
       session.endUserSession();
 
-      // Needed to allow the transport to actually send its data off to fetch
+      // Needed to allow the transport to send its data off to fetch
       await new Promise((r) => setTimeout(r, 1));
 
       const body = fakeFetchGetSpansBody();
@@ -1088,7 +1088,7 @@ describe('initSDK', () => {
       expect(exportedAttributes).to.have.lengthOf(203);
 
       // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
-      // attributes option). Non-part spans no longer carry session IDs; the
+      // attributes option). Non-part spans do not have session IDs. The
       // session-part span itself is the only span stamped, and correlation for
       // everything else happens server-side via the batched envelope. Newest
       // attributes are dropped when the limit is reached, so the first 199
@@ -1113,8 +1113,8 @@ describe('initSDK', () => {
       ]);
     });
 
-    // Not being applied currently, this appears to be a bug in OTel package, the relevant config isn't actually being
-    // used:
+    // This limit is not applied. It appears to be a bug in the OTel package, which does not use the
+    // attributePerEventCountLimit config:
     // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
     // biome-ignore lint/suspicious/noSkippedTests: waiting on OTel bugfix https://github.com/open-telemetry/opentelemetry-js/pull/6479
     xit('should apply limits on the attributes of an individual span event', async () => {
@@ -2032,7 +2032,7 @@ describe('isolated instances', () => {
       registerGlobally: false,
       // The instance's own default instrumentations emit on their own schedule,
       // so leaving them on makes a zero-signal assertion depend on whether they
-      // land before or after the flush.
+      // emit before or after the flush.
       defaultInstrumentationConfig: {
         omit: new Set([
           'document-load',
@@ -2126,8 +2126,8 @@ describe('isolated instances', () => {
     expect(record?.attributes['dom_state.images_above_fold.count']).to.be.a(
       'number',
     );
-    // The part id rides from capture; hold-and-flush exists so the emit-stamped
-    // user session and page correlation still match that part at send time.
+    // The part id is set at capture. Hold-and-flush exists so the user session
+    // and page correlation stamped at emit still match that part at send time.
     expect(record?.attributes['emb.session_part_id']).to.equal(sessionPartId);
   });
 

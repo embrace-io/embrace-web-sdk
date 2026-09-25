@@ -235,7 +235,7 @@ class FakePerformanceObserver {
     }
   }
 
-  /* The engine's one notification for the document. It may carry the entry in
+  /* The engine's one notification for the document. It may contain the entry in
    * any state, which is why collection re-checks loadEventEnd. */
   public notify(entry: object): void {
     if (this._notificationConsumed) {
@@ -1608,7 +1608,7 @@ describe('DocumentLoad Instrumentation', () => {
       FakePerformanceObserver.webkitSemantics = true;
 
       plugin.enable();
-      // Let any replay land first: engines replay the entry while the load is
+      // Let any replay arrive first: engines replay the entry while the load is
       // still in flight, well before loadEventEnd is written.
       await afterPendingTasks();
       completeLoadEvent();

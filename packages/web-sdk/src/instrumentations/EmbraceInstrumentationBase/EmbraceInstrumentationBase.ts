@@ -82,7 +82,7 @@ export abstract class EmbraceInstrumentationBase<
   }
 
   // no-op
-  // Note: OTel uses `| void` but we use `| undefined` for semantic clarity.
+  // OTel uses `| void` but we use `| undefined` for semantic clarity.
   // `void` in union types is confusing because it mixes "returns nothing" with "returns data or nothing".
   // `undefined` better expresses the intent: this method may or may not return a value.
   protected override init():

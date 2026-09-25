@@ -7,7 +7,7 @@ import type { ListenToRouterChangesArgs, Match } from './types.ts';
  * nested routes contain only the partial match, so we need to go through all of them
  * in order to build the full path.
  *
- * Filtering by currentPathname ensures that we only consider routes that are relevant to the current URL.
+ * Filtering by currentPathname keeps only the routes that are relevant to the current URL.
  */
 const getRouteFromMatches = (
   matches: Match[],

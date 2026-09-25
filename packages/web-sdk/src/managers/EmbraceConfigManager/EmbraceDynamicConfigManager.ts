@@ -181,7 +181,7 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
 
     const etag = response.headers.get('etag');
 
-    // Nothing changed, return null
+    // Nothing changed
     if (response.status === 304) {
       return null;
     }

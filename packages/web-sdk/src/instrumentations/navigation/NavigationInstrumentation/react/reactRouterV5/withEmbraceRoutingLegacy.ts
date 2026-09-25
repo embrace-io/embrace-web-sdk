@@ -18,7 +18,7 @@ export const withEmbraceRoutingLegacy = <P extends RouteComponentProps>(
 
       // Depends on this internal behaviour
       // https://github.com/remix-run/react-router/blob/v5.3.4/packages/react-router/modules/Switch.js#L40
-      // It shouldn't change as this version is legacy, and it's not being actively worked on
+      // It shouldn't change, since react-router v5 is not actively developed
       if (routeProps.computedMatch) {
         page.setCurrentRoute({
           path: routeProps.computedMatch.path,

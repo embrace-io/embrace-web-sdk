@@ -30,8 +30,8 @@ and the sole listener of the Navigation API for soft-navigation detection.
   no route change — e.g. resuming from the background — skipped when the
   part started from a soft navigation, since the real new route follows
   immediately).
-- **`EmbraceUserSessionManager`** — owns session-part start/end/rollover; has
-  no interaction with the Navigation API.
+- **`EmbraceUserSessionManager`** — handles session-part
+  start/end/rollover; has no interaction with the Navigation API.
 
 ## Soft-navigation flow
 
@@ -73,9 +73,9 @@ and flushes the queue whenever a session-part span ends, so a span's
 attribution is decided by *ending order*, not by when it started.
 `NavigationInstrumentation` ends its route span from the session-part-ended
 listener, which `EmbraceUserSessionManager.endSessionPartInternal` fires
-**before** ending the outgoing session-part span itself. Rolling over first
-means the outgoing route span is already ended and queued, correctly
-attributed to the outgoing part, by the time that part's span flushes.
+before ending the outgoing session-part span itself. Rolling over first
+means the outgoing route span is already ended and queued by the time
+that part's span flushes, so it is attributed to the outgoing part.
 
 ### Route spans never outlive their session part
 

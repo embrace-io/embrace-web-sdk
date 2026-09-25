@@ -34,7 +34,7 @@ export interface UserSessionManager {
   addBreadcrumb: (name: string) => void;
 
   /**
-   * Stores a key/value property that travels with every session part within
+   * Stores a key/value property that is added to every session part within
    * the current user session. Properties added without `lifespan: 'permanent'`
    * survive across foreground/background transitions but are cleared when the
    * user session ends. They are persisted alongside the user-session state in
@@ -95,7 +95,7 @@ export interface UserSessionManager {
    * Subject to a 5-second cooldown.
    *
    * If no part is active when called, the user session is still ended and
-   * the next foreground part begins a new one, but no part span can carry
+   * the next foreground part begins a new one, but no part span can have
    * `emb.user_session_termination_reason='manual'` (the attribute is only
    * stamped on a final part span).
    */

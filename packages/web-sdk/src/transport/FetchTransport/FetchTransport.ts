@@ -28,7 +28,7 @@ export function _resetKeepaliveTracking(): void {
  *
  * Chromium returns the request's share of the keepalive quota only once the
  * body has been read to the end, and it skips the buffering consumer that would
- * otherwise drain it when the response carries `Cache-Control: no-store`, which
+ * otherwise drain it when the response has `Cache-Control: no-store`, which
  * collectors commonly send. Cancelling is the client-abort path and measures
  * far slower, so the body is read rather than cancelled.
  *
@@ -156,7 +156,7 @@ export class FetchTransport implements IExporterTransport {
       }
     };
 
-    // The quota frees only once the body drains, so the drain owns the release.
+    // The quota frees only once the body drains, so the drain releases it.
     const releaseKeepalive = () => {
       clearTimeoutIfSet();
       inflightKeepaliveBytes -= reservedBytes;
@@ -245,7 +245,7 @@ export class FetchTransport implements IExporterTransport {
       };
     } finally {
       // Only the paths that threw before a response reach this: once the drain
-      // exists it owns the cleanup.
+      // exists it does the cleanup.
       if (!drainOwnsCleanup) {
         if (keepalive) {
           releaseKeepalive();

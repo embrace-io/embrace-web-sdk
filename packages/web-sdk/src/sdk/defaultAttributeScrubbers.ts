@@ -93,8 +93,8 @@ export const getDefaultAttributeScrubbers = (
         }),
     },
 
-    // NOTE that url.original could contain sensitive information however this is intentionally not scrubbed as per the
-    // semantic convention:
+    // url.original could contain sensitive information, but it is intentionally not scrubbed, as per the semantic
+    // convention:
     // https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L54
   ];
 };

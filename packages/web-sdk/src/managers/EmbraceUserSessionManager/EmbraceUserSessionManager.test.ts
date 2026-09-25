@@ -138,7 +138,7 @@ describe('EmbraceUserSessionManager', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
     // background ends the part but keeps the user session alive
-    // (inactivity now ends both the part and the user session in one step).
+    // (inactivity ends both the part and the user session in one step).
     manager.endSessionPartInternal({ reason: 'background' });
 
     // Advance time within inactivity timeout (29 min)
@@ -273,7 +273,7 @@ describe('EmbraceUserSessionManager', () => {
     manager1.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager1.getUserSessionAttributes();
     // background keeps the user session alive; another tab joining
-    // should adopt it. (inactivity now ends both part and user session.)
+    // should adopt it. (inactivity ends both part and user session.)
     manager1.endSessionPartInternal({ reason: 'background' });
 
     // Simulate another tab creating a manager with the same storage
@@ -519,7 +519,8 @@ describe('EmbraceUserSessionManager', () => {
       // The in-memory session stays authoritative only while it is live: once
       // its inactivity deadline passes, the next part rolls a fresh user session
       // instead of resurrecting the expired one. The user-session number cannot
-      // advance because the shared counter also lives in unavailable storage.
+      // advance because the shared counter is also stored in unavailable
+      // storage.
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
@@ -540,7 +541,7 @@ describe('EmbraceUserSessionManager', () => {
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
-      // Past the 1 hour max duration. The max-duration timer lives in memory, so
+      // Past the 1 hour max duration. The max-duration timer is held in memory, so
       // it rolls the user session over even though nothing was ever persisted.
       clock.tick(3601 * 1000);
 
@@ -725,8 +726,8 @@ describe('EmbraceUserSessionManager', () => {
     inMemoryStorage.clear();
 
     // background is the non-final part end that triggers the
-    // continuation persist; this is the path that previously rewrote
-    // the cleared row.
+    // continuation persist. This is the path that could rewrite the
+    // cleared row.
     manager.endSessionPartInternal({ reason: 'background' });
 
     void expect(inMemoryStorage.getItem('embrace_user_session_state')).to.be
@@ -1305,7 +1306,7 @@ describe('EmbraceUserSessionManager', () => {
       manager1.endSessionPartInternal({ reason: 'background' });
       // Cancel manager1's max-duration timer so it doesn't auto-rollover during
       // the tick. We're simulating a page reload: the prior page is gone,
-      // storage carries the dying state forward, and a fresh manager loads.
+      // storage keeps the dying state, and a fresh manager loads.
       manager1._clearMaxDurationTimer();
 
       // Jump the clock past the locked-in userSessionMaxEndTs (1h window).

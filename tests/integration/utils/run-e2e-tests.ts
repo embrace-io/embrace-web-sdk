@@ -6,7 +6,7 @@ import testWithMockApi, {
 const EXPECTED_SPAN_ENDED_TEXT =
   'EmbraceSessionPartBatchedSpanProcessor non-session-part span ended';
 // OTel's floor for error-level records. Exceptions and log.message(_, 'error')
-// land here; every instrumentation the SDK ships emits below it.
+// are logged at this level. Every instrumentation the SDK ships emits below it.
 // https://opentelemetry.io/docs/specs/otel/logs/data-model/#field-severitynumber
 const SEVERITY_NUMBER_ERROR = 17;
 const TEST_LOG_MESSAGE = 'This is a test log message';
@@ -66,7 +66,7 @@ const testE2E = testWithMockApi.extend<E2ETestFixture>({
 
       await page.goto(url);
 
-      // Throwing from the timer would surface as an uncaught exception while
+      // Throwing from the timer would be reported as an uncaught exception while
       // this promise stayed pending, so reject instead. Reporting the count we
       // reached is what makes a wrong expectation diagnosable.
       await new Promise<void>((resolve, reject) => {
@@ -248,12 +248,12 @@ const runE2ETests = ({
         });
         await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
 
-        // First load works as expected as we don't wait for the remote config to be applied
+        // The first load has a user session ID because the SDK doesn't wait for the remote config to be applied
         testE2E.expect(await getCurrentUserSessionId()).toHaveLength(32);
 
         await page.reload();
 
-        // Sampled out, so initSDK bails and returns false before building a
+        // Sampled out, so initSDK returns false early, before building a
         // control object, leaving the harness with nothing to expose.
         const sdkInitialized = await page.evaluate(
           () => window.EMBRACE_SDK !== undefined,
@@ -405,7 +405,7 @@ const runE2ETests = ({
           (record) => record.body?.stringValue === TEST_LOG_MESSAGE,
         );
 
-        // A 204 carrying a body is not an error. The batch is FIFO, so the manual
+        // A 204 with a body is not an error. The batch is FIFO, so the manual
         // log arriving proves everything the fetch emitted has been exported too.
         testE2E
           .expect(

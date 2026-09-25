@@ -1183,7 +1183,6 @@ describe('EmbraceLogManager', () => {
       const errorObj = {
         message: {},
       };
-      // Create circular reference
       // @ts-expect-error create circular reference
       errorObj.message.self = errorObj.message;
 
