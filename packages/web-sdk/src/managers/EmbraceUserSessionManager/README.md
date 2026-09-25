@@ -70,8 +70,13 @@ per-part counters, subscribing to part start/end, and wiring the tracer
 provider (required before the first part). Customer code only ever sees
 `UserSessionManager`.
 
-The SDK init flow also reports the measured startup duration once; the value
-is stamped as `emb.sdk_startup_duration` on every session-part end span.
+The SDK init flow also reports its startup timings once, via
+`recordSDKStartupTimings`. They are page-scoped constants, so they are stamped
+only on the end span of the cold-start part, the one part that covers the load
+they describe. See the end-attribute table below for each key.
+
+If `initSDK` throws before recording them, the cold-start part omits the keys
+entirely. Zeros would read as "loaded at navigation start".
 
 ## Session-part lifecycle
 
@@ -369,7 +374,10 @@ another window).
 | Attribute | Condition |
 | --- | --- |
 | `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
-| `emb.sdk_startup_duration` | Always. Milliseconds, ceiled. |
+| `emb.sdk_startup_duration` | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration. |
+| `emb.sdk_load_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran. |
+| `emb.sdk_init_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered. |
+| `emb.page_load` | Cold-start part only. `true` when `document.readyState` was `complete` at part end. |
 | `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
 | `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |

@@ -42,6 +42,7 @@ line.
 | `millisFromZeroTime(offset)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - (getZeroTime() - timeOrigin))` |
 | `getNowMillis()` | What is the wall-clock epoch time right now? | `timeOrigin + performance.now()` |
 | `millisFromZeroTimeEpoch(epochMillis)` | How many ms after the current view started did this *epoch* value occur? | `max(0, epochMillis - getZeroTime())` |
+| `getNowOriginOffset()` | How many ms after time origin is it right now? | `performance.now()` |
 
 Zero time never participates in converting a raw offset to an epoch: the
 offset already contains the full distance from time origin, so
@@ -59,6 +60,19 @@ Durations need no conversion at all. `entry.duration`, or any difference
 of two offsets in the same frame (`responseEnd - fetchStart`), is
 origin-independent — the origins cancel. Values like these are recorded as-is
 without touching `perf`.
+
+**A third kind of attribute: elapsed-since-origin, deliberately left raw.**
+Some attributes answer "how long after navigation did X happen" rather than
+"what time is it" or "how long into the current view". Examples are
+`emb.sdk_load_origin_offset` and `emb.sdk_init_origin_offset`. They measure
+from time origin, which never resets, so like any other duration they need no
+epoch or zero-time conversion. Read them with `getNowOriginOffset()` so the
+clock still goes through `perf`.
+
+On a prerendered page, time origin is the start of the prerender navigation,
+not activation, so these offsets can include time before the user saw the
+page. That is intended: they describe when SDK machinery ran, not what the user
+perceived. Do not rebase them onto `activationStart`.
 
 ## Worked example
 
@@ -272,6 +286,11 @@ For completeness, the non-instrumentation consumers of the clock:
   the current instant, not a raw offset in need of conversion.
 - **RetryingTransport** — `getNowMillis()` twice to compute a retry deadline
   and the remaining timeout. Internal duration math, not telemetry.
-- **initSDK** — `getNowMillis()` difference for `emb.sdk_startup_duration`
+- **initSDK** — `getNowOriginOffset()` difference for `emb.sdk_startup_duration`
   (a pure duration), plus the `pageshow` / `currententrychange` listeners
-  that reset zero time.
+  that reset zero time. It also stamps the elapsed-since-origin offsets
+  described above: `emb.sdk_init_origin_offset` from `getNowOriginOffset()` at
+  entry, and `emb.sdk_load_origin_offset` from `SDK_LOAD_ORIGIN_OFFSET`.
+  `utils/sdkLoadOriginOffset.ts` is the one deliberate exception to routing
+  clock reads through this manager: it reads `performance.now()` at module
+  evaluation, before any manager instance can exist.

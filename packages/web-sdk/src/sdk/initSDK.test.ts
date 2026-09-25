@@ -814,6 +814,8 @@ describe('initSDK', () => {
       const userSessionId = attrRecord['emb.user_session_id'];
       const userSessionStartTs = attrRecord['emb.user_session_start_ts'];
       const sdkStartupDuration = attrRecord['emb.sdk_startup_duration'];
+      const sdkLoadOriginOffset = attrRecord['emb.sdk_load_origin_offset'];
+      const sdkInitOriginOffset = attrRecord['emb.sdk_init_origin_offset'];
       const browserUrlFull = attrRecord['browser.url.full'];
 
       expect(userSessionId)
@@ -825,6 +827,12 @@ describe('initSDK', () => {
         .to.be.a('number')
         .and.greaterThan(0)
         .and.lessThan(100);
+      // initSDK cannot run before the SDK's module has evaluated.
+      expect(sdkLoadOriginOffset).to.be.a('number').and.at.least(0);
+      expect(sdkInitOriginOffset)
+        .to.be.a('number')
+        .and.at.least(sdkLoadOriginOffset as number)
+        .and.at.most(performance.now());
       expect(browserUrlFull).to.be.a('string').and.match(/^http/);
 
       expect(attrRecord).to.deep.equal({
@@ -847,6 +855,8 @@ describe('initSDK', () => {
         'emb.user_session_inactivity_timeout_seconds': 1800,
         'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
         'emb.sdk_startup_duration': sdkStartupDuration,
+        'emb.sdk_load_origin_offset': sdkLoadOriginOffset,
+        'emb.sdk_init_origin_offset': sdkInitOriginOffset,
         'browser.url.full': browserUrlFull,
         'app.surface.name': window.location.pathname,
         'app.surface.id': appSurfaceId,

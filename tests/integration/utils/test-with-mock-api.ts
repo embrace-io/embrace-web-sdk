@@ -113,6 +113,8 @@ const EXCLUDED_RESOURCE_URL_PATTERNS = [
 const IGNORED_ATTRIBUTES_LIST = [
   'log.record.uid',
   'emb.sdk_startup_duration',
+  'emb.sdk_load_origin_offset',
+  'emb.sdk_init_origin_offset',
   'emb.app_instance_id',
   // UUIDs and timestamps regenerated on every run; compare key presence only.
   'emb.session_part_id',

@@ -1607,6 +1607,67 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
   });
 
+  describe('SDK startup timings', () => {
+    const STARTUP_KEYS = [
+      'emb.sdk_startup_duration',
+      'emb.sdk_load_origin_offset',
+      'emb.sdk_init_origin_offset',
+    ];
+
+    it('should omit them from the cold-start part when never recorded', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      const [coldStartSpan] = memoryExporter.getFinishedSpans();
+      for (const key of STARTUP_KEYS) {
+        expect(coldStartSpan.attributes).to.not.have.property(key);
+      }
+    });
+
+    describe('when recorded', () => {
+      beforeEach(() => {
+        manager.recordSDKStartupTimings({
+          initDuration: 12.4,
+          loadOriginOffset: 1_000.25,
+          initOriginOffset: 1_500.75,
+        });
+      });
+
+      const expectStampedOnFirstPartOnly = () => {
+        const finishedSpans = memoryExporter.getFinishedSpans();
+        expect(finishedSpans).to.have.lengthOf(2);
+        expect(finishedSpans[0].attributes).to.deep.include({
+          'emb.sdk_startup_duration': 13,
+          'emb.sdk_load_origin_offset': 1_000.25,
+          'emb.sdk_init_origin_offset': 1_500.75,
+        });
+        for (const key of STARTUP_KEYS) {
+          expect(finishedSpans[1].attributes).to.not.have.property(key);
+        }
+      };
+
+      it('should stamp them on the cold-start part only', () => {
+        manager.startSessionPartInternal({ reason: 'init' });
+        manager.endSessionPartInternal({ reason: 'background' });
+        manager.startSessionPartInternal({ reason: 'init' });
+        manager.endSessionPartInternal({ reason: 'background' });
+
+        expectStampedOnFirstPartOnly();
+      });
+
+      it('should stamp them on the cold-start part when it ends via rollover', () => {
+        manager.startSessionPartInternal({ reason: 'init' });
+        manager.rolloverSessionPartInternal({
+          endReason: 'web_soft_navigation',
+          startReason: 'web_soft_navigation',
+        });
+        manager.endSessionPartInternal({ reason: 'background' });
+
+        expectStampedOnFirstPartOnly();
+      });
+    });
+  });
+
   describe('emb.page_load attribute', () => {
     const makeDoc = (
       readyState: DocumentReadyState,
