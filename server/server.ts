@@ -3,17 +3,35 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'node:http';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import zlib from 'node:zlib';
-// Easier to parse incoming requests with a known type, only used for tests
+// Deep imports: otlp-transformer exports only its response types, not the OTLP/JSON request shapes.
 import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import type { ReceivedSpans } from '../tests/integration/types.ts';
 import {
+  formatIngestDrop,
+  formatIngestFailure,
+  ingestTypeOf,
+  readIngestRequest,
+  writeIngestAccepted,
+  writeIngestPreflight,
+} from './ingest.ts';
+import {
+  otlpSignalOf,
+  readOtlpRequest,
+  writeOtlpRejection,
+  writeOtlpServerError,
+  writeOtlpSuccess,
+} from './otlp.ts';
+import type { OtlpJson } from './utils.ts';
+import {
+  logError,
   logInfo,
   logReceivedLogRecords,
+  logReceivedMetrics,
   logReceivedSessionPartSpan,
   logReceivedSpans,
   logWarn,
+  RequestAbortedError,
 } from './utils.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,12 +45,8 @@ const PORT = 3001;
 // response stays byte-identical to production.
 const SIMULATE_NO_STORE = process.env['EMB_NO_STORE'] === '1';
 
-// Mirrors the real ingest, which answers 200 with a literal 0 body under a
-// text/html content type. The SDK never reads it.
-const ingestResponseHeaders = (): Record<string, string> => ({
-  'Content-Type': 'text/html; charset=utf-8',
-  ...(SIMULATE_NO_STORE && { 'Cache-Control': 'no-store' }),
-});
+const ingestExtraHeaders = (): Record<string, string> =>
+  SIMULATE_NO_STORE ? { 'Cache-Control': 'no-store' } : {};
 
 const mimeTypes: Record<string, string> = {
   '.html': 'text/html',
@@ -74,34 +88,75 @@ function serveFile(res: ServerResponse, filePath: string) {
   });
 }
 
-const parseGzip = async (
-  req: IncomingMessage,
-): Promise<Record<string, unknown>> =>
-  new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
+const recordLogs = (request: OtlpJson<IExportLogsServiceRequest>) => {
+  const logRecords =
+    request.resourceLogs?.flatMap(
+      (r) => r.scopeLogs?.flatMap((s) => s.logRecords ?? []) ?? [],
+    ) ?? [];
 
-    req.on('data', (chunk) => chunks.push(chunk as Buffer));
-    req.on('error', reject);
-    req.on('end', () => {
-      const buffer = Buffer.concat(chunks);
-      zlib.gunzip(buffer, (err, decoded) => {
-        if (err) {
-          reject(err);
-        } else {
-          try {
-            resolve(
-              JSON.parse(decoded.toString('utf-8')) as Record<string, unknown>,
-            );
-          } catch (parseError) {
-            reject(parseError as Error);
-          }
-        }
-      });
-    });
-  });
+  logReceivedLogRecords(logRecords);
+};
+
+const recordSpans = (request: OtlpJson<IExportTraceServiceRequest>) => {
+  const resourceSpans = request.resourceSpans ?? [];
+
+  logReceivedSpans(resourceSpans);
+
+  const sessionPartSpan = resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
+    (span) => span.name === 'emb-session-part',
+  );
+  const stringAttribute = (key: string) =>
+    (sessionPartSpan?.attributes ?? []).find((attr) => attr.key === key)?.value
+      ?.stringValue ?? undefined;
+  const userSessionId = stringAttribute('emb.user_session_id');
+
+  if (sessionPartSpan && !userSessionId) {
+    logWarn(
+      'emb-session-part received without emb.user_session_id; SDK contract broken?',
+    );
+  }
+
+  if (userSessionId) {
+    if (!receivedSpans[userSessionId]) {
+      receivedSpans[userSessionId] = {};
+    }
+    if (sessionPartSpan) {
+      const sessionPartId = stringAttribute('emb.session_part_id');
+      const endReason = stringAttribute('emb.session_part_end_reason');
+      if (!endReason) {
+        logWarn(
+          'emb-session-part received without emb.session_part_end_reason; SDK contract broken?',
+        );
+      }
+      if (sessionPartId) {
+        receivedSpans[userSessionId][sessionPartId] = { endReason };
+      }
+      logReceivedSessionPartSpan(resourceSpans, sessionPartSpan, userSessionId);
+    }
+  }
+};
+
+// The Embrace SDK always sends gzipped JSON, so its X-EM-* headers on anything else mean a regression.
+const embraceContractViolation = (req: IncomingMessage): string | undefined => {
+  if (
+    req.headers['x-em-aid'] === undefined &&
+    req.headers['x-em-did'] === undefined
+  ) {
+    return undefined;
+  }
+  const contentType = req.headers['content-type'] ?? '';
+  if (contentType.split(';')[0]?.trim().toLowerCase() !== 'application/json') {
+    return `Embrace request with Content-Type "${contentType}", expected application/json`;
+  }
+  const contentEncoding = req.headers['content-encoding'] ?? '';
+  if (contentEncoding.trim().toLowerCase() !== 'gzip') {
+    return `Embrace request with Content-Encoding "${contentEncoding}", expected gzip`;
+  }
+  return undefined;
+};
 
 const server = createServer((req, res) => {
-  // allow cors
+  // The demo and the integration test apps serve from other ports and call this server cross-origin.
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
   res.setHeader('Access-Control-Allow-Headers', '*');
@@ -109,14 +164,26 @@ const server = createServer((req, res) => {
   // it back as null and never sends If-None-Match.
   res.setHeader('Access-Control-Expose-Headers', 'ETag');
 
+  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  const ingestType = ingestTypeOf(pathname);
+
   if (req.method === 'OPTIONS') {
+    if (ingestType) {
+      writeIngestPreflight(res);
+      return;
+    }
     res.writeHead(204);
     res.end();
 
     return;
   }
 
-  const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+  // Mirrors production's root response.
+  if (pathname === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('0\n');
+    return;
+  }
 
   if (req.method === 'GET' && pathname === '/health-check') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -154,83 +221,62 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (pathname?.includes('logs')) {
-    parseGzip(req)
-      .then((request: IExportLogsServiceRequest) => {
-        const logRecords =
-          request.resourceLogs?.flatMap(
-            (r) => r.scopeLogs?.flatMap((s) => s.logRecords ?? []) ?? [],
-          ) ?? [];
+  const otlpSignal = otlpSignalOf(pathname);
+  const isIngest = otlpSignal !== undefined || ingestType !== undefined;
+  const violation = isIngest ? embraceContractViolation(req) : undefined;
+  if (violation) {
+    logWarn(`${violation} on ${pathname}; SDK contract broken?`);
+    res.writeHead(415, { 'Content-Type': 'text/plain' });
+    res.end(violation);
+    return;
+  }
 
-        logReceivedLogRecords(logRecords);
-
-        res.writeHead(200, ingestResponseHeaders());
-        res.end('0');
+  if (otlpSignal && req.method === 'POST') {
+    readOtlpRequest(req, otlpSignal)
+      .then((result) => {
+        if (!result.ok) {
+          writeOtlpRejection(res, otlpSignal, result);
+          return;
+        }
+        if (result.signal === 'traces') {
+          recordSpans(result.request);
+        } else if (result.signal === 'logs') {
+          recordLogs(result.request);
+        } else {
+          logReceivedMetrics(result.request.resourceMetrics ?? []);
+        }
+        writeOtlpSuccess(res);
       })
       .catch((e: unknown) => {
-        console.error('Error handling log request:', e);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal Server Error');
+        if (e instanceof RequestAbortedError) {
+          logWarn(`Client aborted OTLP ${otlpSignal} request: ${e.message}`);
+          return;
+        }
+        writeOtlpServerError(res, otlpSignal, e);
       });
     return;
   }
 
-  if (pathname?.includes('spans')) {
-    parseGzip(req)
-      .then((request: IExportTraceServiceRequest) => {
-        const resourceSpans = request.resourceSpans ?? [];
-
-        logReceivedSpans(resourceSpans);
-
-        const sessionPartSpan =
-          resourceSpans?.[0]?.scopeSpans?.[0]?.spans?.find(
-            (span) => span.name === 'emb-session-part',
-          );
-        const userSessionId = sessionPartSpan?.attributes.find(
-          (attr) => attr.key === 'emb.user_session_id',
-        )?.value.stringValue;
-
-        if (sessionPartSpan && !userSessionId) {
-          logWarn(
-            'emb-session-part received without emb.user_session_id; SDK contract broken?',
-          );
+  if (ingestType) {
+    readIngestRequest(req, ingestType)
+      .then((result) => {
+        if (!result.ok) {
+          logWarn(formatIngestDrop(req, ingestType, result));
+        } else if (result.type === 'spans') {
+          recordSpans(result.request);
+        } else {
+          recordLogs(result.request);
         }
-
-        if (userSessionId) {
-          if (!receivedSpans[userSessionId]) {
-            receivedSpans[userSessionId] = {};
-          }
-          if (sessionPartSpan) {
-            const sessionPartId = sessionPartSpan.attributes.find(
-              (attr) => attr.key === 'emb.session_part_id',
-            )?.value.stringValue;
-            const endReason =
-              sessionPartSpan.attributes.find(
-                (attr) => attr.key === 'emb.session_part_end_reason',
-              )?.value.stringValue ?? undefined;
-            if (!endReason) {
-              logWarn(
-                'emb-session-part received without emb.session_part_end_reason; SDK contract broken?',
-              );
-            }
-            if (sessionPartId) {
-              receivedSpans[userSessionId][sessionPartId] = { endReason };
-            }
-            logReceivedSessionPartSpan(
-              resourceSpans,
-              sessionPartSpan,
-              userSessionId,
-            );
-          }
-        }
-
-        res.writeHead(200, ingestResponseHeaders());
-        res.end('0');
+        writeIngestAccepted(res, ingestExtraHeaders());
       })
       .catch((e: unknown) => {
-        console.error('Error parsing gzip request:', e);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal Server Error');
+        if (e instanceof RequestAbortedError) {
+          logWarn(`Client aborted ${ingestType} request: ${e.message}`);
+          return;
+        }
+        // Production replies 200 before processing, and a 5xx would make the SDK retry.
+        logError(formatIngestFailure(req, ingestType), e);
+        writeIngestAccepted(res, ingestExtraHeaders());
       });
     return;
   }
@@ -259,10 +305,9 @@ const server = createServer((req, res) => {
     return;
   }
 
-  // Every branch above returns, so reaching here means nothing matched. Without
-  // this the request stays open with no response until the client gives up.
-  res.writeHead(404, { 'Content-Type': 'text/plain' });
-  res.end('Not Found');
+  // Production answers unknown paths with 404 "1"; with no reply the request hangs.
+  res.writeHead(404, { 'Content-Type': 'text/html' });
+  res.end('1\n');
 });
 
 server.listen(PORT, () => {
