@@ -261,7 +261,7 @@ const server = createServer((req, res) => {
     readIngestRequest(req, ingestType)
       .then((result) => {
         if (!result.ok) {
-          logWarn(formatIngestDrop(req, ingestType, result));
+          logWarn(...formatIngestDrop(req, ingestType, result));
         } else if (result.type === 'spans') {
           recordSpans(result.request);
         } else {

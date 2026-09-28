@@ -133,26 +133,27 @@ const formatRequestContext = (req: IncomingMessage, size: string): string[] => [
   `  Content-Type=${quoted(headerValue(req, 'content-type'))} Content-Encoding=${quoted(headerValue(req, 'content-encoding'))} ${size}`,
 ];
 
-// Production records only a counter, so the warning carries the full request context.
+// Production discards silently, so the warning carries the full request context.
 const formatIngestDrop = (
   req: IncomingMessage,
   type: IngestType,
   drop: IngestDrop,
-): string =>
-  [
-    `Dropped ${type} request: ${drop.reason} (production replies 200 "0" and discards it)`,
-    `  ${drop.detail}`,
-    ...formatRequestContext(req, `bytes=${drop.bytes}`),
-  ].join('\n');
+): string[] => [
+  `Dropped ${type} request: ${drop.reason} (production replies 200 "0" and discards it)`,
+  `  ${drop.detail}`,
+  ...formatRequestContext(req, `bytes=${drop.bytes}`),
+];
 
-const formatIngestFailure = (req: IncomingMessage, type: IngestType): string =>
-  [
-    `Collector failed to handle ${type} request; replied 200 "0" as production does`,
-    ...formatRequestContext(
-      req,
-      `Content-Length=${quoted(headerValue(req, 'content-length'))}`,
-    ),
-  ].join('\n');
+const formatIngestFailure = (
+  req: IncomingMessage,
+  type: IngestType,
+): string[] => [
+  `Collector failed to handle ${type} request; replied 200 "0" as production does`,
+  ...formatRequestContext(
+    req,
+    `Content-Length=${quoted(headerValue(req, 'content-length'))}`,
+  ),
+];
 
 // Production's body is "0" plus a newline, typed text/html with no charset.
 const writeIngestAccepted = (

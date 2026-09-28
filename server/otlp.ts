@@ -144,7 +144,7 @@ const writeOtlpServerError = (
   error: unknown,
 ) => {
   logError(
-    `Collector failed to handle OTLP ${signal} request; replied 500`,
+    [`Collector failed to handle OTLP ${signal} request; replied 500`],
     error,
   );
   res.writeHead(500, { 'Content-Type': 'application/json' });

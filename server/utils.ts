@@ -129,18 +129,16 @@ const getTimestamp = () => {
 
 const SGR_SEQUENCE = /\[[0-9;]*m/y;
 
-// Logs echo client-sent text: keep color (SGR) sequences, escape every other control character
-// so a request cannot move the cursor, rewrite lines, or send OSC commands to the terminal.
-const printable = (message: string): string => {
+// Logs echo client-sent text: keep color (SGR) sequences and escape every other control character,
+// newlines included, so a request cannot forge log lines or drive the terminal.
+const printable = (line: string): string => {
   let result = '';
-  for (let index = 0; index < message.length; index++) {
-    const code = message.charCodeAt(index);
-    const isControl =
-      (code < 0x20 && code !== 0x0a && code !== 0x09) ||
-      (code >= 0x7f && code <= 0x9f);
+  for (let index = 0; index < line.length; index++) {
+    const code = line.charCodeAt(index);
+    const isControl = code < 0x20 || (code >= 0x7f && code <= 0x9f);
     SGR_SEQUENCE.lastIndex = index + 1;
-    if (!isControl || (code === 0x1b && SGR_SEQUENCE.test(message))) {
-      result += message[index];
+    if (!isControl || (code === 0x1b && SGR_SEQUENCE.test(line))) {
+      result += line[index];
     } else {
       result += `\\x${code.toString(16).padStart(2, '0')}`;
     }
@@ -148,23 +146,31 @@ const printable = (message: string): string => {
   return result;
 };
 
-const logInfo = (message: string) => {
-  console.log(
-    `[SERVER] ${getTimestamp()} ${pc.blue('ℹ')} ${printable(message)}`,
-  );
+// Each argument is one output line; line breaks inside an argument are escaped by printable.
+const formatLog = (icon: string, lines: string[]): string =>
+  `[SERVER] ${getTimestamp()} ${icon} ${lines.map(printable).join('\n')}`;
+
+const logInfo = (...lines: string[]) => {
+  console.log(formatLog(pc.blue('ℹ'), lines));
 };
 
-const logWarn = (message: string) => {
-  console.warn(
-    `[SERVER] ${getTimestamp()} ${pc.yellow('⚠')} ${printable(message)}`,
-  );
+const logWarn = (...lines: string[]) => {
+  console.warn(formatLog(pc.yellow('⚠'), lines));
 };
 
-const logError = (message: string, error: unknown) => {
-  const detail =
-    error instanceof Error ? (error.stack ?? String(error)) : String(error);
+// The message can carry client text with line breaks, so only the stack frames after it become lines.
+const errorLines = (error: unknown): string[] => {
+  const header = String(error);
+  const stack = error instanceof Error ? (error.stack ?? '') : '';
+  const frames = stack.startsWith(header)
+    ? stack.slice(header.length).split('\n').filter(Boolean)
+    : [];
+  return [header, ...frames];
+};
+
+const logError = (lines: string[], error: unknown) => {
   console.error(
-    `[SERVER] ${getTimestamp()} ${pc.red(pc.bold(`✖ ${printable(message)}`))}\n${pc.red(printable(detail))}`,
+    pc.red(formatLog(pc.bold('✖'), [...lines, ...errorLines(error)])),
   );
 };
 
@@ -306,22 +312,22 @@ const logReceivedLogRecords = (logRecords: OtlpJson<ILogRecord>[]) => {
 
   for (const record of logRecords) {
     const eventName = record.eventName ?? '<no eventName>';
-    const parts: string[] = [];
+    const lines = [`LOG eventName: ${eventName}`];
 
     for (const attr of record.attributes ?? []) {
       if (attr.key && LOG_RECORD_IGNORED_KEYS.includes(attr.key)) {
         continue;
       }
 
-      parts.push(`${attr.key}=${renderAttributeValue(attr.value)}`);
+      lines.push(`  ${attr.key}=${renderAttributeValue(attr.value)}`);
     }
 
-    const body = record.body?.stringValue
-      ? `\n  body=${record.body.stringValue}`
-      : '';
+    if (record.body?.stringValue) {
+      lines.push(`  body=${record.body.stringValue}`);
+    }
     const log =
       (record.severityNumber ?? 0) >= SEVERITY_NUMBER_WARN ? logWarn : logInfo;
-    log(`LOG eventName: ${eventName}\n  ${parts.join('\n  ')}${body}`);
+    log(...lines);
   }
 };
 
