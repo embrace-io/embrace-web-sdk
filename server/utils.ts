@@ -1,42 +1,61 @@
+import type { IncomingMessage } from 'node:http';
+import zlib from 'node:zlib';
 import type {
   IAnyValue,
   IKeyValue,
 } from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
 import type { ILogRecord } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
+import type { IResourceMetrics } from '@opentelemetry/otlp-transformer/build/esnext/metrics/internal-types.js';
 import type {
   IResourceSpans,
   ISpan,
 } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import pc from 'picocolors';
 
-const attributeValueFromSpan = (span: ISpan, key: string) => {
-  const attr = span.attributes.find((attr) => attr.key === key);
+// OTLP/JSON omits empty fields, including ones the otlp-transformer types mark required.
+type OtlpJson<T> = T extends Uint8Array
+  ? T
+  : T extends (infer Item)[]
+    ? OtlpJson<Item>[]
+    : T extends object
+      ? { [Key in keyof T]?: OtlpJson<T[Key]> }
+      : T;
+
+const attributeValueFromSpan = (span: OtlpJson<ISpan>, key: string) => {
+  const attr = (span.attributes ?? []).find((attr) => attr.key === key);
   return attr && getAttributeValue(attr);
 };
 
 const getAttributeValue = (
-  attr: IKeyValue,
+  attr: OtlpJson<IKeyValue>,
 ): string | number | boolean | null => {
-  if (attr.value.stringValue !== undefined) {
-    return attr.value.stringValue;
+  const value = attr.value;
+
+  if (value?.stringValue !== undefined) {
+    return value.stringValue;
   }
 
-  if (attr.value.intValue !== undefined) {
-    return attr.value.intValue;
+  if (value?.intValue !== undefined) {
+    return value.intValue;
   }
 
-  if (attr.value.boolValue !== undefined) {
-    return attr.value.boolValue;
+  if (value?.boolValue !== undefined) {
+    return value.boolValue;
   }
 
-  if (attr.value.doubleValue !== undefined) {
-    return attr.value.doubleValue;
+  if (value?.doubleValue !== undefined) {
+    return value.doubleValue;
   }
 
   return null;
 };
 
-const renderAttributeValue = (value: IAnyValue): string => {
+const renderAttributeValue = (
+  value: OtlpJson<IAnyValue> | undefined,
+): string => {
+  if (!value) {
+    return '<empty>';
+  }
   if (value.stringValue !== undefined && value.stringValue !== null) {
     return value.stringValue;
   }
@@ -50,10 +69,10 @@ const renderAttributeValue = (value: IAnyValue): string => {
     return String(value.doubleValue);
   }
   if (value.arrayValue) {
-    return `[${value.arrayValue.values.map(renderAttributeValue).join(', ')}]`;
+    return `[${(value.arrayValue.values ?? []).map(renderAttributeValue).join(', ')}]`;
   }
   if (value.kvlistValue) {
-    const entries = value.kvlistValue.values
+    const entries = (value.kvlistValue.values ?? [])
       .map((kv) => `${kv.key}=${renderAttributeValue(kv.value)}`)
       .join(', ');
     return `{${entries}}`;
@@ -68,7 +87,7 @@ const renderAttributeValue = (value: IAnyValue): string => {
   return '<empty>';
 };
 
-const getEmbType = (span: ISpan): string | null => {
+const getEmbType = (span: OtlpJson<ISpan>): string | null => {
   const value = attributeValueFromSpan(span, 'emb.type');
   return typeof value === 'string' ? value : null;
 };
@@ -78,12 +97,12 @@ const getEmbType = (span: ISpan): string | null => {
  * Flattens the IResourceSpans[] structure to collect all spans and organize them by type
  */
 const groupSpansByType = (
-  resourceSpans: IResourceSpans[],
-): Record<string, ISpan[]> => {
-  const grouped: Record<string, ISpan[]> = {};
+  resourceSpans: OtlpJson<IResourceSpans>[],
+): Record<string, OtlpJson<ISpan>[]> => {
+  const grouped: Record<string, OtlpJson<ISpan>[]> = {};
 
   for (const resource of resourceSpans) {
-    for (const scopeSpan of resource.scopeSpans) {
+    for (const scopeSpan of resource.scopeSpans ?? []) {
       for (const span of scopeSpan.spans ?? []) {
         const embType = getEmbType(span);
 
@@ -108,17 +127,93 @@ const getTimestamp = () => {
   );
 };
 
-const logInfo = (message: string) => {
-  console.log(`[SERVER] ${getTimestamp()} ${pc.blue('ℹ')} ${message}`);
+const SGR_SEQUENCE = /\[[0-9;]*m/y;
+
+// Logs echo client-sent text: keep color (SGR) sequences and escape every other control character,
+// newlines included, so a request cannot forge log lines or drive the terminal.
+const printable = (line: string): string => {
+  let result = '';
+  for (let index = 0; index < line.length; index++) {
+    const code = line.charCodeAt(index);
+    const isControl = code < 0x20 || (code >= 0x7f && code <= 0x9f);
+    SGR_SEQUENCE.lastIndex = index + 1;
+    if (!isControl || (code === 0x1b && SGR_SEQUENCE.test(line))) {
+      result += line[index];
+    } else {
+      result += `\\x${code.toString(16).padStart(2, '0')}`;
+    }
+  }
+  return result;
 };
 
-const logWarn = (message: string) => {
-  console.warn(`[SERVER] ${getTimestamp()} ${pc.yellow('⚠')} ${message}`);
+// Each argument is one output line; line breaks inside an argument are escaped by printable.
+const formatLog = (icon: string, lines: string[]): string =>
+  `[SERVER] ${getTimestamp()} ${icon} ${lines.map(printable).join('\n')}`;
+
+const logInfo = (...lines: string[]) => {
+  console.log(formatLog(pc.blue('ℹ'), lines));
 };
+
+const logWarn = (...lines: string[]) => {
+  console.warn(formatLog(pc.yellow('⚠'), lines));
+};
+
+// The message can carry client text with line breaks, so only the stack frames after it become lines.
+const errorLines = (error: unknown): string[] => {
+  const header = String(error);
+  const stack = error instanceof Error ? (error.stack ?? '') : '';
+  const frames = stack.startsWith(header)
+    ? stack.slice(header.length).split('\n').filter(Boolean)
+    : [];
+  return [header, ...frames];
+};
+
+const logError = (lines: string[], error: unknown) => {
+  console.error(
+    pc.red(formatLog(pc.bold('✖'), [...lines, ...errorLines(error)])),
+  );
+};
+
+// Stream errors on an incoming request mean the client went away, so no response can be sent.
+class RequestAbortedError extends Error {
+  readonly bytes: number;
+
+  constructor(bytes: number, cause: unknown) {
+    super(`request stream failed after ${bytes} bytes`, { cause });
+    this.bytes = bytes;
+  }
+}
+
+// Keeps reading past the limit so the response can still be sent, but stops buffering.
+const readCappedBody = (
+  req: IncomingMessage,
+  maxBytes: number,
+): Promise<{ body: Buffer | undefined; bytes: number }> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+    req.on('data', (chunk: Buffer) => {
+      bytes += chunk.length;
+      if (bytes <= maxBytes) chunks.push(chunk);
+    });
+    req.on('error', (error) => reject(new RequestAbortedError(bytes, error)));
+    req.on('end', () =>
+      resolve({
+        body: bytes > maxBytes ? undefined : Buffer.concat(chunks),
+        bytes,
+      }),
+    );
+  });
+
+// Collector-only guard: a body within the wire limit can still gunzip to gigabytes.
+const MAX_DECODED_BYTES = 64 * 1024 * 1024;
+
+const gunzipCapped = (body: Buffer): Buffer =>
+  zlib.gunzipSync(body, { maxOutputLength: MAX_DECODED_BYTES });
 
 const logReceivedSessionPartSpan = (
-  resourceSpans: IResourceSpans[],
-  sessionPartSpan: ISpan,
+  resourceSpans: OtlpJson<IResourceSpans>[],
+  sessionPartSpan: OtlpJson<ISpan>,
   userSessionId: string,
 ) => {
   const sessionPartId =
@@ -128,8 +223,8 @@ const logReceivedSessionPartSpan = (
   logInfo(
     `Session part received ${sessionPartId} (user session ${userSessionId}):`,
   );
-  const sortedAttrs = [...sessionPartSpan.attributes].sort((a, b) =>
-    a.key.localeCompare(b.key),
+  const sortedAttrs = [...(sessionPartSpan.attributes ?? [])].sort((a, b) =>
+    (a.key ?? '').localeCompare(b.key ?? ''),
   );
   for (const attr of sortedAttrs) {
     logInfo(`  ${attr.key}=${renderAttributeValue(attr.value)}`);
@@ -142,7 +237,7 @@ const logReceivedSessionPartSpan = (
   logBreadcrumbs(sessionPartSpan);
 };
 
-const logReceivedSurfaceSpans = (surfaceSpans: ISpan[]) => {
+const logReceivedSurfaceSpans = (surfaceSpans: OtlpJson<ISpan>[]) => {
   if (surfaceSpans.length === 0) {
     logInfo('No surface spans received');
     return;
@@ -157,7 +252,7 @@ const logReceivedSurfaceSpans = (surfaceSpans: ISpan[]) => {
   });
 };
 
-const logReceivedNetworkSpans = (networkSpans: ISpan[]) => {
+const logReceivedNetworkSpans = (networkSpans: OtlpJson<ISpan>[]) => {
   if (networkSpans.length === 0) {
     logInfo('No network spans received');
     return;
@@ -176,8 +271,8 @@ const logReceivedNetworkSpans = (networkSpans: ISpan[]) => {
   });
 };
 
-const logBreadcrumbs = (sessionPartSpan: ISpan) => {
-  const breadcrumbSpanEvents = sessionPartSpan.events.filter(
+const logBreadcrumbs = (sessionPartSpan: OtlpJson<ISpan>) => {
+  const breadcrumbSpanEvents = (sessionPartSpan.events ?? []).filter(
     (event) => event.name === 'emb-breadcrumb',
   );
 
@@ -188,7 +283,9 @@ const logBreadcrumbs = (sessionPartSpan: ISpan) => {
 
   logInfo(`Breadcrumbs for session part:`);
   breadcrumbSpanEvents.forEach((event, index) => {
-    const messageAttr = event.attributes.find((attr) => attr.key === 'message');
+    const messageAttr = (event.attributes ?? []).find(
+      (attr) => attr.key === 'message',
+    );
 
     const message = messageAttr ? getAttributeValue(messageAttr) : 'unknown';
     logInfo(`  ${index + 1}. ${message}`);
@@ -207,29 +304,30 @@ const LOG_RECORD_IGNORED_KEYS = [
   'user.id',
 ];
 
-const logReceivedLogRecords = (logRecords: ILogRecord[]) => {
+const logReceivedLogRecords = (logRecords: OtlpJson<ILogRecord>[]) => {
   if (logRecords.length === 0) {
+    logWarn('Batch contained 0 log records');
     return;
   }
 
   for (const record of logRecords) {
     const eventName = record.eventName ?? '<no eventName>';
-    const parts: string[] = [];
+    const lines = [`LOG eventName: ${eventName}`];
 
     for (const attr of record.attributes ?? []) {
-      if (LOG_RECORD_IGNORED_KEYS.includes(attr.key)) {
+      if (attr.key && LOG_RECORD_IGNORED_KEYS.includes(attr.key)) {
         continue;
       }
 
-      parts.push(`${attr.key}=${renderAttributeValue(attr.value)}`);
+      lines.push(`  ${attr.key}=${renderAttributeValue(attr.value)}`);
     }
 
-    const body = record.body?.stringValue
-      ? `\n  body=${record.body.stringValue}`
-      : '';
+    if (record.body?.stringValue) {
+      lines.push(`  body=${record.body.stringValue}`);
+    }
     const log =
       (record.severityNumber ?? 0) >= SEVERITY_NUMBER_WARN ? logWarn : logInfo;
-    log(`LOG eventName: ${eventName}\n  ${parts.join('\n  ')}${body}`);
+    log(...lines);
   }
 };
 
@@ -242,10 +340,10 @@ const formatDurationMs = (
   return `${ms}ms`;
 };
 
-const logReceivedSpans = (resourceSpans: IResourceSpans[]) => {
+const logReceivedSpans = (resourceSpans: OtlpJson<IResourceSpans>[]) => {
   let total = 0;
   for (const resource of resourceSpans) {
-    for (const scopeSpan of resource.scopeSpans) {
+    for (const scopeSpan of resource.scopeSpans ?? []) {
       for (const span of scopeSpan.spans ?? []) {
         total++;
         const embType = getEmbType(span) ?? '-';
@@ -258,16 +356,53 @@ const logReceivedSpans = (resourceSpans: IResourceSpans[]) => {
     }
   }
   if (total === 0) {
-    logInfo('Batch contained 0 spans');
+    logWarn('Batch contained 0 spans');
   } else {
     logInfo(`Batch contained ${total} span(s)`);
   }
 };
 
+const METRIC_DATA_KEYS = [
+  'sum',
+  'gauge',
+  'histogram',
+  'exponentialHistogram',
+  'summary',
+] as const;
+
+const logReceivedMetrics = (resourceMetrics: OtlpJson<IResourceMetrics>[]) => {
+  let total = 0;
+  for (const resource of resourceMetrics) {
+    for (const scopeMetric of resource.scopeMetrics ?? []) {
+      for (const metric of scopeMetric.metrics ?? []) {
+        total++;
+        const dataKey = METRIC_DATA_KEYS.find(
+          (key) => metric[key] !== undefined,
+        );
+        const points = dataKey ? (metric[dataKey]?.dataPoints ?? []).length : 0;
+        logInfo(
+          `Metric: ${pc.cyan(metric.name)} type=${dataKey ?? 'unknown'} points=${points}`,
+        );
+      }
+    }
+  }
+  if (total === 0) {
+    logWarn('Batch contained 0 metrics');
+  } else {
+    logInfo(`Batch contained ${total} metric(s)`);
+  }
+};
+
+export type { OtlpJson };
 export {
+  gunzipCapped,
+  logError,
   logInfo,
   logReceivedLogRecords,
+  logReceivedMetrics,
   logReceivedSessionPartSpan,
   logReceivedSpans,
   logWarn,
+  RequestAbortedError,
+  readCappedBody,
 };
