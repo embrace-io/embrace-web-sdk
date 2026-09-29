@@ -8,20 +8,20 @@ import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/
 import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import type { ReceivedSpans } from '../tests/integration/types.ts';
 import {
-  formatIngestDrop,
-  formatIngestFailure,
-  ingestTypeOf,
-  readIngestRequest,
-  writeIngestAccepted,
-  writeIngestPreflight,
-} from './ingest.ts';
+  embraceIngestTypeOf,
+  formatEmbraceIngestDrop,
+  formatEmbraceIngestFailure,
+  readEmbraceIngestRequest,
+  writeEmbraceIngestAccepted,
+  writeEmbraceIngestPreflight,
+} from './embrace-ingest.ts';
 import {
   otlpSignalOf,
   readOtlpRequest,
   writeOtlpRejection,
   writeOtlpServerError,
   writeOtlpSuccess,
-} from './otlp.ts';
+} from './otlp-ingest.ts';
 import type { OtlpJson } from './utils.ts';
 import {
   logError,
@@ -45,7 +45,7 @@ const PORT = 3001;
 // response stays byte-identical to production.
 const SIMULATE_NO_STORE = process.env['EMB_NO_STORE'] === '1';
 
-const ingestExtraHeaders = (): Record<string, string> =>
+const embraceIngestExtraHeaders = (): Record<string, string> =>
   SIMULATE_NO_STORE ? { 'Cache-Control': 'no-store' } : {};
 
 const mimeTypes: Record<string, string> = {
@@ -165,11 +165,11 @@ const server = createServer((req, res) => {
   res.setHeader('Access-Control-Expose-Headers', 'ETag');
 
   const pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
-  const ingestType = ingestTypeOf(pathname);
+  const embraceIngestType = embraceIngestTypeOf(pathname);
 
   if (req.method === 'OPTIONS') {
-    if (ingestType) {
-      writeIngestPreflight(res);
+    if (embraceIngestType) {
+      writeEmbraceIngestPreflight(res);
       return;
     }
     res.writeHead(204);
@@ -222,7 +222,7 @@ const server = createServer((req, res) => {
   }
 
   const otlpSignal = otlpSignalOf(pathname);
-  const isIngest = otlpSignal !== undefined || ingestType !== undefined;
+  const isIngest = otlpSignal !== undefined || embraceIngestType !== undefined;
   const violation = isIngest ? embraceContractViolation(req) : undefined;
   if (violation) {
     logWarn(`${violation} on ${pathname}; SDK contract broken?`);
@@ -257,26 +257,28 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (ingestType) {
-    readIngestRequest(req, ingestType)
+  if (embraceIngestType) {
+    readEmbraceIngestRequest(req, embraceIngestType)
       .then((result) => {
         if (!result.ok) {
-          logWarn(...formatIngestDrop(req, ingestType, result));
+          logWarn(...formatEmbraceIngestDrop(req, embraceIngestType, result));
         } else if (result.type === 'spans') {
           recordSpans(result.request);
         } else {
           recordLogs(result.request);
         }
-        writeIngestAccepted(res, ingestExtraHeaders());
+        writeEmbraceIngestAccepted(res, embraceIngestExtraHeaders());
       })
       .catch((e: unknown) => {
         if (e instanceof RequestAbortedError) {
-          logWarn(`Client aborted ${ingestType} request: ${e.message}`);
+          logWarn(
+            `Client aborted Embrace ${embraceIngestType} request: ${e.message}`,
+          );
           return;
         }
         // Production replies 200 before processing, and a 5xx would make the SDK retry.
-        logError(formatIngestFailure(req, ingestType), e);
-        writeIngestAccepted(res, ingestExtraHeaders());
+        logError(formatEmbraceIngestFailure(req, embraceIngestType), e);
+        writeEmbraceIngestAccepted(res, embraceIngestExtraHeaders());
       });
     return;
   }
@@ -313,7 +315,9 @@ const server = createServer((req, res) => {
 server.listen(PORT, () => {
   logInfo(`Debug collector running on http://localhost:${PORT}`);
   if (SIMULATE_NO_STORE) {
-    logWarn('EMB_NO_STORE=1: ingest responses carry Cache-Control: no-store');
+    logWarn(
+      'EMB_NO_STORE=1: Embrace ingest responses carry Cache-Control: no-store',
+    );
   }
   logInfo('To send telemetry to the debug collector, add your');
   logInfo(`appID to ./demo/frontend/.env:`);

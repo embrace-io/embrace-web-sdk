@@ -6,7 +6,7 @@ import { gunzipCapped, readCappedBody } from './utils.ts';
 
 // Mirrors data.emb-api.com, which replies 200 "0" before validating, so bad payloads still get 200.
 
-type IngestType = 'spans' | 'logs';
+type EmbraceIngestType = 'spans' | 'logs';
 
 // Production also answers oversized bodies with 200 "0".
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
@@ -15,7 +15,7 @@ const DEVICE_ID_PATTERN = /^[0-9A-Fa-f]{32}$/;
 // The uncompressed body the production health check sends.
 const PING_BODY = '{}';
 
-type IngestDropReason =
+type EmbraceIngestDropReason =
   | 'body_too_large'
   | 'invalid_app_id'
   | 'invalid_device_id'
@@ -24,19 +24,21 @@ type IngestDropReason =
   | 'decode_error'
   | 'invalid_resource_count';
 
-type IngestDrop = {
+type EmbraceIngestDrop = {
   ok: false;
-  reason: IngestDropReason;
+  reason: EmbraceIngestDropReason;
   detail: string;
   bytes: number;
 };
-type IngestReadResult =
+type EmbraceIngestReadResult =
   | { ok: true; type: 'spans'; request: OtlpJson<IExportTraceServiceRequest> }
   | { ok: true; type: 'logs'; request: OtlpJson<IExportLogsServiceRequest> }
-  | IngestDrop;
+  | EmbraceIngestDrop;
 
 // Production matches these as path prefixes.
-const ingestTypeOf = (pathname: string): IngestType | undefined => {
+const embraceIngestTypeOf = (
+  pathname: string,
+): EmbraceIngestType | undefined => {
   if (pathname.startsWith('/v2/spans')) return 'spans';
   if (pathname.startsWith('/v2/logs')) return 'logs';
   return undefined;
@@ -49,12 +51,15 @@ const headerValue = (req: IncomingMessage, name: string): string => {
 
 const quoted = (value: string) => (value ? `"${value}"` : 'missing');
 
-const readIngestRequest = async (
+const readEmbraceIngestRequest = async (
   req: IncomingMessage,
-  type: IngestType,
-): Promise<IngestReadResult> => {
+  type: EmbraceIngestType,
+): Promise<EmbraceIngestReadResult> => {
   const { body, bytes } = await readCappedBody(req, MAX_BODY_BYTES);
-  const drop = (reason: IngestDropReason, detail: string): IngestDrop => ({
+  const drop = (
+    reason: EmbraceIngestDropReason,
+    detail: string,
+  ): EmbraceIngestDrop => ({
     ok: false,
     reason,
     detail,
@@ -134,21 +139,21 @@ const formatRequestContext = (req: IncomingMessage, size: string): string[] => [
 ];
 
 // Production discards silently, so the warning carries the full request context.
-const formatIngestDrop = (
+const formatEmbraceIngestDrop = (
   req: IncomingMessage,
-  type: IngestType,
-  drop: IngestDrop,
+  type: EmbraceIngestType,
+  drop: EmbraceIngestDrop,
 ): string[] => [
-  `Dropped ${type} request: ${drop.reason} (production replies 200 "0" and discards it)`,
+  `Dropped Embrace ${type} request: ${drop.reason} (production replies 200 "0" and discards it)`,
   `  ${drop.detail}`,
   ...formatRequestContext(req, `bytes=${drop.bytes}`),
 ];
 
-const formatIngestFailure = (
+const formatEmbraceIngestFailure = (
   req: IncomingMessage,
-  type: IngestType,
+  type: EmbraceIngestType,
 ): string[] => [
-  `Collector failed to handle ${type} request; replied 200 "0" as production does`,
+  `Collector failed to handle Embrace ${type} request; replied 200 "0" as production does`,
   ...formatRequestContext(
     req,
     `Content-Length=${quoted(headerValue(req, 'content-length'))}`,
@@ -156,7 +161,7 @@ const formatIngestFailure = (
 ];
 
 // Production's body is "0" plus a newline, typed text/html with no charset.
-const writeIngestAccepted = (
+const writeEmbraceIngestAccepted = (
   res: ServerResponse,
   extraHeaders: Record<string, string> = {},
 ) => {
@@ -164,7 +169,7 @@ const writeIngestAccepted = (
   res.end('0\n');
 };
 
-const writeIngestPreflight = (res: ServerResponse) => {
+const writeEmbraceIngestPreflight = (res: ServerResponse) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
@@ -173,12 +178,12 @@ const writeIngestPreflight = (res: ServerResponse) => {
   res.end();
 };
 
-export type { IngestDrop, IngestType };
+export type { EmbraceIngestDrop, EmbraceIngestType };
 export {
-  formatIngestDrop,
-  formatIngestFailure,
-  ingestTypeOf,
-  readIngestRequest,
-  writeIngestAccepted,
-  writeIngestPreflight,
+  embraceIngestTypeOf,
+  formatEmbraceIngestDrop,
+  formatEmbraceIngestFailure,
+  readEmbraceIngestRequest,
+  writeEmbraceIngestAccepted,
+  writeEmbraceIngestPreflight,
 };
