@@ -4,6 +4,7 @@
  */
 
 import type { Span } from '@opentelemetry/api';
+import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type DocumentLoadCustomAttributeFunction = (span: Span) => void;
@@ -57,7 +58,4 @@ export type DocumentLoadInstrumentationConfig = Pick<
    * firstPaint
    */
   ignorePerformancePaintEvents?: boolean;
-
-  /** Whether the instrumentation is enabled */
-  enabled?: boolean;
-};
+} & InstrumentationConfig;
