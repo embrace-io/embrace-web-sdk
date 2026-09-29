@@ -112,7 +112,7 @@ const recordSpans = (request: OtlpJson<IExportTraceServiceRequest>) => {
 
   if (sessionPartSpan && !userSessionId) {
     logWarn(
-      'emb-session-part received without emb.user_session_id; SDK contract broken?',
+      'emb-session-part received without emb.user_session_id; SDK contract broken',
     );
   }
 
@@ -125,7 +125,7 @@ const recordSpans = (request: OtlpJson<IExportTraceServiceRequest>) => {
       const endReason = stringAttribute('emb.session_part_end_reason');
       if (!endReason) {
         logWarn(
-          'emb-session-part received without emb.session_part_end_reason; SDK contract broken?',
+          'emb-session-part received without emb.session_part_end_reason; SDK contract broken',
         );
       }
       if (sessionPartId) {
@@ -225,7 +225,7 @@ const server = createServer((req, res) => {
   const isIngest = otlpSignal !== undefined || embraceIngestType !== undefined;
   const violation = isIngest ? embraceContractViolation(req) : undefined;
   if (violation) {
-    logWarn(`${violation} on ${pathname}; SDK contract broken?`);
+    logWarn(`${violation} on ${pathname}; SDK contract broken`);
     res.writeHead(415, { 'Content-Type': 'text/plain' });
     res.end(violation);
     return;

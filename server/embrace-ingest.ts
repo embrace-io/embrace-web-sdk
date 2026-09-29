@@ -30,6 +30,7 @@ type EmbraceIngestDrop = {
   detail: string;
   bytes: number;
 };
+
 type EmbraceIngestReadResult =
   | { ok: true; type: 'spans'; request: OtlpJson<IExportTraceServiceRequest> }
   | { ok: true; type: 'logs'; request: OtlpJson<IExportLogsServiceRequest> }
