@@ -1,0 +1,130 @@
+# Built from the otel-semconv-setup canonical layout. Jobs are grouped into the
+# same features as the Makefile's sections, between `# ==== <feature>` and `# ==== end <feature>`
+# lines: keep the sections of the features and collections the project uses (and `private` only
+# for a private repo, or one fetching a private registry), and the `needs` entries of the
+# aggregate job at the end whose tags are all among them.
+name: Semconv CI validation
+
+# No `paths:` filter: the aggregate job is a required check, and a required check that never runs
+# blocks the pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# The directory holding the project's Makefile, relative to the repo root.
+defaults:
+  run:
+    working-directory: packages/web-sdk/semconv
+
+jobs:
+  # ==== templates
+  test-templates:
+    name: Test templates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read pinned weaver version
+        id: weaver
+        run: |
+          source versions.env
+          echo "version=$WEAVER_VERSION" >> "$GITHUB_OUTPUT"
+
+      # `$/` is GitHub's syntax for this repository's own actions, at the commit running.
+      - name: Install Weaver
+        uses: $/.github/actions/setup-weaver
+        with:
+          version: ${{ steps.weaver.outputs.version }}
+
+      - name: Compare what the templates render from the fixture with the golden files
+        run: make test-templates
+  # ==== end templates
+
+  # ==== codegen
+  # The platform's toolchain setup (an actions/setup-* action, e.g. setup-java, whose
+  # `cache: gradle` stands in for gradle/actions/setup-gradle, or setup-node) goes before the
+  # validate step, with its own `working-directory:` when it must run elsewhere (e.g. `npm ci` at
+  # the repo root); raise timeout-minutes for slow builds (a cold Gradle build). The compare step
+  # is only for committed generated code.
+  validate-generated:
+    name: Validate generated code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read pinned weaver version
+        id: weaver
+        run: |
+          source versions.env
+          echo "version=$WEAVER_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Install Weaver
+        uses: $/.github/actions/setup-weaver
+        with:
+          version: ${{ steps.weaver.outputs.version }}
+
+      - name: Regenerate the code
+        run: make generate
+
+      - name: Compare committed code with the regenerated code
+        uses: $/.github/actions/assert-no-drift
+        with:
+          path: packages/web-sdk/src/semconv
+          label: generated code
+          regenerate-hint: |
+            # run in the project directory (packages/web-sdk/semconv):
+            make install-weaver   # once, if weaver is not on PATH
+            make generate
+            git add ../src/semconv/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: package.json
+          cache: npm
+
+      - name: Install npm dependencies
+        working-directory: .
+        run: npm ci
+
+      # Both rerun `make generate` first, so they fetch too.
+      - name: Validate the generated code
+        run: make validate-generated
+
+      - name: Package the generated code
+        run: make package-generated
+  # ==== end codegen
+
+  # Aggregate gate for branch protection: require only this job. Branch protection sees a job by
+  # its `name:`, so keep the name identical to the id, unique among the repo's workflows, and name
+  # it in the protection rule.
+  semconv-required-status-check:
+    name: semconv-required-status-check
+    if: always()
+    # No checkout here, so the project directory doesn't exist.
+    defaults:
+      run:
+        working-directory: .
+    needs:
+      - test-templates # templates
+      - validate-generated # codegen
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any dependency did not pass
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: exit 1
