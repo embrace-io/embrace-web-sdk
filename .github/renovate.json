@@ -15,7 +15,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": [
+      "fileMatch": [
         "/(^|/)versions\\.env$/",
         "/(^|/)manifest\\.yaml$/",
         "/(^|/)Makefile$/"
