@@ -441,7 +441,7 @@ The SDK can be configured to inject a traceparent header on outgoing network req
 client-side trace ID associated with that particular network span. On the Embrace backend these network spans can then
 be forwarded to other telemetry providers of your choice. This gives you the ability to view client-side spans alongside
 server-side ones that form part of the same overall trace to provide an end-to-end representation. More details can be
-found on the [Network Span Forwarding documentation page](https://embrace.io/docs/product/network-spans-forwarding/).
+found on the [Network Span Forwarding documentation page](https://embrace.io/docs/data-forwarding/network-spans-forwarding/).
 
 The enabling and configuration of this feature is done through our Embrace dashboard so nothing needs to be set in the
 SDK to turn it on, however there are a few SDK-side configurations that prevent the feature to be aware of:
@@ -454,9 +454,9 @@ You can specify particular URLs that you wish to forward CORS requests for and f
 the additional header by configuring the fetch or XHR instrumentations with an allow list of strings and regexes:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
   defaultInstrumentationConfig: {
@@ -482,9 +482,9 @@ Particular configurations of the SDK are incompatible with Network Span Forwardi
 turned off if set:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
 
@@ -494,7 +494,9 @@ sdk.initSDK({
   // 2. Providing a custom propagator
   propagator: myCustomPropagator,
   // 3. Omitting both network instrumentations
-  omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+  defaultInstrumentationConfig: {
+    omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+  },
 });
 ```
 
@@ -504,9 +506,9 @@ A `blockNetworkSpanForwarding` configuration flag is available to block the Netw
 of what has been configured server-side:
 
 ```typescript
-import { sdk } from '@embrace-io/web-sdk';
+import { initSDK } from '@embrace-io/web-sdk';
 
-sdk.initSDK({
+initSDK({
   appID: "YOUR_EMBRACE_APP_ID",
   appVersion: "YOUR_APP_VERSION",
 
