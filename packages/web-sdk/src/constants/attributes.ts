@@ -3,7 +3,11 @@ export const KEY_EMB_STATE = 'emb.state';
 export const KEY_EMB_COLD_START = 'emb.cold_start';
 export const KEY_EMB_PAGE_LOAD = 'emb.page_load';
 export const KEY_EMB_EXCEPTION_NUMBER = 'emb.exception_number';
+// Named for parity with the Android SDK, which emits the same key for the same
+// measurement. Internally this is the initSDK duration, not a wider startup.
 export const KEY_EMB_SDK_STARTUP_DURATION = 'emb.sdk_startup_duration';
+export const KEY_EMB_SDK_LOAD_ORIGIN_OFFSET = 'emb.sdk_load_origin_offset';
+export const KEY_EMB_SDK_INIT_ORIGIN_OFFSET = 'emb.sdk_init_origin_offset';
 export const KEY_PREFIX_EMB_PROPERTIES = 'emb.properties.';
 export const KEY_EMB_JS_EXCEPTION_STACKTRACE = 'emb.stacktrace.js';
 export const KEY_EMB_EXCEPTION_HANDLING = 'emb.exception_handling';
