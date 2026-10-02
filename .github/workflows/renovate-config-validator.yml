@@ -5,9 +5,11 @@ on:
     branches: [main]
     paths:
       - .github/renovate.json
+      - packages/web-sdk/semconv/versions.env
   pull_request:
     paths:
       - .github/renovate.json
+      - packages/web-sdk/semconv/versions.env
 
 permissions:
   contents: read
@@ -29,6 +31,10 @@ jobs:
         # LOG_FORMAT=json bypasses Renovate's async pretty-printer; the validator
         # calls process.exit() without draining streams, so in non-TTY CI any
         # in-flight pretty-printed errors are dropped before they reach the log.
+        # The Renovate version is the one versions.env pins, so a new release arrives as a bump of
+        # that pin, which this workflow checks before it merges.
         env:
           LOG_FORMAT: json
-        run: npx --yes --package=renovate -- renovate-config-validator .github/renovate.json
+        run: |
+          source packages/web-sdk/semconv/versions.env
+          npx --yes --package="renovate@${RENOVATE_VERSION}" -- renovate-config-validator --no-global .github/renovate.json
