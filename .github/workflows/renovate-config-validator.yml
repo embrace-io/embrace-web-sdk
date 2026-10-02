@@ -5,9 +5,11 @@ on:
     branches: [main]
     paths:
       - .github/renovate.json
+      - packages/web-sdk/semconv/versions.env
   pull_request:
     paths:
       - .github/renovate.json
+      - packages/web-sdk/semconv/versions.env
 
 permissions:
   contents: read
@@ -25,10 +27,41 @@ jobs:
         with:
           node-version-file: package.json
 
+      - name: Resolve the Renovate version the hosted app last ran
+        id: renovate
+        # The hosted Mend Renovate app runs a version the repo can't pin or query, but every pull
+        # request it opens or rebases ends with a `renovate-debug` footer whose base64 JSON names
+        # the version that produced it. The most recently updated Renovate pull request therefore
+        # says what ran last, and the config is validated with that version. The pin in
+        # versions.env is the fallback when no footer can be read (no Renovate pull request yet, or
+        # a changed footer format).
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          source packages/web-sdk/semconv/versions.env
+          footer="$(gh pr list --state all --limit 1 \
+            --search 'author:app/renovate sort:updated-desc' --json body --jq '.[0].body // ""' \
+            | grep -o 'renovate-debug:[A-Za-z0-9+/=]*' | cut -d: -f2 || true)"
+          version=""
+          if [[ -n "$footer" ]]; then
+            version="$(printf '%s' "$footer" | base64 -d 2>/dev/null \
+              | jq -r '.updatedInVer // .createdInVer // empty' 2>/dev/null || true)"
+          fi
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Validating with Renovate $version, the version the hosted app last ran."
+          else
+            version="$RENOVATE_VERSION"
+            echo "No Renovate pull request footer found; validating with the pinned fallback $version."
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Validate .github/renovate.json
         # LOG_FORMAT=json bypasses Renovate's async pretty-printer; the validator
         # calls process.exit() without draining streams, so in non-TTY CI any
         # in-flight pretty-printed errors are dropped before they reach the log.
         env:
           LOG_FORMAT: json
-        run: npx --yes --package=renovate -- renovate-config-validator .github/renovate.json
+          RENOVATE_VERSION: ${{ steps.renovate.outputs.version }}
+        run: |
+          npx --yes --package="renovate@${RENOVATE_VERSION}" -- renovate-config-validator --no-global .github/renovate.json

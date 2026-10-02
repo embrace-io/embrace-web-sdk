@@ -1,0 +1,57 @@
+file_format: definition/2
+
+# Fixture attributes, so the attribute templates have something to render: a string with examples
+# and a note, an enum, a deprecated attribute and a long key. The fixture defines them itself and
+# exports them through a public group, so templates that render per group (or select groups by
+# ID) render them too. Codegen filters that select by namespace or group ID must match `fixture`
+# and `registry.fixture.*`.
+#
+# It also imports a core registry group whose attributes nothing else here references: weaver
+# adds an imported group's attributes to the registry's attributes (and lists the group nowhere),
+# so a template that forgets to filter by provenance renders `user_agent.*` and the golden files
+# show it.
+attributes:
+  - key: fixture.str
+    type: string
+    stability: development
+    brief: A fixture string attribute.
+    note: A fixture note, so templates that render notes are exercised.
+    examples: ["a"]
+  - key: fixture.enum
+    type:
+      members:
+        - id: one
+          value: "one"
+          stability: development
+          brief: The only member.
+    stability: development
+    brief: A fixture enum attribute.
+  - key: fixture.old_str
+    type: string
+    stability: development
+    brief: A deprecated fixture attribute, so templates that mark deprecation are exercised.
+    examples: ["a"]
+    deprecated:
+      reason: renamed
+      renamed_to: fixture.str
+      note: Replaced by `fixture.str`.
+  - key: fixture.a_long_attribute_key_that_makes_generated_lines_wrap_in_most_formatters
+    type: int
+    stability: development
+    brief: A fixture attribute with a long key, so templates that wrap long lines are exercised.
+    examples: [1]
+
+attribute_groups:
+  - id: registry.fixture.defined
+    visibility: public
+    stability: development
+    brief: The attributes the fixture defines itself.
+    attributes:
+      - ref: fixture.str
+      - ref: fixture.enum
+      - ref: fixture.old_str
+      - ref: fixture.a_long_attribute_key_that_makes_generated_lines_wrap_in_most_formatters
+
+imports:
+  attribute_groups:
+    - "registry.user_agent"

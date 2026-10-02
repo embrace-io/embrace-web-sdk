@@ -1,0 +1,20 @@
+# The TypeScript attribute constants the web SDK takes from the embrace-semconv registry.
+#
+# The SDK consumes two of the registry's keys, listed in the filter below; every other attribute
+# key stays hand-written in src/constants/attributes.ts. The filter also selects the fixture's
+# `fixture.*` keys, which the source registry doesn't define, so `make test-templates` exercises
+# every branch of the templates (a note, an enum, a deprecated attribute, a long key).
+#
+# Both templates render the same selection: a list of attributes, sorted by key in the templates.
+templates:
+  - pattern: attributes.ts.j2
+    filter: &selected >
+      (.registry.attributes // [])
+      | map(select(.provenance.source | not))
+      | map(select(.key as $key
+          | (["emb.user_session_id", "emb.session_part_id"] | any(. == $key))
+            or ($key | startswith("fixture."))))
+    application_mode: single
+  - pattern: index.ts.j2
+    filter: *selected
+    application_mode: single
