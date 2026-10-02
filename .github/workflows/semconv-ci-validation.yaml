@@ -1,8 +1,6 @@
-# Built from the otel-semconv-setup canonical layout. Jobs are grouped into the
-# same features as the Makefile's sections, between `# ==== <feature>` and `# ==== end <feature>`
-# lines: keep the sections of the features and collections the project uses (and `private` only
-# for a private repo, or one fetching a private registry), and the `needs` entries of the
-# aggregate job at the end whose tags are all among them.
+# Jobs are grouped into the same features as the Makefile's sections, between
+# `# ==== <feature>` and `# ==== end <feature>` lines, and the aggregate job at the end needs
+# every job above it.
 name: Semconv CI validation
 
 # No `paths:` filter: the aggregate job is a required check, and a required check that never runs

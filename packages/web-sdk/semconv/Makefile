@@ -1,13 +1,11 @@
 # Validation, generation and packaging for this project. The same targets run locally and in CI;
 # `make help` lists them.
 #
-# Built from the otel-semconv-setup canonical layout. Each part is a section
-# from a `# ==== <name>` line (optionally followed by `: <description>`) to its
-# `# ==== end <name>` line. Every project keeps `project`, `common` and `templates`, plus the
-# sections of the features and collections it uses. Within a section, change only the settings at
-# its top (a project may add settings of its own there, and reword a setting's comment to match
-# its value); keep the targets in sync with the layout. Requires GNU make 3.81 or later (macOS
-# ships 3.81), so every multi-line recipe runs in a single shell via backslash continuations.
+# Each part is a section from a `# ==== <name>` line (optionally followed by `: <description>`)
+# to its `# ==== end <name>` line: `project`, `common` and `templates`, plus one for each feature
+# and collection the project uses. A section's settings are at its top. Requires GNU make 3.81 or
+# later (macOS ships 3.81), so every multi-line recipe runs in a single shell via backslash
+# continuations.
 
 # ==== project
 .PHONY: all

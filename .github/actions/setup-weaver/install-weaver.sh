@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Part of the otel-semconv-setup canonical layout, copied into each project. Update it from the
-# layout rather than editing it here.
-#
 # Installs the pinned OpenTelemetry Weaver CLI for the host platform.
 #
 # The version comes from $WEAVER_VERSION (`make install-weaver` and the setup-weaver action pass
