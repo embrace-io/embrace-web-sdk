@@ -37,6 +37,10 @@ export default defineConfig([
             // Navigation API (newly available) is used intentionally to
             // track soft navigations. It is guarded by using a proxy interface named NavigationHost
             'navigation',
+            // Soft Navigation Heuristics PerformanceObserver entry type is
+            // feature-detected in SoftNavigationPerformanceInstrumentation,
+            // which falls back to a polyfill when unsupported
+            'soft-navigations',
           ],
         },
       ],
