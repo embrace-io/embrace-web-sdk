@@ -71,9 +71,35 @@ The code within `packages/web-sdk/src/` is divided as follows:
     each payload.
 - `sdk/`
   - Main entry point for initializing the SDK
+- `semconv/`
+  - Attribute constants generated from the embrace-semconv registry. Never
+    edited by hand; see [Semantic conventions](#semantic-conventions)
 - `transport/`
   - Low-level facilities for controlling the actual sending of data and
     error-handling
+
+## Semantic conventions
+
+`packages/web-sdk/src/semconv/` holds attribute constants that
+[weaver](https://github.com/open-telemetry/weaver) generates from the
+[embrace-semconv](https://github.com/embrace-io/embrace-semconv) registry, at
+the release pinned by `SOURCE_REGISTRY` in `packages/web-sdk/semconv/Makefile`.
+The SDK consumes only the keys that registry defines (`emb.user_session_id` and
+`emb.session_part_id`), which `src/constants/attributes.ts` re-exports next to
+the hand-written keys. The generated code is committed, and the
+`Semconv CI validation` workflow fails when it differs from a fresh regeneration.
+
+To regenerate after bumping the release or changing the templates under
+`packages/web-sdk/semconv/templates/`, run from `packages/web-sdk/semconv/`:
+
+```sh
+make install-weaver   # once, if weaver is not on PATH
+make generate         # rewrites src/semconv/
+make test-templates   # or `make update-golden` after a deliberate template change
+make validate-generated
+```
+
+`make help` lists every target.
 
 ## Testing
 

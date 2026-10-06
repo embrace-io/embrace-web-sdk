@@ -1,0 +1,22 @@
+name: Setup Weaver
+description: >
+  Installs the pinned OpenTelemetry Weaver CLI into ~/.local/bin, which is on PATH on
+  GitHub-hosted runners.
+
+inputs:
+  version:
+    description: Weaver version to install, e.g. v0.26.1 (the leading "v" is optional).
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install weaver
+      shell: bash
+      # Inputs are passed through `env`, never interpolated into the script body.
+      env:
+        WEAVER_VERSION: ${{ inputs.version }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        install_dir="${HOME}/.local/bin"
+        bash "${ACTION_PATH}/install-weaver.sh" "${install_dir}"

@@ -1,3 +1,10 @@
+// The keys the embrace-semconv registry defines are generated into src/semconv/ (see
+// packages/web-sdk/semconv/); every other key is hand-written here.
+export {
+  KEY_EMB_SESSION_PART_ID,
+  KEY_EMB_USER_SESSION_ID,
+} from '../semconv/index.ts';
+
 export const KEY_EMB_TYPE = 'emb.type';
 export const KEY_EMB_STATE = 'emb.state';
 export const KEY_EMB_COLD_START = 'emb.cold_start';
@@ -26,12 +33,10 @@ export const KEY_EMB_PAGE_ID = 'app.surface.id';
 export const KEY_APP_SURFACE_LABEL = 'app.surface.label';
 
 // User session attributes
-export const KEY_EMB_SESSION_PART_ID = 'emb.session_part_id';
 export const KEY_EMB_SESSION_PART_NUMBER = 'emb.session_part_number';
 export const KEY_EMB_SESSION_PART_START_REASON =
   'emb.session_part_start_reason';
 export const KEY_EMB_SESSION_PART_END_REASON = 'emb.session_part_end_reason';
-export const KEY_EMB_USER_SESSION_ID = 'emb.user_session_id';
 export const KEY_EMB_USER_SESSION_PREVIOUS_ID = 'emb.user_session_previous_id';
 export const KEY_EMB_USER_SESSION_NUMBER = 'emb.user_session_number';
 export const KEY_EMB_USER_SESSION_PART_INDEX = 'emb.user_session_part_index';
