@@ -1372,7 +1372,7 @@ describe('EmbraceLogManager', () => {
       expect(secondMemoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
     });
 
-    it('should force flush the overridden logger provider', async () => {
+    it('should force flush the flush logger provider', async () => {
       const loggerProvider = new LoggerProvider({
         processors: [
           new SimpleLogRecordProcessor({
@@ -1386,7 +1386,7 @@ describe('EmbraceLogManager', () => {
         perf,
         userSessionManager,
         limitManager,
-        loggerProvider,
+        flushLoggerProvider: loggerProvider,
         storage,
         visibilityDoc: window.document,
       });
@@ -1413,7 +1413,7 @@ describe('EmbraceLogManager', () => {
         perf,
         userSessionManager,
         limitManager,
-        loggerProvider,
+        flushLoggerProvider: loggerProvider,
         storage,
         visibilityDoc: window.document,
       });
