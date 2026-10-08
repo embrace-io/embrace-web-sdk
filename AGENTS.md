@@ -148,7 +148,7 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 
 ### Transport
 
-- Telemetry on the unload path (`pagehide` / `visibilitychange` to hidden) is sent via keepalive `fetch` (the SDK does not use `sendBeacon`). The browser only grants a synchronous budget during unload, so async work (Promises, timers) may not run before teardown. Prefer synchronous work here and avoid adding `await`s. Note: gzip compression currently uses `CompressionStream` (async), a known teardown-race fragility, not a pattern to copy
+- Telemetry on the unload path (`pagehide` / `visibilitychange` to hidden) is sent via keepalive `fetch` (the SDK does not use `sendBeacon`). The browser only grants a synchronous budget during unload, so async work (Promises, timers) may not run before teardown. Prefer synchronous work here and avoid adding `await`s. Gzip uses fflate's synchronous `gzipSync` in `GzipSerializer` for this reason, and runs before the transport so the keepalive budget counts compressed bytes
 
 ### Time
 
