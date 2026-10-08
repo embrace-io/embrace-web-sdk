@@ -1,6 +1,6 @@
 export type {
   DocumentLoadCustomAttributeFunction,
-  DocumentLoadInstrumentationConfig,
+  DocumentLoadInstrumentationArgs,
   ResourceFetchCustomAttributeFunction,
 } from './DocumentLoadInstrumentation/index.ts';
 export {

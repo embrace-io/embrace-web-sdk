@@ -372,11 +372,15 @@ describe('initSDK', () => {
 
   it('should allow setting custom instrumentations', async () => {
     const instrumentation = new FakeInstrumentation();
+    // document-load is omitted wherever this file asserts exact span counts:
+    // once enabled it emits one span per real resource entry on the harness page.
     const result = initSDK({
       logExporters: [logExporter],
       spanExporters: [spanExporter],
       instrumentations: [instrumentation],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -403,7 +407,9 @@ describe('initSDK', () => {
       logProcessors: [new FakeLogRecordProcessor()],
       spanProcessors: [new FakeSpanProcessor()],
       instrumentations: [instrumentation],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -529,7 +535,9 @@ describe('initSDK', () => {
       appID: 'abc12',
       logExporters: [logExporter],
       spanExporters: [spanExporter],
-      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
     });
     void expect(result).not.to.be.false;
 
@@ -616,6 +624,7 @@ describe('initSDK', () => {
   it('should setup a default context manager when none is provided', async () => {
     const result = initSDK({
       spanExporters: [spanExporter],
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
     });
     void expect(result).not.to.be.false;
 
@@ -2131,6 +2140,112 @@ describe('isolated instances', () => {
     expect(record?.attributes['emb.session_part_id']).to.equal(sessionPartId);
   });
 
+  it('should deliver telemetry emitted inside onEnable to the instance exporters', async () => {
+    class EmitOnEnableInstrumentation extends FakeInstrumentation {
+      public override onEnable(): void {
+        super.onEnable();
+        this.emit();
+      }
+    }
+    const isolatedLogExporter = new InMemoryLogRecordExporter();
+    const isolatedSpanExporter = new InMemorySpanExporter();
+    const result = initSDK({
+      logExporters: [isolatedLogExporter],
+      spanExporters: [isolatedSpanExporter],
+      instrumentations: [new EmitOnEnableInstrumentation()],
+      registerGlobally: false,
+      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+    });
+
+    void expect(result).not.to.be.false;
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+
+    await result.flush();
+
+    // registerInstrumentations attaches this instance's providers before it
+    // calls enable(), so anything emitted inside onEnable records here rather
+    // than on the API's no-op providers. Independent of any default
+    // instrumentation, so an upstream change to that order fails this alone.
+    expect(
+      isolatedLogExporter.getFinishedLogRecords().map((record) => record.body),
+    ).to.include('my log');
+    expect(
+      isolatedSpanExporter.getFinishedSpans().map((span) => span.name),
+    ).to.include('my span');
+  });
+
+  it('should record fetch spans into the instance exporter under registerGlobally: false', async () => {
+    const isolatedSpanExporter = new InMemorySpanExporter();
+    const result = initSDK({
+      spanExporters: [isolatedSpanExporter],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    void expect(result).not.to.be.false;
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+
+    // Upstream ends the span after a fixed wait for the resource timing entry.
+    // The stub's default response has no body on purpose: with one, upstream
+    // ends the span only after reading it, past the tick below.
+    const clock = sinon.useFakeTimers();
+    try {
+      await fetch('something');
+      clock.tick(1000);
+    } finally {
+      clock.restore();
+    }
+    await result.flush();
+
+    // The fetch instrumentation is constructed with enabled: false and started
+    // by registerInstrumentations once this instance's tracer provider is
+    // attached, so its spans record here rather than on the API's no-op tracer.
+    const fetchSpans = isolatedSpanExporter
+      .getFinishedSpans()
+      .filter(
+        (span) =>
+          span.instrumentationScope.name ===
+          '@opentelemetry/instrumentation-fetch',
+      );
+    expect(fetchSpans).to.have.lengthOf(1);
+    expect(fetchSpans[0].name).to.equal('GET');
+  });
+
+  it('should export the document load spans for an isolated instance', async () => {
+    const isolatedSpanExporter = new InMemorySpanExporter();
+    const result = initSDK({
+      spanExporters: [isolatedSpanExporter],
+      registerGlobally: false,
+      defaultInstrumentationConfig: { omit: new Set(['web-vital']) },
+    });
+
+    void expect(result).not.to.be.false;
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+
+    await result.flush();
+
+    // This page has already loaded, so the spans are recorded while
+    // registerInstrumentations enables the instrumentation. They must reach
+    // this instance's own exporter even though its tracer provider is only
+    // wired onto the instrumentation after construction.
+    const spanNames = isolatedSpanExporter
+      .getFinishedSpans()
+      .map((span) => span.name);
+    expect(spanNames).to.include('documentLoad');
+    expect(spanNames).to.include('documentFetch');
+  });
+
   it('should allow each instance to emit its own telemetry from the provided managers', async () => {
     const firstSDKInstrumentation = new FakeInstrumentation();
     const firstSDKInstance = initSDK({
@@ -2214,27 +2329,30 @@ describe('isolated instances', () => {
       // Two emb-session-part spans are expected per instance: the init part
       // is ended explicitly, then a fresh activity part is opened and ended.
       // Each instance owns its own userSessionManager, so the parts are
-      // isolated per instance and not shared. The activity part resumes on
-      // the same route, so EmbracePageManager re-notifies NavigationInstrumentation
-      // on session-part-start, giving it its own route span too.
-      expect(finishedSpans).to.have.lengthOf(5);
+      // isolated per instance and not shared. Each part gets its own route
+      // span: the first when registerInstrumentations enables
+      // NavigationInstrumentation on the already-current route, the second
+      // when NavigationInstrumentation's part-start listener replays that
+      // route for the activity part.
+      expect(finishedSpans).to.have.lengthOf(6);
       expect(finishedSpans[0].name).to.equal('some span');
-      expect(finishedSpans[1].name).to.equal('emb-session-part');
+      expect(finishedSpans[1].name).to.equal(window.location.pathname);
+      expect(finishedSpans[2].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[1].attributes['emb.session_part_start_reason'],
+        finishedSpans[2].attributes['emb.session_part_start_reason'],
       ).to.equal('init');
       expect(
-        finishedSpans[1].attributes['emb.session_part_end_reason'],
+        finishedSpans[2].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[2].name).to.equal(window.location.pathname);
-      expect(finishedSpans[3].name).to.equal('emb-session-part');
+      expect(finishedSpans[3].name).to.equal(window.location.pathname);
+      expect(finishedSpans[4].name).to.equal('emb-session-part');
       expect(
-        finishedSpans[3].attributes['emb.session_part_start_reason'],
+        finishedSpans[4].attributes['emb.session_part_start_reason'],
       ).to.equal('web_activity');
       expect(
-        finishedSpans[3].attributes['emb.session_part_end_reason'],
+        finishedSpans[4].attributes['emb.session_part_end_reason'],
       ).to.equal('web_foreground_inactivity');
-      expect(finishedSpans[4].name).to.equal('my span');
+      expect(finishedSpans[5].name).to.equal('my span');
     };
 
     await checkInstanceTelemetry(

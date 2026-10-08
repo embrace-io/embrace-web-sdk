@@ -7,6 +7,6 @@ export { DocumentLoadInstrumentation } from './DocumentLoadInstrumentation.ts';
 export { AttributeNames } from './enums/AttributeNames.ts';
 export type {
   DocumentLoadCustomAttributeFunction,
-  DocumentLoadInstrumentationConfig,
+  DocumentLoadInstrumentationArgs,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
