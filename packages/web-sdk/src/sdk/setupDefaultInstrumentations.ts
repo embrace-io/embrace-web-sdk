@@ -1,7 +1,6 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import { parseUrl } from '@opentelemetry/sdk-trace-web';
 import {
   ClicksInstrumentation,
   DOMStateInstrumentation,
@@ -129,7 +128,7 @@ export const setupDefaultInstrumentations = (
           ...(config['@opentelemetry/instrumentation-fetch']?.ignoreUrls ?? []),
           // FetchTransport's tracing suppression needs a context manager, which
           // `registerGlobally: false` omits. String entries must equal the parsed href.
-          ...exportEndpoints.map((url) => parseUrl(url).href),
+          ...exportEndpoints.map((url) => new URL(url, document.baseURI).href),
         ],
       }),
     );
