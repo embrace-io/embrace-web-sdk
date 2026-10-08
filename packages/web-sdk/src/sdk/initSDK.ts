@@ -537,6 +537,7 @@ const setupLogs = ({
     userSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
+    flushLoggerProvider: loggerProvider,
     perf,
     storage: sdkLocalStorage,
     visibilityDoc,

@@ -27,6 +27,9 @@ export interface LogManager {
    * next scheduled export. Useful before a deliberate teardown, and gives tests
    * a known point to drain from rather than racing the export schedule.
    *
+   * Spans are not exported: they are held until their session part ends, so
+   * call `session.endUserSession()` to export them.
+   *
    * Resolves once the export settles and never rejects: failures are reported
    * on the diagnostic channel. Note the safe-proxy wrapper around the public
    * API only traps synchronous throws, so this must absorb its own rejections.

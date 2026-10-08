@@ -14,6 +14,8 @@ export interface EmbraceLogManagerArgs {
   userSessionManager: UserSessionManagerInternal;
   limitManager: LimitManagerInternal;
   loggerProvider?: LoggerProvider;
+  /** The SDK-owned provider that `flush()` drains; flushing is a no-op without it. */
+  flushLoggerProvider?: LoggerProvider;
   visibilityDoc: VisibilityStateDocument;
   storage: NamespacedStorage;
 }
