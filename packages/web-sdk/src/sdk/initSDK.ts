@@ -22,6 +22,8 @@ import type { AttributeScrubber } from '../common/index.ts';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
+  getLogEndpoint,
+  getTraceEndpoint,
 } from '../exporters/index.ts';
 import {
   DEFAULT_LIMITS,
@@ -239,6 +241,12 @@ export const initSDK = (
       | EmbraceSessionPartBatchedSpanProcessor
       | undefined;
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
+    const exportEndpoints = sendingToEmbrace
+      ? [
+          getTraceEndpoint(validatedAppID, embraceDataURL),
+          getLogEndpoint(validatedAppID, embraceDataURL),
+        ]
+      : [];
     if (sendingToEmbrace) {
       embraceSpanProcessor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new EmbraceTraceExporter({
@@ -325,6 +333,7 @@ export const initSDK = (
             pageManager,
             limitManager,
             signalBuffer,
+            exportEndpoints,
           }),
           ...instrumentations,
         ],
@@ -336,6 +345,7 @@ export const initSDK = (
             pageManager,
             limitManager,
             signalBuffer,
+            exportEndpoints,
           }),
           ...instrumentations,
         ],

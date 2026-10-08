@@ -116,6 +116,24 @@ describe('setupDefaultInstrumentations', () => {
       );
       expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([]);
     });
+
+    it('appends the parsed export endpoints to fetch ignoreUrls only', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        { network: { ignoreUrls: [/network-pattern/] } },
+        {
+          ...makeSetupArgs(),
+          exportEndpoints: ['HTTPS://Collector.Example.com/v2/spans'],
+        },
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-pattern/,
+        'https://collector.example.com/v2/spans',
+      ]);
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([
+        /network-pattern/,
+      ]);
+    });
   });
 
   describe('empty-root opt-in', () => {

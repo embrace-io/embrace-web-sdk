@@ -414,6 +414,7 @@ export interface SetupDefaultInstrumentationsArgs {
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
   signalBuffer?: SignalBuffer;
+  exportEndpoints?: string[];
 }
 
 export interface DefaultInstrumentationConfig {
