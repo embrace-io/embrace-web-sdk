@@ -1,4 +1,5 @@
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import type {
   ExportResponse,
   IExporterTransport,
@@ -196,13 +197,19 @@ export class FetchTransport implements IExporterTransport {
         diag.debug(`Sending without keepalive: ${reason}`);
       }
 
-      const response = await fetch(this._config.url, {
-        method: 'POST',
-        keepalive,
-        headers,
-        body: request,
-        signal,
-      });
+      // The processors' tracing suppression is lost across the gzip `await` and
+      // retry `setTimeout`, so fetch instrumentation would trace this export.
+      const response = await context.with(
+        suppressTracing(context.active()),
+        () =>
+          fetch(this._config.url, {
+            method: 'POST',
+            keepalive,
+            headers,
+            body: request,
+            signal,
+          }),
+      );
 
       // Not awaited: the status already decides the export outcome, and a
       // collector that stalls mid-body must not hold up the caller.

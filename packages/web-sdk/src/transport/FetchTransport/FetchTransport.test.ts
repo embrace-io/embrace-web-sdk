@@ -1,4 +1,7 @@
-import { DiagLogLevel, diag } from '@opentelemetry/api';
+import { context, DiagLogLevel, diag } from '@opentelemetry/api';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
+import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -6,6 +9,7 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
+  fakeFetchWasCalled,
   InMemoryDiagLogger,
 } from '../../../tests/utils/index.ts';
 import { _resetKeepaliveTracking, FetchTransport } from './FetchTransport.ts';
@@ -732,6 +736,53 @@ describe('FetchTransport', () => {
       await transport.send(payload30k, 5000);
 
       expect(fakeFetchGetKeepalive(1)).to.equal(true);
+    });
+  });
+
+  describe('tracing', () => {
+    let fetchInstrumentation: FetchInstrumentation;
+    let startedSpanNames: string[];
+
+    beforeEach(() => {
+      context.setGlobalContextManager(new StackContextManager().enable());
+      startedSpanNames = [];
+      fetchInstrumentation = new FetchInstrumentation({ enabled: false });
+      fetchInstrumentation.setTracerProvider(
+        new TracerProvider({
+          spanProcessors: [
+            {
+              onStart: (span) => {
+                startedSpanNames.push(span.name);
+              },
+              onEnd: () => undefined,
+              forceFlush: () => Promise.resolve(),
+              shutdown: () => Promise.resolve(),
+            },
+          ],
+        }),
+      );
+      fetchInstrumentation.enable();
+    });
+
+    afterEach(() => {
+      fetchInstrumentation.disable();
+      context.disable();
+    });
+
+    it('should not create a span for its own request', async () => {
+      const transport = makeTransport({ compression: 'gzip' });
+
+      await transport.send(smallPayload, 1000);
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(startedSpanNames).to.deep.equal([]);
+    });
+
+    it('should still trace fetches made outside the transport', async () => {
+      await makeTransport().send(smallPayload, 1000);
+      await fetch('http://example.com/app');
+
+      expect(startedSpanNames).to.deep.equal(['GET']);
     });
   });
 });
