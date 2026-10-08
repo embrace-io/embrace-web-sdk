@@ -12,13 +12,9 @@ import {
   fakeFetchGetKeepalive,
   fakeFetchGetRequestHeaders,
   fakeFetchInstall,
-  fakeFetchRespondWith,
-  fakeFetchRestore,
   fakeFetchWasCalled,
 } from '../../tests/utils/index.ts';
 import { mockSpan } from '../../tests/utils/mock-entities/ReadableSpan.ts';
-import { _resetKeepaliveTracking } from '../transport/FetchTransport/FetchTransport.ts';
-import { BaseFetchExporter } from './BaseFetchExporter/index.ts';
 import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate.ts';
 import type { OtlpFetchExporterConfig } from './types.ts';
 
@@ -32,9 +28,9 @@ const TEST_CONFIG: OtlpFetchExporterConfig = {
   timeoutMillis: 1000,
 };
 
-const createTestDelegate = () =>
+const createTestDelegate = (config = TEST_CONFIG) =>
   createOtlpBrowserFetchExportDelegate(
-    TEST_CONFIG,
+    config,
     JsonTraceSerializer,
     'otlp_http_span_exporter',
     TraceExporterMetricsHelper,
@@ -132,85 +128,57 @@ describe('createOtlpBrowserFetchExportDelegate', () => {
 
   it('should not compress or set Content-Encoding when compression is none', async () => {
     fakeFetchInstall();
-    fakeFetchRespondWith('');
+    const delegate = createTestDelegate();
 
-    try {
-      const exporter = new BaseFetchExporter(createTestDelegate());
-      await new Promise<void>((resolve) => {
-        exporter.export([mockSpan], (result) => {
-          expect(result.code).to.equal(ExportResultCode.SUCCESS);
-          resolve();
-        });
-      });
+    const result = await new Promise<ExportResult>((resolve) => {
+      delegate.export([mockSpan], resolve);
+    });
 
-      const headers = fakeFetchGetRequestHeaders() as Record<string, string>;
-      expect(headers['Content-Encoding']).to.be.undefined;
+    expect(result.code).to.equal(ExportResultCode.SUCCESS);
+    const headers = fakeFetchGetRequestHeaders() as Record<string, string>;
+    expect(headers['Content-Encoding']).to.be.undefined;
 
-      const body = fakeFetchGetBody() as Uint8Array<ArrayBuffer>;
-      const parsed = JSON.parse(new TextDecoder().decode(body)) as {
-        resourceSpans: unknown[];
-      };
-      expect(parsed.resourceSpans).to.be.an('array');
-    } finally {
-      fakeFetchRestore();
-    }
+    const body = fakeFetchGetBody() as Uint8Array<ArrayBuffer>;
+    const parsed = JSON.parse(new TextDecoder().decode(body)) as {
+      resourceSpans: unknown[];
+    };
+    expect(parsed.resourceSpans).to.be.an('array');
   });
+
   it('should charge the keepalive budget the compressed size', async () => {
     fakeFetchInstall();
-    fakeFetchRespondWith('');
-    _resetKeepaliveTracking();
+    // 80KiB serialized exceeds the 48KiB keepalive budget but gzips well under
+    // it, so keepalive stays on only if the budget counts compressed bytes.
+    const bulkySpan: ReadableSpan = {
+      ...mockSpan,
+      attributes: { 'test.attribute': 'a'.repeat(80 * 1024) },
+    };
+    const delegate = createTestDelegate({
+      ...TEST_CONFIG,
+      compression: 'gzip',
+    });
 
-    try {
-      // Serializes far past the 48KiB keepalive budget but gzips to a fraction
-      // of it, so keepalive survives only if the budget sees compressed bytes.
-      const bulkySpan: ReadableSpan = {
-        ...mockSpan,
-        attributes: { 'test.attribute': 'a'.repeat(80 * 1024) },
-      };
+    const result = await new Promise<ExportResult>((resolve) => {
+      delegate.export([bulkySpan], resolve);
+    });
 
-      const exporter = new BaseFetchExporter(
-        createOtlpBrowserFetchExportDelegate(
-          { ...TEST_CONFIG, compression: 'gzip' },
-          JsonTraceSerializer,
-          'otlp_http_span_exporter',
-          TraceExporterMetricsHelper,
-        ),
-      );
-      await new Promise<void>((resolve) => {
-        exporter.export([bulkySpan], (result) => {
-          expect(result.code).to.equal(ExportResultCode.SUCCESS);
-          resolve();
-        });
-      });
-
-      const body = fakeFetchGetBody() as Uint8Array<ArrayBuffer>;
-      expect(body.byteLength).to.be.lessThan(49152);
-      expect(fakeFetchGetKeepalive()).to.equal(true);
-    } finally {
-      fakeFetchRestore();
-    }
+    expect(result.code).to.equal(ExportResultCode.SUCCESS);
+    const body = fakeFetchGetBody() as Uint8Array<ArrayBuffer>;
+    expect(body.byteLength).to.be.lessThan(49152);
+    expect(fakeFetchGetKeepalive()).to.equal(true);
   });
+
   it('should reach fetch in the same task as export', () => {
     fakeFetchInstall();
-    fakeFetchRespondWith('');
+    const delegate = createTestDelegate({
+      ...TEST_CONFIG,
+      compression: 'gzip',
+    });
 
-    try {
-      const exporter = new BaseFetchExporter(
-        createOtlpBrowserFetchExportDelegate(
-          { ...TEST_CONFIG, compression: 'gzip' },
-          JsonTraceSerializer,
-          'otlp_http_span_exporter',
-          TraceExporterMetricsHelper,
-        ),
-      );
+    delegate.export([mockSpan], () => undefined);
 
-      exporter.export([mockSpan], () => undefined);
-
-      // Deliberately not awaited: teardown grants only a synchronous budget, so
-      // an await anywhere before fetch loses the payload on the unload path.
-      expect(fakeFetchWasCalled()).to.equal(true);
-    } finally {
-      fakeFetchRestore();
-    }
+    // Checked synchronously: unload teardown may never run work deferred to a
+    // later task, so the export path keeps fetch in the current one.
+    expect(fakeFetchWasCalled()).to.equal(true);
   });
 });

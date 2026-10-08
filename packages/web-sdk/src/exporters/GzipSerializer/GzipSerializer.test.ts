@@ -28,7 +28,7 @@ describe('GzipSerializer', () => {
 
     expect(result).to.be.instanceOf(Uint8Array);
     expect(result?.length).to.be.greaterThan(0);
-    // gzip magic number and deflate method, checked without DecompressionStream
+    // gzip magic number and deflate method
     expect([result?.[0], result?.[1], result?.[2]]).to.deep.equal([
       0x1f, 0x8b, 0x08,
     ]);
