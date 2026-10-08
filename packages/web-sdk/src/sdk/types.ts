@@ -26,7 +26,7 @@ import type {
 import type {
   ClicksInstrumentationArgs,
   DOMStateInstrumentationArgs,
-  DocumentLoadInstrumentationConfig,
+  DocumentLoadInstrumentationArgs,
   ElementTimingInstrumentationArgs,
   EmptyRootInstrumentationArgs,
   FirstInteractionInstrumentationArgs,
@@ -416,6 +416,11 @@ export interface SetupDefaultInstrumentationsArgs {
   signalBuffer?: SignalBuffer;
 }
 
+/**
+ * Use `omit` to turn a default instrumentation off. No entry accepts `enabled`:
+ * initSDK passes every included instrumentation to `registerInstrumentations`,
+ * which starts it regardless of that flag.
+ */
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
   exception?: GlobalExceptionInstrumentationArgs;
@@ -429,7 +434,7 @@ export interface DefaultInstrumentationConfig {
   'element-timing'?: ElementTimingInstrumentationArgs;
   'server-timing'?: ServerTimingInstrumentationArgs;
   'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
-  'document-load'?: DocumentLoadInstrumentationConfig;
+  'document-load'?: DocumentLoadInstrumentationArgs;
   'dom-state'?: DOMStateInstrumentationArgs;
   navigation?: NavigationInstrumentationArgs;
 
@@ -437,11 +442,6 @@ export interface DefaultInstrumentationConfig {
   // '@opentelemetry/instrumentation-xml-http-request' to be specified once
   network?: NetworkInstrumentationArgs;
 
-  /*
-    Remove 'enabled' from the accepted config for the @opentelemetry instrumentations. This parameter is misleading
-    since we are going to call `registerInstrumentations` for every instrumentation we include here even if their
-    config has enabled=false. Instead, use `omit` to specify which default instrumentations should be turned off.
-   */
   '@opentelemetry/instrumentation-fetch'?: Omit<
     FetchInstrumentationConfig,
     'enabled'
