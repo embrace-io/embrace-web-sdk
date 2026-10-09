@@ -17,6 +17,8 @@ import {
   KEY_EMB_COLD_START,
   KEY_EMB_IS_FINAL_SESSION_PART,
   KEY_EMB_PAGE_LOAD,
+  KEY_EMB_SDK_INIT_ORIGIN_OFFSET,
+  KEY_EMB_SDK_LOAD_ORIGIN_OFFSET,
   KEY_EMB_SDK_STARTUP_DURATION,
   KEY_EMB_SESSION_PART_END_REASON,
   KEY_EMB_SESSION_PART_ID,
@@ -76,6 +78,7 @@ import type {
   EmbraceUserSessionManagerArgs,
   EndSessionPartOptions,
   RolloverSessionPartOptions,
+  SDKStartupTimings,
   StartSessionPartOptions,
   UserSessionAttributes,
   UserSessionManagerInternal,
@@ -125,7 +128,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   // cold start.
   private _coldStart = true;
   private _nextSessionPartCounts: Record<string, number> = {};
-  private _sdkStartupDuration = 0;
+  // Stays null if initSDK throws before recording, so the cold-start part
+  // omits the keys rather than reporting zeros that read as real offsets.
+  private _sdkStartupTimings: SDKStartupTimings | null = null;
   private readonly _sessionPartStartedListeners: Array<
     (event: SessionPartStartedEvent) => void
   > = [];
@@ -271,8 +276,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
   }
 
-  public recordSDKStartupDuration(duration: number): void {
-    this._sdkStartupDuration = Math.ceil(duration);
+  public recordSDKStartupTimings(timings: SDKStartupTimings): void {
+    this._sdkStartupTimings = timings;
   }
 
   public getUserSessionId(): string | null {
@@ -459,11 +464,17 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         [KEY_EMB_SESSION_PART_END_REASON]: reason,
         ...this._activeSessionPartCounts,
         ...this._limitManager.getDiagnosticCounts(),
-        [KEY_EMB_SDK_STARTUP_DURATION]: this._sdkStartupDuration,
       };
       if (this._coldStart) {
         endAttrs[KEY_EMB_PAGE_LOAD] =
           this._visibilityDoc.readyState === 'complete';
+        if (this._sdkStartupTimings) {
+          const { initDuration, loadOriginOffset, initOriginOffset } =
+            this._sdkStartupTimings;
+          endAttrs[KEY_EMB_SDK_STARTUP_DURATION] = Math.ceil(initDuration);
+          endAttrs[KEY_EMB_SDK_LOAD_ORIGIN_OFFSET] = loadOriginOffset;
+          endAttrs[KEY_EMB_SDK_INIT_ORIGIN_OFFSET] = initOriginOffset;
+        }
       }
       if (isFinalSessionPart) {
         endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;

@@ -44,6 +44,16 @@ describe('OTelPerformanceManager', () => {
     expect(performanceManager.getNowMillis()).to.equal(1500);
   });
 
+  it('should get current time as a raw origin offset, unlike getNowMillis', () => {
+    const result = performanceManager.getNowOriginOffset();
+    expect(result).to.equal(500); // now() (500), timeOrigin not added
+  });
+
+  it('is unaffected by pageshow, since it reports a raw origin offset', () => {
+    updateZeroTimeMillis(1500); // pageshow bumps zero time, but not the raw offset
+    expect(performanceManager.getNowOriginOffset()).to.equal(500);
+  });
+
   it('should handle zero offset', () => {
     const result = performanceManager.epochMillisFromOrigin(0);
     expect(result).to.equal(1000); // timeOrigin (1000) + offset (0)

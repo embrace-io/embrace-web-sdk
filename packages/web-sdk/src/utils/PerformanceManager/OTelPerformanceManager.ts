@@ -29,6 +29,13 @@ export class OTelPerformanceManager implements PerformanceManager {
   public getNowMillis = () => this.epochMillisFromOrigin(this._clock.now());
 
   /**
+   * Raw milliseconds since time origin. Unaffected by bfcache restores and soft
+   * navigations, so it suits origin-relative attributes and durations, never
+   * wall clock.
+   */
+  public getNowOriginOffset = () => this._clock.now();
+
+  /**
    * To measure the way a user experienced a metric, we measure metrics relative to the time the user
    * started viewing the current page or view. On prerendered pages, this is activationStart. On bfcache
    * restores and soft navigations, this is the time of the restore or navigation. On all other pages

@@ -202,3 +202,12 @@ export interface EmbraceUserSessionManagerArgs {
    */
   activityEvents?: ReadonlyArray<string>;
 }
+
+export interface SDKStartupTimings {
+  /** How long initSDK itself took, in milliseconds. */
+  initDuration: number;
+  /** Milliseconds from time origin to the SDK's code first running on the page. */
+  loadOriginOffset: number;
+  /** Milliseconds from time origin to initSDK being entered. */
+  initOriginOffset: number;
+}
