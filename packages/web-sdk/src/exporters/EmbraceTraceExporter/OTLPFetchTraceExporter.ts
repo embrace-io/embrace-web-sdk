@@ -14,10 +14,7 @@ export class OTLPFetchTraceExporter
   public constructor(config: OtlpFetchExporterConfig) {
     super(
       createOtlpBrowserFetchExportDelegate(
-        {
-          ...config,
-          compression: 'gzip',
-        },
+        config,
         JsonTraceSerializer,
         'otlp_http_span_exporter',
         TraceExporterMetricsHelper,
