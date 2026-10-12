@@ -14,7 +14,7 @@ jobs:
       pull-requests: write
     timeout-minutes: 10
     steps:
-      - uses: release-drafter/release-drafter@72967cdc98ddd3160f1fc3dff619de365e137dd0 # v7.9.0
+      - uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7.10.0
         id: release_drafter
         with:
           # dry run: identify the next version without publishing it yet
@@ -27,7 +27,7 @@ jobs:
         with:
           persist-credentials: true
       - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: package.json
           package-manager-cache: false
