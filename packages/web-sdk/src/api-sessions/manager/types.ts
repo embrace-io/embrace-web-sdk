@@ -135,7 +135,7 @@ export type StartSessionOptions = {
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
   | 'foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
-  | 'web_activity' // user input after foreground inactivity ended the part
+  | 'web_activity' // user input on an engaged tab with no active part, typically after foreground inactivity ended the previous part
   | 'web_soft_navigation' // soft navigation started the next part in the same user session
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
@@ -147,7 +147,7 @@ export interface SessionPartStartedEvent {
 
 export type SessionPartEndReason =
   | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'web_foreground_inactivity' // no keyboard/mouse/scroll input during the active part for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_foreground_inactivity' // no user input on the focused and visible tab for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session. The span ends when the timer fires
   | 'web_soft_navigation' // rolled the part over on a soft navigation. Not final, the user session continues
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 

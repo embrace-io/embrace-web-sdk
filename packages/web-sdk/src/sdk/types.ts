@@ -84,8 +84,11 @@ export interface DynamicSDKConfig {
   userSessionInactivityTimeoutSeconds?: number;
 
   /**
-   * Time a focused and visible tab receives no user input after which the
-   * user session ends, in seconds. Set by remote config.
+   * Time without user input on a focused and visible tab after which the
+   * session part and its user session end, in seconds. Input within 30 seconds
+   * of the last timer reset does not reset it again, so the timer can fire up
+   * to 30 seconds earlier than this value after the last input. Set by remote
+   * config.
    *
    * **default**: 1800 seconds (30 minutes)
    */

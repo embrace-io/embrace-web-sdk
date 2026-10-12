@@ -1155,11 +1155,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         limitManager,
         visibilityDoc,
-        // Match both inactivity timeouts to max so only the max-duration timer
-        // fires first (timers registered earlier fire first when set to the
-        // same delay; max-duration is armed in _ensureUserSessionState before
-        // the foreground inactivity timer is armed by
-        // startSessionPartInternal).
+        // Match the foreground inactivity timeout to max: same-delay timers
+        // fire in registration order, and max-duration is armed in
+        // _loadOrCreateUserSessionState before startSessionPartInternal arms
+        // the foreground inactivity timer.
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
@@ -1205,10 +1204,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(localManager.getUserSessionId()).to.not.equal(firstUserSessionId);
     });
 
-    it('should detect inactivity expiry lazily on the next part start and roll a new user session', () => {
-      // Inactivity expiry is detected only when a new foreground part begins:
-      // no JS timer runs, so the previous part's span is already exported
-      // (without is_final) by the time we notice the gap.
+    it('should find the inactivity deadline expired on the next part start and roll a new user session', () => {
+      // No timer runs for the inactivity deadline; the next part start finds it
+      // expired, after the previous part span has already been exported
+      // without emb.is_final_session_part.
       const localManager = new EmbraceUserSessionManager({
         diag,
         perf,

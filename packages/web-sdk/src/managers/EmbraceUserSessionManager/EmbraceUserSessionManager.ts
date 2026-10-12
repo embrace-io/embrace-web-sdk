@@ -177,7 +177,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   /**
    * Reads the user-session durations from remote config, clamps each to its
    * allowed range, and enforces each inactivity timeout <= max duration. Called
-   * once per user-session creation; the resolved values are frozen into that
+   * once per user-session creation; the resolved values are fixed in that user
    * session's state.
    */
   private _resolveUserSessionDurations(): {
@@ -450,7 +450,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd cannot
     // push them forward: the caller's timestamp (when given) becomes the span
     // end time, while the inactivity deadline is computed from the actual call
-    // time so an anchored end cannot shorten the inactivity timeout.
+    // time so an anchored end cannot move the deadline earlier.
     const now = this._perf.getNowMillis();
     const partEndTs = timestamp ?? now;
     const span = this._sessionPartSpan;
@@ -762,7 +762,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       ...state,
       userSessionPartIndex: state.userSessionPartIndex + 1,
       // A part is active, so any pending inactivity deadline no longer
-      // applies; it gets re-armed when the part ends.
+      // applies; it is rewritten when the part ends.
       inactivityDeadlineTs: null,
     };
     this._storeState();
@@ -984,14 +984,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         return;
       }
       this._diag.debug(
-        'inactivity timer fired; ending current part and user session',
+        'foreground inactivity timer fired; ending current part and user session',
       );
       this.endSessionPartInternal({
         reason: 'web_foreground_inactivity',
         userSessionEndReason: 'inactivity',
       });
     } catch (e) {
-      this._diag.warn('Error handling inactivity timer', e);
+      this._diag.warn('Error handling foreground inactivity timer', e);
     }
   };
 

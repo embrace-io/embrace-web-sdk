@@ -33,15 +33,16 @@ export interface UserSessionState {
   /** Bumped on every part start. */
   readonly userSessionPartIndex: number;
   /**
-   * Configured values captured and locked at session creation, persisted
-   * so they survive page reloads.
+   * Fixed at user session creation and persisted so it survives page reloads.
    */
   readonly userSessionMaxDurationSeconds: number;
+  /**
+   * Fixed at user session creation. Sets `inactivityDeadlineTs` at part end.
+   */
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
    * Fixed at user session creation. Delay of the foreground inactivity timer,
-   * which runs while a part is active. `userSessionInactivityTimeoutSeconds`
-   * instead sets `inactivityDeadlineTs` at part end.
+   * which runs while a part is active.
    */
   readonly userSessionForegroundInactivityTimeoutSeconds: number;
   /**
@@ -174,7 +175,7 @@ export interface EmbraceUserSessionManagerArgs {
   /**
    * Source of the user-session durations (max duration, inactivity timeout,
    * foreground inactivity timeout), which are set by remote config and
-   * resolved at each session creation.
+   * resolved at each user session creation.
    */
   dynamicConfigManager: DynamicConfigManager;
   /**

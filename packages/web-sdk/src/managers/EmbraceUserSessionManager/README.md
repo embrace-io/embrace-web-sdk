@@ -129,7 +129,7 @@ If the end reason is not final (in practice `background`), the user session
 continues: an inactivity deadline of
 `now + userSessionInactivityTimeoutSeconds * 1000` is written into the state
 blob, computed from the actual call time rather than any anchored span-end
-timestamp, so an anchored part end cannot shorten the inactivity timeout. The
+timestamp, so an anchored part end cannot move the deadline earlier. The
 max-duration deadline is fixed at creation and keeps running, so it is not
 re-armed.
 
@@ -157,8 +157,8 @@ A stored user session is treated as expired when any of the following holds:
 - The max-duration boundary has passed.
 - An inactivity deadline was recorded at the last part end and has elapsed.
 
-No timer runs for `userSessionInactivityTimeoutSeconds`. The deadline is
-checked at the next part start. A part span that has already been exported never
+No timer runs for `userSessionInactivityTimeoutSeconds`. The deadline is checked
+at the next part start. A part span that has already been exported never
 retroactively receives `emb.is_final_session_part`.
 
 ### Termination
@@ -192,7 +192,7 @@ silently no-ops if not (the next engagement event will create it).
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | Ends the user session and rolls into the next (`max_duration_reached`). |
 | Inactivity deadline | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
 | Foreground inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
-| Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per 30 seconds of input. |
+| Activity throttle | `DEFAULT_ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
@@ -299,12 +299,12 @@ Several specific edge cases are handled:
   export.
 - A peer tab that learns about a user-session rollover never writes an
   inactivity deadline from the ended user session onto the new user session's
-  storage row. This is
-  structural rather than active: the engagement gate guarantees the peer tab
-  has no active part at the moment of rollover, so its part-end bookkeeping
-  cannot race with the wipe. The peer's stale max-duration timer is cleared
-  lazily, on its next part start. If the stale timer fires first, the rollover
-  it triggers runs benignly against the already-cleared storage row.
+  storage row. This is structural rather than active: the engagement gate
+  guarantees the peer tab has no active part at the moment of rollover, so its
+  part-end bookkeeping cannot race with the wipe. The peer's stale max-duration
+  timer is cleared lazily, on its next part start. If the stale timer fires
+  first, the rollover it triggers runs benignly against the already-cleared
+  storage row.
 
 ## Unload and BFCache handling
 
