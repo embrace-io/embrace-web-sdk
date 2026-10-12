@@ -106,11 +106,16 @@ by design.
 | Value | Trigger |
 | --- | --- |
 | `background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
-| `web_foreground_inactivity` | The foreground part-inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires without any user input event resetting it. |
+| `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because the focused and visible tab received no user input for that long. |
 | `web_soft_navigation` | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately. |
 | `user_session_ended` | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry. |
 
-The part-level `web_foreground_inactivity` is distinct from the user-session-level `inactivity` reason in the [`UserSessionEndReason`](#termination) table below: when the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end reason and `inactivity` as the enclosing user session's termination reason on the same final part span.
+The part-level `web_foreground_inactivity` is distinct from the
+user-session-level `inactivity` reason in the
+[`UserSessionEndReason`](#termination) table below: when the foreground
+inactivity timer fires it stamps `web_foreground_inactivity` as the part end
+reason and `inactivity` as the enclosing user session's termination reason on
+the same final part span.
 
 ### End behavior
 
@@ -124,7 +129,7 @@ If the end reason is not final (in practice `background`), the user session
 continues: an inactivity deadline of
 `now + userSessionInactivityTimeoutSeconds * 1000` is written into the state
 blob, computed from the actual call time rather than any anchored span-end
-timestamp, so an anchored part end cannot shorten the inactivity window. The
+timestamp, so an anchored part end cannot shorten the inactivity timeout. The
 max-duration deadline is fixed at creation and keeps running, so it is not
 re-armed.
 
@@ -152,8 +157,8 @@ A stored user session is treated as expired when any of the following holds:
 - The max-duration boundary has passed.
 - An inactivity deadline was recorded at the last part end and has elapsed.
 
-There is no live timer for the inactivity window. The deadline is checked at
-the next part start. A part span that has already been exported never
+No timer runs for `userSessionInactivityTimeoutSeconds`. The deadline is
+checked at the next part start. A part span that has already been exported never
 retroactively receives `emb.is_final_session_part`.
 
 ### Termination
@@ -162,8 +167,8 @@ A user session ends and immediately attempts to start a part for the next one.
 This happens on a manual `endUserSession()` (reason `manual`) and when the
 max-duration timer fires (reason `max_duration_reached`).
 
-The part-inactivity path ends a user session differently: it ends the active
-part directly with the `inactivity` termination reason rather than going
+The foreground inactivity timer ends a user session differently: it ends the
+active part directly with the `inactivity` termination reason rather than going
 through a rollover.
 
 `UserSessionEndReason` defines all possible values:
@@ -172,7 +177,7 @@ through a rollover.
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
 | `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Part-inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When inactivity is instead detected lazily at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| `inactivity` | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part as
 final with that timestamp, clears the stored user session, and starts the next
@@ -185,20 +190,21 @@ silently no-ops if not (the next engagement event will create it).
 | Timer | Constant | Default | Range | Effect on fire |
 | --- | --- | --- | --- | --- |
 | Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | Ends the user session and rolls into the next (`max_duration_reached`). |
-| User-session inactivity (lazy) | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
-| Part (foreground) inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
-| Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one inactivity-timer reset per 30 seconds of input. |
+| Inactivity deadline | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
+| Foreground inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
+| Activity throttle | `ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per 30 seconds of input. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
-`userSessionForegroundInactivityTimeoutSeconds` are driven by remote config
+`userSessionForegroundInactivityTimeoutSeconds` are set by remote config
 (`DynamicConfigManager.getConfig()`), read at each user-session creation. Each
 value is clamped to its own range; out-of-range values fall back to their
 default and emit a warning. Each inactivity timeout must also be `<=`
 `userSessionMaxDurationSeconds`; if remote config violates that, the offending
 timeout falls back to its default, not to the max-duration value.
-`userSessionForegroundInactivityTimeoutSeconds` drives the live part timer.
-`userSessionInactivityTimeoutSeconds` drives the lazy post-part-end deadline.
+`userSessionForegroundInactivityTimeoutSeconds` sets the foreground inactivity
+timer delay. `userSessionInactivityTimeoutSeconds` sets the inactivity deadline
+written at part end.
 
 The max-duration timer is armed at user-session creation, and re-armed when a
 fresh manager loads an existing, unexpired state on page reload (no timer
@@ -207,8 +213,8 @@ fixed at creation, so it keeps running across parts on its original deadline.
 The delay is computed as the time remaining until that deadline, not the full
 duration value.
 
-The part-inactivity timer is restarted on every activity event, subject to the
-30 second throttle, and cleared on session-part end.
+The foreground inactivity timer is restarted on every activity event, subject to
+the 30 second throttle, and cleared on session-part end.
 
 ## Storage
 
@@ -291,8 +297,9 @@ Several specific edge cases are handled:
 - Part finalization isolates a throwing `setAttributes` call from the span end,
   so a poisoned permanent-property value cannot drop the part span from the
   export.
-- A peer tab that learns about a user-session rollover never stamps the dying
-  tab's inactivity deadline onto the new user session's storage row. This is
+- A peer tab that learns about a user-session rollover never writes an
+  inactivity deadline from the ended user session onto the new user session's
+  storage row. This is
   structural rather than active: the engagement gate guarantees the peer tab
   has no active part at the moment of rollover, so its part-end bookkeeping
   cannot race with the wipe. The peer's stale max-duration timer is cleared

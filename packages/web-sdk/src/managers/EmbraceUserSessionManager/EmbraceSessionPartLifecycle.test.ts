@@ -1155,10 +1155,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         storage,
         limitManager,
         visibilityDoc,
-        // Match inactivity to max so only the max-duration timer fires
-        // first (timers registered earlier fire first when set to the same
-        // delay; max-duration is armed in _ensureUserSessionState before
-        // the inactivity timer is armed by startSessionPartInternal).
+        // Match both inactivity timeouts to max so only the max-duration timer
+        // fires first (timers registered earlier fire first when set to the
+        // same delay; max-duration is armed in _ensureUserSessionState before
+        // the foreground inactivity timer is armed by
+        // startSessionPartInternal).
         dynamicConfigManager: createTestDynamicConfigManager({
           userSessionMaxDurationSeconds: 3600,
           userSessionInactivityTimeoutSeconds: 3600,
@@ -1447,7 +1448,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       clock.tick(1000);
 
-      // A continuing part (still within the inactivity window) must clear
+      // A continuing part (started before the inactivity deadline) must clear
       // the deadline so a future part-start doesn't read a stale value.
       localManager.startSessionPartInternal({ reason: 'init' });
 
@@ -1477,8 +1478,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       clock.tick(5000);
       const boundaryTimestamp = perf.getNowMillis();
       // Advance the clock so now and the anchor diverge. The anchored
-      // timestamp is a span-presentation concern only and must not pull
-      // the lazy expiry window backward.
+      // timestamp is a span-presentation concern only and must not move
+      // the inactivity deadline earlier.
       clock.tick(250);
       localManager.endSessionPartInternal({
         reason: 'background',

@@ -137,8 +137,8 @@ describe('EmbraceUserSessionManager', () => {
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager.getUserSessionAttributes();
-    // background ends the part but keeps the user session alive
-    // (inactivity ends both the part and the user session in one step).
+    // background ends the part but keeps the user session alive (foreground
+    // inactivity ends both the part and the user session in one step).
     manager.endSessionPartInternal({ reason: 'background' });
 
     // Advance time within inactivity timeout (29 min)
@@ -194,8 +194,8 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   it('should fire max duration timer mid-part', () => {
-    // Match inactivity to max-duration so timers fire at the same tick;
-    // max is armed first (in _ensureUserSessionState during part start)
+    // Match both inactivity timeouts to max-duration so timers fire at the same
+    // tick; max is armed first (in _ensureUserSessionState during part start)
     // so it fires first and finalizes via _rolloverUserSession.
     const manager = createManager({
       userSessionMaxDurationSeconds: 3600,
@@ -273,7 +273,7 @@ describe('EmbraceUserSessionManager', () => {
     manager1.startSessionPartInternal({ reason: 'init' });
     const attrs1 = manager1.getUserSessionAttributes();
     // background keeps the user session alive; another tab joining
-    // should adopt it. (inactivity ends both part and user session.)
+    // should adopt it. (foreground inactivity ends both part and user session.)
     manager1.endSessionPartInternal({ reason: 'background' });
 
     // Simulate another tab creating a manager with the same storage
@@ -407,8 +407,8 @@ describe('EmbraceUserSessionManager', () => {
 
       clock.tick(1000);
       manager.endSessionPartInternal({ reason: 'background' });
-      // A genuine gap: nothing is active, and nothing new has started yet
-      // (e.g. inactivity closed the part while a background script kept
+      // A genuine gap: nothing is active, and nothing new has started yet (e.g.
+      // foreground inactivity ended the part while a background script kept
       // producing layout shifts with no real user activity to restart one).
       void expect(manager.getSessionPartId()).to.be.null;
 
@@ -508,9 +508,9 @@ describe('EmbraceUserSessionManager', () => {
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
-      // Past the default 30 min inactivity timeout. The part ended without a
-      // live timer, so the next start detects lazy expiry from the deadline
-      // recorded on the in-memory row.
+      // Past the default 30 min inactivity timeout. No timer runs for the
+      // inactivity deadline, so the next start reads it from the in-memory row
+      // and finds it expired.
       clock.tick(31 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
@@ -1074,8 +1074,9 @@ describe('EmbraceUserSessionManager', () => {
     });
 
     it('refreshes when the max-duration timer rolls the session over', () => {
-      // Equal max + inactivity so the max-duration timer (armed first) fires
-      // before the part-inactivity timer, matching the lifecycle suite.
+      // Equal max + inactivity timeouts so the max-duration timer (armed first)
+      // fires before the foreground inactivity timer, matching the lifecycle
+      // suite.
       const { manager, refreshRemoteConfig } = createManagerWithLiveConfig({
         userSessionMaxDurationSeconds: 3600,
         userSessionInactivityTimeoutSeconds: 3600,
@@ -1157,8 +1158,8 @@ describe('EmbraceUserSessionManager', () => {
       });
       manager.startSessionPartInternal({ reason: 'init' });
       clock.tick(10 * 1000);
-      // background keeps the user session alive and writes the
-      // deadline; inactivity would terminate the session in one step.
+      // background keeps the user session alive and writes the deadline;
+      // foreground inactivity would terminate the session in one step.
       manager.endSessionPartInternal({ reason: 'background' });
 
       expect(readStoredDeadline()).to.equal(10 * 1000 + 120 * 1000);
@@ -1184,9 +1185,9 @@ describe('EmbraceUserSessionManager', () => {
       manager1.startSessionPartInternal({ reason: 'init' });
       const attrs1 = manager1.getUserSessionAttributes();
       // Simulate a crash: no endSessionPartInternal call, no deadline written.
-      // shutdown clears manager1's part-inactivity and max-duration timers
-      // so the fake clock does not synthesize a clean part-end during the
-      // tick below, mimicking a JS engine that died with the page.
+      // shutdown clears manager1's foreground inactivity and max-duration
+      // timers so the fake clock does not synthesize a clean part-end during
+      // the tick below, mimicking a JS engine that died with the page.
       manager1._shutdown();
 
       // Fast forward past the default inactivity timeout but within max duration.

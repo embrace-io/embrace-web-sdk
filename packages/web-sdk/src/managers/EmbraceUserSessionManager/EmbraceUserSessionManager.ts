@@ -176,9 +176,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   /**
    * Reads the user-session durations from remote config, clamps each to its
-   * allowed range, and enforces inactivity <= max duration. Called once per
-   * user-session creation; the resolved values are frozen into that session's
-   * state.
+   * allowed range, and enforces each inactivity timeout <= max duration. Called
+   * once per user-session creation; the resolved values are frozen into that
+   * session's state.
    */
   private _resolveUserSessionDurations(): {
     userSessionMaxDurationSeconds: number;
@@ -447,10 +447,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
 
-    // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd
-    // cannot push them forward: the caller's timestamp (when given) becomes
-    // the span end time, while the inactivity deadline is computed from the
-    // actual call time so an anchored end cannot shorten the expiry window.
+    // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd cannot
+    // push them forward: the caller's timestamp (when given) becomes the span
+    // end time, while the inactivity deadline is computed from the actual call
+    // time so an anchored end cannot shorten the inactivity timeout.
     const now = this._perf.getNowMillis();
     const partEndTs = timestamp ?? now;
     const span = this._sessionPartSpan;
@@ -770,7 +770,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   /**
    * Records the inactivity deadline on the user-session row so the next
-   * part start can detect lazy expiry. The max-duration timer stays valid
+   * part start can detect expiry. The max-duration timer stays valid
    * because userSessionMaxEndTs doesn't change between parts.
    */
   private _continueUserSessionAfterPartEnd(now: number): void {
@@ -895,9 +895,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   /**
-   * Detaches browser-activity listeners and clears the part-inactivity
-   * timer. Intended for SDK teardown and tests; in production the manager
-   * lives for the page's lifetime.
+   * Detaches browser-activity listeners and clears the foreground inactivity
+   * timer. Intended for SDK teardown and tests; in production the manager lives
+   * for the page's lifetime.
    */
   public _shutdown(): void {
     removeActivityListeners({
@@ -968,7 +968,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (engaged && active) {
         // Redundant engagement event while a part is already active (browser
         // quirk: an extra focus/visibility fire that isn't a real transition).
-        // Re-arm the inactivity timer since the event still implies presence.
+        // Re-arm the foreground inactivity timer since the event still implies
+        // presence.
         this._startSessionPartInactivityTimer();
       }
     } catch (e) {
