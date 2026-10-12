@@ -68,25 +68,27 @@ export interface DynamicSDKConfig {
   emptySessionAvoidanceEnabledPct?: number;
 
   /**
-   * Maximum duration of a user session, in seconds. Driven by remote config.
+   * Maximum duration of a user session, in seconds. Set by remote config.
    *
    * **default**: 43200 seconds (12 hours)
    */
   userSessionMaxDurationSeconds?: number;
 
   /**
-   * Inactivity timeout that ends a user session, in seconds. Driven by remote
-   * config.
+   * Time with no focused and visible tab (including all tabs closed) after
+   * which the user session expires, in seconds. Expiry is applied when the
+   * next session part starts. Set by remote config.
    *
    * **default**: 1800 seconds (30 minutes)
    */
   userSessionInactivityTimeoutSeconds?: number;
 
   /**
-   * Inactivity timeout that ends a session part (and its enclosing user
-   * session) while the tab is foregrounded, in seconds. Driven by remote
-   * config. Distinct from `userSessionInactivityTimeoutSeconds`, which drives
-   * the lazy deadline after a backgrounding.
+   * Time without user input on a focused and visible tab after which the
+   * session part and its user session end, in seconds. Input within 30 seconds
+   * of the last timer reset does not reset it again, so the timer can fire up
+   * to 30 seconds earlier than this value after the last input. Set by remote
+   * config.
    *
    * **default**: 1800 seconds (30 minutes)
    */

@@ -79,8 +79,8 @@ export interface UserSessionManager {
    * Returns the active session part span, or `null` when no part is active.
    *
    * The SDK owns this span's lifecycle and can end it at any moment
-   * (backgrounding, inactivity, max duration, user session end). Do not end
-   * it yourself and do not hold long-lived references to it.
+   * (backgrounding, foreground inactivity, max duration, user session end). Do
+   * not end it yourself and do not hold long-lived references to it.
    *
    * Direct access to the span exists for backwards compatibility only and
    * will be removed entirely in a future version.
@@ -127,16 +127,15 @@ export type StartSessionOptions = {
 // them across platforms. Reasons that describe behaviour specific to the web
 // environment (`foreground`, `background`, `web_activity`,
 // `web_foreground_inactivity`, `web_soft_navigation`) are stamped with a `web_`
-// prefix. The part-level
-// `web_foreground_inactivity` and the user-session-level `inactivity` are distinct: when
-// the part-inactivity timer fires it stamps `web_foreground_inactivity` as the part end
-// reason and `inactivity` as the enclosing user session's termination reason
-// on the same final part span.
+// prefix. The part-level `web_foreground_inactivity` and the user-session-level
+// `inactivity` are distinct: when the foreground inactivity timer fires it
+// stamps `web_foreground_inactivity` as the part end reason and `inactivity` as
+// the enclosing user session's termination reason on the same final part span.
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
   | 'foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
-  | 'web_activity' // user input resumed after an inactivity-killed part
+  | 'web_activity' // user input on an engaged tab with no active part, typically after foreground inactivity ended the previous part
   | 'web_soft_navigation' // soft navigation started the next part in the same user session
   | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
 
@@ -148,7 +147,7 @@ export interface SessionPartStartedEvent {
 
 export type SessionPartEndReason =
   | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'web_foreground_inactivity' // no keyboard/mouse/scroll input during the active part for the configured inactivity window; also ends the enclosing user session, with the part span end timestamp anchored to the last activity
+  | 'web_foreground_inactivity' // no user input on the focused and visible tab for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session. The span ends when the timer fires
   | 'web_soft_navigation' // rolled the part over on a soft navigation. Not final, the user session continues
   | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
 

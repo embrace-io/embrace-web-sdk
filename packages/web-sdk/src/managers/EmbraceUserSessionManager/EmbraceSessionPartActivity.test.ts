@@ -153,7 +153,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     visibilityDoc.dispatchEvent(new Event('visibilitychange'));
   };
 
-  it('arms the part-inactivity timer when a part starts', () => {
+  it('arms the foreground inactivity timer when a part starts', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
@@ -163,7 +163,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
-  it('resets the part-inactivity timer on activity', () => {
+  it('resets the foreground inactivity timer on activity', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
@@ -189,7 +189,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
   });
 
-  it('ends the part with reason web_foreground_inactivity when the part-inactivity window elapses', () => {
+  it('ends the part with reason web_foreground_inactivity when the foreground inactivity timer fires', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
@@ -203,7 +203,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
-  it('starts a new part with reason activity after an inactivity-killed part', () => {
+  it('starts a new part with reason web_activity after foreground inactivity ended the part', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
@@ -227,7 +227,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(startReasons()).to.deep.equal(['web_activity']);
   });
 
-  it('clears the part-inactivity timer when a part ends through another path', () => {
+  it('clears the foreground inactivity timer when a part ends through another path', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS / 2);
@@ -373,18 +373,18 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('re-arms the part-inactivity timer when an engagement event fires while already engaged and active', () => {
+  it('re-arms the foreground inactivity timer when an engagement event fires while already engaged and active', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     // Redundant focus event while the tab is still engaged and the part is
     // still active (no blur/hide in between). This is the
     // browser-quirk path: the engagement handler should re-arm the
-    // inactivity timer rather than start a new part.
+    // foreground inactivity timer rather than start a new part.
     target.dispatchEvent(new Event('focus'));
 
     // The timer was re-armed at this tick, so it now needs another full
-    // window before inactivity fires.
+    // foreground inactivity timeout before it fires.
     clock.tick(FOREGROUND_INACTIVITY_MS - 1);
     expect(endReasons()).to.deep.equal([]);
     clock.tick(1);
@@ -396,8 +396,9 @@ describe('EmbraceUserSessionManager browser activity', () => {
   it('starts a fresh part when an activity event arrives just after the prior part finalized', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
-    // Inactivity expires; the part finalizes. Then user activity resumes;
-    // the next event must start a new part with reason 'web_activity'.
+    // The foreground inactivity timer fires and ends the part. Then user
+    // activity resumes; the next event must start a new part with reason
+    // 'web_activity'.
     clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
     void expect(manager.getSessionPartId()).to.be.null;
@@ -408,7 +409,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     void expect(manager.getSessionPartId()).to.not.be.null;
   });
 
-  it('arms the live timer from the foreground value, not the inactivity value', () => {
+  it('arms the foreground inactivity timer from the foreground value, not the inactivity value', () => {
     const splitManager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new MockPerformanceManager(clock),
@@ -460,7 +461,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     fireVisibilityChange('hidden');
     expect(endSpy.callCount).to.equal(endCallsBeforeVisibility);
 
-    // The internal part-inactivity timer was cleared on shutdown, so no
+    // The foreground inactivity timer was cleared on shutdown, so no
     // further endSessionPartInternal({ reason: 'web_foreground_inactivity' }) calls fire.
     const endCallsBefore = endSpy.callCount;
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);

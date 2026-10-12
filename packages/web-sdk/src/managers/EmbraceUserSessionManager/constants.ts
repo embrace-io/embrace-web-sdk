@@ -42,7 +42,8 @@ export const END_USER_SESSION_COOLDOWN_MS = 5 * 1000;
 
 /**
  * Default upper bound on how often the activity handler runs; prevents
- * mousemove from re-arming the inactivity timer for every sub-second event.
+ * mousemove from re-arming the foreground inactivity timer for every sub-second
+ * event.
  */
 export const DEFAULT_ACTIVITY_THROTTLE_MS = 30 * 1000;
 
