@@ -109,6 +109,15 @@ type SpanScope = {
   version?: string;
 };
 
+// Upstream instrumentation scopes carry their package version, which every
+// dependency bump changes, so lookups of those scopes opt out of the version check
+const ANY_VERSION = Symbol('any version');
+
+type ExpectedScope = {
+  name: string;
+  version?: string | typeof ANY_VERSION;
+};
+
 const otlpAttrsToRecord = (
   attrs: ExportedSpan['attributes'],
 ): Record<string, string | number | boolean> => {
@@ -130,7 +139,7 @@ const otlpAttrsToRecord = (
 
 const getLastSessionExportedSpans = async (
   spansExportNumber = 0,
-  scope: SpanScope = { name: 'embrace-web-sdk-traces' },
+  scope: ExpectedScope = { name: 'embrace-web-sdk-traces' },
 ) => {
   // Needed to allow the transport to send its data off to fetch
   await new Promise((r) => setTimeout(r, 1));
@@ -157,8 +166,9 @@ const getLastSessionExportedSpans = async (
     scope: SpanScope;
     spans: ExportedSpan[];
   }>;
-  const matchesScope = (actual: SpanScope, expected: SpanScope): boolean =>
-    actual.name === expected.name && actual.version === expected.version;
+  const matchesScope = (actual: SpanScope, expected: ExpectedScope): boolean =>
+    actual.name === expected.name &&
+    (expected.version === ANY_VERSION || actual.version === expected.version);
 
   const sessionScopeSpan = scopeSpans.find((s) =>
     matchesScope(s.scope, { name: 'embrace-web-sdk-session-parts' }),
@@ -1934,7 +1944,7 @@ describe('initSDK', () => {
             test.networkType === 'fetch'
               ? '@opentelemetry/instrumentation-fetch'
               : '@opentelemetry/instrumentation-xml-http-request',
-          version: '0.223.0',
+          version: ANY_VERSION,
         });
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
