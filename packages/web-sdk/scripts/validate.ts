@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// tsconfig limits `types` to mocha so browser source never sees Node globals
+/// <reference types="node" />
 /**
  * SDK build validation
  *
