@@ -157,8 +157,11 @@ const getLastSessionExportedSpans = async (
     scope: SpanScope;
     spans: ExportedSpan[];
   }>;
+  // Upstream instrumentation scopes carry their package version, which every
+  // dependency bump changes, so an expected scope without a version matches any
   const matchesScope = (actual: SpanScope, expected: SpanScope): boolean =>
-    actual.name === expected.name && actual.version === expected.version;
+    actual.name === expected.name &&
+    (expected.version === undefined || actual.version === expected.version);
 
   const sessionScopeSpan = scopeSpans.find((s) =>
     matchesScope(s.scope, { name: 'embrace-web-sdk-session-parts' }),
@@ -1934,7 +1937,6 @@ describe('initSDK', () => {
             test.networkType === 'fetch'
               ? '@opentelemetry/instrumentation-fetch'
               : '@opentelemetry/instrumentation-xml-http-request',
-          version: '0.222.0',
         });
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
