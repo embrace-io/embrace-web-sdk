@@ -1,6 +1,5 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
-import { createPerformanceObserver } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import {
   KEY_EMB_SERVER_TIMING_DESCRIPTION,
@@ -11,7 +10,6 @@ import {
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
-  private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
 
   public constructor({
@@ -27,54 +25,18 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       limitManager,
       config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
-  }
-
-  private _disconnectObserver(): void {
-    this._navigationObserver?.disconnect();
-    this._navigationObserver = null;
   }
 
   public override onEnable(): void {
-    if (this._performanceCollected) {
-      return;
-    }
-
-    /*
-     * The observer keeps the read out of the constructor. Under
-     * registerGlobally: false the logger provider arrives later in this same
-     * task, and a log emitted before it is lost for good because the
-     * collection guard latches.
-     *
-     * buffered stays at its default of true, the opposite of the navigation
-     * observer in DocumentLoadInstrumentation: server timings arrive in the
-     * response headers and are complete on the entry from the start, so a
-     * replay contains everything. It is also required, because the SDK usually
-     * starts after the entry was buffered and an unbuffered subscription would
-     * never be notified.
-     */
-    this._navigationObserver =
-      createPerformanceObserver<PerformanceNavigationTiming>(
-        'navigation',
-        () => {
-          this._disconnectObserver();
-          this._readServerTiming();
-        },
-        { diag: this._diag },
-      );
-
-    if (!this._navigationObserver) {
-      this._diag.warn(
-        'navigation entries are not observable, server timings will not be collected',
-      );
-    }
+    // The navigation entry is added to the performance entry buffer while the
+    // document is created, before any script runs, and its serverTiming comes
+    // from the response headers, so there is nothing to observe:
+    // https://w3c.github.io/navigation-timing/#dfn-create-the-navigation-timing-entry
+    this._readServerTiming();
   }
 
   public override onDisable(): void {
-    this._disconnectObserver();
+    // The one read happened at enable; there is nothing to undo.
   }
 
   private _readServerTiming(): void {

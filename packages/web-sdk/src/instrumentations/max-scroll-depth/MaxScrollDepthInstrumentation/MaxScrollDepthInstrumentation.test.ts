@@ -173,6 +173,7 @@ describe('MaxScrollDepthInstrumentation', () => {
 
     instrumentation = new MaxScrollDepthInstrumentation();
     instrumentation.setUserSessionManager(userSessionManager);
+    instrumentation.enable();
   });
 
   afterEach(() => {

@@ -12,7 +12,7 @@ import type { UserSessionState } from '../types.ts';
  * True when the stored state is no longer trustworthy: the device clock
  * jumped backwards past the recorded start, the max-duration deadline has
  * passed, or an inactivity deadline (set when the last part ended) has
- * passed. Inactivity only applies between parts; the deadline is null
+ * passed. The inactivity deadline only applies between parts; it is null
  * while a part is active.
  */
 export const isUserSessionExpired = (

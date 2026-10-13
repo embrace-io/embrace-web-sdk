@@ -13,7 +13,7 @@ export type ResourceFetchCustomAttributeFunction = (
   resource: PerformanceResourceTiming,
 ) => void;
 
-export type DocumentLoadInstrumentationConfig = Pick<
+export type DocumentLoadInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
   'diag' | 'perf'
 > & {
@@ -57,7 +57,4 @@ export type DocumentLoadInstrumentationConfig = Pick<
    * firstPaint
    */
   ignorePerformancePaintEvents?: boolean;
-
-  /** Whether the instrumentation is enabled */
-  enabled?: boolean;
 };

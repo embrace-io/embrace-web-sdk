@@ -55,10 +55,6 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
         this._diag.error('failed to process rage-click candidate', e);
       }
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onDisable(): void {

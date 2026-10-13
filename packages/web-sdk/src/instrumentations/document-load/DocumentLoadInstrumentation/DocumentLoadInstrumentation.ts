@@ -48,7 +48,7 @@ import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/ind
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
   DocumentLoadCustomAttributeFunction,
-  DocumentLoadInstrumentationConfig,
+  DocumentLoadInstrumentationArgs,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
 import type {
@@ -87,34 +87,30 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 // Navigation-only attribute names - no PerformanceResourceTiming equivalent, so these never apply to resource fetch spans
 const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
 
-export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<DocumentLoadInstrumentationConfig> {
+export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected = false;
+  private readonly _applyCustomAttributesOnSpan: DocumentLoadInstrumentationArgs['applyCustomAttributesOnSpan'];
+  private readonly _ignorePerformancePaintEvents: boolean;
+  private readonly _ignoreNetworkEvents: boolean;
 
   public constructor({
     diag,
     perf,
-    enabled,
     applyCustomAttributesOnSpan,
     ignorePerformancePaintEvents = false,
     ignoreNetworkEvents = false,
-  }: DocumentLoadInstrumentationConfig = {}) {
+  }: DocumentLoadInstrumentationArgs = {}) {
     super({
       instrumentationName: 'DocumentLoadInstrumentation',
       instrumentationVersion: '1.0.0',
       diag,
       perf,
-      config: {
-        enabled,
-        applyCustomAttributesOnSpan,
-        ignorePerformancePaintEvents,
-        ignoreNetworkEvents,
-      },
+      config: {},
     });
-
-    if (this._config.enabled) {
-      this.enable();
-    }
+    this._applyCustomAttributesOnSpan = applyCustomAttributesOnSpan;
+    this._ignorePerformancePaintEvents = ignorePerformancePaintEvents;
+    this._ignoreNetworkEvents = ignoreNetworkEvents;
   }
 
   /**
@@ -195,16 +191,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         if (fetchSpan) {
           fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
-            addSpanNetworkEvents(
-              fetchSpan,
-              entries,
-              this.getConfig().ignoreNetworkEvents,
-            );
+            addSpanNetworkEvents(fetchSpan, entries, this._ignoreNetworkEvents);
             this._addResourceAttributesToSpan(fetchSpan, entries);
             this._addNavigationTimingAttributesToSpan(fetchSpan, entries);
             this._addCustomAttributesOnSpan(
               fetchSpan,
-              this.getConfig().applyCustomAttributesOnSpan?.documentFetch,
+              this._applyCustomAttributesOnSpan?.documentFetch,
             );
             this._endSpan(
               fetchSpan,
@@ -221,7 +213,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
       this._addResourcesSpans(rootSpan);
 
-      if (!this.getConfig().ignoreNetworkEvents) {
+      if (!this._ignoreNetworkEvents) {
         addSpanNetworkEvent(
           rootSpan,
           PerformanceTimingNames.FETCH_START,
@@ -269,13 +261,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
         );
       }
 
-      if (!this.getConfig().ignorePerformancePaintEvents) {
+      if (!this._ignorePerformancePaintEvents) {
         addSpanPerformancePaintEvents(rootSpan, this.perf);
       }
 
       this._addCustomAttributesOnSpan(
         rootSpan,
-        this.getConfig().applyCustomAttributesOnSpan?.documentLoad,
+        this._applyCustomAttributesOnSpan?.documentLoad,
       );
       this._endSpan(rootSpan, PerformanceTimingNames.LOAD_EVENT_END, entries);
     });
@@ -325,14 +317,14 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
     }
 
     span.setAttribute(ATTR_URL_FULL, resource.name);
-    addSpanNetworkEvents(span, resource, this.getConfig().ignoreNetworkEvents);
+    addSpanNetworkEvents(span, resource, this._ignoreNetworkEvents);
 
     this._addResourceAttributesToSpan(span, resource);
     this._addResourceDiagnosticAttributes(span, resource);
     this._addCustomAttributesOnResourceSpan(
       span,
       resource,
-      this.getConfig().applyCustomAttributesOnSpan?.resourceFetch,
+      this._applyCustomAttributesOnSpan?.resourceFetch,
     );
     this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
   }
@@ -577,15 +569,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase<Docu
 
   public override onEnable(): void {
     // An unbuffered subscription registered after the load event is never
-    // notified, so collect straight away instead of observing. Deferred a
-    // microtask because under registerGlobally: false the tracer provider
-    // arrives later in this same task, and earlier spans reach a no-op tracer.
-    if (this._isLoadEventFinished()) {
-      queueMicrotask(() => {
-        if (this._isEnabled) {
-          this._collectIfLoadEventFinished();
-        }
-      });
+    // notified, so the finished entry is read off the timeline instead.
+    this._collectIfLoadEventFinished();
+    if (this._performanceCollected) {
       return;
     }
 

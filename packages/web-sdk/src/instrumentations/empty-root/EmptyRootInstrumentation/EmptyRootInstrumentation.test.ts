@@ -58,6 +58,7 @@ describe('EmptyInstrumentation', () => {
       rootNode,
       emptyCheckDelayMs: 10,
     });
+    instrumentation.enable();
 
     // Clear out the root node
     child1.remove();
@@ -109,6 +110,7 @@ describe('EmptyInstrumentation', () => {
       rootNode,
       emptyCheckDelayMs: 10,
     });
+    instrumentation.enable();
 
     child1.remove();
 
@@ -140,6 +142,7 @@ describe('EmptyInstrumentation', () => {
       rootNode,
       emptyCheckDelayMs: 10,
     });
+    instrumentation.enable();
 
     child1.remove();
     child2.remove();
@@ -173,6 +176,7 @@ describe('EmptyInstrumentation', () => {
       rootNode,
       emptyCheckDelayMs: 10,
     });
+    instrumentation.enable();
 
     rootNode.remove();
 
@@ -198,6 +202,7 @@ describe('EmptyInstrumentation', () => {
       rootNode: null,
       emptyCheckDelayMs: 10,
     });
+    instrumentation.enable();
 
     expect(diag.getWarnLogs()).to.deep.equal([
       "supplied root node was null, this instrumentation won't be enabled",

@@ -71,10 +71,6 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
         this._diag.error('failed to create new user interaction span event', e);
       }
     };
-
-    if (this._config.enabled) {
-      this.enable();
-    }
   }
 
   public override onDisable(): void {

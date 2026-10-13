@@ -33,21 +33,22 @@ export interface UserSessionState {
   /** Bumped on every part start. */
   readonly userSessionPartIndex: number;
   /**
-   * Configured values captured and locked at session creation, persisted
-   * so they survive page reloads.
+   * Fixed at user session creation and persisted so it survives page reloads.
    */
   readonly userSessionMaxDurationSeconds: number;
+  /**
+   * Fixed at user session creation. Sets `inactivityDeadlineTs` at part end.
+   */
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
-   * Frozen at session creation. Drives the live foreground part-inactivity
-   * timer. Distinct from `userSessionInactivityTimeoutSeconds`, which drives
-   * the lazy deadline set when a part ends.
+   * Fixed at user session creation. Delay of the foreground inactivity timer,
+   * which runs while a part is active.
    */
   readonly userSessionForegroundInactivityTimeoutSeconds: number;
   /**
-   * Absolute timestamp after which the session expires from inactivity
-   * (`part_end_ts + userSessionInactivityTimeoutSeconds * 1000`). Set on part-end;
-   * null while a part is active. Checked lazily on the next part start.
+   * Absolute timestamp after which the user session expires
+   * (part-end call time + `userSessionInactivityTimeoutSeconds * 1000`). Set on
+   * part end; null while a part is active. Checked at the next part start.
    */
   readonly inactivityDeadlineTs: number | null;
   /**
@@ -173,8 +174,8 @@ export interface EmbraceUserSessionManagerArgs {
   storage: NamespacedStorage;
   /**
    * Source of the user-session durations (max duration, inactivity timeout,
-   * foreground inactivity timeout), which are driven by remote config and
-   * resolved at each session creation.
+   * foreground inactivity timeout), which are set by remote config and
+   * resolved at each user session creation.
    */
   dynamicConfigManager: DynamicConfigManager;
   /**
@@ -193,8 +194,8 @@ export interface EmbraceUserSessionManagerArgs {
    */
   target?: EventTarget;
   /**
-   * Upper bound on how often the activity handler runs; prevents
-   * mousemove from re-arming the inactivity timer for every sub-second event.
+   * Upper bound on how often the activity handler runs; prevents mousemove from
+   * re-arming the foreground inactivity timer for every sub-second event.
    */
   activityThrottleMs?: number;
   /**

@@ -1,6 +1,5 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { LogRecord } from '@opentelemetry/api-logs';
-import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import type {
   Metric,
   MetricWithAttribution,
@@ -20,7 +19,7 @@ export type WebVitalListeners = Record<
   ((onReport: WebVitalOnReport, opts?: ReportOpts) => void) | undefined
 >;
 
-export interface WebVitalsInstrumentationConfig extends InstrumentationConfig {
+export interface WebVitalsInstrumentationConfig {
   // OTel upstream options
   /**
    * @experimental

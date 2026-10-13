@@ -1,4 +1,4 @@
-export type { DocumentLoadInstrumentationConfig } from '../instrumentations/document-load/index.ts';
+export type { DocumentLoadInstrumentationArgs } from '../instrumentations/document-load/index.ts';
 export { DocumentLoadInstrumentation } from '../instrumentations/document-load/index.ts';
 export type { EmptyRootInstrumentationArgs } from '../instrumentations/empty-root/index.ts';
 export { EmptyRootInstrumentation } from '../instrumentations/empty-root/index.ts';

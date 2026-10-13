@@ -118,10 +118,18 @@ export const setupDefaultInstrumentations = (
     );
   }
 
+  /*
+   * Upstream patches fetch and XHR from the constructor unless enabled is false.
+   * Starting them disabled gives every instrumentation here one lifecycle:
+   * registerInstrumentations enables all of them. Upstream enable() never
+   * writes config.enabled back, so these two report false for their lifetime;
+   * getConfig().enabled is not a liveness signal.
+   */
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new FetchInstrumentation({
         ...config['@opentelemetry/instrumentation-fetch'],
+        enabled: false,
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
           ...(config['@opentelemetry/instrumentation-fetch']?.ignoreUrls ?? []),
@@ -134,6 +142,7 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new XMLHttpRequestInstrumentation({
         ...config['@opentelemetry/instrumentation-xml-http-request'],
+        enabled: false,
         ignoreUrls: [
           ...(config['network']?.ignoreUrls ?? []),
           ...(config['@opentelemetry/instrumentation-xml-http-request']
