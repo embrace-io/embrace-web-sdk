@@ -10,8 +10,9 @@
     // local file and rewrites 'react' imports to 'react.ts'
     "paths": {
       "react": ["../../node_modules/@types/react"],
-      // TODO: remove both once a web-common release declares sdk-trace and sdk-logs
-      // (fixed upstream); also remove them from tests/integration/tsconfig.json
+      // TODO: remove both once a web-common release includes
+      // https://github.com/open-telemetry/opentelemetry-js/pull/7195,
+      // along with the matching entries in tests/integration/tsconfig.json
       "@opentelemetry/sdk-trace": ["./node_modules/@opentelemetry/sdk-trace"],
       "@opentelemetry/sdk-logs": ["./node_modules/@opentelemetry/sdk-logs"]
     }
