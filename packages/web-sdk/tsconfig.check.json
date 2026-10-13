@@ -3,12 +3,18 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     // react-router's declaration files import react's types without declaring
-    // @types/react. Package managers with an out-of-repo store (isolated installs)
-    // make the hoisted copy unreachable from there, so map it explicitly. This lives
-    // outside tsconfig.json because Biome's useImportExtensions misreads a path-mapped
-    // bare specifier as a local file and rewrites 'react' imports to 'react.ts'
+    // @types/react, and web-common@0.223.0 does the same for sdk-trace and sdk-logs.
+    // Package managers with an out-of-repo store (isolated installs) make those
+    // unreachable from there, so map them explicitly. This lives outside tsconfig.json
+    // because Biome's useImportExtensions misreads a path-mapped bare specifier as a
+    // local file and rewrites 'react' imports to 'react.ts'
     "paths": {
-      "react": ["../../node_modules/@types/react"]
+      "react": ["../../node_modules/@types/react"],
+      // TODO: remove both once a web-common release includes
+      // https://github.com/open-telemetry/opentelemetry-js/pull/7195,
+      // along with the matching entries in tests/integration/tsconfig.json
+      "@opentelemetry/sdk-trace": ["./node_modules/@opentelemetry/sdk-trace"],
+      "@opentelemetry/sdk-logs": ["./node_modules/@opentelemetry/sdk-logs"]
     }
   }
 }

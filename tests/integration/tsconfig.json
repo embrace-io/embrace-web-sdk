@@ -1,5 +1,20 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // web-common@0.223.0 imports sdk-trace and sdk-logs types without declaring them,
+    // which isolated installs leave unreachable from its store directory.
+    // TODO: remove this block once a web-common release includes
+    // https://github.com/open-telemetry/opentelemetry-js/pull/7195,
+    // along with the matching entries in packages/web-sdk/tsconfig.check.json
+    "paths": {
+      "@opentelemetry/sdk-trace": [
+        "../../packages/web-sdk/node_modules/@opentelemetry/sdk-trace"
+      ],
+      "@opentelemetry/sdk-logs": [
+        "../../packages/web-sdk/node_modules/@opentelemetry/sdk-logs"
+      ]
+    }
+  },
   "include": ["**/*.ts"],
   "exclude": ["platforms"]
 }
