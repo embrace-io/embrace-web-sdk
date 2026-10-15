@@ -25,6 +25,7 @@ const RESOURCE_TIMING_MARKS = [
  */
 export const addSpanNetworkEvent = (
   span: Span,
+  perf: PerformanceManager,
   name: string,
   offset: number,
   ignoreZeros = true,
@@ -34,19 +35,19 @@ export const addSpanNetworkEvent = (
   // https://w3c.github.io/resource-timing/#dfn-convert-fetch-timestamp
   // https://w3c.github.io/navigation-timing/#dom-performancenavigationtiming-unloadeventstart
   if (!(ignoreZeros && offset === 0)) {
-    // span.addEvent adds performance.timeOrigin to an offset this small
-    span.addEvent(name, offset);
+    span.addEvent(name, perf.epochMillisFromOrigin(offset));
   }
 };
 
 export const addSpanNetworkEvents = (
   span: Span,
+  perf: PerformanceManager,
   entry: PerformanceResourceTiming,
 ) => {
   // A navigation entry starts at time origin, so its marks can be a real 0
   const ignoreZeros = entry.startTime !== 0;
   for (const name of RESOURCE_TIMING_MARKS) {
-    addSpanNetworkEvent(span, name, entry[name], ignoreZeros);
+    addSpanNetworkEvent(span, perf, name, entry[name], ignoreZeros);
   }
 };
 
