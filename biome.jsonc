@@ -67,7 +67,7 @@
       "performance": {
         "recommended": true,
         "noReExportAll": "error",
-        // inline handlers on DOM elements cause no extra rerenders, and the codebase does not memoize them
+        // no component is wrapped in React.memo, so a fresh function prop causes no extra render
         "noJsxPropsBind": "off"
       },
       "style": {
@@ -90,7 +90,7 @@
         "noImportCycles": "error",
         "noUndeclaredEnvVars": {
           "level": "warn",
-          // Vite sets this on import.meta.env at build time; it is not a process env var
+          // Vite injects import.meta.env.BASE_URL at build time, so no turbo.json declares it
           "options": { "allowedEnvVars": ["BASE_URL"] }
         }
         // turn on when we are ready to use all new OTel semantic conventions
