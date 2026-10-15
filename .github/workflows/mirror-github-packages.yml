@@ -1,0 +1,83 @@
+# Copies a released version of @embrace-io/web-sdk and @embrace-io/web-cli from
+# npm to GitHub Packages, for installs that map the @embrace-io scope to
+# npm.pkg.github.com and so can't reach these packages on npm.
+# The CI workflow calls this after publishing a release; run it by hand to
+# retry a failed mirror or to mirror an earlier version.
+name: Mirror to GitHub Packages
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Released version to mirror, e.g. 2.30.0
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Released version to mirror, e.g. 2.30.0
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: mirror-github-packages-${{ inputs.version }}
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - name: Mirror the npm tarballs
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        shell: bash
+        # zizmor: ignore[use-trusted-publishing] - GitHub Packages has no trusted publishing; it takes GITHUB_TOKEN
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version '$VERSION' isn't MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+
+          npm_registry=https://registry.npmjs.org
+          github_registry=https://npm.pkg.github.com
+          cd "$RUNNER_TEMP"
+          # The token stays in the environment; npm expands it from the config.
+          echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" > mirror.npmrc
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/mirror.npmrc"
+
+          for package in @embrace-io/web-sdk @embrace-io/web-cli; do
+            # A version published moments ago can take a little while to appear on npm.
+            for attempt in $(seq 12); do
+              if tarball=$(npm pack "$package@$VERSION" --registry "$npm_registry" --silent); then
+                break
+              fi
+              if [[ $attempt -eq 12 ]]; then
+                echo "::error::$package@$VERSION isn't on npm"
+                exit 1
+              fi
+              sleep 10
+            done
+            integrity=$(npm view "$package@$VERSION" dist.integrity --registry "$npm_registry")
+
+            mirrored=$(npm view "$package@$VERSION" dist.integrity --registry "$github_registry" 2>/dev/null || true)
+            if [[ "$mirrored" == "$integrity" ]]; then
+              echo "$package@$VERSION is already on GitHub Packages"
+              continue
+            elif [[ -n "$mirrored" ]]; then
+              echo "::error::$package@$VERSION on GitHub Packages differs from npm ($mirrored, not $integrity)"
+              exit 1
+            fi
+
+            # Earlier versions get their own dist-tag, so mirroring one never moves latest backwards.
+            tag=mirror
+            if [[ "$(npm view "$package" dist-tags.latest --registry "$npm_registry")" == "$VERSION" ]]; then
+              tag=latest
+            fi
+            npm publish "$tarball" --registry "$github_registry" --tag "$tag"
+            echo "Mirrored $package@$VERSION to GitHub Packages under $tag"
+          done

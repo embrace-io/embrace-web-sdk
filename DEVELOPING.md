@@ -183,6 +183,12 @@ To release a new version of the SDK:
 3. Once the PR is merged a new Github release will be created as a draft. Edit
    the draft and publish it, this will trigger a publish of the updated SDK
    packages to NPM.
+4. After publishing, the same workflow mirrors both packages, byte for byte, to
+   GitHub Packages, for installs that map the `@embrace-io` scope to
+   `npm.pkg.github.com` and so can't reach them on NPM. If the mirror fails,
+   re-run it, or mirror an earlier version, from the
+   [Mirror to GitHub Packages](https://github.com/embrace-io/embrace-web-sdk/actions/workflows/mirror-github-packages.yml)
+   action with the version.
 
 The level of the version bump (major, minor, patch) is determined by the type
 of changes made to the SDK since the last release. You can see the requirements
@@ -204,6 +210,13 @@ npm unpublish @embrace-io/<package-name>@<version>
 
 Or through their UI, see [Unpublishing a single version of a package](https://docs.npmjs.com/unpublishing-packages-from-the-registry#unpublishing-a-single-version-of-a-package)
 
+Then delete the version from GitHub Packages too, from the package's settings on GitHub or with
+
+```shell
+gh api /orgs/embrace-io/packages/npm/<package-name>/versions --jq '.[] | "\(.id) \(.name)"'
+gh api -X DELETE /orgs/embrace-io/packages/npm/<package-name>/versions/<version-id>
+```
+
 We should only take this option in cases where there are security concerns since we want to consider release artifacts
 as immutable.
 
@@ -215,6 +228,8 @@ done using:
 ```shell
 npm deprecate @embrace-io/<package>@<version> "some message explaining deprecation"
 ```
+
+GitHub Packages has no equivalent, so the mirrored copy of a deprecated version stays as it is.
 
 Once a patch version has been released we should also purge jsdelivr's cache so that the CDN begins to serve the fixed
 version immediately. That can be done by supplying a list of URLs to purge in their [online tool](https://www.jsdelivr.com/tools/purge).
