@@ -34,7 +34,7 @@ type ScriptSummaries = Map<string, ScriptSummaryValue>;
 
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
-  private _isFirstEntry: boolean = true;
+  private _isFirstEntry = true;
 
   private _totalDuration = 0;
   private _workDuration = 0;

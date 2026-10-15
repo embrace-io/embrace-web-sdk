@@ -28,7 +28,7 @@ export class NamespacedStorage {
   private readonly _diag: DiagLogger;
   private readonly _keyPrefix: string;
   private readonly _storage: Storage;
-  private _writeDisabled: boolean = false;
+  private _writeDisabled = false;
 
   public constructor({
     namespace,

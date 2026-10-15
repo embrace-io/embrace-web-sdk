@@ -204,8 +204,8 @@ class FakePerformanceObserver {
   public static webkitSemantics = false;
 
   public observedOptions: PerformanceObserverInit | null = null;
-  public isDisconnected: boolean = false;
-  private _notificationConsumed: boolean = false;
+  public isDisconnected = false;
+  private _notificationConsumed = false;
   private readonly _callback: PerformanceObserverCallback;
 
   public constructor(callback: PerformanceObserverCallback) {

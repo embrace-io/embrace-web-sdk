@@ -319,7 +319,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _largestShiftTargetForCLS: string | undefined | null = null;
   private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
-  private _listenersRegistered: boolean = false;
+  private _listenersRegistered = false;
 
   public constructor({
     diag,
@@ -497,7 +497,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         [KEY_BROWSER_WEB_VITAL_RATING]: metric.rating,
         [KEY_BROWSER_WEB_VITAL_ID]: metric.id,
         [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
-        [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId,
+        ...(metric.navigationId !== undefined
+          ? { [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId }
+          : {}),
         ...(metric.navigationInteractionId !== undefined
           ? {
               [KEY_BROWSER_WEB_VITAL_INTERACTION_ID]:
@@ -543,15 +545,16 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ? lcpElementAttribution(metric, this._diag)
           : {}),
       },
-      body: this._includeRawAttribution
-        ? JSON.stringify(
-            Object.fromEntries(
-              Object.entries(metric.attribution).filter(([, v]) =>
-                isPrimitiveValue(v),
+      body:
+        this._includeRawAttribution && metric.attribution != null
+          ? JSON.stringify(
+              Object.fromEntries(
+                Object.entries(metric.attribution).filter(([, v]) =>
+                  isPrimitiveValue(v),
+                ),
               ),
-            ),
-          )
-        : undefined,
+            )
+          : undefined,
       timestamp: millisToHrTime(metricTimeMillis),
     };
 

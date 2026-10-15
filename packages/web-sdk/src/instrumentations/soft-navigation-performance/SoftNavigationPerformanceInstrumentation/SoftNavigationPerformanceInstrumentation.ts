@@ -53,7 +53,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   private _observer: PerformanceObserver | null = null;
   private _eventObserver: PerformanceObserver | null = null;
   private _pendingNavigations: PendingNavigation[] = [];
-  private _usePolyfill: boolean = false;
+  private _usePolyfill = false;
   private readonly _navigationHost: NavigationHost;
   private readonly _signalBuffer: SignalBuffer | undefined;
 

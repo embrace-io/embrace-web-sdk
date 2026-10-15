@@ -30,7 +30,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
   private readonly _onClick: (event: PointerEvent) => void;
   private readonly _onKeyDown: (event: KeyboardEvent) => void;
   private readonly _onScroll: (event: Event) => void;
-  private _listenersAttached: boolean = false;
+  private _listenersAttached = false;
 
   public constructor({ diag, perf }: FirstInteractionInstrumentationArgs = {}) {
     super({
