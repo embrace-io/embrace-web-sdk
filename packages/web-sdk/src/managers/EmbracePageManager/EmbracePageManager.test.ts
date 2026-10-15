@@ -38,7 +38,6 @@ describe('EmbracePageManager', () => {
     const pageId = pageManager.getCurrentPageId();
 
     expect(route).to.deep.equal({
-      path: window.location.pathname,
       url: window.location.pathname,
     });
     expect(pageId).to.match(UUID_PATTERN);
@@ -208,28 +207,42 @@ describe('EmbracePageManager', () => {
       };
     });
 
-    it('sets the initial route from the current location on construction', () => {
+    it('sets the initial route url from the current location on construction, with no path guess', () => {
       const manager = new EmbracePageManager({
         navigationHost: {
           location: { href: 'http://current.example.com/', pathname: '/' },
         },
       });
 
-      expect(manager.getCurrentRoute()).to.deep.equal({
-        path: '/',
-        url: '/',
-      });
+      expect(manager.getCurrentRoute()).to.deep.equal({ url: '/' });
     });
 
-    it('sets the route from the raw pathname on soft navigation', () => {
+    it('sets the url (not a guessed path) on soft navigation', () => {
       const manager = createPageManager();
 
       navigation.fire('http://previous.example.com/');
 
       expect(manager.getCurrentRoute()).to.deep.equal({
-        path: '/products/123',
         url: '/products/123',
       });
+    });
+
+    it('advances the page id immediately on soft navigation, ahead of any router correction', () => {
+      const manager = createPageManager();
+      const routeFromRouter: Route = {
+        path: '/products/:id',
+        url: '/products/123',
+      };
+      manager.setCurrentRoute(routeFromRouter);
+      const pageIdBeforeNavigation = manager.getCurrentPageId();
+
+      // Simulates navigating to a new page before any router integration has
+      // had a chance to resolve its template.
+      navigationHost.location.pathname = '/settings';
+      navigation.fire('http://previous.example.com/');
+
+      expect(manager.getCurrentRoute()).to.deep.equal({ url: '/settings' });
+      expect(manager.getCurrentPageId()).to.not.equal(pageIdBeforeNavigation);
     });
 
     it('rolls over the session part with web_soft_navigation reasons', () => {
@@ -300,7 +313,6 @@ describe('EmbracePageManager', () => {
       }).to.not.throw();
 
       expect(manager.getCurrentRoute()).to.deep.equal({
-        path: '/products/123',
         url: '/products/123',
       });
     });

@@ -910,7 +910,6 @@ describe('initSDK', () => {
         'emb.user_session_foreground_inactivity_timeout_seconds': 1800,
         'emb.sdk_startup_duration': sdkStartupDuration,
         'browser.url.full': browserUrlFull,
-        'app.surface.name': window.location.pathname,
         'app.surface.id': appSurfaceId,
         'emb.perf_clock_lag_ms': perfClockLag,
       });
@@ -1143,13 +1142,15 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap; four additional attributes are
+      // 200 is the span attribute cap; three additional attributes are
       // written directly to span.attributes by later processors at onEnd,
       // bypassing the cap: browser.url.full (BrowserSpanProcessor),
-      // app.surface.name/app.surface.id (PageSpanProcessor — stamped on
-      // every span since EmbracePageManager always has a current route) and
-      // emb.perf_clock_lag_ms (PerfClockLagSpanProcessor).
-      expect(exportedAttributes).to.have.lengthOf(204);
+      // app.surface.id (PageSpanProcessor — stamped on every span since
+      // EmbracePageManager always has a current route) and
+      // emb.perf_clock_lag_ms (PerfClockLagSpanProcessor). app.surface.name
+      // is not stamped here: no router integration is wired up in this test,
+      // so the route never gets a path.
+      expect(exportedAttributes).to.have.lengthOf(203);
 
       // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
       // attributes option). Non-part spans do not have session IDs. The
@@ -1172,7 +1173,6 @@ describe('initSDK', () => {
         .map((a: { key: string }) => a.key);
       expect(bypassKeys).to.have.members([
         'browser.url.full',
-        'app.surface.name',
         'app.surface.id',
         'emb.perf_clock_lag_ms',
       ]);
