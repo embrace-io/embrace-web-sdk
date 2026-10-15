@@ -28,7 +28,10 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
       const currentRoute = this._pageManager.getCurrentRoute();
 
       if (currentRoute) {
-        logRecord.setAttribute(KEY_EMB_PAGE_PATH, currentRoute.path);
+        if (currentRoute.path) {
+          logRecord.setAttribute(KEY_EMB_PAGE_PATH, currentRoute.path);
+        }
+
         logRecord.setAttribute(
           KEY_EMB_PAGE_ID,
           this._pageManager.getCurrentPageId(),

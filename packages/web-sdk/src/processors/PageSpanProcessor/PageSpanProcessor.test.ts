@@ -85,6 +85,22 @@ describe('PageSpanProcessor', () => {
     void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
   });
 
+  it('should attach page id but not surface name when the route has no path yet', () => {
+    pageManager.setCurrentRoute({ url: '/products/123' });
+
+    const span = tracer.startSpan('test-span-no-path');
+    span.end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const readableSpan = finishedSpans[0];
+
+    expect(readableSpan.attributes[KEY_EMB_PAGE_ID]).to.equal(
+      pageManager.getCurrentPageId(),
+    );
+    void expect(readableSpan.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
+  });
+
   it('should not override page attributes', () => {
     pageManager.setCurrentRoute(mockRoute);
 

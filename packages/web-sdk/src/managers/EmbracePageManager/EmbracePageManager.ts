@@ -130,6 +130,6 @@ export class EmbracePageManager implements PageManager {
 
   private readonly _setInitialRouteFromCurrentLocation = (): void => {
     const pathname = this._navigationHost.location.pathname;
-    this.setCurrentRoute({ path: pathname, url: pathname });
+    this.setCurrentRoute({ url: pathname });
   };
 }

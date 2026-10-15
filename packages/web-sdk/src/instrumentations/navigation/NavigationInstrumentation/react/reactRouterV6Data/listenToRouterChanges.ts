@@ -3,43 +3,31 @@ import { page } from '../../../../../api-page/index.ts';
 import type { ListenToRouterChangesArgs, Match } from './types.ts';
 
 /**
- * getRouteFromMatches goes through all the matches routes to build the full path
- * nested routes contain only the partial match, so we need to go through all of them
- * in order to build the full path.
- *
- * Filtering by currentPathname keeps only the routes that are relevant to the current URL.
+ * matchRoutes already scopes `matches` to the given pathname, ordered from
+ * the root route to the deepest one, so the full pattern is built by
+ * reducing over all of them. Pathless layout and index routes contribute no
+ * `route.path` of their own (and may duplicate an ancestor's pathname), so
+ * they're skipped rather than used to bound which matches count.
  */
 const getRouteFromMatches = (
   matches: Match[],
   currentPathname: string,
 ): Route | null => {
-  const currentMatchIndex = matches.findIndex(
-    (match) => match.pathname === currentPathname,
-  );
+  return matches.reduce<Route | null>((acc, match) => {
+    const routePath = match.route.path;
 
-  if (currentMatchIndex === -1 || !matches[currentMatchIndex].route.path) {
-    return null;
-  }
+    if (!routePath) {
+      return acc;
+    }
 
-  // Build full absolute path by reducing all matches up to the current one.
-  // Absolute child paths reset the accumulation; relative paths are appended.
-  return matches
-    .slice(0, currentMatchIndex + 1)
-    .reduce<Route | null>((acc, match) => {
-      const routePath = match.route.path;
+    // If the route path starts with '/', it's an absolute path and should reset the accumulated path.
+    // Otherwise, it's a relative path and should be appended to the accumulated path.
+    const path = routePath.startsWith('/')
+      ? routePath
+      : `${acc?.path ?? ''}/${routePath}`;
 
-      if (!routePath) {
-        return acc;
-      }
-
-      // If the route path starts with '/', it's an absolute path and should reset the accumulated path.
-      // Otherwise, it's a relative path and should be appended to the accumulated path.
-      const path = routePath.startsWith('/')
-        ? routePath
-        : `${acc?.path ?? ''}/${routePath}`;
-
-      return { path, url: matches[currentMatchIndex].pathname };
-    }, null);
+    return { path, url: currentPathname };
+  }, null);
 };
 
 export const listenToRouterChanges = ({

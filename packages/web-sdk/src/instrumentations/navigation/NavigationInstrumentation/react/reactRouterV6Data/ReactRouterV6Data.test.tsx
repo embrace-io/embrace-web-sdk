@@ -8,6 +8,7 @@ import {
   RouterProvider,
   useNavigate,
 } from 'react-router-domv6plus';
+import * as sinon from 'sinon';
 import { UUID_PATTERN } from '../../../../../../tests/utils/constants.ts';
 import {
   setupTestStorage,
@@ -142,7 +143,6 @@ describe('ReactRouterV6Data', () => {
 
     expect(pageManager.getCurrentPageId()).to.match(UUID_PATTERN);
     expect(pageManager.getCurrentRoute()).to.deep.equal({
-      path: window.location.pathname,
       url: window.location.pathname,
     });
 
@@ -169,5 +169,59 @@ describe('ReactRouterV6Data', () => {
     expect(routeSpans[1].name).to.equal('/product/:id');
     expect(routeSpans[2].name).to.equal('/product/:id/details');
     expect(routeSpans[3].name).to.equal('/product/:id/more-details');
+  });
+});
+
+describe('ReactRouterV6Data - pathless layout routes', () => {
+  let pageManager: EmbracePageManager;
+  let setCurrentRouteSpy: sinon.SinonSpy;
+
+  beforeEach(() => {
+    // A prior test file's navigation can leave real browser history on a
+    // different path; this block exercises the initial, pre-navigation match.
+    window.history.replaceState(null, '', '/');
+    pageManager = new EmbracePageManager();
+    page.setGlobalPageManager(pageManager);
+    setCurrentRouteSpy = sinon.spy(page, 'setCurrentRoute');
+  });
+
+  afterEach(() => {
+    setCurrentRouteSpy.restore();
+  });
+
+  it('reports the matched route pattern for a route wrapped in a pathless layout route', () => {
+    // A pathless layout route (no `path`, e.g. a shared shell/providers
+    // wrapper) shares its pathname with the '/' route it wraps. In the
+    // matches array it appears first and lacks `route.path`.
+    const pathlessLayoutRouter = createBrowserRouter([
+      {
+        element: <Outlet />,
+        children: [
+          { path: '/', element: <div>Home</div> },
+          { path: '/about', element: <div>About</div> },
+        ],
+      },
+    ]);
+
+    const Switcher = () => {
+      useEffect(() => {
+        return listenToRouterChanges({
+          router: pathlessLayoutRouter,
+          routesMatcher: matchRoutes,
+        });
+      }, []);
+
+      return <RouterProvider router={pathlessLayoutRouter} />;
+    };
+
+    const { tearDown } = render(<Switcher />);
+
+    // getRouteFromMatches finds the pathless layout's own match before the
+    // '/' route's match (both share pathname '/'), sees it has no
+    // `route.path`, and bails to null — so listenToRouterChanges never
+    // calls page.setCurrentRoute for an otherwise perfectly matched route.
+    expect(setCurrentRouteSpy.calledWith({ path: '/', url: '/' })).to.be.true;
+
+    tearDown();
   });
 });

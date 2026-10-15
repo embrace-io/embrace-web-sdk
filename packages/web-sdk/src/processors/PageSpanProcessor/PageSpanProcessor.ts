@@ -29,7 +29,10 @@ export class PageSpanProcessor implements SpanProcessor {
       const currentPageId = this._pageManager.getCurrentPageId();
 
       if (currentRoute && currentPageId) {
-        span.attributes[KEY_EMB_PAGE_PATH] = currentRoute.path;
+        if (currentRoute.path) {
+          span.attributes[KEY_EMB_PAGE_PATH] = currentRoute.path;
+        }
+
         span.attributes[KEY_EMB_PAGE_ID] = currentPageId;
       }
     }
