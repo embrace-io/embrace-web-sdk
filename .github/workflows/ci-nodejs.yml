@@ -743,6 +743,16 @@ jobs:
           cd packages/web-cli
           npm publish --provenance --access public
 
+  # Mirrors the release to GitHub Packages; skipped whenever publish is.
+  mirror-github-packages:
+    needs:
+      - publish
+    permissions:
+      packages: write
+    uses: ./.github/workflows/mirror-github-packages.yml # zizmor: ignore[self-repository] - actionlint rejects the $/ form
+    with:
+      version: ${{ github.event.release.tag_name }}
+
   # Publishes preview packages to pkg.pr.new after CI passes on main.
   # For manual triggering, use the Preview workflow (pkg-pr-new.yml).
   preview:
