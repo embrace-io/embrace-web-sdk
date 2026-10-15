@@ -368,6 +368,19 @@ legend {
   overflow-wrap: break-word;
 }
 
+.session-table .vital-part-separator th {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #eeff04;
+  background: rgba(238, 255, 4, 0.08);
+  border-top: 1px solid rgba(238, 255, 4, 0.3);
+  border-bottom: 1px solid #27272a;
+}
+
 .session-table tbody tr:last-child th,
 .session-table tbody tr:last-child td {
   border-bottom: none;
@@ -474,17 +487,4 @@ legend {
   border-radius: 6px;
   color: #eeff04;
   background: rgba(238, 255, 4, 0.05);
-}
-
-.vital-part-separator th {
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #eeff04;
-  background: rgba(238, 255, 4, 0.08);
-  border-top: 1px solid rgba(238, 255, 4, 0.3);
-  border-bottom: 1px solid #27272a;
 }

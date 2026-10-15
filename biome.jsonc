@@ -66,7 +66,9 @@
       },
       "performance": {
         "recommended": true,
-        "noReExportAll": "error"
+        "noReExportAll": "error",
+        // inline handlers on DOM elements cause no extra rerenders, and the codebase does not memoize them
+        "noJsxPropsBind": "off"
       },
       "style": {
         "recommended": true,
@@ -85,7 +87,12 @@
       },
       "suspicious": {
         "recommended": true,
-        "noImportCycles": "error"
+        "noImportCycles": "error",
+        "noUndeclaredEnvVars": {
+          "level": "warn",
+          // Vite sets this on import.meta.env at build time; it is not a process env var
+          "options": { "allowedEnvVars": ["BASE_URL"] }
+        }
         // turn on when we are ready to use all new OTel semantic conventions
         // "noDeprecatedImports": "warn"
       },
