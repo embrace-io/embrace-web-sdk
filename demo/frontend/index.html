@@ -4,8 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Embrace Web SDK React Demo</title>
+    <!-- biome-ignore-start lint/performance/noSyncScripts: render-blocking on purpose, to exercise http.request.render_blocking_status -->
     <script src="/script1.js"></script>
     <script src="/script2.js"></script>
+    <!-- biome-ignore-end lint/performance/noSyncScripts: render-blocking on purpose -->
   </head>
   <body>
     <div id="root"></div>
