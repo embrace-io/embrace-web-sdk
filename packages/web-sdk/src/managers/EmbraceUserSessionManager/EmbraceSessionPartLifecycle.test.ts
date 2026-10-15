@@ -665,7 +665,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     // entry for the same key, otherwise other tabs lose visibility into a
     // value the SDK has already promised them.
     const backing = new InMemoryStorage();
-    let permanentWriteShouldFail = false;
+    let permanentWriteShouldFail: boolean = false;
     const partiallyFailingStorage: Storage = {
       get length() {
         return backing.length;
