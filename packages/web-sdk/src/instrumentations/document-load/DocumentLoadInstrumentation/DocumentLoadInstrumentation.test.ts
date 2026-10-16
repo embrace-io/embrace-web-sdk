@@ -181,9 +181,10 @@ const ensureNetworkEventsExists = (
     'responseStart',
     'responseEnd',
   ].filter((n) => n);
-  for (let i = 0; i < events.length; i++) {
-    assert.strictEqual(events[i].name, expectedEventNames[i]);
-  }
+  assert.deepStrictEqual(
+    events.map((e) => e.name),
+    expectedEventNames,
+  );
 };
 
 /*
@@ -1285,6 +1286,37 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should skip zero connection marks on a cross-origin resource without Timing-Allow-Origin', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          secureConnectionStart: 0,
+          connectEnd: 0,
+          requestStart: 0,
+          responseStart: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'resourceFetch');
+        assert.isOk(resourceSpan);
+        assert.deepStrictEqual(
+          resourceSpan?.events.map((e) => e.name),
+          ['fetchStart', 'responseEnd'],
+        );
+        done();
+      });
+    });
+
     it('should omit http.response_content_length_uncompressed when both body sizes match', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -1558,6 +1590,12 @@ describe('DocumentLoad Instrumentation', () => {
         assert.exists(
           resourceSpan.attributes['http.response_content_length'],
           'http.response_content_length attribute should exist',
+        );
+        const fetchSpan = spans.find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan, 'documentFetch span should exist');
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          362,
         );
         done();
       });
