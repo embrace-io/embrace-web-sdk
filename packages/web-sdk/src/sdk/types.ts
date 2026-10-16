@@ -127,14 +127,15 @@ type BaseSDKInitConfig = {
   instrumentations?: Instrumentation[];
 
   /**
-   * propagator defines a custom context propagator that will be attached to the TracerProvider setup by the SDK
+   * propagator defines a custom context propagator, registered globally when `registerGlobally` is true. Ignored when
+   * network span forwarding is enabled, which uses the SDK's W3C trace context propagator instead
    *
    * **default**: null
    */
   propagator?: TextMapPropagator | null;
 
   /**
-   * contextManager defines a custom context manager that will be attached to the TracerProvider setup by the SDK
+   * contextManager defines a custom context manager, enabled and registered globally when `registerGlobally` is true
    *
    * **default**: StackContextManager
    */

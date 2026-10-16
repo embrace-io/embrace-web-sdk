@@ -1,4 +1,4 @@
-import type { DiagLogger } from '@opentelemetry/api';
+import type { DiagLogger, TextMapPropagator } from '@opentelemetry/api';
 import {
   context,
   DiagConsoleLogger,
@@ -209,6 +209,7 @@ describe('initSDK', () => {
     logs.disable();
     diag.disable();
     context.disable();
+    propagation.disable();
     registry.clear();
     fakeFetchRestore();
   });
@@ -684,6 +685,26 @@ describe('initSDK', () => {
     const activeSpy = sinon.spy(contextManager, 'active');
     context.active();
     void expect(activeSpy.calledOnce).to.be.true;
+  });
+
+  it('should register a provided propagator', () => {
+    const inject = sinon.spy();
+    const propagator: TextMapPropagator = {
+      inject,
+      extract: (ctx) => ctx,
+      fields: () => [],
+    };
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      propagator,
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+    });
+    void expect(result).not.to.be.false;
+
+    const carrier = {};
+    propagation.inject(context.active(), carrier);
+    void expect(inject.calledOnce).to.be.true;
   });
 
   it('should not initialize on restricted protocols', () => {
