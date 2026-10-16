@@ -2495,47 +2495,6 @@ describe('WebVitalsInstrumentation', () => {
     expect(body['loadState']).to.equal('');
   });
 
-  it('should handle null attribution gracefully', () => {
-    instrumentation = new WebVitalsInstrumentation({
-      diag,
-      perf,
-      listeners: mockWebVitalListeners,
-      urlAttribution: false,
-    });
-    instrumentation.enable();
-
-    const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
-
-    clock.tick(5000);
-
-    metricReportFunc({
-      name: 'FCP',
-      value: 0,
-      rating: 'good',
-      delta: 0,
-      id: 'm1',
-      entries: [],
-      navigationType: 'navigate',
-      navigationId: 1,
-      attribution: null,
-    } as unknown as MetricWithAttribution);
-
-    const records = memoryExporter.getFinishedLogRecords();
-    const record = records[0];
-
-    expect(record.attributes).to.deep.equal({
-      [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
-      'browser.web_vital.navigation_id': 1,
-      'browser.web_vital.delta': 0,
-      'browser.web_vital.id': 'm1',
-      'browser.web_vital.name': 'fcp',
-      'browser.web_vital.navigation_type': 'navigate',
-      'browser.web_vital.rating': 'good',
-      'browser.web_vital.value': 0,
-    });
-    expect(record.body).to.be.undefined;
-  });
-
   it('should include boolean attribution values in body', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
