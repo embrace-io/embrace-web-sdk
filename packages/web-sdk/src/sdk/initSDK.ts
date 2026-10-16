@@ -477,11 +477,11 @@ const setupTraces = ({
   if (registerGlobally) {
     embraceTrace.setGlobalTraceManager(embraceTraceManager);
     trace.setGlobalTracerProvider(tracerProvider);
-    // No default propagator, so traceparent is only injected when one is supplied
+    // Unset leaves the no-op propagator: no traceparent inject or extract
     if (propagator) {
       propagation.setGlobalPropagator(propagator);
     }
-    // Unlike propagator, null falls back to a real manager; pass a no-op manager to disable context
+    // null and undefined both default to StackContextManager; pass a no-op manager to disable context
     const activeContextManager = contextManager || new StackContextManager();
     activeContextManager.enable();
     context.setGlobalContextManager(activeContextManager);

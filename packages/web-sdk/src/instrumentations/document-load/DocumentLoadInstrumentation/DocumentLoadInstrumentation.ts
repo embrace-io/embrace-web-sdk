@@ -336,7 +336,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     span: Span,
     resource: EmbracePerformanceResourceTiming,
   ): void {
-    // Deprecated HTTP semconv keys; removing them breaks custom-exporter consumers, so they stay until 3.0
+    // TODO: remove these deprecated HTTP semconv keys in 3.0; custom-exporter consumers still read them
     span.setAttribute(
       ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
       resource.encodedBodySize,
