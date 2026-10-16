@@ -1,4 +1,11 @@
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api';
+import {
+  context,
+  DiagConsoleLogger,
+  DiagLogLevel,
+  diag,
+  propagation,
+  trace,
+} from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
@@ -8,15 +15,15 @@ import {
   LoggerProvider,
 } from '@opentelemetry/sdk-logs';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace';
-import { BatchSpanProcessor } from '@opentelemetry/sdk-trace';
 import {
+  BatchSpanProcessor,
   StackContextManager,
-  WebTracerProvider,
-} from '@opentelemetry/sdk-trace-web';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
 import { session } from '../api-sessions/index.ts';
-import { trace } from '../api-traces/index.ts';
+import { trace as embraceTrace } from '../api-traces/index.ts';
 import { user } from '../api-users/index.ts';
 import type { AttributeScrubber } from '../common/index.ts';
 import {
@@ -450,7 +457,7 @@ const setupTraces = ({
     finalSpanProcessors.push(embraceSpanProcessor);
   }
 
-  const tracerProvider = new WebTracerProvider({
+  const tracerProvider = new TracerProvider({
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
@@ -468,15 +475,16 @@ const setupTraces = ({
   });
 
   if (registerGlobally) {
-    trace.setGlobalTraceManager(embraceTraceManager);
-    tracerProvider.register({
-      // WebTracerProvider.register has different fallback behaviours depending on whether null or undefined is passed,
-      // be more explicit here and always supply a StackContextManager if the config did not specify one. If a user really
-      // wants to turn off context management they can pass a no-op manager explicitly:
-      // https://github.com/open-telemetry/opentelemetry-js/blob/4f0b6285af24b71a9fa022755aaa3b6a63ae5033/packages/opentelemetry-sdk-trace-web/src/WebTracerProvider.ts#L39
-      contextManager: contextManager || new StackContextManager(),
-      propagator,
-    });
+    embraceTrace.setGlobalTraceManager(embraceTraceManager);
+    trace.setGlobalTracerProvider(tracerProvider);
+    // No default propagator, so traceparent is only injected when one is supplied
+    if (propagator) {
+      propagation.setGlobalPropagator(propagator);
+    }
+    // Unlike propagator, null falls back to a real manager; pass a no-op manager to disable context
+    const activeContextManager = contextManager || new StackContextManager();
+    activeContextManager.enable();
+    context.setGlobalContextManager(activeContextManager);
   }
 
   return { tracerProvider, embraceTraceManager };

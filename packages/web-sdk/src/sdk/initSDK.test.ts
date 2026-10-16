@@ -12,7 +12,10 @@ import { CompositePropagator } from '@opentelemetry/core';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
-import { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
+import {
+  InMemorySpanExporter,
+  StackContextManager,
+} from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -666,6 +669,23 @@ describe('initSDK', () => {
     );
   });
 
+  it('should enable and register a provided context manager', () => {
+    const contextManager = new StackContextManager();
+    const enableSpy = sinon.spy(contextManager, 'enable');
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      contextManager,
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+    });
+    void expect(result).not.to.be.false;
+
+    void expect(enableSpy.calledOnce).to.be.true;
+    const activeSpy = sinon.spy(contextManager, 'active');
+    context.active();
+    void expect(activeSpy.calledOnce).to.be.true;
+  });
+
   it('should not initialize on restricted protocols', () => {
     const diagLogger = new InMemoryDiagLogger();
     const result = initSDK({
@@ -1056,7 +1076,7 @@ describe('initSDK', () => {
       for (let i = 0; i < exportedEvents.length; i++) {
         // Default OTel limiting of events drops the oldest events when the limit
         // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
+        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L222
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
           `span-event-${expected.toString()}`,
