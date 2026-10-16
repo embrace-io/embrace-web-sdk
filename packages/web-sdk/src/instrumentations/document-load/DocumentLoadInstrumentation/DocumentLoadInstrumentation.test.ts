@@ -712,6 +712,110 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should add http.request.render_blocking_status to the documentFetch span', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          renderBlockingStatus: 'non-blocking',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.request.render_blocking_status'],
+          'non-blocking',
+        );
+        done();
+      });
+    });
+
+    it('should not add http.request.render_blocking_status to the documentFetch span when the engine does not report it', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.request.render_blocking_status'],
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.status_code to the documentFetch span when the engine does not report it', (done) => {
+      const { responseStatus, ...entryWithoutStatus } = entries;
+      spyEntries
+        .withArgs('navigation')
+        .returns([entryWithoutStatus as PerformanceNavigationTiming]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(fetchSpan?.attributes['http.response.status_code']);
+        done();
+      });
+    });
+
+    it('should add http.response_content_length_uncompressed to the documentFetch span when the body was transport-encoded', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          encodedBodySize: 100,
+          decodedBodySize: 300,
+        } as PerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          100,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length_uncompressed'],
+          300,
+        );
+        done();
+      });
+    });
+
+    it('should omit http.response_content_length_uncompressed from the documentFetch span when both body sizes match', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          362,
+        );
+        assert.notProperty(
+          fetchSpan?.attributes,
+          'http.response_content_length_uncompressed',
+        );
+        done();
+      });
+    });
+
     it('should omit the documentFetch span sizes when the navigation entry lacks size fields', (done) => {
       const {
         transferSize,
