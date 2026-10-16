@@ -37,6 +37,13 @@ interface RageClickWindow {
 */
 export class RageClickInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
+  private readonly _flushHandler = (): void => {
+    try {
+      this._flush();
+    } catch (e) {
+      this._diag.error('failed to emit rage-click log', e);
+    }
+  };
   private _eventWindow: RageClickWindow | null = null;
 
   public constructor({ diag, perf }: RageClickInstrumentationArgs = {}) {
@@ -64,6 +71,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
 
   public override onEnable(): void {
     document.addEventListener('click', this._onClickHandler);
+    this.setSessionPartListeners({ end: this._flushHandler });
   }
 
   private _handleClick(event: MouseEvent): void {
@@ -85,13 +93,10 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
         count: 1,
         interactionType,
         timestamp: event.timeStamp,
-        timeoutId: window.setTimeout(() => {
-          try {
-            this._flush();
-          } catch (e) {
-            this._diag.error('failed to emit rage-click log', e);
-          }
-        }, RAGE_CLICK_WINDOW_TIME),
+        timeoutId: window.setTimeout(
+          this._flushHandler,
+          RAGE_CLICK_WINDOW_TIME,
+        ),
       };
 
       return;

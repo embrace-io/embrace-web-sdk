@@ -5,7 +5,16 @@ import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
   setupTestLogExporter,
+  setupTestStorage,
+  TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
+import type { UserSessionManagerInternal } from '../../../managers/index.ts';
+import {
+  DEFAULT_LIMITS,
+  EmbraceLimitManager,
+  EmbraceUserSessionManager,
+} from '../../../managers/index.ts';
+import { UserSessionLogRecordProcessor } from '../../../processors/index.ts';
 import type { PerformanceManager } from '../../../utils/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { RAGE_CLICK_WINDOW_TIME } from './constants.ts';
@@ -22,9 +31,19 @@ describe('RageClickInstrumentation', () => {
   let diag: InMemoryDiagLogger;
   let testContainer: HTMLElement;
   let clock: sinon.SinonFakeTimers;
+  let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
-    memoryExporter = setupTestLogExporter();
+    userSessionManager = new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: setupTestStorage(),
+      visibilityDoc: window.document,
+    });
+    memoryExporter = setupTestLogExporter([
+      new UserSessionLogRecordProcessor({ userSessionManager }),
+    ]);
   });
 
   beforeEach(() => {
@@ -347,5 +366,65 @@ describe('RageClickInstrumentation', () => {
     expect(logs).to.have.lengthOf(2);
     expect(logs[0].attributes['rage_click.count']).to.equal(3);
     expect(logs[1].attributes['rage_click.count']).to.equal(4);
+  });
+
+  describe('on session part end', () => {
+    let target: HTMLButtonElement;
+
+    beforeEach(() => {
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      instrumentation = new RageClickInstrumentation({ diag });
+      instrumentation.setUserSessionManager(userSessionManager);
+      instrumentation.enable();
+      target = document.createElement('button');
+      target.id = 'a';
+      testContainer.append(target);
+    });
+
+    afterEach(() => {
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+    });
+
+    it('emits a pending rage click before the part ends, attributed to that part', () => {
+      const endingSessionPartId = userSessionManager.getSessionPartId();
+
+      target.click();
+      target.click();
+      target.click();
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+
+      const logs = getRageClickLogs();
+      expect(logs).to.have.lengthOf(1);
+      expect(endingSessionPartId).to.be.a('string').and.not.equal('');
+      expect(logs[0].attributes).to.include({
+        'emb.session_part_id': endingSessionPartId,
+        'rage_click.count': 3,
+        'rage_click.element_selector': '#a',
+      });
+    });
+
+    it('does not emit again when the window timer would have fired', async () => {
+      target.click();
+      target.click();
+      target.click();
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+
+      await clock.tickAsync(TICK_AFTER_WINDOW);
+
+      expect(getRageClickLogs()).to.have.lengthOf(1);
+    });
+
+    it('discards a window below the threshold when the part ends', async () => {
+      target.click();
+      target.click();
+      userSessionManager.endSessionPartInternal({ reason: 'background' });
+      userSessionManager.startSessionPartInternal({ reason: 'foreground' });
+      target.click();
+
+      await clock.tickAsync(TICK_AFTER_WINDOW);
+
+      expect(getRageClickLogs()).to.have.lengthOf(0);
+    });
   });
 });
