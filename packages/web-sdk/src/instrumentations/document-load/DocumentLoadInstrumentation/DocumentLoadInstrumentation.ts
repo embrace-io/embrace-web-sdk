@@ -89,7 +89,7 @@ const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
 
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private _navigationObserver: PerformanceObserver | null = null;
-  private _performanceCollected = false;
+  private _performanceCollected: boolean = false;
   private readonly _applyCustomAttributesOnSpan: DocumentLoadInstrumentationArgs['applyCustomAttributesOnSpan'];
   private readonly _ignorePerformancePaintEvents: boolean;
   private readonly _ignoreNetworkEvents: boolean;

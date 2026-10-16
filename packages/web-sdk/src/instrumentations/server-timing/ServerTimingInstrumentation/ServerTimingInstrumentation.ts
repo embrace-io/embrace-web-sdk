@@ -10,7 +10,7 @@ import {
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
-  private _performanceCollected = false;
+  private _performanceCollected: boolean = false;
 
   public constructor({
     diag,
