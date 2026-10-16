@@ -38,7 +38,7 @@ import type { DOMStateInstrumentationArgs } from './types.ts';
 export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
   // The page's one attempt, spent inside the first engaged part whatever it yields.
-  private _foldMeasured = false;
+  private _foldMeasured: boolean = false;
   private _pendingFoldAttributes: Attributes | null = null;
 
   public constructor({ diag, perf }: DOMStateInstrumentationArgs = {}) {
