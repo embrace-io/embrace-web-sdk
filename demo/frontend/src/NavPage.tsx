@@ -51,7 +51,7 @@ const NavPage = ({
     <>
       <fieldset style={{ gridColumn: '1 / -1' }}>
         <legend>{title}</legend>
-        {nav && <div className="nav-buttons">{nav}</div>}
+        {nav ? <div className="nav-buttons">{nav}</div> : null}
         {children}
       </fieldset>
       <fieldset>
