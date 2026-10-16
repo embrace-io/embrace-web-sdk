@@ -319,7 +319,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _largestShiftTargetForCLS: string | undefined | null = null;
   private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
-  private _listenersRegistered = false;
+  private _listenersRegistered: boolean = false;
 
   public constructor({
     diag,

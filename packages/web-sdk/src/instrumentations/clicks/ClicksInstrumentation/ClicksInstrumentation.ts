@@ -59,7 +59,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
                 element,
                 innerTextForElement
                   ? innerTextForElement(element)
-                  : // biome-ignore lint/nursery/useDomNodeTextContent: we want to capture what the user sees
+                  : // innerText, not textContent: capture what the user sees
                     element.innerText,
               ),
               'tap.coords': `${event.x.toString()},${event.y.toString()}`,

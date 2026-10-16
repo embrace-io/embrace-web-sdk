@@ -40,7 +40,8 @@ export const getSelector = (node: Node | null) => {
       const el: Element = node as Element;
       const part = el.id
         ? `#${el.id}`
-        : [getName(el), ...Array.from(el.classList).sort()].join('.');
+        : // biome-ignore lint/suspicious/useArraySortCompare: code-unit order is locale-independent, so a selector is identical across users
+          [getName(el), ...Array.from(el.classList).sort()].join('.');
       if (sel.length + part.length > MAX_LEN - 1) {
         return sel || part;
       }
