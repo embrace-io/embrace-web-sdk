@@ -255,12 +255,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     span.end(this.perf.epochMillisFromOrigin(resource.responseEnd));
   }
 
-  /**
-   * Starts a span at a timing mark measured from time origin.
-   * @param spanName name of span
-   * @param startTime timing mark for the span start
-   * @param parentSpan
-   */
+  /** startTime is an offset from time origin */
   private _startSpan(
     spanName: string,
     startTime: DOMHighResTimeStamp,

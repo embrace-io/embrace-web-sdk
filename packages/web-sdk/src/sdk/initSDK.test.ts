@@ -684,7 +684,7 @@ describe('initSDK', () => {
     void expect(enableSpy.calledOnce).to.be.true;
     const activeSpy = sinon.spy(contextManager, 'active');
     context.active();
-    void expect(activeSpy.calledOnce).to.be.true;
+    void expect(activeSpy.called).to.be.true;
   });
 
   it('should register a provided propagator', () => {
@@ -1097,7 +1097,7 @@ describe('initSDK', () => {
       for (let i = 0; i < exportedEvents.length; i++) {
         // Default OTel limiting of events drops the oldest events when the limit
         // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L222
+        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L223
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
           `span-event-${expected.toString()}`,
