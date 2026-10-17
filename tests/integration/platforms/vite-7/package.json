@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "tsc -b --force",
     "dev": "vite",
     "build": "npm run build:clean && npm run build:es2015",
     "build:clean": "emb-rm dist .sonda",
