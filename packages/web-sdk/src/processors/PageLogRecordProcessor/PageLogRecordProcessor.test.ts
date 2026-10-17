@@ -121,6 +121,23 @@ describe('PageLogRecordProcessor', () => {
     void expect(log.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
   });
 
+  it('should attach page id but not surface name when the route has no path yet', () => {
+    pageManager.setCurrentRoute({ url: '/products/123' });
+
+    logger.emit({
+      body: 'some log',
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    const log = finishedLogs[0];
+
+    expect(log.attributes[KEY_EMB_PAGE_ID]).to.equal(
+      pageManager.getCurrentPageId(),
+    );
+    void expect(log.attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
+  });
+
   it('should make sure forceFlush no-op does not fail', () => {
     const processor = new PageLogRecordProcessor({
       pageManager: new EmbracePageManager(),
