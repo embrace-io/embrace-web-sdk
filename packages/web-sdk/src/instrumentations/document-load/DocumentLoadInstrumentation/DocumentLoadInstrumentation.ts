@@ -24,16 +24,11 @@ import type { Span } from '@opentelemetry/api';
 import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
-import type { PerformanceEntries } from '@opentelemetry/sdk-trace-web';
-import {
-  addSpanNetworkEvent,
-  addSpanNetworkEvents,
-  hasKey,
-  PerformanceTimingNames,
-} from '@opentelemetry/sdk-trace-web';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_HTTP_RESPONSE_BODY_SIZE,
+  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
+  ATTR_HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
   ATTR_HTTP_RESPONSE_SIZE,
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
@@ -43,7 +38,12 @@ import {
   KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
   KEY_EMB_TYPE,
 } from '../../../constants/index.ts';
-import { createPerformanceObserver } from '../../../utils/index.ts';
+import type { EmbracePerformanceNavigationTiming } from '../../../utils/index.ts';
+import {
+  createPerformanceObserver,
+  getBfcacheNotRestoredReasons,
+  getNonBaselineNavigationTiming,
+} from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import { AttributeNames } from './enums/AttributeNames.ts';
 import type {
@@ -51,25 +51,24 @@ import type {
   DocumentLoadInstrumentationArgs,
   ResourceFetchCustomAttributeFunction,
 } from './types.ts';
-import type {
-  EmbracePerformanceNavigationEntries,
-  EmbracePerformanceResourceTiming,
-} from './utils.ts';
+import type { EmbracePerformanceResourceTiming } from './utils.ts';
 import {
+  addSpanNetworkEvent,
+  addSpanNetworkEvents,
   addSpanPerformancePaintEvents,
-  getPerformanceNavigationEntries,
 } from './utils.ts';
 
-/** Fields shared by resource fetch spans and the document fetch span, which is emitted as a resource fetch for the main document request */
-type ResourceSpanData = {
-  deliveryType?: 'cache' | '';
-  initiatorType?: string;
-  renderBlockingStatus?: 'blocking' | 'non-blocking';
-  responseStatus?: number;
-  encodedBodySize?: number;
-  transferSize?: number;
-  decodedBodySize?: number;
-};
+const ROOT_SPAN_TIMING_MARKS = [
+  'fetchStart',
+  'unloadEventStart',
+  'unloadEventEnd',
+  'domInteractive',
+  'domContentLoadedEventStart',
+  'domContentLoadedEventEnd',
+  'domComplete',
+  'loadEventStart',
+  'loadEventEnd',
+] as const;
 
 // PerformanceResourceTiming attribute names
 const ATTR_HTTP_RESPONSE_DELIVERY_TYPE = 'http.response.delivery_type';
@@ -132,7 +131,13 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
    * notification.
    */
   private _collectIfLoadEventFinished(): void {
-    if (this._performanceCollected || !this._isLoadEventFinished()) {
+    if (this._performanceCollected) {
+      return;
+    }
+    // loadEventEnd is written only after every load handler returns. WebKit
+    // reports no entry at all for about:blank, popups and srcdoc iframes.
+    const navigationTiming = getNonBaselineNavigationTiming();
+    if (!(navigationTiming && navigationTiming.loadEventEnd > 0)) {
       return;
     }
 
@@ -141,19 +146,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     this._performanceCollected = true;
 
     try {
-      this._collectPerformance();
+      this._collectPerformance(navigationTiming);
     } catch (e) {
       this._diag.error('failed to collect the document load', e);
     } finally {
       this._disconnectObserver();
     }
-  }
-
-  /* loadEventEnd is written only after every load handler returns. WebKit
-   * reports no entry at all for about:blank, popups and srcdoc iframes. */
-  private _isLoadEventFinished(): boolean {
-    const [navigationTiming] = performance.getEntriesByType('navigation');
-    return (navigationTiming?.loadEventEnd ?? 0) > 0;
   }
 
   private _disconnectObserver(): void {
@@ -164,47 +162,41 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   /**
    * Collects information about performance and creates appropriate spans
    */
-  private _collectPerformance(): void {
+  private _collectPerformance(
+    navigationTiming: EmbracePerformanceNavigationTiming,
+  ): void {
     const metaElement = Array.from(document.getElementsByTagName('meta')).find(
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
-    const entries = getPerformanceNavigationEntries();
     const traceparent = metaElement?.content || '';
     context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,
-        PerformanceTimingNames.FETCH_START,
-        entries,
+        navigationTiming.fetchStart,
       );
-      if (!rootSpan) {
-        this._diag.warn(
-          'navigation entry has no fetchStart, document load will not be collected',
-        );
-        return;
-      }
       context.with(trace.setSpan(context.active(), rootSpan), () => {
         const fetchSpan = this._startSpan(
           AttributeNames.DOCUMENT_FETCH,
-          PerformanceTimingNames.FETCH_START,
-          entries,
+          navigationTiming.fetchStart,
         );
-        if (fetchSpan) {
-          fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
-          context.with(trace.setSpan(context.active(), fetchSpan), () => {
-            addSpanNetworkEvents(fetchSpan, entries, this._ignoreNetworkEvents);
-            this._addResourceAttributesToSpan(fetchSpan, entries);
-            this._addNavigationTimingAttributesToSpan(fetchSpan, entries);
-            this._addCustomAttributesOnSpan(
-              fetchSpan,
-              this._applyCustomAttributesOnSpan?.documentFetch,
-            );
-            this._endSpan(
-              fetchSpan,
-              PerformanceTimingNames.RESPONSE_END,
-              entries,
-            );
-          });
-        }
+        fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
+        context.with(trace.setSpan(context.active(), fetchSpan), () => {
+          if (!this._ignoreNetworkEvents) {
+            addSpanNetworkEvents(fetchSpan, navigationTiming);
+          }
+          this._addResourceAttributesToSpan(fetchSpan, navigationTiming);
+          this._addNavigationTimingAttributesToSpan(
+            fetchSpan,
+            navigationTiming,
+          );
+          this._addCustomAttributesOnSpan(
+            fetchSpan,
+            this._applyCustomAttributesOnSpan?.documentFetch,
+          );
+          fetchSpan.end(
+            this.perf.epochMillisFromOrigin(navigationTiming.responseEnd),
+          );
+        });
       });
 
       rootSpan.setAttribute(KEY_EMB_TYPE, EMB_TYPES.DocumentLoad);
@@ -214,51 +206,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       this._addResourcesSpans(rootSpan);
 
       if (!this._ignoreNetworkEvents) {
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.FETCH_START,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.UNLOAD_EVENT_START,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.UNLOAD_EVENT_END,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.DOM_INTERACTIVE,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.DOM_CONTENT_LOADED_EVENT_START,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.DOM_CONTENT_LOADED_EVENT_END,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.DOM_COMPLETE,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.LOAD_EVENT_START,
-          entries,
-        );
-        addSpanNetworkEvent(
-          rootSpan,
-          PerformanceTimingNames.LOAD_EVENT_END,
-          entries,
-        );
+        for (const name of ROOT_SPAN_TIMING_MARKS) {
+          addSpanNetworkEvent(rootSpan, name, navigationTiming[name]);
+        }
       }
 
       if (!this._ignorePerformancePaintEvents) {
@@ -269,32 +219,10 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
         rootSpan,
         this._applyCustomAttributesOnSpan?.documentLoad,
       );
-      this._endSpan(rootSpan, PerformanceTimingNames.LOAD_EVENT_END, entries);
+      rootSpan.end(
+        this.perf.epochMillisFromOrigin(navigationTiming.loadEventEnd),
+      );
     });
-  }
-
-  /**
-   * Ends the span at the time of the performance entry named `performanceName`.
-   * @param span
-   * @param performanceName name of performance entry for end time
-   * @param entries
-   */
-  private _endSpan(
-    span: Span | undefined,
-    performanceName: string,
-    entries: PerformanceEntries,
-  ) {
-    // Span can be undefined when entries are missing the required performance timing - no span will be created
-    if (span) {
-      if (
-        hasKey(entries, performanceName) &&
-        typeof entries[performanceName] === 'number'
-      ) {
-        span.end(this.perf.epochMillisFromOrigin(entries[performanceName]));
-      } else {
-        span.end();
-      }
-    }
   }
 
   /**
@@ -308,16 +236,14 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   ) {
     const span = this._startSpan(
       AttributeNames.RESOURCE_FETCH,
-      PerformanceTimingNames.FETCH_START,
-      resource,
+      resource.fetchStart,
       parentSpan,
     );
-    if (!span) {
-      return;
-    }
 
     span.setAttribute(ATTR_URL_FULL, resource.name);
-    addSpanNetworkEvents(span, resource, this._ignoreNetworkEvents);
+    if (!this._ignoreNetworkEvents) {
+      addSpanNetworkEvents(span, resource);
+    }
 
     this._addResourceAttributesToSpan(span, resource);
     this._addResourceDiagnosticAttributes(span, resource);
@@ -326,37 +252,20 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       resource,
       this._applyCustomAttributesOnSpan?.resourceFetch,
     );
-    this._endSpan(span, PerformanceTimingNames.RESPONSE_END, resource);
+    span.end(this.perf.epochMillisFromOrigin(resource.responseEnd));
   }
 
-  /**
-   * Starts a span at the time of the performance entry named `performanceName`.
-   * Returns undefined when that entry has no numeric time.
-   * @param spanName name of span
-   * @param performanceName name of performance entry for time start
-   * @param entries
-   * @param parentSpan
-   */
+  /** startTime is an offset from time origin */
   private _startSpan(
     spanName: string,
-    performanceName: string,
-    entries: PerformanceEntries,
+    startTime: DOMHighResTimeStamp,
     parentSpan?: Span,
-  ): Span | undefined {
-    if (
-      hasKey(entries, performanceName) &&
-      typeof entries[performanceName] === 'number'
-    ) {
-      const span = this.tracer.startSpan(
-        spanName,
-        {
-          startTime: this.perf.epochMillisFromOrigin(entries[performanceName]),
-        },
-        parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined,
-      );
-      return span;
-    }
-    return undefined;
+  ): Span {
+    return this.tracer.startSpan(
+      spanName,
+      { startTime: this.perf.epochMillisFromOrigin(startTime) },
+      parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined,
+    );
   }
 
   /**
@@ -420,8 +329,20 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
    */
   private _addResourceAttributesToSpan(
     span: Span,
-    resource: ResourceSpanData,
+    resource: EmbracePerformanceResourceTiming,
   ): void {
+    // TODO: remove these deprecated HTTP semconv keys in 3.0; custom-exporter consumers still read them
+    span.setAttribute(
+      ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
+      resource.encodedBodySize,
+    );
+    if (resource.decodedBodySize !== resource.encodedBodySize) {
+      span.setAttribute(
+        ATTR_HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+        resource.decodedBodySize,
+      );
+    }
+
     span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
 
     if (resource.deliveryType) {
@@ -452,20 +373,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       );
     }
 
-    if (resource.encodedBodySize !== undefined) {
-      span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-    }
-
-    if (resource.transferSize !== undefined) {
-      span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-    }
-
-    if (resource.decodedBodySize !== undefined) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-        resource.decodedBodySize,
-      );
-    }
+    span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
+    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
+    span.setAttribute(
+      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
+      resource.decodedBodySize,
+    );
   }
 
   /**
@@ -473,16 +386,18 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
    */
   private _addNavigationTimingAttributesToSpan(
     span: Span,
-    entries: EmbracePerformanceNavigationEntries,
+    navigationTiming: EmbracePerformanceNavigationTiming,
   ): void {
-    if (entries.type) {
-      span.setAttribute(ATTR_BROWSER_NAVIGATION_TIMING_TYPE, entries.type);
-    }
+    span.setAttribute(
+      ATTR_BROWSER_NAVIGATION_TIMING_TYPE,
+      navigationTiming.type,
+    );
 
-    if (entries.notRestoredReasons?.length) {
+    const notRestoredReasons = getBfcacheNotRestoredReasons(navigationTiming);
+    if (notRestoredReasons?.length) {
       span.setAttribute(
         KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS,
-        entries.notRestoredReasons,
+        notRestoredReasons,
       );
     }
   }
@@ -545,10 +460,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
    * - Request incomplete (started but didn't complete - network error, aborted)
    * - Request prevented (never started - blocked by CSP, browser, extension)
    *
-   * The size and timing fields read below are always numbers: a cross-origin
-   * resource with no Timing-Allow-Origin reports them as 0 rather than omitting
-   * them, and a resource only reaches here once it has produced a span, which
-   * required a numeric fetchStart.
+   * A cross-origin resource with no Timing-Allow-Origin reports its size and
+   * timing fields as 0 rather than omitting them.
    */
   private _addResourceDiagnosticAttributes(
     span: Span,
