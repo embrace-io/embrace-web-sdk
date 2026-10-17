@@ -3,6 +3,7 @@ import type { LogRecord } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { millisToHrTime } from '@opentelemetry/core';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { EVENT_BROWSER_WEB_VITAL } from '@opentelemetry/semantic-conventions/incubating';
 import type {
   CLSMetricWithAttribution,
   INPAttribution,
@@ -46,7 +47,6 @@ import {
   MAX_CLS_LAYOUT_SHIFTS,
   MAX_LOAF_SCRIPT_ENTRIES,
   MAX_LOAF_SCRIPT_URL_LENGTH,
-  WEB_VITAL_EVENT_NAME,
   WEB_VITALS_ID_TO_LISTENER,
 } from './constants.ts';
 import type {
@@ -487,7 +487,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       this.userSessionManager.getSessionPartIdAt(metricTimeMillis);
     const notRestoredReasons = getBfcacheNotRestoredReasons();
     const logRecord: LogRecord = {
-      eventName: WEB_VITAL_EVENT_NAME,
+      eventName: EVENT_BROWSER_WEB_VITAL,
       severityNumber: SeverityNumber.INFO,
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.WebVital,
