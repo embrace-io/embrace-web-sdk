@@ -10,6 +10,7 @@ import {
   createFetchTransport,
   createRetryingTransport,
 } from '../transport/index.ts';
+import { GzipSerializer } from './GzipSerializer/index.ts';
 import type { OtlpFetchExporterConfig } from './types.ts';
 
 // createOtlpBrowserFetchExportDelegate creates an export delegate that uses
@@ -19,12 +20,21 @@ export const createOtlpBrowserFetchExportDelegate = <Internal, Response>(
   serializer: ISerializer<Internal, Response>,
   componentType: string,
   metricsHelper: IExporterMetricsHelper<Internal>,
-) =>
+) => {
+  // One branch sets both so Content-Encoding always matches the body.
+  const { requestSerializer, headers } =
+    config.compression === 'gzip'
+      ? {
+          requestSerializer: new GzipSerializer(serializer),
+          headers: { ...config.headers, 'Content-Encoding': 'gzip' },
+        }
+      : { requestSerializer: serializer, headers: config.headers };
+
   // createOtlpNetworkExportDelegate has an internal bounded queue that tracks
   // in-flight exports and fails exports beyond config.concurrencyLimit.
-  createOtlpNetworkExportDelegate(
+  return createOtlpNetworkExportDelegate(
     config,
-    serializer,
+    requestSerializer,
     new ExporterMetrics({
       componentType,
       metricsHelper,
@@ -35,6 +45,7 @@ export const createOtlpBrowserFetchExportDelegate = <Internal, Response>(
       responseAttributesFromError: () => ({}),
     }),
     createRetryingTransport({
-      transport: createFetchTransport(config),
+      transport: createFetchTransport({ url: config.url, headers }),
     }),
   );
+};

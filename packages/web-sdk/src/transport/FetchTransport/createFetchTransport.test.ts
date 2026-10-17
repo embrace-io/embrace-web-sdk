@@ -24,11 +24,10 @@ describe('createFetchTransport', () => {
     fakeFetchRestore();
   });
 
-  it('should allow sending without compression', async () => {
+  it('should send data with configured headers', async () => {
     const transport = createFetchTransport({
       url: 'http://example.com',
       headers: { foo: 'bar' },
-      compression: 'none',
     });
 
     fakeFetchRespondWith('ok', { status: 200 });
@@ -50,39 +49,10 @@ describe('createFetchTransport', () => {
     expect(result).to.deep.equal({ status: 'success' });
   });
 
-  it('should allow sending with compression', async () => {
-    const transport = createFetchTransport({
-      url: 'http://example.com',
-      headers: { foo: 'bar' },
-      compression: 'gzip',
-    });
-
-    fakeFetchRespondWith('ok', { status: 200 });
-    const result = await transport.send(
-      new TextEncoder().encode('{"data": "my data"}'),
-      1000,
-    );
-
-    expect(fakeFetchGetUrl()).to.equal('http://example.com');
-    expect(fakeFetchGetMethod()).to.equal('POST');
-    const decompressedStream = new Response(
-      fakeFetchGetBody(),
-    ).body?.pipeThrough(new DecompressionStream('gzip'));
-    const body = await new Response(decompressedStream).text();
-    expect(body).to.equal('{"data": "my data"}');
-    expect(
-      (fakeFetchGetRequestHeaders() as Record<string, string>)[
-        'Content-Encoding'
-      ],
-    ).to.equal('gzip');
-    expect(result).to.deep.equal({ status: 'success' });
-  });
-
   it('should handle request failures', async () => {
     const transport = createFetchTransport({
       url: 'http://example.com',
       headers: { foo: 'bar' },
-      compression: 'none',
     });
 
     fakeFetchRespondWith('error', { status: 500 });
