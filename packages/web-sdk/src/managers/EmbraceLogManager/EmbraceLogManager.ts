@@ -2,6 +2,7 @@ import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
 import type { Logger } from '@opentelemetry/api-logs';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import type { LoggerProvider } from '@opentelemetry/sdk-logs';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
@@ -54,6 +55,7 @@ export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
+  private readonly _flushLoggerProvider?: LoggerProvider;
   private readonly _userSessionManager: UserSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
   private readonly _visibilityDoc: VisibilityStateDocument;
@@ -65,6 +67,7 @@ export class EmbraceLogManager implements LogManager {
     userSessionManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
+    flushLoggerProvider,
     visibilityDoc,
     storage,
   }: EmbraceLogManagerArgs) {
@@ -77,10 +80,21 @@ export class EmbraceLogManager implements LogManager {
       });
     this._perf = perf;
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
+    this._flushLoggerProvider = flushLoggerProvider;
     this._userSessionManager = userSessionManager;
     this._limitManager = limitManager;
     this._visibilityDoc = visibilityDoc;
     this._storage = storage;
+  }
+
+  public async flush(): Promise<void> {
+    try {
+      await this._flushLoggerProvider?.forceFlush();
+    } catch (e) {
+      this._diag.error(
+        `flush: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      );
+    }
   }
 
   private _validateAttributes(attributes: unknown): Attributes {

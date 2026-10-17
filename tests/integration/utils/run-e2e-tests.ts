@@ -191,6 +191,33 @@ const runE2ETests = ({
       },
     );
 
+    // The other tests select records by content, so none covers batching. Waiting
+    // for the page-load export before clicking makes the separate request certain.
+    testE2E(
+      'it should ship page-load telemetry separately from a later interaction',
+      async ({
+        page,
+        requests,
+        waitForOTelRequest,
+        navigateAndWaitUntilReady,
+      }) => {
+        await navigateAndWaitUntilReady(url, numberOfExpectedSpans);
+
+        await waitForOTelRequest();
+        const pageLoadRequestCount = requests.length;
+        const pageLoadPayload = JSON.stringify(requests);
+
+        await page.getByRole('button', { name: 'Send Log' }).click();
+        await waitForOTelRequest();
+
+        testE2E.expect(requests.length).toBeGreaterThan(pageLoadRequestCount);
+        testE2E.expect(pageLoadPayload).not.toContain(TEST_LOG_MESSAGE);
+        testE2E
+          .expect(JSON.stringify(requests.slice(pageLoadRequestCount)))
+          .toContain(TEST_LOG_MESSAGE);
+      },
+    );
+
     testE2E(
       'it should send a log',
       async ({
