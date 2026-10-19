@@ -280,6 +280,7 @@ const lcpElementAttribution = (
 
   try {
     const attribution = metric.attribution as LCPAttribution;
+    // eslint-disable-next-line baseline-js/use-baseline -- optional attribution, omitted where unsupported
     const element = attribution.lcpEntry?.element;
 
     if (element) {
@@ -319,7 +320,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _largestShiftTargetForCLS: string | undefined | null = null;
   private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
-  private _listenersRegistered = false;
+  private _listenersRegistered: boolean = false;
 
   public constructor({
     diag,
@@ -497,9 +498,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         [KEY_BROWSER_WEB_VITAL_RATING]: metric.rating,
         [KEY_BROWSER_WEB_VITAL_ID]: metric.id,
         [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
-        ...(metric.navigationId !== undefined
-          ? { [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId }
-          : {}),
+        [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId,
         ...(metric.navigationInteractionId !== undefined
           ? {
               [KEY_BROWSER_WEB_VITAL_INTERACTION_ID]:
@@ -545,16 +544,15 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           ? lcpElementAttribution(metric, this._diag)
           : {}),
       },
-      body:
-        this._includeRawAttribution && metric.attribution != null
-          ? JSON.stringify(
-              Object.fromEntries(
-                Object.entries(metric.attribution).filter(([, v]) =>
-                  isPrimitiveValue(v),
-                ),
+      body: this._includeRawAttribution
+        ? JSON.stringify(
+            Object.fromEntries(
+              Object.entries(metric.attribution).filter(([, v]) =>
+                isPrimitiveValue(v),
               ),
-            )
-          : undefined,
+            ),
+          )
+        : undefined,
       timestamp: millisToHrTime(metricTimeMillis),
     };
 

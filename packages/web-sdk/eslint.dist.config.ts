@@ -41,6 +41,10 @@ export default defineConfig([
             // feature-detected in SoftNavigationPerformanceInstrumentation,
             // which falls back to a polyfill when unsupported
             'soft-navigations',
+            // requestIdleCallback is guarded from web-vitals, which falls back to setTimeout
+            'requestidlecallback',
+            // notRestoredReasons is a diagnostic-only attribute, omitted where unsupported
+            'bfcache-blocking-reasons',
           ],
         },
       ],

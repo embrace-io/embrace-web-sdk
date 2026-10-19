@@ -787,7 +787,7 @@ describe('DOMStateInstrumentation', () => {
 
   it('spends the fold keys on the part end that fails, not the next one', () => {
     createInstrumentation();
-    let scrollHeightThrows = true;
+    let scrollHeightThrows: boolean = true;
     stubProp(document.documentElement, 'scrollHeight', () => {
       if (scrollHeightThrows) {
         throw new Error('layout read failed');

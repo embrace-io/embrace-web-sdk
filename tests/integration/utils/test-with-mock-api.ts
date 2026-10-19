@@ -414,7 +414,7 @@ const isExcludedSpan = (entity: ISpan | ILogRecord): boolean => {
   if (!isSpan(entity)) {
     return false;
   }
-  const urlAttr = entity.attributes?.find((attr) =>
+  const urlAttr = entity.attributes.find((attr) =>
     URL_ATTRIBUTE_KEYS.has(attr.key),
   );
   const url = urlAttr ? getAttributeValue(urlAttr) : null;
@@ -433,12 +433,12 @@ const isScopeSpan = (entity: IScopeSpans | IScopeLogs): entity is IScopeSpans =>
   (entity as IScopeSpans).spans !== undefined;
 
 const isSpan = (entity: ISpan | ILogRecord): entity is ISpan =>
-  (entity as ISpan).spanId !== undefined;
+  'startTimeUnixNano' in entity;
 
 const getEntitySortKey = (entity: ISpan | ILogRecord): string => {
   if (isSpan(entity)) return entity.name;
   return (
-    entity.attributes?.find((a) => a.key === 'browser.web_vital.name')?.value
+    entity.attributes.find((a) => a.key === 'browser.web_vital.name')?.value
       .stringValue ?? ''
   );
 };
@@ -604,11 +604,11 @@ const expect = testWithMockApi.expect.extend({
       message: `Attributes mismatch for span ${received.name}`,
     });
 
-    const sortedReceivedEvents = [...(received.events ?? [])].sort((a, b) =>
+    const sortedReceivedEvents = [...received.events].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
 
-    const sortedExpectedEvents = [...(expected.events ?? [])].sort((a, b) =>
+    const sortedExpectedEvents = [...expected.events].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
 
@@ -624,9 +624,9 @@ const expect = testWithMockApi.expect.extend({
     };
   },
   toMatchLog: (received: ILogRecord, expected: ILogRecord) => {
-    const ignoreBody =
-      received.attributes?.some((a) => LOGS_WITH_IGNORED_BODY.has(a.key)) ??
-      false;
+    const ignoreBody = received.attributes.some((a) =>
+      LOGS_WITH_IGNORED_BODY.has(a.key),
+    );
 
     // Use this instead of objectContaining for a better error message
     expect({

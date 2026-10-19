@@ -297,7 +297,7 @@ describe('NamespacedStorage', () => {
     });
 
     it('keeps reads, removes, and clears working after writes are disabled', () => {
-      let allowWrites = true;
+      let allowWrites: boolean = true;
       const flakyStorage: Storage = {
         get length() {
           return inMemoryStorage.length;

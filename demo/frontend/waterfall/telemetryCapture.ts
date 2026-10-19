@@ -101,7 +101,6 @@ export class CapturingLogExporter implements LogRecordExporter {
         embType: typeof embType === 'string' ? embType : null,
         severityText: record.severityText ?? 'unspecified',
         body: record.body == null ? '' : String(record.body),
-        // biome-ignore lint/suspicious/noUnnecessaryConditions: a log emitted with no active span has an undefined spanContext at runtime, despite the non-optional type
         spanId: record.spanContext?.spanId ?? null,
         attributes: record.attributes,
       });

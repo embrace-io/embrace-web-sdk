@@ -4,7 +4,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["clean", "^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["GITHUB_ACTIONS"]
     },
     "build:watch": {
       "dependsOn": ["^build"],

@@ -108,7 +108,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   // Distinguishes "another tab wiped storage after we wrote" from "we
   // never managed to write in the first place"; see
   // _continueUserSessionAfterPartEnd.
-  private _hasStoredState = false;
+  private _hasStoredState: boolean = false;
 
   private _activeSessionPartId: string | null = null;
   // Rollover history backing getSessionPartIdAt, cleared once the user
@@ -126,7 +126,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _activeSessionPartCounts: Record<string, number> | null = null;
   // Marks the first part of the page lifetime so it can be reported as a
   // cold start.
-  private _coldStart = true;
+  private _coldStart: boolean = true;
   private _nextSessionPartCounts: Record<string, number> = {};
   // Stays null if initSDK throws before recording, so the cold-start part
   // omits the keys rather than reporting zeros that read as real offsets.

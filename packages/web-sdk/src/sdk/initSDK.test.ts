@@ -1,4 +1,4 @@
-import type { DiagLogger } from '@opentelemetry/api';
+import type { DiagLogger, TextMapPropagator } from '@opentelemetry/api';
 import {
   context,
   DiagConsoleLogger,
@@ -12,7 +12,10 @@ import { CompositePropagator } from '@opentelemetry/core';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
-import { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
+import {
+  InMemorySpanExporter,
+  StackContextManager,
+} from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
@@ -109,6 +112,15 @@ type SpanScope = {
   version?: string;
 };
 
+// Upstream instrumentation scopes carry their package version, which every
+// dependency bump changes, so lookups of those scopes opt out of the version check
+const ANY_VERSION = Symbol('any version');
+
+type ExpectedScope = {
+  name: string;
+  version?: string | typeof ANY_VERSION;
+};
+
 const otlpAttrsToRecord = (
   attrs: ExportedSpan['attributes'],
 ): Record<string, string | number | boolean> => {
@@ -130,7 +142,7 @@ const otlpAttrsToRecord = (
 
 const getLastSessionExportedSpans = async (
   spansExportNumber = 0,
-  scope: SpanScope = { name: 'embrace-web-sdk-traces' },
+  scope: ExpectedScope = { name: 'embrace-web-sdk-traces' },
 ) => {
   // Needed to allow the transport to send its data off to fetch
   await new Promise((r) => setTimeout(r, 1));
@@ -157,8 +169,9 @@ const getLastSessionExportedSpans = async (
     scope: SpanScope;
     spans: ExportedSpan[];
   }>;
-  const matchesScope = (actual: SpanScope, expected: SpanScope): boolean =>
-    actual.name === expected.name && actual.version === expected.version;
+  const matchesScope = (actual: SpanScope, expected: ExpectedScope): boolean =>
+    actual.name === expected.name &&
+    (expected.version === ANY_VERSION || actual.version === expected.version);
 
   const sessionScopeSpan = scopeSpans.find((s) =>
     matchesScope(s.scope, { name: 'embrace-web-sdk-session-parts' }),
@@ -196,6 +209,7 @@ describe('initSDK', () => {
     logs.disable();
     diag.disable();
     context.disable();
+    propagation.disable();
     registry.clear();
     fakeFetchRestore();
   });
@@ -656,6 +670,43 @@ describe('initSDK', () => {
     );
   });
 
+  it('should enable and register a provided context manager', () => {
+    const contextManager = new StackContextManager();
+    const enableSpy = sinon.spy(contextManager, 'enable');
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      contextManager,
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+    });
+    void expect(result).not.to.be.false;
+
+    void expect(enableSpy.calledOnce).to.be.true;
+    const activeSpy = sinon.spy(contextManager, 'active');
+    context.active();
+    void expect(activeSpy.called).to.be.true;
+  });
+
+  it('should register a provided propagator', () => {
+    const inject = sinon.spy();
+    const propagator: TextMapPropagator = {
+      inject,
+      extract: (ctx) => ctx,
+      fields: () => [],
+    };
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      propagator,
+      defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+    });
+    void expect(result).not.to.be.false;
+
+    const carrier = {};
+    propagation.inject(context.active(), carrier);
+    void expect(inject.calledOnce).to.be.true;
+  });
+
   it('should not initialize on restricted protocols', () => {
     const diagLogger = new InMemoryDiagLogger();
     const result = initSDK({
@@ -1056,7 +1107,7 @@ describe('initSDK', () => {
       for (let i = 0; i < exportedEvents.length; i++) {
         // Default OTel limiting of events drops the oldest events when the limit
         // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/8505a6147e3834e04ce546dfc50e5d8fc50b1837/packages/opentelemetry-sdk-trace-base/src/Span.ts#L210
+        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L223
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
           `span-event-${expected.toString()}`,
@@ -1944,7 +1995,7 @@ describe('initSDK', () => {
             test.networkType === 'fetch'
               ? '@opentelemetry/instrumentation-fetch'
               : '@opentelemetry/instrumentation-xml-http-request',
-          version: '0.222.0',
+          version: ANY_VERSION,
         });
         expect(exportedSpans).to.have.lengthOf(1);
         const networkSpan = exportedSpans[0];
