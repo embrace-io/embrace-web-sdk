@@ -119,6 +119,9 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.user_session_id',
   'emb.user_session_previous_id',
   'emb.user_session_start_ts',
+  // Date.now() minus the performance clock, rounded to ms; jitters between -1 and 1 across runs.
+  'emb.perf_clock_lag_ms',
+  'emb.perf_clock_lag_start_ms',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
   'emb.stacktrace.js',
