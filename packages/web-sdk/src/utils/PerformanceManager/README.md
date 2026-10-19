@@ -230,19 +230,19 @@ concept for a one-time page-load report.
 | span start (all three span kinds) | `fetchStart` | `epochMillisFromOrigin` |
 | span end | `responseEnd` / `loadEventEnd` | `epochMillisFromOrigin` |
 | `firstPaint` / `firstContentfulPaint` span events | paint entry `startTime` | `epochMillisFromOrigin` |
-| network span events (`domainLookupStart`, `connectStart`, `responseStart`, …) | navigation/resource timing fields | none — raw offsets inside upstream helpers, see below |
+| network span events (`domainLookupStart`, `connectStart`, `responseStart`, …) | navigation/resource timing fields | none — raw offsets inside the network event helpers, see below |
 
-The network events are added by `@opentelemetry/sdk-trace-web`'s
-`addSpanNetworkEvent(s)` helpers, which pass raw offsets to `span.addEvent`
-with no conversion hook. OTel normalizes those internally: any plain number
+The network events are added by the document-load `addSpanNetworkEvent(s)`
+helpers, adapted from `@opentelemetry/sdk-trace-web`, which pass raw offsets
+to `span.addEvent`. OTel normalizes those internally: any plain number
 below `performance.timeOrigin / 2` is treated as an offset and gets
 `performance.timeOrigin` added (see `timeInputToHrTime` in
 `@opentelemetry/core`), so the recorded timestamps come out the same as an
-explicit conversion. The SDK converts explicitly everywhere it controls the
-call, because the heuristic is a magnitude guess — it reads the ambient global
-clock rather than the injected `PerformanceClock`, and it misclassifies values
-in environments where the global time origin is small (faked test clocks).
-Anyone replacing the upstream helpers with converting versions should keep the
+explicit conversion. The SDK converts explicitly everywhere else, because
+the heuristic is a magnitude guess — it reads the ambient global clock rather
+than the injected `PerformanceClock`, and it misclassifies values in
+environments where the global time origin is small (faked test clocks).
+Anyone switching these helpers to explicit conversion should keep the
 zero-checks on the *raw* values: `0` is a sentinel for "did not happen" (e.g.
 `secureConnectionStart` on plain-HTTP connections), and converting it first
 would fabricate events at exactly time origin.
