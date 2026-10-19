@@ -6,6 +6,8 @@ export { EmbraceSessionPartBatchedSpanProcessor } from './EmbraceSessionPartBatc
 export { LogRecordScrubProcessor } from './LogRecordScrubProcessor/index.ts';
 export { PageLogRecordProcessor } from './PageLogRecordProcessor/index.ts';
 export { PageSpanProcessor } from './PageSpanProcessor/index.ts';
+export { PerfClockLagLogRecordProcessor } from './PerfClockLagLogRecordProcessor/index.ts';
+export { PerfClockLagSpanProcessor } from './PerfClockLagSpanProcessor/index.ts';
 export { SignalCorrelationLogRecordProcessor } from './SignalCorrelationLogRecordProcessor/index.ts';
 export { SignalCorrelationSpanProcessor } from './SignalCorrelationSpanProcessor/index.ts';
 export { SpanScrubProcessor } from './SpanScrubProcessor/index.ts';

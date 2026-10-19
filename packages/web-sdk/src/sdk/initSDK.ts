@@ -43,6 +43,8 @@ import {
   LogRecordScrubProcessor,
   PageLogRecordProcessor,
   PageSpanProcessor,
+  PerfClockLagLogRecordProcessor,
+  PerfClockLagSpanProcessor,
   SignalBuffer,
   SignalCorrelationLogRecordProcessor,
   SignalCorrelationSpanProcessor,
@@ -286,6 +288,7 @@ export const initSDK = (
       registerGlobally,
       embraceSpanProcessor,
       pageManager,
+      perf,
       signalBuffer,
     });
 
@@ -421,6 +424,7 @@ const setupTraces = ({
   registerGlobally,
   embraceSpanProcessor,
   pageManager,
+  perf,
   signalBuffer,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
@@ -429,6 +433,7 @@ const setupTraces = ({
     new EmbraceNetworkSpanProcessor(),
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
+    new PerfClockLagSpanProcessor({ perf }),
     new SpanScrubProcessor({ attributeScrubbers }),
     // Placement in this chain does not affect the stamp: every
     // processor's onEnding runs before any onEnd (the batcher exports at
@@ -508,6 +513,7 @@ const setupLogs = ({
     new UserLogRecordProcessor({ userManager }),
     new LogRecordScrubProcessor({ attributeScrubbers }),
     new PageLogRecordProcessor({ pageManager }),
+    new PerfClockLagLogRecordProcessor({ perf }),
     // Must run after UserSessionLogRecordProcessor, which stamps the
     // synthetic log id this processor records into the shared buffer.
     // Keeping it last to prevent any ordering issues.

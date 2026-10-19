@@ -362,6 +362,7 @@ export interface SetupTracesArgs {
   registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
   pageManager: PageManager;
+  perf: PerformanceManager;
   signalBuffer?: SignalBuffer;
 }
 
