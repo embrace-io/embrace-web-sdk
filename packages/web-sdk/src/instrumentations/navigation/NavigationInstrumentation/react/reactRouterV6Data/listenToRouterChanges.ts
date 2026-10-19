@@ -6,8 +6,7 @@ import type { ListenToRouterChangesArgs, Match } from './types.ts';
  * matchRoutes already scopes `matches` to the given pathname, ordered from
  * the root route to the deepest one, so the full pattern is built by
  * reducing over all of them. Pathless layout and index routes contribute no
- * `route.path` of their own (and may duplicate an ancestor's pathname), so
- * they're skipped rather than used to bound which matches count.
+ * `route.path` of their own, so they're skipped.
  */
 const getRouteFromMatches = (
   matches: Match[],

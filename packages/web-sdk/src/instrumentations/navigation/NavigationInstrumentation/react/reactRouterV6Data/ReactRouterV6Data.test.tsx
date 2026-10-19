@@ -216,10 +216,6 @@ describe('ReactRouterV6Data - pathless layout routes', () => {
 
     const { tearDown } = render(<Switcher />);
 
-    // getRouteFromMatches finds the pathless layout's own match before the
-    // '/' route's match (both share pathname '/'), sees it has no
-    // `route.path`, and bails to null — so listenToRouterChanges never
-    // calls page.setCurrentRoute for an otherwise perfectly matched route.
     expect(setCurrentRouteSpy.calledWith({ path: '/', url: '/' })).to.be.true;
 
     tearDown();
