@@ -373,12 +373,11 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       );
     }
 
-    span.setAttribute(ATTR_HTTP_RESPONSE_BODY_SIZE, resource.encodedBodySize);
-    span.setAttribute(ATTR_HTTP_RESPONSE_SIZE, resource.transferSize);
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE,
-      resource.decodedBodySize,
-    );
+    span.setAttributes({
+      [ATTR_HTTP_RESPONSE_SIZE]: resource.transferSize,
+      [ATTR_HTTP_RESPONSE_BODY_SIZE]: resource.encodedBodySize,
+      [ATTR_HTTP_RESPONSE_DECODED_BODY_SIZE]: resource.decodedBodySize,
+    });
   }
 
   /**
