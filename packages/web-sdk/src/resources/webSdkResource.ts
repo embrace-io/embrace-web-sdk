@@ -57,6 +57,7 @@ export const getWebSDKResource = ({
     [ATTR_USER_AGENT_ORIGINAL]: navigator.userAgent,
     screen_resolution: `${window.screen.width}x${window.screen.height}`,
     viewport_resolution: `${window.innerWidth}x${window.innerHeight}`,
+    // eslint-disable-next-line baseline-js/use-baseline -- optional attribute, omitted where unsupported
     network_effective_type: navigator.connection?.effectiveType,
     device_memory: navigator.deviceMemory,
     webdriver: navigator.webdriver,

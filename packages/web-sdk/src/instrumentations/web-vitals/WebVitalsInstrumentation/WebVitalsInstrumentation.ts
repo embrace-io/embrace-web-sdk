@@ -280,6 +280,7 @@ const lcpElementAttribution = (
 
   try {
     const attribution = metric.attribution as LCPAttribution;
+    // eslint-disable-next-line baseline-js/use-baseline -- optional attribution, omitted where unsupported
     const element = attribution.lcpEntry?.element;
 
     if (element) {

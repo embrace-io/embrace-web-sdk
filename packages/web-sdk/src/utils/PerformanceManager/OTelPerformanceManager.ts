@@ -61,6 +61,7 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   private _getNavigationActivationStart(): number {
     const entry = this.getNavigationEntry();
+    // eslint-disable-next-line baseline-js/use-baseline -- only prerendered pages have a nonzero value, and prerendering only exists where this is supported
     return entry?.activationStart ?? 0;
   }
 
