@@ -182,7 +182,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
         fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
         context.with(trace.setSpan(context.active(), fetchSpan), () => {
           if (!this._ignoreNetworkEvents) {
-            addSpanNetworkEvents(fetchSpan, navigationTiming);
+            addSpanNetworkEvents(fetchSpan, this.perf, navigationTiming);
           }
           this._addResourceAttributesToSpan(fetchSpan, navigationTiming);
           this._addNavigationTimingAttributesToSpan(
@@ -207,7 +207,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
 
       if (!this._ignoreNetworkEvents) {
         for (const name of ROOT_SPAN_TIMING_MARKS) {
-          addSpanNetworkEvent(rootSpan, name, navigationTiming[name]);
+          addSpanNetworkEvent(
+            rootSpan,
+            this.perf,
+            name,
+            navigationTiming[name],
+          );
         }
       }
 
@@ -242,7 +247,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
 
     span.setAttribute(ATTR_URL_FULL, resource.name);
     if (!this._ignoreNetworkEvents) {
-      addSpanNetworkEvents(span, resource);
+      addSpanNetworkEvents(span, this.perf, resource);
     }
 
     this._addResourceAttributesToSpan(span, resource);

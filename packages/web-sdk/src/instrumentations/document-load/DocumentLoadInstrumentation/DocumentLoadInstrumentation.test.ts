@@ -430,6 +430,65 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    // activationStart moves zero time 200ms past time origin, so the two frames differ
+    it('should stamp network events at time origin plus their timing marks', (done) => {
+      plugin = new DocumentLoadInstrumentation({
+        perf: new OTelPerformanceManager({
+          timeOrigin: window.performance.timeOrigin,
+          now: () => window.performance.now(),
+          getEntriesByType: () => [
+            { activationStart: 200 } as PerformanceNavigationTiming,
+          ],
+        }),
+      });
+      plugin.setTracerProvider(provider);
+      plugin.enable();
+
+      setTimeout(() => {
+        const [fetchSpan, loadSpan] = exporter.getFinishedSpans();
+        const eventTime = (span: ReadableSpan, name: string) => {
+          const event = span.events.find((e) => e.name === name);
+          assert.isOk(event, `expected a ${name} event on ${span.name}`);
+          return hrTimeToMilliseconds(event.time);
+        };
+
+        assert.strictEqual(
+          eventTime(fetchSpan, 'requestStart'),
+          window.performance.timeOrigin + entries.requestStart,
+        );
+        assert.strictEqual(
+          eventTime(loadSpan, 'domComplete'),
+          window.performance.timeOrigin + entries.domComplete,
+        );
+        done();
+      });
+    });
+
+    it('should not add a secureConnectionStart event when the navigation used no TLS', (done) => {
+      spyEntries
+        .withArgs('navigation')
+        .returns([{ ...entries, secureConnectionStart: 0 }]);
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0];
+        assert.deepStrictEqual(
+          fetchSpan.events.map((e) => e.name),
+          [
+            'fetchStart',
+            'domainLookupStart',
+            'domainLookupEnd',
+            'connectStart',
+            'connectEnd',
+            'requestStart',
+            'responseStart',
+            'responseEnd',
+          ],
+        );
+        done();
+      });
+    });
+
     // A navigation entry starts at time origin, so its zero marks are real
     it('should keep zero fetchStart and connection marks on the navigation entry', (done) => {
       spyEntries.withArgs('navigation').returns([
@@ -454,7 +513,6 @@ describe('DocumentLoad Instrumentation', () => {
             'domainLookupStart',
             'domainLookupEnd',
             'connectStart',
-            'secureConnectionStart',
             'connectEnd',
             'requestStart',
             'responseStart',
@@ -1329,6 +1387,28 @@ describe('DocumentLoad Instrumentation', () => {
         assert.notProperty(
           resourceSpan.attributes,
           'http.response_content_length_uncompressed',
+        );
+        done();
+      });
+    });
+
+    it('should stamp resource network events at the epoch time of their timing marks', (done) => {
+      const perf = new OTelPerformanceManager();
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([resources[0]]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        const event = resourceSpan.events.find(
+          (e) => e.name === 'responseStart',
+        );
+        assert.isOk(event);
+        assert.strictEqual(
+          hrTimeToMilliseconds(event.time),
+          perf.epochMillisFromOrigin(resources[0].responseStart),
         );
         done();
       });
