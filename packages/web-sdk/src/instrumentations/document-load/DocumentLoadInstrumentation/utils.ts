@@ -44,10 +44,19 @@ export const addSpanNetworkEvents = (
   perf: PerformanceManager,
   entry: PerformanceResourceTiming,
 ) => {
-  // A navigation entry starts at time origin, so its marks can be a real 0
-  const ignoreZeros = entry.startTime !== 0;
+  // A navigation entry starts at time origin, so its marks can be a real 0. On a TLS
+  // navigation secureConnectionStart is at or after fetchStart, so 0 there means plain HTTP
+  // https://fetch.spec.whatwg.org/#clamp-and-coarsen-connection-timing-info
+  // https://github.com/open-telemetry/opentelemetry-js/issues/7017
+  const isNavigation = entry.startTime === 0;
   for (const name of RESOURCE_TIMING_MARKS) {
-    addSpanNetworkEvent(span, perf, name, entry[name], ignoreZeros);
+    addSpanNetworkEvent(
+      span,
+      perf,
+      name,
+      entry[name],
+      !isNavigation || name === 'secureConnectionStart',
+    );
   }
 };
 

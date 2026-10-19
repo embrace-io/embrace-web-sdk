@@ -236,7 +236,9 @@ The document-load `addSpanNetworkEvent(s)` helpers check for zero on the *raw*
 offset before converting: `0` means the mark did not happen or is hidden (e.g.
 `unloadEventStart` with no prior document, or network marks on opaque
 cross-origin resources), and converting it first would fabricate an event at
-exactly time origin.
+exactly time origin. Navigation entries start at time origin, so their zero
+marks are real and kept, except `secureConnectionStart`, where `0` means no
+TLS handshake.
 
 Do not pass raw offsets to `span.addEvent` and rely on OTel to normalize them.
 For a number at or below `performance.now()`, the OTel `Span` adds a

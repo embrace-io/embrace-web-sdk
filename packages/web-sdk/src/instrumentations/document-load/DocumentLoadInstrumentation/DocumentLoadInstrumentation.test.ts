@@ -464,6 +464,31 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should not add a secureConnectionStart event when the navigation used no TLS', (done) => {
+      spyEntries
+        .withArgs('navigation')
+        .returns([{ ...entries, secureConnectionStart: 0 }]);
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0];
+        assert.deepStrictEqual(
+          fetchSpan.events.map((e) => e.name),
+          [
+            'fetchStart',
+            'domainLookupStart',
+            'domainLookupEnd',
+            'connectStart',
+            'connectEnd',
+            'requestStart',
+            'responseStart',
+            'responseEnd',
+          ],
+        );
+        done();
+      });
+    });
+
     // A navigation entry starts at time origin, so its zero marks are real
     it('should keep zero fetchStart and connection marks on the navigation entry', (done) => {
       spyEntries.withArgs('navigation').returns([
@@ -488,7 +513,6 @@ describe('DocumentLoad Instrumentation', () => {
             'domainLookupStart',
             'domainLookupEnd',
             'connectStart',
-            'secureConnectionStart',
             'connectEnd',
             'requestStart',
             'responseStart',
