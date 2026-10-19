@@ -230,8 +230,8 @@ describe('NavigationInstrumentation', () => {
     const finishedSpans = surfaceSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].name).to.equal('/products/123');
-    expect(finishedSpans[0].attributes['app.surface.name']).to.equal(
-      '/products/123',
+    expect(finishedSpans[0].attributes).to.not.have.property(
+      'app.surface.name',
     );
   });
 
