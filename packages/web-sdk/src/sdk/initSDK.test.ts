@@ -875,6 +875,7 @@ describe('initSDK', () => {
       const userSessionStartTs = attrRecord['emb.user_session_start_ts'];
       const sdkStartupDuration = attrRecord['emb.sdk_startup_duration'];
       const browserUrlFull = attrRecord['browser.url.full'];
+      const perfClockLag = attrRecord['emb.perf_clock_lag_ms'];
 
       expect(userSessionId)
         .to.be.a('string')
@@ -886,6 +887,7 @@ describe('initSDK', () => {
         .and.greaterThan(0)
         .and.lessThan(100);
       expect(browserUrlFull).to.be.a('string').and.match(/^http/);
+      expect(perfClockLag).to.be.a('number');
 
       expect(attrRecord).to.deep.equal({
         'emb.type': 'ux.session_part',
@@ -910,6 +912,7 @@ describe('initSDK', () => {
         'browser.url.full': browserUrlFull,
         'app.surface.name': window.location.pathname,
         'app.surface.id': appSurfaceId,
+        'emb.perf_clock_lag_ms': perfClockLag,
       });
     });
 
@@ -1140,12 +1143,13 @@ describe('initSDK', () => {
       expect(exportedSpans).to.have.lengthOf(1);
 
       const exportedAttributes = exportedSpans[0].attributes;
-      // 200 is the span attribute cap; three additional attributes are
+      // 200 is the span attribute cap; four additional attributes are
       // written directly to span.attributes by later processors at onEnd,
-      // bypassing the cap: browser.url.full (BrowserSpanProcessor) and
+      // bypassing the cap: browser.url.full (BrowserSpanProcessor),
       // app.surface.name/app.surface.id (PageSpanProcessor — stamped on
-      // every span since EmbracePageManager always has a current route).
-      expect(exportedAttributes).to.have.lengthOf(203);
+      // every span since EmbracePageManager always has a current route) and
+      // emb.perf_clock_lag_ms (PerfClockLagSpanProcessor).
+      expect(exportedAttributes).to.have.lengthOf(204);
 
       // Only emb.type hits the cap via setAttribute at onStart (from startSpan's
       // attributes option). Non-part spans do not have session IDs. The
@@ -1170,6 +1174,7 @@ describe('initSDK', () => {
         'browser.url.full',
         'app.surface.name',
         'app.surface.id',
+        'emb.perf_clock_lag_ms',
       ]);
     });
 
