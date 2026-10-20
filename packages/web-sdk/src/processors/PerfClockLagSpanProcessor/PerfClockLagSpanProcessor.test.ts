@@ -4,10 +4,7 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
-import {
-  KEY_EMB_PERF_CLOCK_LAG_MS,
-  KEY_EMB_PERF_CLOCK_LAG_START_MS,
-} from '../../constants/index.ts';
+import { KEY_EMB_PERF_CLOCK_LAG_MS } from '../../constants/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
 import { PerfClockLagSpanProcessor } from './PerfClockLagSpanProcessor.ts';
 
@@ -61,9 +58,6 @@ describe('PerfClockLagSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(
-      finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_START_MS],
-    ).to.equal(0);
     expect(finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_MS]).to.equal(0);
   });
 
@@ -76,15 +70,12 @@ describe('PerfClockLagSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(
-      finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_START_MS],
-    ).to.equal(ONE_HOUR);
     expect(finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_MS]).to.equal(
       ONE_HOUR,
     );
   });
 
-  it('should record a larger lag at the end when the device slept while the span was open', () => {
+  it('should record the time slept while the span was open', () => {
     const span = tracer.startSpan('test-span');
     advanceAwake(500);
     advanceAsleep(ONE_HOUR);
@@ -92,9 +83,6 @@ describe('PerfClockLagSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(
-      finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_START_MS],
-    ).to.equal(0);
     expect(finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_MS]).to.equal(
       ONE_HOUR,
     );
@@ -108,9 +96,6 @@ describe('PerfClockLagSpanProcessor', () => {
 
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
-    expect(
-      finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_START_MS],
-    ).to.equal(-5000);
     expect(finishedSpans[0].attributes[KEY_EMB_PERF_CLOCK_LAG_MS]).to.equal(
       -5000,
     );
