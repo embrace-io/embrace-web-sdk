@@ -64,23 +64,19 @@ describe('PerfClockLagLogRecordProcessor', () => {
     );
   });
 
-  it('should make sure forceFlush no-op does not fail', () => {
+  it('should make sure forceFlush no-op does not fail', async () => {
     const processor = new PerfClockLagLogRecordProcessor({
       perf: new OTelPerformanceManager(),
     });
 
-    expect(async () => {
-      await processor.forceFlush();
-    }).to.not.throw();
+    await processor.forceFlush();
   });
 
-  it('should make sure shutdown no-op does not fail', () => {
+  it('should make sure shutdown no-op does not fail', async () => {
     const processor = new PerfClockLagLogRecordProcessor({
       perf: new OTelPerformanceManager(),
     });
 
-    expect(async () => {
-      await processor.shutdown();
-    }).to.not.throw();
+    await processor.shutdown();
   });
 });
