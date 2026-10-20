@@ -230,22 +230,21 @@ concept for a one-time page-load report.
 | span start (all three span kinds) | `fetchStart` | `epochMillisFromOrigin` |
 | span end | `responseEnd` / `loadEventEnd` | `epochMillisFromOrigin` |
 | `firstPaint` / `firstContentfulPaint` span events | paint entry `startTime` | `epochMillisFromOrigin` |
-| network span events (`domainLookupStart`, `connectStart`, `responseStart`, …) | navigation/resource timing fields | none — raw offsets inside upstream helpers, see below |
+| network span events (`domainLookupStart`, `connectStart`, `responseStart`, …) | navigation/resource timing fields | `epochMillisFromOrigin`, see below |
 
-The network events are added by `@opentelemetry/sdk-trace-web`'s
-`addSpanNetworkEvent(s)` helpers, which pass raw offsets to `span.addEvent`
-with no conversion hook. OTel normalizes those internally: any plain number
-below `performance.timeOrigin / 2` is treated as an offset and gets
-`performance.timeOrigin` added (see `timeInputToHrTime` in
-`@opentelemetry/core`), so the recorded timestamps come out the same as an
-explicit conversion. The SDK converts explicitly everywhere it controls the
-call, because the heuristic is a magnitude guess — it reads the ambient global
-clock rather than the injected `PerformanceClock`, and it misclassifies values
-in environments where the global time origin is small (faked test clocks).
-Anyone replacing the upstream helpers with converting versions should keep the
-zero-checks on the *raw* values: `0` is a sentinel for "did not happen" (e.g.
-`secureConnectionStart` on plain-HTTP connections), and converting it first
-would fabricate events at exactly time origin.
+The document-load `addSpanNetworkEvent(s)` helpers check for zero on the *raw*
+offset before converting: `0` means the mark did not happen or is hidden (e.g.
+`unloadEventStart` with no prior document, or network marks on opaque
+cross-origin resources), and converting it first would fabricate an event at
+exactly time origin. Navigation entries start at time origin, so their zero
+marks are real and kept, except `secureConnectionStart`, where `0` means no
+TLS handshake.
+
+Do not pass raw offsets to `span.addEvent` and rely on OTel to normalize them.
+For a number at or below `performance.now()`, the OTel `Span` adds a
+`Date.now()` drift correction measured when the span started. Span start and
+end are converted explicitly and never get that correction, so raw-offset
+events would drift out of their own span's bounds.
 
 ### Instrumentations outside both frames
 

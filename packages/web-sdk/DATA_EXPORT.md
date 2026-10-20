@@ -4,7 +4,7 @@
 
 Telemetry data for Spans and Logs are exported from the SDK independently. Spans are sent as a batch whenever a session part
 ends, this is managed by the [EmbraceSessionPartBatchedSpanProcessor](./src/processors/EmbraceSessionPartBatchedSpanProcessor/EmbraceSessionPartBatchedSpanProcessor.ts).
-Logs are also batched but can be sent throughout a session part, this is managed by a [BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.57.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts).
+Logs are also batched but can be sent throughout a session part, this is managed by a [BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.223.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts).
 
 ## How is data sent?
 
@@ -23,7 +23,7 @@ failures following an exponential backoff. See [FetchTransport](./src/transport/
 ## What happens with custom export?
 
 If you [provide your own custom exporter](./README.md#custom-exporters) then batching of spans and logs are managed by a
-[BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.57.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts)
-and [BatchSpanProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/v1.30.0/packages/opentelemetry-sdk-trace-base/src/platform/browser/export/BatchSpanProcessor.ts)
+[BatchLogRecordProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.223.0/experimental/packages/sdk-logs/src/platform/browser/export/BatchLogRecordProcessor.ts)
+and [BatchSpanProcessor](https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/platform/browser/export/BatchSpanProcessor.ts)
 respectively.
 

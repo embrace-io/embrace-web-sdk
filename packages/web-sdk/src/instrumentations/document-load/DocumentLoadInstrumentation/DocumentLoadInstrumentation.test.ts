@@ -14,12 +14,9 @@ import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  StackContextManager,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import {
-  PerformanceTimingNames as PTN,
-  StackContextManager,
-} from '@opentelemetry/sdk-trace-web';
 
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
@@ -28,8 +25,6 @@ import type { EmbracePerformanceNavigationTiming } from '../../../utils/index.ts
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
 import { EventNames } from './enums/EventNames.ts';
-import type { EmbracePerformanceResourceTiming } from './utils.ts';
-import { getPerformanceNavigationEntries } from './utils.ts';
 
 const exporter = new InMemorySpanExporter();
 const spanProcessor = new SimpleSpanProcessor({ exporter });
@@ -176,19 +171,20 @@ const ensureNetworkEventsExists = (
   expectSecureConnectionStart = true,
 ) => {
   const expectedEventNames = [
-    PTN.FETCH_START,
-    PTN.DOMAIN_LOOKUP_START,
-    PTN.DOMAIN_LOOKUP_END,
-    PTN.CONNECT_START,
-    expectSecureConnectionStart ? PTN.SECURE_CONNECTION_START : undefined,
-    PTN.CONNECT_END,
-    PTN.REQUEST_START,
-    PTN.RESPONSE_START,
-    PTN.RESPONSE_END,
+    'fetchStart',
+    'domainLookupStart',
+    'domainLookupEnd',
+    'connectStart',
+    expectSecureConnectionStart ? 'secureConnectionStart' : undefined,
+    'connectEnd',
+    'requestStart',
+    'responseStart',
+    'responseEnd',
   ].filter((n) => n);
-  for (let i = 0; i < events.length; i++) {
-    assert.strictEqual(events[i].name, expectedEventNames[i]);
-  }
+  assert.deepStrictEqual(
+    events.map((e) => e.name),
+    expectedEventNames,
+  );
 };
 
 /*
@@ -417,22 +413,138 @@ describe('DocumentLoad Instrumentation', () => {
           EventNames.FIRST_CONTENTFUL_PAINT,
         );
 
-        assert.strictEqual(fsEvents[0].name, PTN.FETCH_START);
-        assert.strictEqual(fsEvents[1].name, PTN.UNLOAD_EVENT_START);
-        assert.strictEqual(fsEvents[2].name, PTN.UNLOAD_EVENT_END);
-        assert.strictEqual(fsEvents[3].name, PTN.DOM_INTERACTIVE);
-        assert.strictEqual(
-          fsEvents[4].name,
-          PTN.DOM_CONTENT_LOADED_EVENT_START,
-        );
-        assert.strictEqual(fsEvents[5].name, PTN.DOM_CONTENT_LOADED_EVENT_END);
-        assert.strictEqual(fsEvents[6].name, PTN.DOM_COMPLETE);
-        assert.strictEqual(fsEvents[7].name, PTN.LOAD_EVENT_START);
-        assert.strictEqual(fsEvents[8].name, PTN.LOAD_EVENT_END);
+        assert.strictEqual(fsEvents[0].name, 'fetchStart');
+        assert.strictEqual(fsEvents[1].name, 'unloadEventStart');
+        assert.strictEqual(fsEvents[2].name, 'unloadEventEnd');
+        assert.strictEqual(fsEvents[3].name, 'domInteractive');
+        assert.strictEqual(fsEvents[4].name, 'domContentLoadedEventStart');
+        assert.strictEqual(fsEvents[5].name, 'domContentLoadedEventEnd');
+        assert.strictEqual(fsEvents[6].name, 'domComplete');
+        assert.strictEqual(fsEvents[7].name, 'loadEventStart');
+        assert.strictEqual(fsEvents[8].name, 'loadEventEnd');
 
         assert.strictEqual(rsEvents.length, 9);
         assert.strictEqual(fsEvents.length, 11);
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
+        done();
+      });
+    });
+
+    // activationStart moves zero time 200ms past time origin, so the two frames differ
+    it('should stamp network events at time origin plus their timing marks', (done) => {
+      plugin = new DocumentLoadInstrumentation({
+        perf: new OTelPerformanceManager({
+          timeOrigin: window.performance.timeOrigin,
+          now: () => window.performance.now(),
+          getEntriesByType: () => [
+            { activationStart: 200 } as PerformanceNavigationTiming,
+          ],
+        }),
+      });
+      plugin.setTracerProvider(provider);
+      plugin.enable();
+
+      setTimeout(() => {
+        const [fetchSpan, loadSpan] = exporter.getFinishedSpans();
+        const eventTime = (span: ReadableSpan, name: string) => {
+          const event = span.events.find((e) => e.name === name);
+          assert.isOk(event, `expected a ${name} event on ${span.name}`);
+          return hrTimeToMilliseconds(event.time);
+        };
+
+        assert.strictEqual(
+          eventTime(fetchSpan, 'requestStart'),
+          window.performance.timeOrigin + entries.requestStart,
+        );
+        assert.strictEqual(
+          eventTime(loadSpan, 'domComplete'),
+          window.performance.timeOrigin + entries.domComplete,
+        );
+        done();
+      });
+    });
+
+    it('should not add a secureConnectionStart event when the navigation used no TLS', (done) => {
+      spyEntries
+        .withArgs('navigation')
+        .returns([{ ...entries, secureConnectionStart: 0 }]);
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0];
+        assert.deepStrictEqual(
+          fetchSpan.events.map((e) => e.name),
+          [
+            'fetchStart',
+            'domainLookupStart',
+            'domainLookupEnd',
+            'connectStart',
+            'connectEnd',
+            'requestStart',
+            'responseStart',
+            'responseEnd',
+          ],
+        );
+        done();
+      });
+    });
+
+    // A navigation entry starts at time origin, so its zero marks are real
+    it('should keep zero fetchStart and connection marks on the navigation entry', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          fetchStart: 0,
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          secureConnectionStart: 0,
+          connectEnd: 0,
+        },
+      ]);
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter.getFinishedSpans()[0];
+        assert.deepStrictEqual(
+          fetchSpan.events.map((e) => e.name),
+          [
+            'fetchStart',
+            'domainLookupStart',
+            'domainLookupEnd',
+            'connectStart',
+            'connectEnd',
+            'requestStart',
+            'responseStart',
+            'responseEnd',
+          ],
+        );
+        done();
+      });
+    });
+
+    it('should not add unload events when there was no prior document', (done) => {
+      spyEntries
+        .withArgs('navigation')
+        .returns([{ ...entries, unloadEventStart: 0, unloadEventEnd: 0 }]);
+      plugin.enable();
+
+      setTimeout(() => {
+        const loadSpan = exporter.getFinishedSpans()[1];
+        assert.deepStrictEqual(
+          loadSpan.events.map((e) => e.name),
+          [
+            'fetchStart',
+            'domInteractive',
+            'domContentLoadedEventStart',
+            'domContentLoadedEventEnd',
+            'domComplete',
+            'loadEventStart',
+            'loadEventEnd',
+            'firstPaint',
+            'firstContentfulPaint',
+          ],
+        );
         done();
       });
     });
@@ -659,6 +771,110 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should add http.request.render_blocking_status to the documentFetch span', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          renderBlockingStatus: 'non-blocking',
+        } as EmbracePerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.request.render_blocking_status'],
+          'non-blocking',
+        );
+        done();
+      });
+    });
+
+    it('should not add http.request.render_blocking_status to the documentFetch span when the engine does not report it', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(
+          fetchSpan?.attributes['http.request.render_blocking_status'],
+        );
+        done();
+      });
+    });
+
+    it('should not add http.response.status_code to the documentFetch span when the engine does not report it', (done) => {
+      const { responseStatus, ...entryWithoutStatus } = entries;
+      spyEntries
+        .withArgs('navigation')
+        .returns([entryWithoutStatus as PerformanceNavigationTiming]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.isUndefined(fetchSpan?.attributes['http.response.status_code']);
+        done();
+      });
+    });
+
+    it('should add http.response_content_length_uncompressed to the documentFetch span when the body was transport-encoded', (done) => {
+      spyEntries.withArgs('navigation').returns([
+        {
+          ...entries,
+          encodedBodySize: 100,
+          decodedBodySize: 300,
+        } as PerformanceNavigationTiming,
+      ]);
+
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          100,
+        );
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length_uncompressed'],
+          300,
+        );
+        done();
+      });
+    });
+
+    it('should omit http.response_content_length_uncompressed from the documentFetch span when both body sizes match', (done) => {
+      plugin.enable();
+
+      setTimeout(() => {
+        const fetchSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan);
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          362,
+        );
+        assert.notProperty(
+          fetchSpan?.attributes,
+          'http.response_content_length_uncompressed',
+        );
+        done();
+      });
+    });
+
     it('should omit the documentFetch span sizes when the navigation entry lacks size fields', (done) => {
       const {
         transferSize,
@@ -862,52 +1078,6 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
-  describe('when the navigation entry is missing timing fields', () => {
-    let spyEntries: SinonStubbedFunction<PerformanceEntry[]>;
-
-    const stubNavigationEntry = (
-      missingField: keyof PerformanceNavigationTiming,
-    ) => {
-      const incomplete: Partial<PerformanceNavigationTiming> = { ...entries };
-      delete incomplete[missingField];
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([incomplete]);
-      spyEntries.withArgs('resource').returns([]);
-      spyEntries.withArgs('paint').returns([]);
-    };
-
-    afterEach(() => {
-      spyEntries.restore();
-    });
-
-    /* Every span hangs off the documentLoad span, which needs a start time. */
-    it('should export no spans when fetchStart is missing', (done) => {
-      stubNavigationEntry('fetchStart');
-
-      plugin.enable();
-
-      setTimeout(() => {
-        assert.strictEqual(exporter.getFinishedSpans().length, 0);
-        done();
-      });
-    });
-
-    it('should end the documentFetch span at the current time when responseEnd is missing', (done) => {
-      stubNavigationEntry('responseEnd');
-
-      plugin.enable();
-
-      setTimeout(() => {
-        const fetchSpan = exporter
-          .getFinishedSpans()
-          .find((s) => s.name === 'documentFetch');
-        assert.isOk(fetchSpan);
-        assert.isAbove(hrTimeToMilliseconds(fetchSpan.endTime), 0);
-        done();
-      });
-    });
-  });
-
   const shouldExportCorrectSpan = () => {
     it('should export correct span with events', (done) => {
       plugin.enable();
@@ -939,35 +1109,20 @@ describe('DocumentLoad Instrumentation', () => {
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
 
-        const rsEventNames = rsEvents.map((e) => e.name);
-        // Allow the unloadEvent{Start,End} events to be missing. Tests that
-        // are simulating a fallback to window.performance.timing are using
-        // values (entriesFallback) for that result in those network span
-        // events being dropped after https://github.com/open-telemetry/opentelemetry-js/pull/4486
-        // (@opentelemetry/sdk-trace-web@1.24.0).
-        const expectedRsEventNames =
-          rsEventNames[1] === (PTN.UNLOAD_EVENT_START as string)
-            ? [
-                PTN.FETCH_START,
-                PTN.UNLOAD_EVENT_START,
-                PTN.UNLOAD_EVENT_END,
-                PTN.DOM_INTERACTIVE,
-                PTN.DOM_CONTENT_LOADED_EVENT_START,
-                PTN.DOM_CONTENT_LOADED_EVENT_END,
-                PTN.DOM_COMPLETE,
-                PTN.LOAD_EVENT_START,
-                PTN.LOAD_EVENT_END,
-              ]
-            : [
-                PTN.FETCH_START,
-                PTN.DOM_INTERACTIVE,
-                PTN.DOM_CONTENT_LOADED_EVENT_START,
-                PTN.DOM_CONTENT_LOADED_EVENT_END,
-                PTN.DOM_COMPLETE,
-                PTN.LOAD_EVENT_START,
-                PTN.LOAD_EVENT_END,
-              ];
-        assert.deepStrictEqual(rsEventNames, expectedRsEventNames);
+        assert.deepStrictEqual(
+          rsEvents.map((e) => e.name),
+          [
+            'fetchStart',
+            'unloadEventStart',
+            'unloadEventEnd',
+            'domInteractive',
+            'domContentLoadedEventStart',
+            'domContentLoadedEventEnd',
+            'domComplete',
+            'loadEventStart',
+            'loadEventEnd',
+          ],
+        );
 
         assert.strictEqual(exporter.getFinishedSpans().length, 2);
         done();
@@ -989,8 +1144,6 @@ describe('DocumentLoad Instrumentation', () => {
         .returns([])
         .withArgs('paint')
         .returns([]);
-
-      sandbox.stub(window.performance, 'timing').get(() => undefined);
     });
     afterEach(() => {
       sandbox.restore();
@@ -1166,6 +1319,101 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it('should add http.response_content_length_uncompressed when the body was transport-encoded', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries
+        .withArgs('resource')
+        .returns([
+          { ...resources[0], encodedBodySize: 100, decodedBodySize: 300 },
+        ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.strictEqual(
+          resourceSpan.attributes['http.response_content_length'],
+          100,
+        );
+        assert.strictEqual(
+          resourceSpan.attributes['http.response_content_length_uncompressed'],
+          300,
+        );
+        done();
+      });
+    });
+
+    it('should skip zero connection marks on a cross-origin resource without Timing-Allow-Origin', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          domainLookupStart: 0,
+          domainLookupEnd: 0,
+          connectStart: 0,
+          secureConnectionStart: 0,
+          connectEnd: 0,
+          requestStart: 0,
+          responseStart: 0,
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter
+          .getFinishedSpans()
+          .find((s) => s.name === 'resourceFetch');
+        assert.isOk(resourceSpan);
+        assert.deepStrictEqual(
+          resourceSpan?.events.map((e) => e.name),
+          ['fetchStart', 'responseEnd'],
+        );
+        done();
+      });
+    });
+
+    it('should omit http.response_content_length_uncompressed when both body sizes match', (done) => {
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([resources[0]]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        assert.notProperty(
+          resourceSpan.attributes,
+          'http.response_content_length_uncompressed',
+        );
+        done();
+      });
+    });
+
+    it('should stamp resource network events at the epoch time of their timing marks', (done) => {
+      const perf = new OTelPerformanceManager();
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([resources[0]]);
+      spyEntries.withArgs('paint').returns([]);
+
+      plugin.enable();
+      setTimeout(() => {
+        const resourceSpan = exporter.getFinishedSpans()[1];
+        const event = resourceSpan.events.find(
+          (e) => e.name === 'responseStart',
+        );
+        assert.isOk(event);
+        assert.strictEqual(
+          hrTimeToMilliseconds(event.time),
+          perf.epochMillisFromOrigin(resources[0].responseStart),
+        );
+        done();
+      });
+    });
+
     it('should add http.response.cors_opaque attribute when resource has timing but no size data', (done) => {
       spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -1213,26 +1461,6 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           resourceSpan.attributes['http.request.prevented'],
           true,
-        );
-        done();
-      });
-    });
-
-    /* A resource with no fetchStart has no start time, so it gets no span. */
-    it('should skip a resource whose fetchStart is missing', (done) => {
-      const resourceWithoutFetchStart: Partial<(typeof resources)[0]> = {
-        ...resources[0],
-      };
-      delete resourceWithoutFetchStart.fetchStart;
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([resourceWithoutFetchStart]);
-      spyEntries.withArgs('paint').returns([]);
-
-      plugin.enable();
-      setTimeout(() => {
-        assert.isUndefined(
-          exporter.getFinishedSpans().find((s) => s.name === 'resourceFetch'),
         );
         done();
       });
@@ -1443,48 +1671,14 @@ describe('DocumentLoad Instrumentation', () => {
           resourceSpan.attributes['http.response_content_length'],
           'http.response_content_length attribute should exist',
         );
+        const fetchSpan = spans.find((s) => s.name === 'documentFetch');
+        assert.isOk(fetchSpan, 'documentFetch span should exist');
+        assert.strictEqual(
+          fetchSpan?.attributes['http.response_content_length'],
+          362,
+        );
         done();
       });
-    });
-  });
-
-  describe('getPerformanceNavigationEntries', () => {
-    it('should read the timing fields off the timeline entry', () => {
-      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-
-      const result = getPerformanceNavigationEntries();
-
-      assert.strictEqual(result[PTN.FETCH_START], entries.fetchStart);
-      assert.strictEqual(result[PTN.LOAD_EVENT_END], entries.loadEventEnd);
-    });
-
-    it('should read the resource-shaped fields that are not part of PerformanceTimingNames', () => {
-      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([
-        {
-          ...entries,
-          deliveryType: 'cache',
-          renderBlockingStatus: 'non-blocking',
-        } as EmbracePerformanceResourceTiming,
-      ]);
-
-      const result = getPerformanceNavigationEntries();
-
-      assert.strictEqual(result.transferSize, entries.transferSize);
-      assert.strictEqual(result.initiatorType, entries.initiatorType);
-      assert.strictEqual(result.responseStatus, entries.responseStatus);
-      assert.strictEqual(result.deliveryType, 'cache');
-      assert.strictEqual(result.renderBlockingStatus, 'non-blocking');
-    });
-
-    it('should return an empty object when there is no navigation entry', () => {
-      const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([]);
-
-      const result = getPerformanceNavigationEntries();
-
-      assert.deepStrictEqual(result, {});
     });
   });
 
