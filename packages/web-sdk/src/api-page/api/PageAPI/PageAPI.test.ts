@@ -39,6 +39,9 @@ describe('PageAPI', () => {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
+      getCurrentPageURL: sinon
+        .stub()
+        .returns('https://example.com/products/123'),
       clearCurrentRoute: sinon.stub(),
       setPageLabel: sinon.stub(),
       getPageLabel: sinon.stub(),
@@ -57,6 +60,9 @@ describe('PageAPI', () => {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
+      getCurrentPageURL: sinon
+        .stub()
+        .returns('https://example.com/products/123'),
       clearCurrentRoute: sinon.stub(),
       setPageLabel: sinon.stub(),
       getPageLabel: sinon.stub(),

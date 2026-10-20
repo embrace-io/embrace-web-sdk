@@ -14,6 +14,7 @@ import type { EmbracePageManagerArgs } from './types.ts';
 export class EmbracePageManager implements PageManager {
   private _currentRoute: Route | null = null;
   private _currentPageId: string | null = null;
+  private _currentPageURL: string | null = null;
   private _pageLabel: string | null = null;
   private readonly _titleDocument: TitleDocument | undefined;
   private readonly _useDocumentTitleAsPageLabel: boolean;
@@ -50,6 +51,8 @@ export class EmbracePageManager implements PageManager {
 
   public getCurrentPageId = (): string | null => this._currentPageId;
 
+  public getCurrentPageURL = (): string | null => this._currentPageURL;
+
   public getCurrentRoute = () => this._currentRoute;
 
   public setPageLabel = (label: string): void => {
@@ -71,6 +74,7 @@ export class EmbracePageManager implements PageManager {
     }
 
     this._currentRoute = route;
+    this._currentPageURL = this._navigationHost.location.href;
 
     if (route.label) {
       this._pageLabel = route.label;
@@ -90,6 +94,7 @@ export class EmbracePageManager implements PageManager {
   public clearCurrentRoute = () => {
     this._currentRoute = null;
     this._currentPageId = null;
+    this._currentPageURL = null;
     this._pageLabel = null;
   };
 

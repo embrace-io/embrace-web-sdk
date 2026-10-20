@@ -16,6 +16,7 @@ import {
   setupTestWebVitalListeners,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
+import type { NavigationHost } from '../../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
@@ -3023,6 +3024,7 @@ describe('WebVitalsInstrumentation', () => {
         setCurrentRoute: sinon.stub(),
         getCurrentRoute: sinon.stub().returns(null),
         getCurrentPageId: sinon.stub().returns(null),
+        getCurrentPageURL: sinon.stub().returns(null),
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns(null),
         clearCurrentRoute: sinon.stub(),
@@ -3151,6 +3153,9 @@ describe('WebVitalsInstrumentation', () => {
           .stub()
           .returns({ path: '/products/:id', url: '/products/123' }),
         getCurrentPageId: sinon.stub().returns('page-id-123'),
+        getCurrentPageURL: sinon
+          .stub()
+          .returns('https://example.com/products/123'),
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns('Product Page'),
         clearCurrentRoute: sinon.stub(),
@@ -3742,11 +3747,47 @@ describe('WebVitalsInstrumentation', () => {
       return records[0];
     };
 
+    // No navigation property: the page manager only learns of a route change when
+    // setCurrentRoute is called, like a browser without the Navigation API.
+    const navigationHostAt = (href: string): NavigationHost => ({
+      location: { href, pathname: new URL(href).pathname },
+    });
+
+    it('should describe one page when the document URL moves without a route change', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
+      const urlDocument = { URL: 'https://example.com/' };
+      const navigationHost = navigationHostAt('https://example.com/');
+      const pageManager = new EmbracePageManager({ navigationHost });
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+      instrumentation.enable();
+
+      urlDocument.URL = 'https://example.com/dashboard';
+      navigationHost.location = {
+        href: 'https://example.com/dashboard',
+        pathname: '/dashboard',
+      };
+
+      const record = emitLCP(lcpMetric({}));
+
+      expect(record.attributes).to.deep.include({
+        [KEY_BROWSER_URL_FULL]: 'https://example.com/',
+        [KEY_EMB_PAGE_PATH]: '/',
+      });
+    });
+
     // browser.url.full and the app.surface.* keys answer one question, so they come
     // from the attributed page together; navigationURL names a navigation, not a page.
     it('should describe one page across browser.url.full and the page attributes when navigationURL points elsewhere', () => {
       stubSupportedEntryTypes(['soft-navigation']);
-      const pageManager = new EmbracePageManager();
+      const pageManager = new EmbracePageManager({
+        navigationHost: navigationHostAt('https://example.com/page-a'),
+      });
       pageManager.setCurrentRoute({
         path: '/page-a',
         url: '/page-a',
@@ -3782,7 +3823,8 @@ describe('WebVitalsInstrumentation', () => {
     it('should describe one page for CLS when the largest shift moves after the navigation', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       const testDocument = { URL: 'https://example.com/page-a' };
-      const pageManager = new EmbracePageManager();
+      const navigationHost = navigationHostAt('https://example.com/page-a');
+      const pageManager = new EmbracePageManager({ navigationHost });
       pageManager.setCurrentRoute({ path: '/page-a', url: '/page-a' });
 
       instrumentation = new WebVitalsInstrumentation({
@@ -3813,6 +3855,10 @@ describe('WebVitalsInstrumentation', () => {
       changeFunc(clsMetric);
       clsMetric.attribution.largestShiftTarget = 'target-2';
       testDocument.URL = 'https://example.com/page-b';
+      navigationHost.location = {
+        href: 'https://example.com/page-b',
+        pathname: '/page-b',
+      };
       pageManager.setCurrentRoute({ path: '/page-b', url: '/page-b' });
       const attributedPageID = pageManager.getCurrentPageId();
       changeFunc(clsMetric);

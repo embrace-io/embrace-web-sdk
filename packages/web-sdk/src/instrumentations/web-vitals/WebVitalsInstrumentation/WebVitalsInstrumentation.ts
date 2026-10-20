@@ -426,7 +426,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   private _currentAttributedPage(): AttributedPage {
     return {
-      fullURL: this._urlDocument.URL,
+      fullURL: this._pageManager.getCurrentPageURL() ?? this._urlDocument.URL,
       path: this._pageManager.getCurrentRoute()?.path,
       pageID: this._pageManager.getCurrentPageId() ?? undefined,
       label: this._pageManager.getPageLabel() ?? undefined,

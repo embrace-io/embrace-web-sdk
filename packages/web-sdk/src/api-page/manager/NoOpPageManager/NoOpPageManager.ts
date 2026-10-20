@@ -11,6 +11,10 @@ export class NoOpPageManager implements PageManager {
     return '';
   }
 
+  public getCurrentPageURL(): string | null {
+    return null;
+  }
+
   public setPageLabel(_label: string): void {}
 
   public getPageLabel(): string | null {
