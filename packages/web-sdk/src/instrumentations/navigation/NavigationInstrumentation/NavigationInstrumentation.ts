@@ -46,15 +46,11 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    if (
-      this._currentRouteSpan &&
-      route.path &&
-      this._currentRouteSpanUrl === route.url
-    ) {
+    if (this._currentRouteSpan && this._currentRouteSpanUrl === route.url) {
       // Same url as the currently open span: either the templated path just
-      // resolved (rename in place), or a redundant re-render — no-op if the
-      // path hasn't changed.
-      if (this._currentRouteSpanPath !== route.path) {
+      // resolved/changed (rename in place), or a redundant replay — no-op if
+      // there's no new path to apply (path still unknown, or unchanged).
+      if (route.path && this._currentRouteSpanPath !== route.path) {
         this._renameCurrentRouteSpan(route);
       }
       return;

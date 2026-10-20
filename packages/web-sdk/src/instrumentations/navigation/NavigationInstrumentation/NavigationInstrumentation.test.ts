@@ -235,6 +235,27 @@ describe('NavigationInstrumentation', () => {
     );
   });
 
+  it('does not start a duplicate span when a path-less route is replayed for the same url', () => {
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+    navigationInstrumentation.enable();
+
+    // e.g. onEnable's replay of an already-set route, followed by
+    // _onSessionPartStarted's replay of the same route when a session part
+    // starts with no navigation in between — both report the same url with
+    // no path yet.
+    pageManager.setCurrentRoute({ url: '/products/123' });
+    pageManager.setCurrentRoute({ url: '/products/123' });
+
+    pageManager.setCurrentRoute({ path: '/other', url: '/other' });
+
+    const finishedSpans = surfaceSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].name).to.equal('/products/123');
+  });
+
   it('should end the old span and start a new one immediately when the url changes, with no session-part boundary needed', () => {
     navigationInstrumentation = new NavigationInstrumentation({
       diag,
