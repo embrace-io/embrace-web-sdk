@@ -105,7 +105,6 @@ describe('ReactRouterV5Legacy', () => {
 
     expect(pageManager.getCurrentPageId()).to.match(UUID_PATTERN);
     expect(pageManager.getCurrentRoute()).to.deep.equal({
-      path: window.location.pathname,
       url: window.location.pathname,
     });
 

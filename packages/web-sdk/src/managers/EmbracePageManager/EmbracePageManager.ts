@@ -130,6 +130,15 @@ export class EmbracePageManager implements PageManager {
 
   private readonly _setInitialRouteFromCurrentLocation = (): void => {
     const pathname = this._navigationHost.location.pathname;
-    this.setCurrentRoute({ path: pathname, url: pathname });
+
+    // Same pathname as the current route (e.g. only the query string
+    // changed) isn't a new route — re-set it as-is (path, label, and all)
+    // rather than rebuilding a partial one that drops those fields.
+    if (this._currentRoute?.url === pathname && this._currentRoute.path) {
+      this.setCurrentRoute(this._currentRoute);
+      return;
+    }
+
+    this.setCurrentRoute({ url: pathname });
   };
 }

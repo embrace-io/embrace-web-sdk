@@ -21,7 +21,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _pageManager: PageManager;
   private _currentRouteSpan: Span | null = null;
   private _currentRouteSpanUrl: string | null = null;
-  private _currentRouteSpanPath: string | null = null;
+  private _currentRouteSpanPath: string | undefined = undefined;
 
   public constructor({
     diag,
@@ -48,10 +48,10 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     if (this._currentRouteSpan && this._currentRouteSpanUrl === route.url) {
       // Same url as the currently open span: either the templated path just
-      // resolved (rename in place), or a redundant re-render — no-op if the
-      // path hasn't changed.
-      if (this._currentRouteSpanPath !== route.path) {
-        this._renameCurrentRouteSpan(route.path);
+      // resolved/changed (rename in place), or a redundant replay — no-op if
+      // there's no new path to apply (path still unknown, or unchanged).
+      if (route.path && this._currentRouteSpanPath !== route.path) {
+        this._renameCurrentRouteSpan(route);
       }
       return;
     }
@@ -63,12 +63,12 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _startRouteSpan = (route: Route): Span => {
     this._diag.debug(`Starting route span for url: ${route.url}`);
 
-    const pathName = this._cleanPath(route.path);
+    const pathName = this._resolveRouteName(route);
     this._currentRouteSpan = this.tracer.startSpan(pathName, {
       startTime: this.perf.getNowMillis(),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Surface,
-        [KEY_EMB_PAGE_PATH]: pathName,
+        [KEY_EMB_PAGE_PATH]: route.path ? pathName : undefined,
         [KEY_EMB_PAGE_ID]: this._pageManager.getCurrentPageId() || undefined,
       },
     });
@@ -87,23 +87,26 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       this._currentRouteSpan.end(this.perf.getNowMillis());
       this._currentRouteSpan = null;
       this._currentRouteSpanUrl = null;
-      this._currentRouteSpanPath = null;
+      this._currentRouteSpanPath = undefined;
     }
   };
 
-  private readonly _renameCurrentRouteSpan = (path: string): void => {
-    const pathName = this._cleanPath(path);
+  private readonly _renameCurrentRouteSpan = (route: Route): void => {
+    const pathName = this._resolveRouteName(route);
     this._diag.debug(`Resolved route span path to: ${pathName}`);
 
     this._currentRouteSpan?.updateName(pathName);
     this._currentRouteSpan?.setAttribute(KEY_EMB_PAGE_PATH, pathName);
-    this._currentRouteSpanPath = path;
+    this._currentRouteSpanPath = route.path;
   };
 
-  private readonly _cleanPath = (path: string): string =>
-    this._shouldCleanupPathOptionsFromRouteName
-      ? path.replace(PATH_OPTIONS_RE, '')
-      : path;
+  private readonly _resolveRouteName = (route: Route): string => {
+    const pathName = route.path ?? route.url;
+
+    return this._shouldCleanupPathOptionsFromRouteName
+      ? pathName.replace(PATH_OPTIONS_RE, '')
+      : pathName;
+  };
 
   // A route span must not outlive the session part it started in — e.g. the
   // tab backgrounds, or the session ends, with no further navigation to
