@@ -245,6 +245,38 @@ describe('EmbracePageManager', () => {
       expect(manager.getCurrentPageId()).to.not.equal(pageIdBeforeNavigation);
     });
 
+    it('keeps the current path on a query-only change (pathname unchanged)', () => {
+      const manager = createPageManager();
+      const routeFromRouter: Route = {
+        path: '/products/:id',
+        url: '/products/123',
+      };
+      manager.setCurrentRoute(routeFromRouter);
+
+      // navigationHost.location.pathname stays '/products/123'; only the
+      // query string would differ on a real navigation like this.
+      navigation.fire('http://previous.example.com/');
+
+      expect(manager.getCurrentRoute()).to.deep.equal({
+        path: '/products/:id',
+        url: '/products/123',
+      });
+    });
+
+    it('keeps the current label on a query-only change (pathname unchanged)', () => {
+      const manager = createPageManager();
+      const routeFromRouter: Route = {
+        path: '/products/:id',
+        url: '/products/123',
+        label: 'Products Page',
+      };
+      manager.setCurrentRoute(routeFromRouter);
+
+      navigation.fire('http://previous.example.com/');
+
+      expect(manager.getPageLabel()).to.equal('Products Page');
+    });
+
     it('rolls over the session part with web_soft_navigation reasons', () => {
       createPageManager();
 
