@@ -69,7 +69,7 @@ async function drainResponseBody(response: Response): Promise<void> {
   }
 }
 
-// OTel's wrapper keeps the function it wrapped as `__original`. Calling that
+// OTel's shimmer `wrap` stores the wrapped function as `__original`. Calling it
 // skips the outermost fetch instrumentation, with or without a context manager.
 function getUnwrappedFetch(): typeof fetch {
   const current: typeof fetch & { __original?: typeof fetch } =
@@ -207,8 +207,8 @@ export class FetchTransport implements IExporterTransport {
         diag.debug(`Sending without keepalive: ${reason}`);
       }
 
-      // Covers instrumentation below the unwrapped layer. The processors' own
-      // suppression is lost across the gzip `await` and retry `setTimeout`.
+      // Suppresses inner fetch wrappers, only when a context manager is set. StackContextManager
+      // drops the processors' own suppression at the gzip `await` and retry `setTimeout`.
       const response = await context.with(
         suppressTracing(context.active()),
         () =>

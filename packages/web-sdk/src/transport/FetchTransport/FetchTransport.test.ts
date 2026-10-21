@@ -742,7 +742,7 @@ describe('FetchTransport', () => {
     let fetchInstrumentations: FetchInstrumentation[];
     let startedSpanNames: string[];
 
-    // Each instrumentation wraps whatever `window.fetch` is at enable time.
+    // Each enable wraps the current `globalThis.fetch`, so a second call stacks a second wrapper.
     const enableRecordingInstrumentation = () => {
       const instrumentation = new FetchInstrumentation({ enabled: false });
       instrumentation.setTracerProvider(
@@ -777,8 +777,8 @@ describe('FetchTransport', () => {
       context.disable();
     });
 
-    it('should not create a span for its own request', async () => {
-      const transport = makeTransport({ compression: 'gzip' });
+    it('should not create a span for its own uncompressed request', async () => {
+      const transport = makeTransport({ compression: 'none' });
 
       await transport.send(smallPayload, 1000);
 
@@ -793,6 +793,9 @@ describe('FetchTransport', () => {
 
       void expect(fakeFetchWasCalled()).to.be.true;
       expect(startedSpanNames).to.deep.equal([]);
+
+      await fetch('http://example.com/app');
+      expect(startedSpanNames).to.deep.equal(['GET']);
     });
 
     it('should not create a span when a second instrumentation wraps fetch', async () => {
@@ -802,10 +805,13 @@ describe('FetchTransport', () => {
 
       void expect(fakeFetchWasCalled()).to.be.true;
       expect(startedSpanNames).to.deep.equal([]);
+
+      await fetch('http://example.com/app');
+      expect(startedSpanNames).to.deep.equal(['GET', 'GET']);
     });
 
     it('should still trace fetches made outside the transport', async () => {
-      await makeTransport().send(smallPayload, 1000);
+      await makeTransport({ compression: 'gzip' }).send(smallPayload, 1000);
       await fetch('http://example.com/app');
 
       expect(startedSpanNames).to.deep.equal(['GET']);
