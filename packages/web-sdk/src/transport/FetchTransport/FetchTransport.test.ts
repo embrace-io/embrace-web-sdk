@@ -1,7 +1,6 @@
 import { context, DiagLogLevel, diag } from '@opentelemetry/api';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
-import { TracerProvider } from '@opentelemetry/sdk-trace';
-import { StackContextManager } from '@opentelemetry/sdk-trace-web';
+import { StackContextManager, TracerProvider } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
