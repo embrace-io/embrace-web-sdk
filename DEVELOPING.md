@@ -41,7 +41,7 @@ This command will:
 
 - Automatically watch and rebuild the SDK when files change
 - Start the demo application with hot reloading enabled
-- Open your browser to `http://localhost:5173`
+- Open your browser to `http://localhost:4847`
 
 ## Repo Layout
 
