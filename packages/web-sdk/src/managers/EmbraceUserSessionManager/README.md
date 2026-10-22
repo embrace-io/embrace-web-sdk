@@ -171,13 +171,21 @@ The foreground inactivity timer ends a user session differently: it ends the
 active part directly with the `inactivity` termination reason rather than going
 through a rollover.
 
+A part that stays open through a sleep can pass its foreground inactivity
+deadline or the max-duration boundary before either timer fires (see
+[Timers](#timers)). Every engagement event (`visibilitychange`, `focus`,
+`blur`) and every input checks both against the clock first. If one has
+passed, the part ends at that deadline as final, with `inactivity` or
+`max_duration_reached`, and the event's usual handling then starts the next
+part in a fresh user session.
+
 `UserSessionEndReason` defines all possible values:
 
 | Value | Trigger | Emitted by web SDK |
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
-| `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| `max_duration_reached` | Max-duration timer fires, or an engagement event or input finds the boundary passed while a part is still open. | Yes |
+| `inactivity` | Foreground inactivity timer fires while a part is active, or an engagement event or input finds its deadline passed while the part is still open. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part as
 final with that timestamp, clears the stored user session, and starts the next
@@ -194,6 +202,11 @@ silently no-ops if not (the next engagement event will create it).
 | Foreground inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
 | Activity throttle | `DEFAULT_ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
+
+Timers count only awake time. While the machine sleeps none of them advance, so
+after waking a pending timer fires late by the time asleep. The manager keeps
+the foreground inactivity deadline on the wall clock as well, so it can find
+both deadlines passed on the way back (see [Termination](#termination)).
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
 `userSessionForegroundInactivityTimeoutSeconds` are set by remote config
