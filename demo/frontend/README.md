@@ -69,7 +69,7 @@ This single command will:
 
 - Watch and rebuild the SDK automatically
 - Start the demo app with hot reloading
-- Open your browser to `http://localhost:5173`
+- Open your browser to `http://localhost:4847`
 
 ## 📤 Testing Source Map Upload
 
