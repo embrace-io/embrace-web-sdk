@@ -12,7 +12,7 @@ and the sole listener of the Navigation API for soft-navigation detection.
   since `currententrychange` never fires for the page's own initial entry.
   On a soft navigation, it rolls over the active session part
   (`EmbraceUserSessionManager.rolloverSessionPartInternal`) before reporting
-  the new route, and resets the SDK's zero time (`updateZeroTimeMillis`) —
+  the new route, and resets the SDK's zero time (`perf.setZeroTimeOffset`) —
   the same reset `initSDK` performs on `pageshow` for bfcache restores.
 - **React-router integrations** (`withEmbraceRouting`,
   `withEmbraceRoutingLegacy`, `listenToRouterChanges`) — call

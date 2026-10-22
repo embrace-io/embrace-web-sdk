@@ -13,10 +13,6 @@ import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
 } from '../../../managers/index.ts';
-import {
-  _resetZeroTimeMillisForTesting,
-  updateZeroTimeMillis,
-} from '../../../utils/PerformanceManager/OTelPerformanceManager.ts';
 import { ElementTimingInstrumentation } from './ElementTimingInstrumentation.ts';
 import type { PerformanceElementTiming } from './types.ts';
 
@@ -82,7 +78,6 @@ describe('ElementTimingInstrumentation', () => {
 
   beforeEach(() => {
     spanExporter.reset();
-    _resetZeroTimeMillisForTesting();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
@@ -97,7 +92,6 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   afterEach(() => {
-    _resetZeroTimeMillisForTesting();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -189,7 +183,7 @@ describe('ElementTimingInstrumentation', () => {
 
     const span = spanExporter.getFinishedSpans()[0];
     // start = getZeroTime() = navigation epoch (no reset has occurred)
-    // end   = epochMillisFromOrigin(250) = navigation epoch + 250ms
+    // end   = offsetToAbsoluteTime(250) = navigation epoch + 250ms
     expect(span.startTime).to.not.deep.equal(span.endTime);
 
     instrumentation.disable();
@@ -202,7 +196,7 @@ describe('ElementTimingInstrumentation', () => {
 
     const resetEpoch = timeOrigin + 500; // e.g. a bfcache restore or soft navigation happens 500ms later
     clock.setSystemTime(resetEpoch);
-    updateZeroTimeMillis(resetEpoch);
+    timeOriginPerf.setZeroTimeOffset(resetEpoch - timeOrigin);
 
     const instrumentation = new ElementTimingInstrumentation({
       perf: timeOriginPerf,
@@ -220,6 +214,34 @@ describe('ElementTimingInstrumentation', () => {
     expect(span.attributes['emb.element_timing.render_time']).to.equal(200);
     expect(span.attributes['emb.element_timing.load_time']).to.equal(150);
     expect(span.attributes['emb.element_timing.start_time']).to.equal(200);
+
+    instrumentation.disable();
+  });
+
+  it('keeps the span as long as render_time when the machine slept after zero time', () => {
+    clock.tick(500);
+    perf.setZeroTimeOffset(200); // e.g. a soft navigation
+    perf.checkDrift(); // e.g. visibilitychange to hidden as the lid closes
+    perf.sleep(60 * 60 * 1000);
+    clock.tick(500);
+
+    const instrumentation = new ElementTimingInstrumentation({
+      perf,
+      limitManager,
+    });
+    instrumentation.enable();
+
+    triggerEntries([
+      makeEntry({ startTime: 800, renderTime: 800, loadTime: 0 }),
+    ]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    // The render happened after waking, so it is stamped on the wall clock.
+    expect(hrTimeToMilliseconds(span.endTime)).to.equal(60 * 60 * 1000 + 800);
+    expect(
+      hrTimeToMilliseconds(span.endTime) - hrTimeToMilliseconds(span.startTime),
+    ).to.equal(600);
+    expect(span.attributes['emb.element_timing.render_time']).to.equal(600);
 
     instrumentation.disable();
   });

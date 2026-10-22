@@ -260,6 +260,31 @@ describe('UserTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
+  it('keeps a measure span as long as the measure when the machine slept during it', () => {
+    const timeOrigin = 1_700_000_000_000;
+    clock.setSystemTime(timeOrigin);
+    const sleepingPerf = new MockPerformanceManager(clock);
+    clock.tick(500);
+    sleepingPerf.checkDrift(); // e.g. visibilitychange to hidden as the lid closes
+    sleepingPerf.sleep(60 * 60 * 1000);
+    clock.tick(500);
+
+    const instrumentation = new UserTimingInstrumentation({
+      perf: sleepingPerf,
+    });
+    instrumentation.enable();
+
+    triggerMeasureEntries([
+      makeMeasure({ name: 'across-sleep', startTime: 400, duration: 600 }),
+    ]);
+
+    const span = spanExporter.getFinishedSpans()[0];
+    expect(span.startTime).to.deep.equal(timeInputToHrTime(timeOrigin + 400));
+    expect(span.endTime).to.deep.equal(timeInputToHrTime(timeOrigin + 1000));
+
+    instrumentation.disable();
+  });
+
   it('should create a span for a measure entry', () => {
     const instrumentation = new UserTimingInstrumentation({ perf });
     instrumentation.enable();

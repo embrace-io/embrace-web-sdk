@@ -438,9 +438,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       metric.name === 'INP' &&
       metric.attribution.interactionTime !== undefined
     ) {
-      return this.perf.epochMillisFromOrigin(
-        metric.attribution.interactionTime,
-      );
+      return this.perf.offsetToAbsoluteTime(metric.attribution.interactionTime);
     }
 
     // For CLS use the first layout shift's startTime, which is the beginning of
@@ -453,7 +451,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
           : metric.attribution.largestShiftTime;
 
       if (windowStart !== undefined) {
-        return this.perf.epochMillisFromOrigin(windowStart);
+        return this.perf.offsetToAbsoluteTime(windowStart);
       }
     }
 
@@ -469,11 +467,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       metric.entries[metric.entries.length - 1]?.startTime;
 
     if (metricStartTime !== undefined) {
-      return this.perf.epochMillisFromOrigin(metricStartTime);
+      return this.perf.offsetToAbsoluteTime(metricStartTime);
     }
 
     // Fall back to when the metric was reported
-    return this.perf.getNowMillis();
+    return this.perf.getNow();
   }
 
   private _emitWebVital(metric: MetricWithAttribution): void {

@@ -71,7 +71,6 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  updateZeroTimeMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -139,11 +138,19 @@ export const initSDK = (
     }
 
     const perf = new OTelPerformanceManager();
-    const initSDKStart = perf.getNowMillis();
+    const initSDKStart = perf.getNow();
 
     window.addEventListener('pageshow', (event) =>
-      updateZeroTimeMillis(perf.epochMillisFromOrigin(event.timeStamp)),
+      perf.setZeroTimeOffset(event.timeStamp),
     );
+    // A sleep is only noticed on the next clock read. Reading on the events
+    // around it keeps the origin boundary close to when the machine slept.
+    for (const type of ['pagehide', 'pageshow', 'focus']) {
+      window.addEventListener(type, perf.checkDrift);
+    }
+    for (const type of ['visibilitychange', 'freeze', 'resume']) {
+      window.document.addEventListener(type, perf.checkDrift);
+    }
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);
@@ -381,9 +388,7 @@ export const initSDK = (
       registry.register(sdkControl);
     }
 
-    userSessionManager.recordSDKStartupDuration(
-      perf.getNowMillis() - initSDKStart,
-    );
+    userSessionManager.recordSDKStartupDuration(perf.getNow() - initSDKStart);
 
     return sdkControl;
   } catch (e) {
@@ -486,6 +491,7 @@ const setupTraces = ({
 
   const embraceTraceManager = new EmbraceTraceManager({
     tracerProvider: registerGlobally ? undefined : tracerProvider,
+    perf,
   });
 
   if (registerGlobally) {

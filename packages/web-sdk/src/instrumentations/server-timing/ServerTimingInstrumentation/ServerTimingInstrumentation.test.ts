@@ -1,4 +1,5 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -100,6 +101,24 @@ describe('ServerTimingInstrumentation', () => {
   });
 
   describe('collecting server timings', () => {
+    it('stamps each log with the SDK clock', () => {
+      // Past both timeOrigin and performance.now(), so OTel reads it as epoch.
+      const LOG_TIMESTAMP = 2_000_000_000_000;
+      getEntriesByTypeStub
+        .withArgs('navigation')
+        .returns([makeNavigationEntry([makeServerTimingEntry()])]);
+      perf.getNow = () => LOG_TIMESTAMP;
+
+      const instrumentation = new ServerTimingInstrumentation({
+        perf,
+        limitManager,
+      });
+      instrumentation.enable();
+
+      const [record] = memoryExporter.getFinishedLogRecords();
+      expect(hrTimeToMilliseconds(record.hrTime)).to.equal(LOG_TIMESTAMP);
+    });
+
     it('emits one log per server timing entry', () => {
       getEntriesByTypeStub.withArgs('navigation').returns([
         makeNavigationEntry([

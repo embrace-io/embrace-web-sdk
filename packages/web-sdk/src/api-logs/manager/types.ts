@@ -9,6 +9,11 @@ export type LogMessageOptions = {
 export type LogExceptionOptions = {
   handled?: boolean;
   attributes?: Record<string, AttributeValue | undefined>;
+  /**
+   * When the exception happened, in epoch milliseconds (e.g. Date.now()). Defaults to now. A
+   * performance.now()-based value is read as timeOrigin + value, which is off by any time the
+   * machine slept.
+   */
   timestamp?: number;
   handler?: ExceptionHandlerType;
 };
