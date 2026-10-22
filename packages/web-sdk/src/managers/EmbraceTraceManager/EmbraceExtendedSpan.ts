@@ -13,6 +13,7 @@ import type {
   ExtendedSpanFailedOptions,
 } from '../../api-traces/index.ts';
 import { KEY_EMB_ERROR_CODE } from '../../constants/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
 
 /**
  * Delegates most calls to the Span it receives in its constructor, so that it satisfies the Span interface.
@@ -20,9 +21,14 @@ import { KEY_EMB_ERROR_CODE } from '../../constants/index.ts';
  */
 export class EmbraceExtendedSpan implements ExtendedSpan {
   private readonly _span: ExtendedSpan;
+  // Ends spans on the SDK clock, the one startSpan's start time uses. OTel's own default
+  // leaves out time asleep for a span started without a start time, such as one created
+  // through the OTel API and wrapped by getSpan().
+  private readonly _perf: PerformanceManager;
 
-  public constructor(span: Span) {
+  public constructor(span: Span, perf: PerformanceManager) {
     this._span = span as ExtendedSpan;
+    this._perf = perf;
   }
 
   /**
@@ -52,7 +58,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   }
 
   public end(endTime?: TimeInput): void {
-    this._span.end(endTime);
+    this._span.end(endTime ?? this._perf.getNow());
   }
 
   public isRecording(): boolean {
@@ -103,6 +109,6 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
       this._span.setAttribute(KEY_EMB_ERROR_CODE, options.code.toUpperCase());
     }
 
-    this._span.end(options.endTime);
+    this._span.end(options.endTime ?? this._perf.getNow());
   }
 }

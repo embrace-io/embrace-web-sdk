@@ -24,7 +24,6 @@ export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
   OTelPerformanceManager,
   type PerformanceManager,
-  updateZeroTimeMillis,
 } from './PerformanceManager/index.ts';
 export {
   createPerformanceObserver,

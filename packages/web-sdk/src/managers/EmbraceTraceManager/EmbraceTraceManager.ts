@@ -4,20 +4,25 @@ import type {
   ExtendedSpan,
   ExtendedSpanOptions,
   TraceManager,
-  TraceManagerArgs,
 } from '../../api-traces/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import type { PerformanceManager } from '../../utils/index.ts';
+import { OTelPerformanceManager } from '../../utils/index.ts';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
+import type { EmbraceTraceManagerArgs } from './types.ts';
 
 export class EmbraceTraceManager implements TraceManager {
   private readonly _tracer: Tracer;
+  private readonly _perf: PerformanceManager;
 
   public constructor({
     tracerProvider: globalTraceProviderOverride,
-  }: TraceManagerArgs = {}) {
+    perf = new OTelPerformanceManager(),
+  }: EmbraceTraceManagerArgs = {}) {
     const tracerProvider = globalTraceProviderOverride ?? trace;
 
     this._tracer = tracerProvider.getTracer('embrace-web-sdk-traces');
+    this._perf = perf;
   }
 
   public startSpan(
@@ -32,8 +37,15 @@ export class EmbraceTraceManager implements TraceManager {
       ? trace.setSpan(context.active(), options.parentSpan)
       : ctx;
 
+    // Without a start time, OTel times the span's end and events as start + elapsed
+    // performance.now(), which leaves out any time asleep.
     return new EmbraceExtendedSpan(
-      this._tracer.startSpan(name, options, activeContext),
+      this._tracer.startSpan(
+        name,
+        { ...options, startTime: options.startTime ?? this._perf.getNow() },
+        activeContext,
+      ),
+      this._perf,
     );
   }
 
@@ -43,7 +55,7 @@ export class EmbraceTraceManager implements TraceManager {
     const span = trace.getSpan(context);
 
     if (span) {
-      return new EmbraceExtendedSpan(span);
+      return new EmbraceExtendedSpan(span, this._perf);
     }
 
     return undefined;

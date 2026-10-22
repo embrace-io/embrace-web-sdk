@@ -51,14 +51,17 @@ describe('EmbraceUserSessionManager', () => {
     clock.restore();
   });
 
-  const createManager = (config?: {
-    userSessionMaxDurationSeconds?: number;
-    userSessionInactivityTimeoutSeconds?: number;
-    userSessionForegroundInactivityTimeoutSeconds?: number;
-  }) =>
+  const createManager = (
+    config?: {
+      userSessionMaxDurationSeconds?: number;
+      userSessionInactivityTimeoutSeconds?: number;
+      userSessionForegroundInactivityTimeoutSeconds?: number;
+    },
+    perf = new MockPerformanceManager(clock),
+  ) =>
     new EmbraceUserSessionManager({
       diag,
-      perf: new MockPerformanceManager(clock),
+      perf,
       storage,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       visibilityDoc: window.document,
@@ -183,6 +186,53 @@ describe('EmbraceUserSessionManager', () => {
 
     // Advance past max duration (3601 seconds)
     clock.tick(3601 * 1000);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+  });
+
+  // performance.now() stops while the machine sleeps, so only the wall clock
+  // shows the time that passed.
+  it('should start a user session when the machine sleeps past the inactivity timeout', () => {
+    const perf = new MockPerformanceManager(clock);
+    const manager = createManager(undefined, perf);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal({ reason: 'background' });
+
+    perf.sleep(31 * 60 * 1000);
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs2 = manager.getUserSessionAttributes();
+
+    expect(attrs2?.['emb.user_session_id']).to.not.equal(
+      attrs1?.['emb.user_session_id'],
+    );
+    expect(attrs2?.['emb.user_session_number']).to.equal(2);
+    expect(attrs2?.['emb.user_session_start_ts']).to.equal(31 * 60 * 1000);
+  });
+
+  it('should start a user session when the machine sleeps past max duration', () => {
+    const perf = new MockPerformanceManager(clock);
+    const manager = createManager(
+      {
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 7200,
+      },
+      perf,
+    );
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    const attrs1 = manager.getUserSessionAttributes();
+    manager.endSessionPartInternal({ reason: 'background' });
+
+    perf.sleep(3601 * 1000);
 
     manager.startSessionPartInternal({ reason: 'init' });
     const attrs2 = manager.getUserSessionAttributes();

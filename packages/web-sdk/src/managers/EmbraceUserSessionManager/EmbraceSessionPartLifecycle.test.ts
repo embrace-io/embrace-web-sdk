@@ -120,11 +120,35 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     );
   });
 
+  it('starts the part span on the SDK clock, the one it ends on', () => {
+    const timeOrigin = 1_700_000_000_000;
+    clock.setSystemTime(timeOrigin);
+    const sleepingPerf = new MockPerformanceManager(clock);
+    const localManager = new EmbraceUserSessionManager({
+      diag,
+      storage,
+      limitManager,
+      perf: sleepingPerf,
+      visibilityDoc: window.document,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+    });
+    // Date.now() moves ahead of the SDK clock by less than the drift
+    // threshold, so the SDK clock is not re-anchored.
+    sleepingPerf.sleep(500);
+
+    localManager.startSessionPartInternal({ reason: 'init' });
+    localManager.endSessionPartInternal({ reason: 'background' });
+
+    const [span] = memoryExporter.getFinishedSpans();
+    expect(hrTimeToMilliseconds(span.startTime)).to.equal(timeOrigin);
+    expect(hrTimeToMilliseconds(span.endTime)).to.equal(timeOrigin);
+  });
+
   it('anchors part end and start spans to an explicit boundary timestamp', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     clock.tick(5000);
 
-    const boundaryTimestamp = perf.getNowMillis();
+    const boundaryTimestamp = perf.getNow();
     // Advance the clock past the boundary so the explicit timestamp and
     // "now" diverge. Without this the default now-anchored path would
     // produce the same values and the assertions would pass vacuously.
@@ -157,7 +181,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('tiles the rolled part spans even when part-end processing takes time', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     clock.tick(5000);
-    const boundaryTimestamp = perf.getNowMillis();
+    const boundaryTimestamp = perf.getNow();
 
     // Simulate unbounded work between the part end and the rollover part
     // start (e.g. slow part-end listeners or a slow SpanProcessor.onEnd
@@ -1475,7 +1499,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       localManager.startSessionPartInternal({ reason: 'init' });
       clock.tick(5000);
-      const boundaryTimestamp = perf.getNowMillis();
+      const boundaryTimestamp = perf.getNow();
       // Advance the clock so now and the anchor diverge. The anchored
       // timestamp is a span-presentation concern only and must not move
       // the inactivity deadline earlier.

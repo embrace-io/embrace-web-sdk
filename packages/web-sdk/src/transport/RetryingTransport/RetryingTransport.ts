@@ -45,7 +45,7 @@ export class RetryingTransport implements IExporterTransport {
     data: Uint8Array,
     timeoutMillis: number,
   ): Promise<ExportResponse> {
-    const deadline = this._perf.getNowMillis() + timeoutMillis;
+    const deadline = this._perf.getNow() + timeoutMillis;
     let result = await this._transport.send(data, timeoutMillis);
     let attempts = MAX_ATTEMPTS;
     let nextBackoff = INITIAL_BACKOFF;
@@ -62,7 +62,7 @@ export class RetryingTransport implements IExporterTransport {
       const retryInMillis = result.retryInMillis ?? backoff;
 
       // return when expected retry time is after the export deadline.
-      const remainingTimeoutMillis = deadline - this._perf.getNowMillis();
+      const remainingTimeoutMillis = deadline - this._perf.getNow();
       if (retryInMillis > remainingTimeoutMillis) {
         return result;
       }

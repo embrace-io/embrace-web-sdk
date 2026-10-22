@@ -392,7 +392,7 @@ describe('EmbraceLogManager', () => {
         attributes: {
           attr_key: 'attr value',
         },
-        timestamp: perf.getNowMillis(),
+        timestamp: perf.getNow(),
       });
     }).to.not.throw();
 
@@ -489,7 +489,7 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNowMillis(),
+      perf.getNow(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
@@ -521,7 +521,7 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNowMillis(),
+      perf.getNow(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
@@ -1062,7 +1062,7 @@ describe('EmbraceLogManager', () => {
           attributes: {
             attr_key: 'attr value',
           },
-          timestamp: perf.getNowMillis(),
+          timestamp: perf.getNow(),
         },
       );
     }).to.not.throw();

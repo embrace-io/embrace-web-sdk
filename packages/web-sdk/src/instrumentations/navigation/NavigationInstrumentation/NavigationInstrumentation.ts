@@ -65,7 +65,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     const pathName = this._resolveRouteName(route);
     this._currentRouteSpan = this.tracer.startSpan(pathName, {
-      startTime: this.perf.getNowMillis(),
+      startTime: this.perf.getNow(),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Surface,
         [KEY_EMB_PAGE_PATH]: route.path ? pathName : undefined,
@@ -84,7 +84,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
         `Ending route span for url: ${this._currentRouteSpanUrl ?? 'unknown'}`,
       );
 
-      this._currentRouteSpan.end(this.perf.getNowMillis());
+      this._currentRouteSpan.end(this.perf.getNow());
       this._currentRouteSpan = null;
       this._currentRouteSpanUrl = null;
       this._currentRouteSpanPath = undefined;

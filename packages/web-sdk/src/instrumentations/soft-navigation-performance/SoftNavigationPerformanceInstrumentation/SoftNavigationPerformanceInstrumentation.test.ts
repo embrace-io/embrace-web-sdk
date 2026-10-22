@@ -253,19 +253,19 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromOrigin(225),
+      startTime: perf.offsetToAbsoluteTime(225),
       type: 'perf.network_request',
     });
     signalBuffer.record({
       kind: 'log',
       id: 'child-log',
-      startTime: perf.epochMillisFromOrigin(240),
+      startTime: perf.offsetToAbsoluteTime(240),
       type: 'sys.log',
     });
     signalBuffer.record({
       kind: 'span',
       id: 'outside-window',
-      startTime: perf.epochMillisFromOrigin(300),
+      startTime: perf.offsetToAbsoluteTime(300),
     });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
@@ -299,7 +299,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromOrigin(225),
+      startTime: perf.offsetToAbsoluteTime(225),
     });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
@@ -657,19 +657,19 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     signalBuffer.record({
       kind: 'span',
       id: 'child-span',
-      startTime: perf.epochMillisFromOrigin(120),
+      startTime: perf.offsetToAbsoluteTime(120),
       type: 'perf.network_request',
     });
     signalBuffer.record({
       kind: 'log',
       id: 'child-log',
-      startTime: perf.epochMillisFromOrigin(140),
+      startTime: perf.offsetToAbsoluteTime(140),
       type: 'sys.log',
     });
     signalBuffer.record({
       kind: 'span',
       id: 'outside-window',
-      startTime: perf.epochMillisFromOrigin(200),
+      startTime: perf.offsetToAbsoluteTime(200),
     });
 
     clock.tick(150);

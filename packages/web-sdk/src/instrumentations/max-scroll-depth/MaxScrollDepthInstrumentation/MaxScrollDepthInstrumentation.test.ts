@@ -1,4 +1,5 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
+import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type {
   InMemoryLogRecordExporter,
   LogRecordProcessor,
@@ -179,6 +180,24 @@ describe('MaxScrollDepthInstrumentation', () => {
   afterEach(() => {
     instrumentation.disable();
     restoreGeometry();
+  });
+
+  it('stamps the log with the SDK clock', () => {
+    // Past both timeOrigin and performance.now(), so OTel reads it as epoch.
+    const LOG_TIMESTAMP = 2_000_000_000_000;
+    instrumentation.disable();
+    const perf = new OTelPerformanceManager();
+    perf.getNow = () => LOG_TIMESTAMP;
+    instrumentation = new MaxScrollDepthInstrumentation({ perf });
+    instrumentation.setUserSessionManager(userSessionManager);
+    instrumentation.enable();
+
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const [record] = getMaxScrollDepthLogs();
+    expect(hrTimeToMilliseconds(record.hrTime)).to.equal(LOG_TIMESTAMP);
   });
 
   it('emits a max-scroll-depth log on session part end with all attributes', () => {
