@@ -142,6 +142,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
+  private _foregroundInactivityDeadlineTs: number | null = null;
 
   public constructor({
     dynamicConfigManager,
@@ -919,6 +920,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (!isTabEngaged(this._visibilityDoc)) {
         return;
       }
+      this._endPartIfOverdue('activity');
       if (this._activeSessionPartId === null) {
         this.startSessionPartInternal({ reason: 'web_activity' });
         return;
@@ -954,6 +956,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   private _handleEngagementTransition(source: string): void {
     try {
+      this._endPartIfOverdue(source);
       const engaged = isTabEngaged(this._visibilityDoc);
       const active = this._activeSessionPartId !== null;
       if (!engaged && active) {
@@ -975,6 +978,36 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       }
     } catch (e) {
       this._diag.warn('Error handling engagement change', e);
+    }
+  }
+
+  // Timers don't count time asleep, so a part that stays open through a sleep
+  // misses its deadlines and its timers fire late. Ends the part at the first
+  // deadline it missed, so the caller's usual logic can start the next one.
+  private _endPartIfOverdue(source: string): void {
+    if (this._activeSessionPartId === null || !this._state) {
+      return;
+    }
+    const inactivityDeadline = this._foregroundInactivityDeadlineTs ?? Infinity;
+    const maxEnd = this._state.userSessionMaxEndTs;
+    if (this._perf.getNow() < Math.min(inactivityDeadline, maxEnd)) {
+      return;
+    }
+    this._diag.debug(
+      `session part outlived a deadline, found via ${source}; ending it`,
+    );
+    if (inactivityDeadline <= maxEnd) {
+      this.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+        timestamp: inactivityDeadline,
+      });
+    } else {
+      this.endSessionPartInternal({
+        reason: 'user_session_ended',
+        userSessionEndReason: 'max_duration_reached',
+        timestamp: maxEnd,
+      });
     }
   }
 
@@ -1007,6 +1040,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._onSessionPartInactivity,
       this._state.userSessionForegroundInactivityTimeoutSeconds * 1000,
     );
+    this._foregroundInactivityDeadlineTs =
+      this._perf.getNow() +
+      this._state.userSessionForegroundInactivityTimeoutSeconds * 1000;
   }
 
   private _clearSessionPartInactivityTimer(): void {
@@ -1014,6 +1050,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       clearTimeout(this._sessionPartInactivityTimer);
       this._sessionPartInactivityTimer = null;
     }
+    this._foregroundInactivityDeadlineTs = null;
   }
 
   private _addListener<T>(list: T[], listener: T): () => void {
