@@ -13,7 +13,10 @@ import {
 import type { MaxScrollDepthInstrumentationArgs } from './types.ts';
 
 /*
-  Tracks how far the user scrolls during a session part and emits telemetry when the part ends
+  Tracks how far the user scrolls during a session part and emits telemetry when the part ends.
+
+  This tracking only applies to scrolling directly on the window, scrolling that the user does on
+  inner page elements are not observed here.
 */
 export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onScrollHandler: () => void;
