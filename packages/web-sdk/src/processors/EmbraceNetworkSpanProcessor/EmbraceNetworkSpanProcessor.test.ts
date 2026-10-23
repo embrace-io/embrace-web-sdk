@@ -21,6 +21,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
         exporterEndpoints: [
           'https://a-11111.data.emb-api.com/v2/spans',
           'https://Collector.Example.com:443/v2/logs',
+          '/collector/v2/spans',
         ],
       }),
     ]);
@@ -75,7 +76,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
     );
   });
 
-  it('should match an exporter endpoint that differs from url.full only before normalization', () => {
+  it('should match an exporter endpoint that differs from url.full only in host case and default port', () => {
     tracer
       .startSpan('network-request', {
         attributes: {
@@ -87,6 +88,55 @@ describe('EmbraceNetworkSpanProcessor', () => {
       .end();
 
     const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].attributes['emb.type']).to.equal(
+      'sys.export_request',
+    );
+  });
+
+  it('should match a relative exporter endpoint against the absolute url.full', () => {
+    tracer
+      .startSpan('network-request', {
+        attributes: {
+          'http.request.method': 'POST',
+          'http.response.status_code': 200,
+          'url.full': `${window.location.origin}/collector/v2/spans`,
+        },
+      })
+      .end();
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].attributes['emb.type']).to.equal(
+      'sys.export_request',
+    );
+  });
+
+  it('should keep matching valid exporter endpoints when one is unparseable', () => {
+    const exporter = new InMemorySpanExporter();
+    const localTracer = new TracerProvider({
+      spanProcessors: [
+        new EmbraceNetworkSpanProcessor({
+          exporterEndpoints: [
+            'http://[',
+            'https://a-11111.data.emb-api.com/v2/spans',
+          ],
+        }),
+        new SimpleSpanProcessor({ exporter }),
+      ],
+    }).getTracer('test-tracer');
+
+    localTracer
+      .startSpan('network-request', {
+        attributes: {
+          'http.request.method': 'POST',
+          'http.response.status_code': 200,
+          'url.full': 'https://a-11111.data.emb-api.com/v2/spans',
+        },
+      })
+      .end();
+
+    const finishedSpans = exporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
       'sys.export_request',

@@ -6,8 +6,8 @@ import { isNetworkSpan } from '../../utils/index.ts';
 import type { EmbraceNetworkSpanProcessorArgs } from './types.ts';
 
 /**
- * Embrace's API expects network spans to have some specific attributes.
- * This processor checks if a span is a network span and adds them.
+ * Sets emb.type on network spans: sys.export_request for requests to the given
+ * exporter endpoints, perf.network_request otherwise.
  */
 export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   private readonly _exporterEndpoints: ReadonlySet<string>;
@@ -15,7 +15,7 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   public constructor({
     exporterEndpoints = [],
   }: EmbraceNetworkSpanProcessorArgs = {}) {
-    // Network instrumentations record url.full as a parsed href, so compare in that form.
+    // The fetch/XHR instrumentations record url.full as an href resolved against document.baseURI.
     this._exporterEndpoints = new Set(exporterEndpoints.map(normalizeUrl));
   }
 
@@ -53,9 +53,9 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
 
 const normalizeUrl = (url: string): string => {
   try {
-    return new URL(url).href;
+    return new URL(url, document.baseURI).href;
   } catch {
-    // An unparseable URL fails at export too; keep it rather than throw from init.
+    // fetch rejects the same URL at export; keep it rather than throw from init.
     return url;
   }
 };

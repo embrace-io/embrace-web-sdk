@@ -203,8 +203,10 @@ export class EmbraceLimitManager implements LimitManagerInternal {
   }
 
   public dropReadableSpan(span: ReadableSpan): boolean {
+    const embType = span.attributes[KEY_EMB_TYPE];
+    // Export requests share the network budget so the SDK's own uploads can't exhaust the user span budget.
     const type =
-      span.attributes[KEY_EMB_TYPE] === EMB_TYPES.Network
+      embType === EMB_TYPES.Network || embType === EMB_TYPES.ExportRequest
         ? 'network_request'
         : 'span';
 
