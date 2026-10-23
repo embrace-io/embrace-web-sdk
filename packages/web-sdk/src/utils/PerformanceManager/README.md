@@ -52,7 +52,7 @@ an offset from time origin can be passed to `offsetToAbsoluteTime`.
 | `getZeroTime(entryStart = zeroOffset)` | What is the epoch timestamp of the current view's start? | `origin(entryStart) + zeroOffset`, where `zeroOffset = max(activationStart, lastResetOffset)` |
 | `getOffsetFromZeroTime(offset = now)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - zeroOffset)` |
 | `getNow()` | What is the wall-clock epoch time right now? | `origin(now) + performance.now()` |
-| `getClockLag()` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (timeOrigin + performance.now()))` |
+| `getClockLag()` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (timeOrigin + performance.now()))`, with `timeOrigin` as read at startup |
 | `setZeroTimeOffset(offset)` | — (records the raw offset at which the current view started) | |
 | `checkDrift()` | — (starts a new origin segment if the machine slept) | |
 
@@ -109,6 +109,12 @@ What follows from this:
   two `getNow()` reads includes any time asleep or wall-clock correction
   between them, which is what a retry deadline wants, and is negligible for a
   synchronous measurement like SDK startup.
+- **`timeOrigin` is read once.** Safari moves `performance.timeOrigin` forward
+  by the time asleep, which keeps `timeOrigin + performance.now()` on the wall
+  clock while `performance.now()` itself stops. The manager reads `timeOrigin`
+  when the clock state is created and measures drift and `getClockLag()`
+  against that value. Reading it fresh would hide the drift, and stamp entries
+  from before a sleep late by the whole sleep.
 - **The state belongs to the clock.** The SDK builds several managers on
   `window.performance` (initSDK's, plus one per instrumentation that isn't
   handed one), so the origin history and zero time are kept per clock, not per
