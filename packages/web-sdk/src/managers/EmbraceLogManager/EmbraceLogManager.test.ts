@@ -1266,6 +1266,84 @@ describe('EmbraceLogManager', () => {
       expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
       expect(log.attributes[ATTR_EXCEPTION_STACKTRACE]).to.equal('');
     });
+
+    it('should handle errors from another realm', () => {
+      const iframe = document.createElement('iframe');
+      document.body.appendChild(iframe);
+      try {
+        const realmWindow = iframe.contentWindow as Window & {
+          Error: ErrorConstructor;
+        };
+        const error = new realmWindow.Error('iframe error');
+        expect(error instanceof Error).to.equal(false);
+
+        manager.logException(error);
+
+        const log = memoryExporter.getFinishedLogRecords()[0];
+        expect(log.body).to.equal('iframe error');
+        expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Error');
+        expect(log.attributes).to.have.property('exception.name', 'Error');
+        expect(log.attributes).to.have.property(
+          ATTR_EXCEPTION_STACKTRACE,
+          error.stack,
+        );
+      } finally {
+        iframe.remove();
+      }
+    });
+
+    it('should not record "{}" for objects without enumerable fields', () => {
+      manager.logException(new Response(null, { status: 500 }));
+
+      const log = memoryExporter.getFinishedLogRecords()[0];
+      expect(log.body).to.equal('[object Response]');
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'Response');
+    });
+
+    it('should handle objects without a toString', () => {
+      expect(() => {
+        manager.logException(Object.create(null));
+      }).to.not.throw();
+
+      const log = memoryExporter.getFinishedLogRecords()[0];
+      expect(log.body).to.equal('[object Object]');
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_TYPE, 'object');
+    });
+
+    it('should keep only string names and stacks from errors', () => {
+      const error = new Error('bad fields');
+      Object.defineProperty(error, 'name', { value: 42 });
+      Object.defineProperty(error, 'stack', { value: {} });
+
+      manager.logException(error);
+
+      const log = memoryExporter.getFinishedLogRecords()[0];
+      expect(log.attributes).to.have.property('exception.name', '');
+      expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE, '');
+    });
+
+    it('should still log a value whose properties throw', () => {
+      const hostile = Object.defineProperty({}, 'constructor', {
+        get() {
+          throw new Error('constructor getter failed');
+        },
+      });
+
+      expect(() => {
+        manager.logException(hostile);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      expect(finishedLogs[0].attributes).to.have.property(
+        ATTR_EXCEPTION_TYPE,
+        'object',
+      );
+      expect(finishedLogs[0].attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        '',
+      );
+    });
   });
 
   describe('messages with stacktrace passed in', () => {

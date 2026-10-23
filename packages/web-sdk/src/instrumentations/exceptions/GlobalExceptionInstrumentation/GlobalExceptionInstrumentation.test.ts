@@ -251,4 +251,20 @@ describe('GlobalExceptionInstrumentation', () => {
       'emb.exception_number': 1,
     });
   });
+
+  it('should record a falsy thrown value instead of the browser message', () => {
+    window.dispatchEvent(
+      new ErrorEvent('error', {
+        error: 0,
+        message: 'global exception test error message',
+      }),
+    );
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    void expect(finishedLogs[0].body).to.be.equal('0');
+    void expect(finishedLogs[0].attributes['exception.type']).to.be.equal(
+      'Number',
+    );
+  });
 });

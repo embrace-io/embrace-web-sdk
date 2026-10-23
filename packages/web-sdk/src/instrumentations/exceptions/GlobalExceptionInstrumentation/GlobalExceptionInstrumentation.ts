@@ -16,7 +16,9 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       config: {},
     });
     this._onErrorHandler = (event: ErrorEvent) => {
-      this.logManager.logException(event.error || event.message, {
+      // A falsy throw such as `throw 0` keeps its value. The browser message is
+      // only for a missing error, e.g. the cross-origin "Script error.".
+      this.logManager.logException(event.error ?? event.message, {
         handled: false,
         timestamp: this.perf.epochMillisFromOrigin(event.timeStamp),
         handler: 'global_exception',

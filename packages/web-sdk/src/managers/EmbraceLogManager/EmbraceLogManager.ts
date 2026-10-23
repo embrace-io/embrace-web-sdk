@@ -50,6 +50,45 @@ const EMBRACE_EXCEPTION_NUMBER_STORAGE_KEY = 'embrace_exception_number';
 const getJSFileBundleIDs = () =>
   JSON.stringify(GLOBAL_CONFIG._EmbraceFileBundleIDs || {});
 
+interface ErrorDescription {
+  type: string;
+  name: string;
+  message: string;
+  stack: string;
+  cause: string;
+}
+
+// The tag check also matches errors from other realms (iframes), which fail instanceof.
+// Error.isError would do this but is not Baseline Widely Available.
+const isError = (value: unknown): value is Error => {
+  switch (Object.prototype.toString.call(value)) {
+    case '[object Error]':
+    case '[object DOMException]':
+      return true;
+    default:
+      return value instanceof Error;
+  }
+};
+
+const stringifyObject = (value: object): string => {
+  let json: string | undefined;
+  try {
+    json = JSON.stringify(value);
+  } catch {
+    // Circular references, BigInt values or a throwing toJSON.
+  }
+  // '{}' means no enumerable fields (e.g. a Response), so it says nothing.
+  if (json && json !== '{}') {
+    return json;
+  }
+  try {
+    return String(value).trim();
+  } catch {
+    // No callable toString, e.g. Object.create(null).
+    return Object.prototype.toString.call(value);
+  }
+};
+
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _perf: PerformanceManager;
@@ -121,26 +160,13 @@ export class EmbraceLogManager implements LogManager {
       );
     }
 
-    const type = error?.constructor?.name || typeof error;
-    let errMessage = '';
-    let errName = type;
-    let errStack = '';
-    let errCause = '';
-
-    if (error instanceof Error) {
-      errMessage = String(error.message || '').trim();
-      errName = error.name || '';
-      errStack = error.stack || '';
-      errCause = error.cause ? 'present' : '';
-    } else if (error && typeof error === 'object') {
-      try {
-        errMessage = JSON.stringify(error);
-      } catch {
-        errMessage = String(error).trim();
-      }
-    } else {
-      errMessage = String(error).trim();
-    }
+    const {
+      type,
+      name: errName,
+      message: errMessage,
+      stack: errStack,
+      cause: errCause,
+    } = this._describeError(error);
 
     const limited = this._limitManager.limitException(errMessage, validAttrs);
     if (limited === 'dropped') {
@@ -174,6 +200,47 @@ export class EmbraceLogManager implements LogManager {
         ),
       },
     });
+  }
+
+  // Any value can be thrown or rejected, and its getters, toJSON or toString can throw.
+  private _describeError(error: unknown): ErrorDescription {
+    try {
+      const constructorName: unknown = error?.constructor?.name;
+      const type =
+        typeof constructorName === 'string' && constructorName
+          ? constructorName
+          : typeof error;
+
+      if (isError(error)) {
+        return {
+          type,
+          name: typeof error.name === 'string' ? error.name : '',
+          message: String(error.message || '').trim(),
+          stack: typeof error.stack === 'string' ? error.stack : '',
+          cause: error.cause ? 'present' : '',
+        };
+      }
+
+      return {
+        type,
+        name: type,
+        message:
+          error && typeof error === 'object'
+            ? stringifyObject(error)
+            : String(error).trim(),
+        stack: '',
+        cause: '',
+      };
+    } catch (e) {
+      this._diag.warn('failed to read exception value', e);
+      return {
+        type: typeof error,
+        name: typeof error,
+        message: '',
+        stack: '',
+        cause: '',
+      };
+    }
   }
 
   public message(
