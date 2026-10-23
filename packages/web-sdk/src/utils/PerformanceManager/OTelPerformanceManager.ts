@@ -105,10 +105,15 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   /**
    * How far timeOrigin + performance.now() is behind Date.now(), in whole milliseconds, ignoring
-   * any corrections. About 0 while awake, it grows by the time slept.
+   * any corrections. About 0 while awake, it grows by the time slept. Uses the timeOrigin read when
+   * the clock state was created: Safari moves performance.timeOrigin forward after a sleep, so the
+   * live value would hide the lag.
    */
-  public getClockLag = (): number =>
-    Math.round(this._wallNow() - (this._clock.timeOrigin + this._clock.now()));
+  public getClockLag = (): number => {
+    const { origin } = this._sharedClockState.segments[0];
+
+    return Math.round(this._wallNow() - (origin + this._clock.now()));
+  };
 
   /**
    * Records when the current view started. Every manager on the same clock sees it.

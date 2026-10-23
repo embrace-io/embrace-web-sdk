@@ -306,6 +306,29 @@ describe('OTelPerformanceManager', () => {
       expect(perf.getClockLag()).to.equal(ONE_HOUR);
     });
 
+    it('reports the lag and still re-anchors when timeOrigin moves forward after a sleep, as in Safari', () => {
+      let slept = 0;
+      const movingOriginClock: PerformanceClock = {
+        get timeOrigin() {
+          return TIME_ORIGIN + slept;
+        },
+        now: () => perfNow,
+      };
+      const safariPerf = new OTelPerformanceManager(
+        movingOriginClock,
+        () => wallNow,
+      );
+
+      advanceAwake(1000);
+      safariPerf.checkDrift(); // e.g. the blur as the machine goes to sleep
+      sleep(ONE_HOUR);
+      slept += ONE_HOUR;
+
+      expect(safariPerf.getClockLag()).to.equal(ONE_HOUR);
+      expect(safariPerf.getNow()).to.equal(TIME_ORIGIN + ONE_HOUR + 1000);
+      expect(safariPerf.offsetToAbsoluteTime(500)).to.equal(TIME_ORIGIN + 500);
+    });
+
     it('rounds getClockLag to whole milliseconds', () => {
       wallNow = TIME_ORIGIN + 1234.6;
 
