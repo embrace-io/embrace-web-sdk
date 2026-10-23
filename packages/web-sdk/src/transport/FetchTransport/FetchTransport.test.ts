@@ -1,4 +1,6 @@
-import { DiagLogLevel, diag } from '@opentelemetry/api';
+import { context, DiagLogLevel, diag } from '@opentelemetry/api';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { StackContextManager, TracerProvider } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -6,6 +8,7 @@ import {
   fakeFetchInstall,
   fakeFetchRespondWith,
   fakeFetchRestore,
+  fakeFetchWasCalled,
   InMemoryDiagLogger,
 } from '../../../tests/utils/index.ts';
 import { _resetKeepaliveTracking, FetchTransport } from './FetchTransport.ts';
@@ -732,6 +735,86 @@ describe('FetchTransport', () => {
       await transport.send(payload30k, 5000);
 
       expect(fakeFetchGetKeepalive(1)).to.equal(true);
+    });
+  });
+
+  describe('tracing', () => {
+    let fetchInstrumentations: FetchInstrumentation[];
+    let startedSpanNames: string[];
+
+    // Each enable wraps the current `globalThis.fetch`, so a second call stacks a second wrapper.
+    const enableRecordingInstrumentation = () => {
+      const instrumentation = new FetchInstrumentation({ enabled: false });
+      instrumentation.setTracerProvider(
+        new TracerProvider({
+          spanProcessors: [
+            {
+              onStart: (span) => {
+                startedSpanNames.push(span.name);
+              },
+              onEnd: () => undefined,
+              forceFlush: () => Promise.resolve(),
+              shutdown: () => Promise.resolve(),
+            },
+          ],
+        }),
+      );
+      instrumentation.enable();
+      fetchInstrumentations.push(instrumentation);
+    };
+
+    beforeEach(() => {
+      context.setGlobalContextManager(new StackContextManager().enable());
+      startedSpanNames = [];
+      fetchInstrumentations = [];
+      enableRecordingInstrumentation();
+    });
+
+    afterEach(() => {
+      for (const instrumentation of fetchInstrumentations) {
+        instrumentation.disable();
+      }
+      context.disable();
+    });
+
+    it('should not create a span for its own uncompressed request', async () => {
+      const transport = makeTransport({ compression: 'none' });
+
+      await transport.send(smallPayload, 1000);
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(startedSpanNames).to.deep.equal([]);
+    });
+
+    it('should not create a span without a context manager', async () => {
+      context.disable();
+
+      await makeTransport({ compression: 'gzip' }).send(smallPayload, 1000);
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(startedSpanNames).to.deep.equal([]);
+
+      await fetch('http://example.com/app');
+      expect(startedSpanNames).to.deep.equal(['GET']);
+    });
+
+    it('should not create a span when a second instrumentation wraps fetch', async () => {
+      enableRecordingInstrumentation();
+
+      await makeTransport({ compression: 'gzip' }).send(smallPayload, 1000);
+
+      void expect(fakeFetchWasCalled()).to.be.true;
+      expect(startedSpanNames).to.deep.equal([]);
+
+      await fetch('http://example.com/app');
+      expect(startedSpanNames).to.deep.equal(['GET', 'GET']);
+    });
+
+    it('should still trace fetches made outside the transport', async () => {
+      await makeTransport({ compression: 'gzip' }).send(smallPayload, 1000);
+      await fetch('http://example.com/app');
+
+      expect(startedSpanNames).to.deep.equal(['GET']);
     });
   });
 });

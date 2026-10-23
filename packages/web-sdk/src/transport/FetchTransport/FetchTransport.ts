@@ -1,4 +1,5 @@
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import type {
   ExportResponse,
   IExporterTransport,
@@ -66,6 +67,16 @@ async function drainResponseBody(response: Response): Promise<void> {
       `Fetch transport failed to drain response body: ${drainError.message}`,
     );
   }
+}
+
+// OTel's shimmer `wrap` stores the wrapped function as `__original`. Calling it
+// skips the outermost fetch instrumentation, with or without a context manager.
+function getUnwrappedFetch(): typeof fetch {
+  const current: typeof fetch & { __original?: typeof fetch } =
+    globalThis.fetch;
+  return typeof current.__original === 'function'
+    ? current.__original
+    : current;
 }
 
 export class FetchTransport implements IExporterTransport {
@@ -196,13 +207,19 @@ export class FetchTransport implements IExporterTransport {
         diag.debug(`Sending without keepalive: ${reason}`);
       }
 
-      const response = await fetch(this._config.url, {
-        method: 'POST',
-        keepalive,
-        headers,
-        body: request,
-        signal,
-      });
+      // Suppresses inner fetch wrappers, only when a context manager is set. StackContextManager
+      // drops the processors' own suppression at the gzip `await` and retry `setTimeout`.
+      const response = await context.with(
+        suppressTracing(context.active()),
+        () =>
+          getUnwrappedFetch()(this._config.url, {
+            method: 'POST',
+            keepalive,
+            headers,
+            body: request,
+            signal,
+          }),
+      );
 
       // Not awaited: the status already decides the export outcome, and a
       // collector that stalls mid-body must not hold up the caller.
