@@ -243,6 +243,32 @@ describe('EmbraceUserSessionManager', () => {
     expect(attrs2?.['emb.user_session_number']).to.equal(2);
   });
 
+  it('should fire the max duration timer on time after a sleep between parts', () => {
+    const perf = new MockPerformanceManager(clock);
+    const manager = createManager(
+      {
+        userSessionMaxDurationSeconds: 3600,
+        userSessionInactivityTimeoutSeconds: 3600,
+        userSessionForegroundInactivityTimeoutSeconds: 3600,
+      },
+      perf,
+    );
+    const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+
+    manager.startSessionPartInternal({ reason: 'init' });
+    clock.tick(10 * 60 * 1000);
+    manager.endSessionPartInternal({ reason: 'background' });
+    // No timers run while asleep, so the max-duration timer falls 20 minutes behind.
+    perf.sleep(20 * 60 * 1000);
+    manager.startSessionPartInternal({ reason: 'foreground' });
+    clock.tick(30 * 60 * 1000);
+
+    const lastEnd = lastEndCall(endSpy);
+    expect(lastEnd?.reason).to.equal('user_session_ended');
+    expect(lastEnd?.userSessionEndReason).to.equal('max_duration_reached');
+    expect(lastEnd?.timestamp).to.equal(60 * 60 * 1000);
+  });
+
   it('should fire max duration timer mid-part', () => {
     // Match the foreground inactivity timeout to max-duration so both timers
     // fire at the same tick; max is armed first (in
