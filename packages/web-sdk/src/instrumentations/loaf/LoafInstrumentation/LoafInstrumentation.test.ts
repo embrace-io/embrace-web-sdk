@@ -1,5 +1,4 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -115,7 +114,6 @@ describe('LoafInstrumentation', () => {
     const logManager = new EmbraceLogManager({
       userSessionManager,
       limitManager,
-      perf,
       storage,
       visibilityDoc: window.document,
     });
@@ -147,40 +145,6 @@ describe('LoafInstrumentation', () => {
       type: 'long-animation-frame',
       buffered: true,
     });
-
-    instrumentation.disable();
-  });
-
-  it('stamps both logs with the SDK clock', () => {
-    // Past both timeOrigin and performance.now(), so OTel reads it as epoch.
-    const LOG_TIMESTAMP = 2_000_000_000_000;
-    const instrumentation = new LoafInstrumentation({ perf });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
-    triggerEntries([
-      makeEntry({
-        scripts: [
-          makeScript(),
-        ] as unknown as PerformanceLongAnimationFrameTiming['scripts'],
-      }),
-    ]);
-    perf.getNow = () => LOG_TIMESTAMP;
-
-    userSessionManager.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
-
-    const logs = memoryExporter
-      .getFinishedLogRecords()
-      .filter(
-        (l) =>
-          l.eventName === 'emb-loaf-report' ||
-          l.eventName === 'emb-loaf-scripts',
-      );
-    expect(logs).to.have.lengthOf(2);
-    for (const record of logs) {
-      expect(hrTimeToMilliseconds(record.hrTime)).to.equal(LOG_TIMESTAMP);
-    }
 
     instrumentation.disable();
   });
@@ -584,7 +548,6 @@ describe('LoafInstrumentation', () => {
     const logManager2 = new EmbraceLogManager({
       userSessionManager: userSessionManager2,
       limitManager: limitManager2,
-      perf,
       storage: storage2,
       visibilityDoc: window.document,
     });

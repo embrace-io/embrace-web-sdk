@@ -109,7 +109,6 @@ describe('EmbraceLogManager', () => {
       visibilityDoc: window.document,
     });
     manager = new EmbraceLogManager({
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -130,7 +129,6 @@ describe('EmbraceLogManager', () => {
     const testDiag = new InMemoryDiagLogger();
     const testManager = new EmbraceLogManager({
       diag: testDiag,
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -152,7 +150,6 @@ describe('EmbraceLogManager', () => {
     const testDiag = new InMemoryDiagLogger();
     const testManager = new EmbraceLogManager({
       diag: testDiag,
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -176,7 +173,6 @@ describe('EmbraceLogManager', () => {
     const testDiag = new InMemoryDiagLogger();
     const testManager = new EmbraceLogManager({
       diag: testDiag,
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -204,7 +200,6 @@ describe('EmbraceLogManager', () => {
     const testDiag = new InMemoryDiagLogger();
     const testManager = new EmbraceLogManager({
       diag: testDiag,
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -489,7 +484,7 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNow(),
+      Date.now(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
@@ -521,7 +516,7 @@ describe('EmbraceLogManager', () => {
     expect(log.severityNumber).to.be.equal(SeverityNumber.ERROR);
     expect(log.severityText).to.be.equal('ERROR');
     void expect(hrTimeToMilliseconds(log.hrTime)).to.be.lessThanOrEqual(
-      perf.getNow(),
+      Date.now(),
     );
 
     expect(log.attributes).to.have.property(KEY_EMB_TYPE, 'sys.exception');
@@ -688,7 +683,6 @@ describe('EmbraceLogManager', () => {
       ...DEFAULT_LIMITS,
     });
     const defaultLimitLogManager = new EmbraceLogManager({
-      perf,
       userSessionManager,
       limitManager: defaultLimitManager,
       storage,
@@ -998,7 +992,6 @@ describe('EmbraceLogManager', () => {
       hasFocus: () => false,
     };
     const backgroundManager = new EmbraceLogManager({
-      perf,
       userSessionManager,
       limitManager,
       storage,
@@ -1035,7 +1028,6 @@ describe('EmbraceLogManager', () => {
 
     for (const { visibilityDoc } of cases) {
       const localManager = new EmbraceLogManager({
-        perf,
         userSessionManager,
         limitManager,
         storage,
@@ -1357,7 +1349,6 @@ describe('EmbraceLogManager', () => {
       });
 
       const manager = new EmbraceLogManager({
-        perf,
         userSessionManager,
         limitManager,
         loggerProvider,
@@ -1395,7 +1386,6 @@ describe('EmbraceLogManager', () => {
 
     it('should default to exception number 1 when storage is failing', () => {
       manager = new EmbraceLogManager({
-        perf,
         userSessionManager,
         limitManager,
         storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
@@ -1421,7 +1411,6 @@ describe('EmbraceLogManager', () => {
       expect(
         () =>
           new EmbraceLogManager({
-            perf,
             userSessionManager,
             limitManager,
             storage: new NamespacedStorage({

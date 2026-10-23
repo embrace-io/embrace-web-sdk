@@ -28,10 +28,7 @@ import {
   KEY_EMB_STATE,
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
-import type {
-  NamespacedStorage,
-  PerformanceManager,
-} from '../../utils/index.ts';
+import type { NamespacedStorage } from '../../utils/index.ts';
 import {
   GLOBAL_CONFIG,
   getIncrementedCount,
@@ -52,7 +49,6 @@ const getJSFileBundleIDs = () =>
 
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
-  private readonly _perf: PerformanceManager;
   private readonly _logger: Logger;
   private readonly _userSessionManager: UserSessionManagerInternal;
   private readonly _limitManager: LimitManagerInternal;
@@ -61,7 +57,6 @@ export class EmbraceLogManager implements LogManager {
 
   public constructor({
     diag: diagParam,
-    perf,
     userSessionManager,
     limitManager,
     loggerProvider: globalLoggerProviderOverride,
@@ -75,7 +70,6 @@ export class EmbraceLogManager implements LogManager {
       diag.createComponentLogger({
         namespace: 'EmbraceLogManager',
       });
-    this._perf = perf;
     this._logger = loggerProvider.getLogger('embrace-web-sdk-logs');
     this._userSessionManager = userSessionManager;
     this._limitManager = limitManager;
@@ -109,7 +103,7 @@ export class EmbraceLogManager implements LogManager {
     {
       handled = true,
       attributes = {},
-      timestamp = this._perf.getNow(),
+      timestamp,
       handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
@@ -215,7 +209,6 @@ export class EmbraceLogManager implements LogManager {
     this._logMessage({
       message: message.trim(),
       severity,
-      timestamp: this._perf.getNow(),
       attributes: validAttrs,
       stack,
     });
@@ -224,13 +217,11 @@ export class EmbraceLogManager implements LogManager {
   private _logMessage({
     message,
     severity,
-    timestamp,
     attributes = {},
     stack,
   }: {
     message: string;
     severity: LogSeverity;
-    timestamp: number;
     attributes?: Attributes;
     stack?: string;
   }) {
@@ -246,7 +237,6 @@ export class EmbraceLogManager implements LogManager {
 
     this._logger.emit({
       eventName: LOG_EVENT_NAME,
-      timestamp,
       severityNumber: EmbraceLogManager._logSeverityToSeverityNumber(severity),
       severityText: severity.toUpperCase(),
       body: limitedLog.message,

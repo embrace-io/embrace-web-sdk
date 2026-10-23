@@ -10,10 +10,7 @@ import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
-import {
-  BatchLogRecordProcessor,
-  LoggerProvider,
-} from '@opentelemetry/sdk-logs';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   BatchSpanProcessor,
@@ -36,6 +33,7 @@ import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
   EmbraceLimitManager,
+  EmbraceLoggerProvider,
   EmbraceLogManager,
   EmbracePageManager,
   EmbraceSDKFeaturesManager,
@@ -557,16 +555,18 @@ const setupLogs = ({
     finalLogProcessors.push(embraceLogProcessor);
   }
 
-  const loggerProvider = new LoggerProvider({
+  // The log manager, the instrumentations and, when registered globally, the OTel logs API
+  // all get their loggers here, so all of them stamp logs on the SDK clock.
+  const loggerProvider = new EmbraceLoggerProvider({
     resource,
     processors: finalLogProcessors,
+    perf,
   });
 
   const embraceLogManager = new EmbraceLogManager({
     userSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
-    perf,
     storage: sdkLocalStorage,
     visibilityDoc,
   });

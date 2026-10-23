@@ -215,7 +215,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
 
   private _sendLog(attributes: Attributes): void {
     this.logger.emit({
-      timestamp: this.perf.getNow(),
       eventName: DOM_STATE_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,

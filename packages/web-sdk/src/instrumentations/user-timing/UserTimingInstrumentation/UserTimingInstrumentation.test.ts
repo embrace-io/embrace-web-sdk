@@ -129,7 +129,6 @@ describe('UserTimingInstrumentation', () => {
     const logManager = new EmbraceLogManager({
       userSessionManager,
       limitManager,
-      perf,
       storage,
       visibilityDoc: window.document,
     });

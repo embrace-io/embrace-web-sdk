@@ -154,8 +154,9 @@ try {
 ```
 
 `logException` also takes an optional `timestamp`, which defaults to now. Pass it in epoch milliseconds
-(e.g. `Date.now()`), not as a `performance.now()`-based value: those are read as `timeOrigin + value`, which is off by
-any time the machine slept. The same applies to timestamps passed to the OpenTelemetry logs API.
+(e.g. `Date.now()`) or as a `performance.now()`-based value: the SDK converts the latter on its own clock, which
+accounts for any time the machine slept. With `registerGlobally` left on, timestamps passed to the OpenTelemetry logs
+API are converted the same way.
 
 ## React Instrumentation
 

@@ -311,9 +311,10 @@ events would drift out of their own span's bounds.
 ### Instrumentations outside both frames
 
 These handle no origin-relative offsets at all — only pure durations,
-non-timing data, or "now". Their logs are stamped with `getNow()` rather than
-OTel's default `Date.now()`, which can be up to the 1s drift threshold away
-from the session part's recorded end.
+non-timing data, or "now". Their logs carry no timestamp, so
+`EmbraceLoggerProvider` stamps them with `getNow()` rather than OTel's default
+`Date.now()`, which can be up to the 1s drift threshold away from the session
+part's recorded end.
 
 | Instrumentation | Timing data it emits |
 | --- | --- |
@@ -327,8 +328,12 @@ from the session part's recorded end.
 
 For completeness, the non-instrumentation consumers of the clock:
 
-- **EmbraceLogManager** — `getNow()` as the default `timestamp` for
-  `log()` / `logException()` when the caller does not supply one.
+- **EmbraceLoggerProvider** — the SDK's `LoggerProvider`: the log manager,
+  every instrumentation and, when the SDK registers globally, the OTel logs API
+  get their loggers from it. A log without a timestamp gets `getNow()`. A
+  number below `performance.timeOrigin / 2`, OTel's own cut-off for a
+  `performance.now()`-based value, goes through `offsetToAbsoluteTime()`.
+  Epoch numbers, `Date`s and `HrTime`s are kept as given.
 - **EmbraceUserSessionManager** — `getNow()` for user-session and
   session-part lifecycle timestamps (part span start/end, breadcrumb events,
   rollover boundaries). These are genuinely "now" — the lifecycle event *is*

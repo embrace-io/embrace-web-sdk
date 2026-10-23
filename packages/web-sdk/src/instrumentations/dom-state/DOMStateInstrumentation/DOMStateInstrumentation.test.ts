@@ -194,21 +194,6 @@ describe('DOMStateInstrumentation', () => {
     appendedImages = [];
   });
 
-  it('stamps the log with the SDK clock', () => {
-    // Past both timeOrigin and performance.now(), so OTel reads it as epoch.
-    const LOG_TIMESTAMP = 2_000_000_000_000;
-    const perf = new OTelPerformanceManager();
-    perf.getNow = () => LOG_TIMESTAMP;
-    instrumentation = new DOMStateInstrumentation({ perf });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
-
-    endSessionPart();
-
-    const [record] = getDomStateLogs();
-    expect(hrTimeToMilliseconds(record.hrTime)).to.equal(LOG_TIMESTAMP);
-  });
-
   it('emits nothing until the part ends, then one log carrying both measurements', () => {
     // @web/test-runner drives tests after the load event, so the navigation
     // entry already reports it and the fold capture happens at enable.

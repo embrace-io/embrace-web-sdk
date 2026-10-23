@@ -53,6 +53,7 @@ import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import { RageClickInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
+  EmbraceLoggerProvider,
   EmbraceLogManager,
   EmbraceTraceManager,
   EmbraceUserManager,
@@ -559,6 +560,7 @@ describe('initSDK', () => {
     expect(
       (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
+    expect(logs.getLoggerProvider()).to.be.instanceOf(EmbraceLoggerProvider);
 
     expect(session.getUserSessionManager()).to.be.instanceOf(
       ProxyUserSessionManager,

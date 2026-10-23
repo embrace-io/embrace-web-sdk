@@ -58,7 +58,6 @@ describe('GlobalExceptionInstrumentation', () => {
         visibilityDoc: window.document,
       }),
       limitManager,
-      perf,
       storage,
       visibilityDoc: window.document,
     });
