@@ -406,12 +406,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const startTimeEpochMillis = timestamp ?? this._perf.getNow();
     let span: EmbraceExtendedSpan;
     try {
-      span = new EmbraceExtendedSpan(
+      span = EmbraceExtendedSpan.from(
         this._tracer.startSpan(SESSION_PART_SPAN_NAME, {
           attributes,
           startTime: startTimeEpochMillis,
         }),
-        this._perf,
       );
     } catch (error) {
       this._activeSessionPartId = null;

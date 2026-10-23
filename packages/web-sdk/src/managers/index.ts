@@ -16,6 +16,7 @@ export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.ts'
 export {
   EmbraceExtendedSpan,
   EmbraceTraceManager,
+  EmbraceTracerProvider,
 } from './EmbraceTraceManager/index.ts';
 export { EmbraceUserManager } from './EmbraceUserManager/index.ts';
 export type { UserSessionManagerInternal } from './EmbraceUserSessionManager/index.ts';

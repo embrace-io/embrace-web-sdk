@@ -1,4 +1,8 @@
-import type { DiagLogger, TextMapPropagator } from '@opentelemetry/api';
+import type {
+  DiagLogger,
+  ProxyTracerProvider,
+  TextMapPropagator,
+} from '@opentelemetry/api';
 import {
   context,
   DiagConsoleLogger,
@@ -56,6 +60,7 @@ import {
   EmbraceLoggerProvider,
   EmbraceLogManager,
   EmbraceTraceManager,
+  EmbraceTracerProvider,
   EmbraceUserManager,
   EmbraceUserSessionManager,
 } from '../managers/index.ts';
@@ -561,6 +566,9 @@ describe('initSDK', () => {
       (log.getLogManager() as ProxyLogManager).getDelegate(),
     ).to.be.instanceOf(EmbraceLogManager);
     expect(logs.getLoggerProvider()).to.be.instanceOf(EmbraceLoggerProvider);
+    expect(
+      (trace.getTracerProvider() as ProxyTracerProvider).getDelegate(),
+    ).to.be.instanceOf(EmbraceTracerProvider);
 
     expect(session.getUserSessionManager()).to.be.instanceOf(
       ProxyUserSessionManager,

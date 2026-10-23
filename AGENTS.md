@@ -152,7 +152,11 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 
 ### Time
 
-- Anything touching timestamps or timing attributes must convert through `OTelPerformanceManager` (`this.perf`), never by hand or with raw offsets. Read `packages/web-sdk/src/utils/PerformanceManager/README.md` first — it defines the two reference frames (time origin vs zero time) and which method fits each case
+- Read `packages/web-sdk/src/utils/PerformanceManager/README.md` first — it defines the two reference frames (time origin vs zero time) and which method fits each case
+- Timing attributes and performance-entry timings convert through `OTelPerformanceManager` (`this.perf`), never by hand. Pass the entry's `startTime` as `entryStart` for every timing of one entry, so the entry keeps its duration
+- For "now", omit the log timestamp or span time: the SDK's logger and tracer providers fill it in. Anything that happened earlier needs its real time, as epoch ms or a raw `performance.now()` offset
+- Never pass `performance.timeOrigin + performance.now()` or OTel's `hrTime()`: both read as epoch values but are not corrected for time asleep
+- Take both ends of a span from the same clock: both explicit `getNow()` (as session parts do), or both omitted
 
 ## Common Tasks
 

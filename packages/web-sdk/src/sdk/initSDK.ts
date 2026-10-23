@@ -15,7 +15,6 @@ import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   BatchSpanProcessor,
   StackContextManager,
-  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
@@ -38,6 +37,7 @@ import {
   EmbracePageManager,
   EmbraceSDKFeaturesManager,
   EmbraceTraceManager,
+  EmbraceTracerProvider,
   EmbraceUserManager,
   EmbraceUserSessionManager,
 } from '../managers/index.ts';
@@ -474,7 +474,11 @@ const setupTraces = ({
     finalSpanProcessors.push(embraceSpanProcessor);
   }
 
-  const tracerProvider = new TracerProvider({
+  // The trace manager, the user session manager, the instrumentations and, when registered
+  // globally, the OTel trace API all get their tracers here, so all of them keep span times on the
+  // wall clock across a sleep.
+  const tracerProvider = new EmbraceTracerProvider({
+    perf,
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
@@ -489,7 +493,6 @@ const setupTraces = ({
 
   const embraceTraceManager = new EmbraceTraceManager({
     tracerProvider: registerGlobally ? undefined : tracerProvider,
-    perf,
   });
 
   if (registerGlobally) {

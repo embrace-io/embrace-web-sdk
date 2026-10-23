@@ -54,6 +54,7 @@ class EmbraceLogger implements Logger {
     if (timestamp === undefined) {
       return this._perf.getNow();
     }
+    // TODO: review once https://github.com/open-telemetry/opentelemetry-js/issues/7217 is closed
     // OTel's own cut-off between a performance.now()-based value and epoch milliseconds
     if (
       typeof timestamp === 'number' &&

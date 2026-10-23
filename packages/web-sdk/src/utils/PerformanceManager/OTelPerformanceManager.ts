@@ -8,7 +8,7 @@ import type {
 
 // Past this much disagreement with Date.now(), the perf clock is treated as
 // having stopped (the machine slept) or the wall clock as having been changed.
-const DRIFT_THRESHOLD_MS = 1000;
+export const DRIFT_THRESHOLD_MS = 1000;
 // Bounds the origin history on tabs that live through many sleeps. The first
 // segment is always kept, so entries from the initial page load keep timeOrigin.
 const MAX_ORIGIN_SEGMENTS = 100;
@@ -164,6 +164,12 @@ export class OTelPerformanceManager implements PerformanceManager {
 
     return null;
   };
+
+  /**
+   * Milliseconds from timeOrigin to now on the perf clock, i.e. performance.now(). It leaves out
+   * time asleep, so it is only comparable with other perf offsets.
+   */
+  public getOffsetFromOrigin = (): Offset => this._clock.now();
 
   /**
    * Milliseconds from zero time to originOffset. Both are perf offsets, so this is a pure perf

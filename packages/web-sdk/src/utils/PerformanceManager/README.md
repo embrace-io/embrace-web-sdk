@@ -50,6 +50,7 @@ an offset from time origin can be passed to `offsetToAbsoluteTime`.
 | --- | --- | --- |
 | `offsetToAbsoluteTime(offset, entryStart = offset)` | What wall-clock epoch time does this raw offset correspond to? | `origin(entryStart) + offset` |
 | `getZeroTime(entryStart = zeroOffset)` | What is the epoch timestamp of the current view's start? | `origin(entryStart) + zeroOffset`, where `zeroOffset = max(activationStart, lastResetOffset)` |
+| `getOffsetFromOrigin()` | What is the raw offset right now? | `performance.now()` |
 | `getOffsetFromZeroTime(offset = now)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - zeroOffset)` |
 | `getNow()` | What is the wall-clock epoch time right now? | `origin(now) + performance.now()` |
 | `getClockLag()` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (timeOrigin + performance.now()))`, with `timeOrigin` as read at startup |
@@ -119,9 +120,73 @@ What follows from this:
   `window.performance` (initSDK's, plus one per instrumentation that isn't
   handed one), so the origin history and zero time are kept per clock, not per
   manager, and every manager on the same clock agrees on them.
-- **Never pass raw `performance.now()`-based numbers to OTel.** OTel converts
-  them as `timeOrigin + t` with no correction. Always pass epoch milliseconds
-  from the manager.
+- **Spans and logs get their times through the SDK's providers**, described
+  below. Never pass `timeOrigin + performance.now()` or OTel's `hrTime()`:
+  both read as epoch values and get no correction.
+
+### Spans
+
+OTel fills in a span's missing end and event times differently depending on
+whether the span was started with a start time. Both spans below start at the
+same instant with the same value; only that flag differs:
+
+```ts
+const a = tracer.startSpan('a');                             // no start time
+const b = tracer.startSpan('b', { startTime: Date.now() });  // the same value, passed explicitly
+// 3s awake, then 30 min asleep, then 5s awake
+a.end();
+b.end();
+```
+
+| Span | Start | `end()` with no time | Duration |
+| --- | --- | --- | --- |
+| `a` | `Date.now()` (10:00:00), not marked as given | start + elapsed `performance.now()` = 10:00:08 | 8s |
+| `b` | `Date.now()` (10:00:00), marked as given | `Date.now()` = 10:30:08 | 30m 8s |
+
+A raw `performance.now()` offset passed as `startTime` or to `end()` or
+`addEvent()` is converted by OTel as `timeOrigin + offset` plus the lag
+measured when the span was created. That is right unless a sleep falls between
+the offset and the span's creation.
+
+`EmbraceTracerProvider` starts every span through `EmbraceExtendedSpan.start()`,
+which handles both:
+
+- **No start time:** it passes `Date.now()`, the value OTel would use, so every
+  span behaves like `b`.
+- **Offsets:** it converts them itself, in the start and in `end()`, `fail()`,
+  `addEvent()` and `recordException()`. Each is anchored to the wall clock as of
+  the span's creation (`Date.now() - getOffsetFromOrigin()` then), which lines
+  it up exactly with the span's `Date.now()` values. When
+  `offsetToAbsoluteTime()` lands more than the 1s threshold away from that, a
+  sleep separates the offset from the span's creation, and the origin history's
+  value is used instead.
+- **Epoch numbers, `Date`s and `HrTime`s** are kept as given.
+
+Spans default to `Date.now()` rather than `getNow()` because their other end is
+usually `Date.now()`: OTel's default end once a start is given, and the explicit
+end of the fetch and XHR instrumentations. A `getNow()` start would put the
+drift between the two clocks into the duration.
+
+### Logs
+
+OTel stamps a log without a timestamp with `Date.now()`. That includes time
+asleep, but can be up to the 1s threshold away from the SDK clock, so a log
+flushed at a session part's end could land after the part's recorded end. A
+number below `timeOrigin / 2` is read as `performance.now()`-based and converted
+as `timeOrigin + t` with no correction: after a sleep it is early by all the
+time asleep on Chrome and Firefox, and late on Safari for values from before
+the sleep.
+
+`EmbraceLoggerProvider` fills in the timestamp before OTel sees it:
+
+- **No timestamp:** `getNow()`. A log is a single point, which only needs to
+  line up with the session part it belongs to.
+- **A number below `timeOrigin / 2`:** `offsetToAbsoluteTime()`.
+- **Epoch numbers, `Date`s and `HrTime`s** are kept as given.
+
+Both providers serve the SDK's managers, every instrumentation and, when the
+SDK registers globally, the OTel logs and trace APIs. Spans and logs
+from any other provider keep OTel's behavior.
 
 ## Worked example
 
@@ -302,11 +367,11 @@ exactly time origin. Navigation entries start at time origin, so their zero
 marks are real and kept, except `secureConnectionStart`, where `0` means no
 TLS handshake.
 
-Do not pass raw offsets to `span.addEvent` and rely on OTel to normalize them.
-For a number at or below `performance.now()`, the OTel `Span` adds a
-`Date.now()` drift correction measured when the span started. Span start and
-end are converted explicitly and never get that correction, so raw-offset
-events would drift out of their own span's bounds.
+Do not pass raw offsets to `span.addEvent` and rely on the span to normalize
+them. A number at or below `performance.now()` is anchored to `Date.now()` as of
+the span's creation (see `EmbraceTracerProvider` below). Span start and end are
+converted explicitly and never get that anchoring, so raw-offset events would
+drift out of their own span's bounds.
 
 ### Instrumentations outside both frames
 
@@ -339,11 +404,22 @@ For completeness, the non-instrumentation consumers of the clock:
   rollover boundaries). These are genuinely "now" — the lifecycle event *is*
   the current instant, not a raw offset in need of conversion. The part span
   start is passed explicitly, so a part starts and ends on the same clock.
-- **EmbraceTraceManager / EmbraceExtendedSpan** — `getNow()` as the default
-  start of `startSpan()` and the default end of `end()` and `fail()`. Without a
-  start time, OTel ends a span at its start plus the elapsed `performance.now()`,
-  which leaves out time asleep. Spans created directly through the OTel API
-  keep OTel's behavior.
+- **EmbraceTracerProvider** — the SDK's `TracerProvider`: the trace manager,
+  the user session manager, every instrumentation and, when the SDK registers
+  globally, the OTel trace API get their tracers from it. Spans come back as
+  `EmbraceExtendedSpan`, which converts the times given to `end()`, `fail()`,
+  `addEvent()` and `recordException()` the same way as the start.
+  - A span without a start time gets `Date.now()`, passed explicitly. Without
+    one, OTel ends the span and stamps its events at its start plus the elapsed
+    `performance.now()`, which leaves out time asleep. With one, at `Date.now()`.
+  - A `performance.now()`-based time (a number up to `getOffsetFromOrigin()`)
+    is anchored to the wall clock as of the span's creation,
+    `Date.now() - getOffsetFromOrigin()` then, as OTel would. That keeps it in
+    line with the span's `Date.now()` start and end. It goes through
+    `offsetToAbsoluteTime()` instead when that lands more than the drift
+    threshold away, which means the machine slept between the time and the
+    span's creation.
+  - Epoch numbers, `Date`s and `HrTime`s are kept as given.
 - **RetryingTransport** — `getNow()` twice to compute a retry
   deadline and the remaining timeout. Internal duration math, not telemetry.
 - **initSDK** — `getNow()` difference for `emb.sdk_startup_duration`

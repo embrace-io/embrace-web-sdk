@@ -22,6 +22,8 @@ export {
 export { NamespacedStorage } from './NamespacedStorage/index.ts';
 export { nsfConfigValidation } from './nsfConfigValidation.ts';
 export {
+  type AbsoluteTime,
+  DRIFT_THRESHOLD_MS,
   OTelPerformanceManager,
   type PerformanceManager,
 } from './PerformanceManager/index.ts';

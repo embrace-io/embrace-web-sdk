@@ -1,7 +1,6 @@
-import type { TraceManagerArgs } from '../../api-traces/index.ts';
+import type { TracerProviderOptions } from '@opentelemetry/sdk-trace';
 import type { PerformanceManager } from '../../utils/index.ts';
 
-export interface EmbraceTraceManagerArgs extends TraceManagerArgs {
-  /** Used to default span start and end times, so they follow the wall clock across a sleep. */
-  perf?: PerformanceManager;
+export interface EmbraceTracerProviderArgs extends TracerProviderOptions {
+  perf: PerformanceManager;
 }

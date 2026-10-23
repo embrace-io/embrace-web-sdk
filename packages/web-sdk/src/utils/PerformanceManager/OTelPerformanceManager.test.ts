@@ -47,6 +47,11 @@ describe('OTelPerformanceManager', () => {
     expect(result).to.equal(1000); // timeOrigin (1000) + offset (0)
   });
 
+  it('reads the perf clock for getOffsetFromOrigin, ignoring zero time', () => {
+    performanceManager.setZeroTimeOffset(200);
+    expect(performanceManager.getOffsetFromOrigin()).to.equal(500); // now() (500)
+  });
+
   it('measures getOffsetFromZeroTime up to now when given no offset', () => {
     performanceManager.setZeroTimeOffset(200);
     expect(performanceManager.getOffsetFromZeroTime()).to.equal(300); // now() (500) - 200
