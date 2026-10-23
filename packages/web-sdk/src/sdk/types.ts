@@ -362,6 +362,7 @@ export interface SetupTracesArgs {
   dynamicSDKConfig?: DynamicSDKConfig;
   registerGlobally?: boolean;
   embraceSpanProcessor?: SpanProcessor;
+  exporterEndpoints?: readonly string[];
   pageManager: PageManager;
   perf: PerformanceManager;
   signalBuffer?: SignalBuffer;
