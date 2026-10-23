@@ -68,7 +68,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
   let startSpy: sinon.SinonSpy<[options: StartSessionPartOptions], void>;
   let endSpy: sinon.SinonSpy;
   let visibilityDoc: FakeVisibilityDoc;
-  let perf: MockPerformanceManager;
 
   // Pulls reasons from the spies in the same order startSessionPartInternal /
   // endSessionPartInternal were invoked.
@@ -81,10 +80,9 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock = sinon.useFakeTimers({ now: 0 });
     target = new FakeTarget();
     visibilityDoc = new FakeVisibilityDoc();
-    perf = new MockPerformanceManager(clock);
     manager = new EmbraceUserSessionManager({
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-      perf,
+      perf: new MockPerformanceManager(clock),
       storage: setupTestStorage(),
       visibilityDoc,
       target,
@@ -439,95 +437,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endOptions2.userSessionEndReason).to.equal('inactivity');
 
     splitManager._shutdown();
-  });
-
-  describe('when a part stays open through a sleep', () => {
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-    const lastEndOptions = () =>
-      endSpy.lastCall.args[0] as EndSessionPartOptions;
-
-    it('ends the part at its inactivity deadline when focus returns, then starts a new user session', () => {
-      manager.startSessionPartInternal({ reason: 'init' });
-      const userSessionId = manager.getUserSessionId();
-
-      // No timers fire while asleep, so the inactivity timer is still pending.
-      perf.sleep(TWO_HOURS);
-      fireFocus();
-
-      expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
-      expect(lastEndOptions().userSessionEndReason).to.equal('inactivity');
-      expect(lastEndOptions().timestamp).to.equal(FOREGROUND_INACTIVITY_MS);
-      expect(startReasons()).to.deep.equal(['init', 'foreground']);
-      expect(manager.getUserSessionId()).to.not.equal(userSessionId);
-    });
-
-    it('ends the part at its inactivity deadline on the first input after waking', () => {
-      manager.startSessionPartInternal({ reason: 'init' });
-
-      perf.sleep(TWO_HOURS);
-      fireActivity();
-
-      expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
-      expect(lastEndOptions().timestamp).to.equal(FOREGROUND_INACTIVITY_MS);
-      expect(startReasons()).to.deep.equal(['init', 'web_activity']);
-    });
-
-    it('ends the part at its inactivity deadline, not as background, when blur and focus fire together on waking', () => {
-      manager.startSessionPartInternal({ reason: 'init' });
-
-      perf.sleep(TWO_HOURS);
-      fireBlur();
-      fireFocus();
-
-      expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
-      expect(lastEndOptions().timestamp).to.equal(FOREGROUND_INACTIVITY_MS);
-      expect(startReasons()).to.deep.equal(['init', 'foreground']);
-    });
-
-    it('ends the part at the max-duration boundary when it comes before the inactivity deadline', () => {
-      manager._shutdown();
-      const maxDurationMs = 60 * 60 * 1000;
-      const shortManager = new EmbraceUserSessionManager({
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        perf,
-        storage: setupTestStorage(),
-        visibilityDoc,
-        target,
-        activityThrottleMs: THROTTLE_MS,
-        dynamicConfigManager: createTestDynamicConfigManager({
-          userSessionMaxDurationSeconds: maxDurationMs / 1000,
-          userSessionForegroundInactivityTimeoutSeconds: maxDurationMs / 1000,
-        }),
-      });
-      shortManager.setTracerProvider(new TracerProvider());
-      const shortEndSpy = sinon.spy(shortManager, 'endSessionPartInternal');
-
-      shortManager.startSessionPartInternal({ reason: 'init' });
-      // Input 10 minutes in moves the inactivity deadline past the max-duration boundary.
-      clock.tick(10 * 60 * 1000);
-      fireActivity();
-      perf.sleep(TWO_HOURS);
-      fireFocus();
-
-      const endOptions = shortEndSpy.lastCall.args[0] as EndSessionPartOptions;
-      expect(shortEndSpy.callCount).to.equal(1);
-      expect(endOptions.reason).to.equal('user_session_ended');
-      expect(endOptions.userSessionEndReason).to.equal('max_duration_reached');
-      expect(endOptions.timestamp).to.equal(maxDurationMs);
-
-      shortManager._shutdown();
-    });
-
-    it('keeps the part and user session when a sleep ends before both deadlines', () => {
-      manager.startSessionPartInternal({ reason: 'init' });
-      const userSessionId = manager.getUserSessionId();
-
-      perf.sleep(FOREGROUND_INACTIVITY_MS - 60 * 1000);
-      fireFocus();
-
-      expect(endReasons()).to.deep.equal([]);
-      expect(manager.getUserSessionId()).to.equal(userSessionId);
-    });
   });
 
   it('removes listeners and clears the timer on shutdown', () => {

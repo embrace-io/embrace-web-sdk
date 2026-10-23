@@ -171,21 +171,13 @@ The foreground inactivity timer ends a user session differently: it ends the
 active part directly with the `inactivity` termination reason rather than going
 through a rollover.
 
-A part that stays open through a sleep can pass its foreground inactivity
-deadline or the max-duration boundary before either timer fires (see
-[Timers](#timers)). Every engagement event (`visibilitychange`, `focus`,
-`blur`) and every input checks both against the clock first. If one has
-passed, the part ends at that deadline as final, with `inactivity` or
-`max_duration_reached`, and the event's usual handling then starts the next
-part in a fresh user session.
-
 `UserSessionEndReason` defines all possible values:
 
 | Value | Trigger | Emitted by web SDK |
 | --- | --- | --- |
 | `manual` | `endUserSession()` API call. | Yes |
-| `max_duration_reached` | Max-duration timer fires, or an engagement event or input finds the boundary passed while a part is still open. | Yes |
-| `inactivity` | Foreground inactivity timer fires while a part is active, or an engagement event or input finds its deadline passed while the part is still open. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| `max_duration_reached` | Max-duration timer fires. | Yes |
+| `inactivity` | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part as
 final with that timestamp, clears the stored user session, and starts the next
@@ -203,11 +195,6 @@ silently no-ops if not (the next engagement event will create it).
 | Activity throttle | `DEFAULT_ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`. |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
 
-Timers count only awake time. While the machine sleeps none of them advance, so
-after waking a pending timer fires late by the time asleep. The manager keeps
-the foreground inactivity deadline on the wall clock as well, so it can find
-both deadlines passed on the way back (see [Termination](#termination)).
-
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
 `userSessionForegroundInactivityTimeoutSeconds` are set by remote config
 (`DynamicConfigManager.getConfig()`), read at each user-session creation. Each
@@ -219,11 +206,12 @@ timeout falls back to its default, not to the max-duration value.
 timer delay. `userSessionInactivityTimeoutSeconds` sets the inactivity deadline
 written at part end.
 
-The max-duration timer is armed at user-session creation, and re-armed when a
-fresh manager loads an existing, unexpired state on page reload (no timer
-running yet). It is not re-armed on session-part end; `userSessionMaxEndTs` is
-fixed at creation, so it keeps running across parts on its original deadline.
-The delay is computed as the time remaining until that deadline, not the full
+The max-duration timer is armed at user-session creation, and re-armed on every
+part start and whenever a manager loads existing state (for example on page
+reload). Timers count only awake time, so a timer armed before the machine
+sleeps would fire late by the time slept; re-arming from the current time keeps
+it due at `userSessionMaxEndTs`. It is not re-armed on session-part end. The
+delay is computed as the time remaining until that deadline, not the full
 duration value.
 
 The foreground inactivity timer is restarted on every activity event, subject to
