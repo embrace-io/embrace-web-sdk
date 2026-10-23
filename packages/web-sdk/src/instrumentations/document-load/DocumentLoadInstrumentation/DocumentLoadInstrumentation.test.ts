@@ -1408,7 +1408,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.isOk(event);
         assert.strictEqual(
           hrTimeToMilliseconds(event.time),
-          perf.epochMillisFromOrigin(resources[0].responseStart),
+          perf.offsetToAbsoluteTime(resources[0].responseStart),
         );
         done();
       });
@@ -1762,7 +1762,7 @@ describe('DocumentLoad Instrumentation', () => {
       // end the span at time origin, before its own start.
       assert.strictEqual(
         hrTimeToMilliseconds(documentLoadSpans()[0].endTime),
-        perf.epochMillisFromOrigin(entries.loadEventEnd),
+        perf.offsetToAbsoluteTime(entries.loadEventEnd),
       );
     });
 
@@ -1801,7 +1801,7 @@ describe('DocumentLoad Instrumentation', () => {
       // rather than at the wall clock fallback an incomplete entry would give.
       assert.strictEqual(
         hrTimeToMilliseconds(documentLoadSpans()[0].endTime),
-        perf.epochMillisFromOrigin(entries.loadEventEnd),
+        perf.offsetToAbsoluteTime(entries.loadEventEnd),
       );
     });
 
@@ -1823,7 +1823,7 @@ describe('DocumentLoad Instrumentation', () => {
       const [documentLoad] = documentLoadSpans();
       assert.strictEqual(
         hrTimeToMilliseconds(documentLoad.endTime),
-        perf.epochMillisFromOrigin(entries.loadEventEnd),
+        perf.offsetToAbsoluteTime(entries.loadEventEnd),
       );
     });
 

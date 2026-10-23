@@ -83,18 +83,18 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
       // Span start anchors to the SDK's zero time (start of the current view) so the span
       // duration equals "time since the user started viewing this page until the element
       // was rendered" — useful for analyzing render timing relative to the current view.
-      startTime: this.perf.getZeroTime(),
+      startTime: this.perf.getZeroTime(entry.startTime),
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.ElementTiming,
         [KEY_EMB_ELEMENT_TIMING_IDENTIFIER]: entry.identifier,
         [KEY_EMB_ELEMENT_TIMING_ELEMENT]: entry.element?.tagName?.toLowerCase(),
-        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_ELEMENT_TIMING_RENDER_TIME]: this.perf.getOffsetFromZeroTime(
           entry.renderTime,
         ),
-        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_ELEMENT_TIMING_LOAD_TIME]: this.perf.getOffsetFromZeroTime(
           entry.loadTime,
         ),
-        [KEY_EMB_ELEMENT_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_ELEMENT_TIMING_START_TIME]: this.perf.getOffsetFromZeroTime(
           entry.startTime,
         ),
         [KEY_EMB_ELEMENT_TIMING_URL]: entry.url,
@@ -103,9 +103,12 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
       },
     });
     if (entry.loadTime > 0) {
-      span.addEvent('load', this.perf.epochMillisFromOrigin(entry.loadTime));
+      span.addEvent(
+        'load',
+        this.perf.offsetToAbsoluteTime(entry.loadTime, entry.startTime),
+      );
     }
     // entry.startTime = renderTime if non-zero, else loadTime
-    span.end(this.perf.epochMillisFromOrigin(entry.startTime));
+    span.end(this.perf.offsetToAbsoluteTime(entry.startTime));
   }
 }

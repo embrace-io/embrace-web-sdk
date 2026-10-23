@@ -197,6 +197,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
 
     try {
       this.logger.emit({
+        timestamp: this.perf.getNow(),
         eventName: LOAF_EVENT_NAME,
         severityNumber: SeverityNumber.INFO,
         attributes: attrs,
@@ -222,6 +223,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
           ]);
 
         this.logger.emit({
+          timestamp: this.perf.getNow(),
           eventName: LOAF_SCRIPTS_EVENT_NAME,
           severityNumber: SeverityNumber.INFO,
           body: JSON.stringify(Object.fromEntries(scripts)),

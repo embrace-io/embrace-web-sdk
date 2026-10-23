@@ -194,6 +194,21 @@ describe('DOMStateInstrumentation', () => {
     appendedImages = [];
   });
 
+  it('stamps the log with the SDK clock', () => {
+    // Past both timeOrigin and performance.now(), so OTel reads it as epoch.
+    const LOG_TIMESTAMP = 2_000_000_000_000;
+    const perf = new OTelPerformanceManager();
+    perf.getNow = () => LOG_TIMESTAMP;
+    instrumentation = new DOMStateInstrumentation({ perf });
+    instrumentation.setUserSessionManager(userSessionManager);
+    instrumentation.enable();
+
+    endSessionPart();
+
+    const [record] = getDomStateLogs();
+    expect(hrTimeToMilliseconds(record.hrTime)).to.equal(LOG_TIMESTAMP);
+  });
+
   it('emits nothing until the part ends, then one log carrying both measurements', () => {
     // @web/test-runner drives tests after the load event, so the navigation
     // entry already reports it and the fold capture happens at enable.
@@ -240,7 +255,11 @@ describe('DOMStateInstrumentation', () => {
     // No bfcache restore or soft navigation happens in this test, so zero time
     // is at time origin: the two attributes describe the same instant, one
     // as wall clock and one as ms since zero time, so they agree once rebased.
-    expect(captureMillis).to.equal(timestampMillis - performance.timeOrigin);
+    // They come from two back-to-back clock reads.
+    expect(captureMillis).to.be.closeTo(
+      timestampMillis - performance.timeOrigin,
+      1,
+    );
 
     // The log itself is stamped at the part-end flush, not the earlier fold
     // capture, since its other attributes (element count, document box) are

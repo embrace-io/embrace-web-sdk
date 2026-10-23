@@ -20,6 +20,6 @@ export interface EmbracePageManagerArgs {
    * skips the rollover.
    */
   userSessionManager?: UserSessionManagerInternal;
-  /** Used to convert a soft navigation's event.timeStamp to an epoch time when resetting the SDK's zero time. */
+  /** Used to record a soft navigation's event.timeStamp as the SDK's zero time. */
   perf?: PerformanceManager;
 }

@@ -64,7 +64,7 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
               ),
               'tap.coords': `${event.x.toString()},${event.y.toString()}`,
             },
-            this.perf.epochMillisFromOrigin(event.timeStamp),
+            this.perf.offsetToAbsoluteTime(event.timeStamp),
           );
         }
       } catch (e) {

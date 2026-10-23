@@ -89,6 +89,7 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       }
 
       this.logger.emit({
+        timestamp: this.perf.getNow(),
         eventName: MAX_SCROLL_DEPTH_EVENT_NAME,
         severityNumber: SeverityNumber.INFO,
         attributes: {

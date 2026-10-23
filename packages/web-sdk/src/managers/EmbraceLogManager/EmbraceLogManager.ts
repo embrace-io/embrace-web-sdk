@@ -109,7 +109,7 @@ export class EmbraceLogManager implements LogManager {
     {
       handled = true,
       attributes = {},
-      timestamp = this._perf.getNowMillis(),
+      timestamp = this._perf.getNow(),
       handler = 'manual',
     }: LogExceptionOptions = {},
   ) {
@@ -215,7 +215,7 @@ export class EmbraceLogManager implements LogManager {
     this._logMessage({
       message: message.trim(),
       severity,
-      timestamp: this._perf.getNowMillis(),
+      timestamp: this._perf.getNow(),
       attributes: validAttrs,
       stack,
     });

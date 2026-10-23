@@ -216,11 +216,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
-    const startTimeEpochMillis = this.perf.epochMillisFromOrigin(
+    const startTimeEpochMillis = this.perf.offsetToAbsoluteTime(
       entry.startTime,
     );
-    const endTimeEpochMillis = this.perf.epochMillisFromOrigin(
+    const endTimeEpochMillis = this.perf.offsetToAbsoluteTime(
       entry.startTime + entry.duration,
+      entry.startTime,
     );
 
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
@@ -231,17 +232,17 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
           SOFT_NAVIGATION_SOURCES.performanceObserver,
         [KEY_EMB_SOFT_NAVIGATION_NAVIGATION_ID]: entry.navigationId,
         [KEY_EMB_SOFT_NAVIGATION_INTERACTION_ID]: entry.interactionId,
-        [KEY_EMB_SOFT_NAVIGATION_START_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_SOFT_NAVIGATION_START_TIME]: this.perf.getOffsetFromZeroTime(
           entry.startTime,
         ),
         [KEY_EMB_SOFT_NAVIGATION_DURATION]: entry.duration,
         [KEY_EMB_SOFT_NAVIGATION_PAINT_TIME]:
           entry.paintTime != null
-            ? this.perf.millisFromZeroTime(entry.paintTime)
+            ? this.perf.getOffsetFromZeroTime(entry.paintTime)
             : undefined,
         [KEY_EMB_SOFT_NAVIGATION_PRESENTATION_TIME]:
           entry.presentationTime != null
-            ? this.perf.millisFromZeroTime(entry.presentationTime)
+            ? this.perf.getOffsetFromZeroTime(entry.presentationTime)
             : undefined,
         ...this._correlationAttributes(
           startTimeEpochMillis,
@@ -293,18 +294,20 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       return;
     }
 
-    const startTimeEpochMillis = this.perf.epochMillisFromOrigin(
+    const startTimeEpochMillis = this.perf.offsetToAbsoluteTime(
       clickEntry.startTime,
     );
-    const endTimeEpochMillis =
-      this.perf.epochMillisFromOrigin(navigationTimestamp);
+    const endTimeEpochMillis = this.perf.offsetToAbsoluteTime(
+      navigationTimestamp,
+      clickEntry.startTime,
+    );
 
     const span = this.tracer.startSpan(SOFT_NAVIGATION_SPAN_NAME, {
       startTime: startTimeEpochMillis,
       attributes: {
         [KEY_BROWSER_URL_FULL]: url,
         [KEY_EMB_SOFT_NAVIGATION_SOURCE]: SOFT_NAVIGATION_SOURCES.polyfill,
-        [KEY_EMB_SOFT_NAVIGATION_START_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_SOFT_NAVIGATION_START_TIME]: this.perf.getOffsetFromZeroTime(
           clickEntry.startTime,
         ),
         [KEY_EMB_SOFT_NAVIGATION_DURATION]:

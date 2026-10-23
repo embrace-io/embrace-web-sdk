@@ -124,13 +124,13 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     if (entry.entryType === 'measure') {
       const measureDetail = (entry as PerformanceMeasure).detail;
       const span = this.tracer.startSpan(entry.name, {
-        startTime: this.perf.epochMillisFromOrigin(entry.startTime),
+        startTime: this.perf.offsetToAbsoluteTime(entry.startTime),
         attributes: {
           [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
           [KEY_EMB_INSTRUMENTATION]:
             EMB_PERFORMANCE_INSTRUMENTATIONS.UserTiming,
           [KEY_EMB_USER_TIMING_ENTRY_TYPE]: entry.entryType,
-          [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+          [KEY_EMB_USER_TIMING_START_TIME]: this.perf.getOffsetFromZeroTime(
             entry.startTime,
           ),
           [KEY_EMB_USER_TIMING_DURATION]: entry.duration,
@@ -140,7 +140,10 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
         },
       });
       span.end(
-        this.perf.epochMillisFromOrigin(entry.startTime + entry.duration),
+        this.perf.offsetToAbsoluteTime(
+          entry.startTime + entry.duration,
+          entry.startTime,
+        ),
       );
       return;
     }
@@ -149,13 +152,13 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     const body = detail != null ? JSON.stringify(detail) : undefined;
 
     this.logger.emit({
-      timestamp: this.perf.epochMillisFromOrigin(entry.startTime),
+      timestamp: this.perf.offsetToAbsoluteTime(entry.startTime),
       eventName: USER_TIMING_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.UserTiming,
         [KEY_EMB_USER_TIMING_NAME]: entry.name,
-        [KEY_EMB_USER_TIMING_START_TIME]: this.perf.millisFromZeroTime(
+        [KEY_EMB_USER_TIMING_START_TIME]: this.perf.getOffsetFromZeroTime(
           entry.startTime,
         ),
         [KEY_EMB_USER_TIMING_DURATION]: entry.duration,

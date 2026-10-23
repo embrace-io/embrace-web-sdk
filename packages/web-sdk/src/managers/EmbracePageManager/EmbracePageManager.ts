@@ -3,11 +3,7 @@ import { diag } from '@opentelemetry/api';
 import type { PageManager, Route } from '../../api-page/index.ts';
 import type { NavigationHost, TitleDocument } from '../../common/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
-import {
-  generateUUID,
-  OTelPerformanceManager,
-  updateZeroTimeMillis,
-} from '../../utils/index.ts';
+import { generateUUID, OTelPerformanceManager } from '../../utils/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
 import type { EmbracePageManagerArgs } from './types.ts';
 
@@ -115,7 +111,7 @@ export class EmbracePageManager implements PageManager {
       return;
     }
 
-    updateZeroTimeMillis(this._perf.epochMillisFromOrigin(event.timeStamp));
+    this._perf.setZeroTimeOffset(event.timeStamp);
 
     // Order matters: rolling over first ends the outgoing route span (via the
     // session-part-ended listener) while it's still open, so it's

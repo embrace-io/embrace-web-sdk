@@ -30,10 +30,6 @@ import {
   EmbracePageManager,
   EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
-import {
-  _resetZeroTimeMillisForTesting,
-  updateZeroTimeMillis,
-} from '../../../utils/PerformanceManager/index.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 
@@ -77,7 +73,6 @@ describe('WebVitalsInstrumentation', () => {
   afterEach(() => {
     clock.restore();
     instrumentation.disable();
-    _resetZeroTimeMillisForTesting();
   });
 
   it('should report CLS metrics as a log record', () => {
@@ -835,7 +830,7 @@ describe('WebVitalsInstrumentation', () => {
     clock.tick(5000);
     // Distinct from both the time origin (0) and the report time (5000) so the
     // assertion below can only match the session part's zero time.
-    updateZeroTimeMillis(2000);
+    perf.setZeroTimeOffset(2000);
 
     metricReportFunc({
       name: 'TTFB',
@@ -2264,7 +2259,7 @@ describe('WebVitalsInstrumentation', () => {
     clock.tick(5000);
     // Distinct from both the time origin (0) and the report time (5000) so the
     // assertion below can only match the session part's zero time.
-    updateZeroTimeMillis(2000);
+    perf.setZeroTimeOffset(2000);
 
     const metric = {
       name: 'TTFB',

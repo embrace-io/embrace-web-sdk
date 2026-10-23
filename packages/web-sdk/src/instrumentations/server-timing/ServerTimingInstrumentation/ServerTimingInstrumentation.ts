@@ -56,6 +56,7 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       }
 
       this.logger.emit({
+        timestamp: this.perf.getNow(),
         eventName: SERVER_TIMING_EVENT_NAME,
         severityNumber: SeverityNumber.INFO,
         attributes: {

@@ -6,8 +6,12 @@ import {
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
-import { setupTestTraceExporter } from '../../../tests/utils/index.ts';
+import {
+  MockPerformanceManager,
+  setupTestTraceExporter,
+} from '../../../tests/utils/index.ts';
 import { KEY_EMB_ERROR_CODE, KEY_EMB_TYPE } from '../../constants/index.ts';
 import { EmbraceExtendedSpan } from './EmbraceExtendedSpan.ts';
 import { EmbraceTraceManager } from './EmbraceTraceManager.ts';
@@ -223,5 +227,60 @@ describe('EmbraceTraceManager', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     const finished = finishedSpans.find((s) => s.name === 'demo-span');
     void expect(finished?.parentSpanContext?.spanId).to.be.undefined;
+  });
+
+  describe('when the machine sleeps during a span', () => {
+    const TIME_ORIGIN = 1_700_000_000_000;
+    const TWO_HOURS = 2 * 60 * 60 * 1000;
+    let clock: sinon.SinonFakeTimers;
+    let perf: MockPerformanceManager;
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers(TIME_ORIGIN);
+      perf = new MockPerformanceManager(clock);
+      manager = new EmbraceTraceManager({ perf });
+    });
+
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('ends the span on the wall clock, so its duration includes the time asleep', () => {
+      const span = manager.startSpan('across-sleep');
+      clock.tick(1000);
+      perf.sleep(TWO_HOURS);
+      clock.tick(500);
+      span.end();
+
+      const [finished] = memoryExporter.getFinishedSpans();
+      expect(hrTimeToMilliseconds(finished.startTime)).to.equal(TIME_ORIGIN);
+      expect(hrTimeToMilliseconds(finished.endTime)).to.equal(
+        TIME_ORIGIN + TWO_HOURS + 1500,
+      );
+    });
+
+    it('ends a failed span on the wall clock', () => {
+      const span = manager.startSpan('across-sleep');
+      clock.tick(1000);
+      perf.sleep(TWO_HOURS);
+      span.fail();
+
+      const [finished] = memoryExporter.getFinishedSpans();
+      expect(hrTimeToMilliseconds(finished.endTime)).to.equal(
+        TIME_ORIGIN + TWO_HOURS + 1000,
+      );
+    });
+
+    it('keeps a start time the caller passes', () => {
+      const span = manager.startSpan('explicit-start', {
+        startTime: TIME_ORIGIN - 5000,
+      });
+      span.end();
+
+      const [finished] = memoryExporter.getFinishedSpans();
+      expect(hrTimeToMilliseconds(finished.startTime)).to.equal(
+        TIME_ORIGIN - 5000,
+      );
+    });
   });
 });
