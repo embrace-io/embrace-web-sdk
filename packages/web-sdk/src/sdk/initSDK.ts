@@ -29,6 +29,8 @@ import type { AttributeScrubber } from '../common/index.ts';
 import {
   EmbraceLogExporter,
   EmbraceTraceExporter,
+  getLogEndpoint,
+  getTraceEndpoint,
 } from '../exporters/index.ts';
 import {
   DEFAULT_LIMITS,
@@ -248,7 +250,12 @@ export const initSDK = (
       | EmbraceSessionPartBatchedSpanProcessor
       | undefined;
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
+    const exporterEndpoints: string[] = [];
     if (sendingToEmbrace) {
+      exporterEndpoints.push(
+        getTraceEndpoint(validatedAppID, embraceDataURL),
+        getLogEndpoint(validatedAppID, embraceDataURL),
+      );
       embraceSpanProcessor = new EmbraceSessionPartBatchedSpanProcessor({
         exporter: new EmbraceTraceExporter({
           appID: validatedAppID,
@@ -294,6 +301,7 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceSpanProcessor,
+      exporterEndpoints,
       pageManager,
       perf,
       signalBuffer,
@@ -430,6 +438,7 @@ const setupTraces = ({
   attributeScrubbers,
   registerGlobally,
   embraceSpanProcessor,
+  exporterEndpoints,
   pageManager,
   perf,
   signalBuffer,
@@ -437,7 +446,7 @@ const setupTraces = ({
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     new BrowserSpanProcessor(),
-    new EmbraceNetworkSpanProcessor(),
+    new EmbraceNetworkSpanProcessor({ exporterEndpoints }),
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
     new PerfClockLagSpanProcessor({ perf }),

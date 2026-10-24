@@ -54,6 +54,7 @@ export const KEY_EMB_TAB_IS_TAB_ENGAGED = 'emb.is_tab_engaged';
 export enum EMB_TYPES {
   SessionPart = 'ux.session_part',
   Network = 'perf.network_request',
+  ExportRequest = 'sys.export_request',
   Perf = 'perf',
   SystemLog = 'sys.log', // SystemLog is a log emb type that tells the Embrace BE to treat this as an Embrace Log to be shown in the dashboard.
   SystemException = 'sys.exception',
