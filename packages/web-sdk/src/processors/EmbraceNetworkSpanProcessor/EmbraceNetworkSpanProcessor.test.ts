@@ -18,7 +18,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
   before(() => {
     memoryExporter = setupTestTraceExporter([
       new EmbraceNetworkSpanProcessor({
-        exporterEndpoints: [
+        embraceExporterEndpoints: [
           'https://a-11111.data.emb-api.com/v2/spans',
           'https://Collector.Example.com:443/v2/logs',
           '/collector/v2/spans',
@@ -117,7 +117,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
     const localTracer = new TracerProvider({
       spanProcessors: [
         new EmbraceNetworkSpanProcessor({
-          exporterEndpoints: [
+          embraceExporterEndpoints: [
             'http://[',
             'https://a-11111.data.emb-api.com/v2/spans',
           ],

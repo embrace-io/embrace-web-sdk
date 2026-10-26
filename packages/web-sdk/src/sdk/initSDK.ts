@@ -250,9 +250,9 @@ export const initSDK = (
       | EmbraceSessionPartBatchedSpanProcessor
       | undefined;
     let embraceLogProcessor: BatchLogRecordProcessor | undefined;
-    const exporterEndpoints: string[] = [];
+    const embraceExporterEndpoints: string[] = [];
     if (sendingToEmbrace) {
-      exporterEndpoints.push(
+      embraceExporterEndpoints.push(
         getTraceEndpoint(validatedAppID, embraceDataURL),
         getLogEndpoint(validatedAppID, embraceDataURL),
       );
@@ -301,7 +301,7 @@ export const initSDK = (
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
       embraceSpanProcessor,
-      exporterEndpoints,
+      embraceExporterEndpoints,
       pageManager,
       perf,
       signalBuffer,
@@ -438,7 +438,7 @@ const setupTraces = ({
   attributeScrubbers,
   registerGlobally,
   embraceSpanProcessor,
-  exporterEndpoints,
+  embraceExporterEndpoints,
   pageManager,
   perf,
   signalBuffer,
@@ -446,7 +446,7 @@ const setupTraces = ({
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
     new BrowserSpanProcessor(),
-    new EmbraceNetworkSpanProcessor({ exporterEndpoints }),
+    new EmbraceNetworkSpanProcessor({ embraceExporterEndpoints }),
     new UserSpanProcessor({ userManager }),
     new PageSpanProcessor({ pageManager }),
     new PerfClockLagSpanProcessor({ perf }),

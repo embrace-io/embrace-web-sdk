@@ -10,13 +10,15 @@ import type { EmbraceNetworkSpanProcessorArgs } from './types.ts';
  * exporter endpoints, perf.network_request otherwise.
  */
 export class EmbraceNetworkSpanProcessor implements SpanProcessor {
-  private readonly _exporterEndpoints: ReadonlySet<string>;
+  private readonly _embraceExporterEndpoints: ReadonlySet<string>;
 
   public constructor({
-    exporterEndpoints = [],
+    embraceExporterEndpoints = [],
   }: EmbraceNetworkSpanProcessorArgs = {}) {
     // The fetch/XHR instrumentations record url.full as an href resolved against document.baseURI.
-    this._exporterEndpoints = new Set(exporterEndpoints.map(normalizeUrl));
+    this._embraceExporterEndpoints = new Set(
+      embraceExporterEndpoints.map(normalizeUrl),
+    );
   }
 
   public forceFlush(): Promise<void> {
@@ -47,7 +49,7 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   }
 
   private _isExportRequest(url: AttributeValue | undefined): boolean {
-    return typeof url === 'string' && this._exporterEndpoints.has(url);
+    return typeof url === 'string' && this._embraceExporterEndpoints.has(url);
   }
 }
 
