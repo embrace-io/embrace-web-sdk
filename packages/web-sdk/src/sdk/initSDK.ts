@@ -141,14 +141,12 @@ export const initSDK = (
     window.addEventListener('pageshow', (event) =>
       perf.setZeroTimeOffset(event.timeStamp),
     );
-    // A sleep is only noticed on the next clock read. Reading on the events
-    // around it keeps the origin boundary close to when the machine slept.
-    for (const type of ['pagehide', 'pageshow', 'focus']) {
-      window.addEventListener(type, perf.checkDrift);
-    }
-    for (const type of ['visibilitychange', 'freeze', 'resume']) {
-      window.document.addEventListener(type, perf.checkDrift);
-    }
+    // A sleep is noticed on the first clock read after it, and the origin
+    // boundary is set to the read before that, so only a read just before the
+    // sleep matters: blur came before every sleep in testing, and
+    // visibilitychange covers a page that was already hidden.
+    window.addEventListener('blur', perf.checkDrift);
+    window.document.addEventListener('visibilitychange', perf.checkDrift);
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);

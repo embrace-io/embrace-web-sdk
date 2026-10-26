@@ -221,7 +221,7 @@ describe('ElementTimingInstrumentation', () => {
   it('keeps the span as long as render_time when the machine slept after zero time', () => {
     clock.tick(500);
     perf.setZeroTimeOffset(200); // e.g. a soft navigation
-    perf.checkDrift(); // e.g. visibilitychange to hidden as the lid closes
+    perf.checkDrift(); // e.g. the blur as the machine goes to sleep
     perf.sleep(60 * 60 * 1000);
     clock.tick(500);
 

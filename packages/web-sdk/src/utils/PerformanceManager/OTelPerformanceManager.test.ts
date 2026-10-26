@@ -229,7 +229,7 @@ describe('OTelPerformanceManager', () => {
 
     it('converts entries from before the sleep with the original origin', () => {
       advanceAwake(1000);
-      perf.checkDrift(); // e.g. visibilitychange to hidden as the lid closes
+      perf.checkDrift(); // e.g. the blur as the machine goes to sleep
       sleep(ONE_HOUR);
       advanceAwake(500);
 

@@ -264,7 +264,7 @@ describe('UserTimingInstrumentation', () => {
     clock.setSystemTime(timeOrigin);
     const sleepingPerf = new MockPerformanceManager(clock);
     clock.tick(500);
-    sleepingPerf.checkDrift(); // e.g. visibilitychange to hidden as the lid closes
+    sleepingPerf.checkDrift(); // e.g. the blur as the machine goes to sleep
     sleepingPerf.sleep(60 * 60 * 1000);
     clock.tick(500);
 

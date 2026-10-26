@@ -94,9 +94,10 @@ pushes `{ from: lastCheckedNow, origin: Date.now() - performance.now() }`:
 - Offsets up to `from` (the last check, when the clocks still agreed) are
   known to predate the sleep, and keep the old origin.
 - Offsets after it get the new, wall-clock-anchored origin. The sleep happened
-  somewhere between the two checks, so `initSDK` also calls `checkDrift()` on
-  `visibilitychange`, `pagehide`, `pageshow`, `freeze`, `resume` and `focus`
-  to keep the boundary close to it.
+  somewhere between the two checks. When the second check runs does not
+  matter, but the first should be just before the sleep, so `initSDK` also
+  calls `checkDrift()` on `blur`, which came before every sleep in testing,
+  and on `visibilitychange`, for a page that was already hidden.
 
 The history is capped at 100 segments. The first one is always kept, so
 document load entries keep `timeOrigin`.
@@ -225,6 +226,54 @@ The three ways to get this wrong, with the same inputs:
   because `getNow()` already has `timeOrigin` added in and
   `getOffsetFromZeroTime` subtracts assuming it doesn't. Call
   `getOffsetFromZeroTime()` with no offset instead.
+
+## Worked example: sleep
+
+A tab on Chrome or Firefox, where `performance.now()` stops while the machine
+sleeps:
+
+| Wall clock | `performance.now()` | Event |
+| --- | --- | --- |
+| 12:00:00.000 | 0 | Hard navigation: `timeOrigin = 1,700,000,000,000` |
+| 12:10:00.000 | 600,000 | `log.message('before sleep')`: log A, no timestamp |
+| 12:10:01.000 | 601,000 | `trace.startSpan('upload')`: span S, no start time |
+| 12:10:03.000 | 603,000 | `blur` as the machine goes to sleep: the session part ends, and `checkDrift()` finds the clocks in agreement |
+| 12:10:03 – 12:40:03 | 603,000 | Asleep for 30 min: the perf clock does not advance |
+| 12:40:03.000 | 603,000 | Wake: `focus` starts a new session part, whose start reads `getNow()`. Its `checkDrift()` sees a 30 min gap and adds the segment `{ from: 603,000, origin: 1,700,001,800,000 }` |
+| 12:40:05.000 | 605,000 | `span.addEvent('retry', performance.now())` |
+| 12:40:08.000 | 608,000 | `span.end()`, no time |
+| 12:40:10.000 | 610,000 | `log.message('after sleep')`: log B, no timestamp |
+
+What each one gets:
+
+| Signal | How it is converted | Result |
+| --- | --- | --- |
+| Log A | `EmbraceLoggerProvider`: no timestamp, so `getNow()` = `timeOrigin + 600,000` | `1,700,000,600,000` (12:10:00.000) |
+| Span S start | `EmbraceExtendedSpan.start()`: no start time, so `Date.now()`, marked as given. It also records `wallOrigin = Date.now() - performance.now()` = `1,700,000,000,000` | `1,700,000,601,000` (12:10:01.000) |
+| `retry` event | `wallOrigin + 605,000` is 12:10:05.000, while `offsetToAbsoluteTime(605,000)` uses the new segment, `1,700,001,800,000 + 605,000`. They differ by 30 min, more than the 1s threshold, so the second is used | `1,700,002,405,000` (12:40:05.000) |
+| Span S end | `end()` with no time: the start was given, so OTel uses `Date.now()` | `1,700,002,408,000` (12:40:08.000) |
+| Log B | `getNow()` = new origin `+ 610,000` | `1,700,002,410,000` (12:40:10.000) |
+
+The span starts at 12:10:01 and ends at 12:40:08, a duration of **30m 7s**
+that includes the time asleep, with its `retry` event at 12:40:05, between the
+wake and the end. Logs A and B land on either side of the sleep, at the times
+they were emitted. On Safari, which moves `performance.timeOrigin` forward
+instead, the results are the same: the manager reads `timeOrigin` once, and
+`wallOrigin` does not use it.
+
+The ways to get this wrong, with the same inputs:
+
+- **Starting the span on a plain OTel tracer.** It starts at the same
+  12:10:01, but without a start time marked as given, so `end()` lands at the
+  start plus 7s of `performance.now()`: 12:10:08. The span reports **7s** and
+  ends half an hour before it did.
+- **The same `addEvent('retry', performance.now())` on a plain OTel span.**
+  OTel converts the offset with the lag measured when the span was created,
+  before the sleep: 12:10:05, half an hour early, before the sleep it came
+  after.
+- **Stamping log B with `timeOrigin + performance.now()`** (or OTel's
+  `hrTime()`): `1,700,000,610,000` (12:10:10), half an hour early, before the
+  sleep it came after.
 
 ## Instrumentation catalog
 
@@ -424,6 +473,6 @@ For completeness, the non-instrumentation consumers of the clock:
   deadline and the remaining timeout. Internal duration math, not telemetry.
 - **initSDK** — `getNow()` difference for `emb.sdk_startup_duration`
   (a pure duration), the `pageshow` listener that resets zero time, and the
-  page lifecycle listeners that call `checkDrift()`.
+  `blur` and `visibilitychange` listeners that call `checkDrift()`.
 - **PerfClockLagSpanProcessor / PerfClockLagLogRecordProcessor** —
   `getClockLag()` for `emb.perf_clock_lag_ms`.

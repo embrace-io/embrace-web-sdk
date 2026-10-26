@@ -9,10 +9,6 @@ export type LogMessageOptions = {
 export type LogExceptionOptions = {
   handled?: boolean;
   attributes?: Record<string, AttributeValue | undefined>;
-  /**
-   * When the exception happened, in epoch milliseconds (e.g. Date.now()) or as a
-   * performance.now()-based value. Defaults to now.
-   */
   timestamp?: number;
   handler?: ExceptionHandlerType;
 };
