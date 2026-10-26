@@ -1,13 +1,17 @@
 import type { AttributeValue } from '@opentelemetry/api';
 import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import {
+  EMB_TYPES,
+  KEY_EMB_IS_EMBRACE_EXPORT,
+  KEY_EMB_TYPE,
+} from '../../constants/index.ts';
 import { isNetworkSpan } from '../../utils/index.ts';
 import type { EmbraceNetworkSpanProcessorArgs } from './types.ts';
 
 /**
- * Sets emb.type on network spans: sys.export_request for requests to the given
- * exporter endpoints, perf.network_request otherwise.
+ * Sets emb.type on network spans, and flags requests to the given exporter
+ * endpoints with emb.is_embrace_export.
  */
 export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   private readonly _embraceExporterEndpoints: ReadonlySet<string>;
@@ -28,11 +32,10 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   // Read in onEnding because isNetworkSpan depends on the HTTP response status, which is only set at span end.
   public onEnding(span: Span): void {
     if (isNetworkSpan(span)) {
-      span.attributes[KEY_EMB_TYPE] = this._isExportRequest(
-        span.attributes[ATTR_URL_FULL],
-      )
-        ? EMB_TYPES.ExportRequest
-        : EMB_TYPES.Network;
+      span.attributes[KEY_EMB_TYPE] = EMB_TYPES.Network;
+      if (this._isExportRequest(span.attributes[ATTR_URL_FULL])) {
+        span.attributes[KEY_EMB_IS_EMBRACE_EXPORT] = true;
+      }
     }
   }
 

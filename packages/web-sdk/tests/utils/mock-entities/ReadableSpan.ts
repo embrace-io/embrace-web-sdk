@@ -34,13 +34,6 @@ export const mockNetworkRequestSpan: ReadableSpan = {
   },
 };
 
-export const mockExportRequestSpan: ReadableSpan = {
-  ...mockSpan,
-  attributes: {
-    'emb.type': 'sys.export_request',
-  },
-};
-
 export const mockSessionSpan: ReadableSpan = {
   ...mockSpan,
   name: 'mock session span',

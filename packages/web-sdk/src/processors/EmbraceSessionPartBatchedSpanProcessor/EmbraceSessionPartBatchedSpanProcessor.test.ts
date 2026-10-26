@@ -12,7 +12,6 @@ import {
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import {
-  mockExportRequestSpan,
   mockNetworkRequestSpan,
   mockSessionSpan,
   mockSpan,
@@ -271,21 +270,5 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
     processor.onEnd(mockSessionSpan);
     const nextFinishedSpans = memoryExporter.getFinishedSpans();
     expect(nextFinishedSpans).to.have.lengthOf(2);
-  });
-
-  it('should count export request spans against the network request limit', () => {
-    for (let i = 0; i < 5; i++) {
-      processor.onEnd(mockExportRequestSpan);
-    }
-    processor.onEnd(mockSpan);
-    processor.onEnd(mockSessionSpan);
-    const finishedSpans = memoryExporter.getFinishedSpans();
-    expect(finishedSpans).to.have.lengthOf(5);
-
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.deep.equal([
-      'disallowing network_request because the maximum number of 3 has already been reached for this session',
-      'disallowing network_request because the maximum number of 3 has already been reached for this session',
-    ]);
   });
 });

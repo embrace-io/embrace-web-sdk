@@ -58,7 +58,7 @@ describe('EmbraceNetworkSpanProcessor', () => {
     });
   });
 
-  it('should add the export request emb.type for a request to an exporter endpoint', () => {
+  it('should flag a request to an exporter endpoint as an Embrace export', () => {
     tracer
       .startSpan('network-request', {
         attributes: {
@@ -72,8 +72,9 @@ describe('EmbraceNetworkSpanProcessor', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
-      'sys.export_request',
+      'perf.network_request',
     );
+    expect(finishedSpans[0].attributes['emb.is_embrace_export']).to.equal(true);
   });
 
   it('should match an exporter endpoint that differs from url.full only in host case and default port', () => {
@@ -90,8 +91,9 @@ describe('EmbraceNetworkSpanProcessor', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
-      'sys.export_request',
+      'perf.network_request',
     );
+    expect(finishedSpans[0].attributes['emb.is_embrace_export']).to.equal(true);
   });
 
   it('should match a relative exporter endpoint against the absolute url.full', () => {
@@ -108,8 +110,9 @@ describe('EmbraceNetworkSpanProcessor', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
-      'sys.export_request',
+      'perf.network_request',
     );
+    expect(finishedSpans[0].attributes['emb.is_embrace_export']).to.equal(true);
   });
 
   it('should keep matching valid exporter endpoints when one is unparseable', () => {
@@ -139,11 +142,12 @@ describe('EmbraceNetworkSpanProcessor', () => {
     const finishedSpans = exporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
-      'sys.export_request',
+      'perf.network_request',
     );
+    expect(finishedSpans[0].attributes['emb.is_embrace_export']).to.equal(true);
   });
 
-  it('should add the network emb.type to every network span when no exporter endpoints are given', () => {
+  it('should not flag any network span when no exporter endpoints are given', () => {
     const exporter = new InMemorySpanExporter();
     const localTracer = new TracerProvider({
       spanProcessors: [
@@ -167,9 +171,12 @@ describe('EmbraceNetworkSpanProcessor', () => {
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
       'perf.network_request',
     );
+    expect(finishedSpans[0].attributes).to.not.have.property(
+      'emb.is_embrace_export',
+    );
   });
 
-  it('should add the network emb.type for a request to another path on the exporter endpoint host', () => {
+  it('should not flag a request to another path on the exporter endpoint host', () => {
     tracer
       .startSpan('network-request', {
         attributes: {
@@ -184,6 +191,9 @@ describe('EmbraceNetworkSpanProcessor', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].attributes['emb.type']).to.equal(
       'perf.network_request',
+    );
+    expect(finishedSpans[0].attributes).to.not.have.property(
+      'emb.is_embrace_export',
     );
   });
 
