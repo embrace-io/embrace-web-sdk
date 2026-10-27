@@ -34,6 +34,7 @@ import type {
   LoafInstrumentationArgs,
   MaxScrollDepthInstrumentationArgs,
   NavigationInstrumentationArgs,
+  PageLoadInstrumentationArgs,
   RageClickInstrumentationArgs,
   ServerTimingInstrumentationArgs,
   SoftNavigationPerformanceInstrumentationArgs,
@@ -406,6 +407,7 @@ type OptionalInstrumentations =
   | 'soft-navigation-performance'
   | 'document-load'
   | 'dom-state'
+  | 'page-load'
   | '@opentelemetry/instrumentation-fetch'
   | '@opentelemetry/instrumentation-xml-http-request';
 
@@ -419,6 +421,8 @@ export interface SetupDefaultInstrumentationsArgs {
   pageManager?: PageManager;
   limitManager?: LimitManagerInternal;
   signalBuffer?: SignalBuffer;
+  // URLs the SDK sends its own requests to (telemetry export, remote config).
+  sdkRequestUrls?: string[];
 }
 
 /**
@@ -441,6 +445,7 @@ export interface DefaultInstrumentationConfig {
   'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationArgs;
   'dom-state'?: DOMStateInstrumentationArgs;
+  'page-load'?: PageLoadInstrumentationArgs;
   navigation?: NavigationInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and

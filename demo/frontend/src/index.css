@@ -479,6 +479,25 @@ legend {
   background: rgba(248, 113, 113, 0.1);
 }
 
+.page-load-stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+  margin: 1rem 0 0;
+}
+
+.page-load-row {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #27272a;
+  border-radius: 6px;
+  background: #1c1c1f;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
 .cls-banner {
   padding: 3rem 1rem;
   margin: 1rem 0;

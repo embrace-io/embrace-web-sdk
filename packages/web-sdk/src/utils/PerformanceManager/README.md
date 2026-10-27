@@ -424,6 +424,21 @@ the span's creation (see `EmbraceTracerProvider` below). Span start and end are
 converted explicitly and never get that anchoring, so raw-offset events would
 drift out of their own span's bounds.
 
+#### PageLoadInstrumentation
+
+One `page-load` log per page view: the hard navigation, then each route change.
+
+| Telemetry field | Source | Method |
+| --- | --- | --- |
+| log timestamp | the later of the moment activity last stopped (`getOffsetFromOrigin()`) and, for the hard navigation, `loadEventEnd` | `offsetToAbsoluteTime` |
+| `page_load.duration` | that end minus the view start: time origin for the hard navigation, the route change (`getOffsetFromOrigin()`) for the others, either moved to `activationStart` on a prerendered page | none — a difference of two offsets |
+
+Every time is kept as an offset from time origin, so the duration leaves out
+time asleep. The view start is kept per view instead of read from zero time:
+`pageshow` also fires at the end of a first load (`persisted: false`), which
+moves zero time there, and a route change reported by a router integration
+without the Navigation API does not move it.
+
 ### Instrumentations outside both frames
 
 These handle no origin-relative offsets at all — only pure durations,

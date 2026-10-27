@@ -21,6 +21,9 @@ npm ci && npm run demo
   promise rejection handling
 - **Network Monitoring**: Automatic instrumentation of fetch and XMLHttpRequest
   calls
+- **Page Load**: A `/page-load/` sub-app whose routes each load with a different
+  mix of fetch, XHR, subresources and DOM mutations, showing when the SDK
+  decides a page view has finished loading
 - **React Integration**: Error boundaries and routing instrumentation for React
   Router v4/v5 and v6+
 - **Session Properties**: Add and remove permanent and session-scoped properties

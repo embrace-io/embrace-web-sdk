@@ -332,6 +332,15 @@ export const initSDK = (
       signalBuffer,
     });
 
+    const remoteConfigURL =
+      dynamicConfigManager instanceof EmbraceDynamicConfigManager
+        ? dynamicConfigManager.getRemoteConfigURL()
+        : null;
+    const sdkRequestUrls = [
+      ...embraceExporterEndpoints,
+      ...(remoteConfigURL ? [remoteConfigURL] : []),
+    ];
+
     // We require setupInstrumentation to run last, after setupLogs and setupTraces. This is how OTel works wrt
     // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
     // setup before we enable instrumentations.
@@ -346,6 +355,7 @@ export const initSDK = (
             pageManager,
             limitManager,
             signalBuffer,
+            sdkRequestUrls,
           }),
           ...instrumentations,
         ],
@@ -357,6 +367,7 @@ export const initSDK = (
             pageManager,
             limitManager,
             signalBuffer,
+            sdkRequestUrls,
           }),
           ...instrumentations,
         ],

@@ -13,6 +13,7 @@ import {
   LoafInstrumentation,
   MaxScrollDepthInstrumentation,
   NavigationInstrumentation,
+  PageLoadInstrumentation,
   RageClickInstrumentation,
   ServerTimingInstrumentation,
   SoftNavigationPerformanceInstrumentation,
@@ -32,6 +33,7 @@ export const setupDefaultInstrumentations = (
     pageManager,
     limitManager,
     signalBuffer,
+    sdkRequestUrls = [],
   }: SetupDefaultInstrumentationsArgs,
 ): Instrumentation[] => {
   const instrumentations: Instrumentation[] = [];
@@ -103,6 +105,21 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('dom-state')) {
     instrumentations.push(new DOMStateInstrumentation(config['dom-state']));
+  }
+
+  if (!config.omit?.has('page-load')) {
+    instrumentations.push(
+      new PageLoadInstrumentation({
+        ...config['page-load'],
+        // A telemetry export starts on every soft navigation, so counting the
+        // SDK's own requests would add its round-trip to each route change.
+        ignoreUrls: [
+          ...(config['page-load']?.ignoreUrls ?? []),
+          ...sdkRequestUrls,
+        ],
+        pageManager,
+      }),
+    );
   }
 
   instrumentations.push(

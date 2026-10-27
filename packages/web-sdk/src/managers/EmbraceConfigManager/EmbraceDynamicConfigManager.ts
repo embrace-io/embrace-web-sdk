@@ -118,6 +118,10 @@ export class EmbraceDynamicConfigManager implements DynamicConfigManager {
     return this._sdkConfig;
   }
 
+  public getRemoteConfigURL(): string | null {
+    return this._remoteConfigURL;
+  }
+
   // No-op if not sending data to embrace
   public async refreshRemoteConfig(): Promise<void> {
     if (!this._remoteConfigURL) {
