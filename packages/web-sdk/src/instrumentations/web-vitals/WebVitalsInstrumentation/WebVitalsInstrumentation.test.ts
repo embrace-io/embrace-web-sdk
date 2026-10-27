@@ -16,6 +16,7 @@ import {
   setupTestWebVitalListeners,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
+import type { NavigationHost } from '../../../common/index.ts';
 import {
   EMB_TYPES,
   KEY_APP_SURFACE_LABEL,
@@ -3023,6 +3024,7 @@ describe('WebVitalsInstrumentation', () => {
         setCurrentRoute: sinon.stub(),
         getCurrentRoute: sinon.stub().returns(null),
         getCurrentPageId: sinon.stub().returns(null),
+        getCurrentPageURL: sinon.stub().returns(null),
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns(null),
         clearCurrentRoute: sinon.stub(),
@@ -3151,6 +3153,9 @@ describe('WebVitalsInstrumentation', () => {
           .stub()
           .returns({ path: '/products/:id', url: '/products/123' }),
         getCurrentPageId: sinon.stub().returns('page-id-123'),
+        getCurrentPageURL: sinon
+          .stub()
+          .returns('https://example.com/products/123'),
         setPageLabel: sinon.stub(),
         getPageLabel: sinon.stub().returns('Product Page'),
         clearCurrentRoute: sinon.stub(),
@@ -3711,91 +3716,167 @@ describe('WebVitalsInstrumentation', () => {
         .undefined;
     });
 
-    it('should prefer navigationURL for browser.url.full on soft navigations', () => {
-      stubSupportedEntryTypes(['soft-navigation']);
-      instrumentation = new WebVitalsInstrumentation({
-        diag,
-        perf,
-        listeners: mockWebVitalListeners,
-        urlDocument: { URL: 'https://example.com/page-a' },
-      });
-      instrumentation.enable();
-
-      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
-      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
-
-      const metric = {
+    const lcpMetric = (
+      overrides: Partial<MetricWithAttribution>,
+    ): MetricWithAttribution =>
+      ({
         name: 'LCP',
         value: 22,
         rating: 'poor',
         delta: 0,
         id: 'm5',
         entries: [],
-        navigationType: 'soft-navigation',
-        navigationId: 2,
-        navigationURL: 'https://example.com/page-b',
+        navigationType: 'navigate',
+        navigationId: 1,
         attribution: {
           timeToFirstByte: 0,
           resourceLoadDelay: 0,
           resourceLoadDuration: 0,
           elementRenderDelay: 0,
         },
-      } as MetricWithAttribution;
+        ...overrides,
+      }) as MetricWithAttribution;
 
+    const emitLCP = (metric: MetricWithAttribution) => {
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
       pageTrackFunc(metric);
       emitFunc(metric);
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      return records[0];
+    };
 
-      const record = memoryExporter.getFinishedLogRecords()[0];
-      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
-        'https://example.com/page-b',
-      );
+    // No navigation property: the page manager only learns of a route change when
+    // setCurrentRoute is called, like a browser without the Navigation API.
+    const navigationHostAt = (href: string): NavigationHost => ({
+      location: { href, pathname: new URL(href).pathname },
     });
 
-    // With soft navigations active the browser segments metrics per navigation, so
-    // navigationURL names the navigation the value is anchored to and wins even for
-    // hard navigations. Without them a single metric spans the whole SPA visit and
-    // navigationURL is stuck on the entry URL, so the attributed page is all we have.
-    it('should prefer navigationURL for hard navigations when soft navigations are active', () => {
+    it('should describe one page when the document URL moves without a route change', () => {
       stubSupportedEntryTypes(['soft-navigation']);
+      const urlDocument = { URL: 'https://example.com/' };
+      const navigationHost = navigationHostAt('https://example.com/');
+      const pageManager = new EmbracePageManager({ navigationHost });
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+        pageManager,
+      });
+      instrumentation.enable();
+
+      urlDocument.URL = 'https://example.com/dashboard';
+      navigationHost.location = {
+        href: 'https://example.com/dashboard',
+        pathname: '/dashboard',
+      };
+
+      const record = emitLCP(lcpMetric({}));
+
+      expect(record.attributes).to.deep.include({
+        [KEY_BROWSER_URL_FULL]: 'https://example.com/',
+        [KEY_EMB_PAGE_PATH]: '/',
+      });
+    });
+
+    // browser.url.full and the app.surface.* keys answer one question, so they come
+    // from the attributed page together; navigationURL names a navigation, not a page.
+    it('should describe one page across browser.url.full and the page attributes when navigationURL points elsewhere', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
+      const pageManager = new EmbracePageManager({
+        navigationHost: navigationHostAt('https://example.com/page-a'),
+      });
+      pageManager.setCurrentRoute({
+        path: '/page-a',
+        url: '/page-a',
+        label: 'Page A',
+      });
       instrumentation = new WebVitalsInstrumentation({
         diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
+        pageManager,
       });
       instrumentation.enable();
+      const attributedPageID = pageManager.getCurrentPageId();
 
-      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
-      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+      const record = emitLCP(
+        lcpMetric({ navigationURL: 'https://example.com/page-b' }),
+      );
 
-      const metric = {
-        name: 'LCP',
-        value: 22,
-        rating: 'poor',
-        delta: 0,
-        id: 'm6',
-        entries: [],
-        navigationType: 'navigate',
-        navigationId: 1,
-        navigationURL: 'https://example.com/page-b',
-        attribution: {
-          timeToFirstByte: 0,
-          resourceLoadDelay: 0,
-          resourceLoadDuration: 0,
-          elementRenderDelay: 0,
-        },
-      } as MetricWithAttribution;
-
-      pageTrackFunc(metric);
-      emitFunc(metric);
-
-      const record = memoryExporter.getFinishedLogRecords()[0];
-      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+      expect(record.attributes).to.deep.include({
+        [KEY_BROWSER_URL_FULL]: 'https://example.com/page-a',
+        [KEY_EMB_PAGE_PATH]: '/page-a',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+        [KEY_APP_SURFACE_LABEL]: 'Page A',
+      });
+      expect(record.attributes['browser.web_vital.navigation_url']).to.equal(
         'https://example.com/page-b',
       );
     });
 
-    it('should keep the attributed-page URL for hard navigations when soft navigations are unsupported', () => {
+    // CLS re-captures its attributed page when the largest shift moves, so it is the
+    // metric most likely to outlive the navigation navigationURL names.
+    it('should describe one page for CLS when the largest shift moves after the navigation', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
+      const testDocument = { URL: 'https://example.com/page-a' };
+      const navigationHost = navigationHostAt('https://example.com/page-a');
+      const pageManager = new EmbracePageManager({ navigationHost });
+      pageManager.setCurrentRoute({ path: '/page-a', url: '/page-a' });
+
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: testDocument,
+        pageManager,
+      });
+      instrumentation.enable();
+
+      const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const clsMetric = {
+        name: 'CLS',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm8',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        navigationURL: 'https://example.com/page-a',
+        attribution: { largestShiftTarget: 'target-1' },
+      } as CLSMetricWithAttribution;
+
+      changeFunc(clsMetric);
+      clsMetric.attribution.largestShiftTarget = 'target-2';
+      testDocument.URL = 'https://example.com/page-b';
+      navigationHost.location = {
+        href: 'https://example.com/page-b',
+        pathname: '/page-b',
+      };
+      pageManager.setCurrentRoute({ path: '/page-b', url: '/page-b' });
+      const attributedPageID = pageManager.getCurrentPageId();
+      changeFunc(clsMetric);
+      finalFunc(clsMetric);
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(1);
+      expect(records[0].attributes).to.deep.include({
+        [KEY_BROWSER_URL_FULL]: 'https://example.com/page-b',
+        [KEY_EMB_PAGE_PATH]: '/page-b',
+        [KEY_EMB_PAGE_ID]: attributedPageID,
+      });
+      expect(
+        records[0].attributes['browser.web_vital.navigation_url'],
+      ).to.equal('https://example.com/page-a');
+    });
+
+    it('should keep browser.url.full on the attributed page when soft navigations are unsupported', () => {
       stubSupportedEntryTypes([]);
       instrumentation = new WebVitalsInstrumentation({
         diag,
@@ -3805,37 +3886,16 @@ describe('WebVitalsInstrumentation', () => {
       });
       instrumentation.enable();
 
-      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
-      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+      const record = emitLCP(
+        lcpMetric({ navigationURL: 'https://example.com/page-b' }),
+      );
 
-      const metric = {
-        name: 'LCP',
-        value: 22,
-        rating: 'poor',
-        delta: 0,
-        id: 'm6b',
-        entries: [],
-        navigationType: 'navigate',
-        navigationId: 1,
-        navigationURL: 'https://example.com/page-b',
-        attribution: {
-          timeToFirstByte: 0,
-          resourceLoadDelay: 0,
-          resourceLoadDuration: 0,
-          elementRenderDelay: 0,
-        },
-      } as MetricWithAttribution;
-
-      pageTrackFunc(metric);
-      emitFunc(metric);
-
-      const record = memoryExporter.getFinishedLogRecords()[0];
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
     });
 
-    it('should fall back to the attributed-page URL for soft navigations without navigationURL', () => {
+    it('should keep browser.url.full on the attributed page for soft navigation metrics when navigationURL points elsewhere', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
         diag,
@@ -3845,33 +3905,41 @@ describe('WebVitalsInstrumentation', () => {
       });
       instrumentation.enable();
 
-      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
-      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+      const record = emitLCP(
+        lcpMetric({
+          navigationType: 'soft-navigation',
+          navigationId: 2,
+          navigationURL: 'https://example.com/page-b',
+        }),
+      );
 
-      const metric = {
-        name: 'LCP',
-        value: 22,
-        rating: 'poor',
-        delta: 0,
-        id: 'm7',
-        entries: [],
-        navigationType: 'soft-navigation',
-        navigationId: 2,
-        attribution: {
-          timeToFirstByte: 0,
-          resourceLoadDelay: 0,
-          resourceLoadDuration: 0,
-          elementRenderDelay: 0,
-        },
-      } as MetricWithAttribution;
-
-      pageTrackFunc(metric);
-      emitFunc(metric);
-
-      const record = memoryExporter.getFinishedLogRecords()[0];
       expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
         'https://example.com/page-a',
       );
+      expect(record.attributes['browser.web_vital.navigation_url']).to.equal(
+        'https://example.com/page-b',
+      );
+    });
+
+    it('should omit browser.web_vital.navigation_url when the metric has none', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+      instrumentation.enable();
+
+      const record = emitLCP(
+        lcpMetric({ navigationType: 'soft-navigation', navigationId: 2 }),
+      );
+
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-a',
+      );
+      void expect(record.attributes['browser.web_vital.navigation_url']).to.be
+        .undefined;
     });
 
     it('should refresh the attributed page for CLS when the metric id changes with an unchanged largestShiftTarget', () => {
