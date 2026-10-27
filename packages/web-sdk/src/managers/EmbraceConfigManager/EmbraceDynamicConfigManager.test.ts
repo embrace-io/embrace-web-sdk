@@ -467,4 +467,25 @@ describe('EmbraceDynamicConfigManager', () => {
       `https://custom-config-url.com/config/v2/config?appId=test-app&osVersion=1&appVersion=1.0.0&deviceId=test-device`,
     );
   });
+
+  it('should report the URL it fetches the remote config from', async () => {
+    fakeFetchRespondWith(JSON.stringify({ threshold: 90 }), { status: 200 });
+    const configManager = new EmbraceDynamicConfigManager({
+      appID: 'test-app',
+      appVersion: '1.0.0',
+      deviceId: 'test-device',
+      storage,
+      diag,
+    });
+
+    await configManager.refreshRemoteConfig();
+
+    expect(configManager.getRemoteConfigURL()).to.equal(fakeFetchGetUrl());
+  });
+
+  it('should report no remote config URL when not connected to Embrace', () => {
+    const configManager = new EmbraceDynamicConfigManager({ storage, diag });
+
+    expect(configManager.getRemoteConfigURL()).to.equal(null);
+  });
 });

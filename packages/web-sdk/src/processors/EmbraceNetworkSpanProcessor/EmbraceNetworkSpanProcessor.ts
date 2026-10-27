@@ -6,7 +6,7 @@ import {
   KEY_EMB_IS_EMBRACE_EXPORT,
   KEY_EMB_TYPE,
 } from '../../constants/index.ts';
-import { isNetworkSpan } from '../../utils/index.ts';
+import { isNetworkSpan, resolveUrl } from '../../utils/index.ts';
 import type { EmbraceNetworkSpanProcessorArgs } from './types.ts';
 
 /**
@@ -19,9 +19,8 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
   public constructor({
     embraceExporterEndpoints = [],
   }: EmbraceNetworkSpanProcessorArgs = {}) {
-    // The fetch/XHR instrumentations record url.full as an href resolved against document.baseURI.
     this._embraceExporterEndpoints = new Set(
-      embraceExporterEndpoints.map(normalizeUrl),
+      embraceExporterEndpoints.map(resolveUrl),
     );
   }
 
@@ -55,12 +54,3 @@ export class EmbraceNetworkSpanProcessor implements SpanProcessor {
     return typeof url === 'string' && this._embraceExporterEndpoints.has(url);
   }
 }
-
-const normalizeUrl = (url: string): string => {
-  try {
-    return new URL(url, document.baseURI).href;
-  } catch {
-    // fetch rejects the same URL at export; keep it rather than throw from init.
-    return url;
-  }
-};

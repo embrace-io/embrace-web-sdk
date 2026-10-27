@@ -172,6 +172,19 @@ measured at that later point, not at the earlier capture. Everything else is
 counts and pixels, not timing data. `getNavigationEntry()` is also read for
 `loadEventStart`, used only as a fired/not-fired predicate, never emitted.
 
+#### PageLoadInstrumentation
+
+One `page-load` log per page view: the hard navigation, then each route change.
+
+| Telemetry field | Source | Method |
+| --- | --- | --- |
+| log timestamp | the later of the moment activity last stopped and, for the hard navigation, `loadEventEnd` | `getNowMillis()` / `epochMillisFromOrigin` |
+| `page_load.duration` | that end minus the view start: the route change, or time origin for the hard navigation, both moved to `activationStart` on a prerendered page | `getNowMillis()` / `epochMillisFromOrigin`, then a difference of two epoch values |
+
+The view start is the current view's start, but it is kept per view instead of
+read through `getZeroTime()`: a route change reported by a router integration
+without the Navigation API does not move zero time.
+
 ### Time-origin instrumentations
 
 These only convert raw offsets into absolute epoch timestamps. They have no
