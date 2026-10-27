@@ -340,6 +340,17 @@ describe('OTelPerformanceManager', () => {
       expect(perf.getClockLag()).to.equal(1235);
     });
 
+    it('counts only the time slept since the given origin in getClockLag', () => {
+      advanceAwake(1000);
+      sleep(ONE_HOUR);
+      const spanWallOrigin = wallNow - perfNow; // as a span started now reads it
+      advanceAwake(500);
+      sleep(ONE_HOUR / 2);
+
+      expect(perf.getClockLag()).to.equal(ONE_HOUR + ONE_HOUR / 2);
+      expect(perf.getClockLag(spanWallOrigin)).to.equal(ONE_HOUR / 2);
+    });
+
     it('includes time asleep in a getNow difference', () => {
       advanceAwake(1000);
       const start = perf.getNow();

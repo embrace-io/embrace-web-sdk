@@ -27,7 +27,7 @@ export interface PerformanceManager {
     originOffset: Offset,
     entryStart?: Offset,
   ) => AbsoluteTime;
-  getClockLag: () => number;
+  getClockLag: (origin?: AbsoluteTime) => number;
   getNavigationEntry: () => PerformanceNavigationTiming | null;
   getNow: () => AbsoluteTime;
   getOffsetFromOrigin: () => Offset;

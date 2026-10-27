@@ -16,7 +16,10 @@ import type {
   ExtendedSpan,
   ExtendedSpanFailedOptions,
 } from '../../api-traces/index.ts';
-import { KEY_EMB_ERROR_CODE } from '../../constants/index.ts';
+import {
+  KEY_EMB_ERROR_CODE,
+  KEY_EMB_PERF_CLOCK_LAG_DELTA_MS,
+} from '../../constants/index.ts';
 import type { AbsoluteTime, PerformanceManager } from '../../utils/index.ts';
 import { DRIFT_THRESHOLD_MS } from '../../utils/index.ts';
 
@@ -39,10 +42,12 @@ const toSpanTime = (
   }
 
   const anchoredTime = wallOrigin + time;
-  const absoluteTime = perf.offsetToAbsoluteTime(time);
+  const correctedAbsoluteTime = perf.offsetToAbsoluteTime(time);
 
-  return Math.abs(absoluteTime - anchoredTime) > DRIFT_THRESHOLD_MS
-    ? absoluteTime
+  // If the difference between anchoredTime and correctedAbsoluteTime is the expected error between Date.now() and performance.now()
+  // keep anchoredTime, otherwise assume there's a sleep and use correctedAbsoluteTime
+  return Math.abs(correctedAbsoluteTime - anchoredTime) > DRIFT_THRESHOLD_MS
+    ? correctedAbsoluteTime
     : anchoredTime;
 };
 
@@ -50,13 +55,17 @@ const toSpanTime = (
  * Delegates most calls to the Span it wraps, so that it satisfies the Span interface.
  * It also implements the helpers that are part of the ExtendedSpan interface. For a span started
  * through `start`, it converts the times given to `end`, `fail`, `addEvent` and `recordException`
- * the same way as the start.
+ * the same way as the start, and `end` and `fail` set emb.perf_clock_lag_delta_ms to the time slept
+ * since the span started.
  */
 export class EmbraceExtendedSpan implements ExtendedSpan {
   private readonly _span: ExtendedSpan;
   // Set only by start(): a span wrapped by from() has no wall origin from its creation, so its
-  // times are kept as given
+  // times are kept as given and it gets no emb.perf_clock_lag_delta_ms
   private readonly _perf?: PerformanceManager;
+  // Stores Date.now() - performance.now() when the span is created
+  // so all offsets are anchored to the same difference
+  // We need to store this in case any external instrumentation uses Date.now() as startTime instead of our own SDK clock
   private readonly _wallOrigin?: AbsoluteTime;
 
   private constructor(
@@ -139,7 +148,7 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
   }
 
   public end(endTime?: TimeInput): void {
-    this._span.end(this._toSpanTime(endTime));
+    this._end(endTime);
   }
 
   public isRecording(): boolean {
@@ -190,7 +199,19 @@ export class EmbraceExtendedSpan implements ExtendedSpan {
       this._span.setAttribute(KEY_EMB_ERROR_CODE, options.code.toUpperCase());
     }
 
-    this._span.end(this._toSpanTime(options.endTime));
+    this._end(options.endTime);
+  }
+
+  private _end(endTime: TimeInput | undefined): void {
+    // A span that has ended, or isn't sampled and so has no attributes, is left as it is
+    if (this._perf && this._wallOrigin !== undefined && this.isRecording()) {
+      // Written directly, as PerfClockLagSpanProcessor writes emb.perf_clock_lag_ms, so the
+      // attribute count limit doesn't drop it
+      this._span.attributes[KEY_EMB_PERF_CLOCK_LAG_DELTA_MS] =
+        this._perf.getClockLag(this._wallOrigin);
+    }
+
+    this._span.end(this._toSpanTime(endTime));
   }
 
   private _toSpanTime(time: TimeInput | undefined): TimeInput | undefined {

@@ -53,7 +53,7 @@ an offset from time origin can be passed to `offsetToAbsoluteTime`.
 | `getOffsetFromOrigin()` | What is the raw offset right now? | `performance.now()` |
 | `getOffsetFromZeroTime(offset = now)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - zeroOffset)` |
 | `getNow()` | What is the wall-clock epoch time right now? | `origin(now) + performance.now()` |
-| `getClockLag()` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (timeOrigin + performance.now()))`, with `timeOrigin` as read at startup |
+| `getClockLag(origin?)` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (origin + performance.now()))`, with `origin` defaulting to `timeOrigin` as read at startup |
 | `setZeroTimeOffset(offset)` | — (records the raw offset at which the current view started) | |
 | `checkDrift()` | — (starts a new origin segment if the machine slept) | |
 
@@ -83,7 +83,8 @@ sleeps, but `Date.now()` keeps real time. In a tab that stays open across a
 sleep, `timeOrigin + performance.now()` falls behind the wall clock by the
 time slept. Left alone, that stamps everything after the sleep hours in the
 past, and keeps user sessions alive because their expiry checks never see the
-time go by. `emb.perf_clock_lag_ms` records the size of that lag.
+time go by. `emb.perf_clock_lag_ms` records the size of that lag, and
+`emb.perf_clock_lag_delta_ms` how much of it built up while a span was open.
 
 The manager keeps an origin history: a list of `{ from, origin }` segments
 that starts as `{ from: 0, origin: timeOrigin }`. Every read runs
@@ -256,7 +257,8 @@ What each one gets:
 
 The span starts at 12:10:01 and ends at 12:40:08, a duration of **30m 7s**
 that includes the time asleep, with its `retry` event at 12:40:05, between the
-wake and the end. Logs A and B land on either side of the sleep, at the times
+wake and the end. Its `emb.perf_clock_lag_delta_ms` is `1,800,000`, the 30 min
+asleep, so the 7s it was awake is the duration minus that. Logs A and B land on either side of the sleep, at the times
 they were emitted. On Safari, which moves `performance.timeOrigin` forward
 instead, the results are the same: the manager reads `timeOrigin` once, and
 `wallOrigin` does not use it.
@@ -458,6 +460,11 @@ For completeness, the non-instrumentation consumers of the clock:
   globally, the OTel trace API get their tracers from it. Spans come back as
   `EmbraceExtendedSpan`, which converts the times given to `end()`, `fail()`,
   `addEvent()` and `recordException()` the same way as the start.
+  - `end()` and `fail()` set `emb.perf_clock_lag_delta_ms` to `getClockLag()`
+    measured from the span's wall origin (`Date.now() - getOffsetFromOrigin()`
+    at its creation), the time slept since then. A span created and ended at
+    once with earlier times, as from a performance entry, gets 0 even if the
+    entry spanned a sleep.
   - A span without a start time gets `Date.now()`, passed explicitly. Without
     one, OTel ends the span and stamps its events at its start plus the elapsed
     `performance.now()`, which leaves out time asleep. With one, at `Date.now()`.
@@ -475,4 +482,5 @@ For completeness, the non-instrumentation consumers of the clock:
   (a pure duration), the `pageshow` listener that resets zero time, and the
   `blur` and `visibilitychange` listeners that call `checkDrift()`.
 - **PerfClockLagSpanProcessor / PerfClockLagLogRecordProcessor** —
-  `getClockLag()` for `emb.perf_clock_lag_ms`.
+  `getClockLag()` for `emb.perf_clock_lag_ms`. It counts every sleep since
+  the page loaded, including those before the span or log.

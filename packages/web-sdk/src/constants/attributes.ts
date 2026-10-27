@@ -20,6 +20,9 @@ export const KEY_EMB_W3C_TRACEPARENT = 'emb.w3c_traceparent';
 // performance.now() stops while the device sleeps on some platforms (e.g. macOS), so this grows by the time
 // slept since the page loaded. Spans get it when they end, logs when emitted.
 export const KEY_EMB_PERF_CLOCK_LAG_MS = 'emb.perf_clock_lag_ms';
+// How much emb.perf_clock_lag_ms grew while a span was open, in ms: the time slept between its start and end,
+// or a wall-clock change. Spans started through EmbraceTracerProvider get it when they end.
+export const KEY_EMB_PERF_CLOCK_LAG_DELTA_MS = 'emb.perf_clock_lag_delta_ms';
 export const KEY_BROWSER_URL_FULL = 'browser.url.full';
 export const KEY_BROWSER_NAVIGATION_TIMING_NOT_RESTORED_REASONS =
   'browser.navigation_timing.not_restored_reasons';

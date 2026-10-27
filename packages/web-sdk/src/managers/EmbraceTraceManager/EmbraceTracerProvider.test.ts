@@ -3,6 +3,7 @@ import { context, trace } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  AlwaysOffSampler,
   InMemorySpanExporter,
   SimpleSpanProcessor,
   StackContextManager,
@@ -18,6 +19,7 @@ const { expect } = chai;
 
 const TIME_ORIGIN = 1_700_000_000_000;
 const THIRTY_MINUTES = 30 * 60 * 1000;
+const TEN_MINUTES = 10 * 60 * 1000;
 
 const toMillis = (span: ReadableSpan) => ({
   start: hrTimeToMilliseconds(span.startTime),
@@ -192,7 +194,10 @@ describe('EmbraceTracerProvider', () => {
     outer.end();
 
     const [inner] = exporter.getFinishedSpans();
-    expect(inner.attributes).to.deep.equal({ key: 'value' });
+    expect(inner.attributes).to.deep.equal({
+      key: 'value',
+      'emb.perf_clock_lag_delta_ms': 0,
+    });
     expect(inner.parentSpanContext?.spanId).to.equal(
       outer.spanContext().spanId,
     );
@@ -218,9 +223,46 @@ describe('EmbraceTracerProvider', () => {
       kept: 'yes',
       'emb.type': 'perf',
       'emb.error_code': 'FAILURE',
+      'emb.perf_clock_lag_delta_ms': THIRTY_MINUTES,
     });
     expect(toMillis(finished).end).to.equal(
       TIME_ORIGIN + 10_000 + THIRTY_MINUTES,
     );
+  });
+
+  it('records only the time slept while the span was open in emb.perf_clock_lag_delta_ms', () => {
+    sleep(THIRTY_MINUTES); // before the span starts, so not part of it
+    const span = tracer.startSpan('across-sleep');
+    advanceAwake(3000);
+    sleep(TEN_MINUTES);
+    advanceAwake(2000);
+    span.end();
+
+    const [finished] = exporter.getFinishedSpans();
+    expect(finished.attributes['emb.perf_clock_lag_delta_ms']).to.equal(
+      TEN_MINUTES,
+    );
+  });
+
+  it('keeps emb.perf_clock_lag_delta_ms from the first end', () => {
+    const span = tracer.startSpan('ended-twice');
+    span.end();
+    sleep(THIRTY_MINUTES);
+    span.end();
+
+    const [finished] = exporter.getFinishedSpans();
+    expect(finished.attributes['emb.perf_clock_lag_delta_ms']).to.equal(0);
+  });
+
+  it('ends a span that is not sampled', () => {
+    const unsampledTracer = new EmbraceTracerProvider({
+      perf,
+      sampler: new AlwaysOffSampler(),
+    }).getTracer('test');
+    const span = unsampledTracer.startSpan('not-sampled');
+
+    expect(() => {
+      span.end();
+    }).not.to.throw();
   });
 });
