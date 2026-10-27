@@ -3,7 +3,7 @@
 #
 #   source "$(dirname "${BASH_SOURCE[0]}")/e2e-container-env.sh"
 
-PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright:v1.60.0-noble@sha256:9bd26ad900bb5e0f4dee75839e957a89ae89c2b7ab1e76050e559790e946b948"
+PLAYWRIGHT_IMAGE="mcr.microsoft.com/playwright:v1.64.1-noble@sha256:47b510dd9230bf0b9bfc9b20102241e577ea7a99334ab4c3ca19f19770e9b8ea"
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVE_CONTAINER="embrace-integration-servers"
 IMAGE_TAG="embrace-web-sdk-integration"
@@ -63,7 +63,10 @@ FROM ${PLAYWRIGHT_IMAGE}
 ${PROXY_DOCKERFILE_ARGS}WORKDIR /workspace
 COPY . .
 RUN mkdir -p /root/.cache && ln -sf /ms-playwright /root/.cache/ms-playwright
-RUN npm i -g npm@11 && npm ci
+# The image's Node is older than package.json requires. Installs the latest release of the required
+# major version, as CI's setup-node does, from / so npx doesn't check the workspace's devEngines.
+RUN cd / && npx --yes n "\$(node -p "require('/workspace/package.json').devEngines.runtime.version.match(/\\d+/)[0]")"
+RUN npm ci
 RUN npm run build
 RUN npm run install-dependencies --prefix tests/integration
 RUN npm run build-platforms --prefix tests/integration
