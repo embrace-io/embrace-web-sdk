@@ -50,6 +50,8 @@ export const KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS =
 export const KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS =
   'emb.user_session_foreground_inactivity_timeout_seconds';
 export const KEY_EMB_TAB_IS_TAB_ENGAGED = 'emb.is_tab_engaged';
+// Set to true on network spans for the SDK's own uploads to the Embrace backend.
+export const KEY_EMB_IS_EMBRACE_EXPORT = 'emb.is_embrace_export';
 
 export enum EMB_TYPES {
   SessionPart = 'ux.session_part',
