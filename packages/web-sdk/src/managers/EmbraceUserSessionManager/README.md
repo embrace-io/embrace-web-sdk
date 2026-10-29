@@ -206,11 +206,12 @@ timeout falls back to its default, not to the max-duration value.
 timer delay. `userSessionInactivityTimeoutSeconds` sets the inactivity deadline
 written at part end.
 
-The max-duration timer is armed at user-session creation, and re-armed when a
-fresh manager loads an existing, unexpired state on page reload (no timer
-running yet). It is not re-armed on session-part end; `userSessionMaxEndTs` is
-fixed at creation, so it keeps running across parts on its original deadline.
-The delay is computed as the time remaining until that deadline, not the full
+The max-duration timer is armed at user-session creation, and re-armed on every
+part start and whenever a manager loads existing state (for example on page
+reload). Timers count only awake time, so a timer armed before the machine
+sleeps would fire late by the time slept; re-arming from the current time keeps
+it due at `userSessionMaxEndTs`. It is not re-armed on session-part end. The
+delay is computed as the time remaining until that deadline, not the full
 duration value.
 
 The foreground inactivity timer is restarted on every activity event, subject to
