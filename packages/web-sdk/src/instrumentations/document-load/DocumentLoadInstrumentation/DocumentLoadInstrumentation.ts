@@ -194,7 +194,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
             this._applyCustomAttributesOnSpan?.documentFetch,
           );
           fetchSpan.end(
-            this.perf.epochMillisFromOrigin(navigationTiming.responseEnd),
+            this.perf.offsetToAbsoluteTime(navigationTiming.responseEnd),
           );
         });
       });
@@ -225,7 +225,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
         this._applyCustomAttributesOnSpan?.documentLoad,
       );
       rootSpan.end(
-        this.perf.epochMillisFromOrigin(navigationTiming.loadEventEnd),
+        this.perf.offsetToAbsoluteTime(navigationTiming.loadEventEnd),
       );
     });
   }
@@ -257,7 +257,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       resource,
       this._applyCustomAttributesOnSpan?.resourceFetch,
     );
-    span.end(this.perf.epochMillisFromOrigin(resource.responseEnd));
+    span.end(this.perf.offsetToAbsoluteTime(resource.responseEnd));
   }
 
   /** startTime is an offset from time origin */
@@ -268,7 +268,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   ): Span {
     return this.tracer.startSpan(
       spanName,
-      { startTime: this.perf.epochMillisFromOrigin(startTime) },
+      { startTime: this.perf.offsetToAbsoluteTime(startTime) },
       parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined,
     );
   }

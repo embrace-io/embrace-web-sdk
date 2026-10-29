@@ -18,14 +18,14 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     this._onErrorHandler = (event: ErrorEvent) => {
       this.logManager.logException(event.error || event.message, {
         handled: false,
-        timestamp: this.perf.epochMillisFromOrigin(event.timeStamp),
+        timestamp: this.perf.offsetToAbsoluteTime(event.timeStamp),
         handler: 'global_exception',
       });
     };
     this._onUnhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       this.logManager.logException(event.reason, {
         handled: false,
-        timestamp: this.perf.epochMillisFromOrigin(event.timeStamp),
+        timestamp: this.perf.offsetToAbsoluteTime(event.timeStamp),
         handler: 'promise_rejection',
       });
     };

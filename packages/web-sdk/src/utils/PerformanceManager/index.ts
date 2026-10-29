@@ -1,6 +1,5 @@
 export {
-  _resetZeroTimeMillisForTesting,
+  DRIFT_THRESHOLD_MS,
   OTelPerformanceManager,
-  updateZeroTimeMillis,
 } from './OTelPerformanceManager.ts';
-export type { PerformanceManager } from './types.ts';
+export type { AbsoluteTime, Offset, PerformanceManager } from './types.ts';

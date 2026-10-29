@@ -130,7 +130,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
     }
 
     this.logger.emit({
-      timestamp: this.perf.epochMillisFromOrigin(eventWindow.timestamp),
+      timestamp: this.perf.offsetToAbsoluteTime(eventWindow.timestamp),
       eventName: RAGE_CLICK_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes: {

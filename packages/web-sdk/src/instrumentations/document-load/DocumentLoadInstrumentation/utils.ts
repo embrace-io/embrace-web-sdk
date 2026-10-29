@@ -35,7 +35,7 @@ export const addSpanNetworkEvent = (
   // https://w3c.github.io/resource-timing/#dfn-convert-fetch-timestamp
   // https://w3c.github.io/navigation-timing/#dom-performancenavigationtiming-unloadeventstart
   if (!(ignoreZeros && offset === 0)) {
-    span.addEvent(name, perf.epochMillisFromOrigin(offset));
+    span.addEvent(name, perf.offsetToAbsoluteTime(offset));
   }
 };
 
@@ -83,7 +83,7 @@ export const addSpanPerformancePaintEvents = (
   performancePaintTiming.forEach(({ name, startTime }) => {
     const eventName = performancePaintNames[name];
     if (eventName) {
-      span.addEvent(eventName, perf.epochMillisFromOrigin(startTime));
+      span.addEvent(eventName, perf.offsetToAbsoluteTime(startTime));
     }
   });
 };

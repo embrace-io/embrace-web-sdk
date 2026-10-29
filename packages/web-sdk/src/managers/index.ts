@@ -5,7 +5,10 @@ export {
   DEFAULT_MAX_LOG_ATTRIBUTES,
   EmbraceLimitManager,
 } from './EmbraceLimitManager/index.ts';
-export { EmbraceLogManager } from './EmbraceLogManager/index.ts';
+export {
+  EmbraceLoggerProvider,
+  EmbraceLogManager,
+} from './EmbraceLogManager/index.ts';
 export { EmbracePageManager } from './EmbracePageManager/index.ts';
 export type { EmbracePageManagerArgs } from './EmbracePageManager/types.ts';
 export type { SDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.ts';
@@ -13,6 +16,7 @@ export { EmbraceSDKFeaturesManager } from './EmbraceSDKFeaturesManager/index.ts'
 export {
   EmbraceExtendedSpan,
   EmbraceTraceManager,
+  EmbraceTracerProvider,
 } from './EmbraceTraceManager/index.ts';
 export { EmbraceUserManager } from './EmbraceUserManager/index.ts';
 export type { UserSessionManagerInternal } from './EmbraceUserSessionManager/index.ts';

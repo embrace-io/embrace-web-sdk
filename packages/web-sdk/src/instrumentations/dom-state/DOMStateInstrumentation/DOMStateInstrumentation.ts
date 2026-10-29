@@ -136,7 +136,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
         return;
       }
 
-      const captureEpochMillis = this.perf.getNowMillis();
       this._pendingFoldAttributes = {
         [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_COUNT]:
           this._countImagesAboveFold(measurement),
@@ -144,9 +143,9 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
           measurement.viewportHeight,
         [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_VIEWPORT_WIDTH]:
           measurement.viewportWidth,
-        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]: captureEpochMillis,
+        [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_TIMESTAMP]: this.perf.getNow(),
         [ATTR_DOM_STATE_IMAGES_ABOVE_FOLD_CAPTURE_TIME]:
-          this.perf.millisFromZeroTimeEpoch(captureEpochMillis),
+          this.perf.getOffsetFromZeroTime(),
       };
     } catch (e) {
       this._diag.error('failed to capture dom-state fold measurement', e);

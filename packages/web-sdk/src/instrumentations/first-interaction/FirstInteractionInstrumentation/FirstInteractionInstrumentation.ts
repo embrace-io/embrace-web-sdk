@@ -139,7 +139,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
       [ATTR_FIRST_INTERACTION_INTERACTION_TYPE]: data.interactionType,
       [ATTR_FIRST_INTERACTION_ELEMENT_TYPE]: elementType,
       [ATTR_FIRST_INTERACTION_ELEMENT_SELECTOR]: elementSelector,
-      [ATTR_FIRST_INTERACTION_TIME]: this.perf.millisFromZeroTime(
+      [ATTR_FIRST_INTERACTION_TIME]: this.perf.getOffsetFromZeroTime(
         data.timestamp,
       ),
     };
@@ -150,7 +150,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     }
 
     this.logger.emit({
-      timestamp: this.perf.epochMillisFromOrigin(data.timestamp),
+      timestamp: this.perf.offsetToAbsoluteTime(data.timestamp),
       eventName: FIRST_INTERACTION_EVENT_NAME,
       severityNumber: SeverityNumber.INFO,
       attributes,

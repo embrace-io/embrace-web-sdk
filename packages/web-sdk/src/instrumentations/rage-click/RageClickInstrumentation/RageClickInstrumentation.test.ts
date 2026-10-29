@@ -323,7 +323,7 @@ describe('RageClickInstrumentation', () => {
     const realPerf = new OTelPerformanceManager();
     const throwingPerf: PerformanceManager = {
       ...realPerf,
-      epochMillisFromOrigin: () => {
+      offsetToAbsoluteTime: () => {
         throw new Error('boom');
       },
     };

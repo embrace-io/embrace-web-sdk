@@ -263,7 +263,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     // first part starts, and so other tabs see the row when we create a
     // fresh session here.
     const { state, created } = this._loadOrCreateUserSessionState(
-      this._perf.getNowMillis(),
+      this._perf.getNow(),
     );
     this._state = state;
     if (created) {
@@ -319,7 +319,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    const now = this._perf.getNowMillis();
+    const now = this._perf.getNow();
     const lastEndRaw = this._storage.getItem(
       EMBRACE_LAST_END_USER_SESSION_TS_KEY,
     );
@@ -402,12 +402,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     };
 
     this._activeSessionPartId = activeSessionPartId;
+    // Explicit, so the part starts and ends on the same clock.
+    const startTimeEpochMillis = timestamp ?? this._perf.getNow();
     let span: EmbraceExtendedSpan;
     try {
-      span = new EmbraceExtendedSpan(
+      span = EmbraceExtendedSpan.from(
         this._tracer.startSpan(SESSION_PART_SPAN_NAME, {
           attributes,
-          startTime: timestamp,
+          startTime: startTimeEpochMillis,
         }),
       );
     } catch (error) {
@@ -421,7 +423,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._sessionPartSpan = span;
     this._sessionPartHistory.push({
       id: activeSessionPartId,
-      startTimeEpochMillis: timestamp ?? this._perf.getNowMillis(),
+      startTimeEpochMillis,
     });
 
     this._startSessionPartInactivityTimer();
@@ -451,7 +453,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     // push them forward: the caller's timestamp (when given) becomes the span
     // end time, while the inactivity deadline is computed from the actual call
     // time so an anchored end cannot move the deadline earlier.
-    const now = this._perf.getNowMillis();
+    const now = this._perf.getNow();
     const partEndTs = timestamp ?? now;
     const span = this._sessionPartSpan;
     try {
@@ -538,7 +540,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       {
         message: limitedBreadcrumb.name,
       },
-      this._perf.getNowMillis(),
+      this._perf.getNow(),
     );
   }
 
@@ -580,9 +582,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     // Ensure a state row exists to hold the write.
     // addProperty can fire before any part has started.
-    const { state } = this._loadOrCreateUserSessionState(
-      this._perf.getNowMillis(),
-    );
+    const { state } = this._loadOrCreateUserSessionState(this._perf.getNow());
     this._state = {
       ...state,
       userSessionProperties: {
@@ -749,7 +749,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    * so `getUserSessionAttributes()` is guaranteed non-null after this.
    */
   private _beginUserSessionForPartStart(): void {
-    const now = this._perf.getNowMillis();
+    const now = this._perf.getNow();
     const { state } = this._loadOrCreateUserSessionState(now);
 
     this._currentSessionPartNumber = getIncrementedCount(
@@ -822,7 +822,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // start a part without passing a timestamp. The timestamp anchors the
       // spans only; user-session state and timers always use the actual call
       // time.
-      const boundaryTimestamp = this._perf.getNowMillis();
+      const boundaryTimestamp = this._perf.getNow();
       this.endSessionPartInternal({
         reason: 'user_session_ended',
         userSessionEndReason,
@@ -859,7 +859,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     if (!this._sessionPartSpan) {
       return;
     }
-    const boundaryTimestamp = timestamp ?? this._perf.getNowMillis();
+    const boundaryTimestamp = timestamp ?? this._perf.getNow();
     this.endSessionPartInternal({
       reason: endReason,
       timestamp: boundaryTimestamp,

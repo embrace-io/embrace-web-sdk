@@ -114,7 +114,6 @@ describe('LoafInstrumentation', () => {
     const logManager = new EmbraceLogManager({
       userSessionManager,
       limitManager,
-      perf,
       storage,
       visibilityDoc: window.document,
     });
@@ -549,7 +548,6 @@ describe('LoafInstrumentation', () => {
     const logManager2 = new EmbraceLogManager({
       userSessionManager: userSessionManager2,
       limitManager: limitManager2,
-      perf,
       storage: storage2,
       visibilityDoc: window.document,
     });

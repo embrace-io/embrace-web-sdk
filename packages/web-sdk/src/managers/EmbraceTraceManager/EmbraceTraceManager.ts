@@ -32,7 +32,7 @@ export class EmbraceTraceManager implements TraceManager {
       ? trace.setSpan(context.active(), options.parentSpan)
       : ctx;
 
-    return new EmbraceExtendedSpan(
+    return EmbraceExtendedSpan.from(
       this._tracer.startSpan(name, options, activeContext),
     );
   }
@@ -43,7 +43,7 @@ export class EmbraceTraceManager implements TraceManager {
     const span = trace.getSpan(context);
 
     if (span) {
-      return new EmbraceExtendedSpan(span);
+      return EmbraceExtendedSpan.from(span);
     }
 
     return undefined;

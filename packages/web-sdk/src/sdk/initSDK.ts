@@ -10,15 +10,11 @@ import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
-import {
-  BatchLogRecordProcessor,
-  LoggerProvider,
-} from '@opentelemetry/sdk-logs';
+import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
   BatchSpanProcessor,
   StackContextManager,
-  TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
@@ -36,10 +32,12 @@ import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
   EmbraceLimitManager,
+  EmbraceLoggerProvider,
   EmbraceLogManager,
   EmbracePageManager,
   EmbraceSDKFeaturesManager,
   EmbraceTraceManager,
+  EmbraceTracerProvider,
   EmbraceUserManager,
   EmbraceUserSessionManager,
 } from '../managers/index.ts';
@@ -71,7 +69,6 @@ import {
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
-  updateZeroTimeMillis,
 } from '../utils/index.ts';
 import { getDefaultAttributeScrubbers } from './defaultAttributeScrubbers.ts';
 import { registry } from './registry.ts';
@@ -139,11 +136,17 @@ export const initSDK = (
     }
 
     const perf = new OTelPerformanceManager();
-    const initSDKStart = perf.getNowMillis();
+    const initSDKStart = perf.getNow();
 
     window.addEventListener('pageshow', (event) =>
-      updateZeroTimeMillis(perf.epochMillisFromOrigin(event.timeStamp)),
+      perf.setZeroTimeOffset(event.timeStamp),
     );
+    // A sleep is noticed on the first clock read after it, and the origin
+    // boundary is set to the read before that, so only a read just before the
+    // sleep matters: blur came before every sleep in testing, and
+    // visibilitychange covers a page that was already hidden.
+    window.addEventListener('blur', perf.checkDrift);
+    window.document.addEventListener('visibilitychange', perf.checkDrift);
 
     const validatedAppID = validateAppID(appID);
     const validatedAppVersion = validateAppVersion(appVersion);
@@ -381,9 +384,7 @@ export const initSDK = (
       registry.register(sdkControl);
     }
 
-    userSessionManager.recordSDKStartupDuration(
-      perf.getNowMillis() - initSDKStart,
-    );
+    userSessionManager.recordSDKStartupDuration(perf.getNow() - initSDKStart);
 
     return sdkControl;
   } catch (e) {
@@ -471,7 +472,11 @@ const setupTraces = ({
     finalSpanProcessors.push(embraceSpanProcessor);
   }
 
-  const tracerProvider = new TracerProvider({
+  // The trace manager, the user session manager, the instrumentations and, when registered
+  // globally, the OTel trace API all get their tracers here, so all of them keep span times on the
+  // wall clock across a sleep.
+  const tracerProvider = new EmbraceTracerProvider({
+    perf,
     resource,
     spanProcessors: finalSpanProcessors,
     spanLimits: {
@@ -551,16 +556,18 @@ const setupLogs = ({
     finalLogProcessors.push(embraceLogProcessor);
   }
 
-  const loggerProvider = new LoggerProvider({
+  // The log manager, the instrumentations and, when registered globally, the OTel logs API
+  // all get their loggers here, so all of them stamp logs on the SDK clock.
+  const loggerProvider = new EmbraceLoggerProvider({
     resource,
     processors: finalLogProcessors,
+    perf,
   });
 
   const embraceLogManager = new EmbraceLogManager({
     userSessionManager,
     limitManager,
     loggerProvider: registerGlobally ? undefined : loggerProvider,
-    perf,
     storage: sdkLocalStorage,
     visibilityDoc,
   });

@@ -1,7 +1,6 @@
 import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { KEY_EMB_PERF_CLOCK_LAG_MS } from '../../constants/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
-import { getPerfClockLagMillis } from '../utils/index.ts';
 import type { PerfClockLagSpanProcessorArgs } from './types.ts';
 
 /**
@@ -19,9 +18,7 @@ export class PerfClockLagSpanProcessor implements SpanProcessor {
   }
 
   public onEnding(span: Span): void {
-    span.attributes[KEY_EMB_PERF_CLOCK_LAG_MS] = getPerfClockLagMillis(
-      this._perf,
-    );
+    span.attributes[KEY_EMB_PERF_CLOCK_LAG_MS] = this._perf.getClockLag();
   }
 
   public onStart(this: void): void {

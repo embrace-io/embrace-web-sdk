@@ -240,7 +240,11 @@ describe('DOMStateInstrumentation', () => {
     // No bfcache restore or soft navigation happens in this test, so zero time
     // is at time origin: the two attributes describe the same instant, one
     // as wall clock and one as ms since zero time, so they agree once rebased.
-    expect(captureMillis).to.equal(timestampMillis - performance.timeOrigin);
+    // They come from two back-to-back clock reads.
+    expect(captureMillis).to.be.closeTo(
+      timestampMillis - performance.timeOrigin,
+      1,
+    );
 
     // The log itself is stamped at the part-end flush, not the earlier fold
     // capture, since its other attributes (element count, document box) are
