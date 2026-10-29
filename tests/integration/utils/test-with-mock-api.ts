@@ -124,6 +124,8 @@ const IGNORED_ATTRIBUTES_LIST = [
   'emb.perf_clock_lag_delta_ms',
   // CI runs on Linux, devs might use different OS, thus different user agent
   'user_agent.original',
+  // navigator.deviceMemory reports the host's RAM, which differs between CI runners and dev machines
+  'device_memory',
   'emb.stacktrace.js',
   'emb.js_file_bundle_ids',
   'emb.web_vital.attribution.elementRenderDelay',
