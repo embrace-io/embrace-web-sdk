@@ -63,9 +63,17 @@ const isError = (value: unknown): value is Error => {
     case '[object DOMException]':
       return true;
     default:
-      return value instanceof Error;
+      try {
+        return value instanceof Error;
+      } catch {
+        // A Proxy with a throwing getPrototypeOf trap; treat it as a plain object.
+        return false;
+      }
   }
 };
+
+// Minifiers rename classes to one or two letters, which says nothing about the error.
+const MINIFIED_NAME_MAX_LENGTH = 2;
 
 const stringifyObject = (value: object): string => {
   let json: string | undefined;
@@ -206,9 +214,10 @@ export class EmbraceLogManager implements LogManager {
           : typeof error;
 
       if (isError(error)) {
+        const name = typeof error.name === 'string' ? error.name : '';
         return {
-          type,
-          name: typeof error.name === 'string' ? error.name : '',
+          type: type.length <= MINIFIED_NAME_MAX_LENGTH && name ? name : type,
+          name,
           message: String(error.message || '').trim(),
           stack: typeof error.stack === 'string' ? error.stack : '',
           cause: error.cause ? 'present' : '',

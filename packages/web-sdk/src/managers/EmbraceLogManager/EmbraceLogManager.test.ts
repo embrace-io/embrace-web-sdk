@@ -1336,6 +1336,47 @@ describe('EmbraceLogManager', () => {
         '',
       );
     });
+
+    it('should use the error name as the type when the class name is minified', () => {
+      class e extends Error {}
+      class CustomError extends Error {}
+
+      manager.logException(new e('minified'));
+      manager.logException(new CustomError('custom'));
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(2);
+      expect(finishedLogs[0].attributes).to.have.property(
+        ATTR_EXCEPTION_TYPE,
+        'Error',
+      );
+      expect(finishedLogs[1].attributes).to.have.property(
+        ATTR_EXCEPTION_TYPE,
+        'CustomError',
+      );
+    });
+
+    it('should still record the fields of an object whose prototype cannot be read', () => {
+      const value = new Proxy(
+        { reason: 'request failed' },
+        {
+          getPrototypeOf() {
+            throw new Error('cannot read prototype');
+          },
+        },
+      );
+
+      expect(() => {
+        manager.logException(value);
+      }).to.not.throw();
+
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      expect(finishedLogs[0].attributes).to.have.property(
+        ATTR_EXCEPTION_MESSAGE,
+        '{"reason":"request failed"}',
+      );
+    });
   });
 
   describe('messages with stacktrace passed in', () => {
