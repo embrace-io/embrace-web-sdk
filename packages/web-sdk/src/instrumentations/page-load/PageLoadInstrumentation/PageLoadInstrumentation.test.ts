@@ -8,6 +8,7 @@ import {
   MockPerformanceManager,
   setupTestLogExporter,
 } from '../../../../tests/utils/index.ts';
+import { page } from '../../../api-page/index.ts';
 import { EmbracePageManager } from '../../../managers/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { PageLoadInstrumentation } from './PageLoadInstrumentation.ts';
@@ -83,6 +84,27 @@ describe('PageLoadInstrumentation', () => {
       .getFinishedLogRecords()
       .filter((l) => l.eventName === 'page-load');
 
+  // A navigation entry the test fills in as the load progresses.
+  const usePendingNavigation = () => {
+    const navigationEntry = { loadEventEnd: 0, activationStart: 0 };
+    perf = new OTelPerformanceManager({
+      now: () => clock.now,
+      timeOrigin: 0,
+      getEntriesByType: (type) =>
+        type === 'navigation'
+          ? [navigationEntry as unknown as PerformanceEntry]
+          : [],
+    });
+    return navigationEntry;
+  };
+
+  const setReadyState = (state: DocumentReadyState) => {
+    Object.defineProperty(document, 'readyState', {
+      configurable: true,
+      get: () => state,
+    });
+  };
+
   before(() => {
     memoryExporter = setupTestLogExporter();
   });
@@ -107,6 +129,7 @@ describe('PageLoadInstrumentation', () => {
 
   afterEach(() => {
     instrumentation.disable();
+    Reflect.deleteProperty(document, 'readyState');
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -162,30 +185,15 @@ describe('PageLoadInstrumentation', () => {
     });
 
     it('waits for the load event', () => {
-      const navigationEntry = { loadEventEnd: 0, activationStart: 0 };
-      perf = new OTelPerformanceManager({
-        now: () => clock.now,
-        timeOrigin: 0,
-        getEntriesByType: (type) =>
-          type === 'navigation'
-            ? [navigationEntry as unknown as PerformanceEntry]
-            : [],
-      });
-      Object.defineProperty(document, 'readyState', {
-        configurable: true,
-        get: () => 'loading',
-      });
+      const navigationEntry = usePendingNavigation();
+      setReadyState('loading');
 
-      try {
-        createInstrumentation().enable();
-        clock.tick(400);
-        expect(getLogs()).to.have.lengthOf(0);
+      createInstrumentation().enable();
+      clock.tick(400);
+      expect(getLogs()).to.have.lengthOf(0);
 
-        navigationEntry.loadEventEnd = 400;
-        window.dispatchEvent(new Event('load'));
-      } finally {
-        Reflect.deleteProperty(document, 'readyState');
-      }
+      navigationEntry.loadEventEnd = 400;
+      window.dispatchEvent(new Event('load'));
       clock.tick(0);
 
       const logs = getLogs();
@@ -194,6 +202,57 @@ describe('PageLoadInstrumentation', () => {
         'page_load.type': 'initial_load',
         'page_load.duration': 400,
       });
+    });
+
+    it('reads loadEventEnd once the load event it was enabled in returns', () => {
+      const navigationEntry = usePendingNavigation();
+      setReadyState('complete');
+
+      createInstrumentation().enable();
+      navigationEntry.loadEventEnd = 5;
+      clock.tick(100);
+
+      expect(getLogs()[0].attributes).to.include({
+        'page_load.type': 'initial_load',
+        'page_load.duration': 5,
+      });
+    });
+
+    it('cancels the pending loadEventEnd read when disabled', () => {
+      usePendingNavigation();
+      setReadyState('complete');
+
+      createInstrumentation().enable();
+      instrumentation.disable();
+
+      expect(clock.countTimers()).to.equal(0);
+    });
+
+    it('waits for the load event when there is no navigation entry', () => {
+      setReadyState('loading');
+      createInstrumentation().enable();
+      clock.tick(300);
+      expect(getLogs()).to.have.lengthOf(0);
+
+      setReadyState('complete');
+      window.dispatchEvent(new Event('load'));
+      clock.tick(0);
+
+      expect(getLogs()[0].attributes).to.include({
+        'page_load.type': 'initial_load',
+        'page_load.duration': 300,
+      });
+    });
+
+    it('logs a failure to emit the log', () => {
+      sinon
+        .stub(perf, 'offsetToAbsoluteTime')
+        .throws(new Error('clock failed'));
+      createInstrumentation().enable();
+      clock.tick(100);
+
+      expect(getLogs()).to.have.lengthOf(0);
+      expect(diag.getErrorLogs()).to.include('failed to emit page-load log');
     });
 
     it('measures a prerendered page from its activation', () => {
@@ -324,6 +383,41 @@ describe('PageLoadInstrumentation', () => {
       expect(logs[1].attributes).to.include({ 'page_load.duration': 250 });
       // 1,000ms awake before the route change, 30 min asleep, then 250ms of load.
       expect(logs[1].hrTime).to.deep.equal(timeInputToHrTime(1_801_250));
+    });
+
+    it('ignores the load event of the hard navigation once a route change replaced it', () => {
+      const navigationEntry = usePendingNavigation();
+      setReadyState('loading');
+      createInstrumentation().enable();
+      clock.tick(50);
+      pageManager.setCurrentRoute({ url: '/products' });
+
+      clock.tick(30);
+      navigationEntry.loadEventEnd = 80;
+      window.dispatchEvent(new Event('load'));
+      clock.tick(100);
+
+      const logs = getLogs();
+      expect(logs).to.have.lengthOf(1);
+      expect(logs[0].attributes).to.include({
+        'page_load.type': 'route_change',
+        'page_load.duration': 0,
+      });
+    });
+
+    it('listens to the global page manager when none is given', () => {
+      page.setGlobalPageManager(pageManager);
+      createInstrumentation({ pageManager: undefined }).enable();
+      clock.tick(100);
+
+      page.setCurrentRoute({ url: '/products' });
+      clock.tick(100);
+
+      const logs = getLogs();
+      expect(logs).to.have.lengthOf(2);
+      expect(logs[1].attributes).to.include({
+        'page_load.type': 'route_change',
+      });
     });
 
     it('does not start a view when the same page is reported again', () => {
@@ -514,6 +608,61 @@ describe('PageLoadInstrumentation', () => {
       expect(getLogs()[0].attributes).to.include({
         'page_load.duration': 400,
       });
+    });
+
+    it('ignores requests once the page has loaded', () => {
+      fetchStub.returns(new Promise(() => undefined));
+      createInstrumentation().enable();
+      clock.tick(100);
+      expect(getLogs()).to.have.lengthOf(1);
+
+      void window.fetch('/api/poll');
+      clock.tick(1000);
+
+      expect(getLogs()).to.have.lengthOf(1);
+      expect(diag.getErrorLogs()).to.be.empty;
+    });
+
+    it('ends a fetch that throws synchronously and passes the error on', () => {
+      fetchStub.throws(new TypeError('Failed to fetch'));
+      createInstrumentation().enable();
+
+      expect(() => window.fetch('/api/products')).to.throw(TypeError);
+      clock.tick(100);
+
+      expect(getLogs()).to.have.lengthOf(1);
+    });
+
+    it('sends an XHR matching ignoreUrls without holding the page', () => {
+      const send = sinon.stub(XMLHttpRequest.prototype, 'send');
+      createInstrumentation({ ignoreUrls: [/\/stream$/] }).enable();
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', '/stream');
+      xhr.send();
+      clock.tick(100);
+
+      sinon.assert.calledOnce(send);
+      expect(getLogs()).to.have.lengthOf(1);
+    });
+
+    it('lets a request through untracked when an ignoreUrls matcher throws', () => {
+      fetchStub.returns(new Promise(() => undefined));
+      const brokenMatcher = {
+        [Symbol.match]: () => {
+          throw new Error('broken matcher');
+        },
+      } as unknown as RegExp;
+      createInstrumentation({ ignoreUrls: [brokenMatcher] }).enable();
+
+      void window.fetch('/api/products');
+      clock.tick(100);
+
+      sinon.assert.calledOnce(fetchStub);
+      expect(getLogs()).to.have.lengthOf(1);
+      expect(diag.getErrorLogs()).to.include(
+        'failed to track a page-load request',
+      );
     });
 
     it('ends a fetch that rejects', async () => {

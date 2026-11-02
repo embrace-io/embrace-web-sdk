@@ -405,10 +405,6 @@ export class PageLoadInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _patchXHR(): void {
-    if (typeof XMLHttpRequest === 'undefined') {
-      return;
-    }
-
     const prototype = XMLHttpRequest.prototype;
     const xhrRequests = this._xhrRequests;
 
@@ -471,10 +467,6 @@ export class PageLoadInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _unpatchXHR(): void {
-    if (typeof XMLHttpRequest === 'undefined') {
-      return;
-    }
-
     const prototype = XMLHttpRequest.prototype;
 
     if (this._originalXHROpen && prototype.open === this._patchedXHROpen) {
