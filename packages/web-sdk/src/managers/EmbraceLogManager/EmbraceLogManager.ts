@@ -94,6 +94,44 @@ const stringifyObject = (value: object): string => {
   }
 };
 
+const MAX_CAUSE_DEPTH = 5;
+
+const describeCause = (cause: unknown): string => {
+  if (isError(cause)) {
+    const name = typeof cause.name === 'string' ? cause.name : '';
+    const message = String(cause.message || '').trim();
+    return name && message ? `${name}: ${message}` : name || message;
+  }
+  return cause && typeof cause === 'object'
+    ? stringifyObject(cause)
+    : String(cause).trim();
+};
+
+// Cycles are possible because `cause` is user assigned. A throwing getter ends the
+// chain and keeps what was read so far.
+const describeCauseChain = (error: Error): string => {
+  const parts: string[] = [];
+  const seen = new Set<unknown>([error]);
+  try {
+    let current: unknown = error;
+    while (parts.length < MAX_CAUSE_DEPTH && isError(current)) {
+      const cause: unknown = current.cause;
+      if (cause === undefined || cause === null || seen.has(cause)) {
+        break;
+      }
+      seen.add(cause);
+      const text = describeCause(cause);
+      if (text) {
+        parts.push(text);
+      }
+      current = cause;
+    }
+  } catch {
+    // Keep the causes read before the failure.
+  }
+  return parts.join(' <- ');
+};
+
 export class EmbraceLogManager implements LogManager {
   private readonly _diag: DiagLogger;
   private readonly _logger: Logger;
@@ -220,7 +258,7 @@ export class EmbraceLogManager implements LogManager {
           name,
           message: String(error.message || '').trim(),
           stack: typeof error.stack === 'string' ? error.stack : '',
-          cause: error.cause ? 'present' : '',
+          cause: describeCauseChain(error),
         };
       }
 

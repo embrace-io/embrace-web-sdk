@@ -1075,8 +1075,66 @@ describe('EmbraceLogManager', () => {
       'exception.name': 'Error',
       'exception.message': 'this is an exception',
       'exception.stacktrace': log.attributes['exception.stacktrace'],
-      'emb.exception_cause': 'present',
+      'emb.exception_cause': 'Error: initial error',
       'emb.state': 'foreground',
+    });
+  });
+
+  describe('exception causes', () => {
+    const logAndGetCause = (error: unknown) => {
+      manager.logException(error);
+      const finishedLogs = memoryExporter.getFinishedLogRecords();
+      expect(finishedLogs).to.have.lengthOf(1);
+      return String(finishedLogs[0].attributes['emb.exception_cause']);
+    };
+
+    it('should join a chain of causes from nearest to root', () => {
+      const root = new RangeError('disk full');
+      const middle = new TypeError('write failed', { cause: root });
+
+      expect(
+        logAndGetCause(new Error('save failed', { cause: middle })),
+      ).to.equal('TypeError: write failed <- RangeError: disk full');
+    });
+
+    it('should describe causes that are not Errors', () => {
+      expect(
+        logAndGetCause(new Error('failed', { cause: { code: 'E_FAIL' } })),
+      ).to.equal('{"code":"E_FAIL"}');
+    });
+
+    it('should be empty without a cause', () => {
+      expect(logAndGetCause(new Error('failed'))).to.equal('');
+    });
+
+    it('should stop at a cycle', () => {
+      const a = new Error('a');
+      const b = new Error('b', { cause: a });
+      a.cause = b;
+
+      expect(logAndGetCause(a)).to.equal('Error: b');
+    });
+
+    it('should cap the depth of the chain', () => {
+      let error = new Error('level 0');
+      for (let i = 1; i <= 8; i++) {
+        error = new Error(`level ${i}`, { cause: error });
+      }
+
+      expect(logAndGetCause(error).split(' <- ')).to.have.lengthOf(5);
+    });
+
+    it('should keep the causes read before a getter throws', () => {
+      const bad = new Error('bad');
+      Object.defineProperty(bad, 'cause', {
+        get() {
+          throw new Error('cause getter failed');
+        },
+      });
+
+      expect(logAndGetCause(new Error('top', { cause: bad }))).to.equal(
+        'Error: bad',
+      );
     });
   });
 
