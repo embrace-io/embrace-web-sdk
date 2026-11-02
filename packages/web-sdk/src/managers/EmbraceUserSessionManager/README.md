@@ -309,9 +309,9 @@ Several specific edge cases are handled:
 
 ## Unload and BFCache handling
 
-There is no BFCache-specific code in the manager and no `pagehide`/`pageshow`
-listener. Behavior is absorbed by the engagement-transition events the manager
-already listens to (`blur`, `focus`, `visibilitychange`), per the HTML
+The manager has no `pagehide` listener and only a `pageshow` listener that
+annotates a restored part. Part start and end are absorbed by the
+engagement-transition events the manager already listens to (`blur`, `focus`, `visibilitychange`), per the HTML
 [unload a document][unload-spec] algorithm and the event ordering observed in
 the browsers below:
 
@@ -325,11 +325,14 @@ the browsers below:
 - **Backgrounded-tab unload**. `visibilitychange` to hidden already fired
   earlier (when the user switched away), ending the part as `background`
   at that moment. The later `pagehide` is on an already-ended part.
-- **BFCache restore**. Per the spec, `focus` and `visibilitychange` to
-  `'visible'` fire before `pageshow`. The combined visible+focused transition
-  starts a new part as `foreground`; `pageshow` would be redundant. This
-  path is spec-derived rather than empirically verified here because Playwright
-  suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
+- **BFCache restore**. `focus` and `visibilitychange` to `'visible'` fire
+  before `pageshow` (observed in Chrome 155: `pagehide` with `persisted`,
+  `visibilitychange` hidden, `freeze`, `resume`, `visibilitychange` visible,
+  `pageshow` with `persisted`). The visible+focused transition starts a new
+  part as `foreground`, then the `pageshow` listener stamps
+  `emb.bfcache_restore` on that active part when `persisted` is true.
+  Playwright suppresses BFCache (`pageshow.persisted` is always `false` on
+  `goBack()`), so the ordering is not covered by an end-to-end test.
 
 The in-memory state survives the freeze-restore cycle because BFCache
 preserves the JS heap.
@@ -362,6 +365,7 @@ another window).
 | `emb.session_part_number` | 1-indexed monotonic count across all visits since the first visit, incremented per session part. |
 | `emb.session_part_start_reason` | One of `SessionPartStartReason`. |
 | `emb.cold_start` | `true` on the first part started by this manager instance, `false` thereafter. |
+| `emb.bfcache_restore` | `true` only when a BFCache restore (`pageshow` with `persisted`) happens while the part is active. Absent otherwise. |
 | `emb.user_session_id` | UUID of the enclosing user session. |
 | `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first user session for this browser. |
 | `emb.user_session_number` | 1-indexed monotonic count across all visits since the first visit. |

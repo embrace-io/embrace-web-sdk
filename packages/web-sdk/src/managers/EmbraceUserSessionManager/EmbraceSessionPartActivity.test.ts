@@ -1,4 +1,8 @@
-import { TracerProvider } from '@opentelemetry/sdk-trace';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
@@ -466,5 +470,66 @@ describe('EmbraceUserSessionManager browser activity', () => {
     const endCallsBefore = endSpy.callCount;
     clock.tick(FOREGROUND_INACTIVITY_MS * 2);
     expect(endSpy.callCount).to.equal(endCallsBefore);
+  });
+});
+
+describe('EmbraceUserSessionManager BFCache restore', () => {
+  let target: FakeTarget;
+  let manager: EmbraceUserSessionManager;
+  let exporter: InMemorySpanExporter;
+
+  beforeEach(() => {
+    target = new FakeTarget();
+    exporter = new InMemorySpanExporter();
+    manager = new EmbraceUserSessionManager({
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new MockPerformanceManager(sinon.useFakeTimers({ now: 0 })),
+      storage: setupTestStorage(),
+      visibilityDoc: new FakeVisibilityDoc(),
+      target,
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+    });
+    manager.setTracerProvider(
+      new TracerProvider({
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
+      }),
+    );
+  });
+
+  afterEach(() => {
+    manager._shutdown();
+    sinon.restore();
+  });
+
+  const endedPartAttributes = () => {
+    manager.endSessionPartInternal({ reason: 'background' });
+    return exporter.getFinishedSpans()[0].attributes;
+  };
+
+  it('stamps emb.bfcache_restore on the active part when pageshow is persisted', () => {
+    manager.startSessionPartInternal({ reason: 'foreground' });
+    target.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: true }),
+    );
+
+    expect(endedPartAttributes()).to.have.property('emb.bfcache_restore', true);
+  });
+
+  it('leaves the part unmarked on a pageshow that is not a restore', () => {
+    manager.startSessionPartInternal({ reason: 'init' });
+    target.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: false }),
+    );
+
+    expect(endedPartAttributes()).to.not.have.property('emb.bfcache_restore');
+  });
+
+  it('ignores a persisted pageshow while no part is active', () => {
+    target.dispatchEvent(
+      new PageTransitionEvent('pageshow', { persisted: true }),
+    );
+    manager.startSessionPartInternal({ reason: 'foreground' });
+
+    expect(endedPartAttributes()).to.not.have.property('emb.bfcache_restore');
   });
 });

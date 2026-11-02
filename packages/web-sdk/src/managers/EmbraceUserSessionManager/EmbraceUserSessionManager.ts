@@ -14,6 +14,7 @@ import type { VisibilityStateDocument } from '../../common/index.ts';
 import {
   EMB_STATES,
   EMB_TYPES,
+  KEY_EMB_BFCACHE_RESTORE,
   KEY_EMB_COLD_START,
   KEY_EMB_IS_FINAL_SESSION_PART,
   KEY_EMB_PAGE_LOAD,
@@ -258,6 +259,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
+      onPageShow: this._onPageShow,
     });
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
@@ -905,6 +907,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
       onBlur: this._onBlur,
+      onPageShow: this._onPageShow,
     });
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
@@ -938,14 +941,26 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   };
 
   // Window focus lost (alt-tab, DevTools, another window). Engagement
-  // transition ends the active part as background. pagehide/pageshow
-  // are not listened to: blur or visibilitychange-to-hidden end the part
+  // transition ends the active part as background. pagehide is not
+  // listened to: blur or visibilitychange-to-hidden end the part
   // first (see README "Unload and BFCache handling" for the verified
   // cross-engine ordering). The part-end doubles as the unload flush via
   // EmbraceSessionPartBatchedSpanProcessor.onEnd's synchronous keepalive export.
   // https://developer.chrome.com/docs/web-platform/page-lifecycle-api
   private readonly _onBlur = (): void => {
     this._handleEngagementTransition('blur');
+  };
+
+  // A BFCache restore fires focus and visibilitychange before pageshow, so
+  // the part is already active here; the restore only annotates it.
+  private readonly _onPageShow = (event: Event): void => {
+    try {
+      if ((event as PageTransitionEvent).persisted) {
+        this._sessionPartSpan?.setAttribute(KEY_EMB_BFCACHE_RESTORE, true);
+      }
+    } catch (e) {
+      this._diag.warn('Error handling pageshow', e);
+    }
   };
 
   private _handleEngagementTransition(source: string): void {

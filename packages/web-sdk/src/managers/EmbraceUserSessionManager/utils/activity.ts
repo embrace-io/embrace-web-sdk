@@ -8,6 +8,7 @@ export interface ActivityListenersArgs {
   onVisibilityChange: (event: Event) => void;
   onFocus: (event: Event) => void;
   onBlur: (event: Event) => void;
+  onPageShow: (event: Event) => void;
 }
 
 export const addActivityListeners = ({
@@ -18,6 +19,7 @@ export const addActivityListeners = ({
   onVisibilityChange,
   onFocus,
   onBlur,
+  onPageShow,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.addEventListener(event, onActivity);
@@ -27,6 +29,7 @@ export const addActivityListeners = ({
   // Window focus changes (alt-tab, click into DevTools, multi-monitor).
   target.addEventListener('focus', onFocus);
   target.addEventListener('blur', onBlur);
+  target.addEventListener('pageshow', onPageShow);
 };
 
 export const removeActivityListeners = ({
@@ -37,6 +40,7 @@ export const removeActivityListeners = ({
   onVisibilityChange,
   onFocus,
   onBlur,
+  onPageShow,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.removeEventListener(event, onActivity);
@@ -44,4 +48,5 @@ export const removeActivityListeners = ({
   visibilityDoc.removeEventListener?.('visibilitychange', onVisibilityChange);
   target.removeEventListener('focus', onFocus);
   target.removeEventListener('blur', onBlur);
+  target.removeEventListener('pageshow', onPageShow);
 };
