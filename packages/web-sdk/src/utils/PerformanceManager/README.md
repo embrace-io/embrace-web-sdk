@@ -190,6 +190,19 @@ Both providers serve the SDK's managers, every instrumentation and, when the
 SDK registers globally, the OTel logs and trace APIs. Spans and logs
 from any other provider keep OTel's behavior.
 
+**A third kind of attribute: elapsed-since-origin, deliberately left raw.**
+Some attributes answer "how long after navigation did X happen" rather than
+"what time is it" or "how long into the current view". Examples are
+`emb.sdk_load_origin_offset` and `emb.sdk_init_origin_offset`. They measure
+from time origin, which never resets, so like any other duration they need no
+epoch or zero-time conversion. Read them with `getOffsetFromOrigin()` so the
+clock still goes through `perf`.
+
+On a prerendered page, time origin is the start of the prerender navigation,
+not activation, so these offsets can include time before the user saw the
+page. That is intended: they describe when SDK machinery ran, not what the user
+perceived. Do not rebase them onto `activationStart`.
+
 ## Worked example
 
 Timeline (times shown as wall clock for readability):
@@ -480,7 +493,13 @@ For completeness, the non-instrumentation consumers of the clock:
   deadline and the remaining timeout. Internal duration math, not telemetry.
 - **initSDK** — `getNow()` difference for `emb.sdk_startup_duration`
   (a pure duration), the `pageshow` listener that resets zero time, and the
-  `blur` and `visibilitychange` listeners that call `checkDrift()`.
+  `blur` and `visibilitychange` listeners that call `checkDrift()`. It also
+  stamps the elapsed-since-origin offsets described above:
+  `emb.sdk_init_origin_offset` from `getOffsetFromOrigin()` at entry, and
+  `emb.sdk_load_origin_offset` from `SDK_LOAD_ORIGIN_OFFSET`.
+  `utils/sdkLoadOriginOffset.ts` is the one deliberate exception to routing
+  clock reads through this manager: it reads `performance.now()` at module
+  evaluation, before any manager instance can exist.
 - **PerfClockLagSpanProcessor / PerfClockLagLogRecordProcessor** —
   `getClockLag()` for `emb.perf_clock_lag_ms`. It counts every sleep since
   the page loaded, including those before the span or log.
