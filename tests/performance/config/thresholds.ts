@@ -1,7 +1,7 @@
 const getFromEnv = (key: string, defaultValue: number): number => {
   const value = process.env[key];
 
-  return value ? parseInt(value, 10) : defaultValue;
+  return value ? parseFloat(value) : defaultValue;
 };
 
 const TOTAL_SIZE_OF_REQUESTS_THRESHOLD_IN_KB = getFromEnv(
@@ -18,7 +18,7 @@ const TOTAL_TASK_DURATION_THRESHOLD_IN_MS = getFromEnv(
 );
 const TOTAL_HEAP_SIZE_THRESHOLD_IN_MB = getFromEnv(
   'TOTAL_HEAP_SIZE_THRESHOLD_IN_MB',
-  16,
+  16.5,
 );
 const TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS = getFromEnv(
   'TOTAL_BLOCKING_TIME_THRESHOLD_IN_MS',
