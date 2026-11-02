@@ -163,6 +163,8 @@ const IGNORED_ATTRIBUTES_LIST = [
   'app.surface.id',
   'dom_state.images_above_fold.timestamp',
   'dom_state.images_above_fold.capture_time',
+  // Measured load time; varies with machine and network on every run.
+  'page_load.duration',
 ];
 
 // Which export batch a record rides in depends on where the processor's batch

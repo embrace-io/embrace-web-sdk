@@ -31,6 +31,7 @@ export {
   createPerformanceObserver,
   isEntryTypeSupported,
 } from './performanceObserver/index.ts';
+export { resolveUrl } from './resolveUrl.ts';
 export {
   isNetworkSpan,
   isSessionPartSpan,

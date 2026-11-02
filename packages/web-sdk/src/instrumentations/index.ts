@@ -36,6 +36,11 @@ export {
   type NavigationInstrumentationArgs,
 } from './navigation/index.ts';
 export {
+  type PageLoad,
+  PageLoadInstrumentation,
+  type PageLoadInstrumentationArgs,
+} from './page-load/index.ts';
+export {
   RageClickInstrumentation,
   type RageClickInstrumentationArgs,
 } from './rage-click/index.ts';

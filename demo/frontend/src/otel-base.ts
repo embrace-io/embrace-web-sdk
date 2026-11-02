@@ -13,10 +13,15 @@ const APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
 const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 
+type DefaultInstrumentationConfig = NonNullable<
+  NonNullable<Parameters<typeof initSDK>[0]>['defaultInstrumentationConfig']
+>;
+
 const setupSDK = (
   instrumentations?: Instrumentation[],
   extraSpanExporters: SpanExporter[] = [],
   extraLogExporters: LogRecordExporter[] = [],
+  extraDefaultInstrumentationConfig: DefaultInstrumentationConfig = {},
 ) => {
   const result = initSDK({
     logLevel: DiagLogLevel.ALL,
@@ -34,6 +39,7 @@ const setupSDK = (
       //   '@opentelemetry/instrumentation-xml-http-request',
       //   'document-load',
       // ]),
+      ...extraDefaultInstrumentationConfig,
     },
     ...(instrumentations ? { instrumentations } : {}),
     embraceDataURL: DATA_URL ?? undefined,

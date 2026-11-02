@@ -7,6 +7,7 @@ import type { LogManager } from '../api-logs/index.ts';
 import {
   EmbraceInstrumentationBase,
   EmptyRootInstrumentation,
+  PageLoadInstrumentation,
 } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/index.ts';
 import {
@@ -114,6 +115,39 @@ describe('setupDefaultInstrumentations', () => {
       const instrumentations = setupDefaultInstrumentations(
         {},
         makeSetupArgs(),
+      );
+
+      expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal(
+        [],
+      );
+      expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([]);
+    });
+
+    it("adds the SDK's own request URLs to page-load ignoreUrls", () => {
+      const instrumentations = setupDefaultInstrumentations(
+        { 'page-load': { ignoreUrls: [/stream/] } },
+        {
+          ...makeSetupArgs(),
+          sdkRequestUrls: ['https://a-abc12.data.emb-api.com/v2/spans'],
+        },
+      );
+      const pageLoad = instrumentations.find(
+        (i) => i instanceof PageLoadInstrumentation,
+      ) as PageLoadInstrumentation;
+
+      expect(pageLoad['_ignoreUrls']).to.deep.equal([
+        /stream/,
+        'https://a-abc12.data.emb-api.com/v2/spans',
+      ]);
+    });
+
+    it('leaves fetch and XHR ignoreUrls without the SDK request URLs', () => {
+      const instrumentations = setupDefaultInstrumentations(
+        {},
+        {
+          ...makeSetupArgs(),
+          sdkRequestUrls: ['https://a-abc12.data.emb-api.com/v2/spans'],
+        },
       );
 
       expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal(
