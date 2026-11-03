@@ -35,9 +35,9 @@ Embrace engineers are among the maintainers of [opentelemetry-browser](https://g
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [`@embrace-io/web-sdk`](./packages/web-sdk/) | SDK for capturing web telemetry |
+| Package                                      | Description                                    |
+| -------------------------------------------- | ---------------------------------------------- |
+| [`@embrace-io/web-sdk`](./packages/web-sdk/) | SDK for capturing web telemetry                |
 | [`@embrace-io/web-cli`](./packages/web-cli/) | CLI for sourcemap uploads and build-time tasks |
 
 ## Documentation

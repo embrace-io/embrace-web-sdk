@@ -34,32 +34,32 @@ The `UserSessionManager` interface exposes the following methods.
 
 ### Active
 
-| Method | Behavior |
-| --- | --- |
-| `getUserSessionId()` | Returns the current user session UUID or `null`. |
-| `getPreviousUserSessionId()` | Returns the prior user session UUID or `null`. |
-| `getUserSessionStartTime()` | Returns wall-clock milliseconds since Unix epoch, or `null`. |
-| `endUserSession()` | Ends the current user session. Subject to a 5 second cooldown. No-op if no user session is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason. |
-| `addBreadcrumb(name)` | Adds an `emb-breadcrumb` event to the active session-part span. Dropped if no part is active. |
+| Method                              | Behavior                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getUserSessionId()`                | Returns the current user session UUID or `null`.                                                                                                                                                                                                                                                                                                                                                           |
+| `getPreviousUserSessionId()`        | Returns the prior user session UUID or `null`.                                                                                                                                                                                                                                                                                                                                                             |
+| `getUserSessionStartTime()`         | Returns wall-clock milliseconds since Unix epoch, or `null`.                                                                                                                                                                                                                                                                                                                                               |
+| `endUserSession()`                  | Ends the current user session. Subject to a 5 second cooldown. No-op if no user session is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason.                                                                                                                                                                 |
+| `addBreadcrumb(name)`               | Adds an `emb-breadcrumb` event to the active session-part span. Dropped if no part is active.                                                                                                                                                                                                                                                                                                              |
 | `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry is stored in the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it begins. |
-| `removeProperty(key)` | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute. |
+| `removeProperty(key)`               | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute.                                                                                                                                                                                                                                                                                               |
 
 ### Deprecated forwarders
 
 These exist for source compatibility with the prior API. Some forward to the
 current equivalents; others are inert (return `null` or no-op).
 
-| Method | Behavior |
-| --- | --- |
-| `getSessionId()` | Forwards to `getUserSessionId()`. |
-| `getSessionStartTime()` | Forwards to `getUserSessionStartTime()` (returns milliseconds since the Unix epoch). |
-| `getSessionSpan()` | Forwards to the active session-part span. |
-| `endSessionSpan()` | Forwards to `endUserSession()`. |
-| `getPreviousSessionId()` | Always returns `null`. Use `getPreviousUserSessionId()`. |
-| `currentSessionAsReadableSpan()` | Always returns `null`. |
-| `startSessionSpan()` | No-op. User sessions start implicitly on first engagement, not via a public API. |
-| `addSessionStartedListener()` | Returns a no-op unsubscribe. The listener is never called. |
-| `addSessionEndedListener()` | Returns a no-op unsubscribe. The listener is never called. |
+| Method                           | Behavior                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------ |
+| `getSessionId()`                 | Forwards to `getUserSessionId()`.                                                    |
+| `getSessionStartTime()`          | Forwards to `getUserSessionStartTime()` (returns milliseconds since the Unix epoch). |
+| `getSessionSpan()`               | Forwards to the active session-part span.                                            |
+| `endSessionSpan()`               | Forwards to `endUserSession()`.                                                      |
+| `getPreviousSessionId()`         | Always returns `null`. Use `getPreviousUserSessionId()`.                             |
+| `currentSessionAsReadableSpan()` | Always returns `null`.                                                               |
+| `startSessionSpan()`             | No-op. User sessions start implicitly on first engagement, not via a public API.     |
+| `addSessionStartedListener()`    | Returns a no-op unsubscribe. The listener is never called.                           |
+| `addSessionEndedListener()`      | Returns a no-op unsubscribe. The listener is never called.                           |
 
 ### Internal interface
 
@@ -96,24 +96,24 @@ by design.
 
 `SessionPartStartReason` enumerates every reason a session part can begin:
 
-| Value | Trigger |
-| --- | --- |
-| `init` | SDK init flow on page load. |
-| `foreground` | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path. |
-| `web_activity` | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
-| `web_soft_navigation` | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part. |
-| `user_session_rollover` | Begins the next user session's first part immediately after a user session ends. |
+| Value                   | Trigger                                                                                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `init`                  | SDK init flow on page load.                                                                                                                  |
+| `foreground`            | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path.               |
+| `web_activity`          | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
+| `web_soft_navigation`   | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part.                     |
+| `user_session_rollover` | Begins the next user session's first part immediately after a user session ends.                                                             |
 
 ### End triggers
 
 `SessionPartEndReason` enumerates every reason a session part can end:
 
-| Value | Trigger |
-| --- | --- |
-| `background` | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires. |
+| Value                       | Trigger                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.  |
 | `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because the focused and visible tab received no user input for that long. |
-| `web_soft_navigation` | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately. |
-| `user_session_ended` | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry. |
+| `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                            |
+| `user_session_ended`        | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry.                                                           |
 
 The part-level `web_foreground_inactivity` is distinct from the
 user-session-level `inactivity` reason in the
@@ -178,11 +178,11 @@ through a rollover.
 
 `UserSessionEndReason` defines all possible values:
 
-| Value | Trigger | Emitted by web SDK |
-| --- | --- | --- |
-| `manual` | `endUserSession()` API call. | Yes |
-| `max_duration_reached` | Max-duration timer fires. | Yes |
-| `inactivity` | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
+| Value                  | Trigger                                                   | Emitted by web SDK                                                                                                                                                                                                                                                                                                                      |
+| ---------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `manual`               | `endUserSession()` API call.                              | Yes                                                                                                                                                                                                                                                                                                                                     |
+| `max_duration_reached` | Max-duration timer fires.                                 | Yes                                                                                                                                                                                                                                                                                                                                     |
+| `inactivity`           | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part as
 final with that timestamp, clears the stored user session, and starts the next
@@ -192,13 +192,13 @@ silently no-ops if not (the next engagement event will create it).
 
 ## Timers
 
-| Timer | Constant | Default | Range | Effect on fire |
-| --- | --- | --- | --- | --- |
-| Max duration | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS` | 12 hours | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h) | Ends the user session and rolls into the next (`max_duration_reached`). |
-| Inactivity deadline | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h) | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
-| Foreground inactivity | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`). |
-| Activity throttle | `DEFAULT_ACTIVITY_THROTTLE_MS` | 30 seconds | n/a | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`. |
-| `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS` | 5 seconds | n/a | Calls within 5 seconds of the last call are silently ignored. |
+| Timer                     | Constant                                                     | Default    | Range                                                                                                                            | Effect on fire                                                                                                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Max duration              | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS`                  | 12 hours   | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h)                                    | Ends the user session and rolls into the next (`max_duration_reached`).                                                                                                                                                                                                  |
+| Inactivity deadline       | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS`            | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h)                       | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
+| Foreground inactivity     | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`).                                                               |
+| Activity throttle         | `DEFAULT_ACTIVITY_THROTTLE_MS`                               | 30 seconds | n/a                                                                                                                              | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`.                                                                                                                        |
+| `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS`                               | 5 seconds  | n/a                                                                                                                              | Calls within 5 seconds of the last call are silently ignored.                                                                                                                                                                                                            |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and
 `userSessionForegroundInactivityTimeoutSeconds` are set by remote config
@@ -226,12 +226,12 @@ the 30 second throttle, and cleared on session-part end.
 
 ### Keys
 
-| Key | Contents | Lifetime |
-| --- | --- | --- |
-| `embrace_user_session_state` | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number` | Monotonic integer string. | Persisted across visits. Only ever incremented. |
-| `embrace_session_part_number` | Monotonic integer string. | Persisted across visits. Bumped at every session-part start. |
-| `emb.properties.<key>` | String value. | Persisted across visits. Survives user-session boundaries. |
+| Key                           | Contents                                                                                                             | Lifetime                                                                                                                                                                                                                                                                  |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`  | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number` | Monotonic integer string.                                                                                            | Persisted across visits. Only ever incremented.                                                                                                                                                                                                                           |
+| `embrace_session_part_number` | Monotonic integer string.                                                                                            | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                              |
+| `emb.properties.<key>`        | String value.                                                                                                        | Persisted across visits. Survives user-session boundaries.                                                                                                                                                                                                                |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -359,38 +359,38 @@ another window).
 
 ### Stamped at session-part start
 
-| Attribute | Value |
-| --- | --- |
-| `emb.type` | `ux.session_part` |
-| `emb.state` | `foreground` |
-| `emb.session_part_id` | UUID unique to this part. |
-| `emb.session_part_number` | 1-indexed monotonic count across all visits since the first visit, incremented per session part. |
-| `emb.session_part_start_reason` | One of `SessionPartStartReason`. |
-| `emb.cold_start` | `true` on the first part started by this manager instance, `false` thereafter. |
-| `emb.user_session_id` | UUID of the enclosing user session. |
-| `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first user session for this browser. |
-| `emb.user_session_number` | 1-indexed monotonic count across all visits since the first visit. |
-| `emb.user_session_part_index` | 1-indexed within the user session. |
-| `emb.user_session_start_ts` | Milliseconds since Unix epoch. |
-| `emb.user_session_max_duration_seconds` | Whole seconds, frozen at session creation. |
-| `emb.user_session_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
-| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation. |
-| `emb.properties.*` | All properties at part-start time. |
+| Attribute                                                | Value                                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `emb.type`                                               | `ux.session_part`                                                                                |
+| `emb.state`                                              | `foreground`                                                                                     |
+| `emb.session_part_id`                                    | UUID unique to this part.                                                                        |
+| `emb.session_part_number`                                | 1-indexed monotonic count across all visits since the first visit, incremented per session part. |
+| `emb.session_part_start_reason`                          | One of `SessionPartStartReason`.                                                                 |
+| `emb.cold_start`                                         | `true` on the first part started by this manager instance, `false` thereafter.                   |
+| `emb.user_session_id`                                    | UUID of the enclosing user session.                                                              |
+| `emb.user_session_previous_id`                           | UUID of the prior user session; `''` on the first user session for this browser.                 |
+| `emb.user_session_number`                                | 1-indexed monotonic count across all visits since the first visit.                               |
+| `emb.user_session_part_index`                            | 1-indexed within the user session.                                                               |
+| `emb.user_session_start_ts`                              | Milliseconds since Unix epoch.                                                                   |
+| `emb.user_session_max_duration_seconds`                  | Whole seconds, frozen at session creation.                                                       |
+| `emb.user_session_inactivity_timeout_seconds`            | Whole seconds, frozen at session creation.                                                       |
+| `emb.user_session_foreground_inactivity_timeout_seconds` | Whole seconds, frozen at session creation.                                                       |
+| `emb.properties.*`                                       | All properties at part-start time.                                                               |
 
 ### Stamped at session-part end
 
-| Attribute | Condition |
-| --- | --- |
-| `emb.session_part_end_reason` | Always. One of `SessionPartEndReason`. |
-| `emb.sdk_startup_duration` | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration. |
-| `emb.sdk_load_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran. |
-| `emb.sdk_init_origin_offset` | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered. |
-| `emb.page_load` | Cold-start part only. `true` when `document.readyState` was `complete` at part end. |
-| `emb.is_final_session_part = 1` | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`). |
-| `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one). |
-| `emb.properties.*` | Refreshed from storage to capture cross-tab writes. |
-| `emb.app.applied_limit.*` | Diagnostic counts from the limit manager. |
-| Counter keys | Per-part counts populated by instrumentations. |
+| Attribute                             | Condition                                                                                                      |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `emb.session_part_end_reason`         | Always. One of `SessionPartEndReason`.                                                                         |
+| `emb.sdk_startup_duration`            | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration.                 |
+| `emb.sdk_load_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran. |
+| `emb.sdk_init_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered.    |
+| `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                            |
+| `emb.is_final_session_part = 1`       | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`).                            |
+| `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one).              |
+| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes.                                                            |
+| `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                      |
+| Counter keys                          | Per-part counts populated by instrumentations.                                                                 |
 
 ### Stamped on every other span
 
@@ -401,12 +401,12 @@ emitted by `EmbraceSessionPartBatchedSpanProcessor`, not by per-span ID stamping
 
 `UserSessionLogRecordProcessor` writes exactly these four:
 
-| Attribute | Value |
-| --- | --- |
-| `log.record.uid` | Fresh UUID per record. |
-| `emb.user_session_id` | UUID of the enclosing user session; `''` when there is none. |
-| `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first. |
-| `emb.session_part_id` | Part active at emit time, keeping a value an earlier processor already stamped; `''` when no part is active. |
+| Attribute                      | Value                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `log.record.uid`               | Fresh UUID per record.                                                                                       |
+| `emb.user_session_id`          | UUID of the enclosing user session; `''` when there is none.                                                 |
+| `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first.                                                           |
+| `emb.session_part_id`          | Part active at emit time, keeping a value an earlier processor already stamped; `''` when no part is active. |
 
 ### Never stamped
 
