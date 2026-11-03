@@ -18,11 +18,10 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private _hasScrolled = false;
   private _maxScrollY = 0;
 
-  public constructor({ diag, perf }: MaxScrollDepthInstrumentationArgs = {}) {
+  public constructor({ perf }: MaxScrollDepthInstrumentationArgs = {}) {
     super({
       instrumentationName: 'MaxScrollDepthInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

@@ -14,14 +14,12 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private _performanceCollected: boolean = false;
 
   public constructor({
-    diag,
     perf,
     limitManager,
   }: ServerTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'ServerTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       limitManager,
       config: {},

@@ -93,7 +93,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private readonly _ignoreNetworkEvents: boolean;
 
   public constructor({
-    diag,
     perf,
     applyCustomAttributesOnSpan,
     ignorePerformancePaintEvents = false,
@@ -102,7 +101,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'DocumentLoadInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

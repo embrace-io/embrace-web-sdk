@@ -10,6 +10,10 @@ CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sd
 
 The React helpers move from `@embrace-io/web-sdk/react-instrumentation` to `@embrace-io/web-sdk/instrumentations/react`. The instrumentation classes, such as `DocumentLoadInstrumentation`, are exported from `@embrace-io/web-sdk/instrumentations`.
 
+### Removed instrumentation `diag` option
+
+The `diag` option is removed from every instrumentation's constructor arguments and from `WebVitalsInstrumentationConfig`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.
+
 ### Removed session methods
 
 The deprecated `session` methods from 2.21.0 are removed. Methods with a replacement:

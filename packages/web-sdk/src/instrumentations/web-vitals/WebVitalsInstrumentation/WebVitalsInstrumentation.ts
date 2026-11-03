@@ -319,7 +319,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _listenersRegistered: boolean = false;
 
   public constructor({
-    diag,
     perf,
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument,
@@ -332,7 +331,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

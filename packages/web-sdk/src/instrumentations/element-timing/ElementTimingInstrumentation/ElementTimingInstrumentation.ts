@@ -24,14 +24,12 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
 
   public constructor({
-    diag,
     perf,
     limitManager,
   }: ElementTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'ElementTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       limitManager,
       config: {},

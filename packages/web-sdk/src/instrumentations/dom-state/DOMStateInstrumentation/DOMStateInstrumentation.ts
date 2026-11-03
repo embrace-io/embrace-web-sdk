@@ -27,11 +27,10 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private _foldMeasured: boolean = false;
   private _pendingFoldAttributes: Attributes | null = null;
 
-  public constructor({ diag, perf }: DOMStateInstrumentationArgs = {}) {
+  public constructor({ perf }: DOMStateInstrumentationArgs = {}) {
     super({
       instrumentationName: 'DOMStateInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

@@ -1,10 +1,12 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -20,6 +22,7 @@ import {
 } from '../../../managers/index.ts';
 import { LoafInstrumentation } from './LoafInstrumentation.ts';
 
+chai.use(sinonChai);
 const { expect } = chai;
 
 const makeScript = (
@@ -129,6 +132,7 @@ describe('LoafInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -327,15 +331,14 @@ describe('LoafInstrumentation', () => {
       public disconnect(): void {}
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(diagLogger.getDebugLogs().length).to.be.greaterThan(0);
+    expect(logger.debug).to.have.been.called;
     expect(observerCallback).to.be.null;
 
     instrumentation.disable();
@@ -697,10 +700,9 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should handle error in entry processing gracefully', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
@@ -714,16 +716,15 @@ describe('LoafInstrumentation', () => {
       } as PerformanceLongAnimationFrameTiming,
     ]);
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(logger.error).to.have.been.called;
 
     instrumentation.disable();
   });
 
   it('should handle error in flush report gracefully', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
@@ -740,7 +741,7 @@ describe('LoafInstrumentation', () => {
       reason: 'web_foreground_inactivity',
     });
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(logger.error).to.have.been.called;
 
     instrumentation['logger'].emit = originalEmit;
     instrumentation.disable();
@@ -756,15 +757,14 @@ describe('LoafInstrumentation', () => {
       }
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(logger.error).to.have.been.called;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();

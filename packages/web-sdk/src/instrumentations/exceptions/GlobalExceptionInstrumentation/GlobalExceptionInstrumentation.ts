@@ -8,11 +8,10 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     event: PromiseRejectionEvent,
   ) => void;
 
-  public constructor({ diag, perf }: GlobalExceptionInstrumentationArgs = {}) {
+  public constructor({ perf }: GlobalExceptionInstrumentationArgs = {}) {
     super({
       instrumentationName: 'GlobalExceptionInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });
