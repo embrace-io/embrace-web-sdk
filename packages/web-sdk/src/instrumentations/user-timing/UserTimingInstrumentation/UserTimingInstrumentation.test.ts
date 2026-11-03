@@ -23,6 +23,9 @@ import { UserTimingInstrumentation } from './UserTimingInstrumentation.ts';
 
 const { expect } = chai;
 
+// A realistic epoch: OTel reads numeric span times at or below performance.now() as performance offsets
+const TIME_ORIGIN = 1_700_000_000_000;
+
 type ObserverCallback = (list: {
   getEntries: () => PerformanceEntry[];
 }) => void;
@@ -113,7 +116,7 @@ describe('UserTimingInstrumentation', () => {
   beforeEach(() => {
     memoryExporter.reset();
     spanExporter.reset();
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers({ now: TIME_ORIGIN });
     perf = new MockPerformanceManager(clock);
 
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
@@ -254,13 +257,15 @@ describe('UserTimingInstrumentation', () => {
     ]);
 
     const record = memoryExporter.getFinishedLogRecords()[0];
-    expect(record.hrTime).to.deep.equal(timeInputToHrTime(1000 + 150));
+    expect(record.hrTime).to.deep.equal(
+      timeInputToHrTime(TIME_ORIGIN + 1000 + 150),
+    );
 
     instrumentation.disable();
   });
 
   it('keeps a measure span as long as the measure when the machine slept during it', () => {
-    const timeOrigin = 1_700_000_000_000;
+    const timeOrigin = TIME_ORIGIN;
     clock.setSystemTime(timeOrigin);
     const sleepingPerf = new MockPerformanceManager(clock);
     clock.tick(500);
