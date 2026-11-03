@@ -4,7 +4,7 @@ import type {
   DiagLogLevel,
   TextMapPropagator,
 } from '@opentelemetry/api';
-import type { Instrumentation } from '@opentelemetry/instrumentation';
+import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type { Resource } from '@opentelemetry/resources';
@@ -23,6 +23,7 @@ import type {
   AttributeScrubber,
   VisibilityStateDocument,
 } from '../common/index.ts';
+import type { Instrumentation } from '../instrumentations/InstrumentationBase/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DOMStateInstrumentationArgs,
@@ -121,14 +122,17 @@ type BaseSDKInitConfig = {
   /**
    * instrumentations can be set to include instrumentations beyond the default ones provided by Embrace. This does not
    * override Embrace's default instrumentations, to control those set `defaultInstrumentationConfig` instead.
+   * `initSDK` calls `enable()` on each, passing its tracer provider, logger provider and propagator. An
+   * `@opentelemetry/instrumentation` instrumentation is started through `registerInstrumentations` instead.
    *
    * **default**: []
    */
-  instrumentations?: Instrumentation[];
+  instrumentations?: Array<Instrumentation | LegacyOTelInstrumentation>;
 
   /**
-   * propagator defines a custom context propagator, registered globally when `registerGlobally` is true. Ignored when
-   * network span forwarding is enabled, which uses the SDK's W3C trace context propagator instead
+   * propagator defines a custom context propagator, registered globally when `registerGlobally` is true and passed to
+   * Embrace's instrumentations in both modes. Ignored when network span forwarding is enabled, which uses the SDK's W3C
+   * trace context propagator instead
    *
    * **default**: null
    */
@@ -423,8 +427,7 @@ export interface SetupDefaultInstrumentationsArgs {
 
 /**
  * Use `omit` to turn a default instrumentation off. No entry accepts `enabled`:
- * initSDK passes every included instrumentation to `registerInstrumentations`,
- * which starts it regardless of that flag.
+ * initSDK enables every included instrumentation.
  */
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;

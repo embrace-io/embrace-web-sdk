@@ -54,11 +54,14 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public override enable(): void {
-    if (isEntryTypeSupported('long-animation-frame')) {
-      super.enable();
-    } else {
-      this._diag.debug('long-animation-frame not supported, skipping');
+  /** Whether this browser reports long-animation-frame entries. initSDK skips the default instance when it does not. */
+  public static isSupported(): boolean {
+    return isEntryTypeSupported('long-animation-frame');
+  }
+
+  protected override _init(): void {
+    if (!LoafInstrumentation.isSupported()) {
+      throw new Error('long-animation-frame entries are not supported');
     }
   }
 
@@ -71,9 +74,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       );
 
     if (!this._observer) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable');
-      return;
+      throw new Error('could not observe long-animation-frame entries');
     }
 
     this.setSessionPartListeners({
@@ -97,7 +98,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _processEntry(entry: PerformanceLongAnimationFrameTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 

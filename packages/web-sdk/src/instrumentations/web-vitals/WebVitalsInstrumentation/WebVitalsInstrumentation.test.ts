@@ -3496,6 +3496,21 @@ describe('WebVitalsInstrumentation', () => {
           reportSoftNavs: false,
         });
       });
+
+      it('should check soft-navigation support at enable(), not at construction', () => {
+        stubSupportedEntryTypes([]);
+        instrumentation = new WebVitalsInstrumentation({
+          perf,
+          listeners: mockWebVitalListeners,
+          urlDocument,
+        });
+        stubSupportedEntryTypes(['soft-navigation']);
+        instrumentation.enable();
+
+        expect(clsStub.getCall(1).args[1]).to.deep.equal({
+          reportSoftNavs: true,
+        });
+      });
     });
 
     it('should emit non-TTFB metrics for soft navigations', () => {

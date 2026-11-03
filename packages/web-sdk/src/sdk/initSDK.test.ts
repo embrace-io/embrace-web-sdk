@@ -13,6 +13,9 @@ import {
 } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { CompositePropagator } from '@opentelemetry/core';
+import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
+import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
+import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
@@ -53,6 +56,8 @@ import {
   ProxyTraceManager,
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
+import type { Instrumentation } from '../instrumentations/InstrumentationBase/index.ts';
+import { InstrumentationBase } from '../instrumentations/InstrumentationBase/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import { RageClickInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
@@ -548,6 +553,118 @@ describe('initSDK', () => {
     } finally {
       enableSpy.restore();
     }
+  });
+
+  it('should enable every default instrumentation exactly once and in order, before the custom ones', () => {
+    // Widened so loaf, element-timing and soft-navigation-performance are built in every test browser.
+    const OriginalPerformanceObserver = globalThis.PerformanceObserver;
+    globalThis.PerformanceObserver = class extends OriginalPerformanceObserver {
+      public static override readonly supportedEntryTypes = [
+        ...OriginalPerformanceObserver.supportedEntryTypes,
+        'long-animation-frame',
+        'element',
+        'soft-navigation',
+      ];
+    };
+    const enableSpies = [
+      sinon.spy(InstrumentationBase.prototype, 'enable'),
+      sinon.spy(FetchInstrumentation.prototype, 'enable'),
+      sinon.spy(XMLHttpRequestInstrumentation.prototype, 'enable'),
+    ];
+    const customInstrumentation = new FakeInstrumentation();
+
+    try {
+      const result = initSDK({
+        logExporters: [logExporter],
+        spanExporters: [spanExporter],
+        instrumentations: [customInstrumentation],
+        defaultInstrumentationConfig: {
+          'empty-root': { rootNode: document.body },
+        },
+      });
+      void expect(result).not.to.be.false;
+
+      const enableCalls = enableSpies
+        .flatMap((spy) => spy.getCalls())
+        .sort((a, b) => (a.calledBefore(b) ? -1 : 1));
+      const enabled = enableCalls.map(
+        (call) => call.thisValue as { instrumentationName: string },
+      );
+
+      expect(enabled.map((i) => i.instrumentationName)).to.deep.equal([
+        'GlobalExceptionInstrumentation',
+        'ClicksInstrumentation',
+        'RageClickInstrumentation',
+        'MaxScrollDepthInstrumentation',
+        'FirstInteractionInstrumentation',
+        'WebVitalsInstrumentation',
+        'LoafInstrumentation',
+        'UserTimingInstrumentation',
+        'ElementTimingInstrumentation',
+        'SoftNavigationPerformanceInstrumentation',
+        'DocumentLoadInstrumentation',
+        'DOMStateInstrumentation',
+        'NavigationInstrumentation',
+        'ServerTimingInstrumentation',
+        '@opentelemetry/instrumentation-fetch',
+        '@opentelemetry/instrumentation-xml-http-request',
+        'EmptyRootInstrumentation',
+        'FakeInstrumentation',
+      ]);
+      expect(new Set(enabled).size).to.equal(enabled.length);
+      expect(enabled.at(-1)).to.equal(customInstrumentation);
+    } finally {
+      for (const spy of enableSpies) {
+        spy.restore();
+      }
+      globalThis.PerformanceObserver = OriginalPerformanceObserver;
+    }
+  });
+
+  it('should keep initializing and enable later instrumentations when one fails to enable', () => {
+    const diagLogger = new InMemoryDiagLogger();
+    const throwingInstrumentation: Instrumentation = {
+      instrumentationName: 'ThrowingInstrumentation',
+      enable: () => {
+        throw new Error('enable broke');
+      },
+      disable: () => {},
+      isEnabled: () => false,
+    };
+    const throwingLegacyOTelInstrumentation: LegacyOTelInstrumentation = {
+      instrumentationName: 'ThrowingLegacyOTelInstrumentation',
+      instrumentationVersion: '1.0.0',
+      enable: () => {},
+      disable: () => {},
+      setTracerProvider: () => {
+        throw new Error('provider broke');
+      },
+      setMeterProvider: () => {},
+      setConfig: () => {},
+      getConfig: () => ({ enabled: false }),
+    };
+    const laterInstrumentation = new FakeInstrumentation();
+
+    const result = initSDK({
+      logExporters: [logExporter],
+      spanExporters: [spanExporter],
+      diagLogger,
+      instrumentations: [
+        throwingInstrumentation,
+        throwingLegacyOTelInstrumentation,
+        laterInstrumentation,
+      ],
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    void expect(result).not.to.be.false;
+    void expect(laterInstrumentation.isEnabled()).to.be.true;
+    expect(diagLogger.getErrorLogs()).to.include.members([
+      'failed to enable ThrowingInstrumentation: enable broke',
+      'failed to enable ThrowingLegacyOTelInstrumentation: provider broke',
+    ]);
   });
 
   it('should register all global managers', async () => {
@@ -2246,16 +2363,45 @@ describe('isolated instances', () => {
 
     await result.flush();
 
-    // registerInstrumentations attaches this instance's providers before it
-    // calls enable(), so anything emitted inside _onEnable records here rather
-    // than on the API's no-op providers. Independent of any default
-    // instrumentation, so an upstream change to that order fails this alone.
+    // initSDK passes this instance's providers to enable(), so anything
+    // emitted inside _onEnable records here rather than on the API's no-op
+    // providers. Independent of any default instrumentation.
     expect(
       isolatedLogExporter.getFinishedLogRecords().map((record) => record.body),
     ).to.include('my log');
     expect(
       isolatedSpanExporter.getFinishedSpans().map((span) => span.name),
     ).to.include('my span');
+  });
+
+  it('should pass the configured propagator to instrumentations under registerGlobally: false', () => {
+    class PropagatorRecordingInstrumentation extends FakeInstrumentation {
+      public propagatorAtEnable: TextMapPropagator | undefined;
+
+      protected override _onEnable(): void {
+        super._onEnable();
+        this.propagatorAtEnable = this.propagator;
+      }
+    }
+    const propagator: TextMapPropagator = {
+      inject: () => {},
+      extract: (ctx) => ctx,
+      fields: () => [],
+    };
+    const instrumentation = new PropagatorRecordingInstrumentation();
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      propagator,
+      instrumentations: [instrumentation],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    void expect(result).not.to.be.false;
+    expect(instrumentation.propagatorAtEnable).to.equal(propagator);
   });
 
   it('should record fetch spans into the instance exporter under registerGlobally: false', async () => {
@@ -2316,10 +2462,9 @@ describe('isolated instances', () => {
 
     await result.flush();
 
-    // This page has already loaded, so the spans are recorded while
-    // registerInstrumentations enables the instrumentation. They must reach
-    // this instance's own exporter even though its tracer provider is only
-    // wired onto the instrumentation after construction.
+    // This page has already loaded, so the spans are recorded while initSDK
+    // enables the instrumentation. They must reach this instance's own
+    // exporter, whose tracer provider is passed to enable().
     const spanNames = isolatedSpanExporter
       .getFinishedSpans()
       .map((span) => span.name);
@@ -2411,7 +2556,7 @@ describe('isolated instances', () => {
       // is ended explicitly, then a fresh activity part is opened and ended.
       // Each instance owns its own userSessionManager, so the parts are
       // isolated per instance and not shared. Each part gets its own route
-      // span: the first when registerInstrumentations enables
+      // span: the first when initSDK enables
       // NavigationInstrumentation on the already-current route, the second
       // when NavigationInstrumentation's part-start listener replays that
       // route for the activity part.

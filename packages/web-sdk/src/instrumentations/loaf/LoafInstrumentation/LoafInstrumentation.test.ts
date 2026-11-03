@@ -324,7 +324,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should no-op when PerformanceObserver does not support long-animation-frame', () => {
+  it('stays off when PerformanceObserver does not support long-animation-frame', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
       public static supportedEntryTypes = ['resource', 'navigation'];
       public observe(): void {}
@@ -338,7 +338,12 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(logger.debug).to.have.been.called;
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(logger.error).to.have.been.calledWith(
+      sinon.match.string,
+      'init failed, so this instrumentation stays off: long-animation-frame entries are not supported',
+      sinon.match.instanceOf(Error),
+    );
     expect(observerCallback).to.be.null;
 
     instrumentation.disable();
@@ -764,10 +769,29 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(logger.error).to.have.been.called;
+    expect(logger.error).to.have.been.calledWith(
+      sinon.match.string,
+      'enable failed: could not observe long-animation-frame entries',
+      sinon.match.instanceOf(Error),
+    );
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+
+  describe('isSupported', () => {
+    it('returns true when PerformanceObserver supports long-animation-frame', () => {
+      void expect(LoafInstrumentation.isSupported()).to.be.true;
+    });
+
+    it('returns false when PerformanceObserver does not support long-animation-frame', () => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = ['resource'];
+      };
+
+      void expect(LoafInstrumentation.isSupported()).to.be.false;
+    });
   });
 
   describe('script summary', () => {

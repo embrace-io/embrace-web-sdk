@@ -1,7 +1,8 @@
-import type { Instrumentation } from '@opentelemetry/instrumentation';
+import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
+import type { Instrumentation } from '../instrumentations/InstrumentationBase/index.ts';
 import {
   ClicksInstrumentation,
   DOMStateInstrumentation,
@@ -33,8 +34,9 @@ export const setupDefaultInstrumentations = (
     limitManager,
     signalBuffer,
   }: SetupDefaultInstrumentationsArgs,
-): Instrumentation[] => {
-  const instrumentations: Instrumentation[] = [];
+): Array<Instrumentation | LegacyOTelInstrumentation> => {
+  const instrumentations: Array<Instrumentation | LegacyOTelInstrumentation> =
+    [];
 
   if (!config.omit?.has('exception')) {
     instrumentations.push(
@@ -68,7 +70,7 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  if (!config.omit?.has('loaf')) {
+  if (!config.omit?.has('loaf') && LoafInstrumentation.isSupported()) {
     instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
   }
 
@@ -76,7 +78,10 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(new UserTimingInstrumentation(config['user-timing']));
   }
 
-  if (!config.omit?.has('element-timing')) {
+  if (
+    !config.omit?.has('element-timing') &&
+    ElementTimingInstrumentation.isSupported()
+  ) {
     instrumentations.push(
       new ElementTimingInstrumentation({
         limitManager,
@@ -85,7 +90,12 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  if (!config.omit?.has('soft-navigation-performance')) {
+  if (
+    !config.omit?.has('soft-navigation-performance') &&
+    SoftNavigationPerformanceInstrumentation.isSupported(
+      config['soft-navigation-performance']?.navigationHost,
+    )
+  ) {
     instrumentations.push(
       new SoftNavigationPerformanceInstrumentation({
         limitManager,
@@ -118,13 +128,8 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  /*
-   * Upstream patches fetch and XHR from the constructor unless enabled is false.
-   * Starting them disabled gives every instrumentation here one lifecycle:
-   * registerInstrumentations enables all of them. Upstream enable() never
-   * writes config.enabled back, so these two report false for their lifetime;
-   * getConfig().enabled is not a liveness signal.
-   */
+  // Upstream patches fetch and XHR in the constructor unless enabled is false; initSDK enables them once the providers exist.
+  // Upstream enable() never sets config.enabled, so it reads false for their lifetime.
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new FetchInstrumentation({

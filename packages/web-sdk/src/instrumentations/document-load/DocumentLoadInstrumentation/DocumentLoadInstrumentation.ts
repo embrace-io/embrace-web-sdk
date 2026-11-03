@@ -21,9 +21,13 @@
  */
 
 import type { Span } from '@opentelemetry/api';
-import { context, propagation, ROOT_CONTEXT, trace } from '@opentelemetry/api';
+import {
+  context,
+  defaultTextMapGetter,
+  ROOT_CONTEXT,
+  trace,
+} from '@opentelemetry/api';
 import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_HTTP_RESPONSE_BODY_SIZE,
@@ -166,7 +170,12 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       (e) => e.getAttribute('name') === TRACE_PARENT_HEADER,
     );
     const traceparent = metaElement?.content || '';
-    context.with(propagation.extract(ROOT_CONTEXT, { traceparent }), () => {
+    const serverContext = this.propagator.extract(
+      ROOT_CONTEXT,
+      { traceparent },
+      defaultTextMapGetter,
+    );
+    context.with(serverContext, () => {
       const rootSpan = this._startSpan(
         AttributeNames.DOCUMENT_LOAD,
         navigationTiming.fetchStart,
@@ -281,19 +290,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       | undefined,
   ) {
     if (applyCustomAttributesOnSpan) {
-      safeExecuteInTheMiddle(
-        () => {
-          applyCustomAttributesOnSpan(span);
-        },
-        (error) => {
-          if (!error) {
-            return;
-          }
-
-          this._diag.error('addCustomAttributesOnSpan', error);
-        },
-        true,
-      );
+      this._safeExecute('addCustomAttributesOnSpan', () => {
+        applyCustomAttributesOnSpan(span);
+      });
     }
   }
 
@@ -308,19 +307,9 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
       | undefined,
   ) {
     if (applyCustomAttributesOnSpan) {
-      safeExecuteInTheMiddle(
-        () => {
-          applyCustomAttributesOnSpan(span, resource);
-        },
-        (error) => {
-          if (!error) {
-            return;
-          }
-
-          this._diag.error('addCustomAttributesOnResourceSpan', error);
-        },
-        true,
-      );
+      this._safeExecute('addCustomAttributesOnResourceSpan', () => {
+        applyCustomAttributesOnSpan(span, resource);
+      });
     }
   }
 

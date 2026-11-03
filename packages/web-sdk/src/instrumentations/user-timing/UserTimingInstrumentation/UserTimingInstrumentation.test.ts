@@ -218,6 +218,12 @@ describe('UserTimingInstrumentation', () => {
       ([namespace]) => namespace === 'UserTimingInstrumentation',
     );
     expect(userTimingDebugCalls).to.have.length(2);
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(logger.error).to.have.been.calledWith(
+      'UserTimingInstrumentation',
+      'enable failed: could not observe mark or measure entries',
+      sinon.match.instanceOf(Error),
+    );
 
     instrumentation.disable();
   });

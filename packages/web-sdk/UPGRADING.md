@@ -18,6 +18,15 @@ The React helpers move from `@embrace-io/web-sdk/react-instrumentation` to `@emb
 
 `onEnable()` and `onDisable()` on the instrumentation classes are now protected and named `_onEnable()` and `_onDisable()`. Turn an instrumentation on and off with `enable()` and `disable()`, and read its state with `isEnabled()`.
 
+### Instrumentations follow the OpenTelemetry browser lifecycle
+
+The instrumentation classes no longer implement `Instrumentation` from `@opentelemetry/instrumentation`:
+
+- `setTracerProvider()`, `setLoggerProvider()`, `setMeterProvider()`, `setConfig()`, `getConfig()` and `getModuleDefinitions()` are removed.
+- Pass the instances in the `instrumentations` option of `initSDK`, not to `registerInstrumentations`. `initSDK` calls `enable()` with its tracer provider, logger provider and propagator. To enable one yourself, call `enable({ tracerProvider, loggerProvider, propagator })`. The first `enable()` keeps these for the life of the instance.
+- An instrumentation that cannot run stays off: `isEnabled()` returns false and the error is logged through `diag`. This covers `LoafInstrumentation`, `ElementTimingInstrumentation` and `SoftNavigationPerformanceInstrumentation` in a browser without the API (check the static `isSupported()` first), and `EmptyRootInstrumentation` with a null `rootNode`, which logs an error instead of a warning.
+- Under `registerGlobally: false`, the `propagator` option is passed to the SDK's instrumentations.
+
 ### Removed instrumentation `diag` option
 
 The `diag` option is removed from every instrumentation's constructor arguments and from `WebVitalsInstrumentationConfig`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.
