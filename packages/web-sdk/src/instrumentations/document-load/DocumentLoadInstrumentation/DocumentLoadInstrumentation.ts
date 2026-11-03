@@ -350,7 +350,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
 
     span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
 
-    /* eslint-disable baseline-js/use-baseline -- Chromium-only fields, read optionally */
+    /* eslint-disable baseline-js/use-baseline -- not widely available (Safari lacks renderBlockingStatus and responseStatus; deliveryType is newly available); read optionally */
     if (resource.deliveryType) {
       span.setAttribute(
         ATTR_HTTP_RESPONSE_DELIVERY_TYPE,
@@ -454,7 +454,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
     // deliveryType is Chromium only, so an engine without it never reads 'cache'.
-    // eslint-disable-next-line baseline-js/use-baseline -- Chromium-only fields, read optionally
+    // eslint-disable-next-line baseline-js/use-baseline -- deliveryType is newly available, not widely available; read optionally
     return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
