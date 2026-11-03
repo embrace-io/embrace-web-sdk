@@ -17,6 +17,10 @@ import {
   BatchSpanProcessor,
   StackContextManager,
 } from '@opentelemetry/sdk-trace';
+import type {
+  Instrumentation,
+  InstrumentationDeps,
+} from '#opentelemetry/browser-instrumentation-api';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
 import { session } from '../api-sessions/index.ts';
@@ -29,10 +33,6 @@ import {
   getLogEndpoint,
   getTraceEndpoint,
 } from '../exporters/index.ts';
-import type {
-  Instrumentation,
-  InstrumentationDeps,
-} from '../instrumentations/InstrumentationBase/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,

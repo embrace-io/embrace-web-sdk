@@ -14,6 +14,7 @@ import type {
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace';
+import type { Instrumentation } from '#opentelemetry/browser-instrumentation-api';
 import type { LogManager } from '../api-logs/index.ts';
 import type { PageManager } from '../api-page/index.ts';
 import type { UserSessionManager } from '../api-sessions/index.ts';
@@ -23,7 +24,6 @@ import type {
   AttributeScrubber,
   VisibilityStateDocument,
 } from '../common/index.ts';
-import type { Instrumentation } from '../instrumentations/InstrumentationBase/index.ts';
 import type {
   ClicksInstrumentationArgs,
   DOMStateInstrumentationArgs,

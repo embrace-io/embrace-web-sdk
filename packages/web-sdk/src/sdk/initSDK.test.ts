@@ -28,6 +28,8 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
+import type { Instrumentation } from '#opentelemetry/browser-instrumentation-api';
+import { InstrumentationBase } from '#opentelemetry/browser-instrumentation-api';
 import {
   FakeInstrumentation,
   FakeLogRecordProcessor,
@@ -56,8 +58,6 @@ import {
   ProxyTraceManager,
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
-import type { Instrumentation } from '../instrumentations/InstrumentationBase/index.ts';
-import { InstrumentationBase } from '../instrumentations/InstrumentationBase/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import { RageClickInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';

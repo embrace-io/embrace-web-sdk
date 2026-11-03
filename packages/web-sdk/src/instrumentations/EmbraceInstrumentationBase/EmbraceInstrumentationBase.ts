@@ -1,3 +1,4 @@
+import { InstrumentationBase } from '#opentelemetry/browser-instrumentation-api';
 import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
 import type { SessionPartStartedEvent } from '../../api-sessions/index.ts';
@@ -8,7 +9,6 @@ import type {
 } from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
-import { InstrumentationBase } from '../InstrumentationBase/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
 type SessionPartListeners = {
