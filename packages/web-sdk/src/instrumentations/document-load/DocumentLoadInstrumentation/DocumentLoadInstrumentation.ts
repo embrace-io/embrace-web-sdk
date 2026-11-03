@@ -84,6 +84,7 @@ const ATTR_HTTP_REQUEST_PREVENTED = 'http.request.prevented'; // Request never s
 // Navigation-only attribute names - no PerformanceResourceTiming equivalent, so these never apply to resource fetch spans
 const ATTR_BROWSER_NAVIGATION_TIMING_TYPE = 'browser.navigation_timing.type';
 
+/** Records the page load as `documentLoad` and `documentFetch` spans, plus a `resourceFetch` span for each resource the page loads. */
 export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private _navigationObserver: PerformanceObserver | null = null;
   private _performanceCollected: boolean = false;

@@ -38,7 +38,8 @@
   ],
   "exports": {
     ".": "./dist/index.js",
-    "./react-instrumentation": "./dist/react-instrumentation/index.js",
+    "./instrumentations": "./dist/instrumentations/index.js",
+    "./instrumentations/react": "./dist/instrumentations/react/index.js",
     "./package.json": "./package.json"
   },
   "typesVersions": {
@@ -46,8 +47,11 @@
       ".": [
         "./dist/index.d.ts"
       ],
-      "react-instrumentation": [
-        "./dist/react-instrumentation/index.d.ts"
+      "instrumentations": [
+        "./dist/instrumentations/index.d.ts"
+      ],
+      "instrumentations/react": [
+        "./dist/instrumentations/react/index.d.ts"
       ]
     }
   },

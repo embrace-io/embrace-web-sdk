@@ -6,6 +6,10 @@
 
 CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sdk')` fails with `ERR_REQUIRE_ESM` on Node versions that cannot load ES modules, and any case where it loads is unsupported. Load the SDK with `import` or a bundler; from a CommonJS file, use dynamic `import()`.
 
+### Instrumentation subpaths
+
+The React helpers move from `@embrace-io/web-sdk/react-instrumentation` to `@embrace-io/web-sdk/instrumentations/react`. The instrumentation classes, such as `DocumentLoadInstrumentation`, are exported from `@embrace-io/web-sdk/instrumentations`.
+
 ### Removed session methods
 
 The deprecated `session` methods from 2.21.0 are removed. Methods with a replacement:

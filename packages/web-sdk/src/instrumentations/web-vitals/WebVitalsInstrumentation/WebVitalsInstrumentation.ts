@@ -295,6 +295,7 @@ const lcpElementAttribution = (
   return attributes;
 };
 
+/** Logs the CLS, FCP, INP, LCP and TTFB measurements reported by the `web-vitals` library. */
 export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _listeners: WebVitalListeners;
   private readonly _urlDocument: URLDocument;

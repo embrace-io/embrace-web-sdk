@@ -10,7 +10,6 @@ export {
   DOMStateInstrumentation,
   type DOMStateInstrumentationArgs,
 } from './dom-state/index.ts';
-export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
 export {
   ElementTimingInstrumentation,
   type ElementTimingInstrumentationArgs,
@@ -43,7 +42,6 @@ export {
   ServerTimingInstrumentation,
   type ServerTimingInstrumentationArgs,
 } from './server-timing/index.ts';
-export type { SessionPartSpan } from './session-part/index.ts';
 export {
   SoftNavigationPerformanceInstrumentation,
   type SoftNavigationPerformanceInstrumentationArgs,

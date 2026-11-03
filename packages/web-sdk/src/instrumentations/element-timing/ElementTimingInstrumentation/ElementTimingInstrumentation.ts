@@ -19,6 +19,7 @@ import type {
   PerformanceElementTiming,
 } from './types.ts';
 
+/** Records a span for each Element Timing entry, that is, each element marked with the `elementtiming` attribute. */
 export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
 

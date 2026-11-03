@@ -1,12 +1,12 @@
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
 import {
   ClicksInstrumentation,
   DOMStateInstrumentation,
   DocumentLoadInstrumentation,
   ElementTimingInstrumentation,
-  EmbraceInstrumentationBase,
   EmptyRootInstrumentation,
   FirstInteractionInstrumentation,
   GlobalExceptionInstrumentation,

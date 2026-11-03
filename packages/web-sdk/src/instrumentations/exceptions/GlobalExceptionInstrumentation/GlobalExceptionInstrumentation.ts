@@ -1,6 +1,7 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { GlobalExceptionInstrumentationArgs } from './types.ts';
 
+/** Logs uncaught errors and unhandled promise rejections as unhandled exceptions. */
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
   private readonly _onUnhandledRejectionHandler: (

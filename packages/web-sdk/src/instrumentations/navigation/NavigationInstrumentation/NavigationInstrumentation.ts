@@ -16,6 +16,7 @@ import type { NavigationInstrumentationArgs } from './types.ts';
 // Could be simplified but done this way to prevent: https://javascript.info/regexp-catastrophic-backtracking
 const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
+/** Records one span per route in a single-page app. The React Router helpers in `@embrace-io/web-sdk/instrumentations/react` report route changes to it. */
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
   private readonly _pageManager: PageManager;

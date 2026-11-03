@@ -16,6 +16,7 @@ import type { ClicksInstrumentationArgs } from './types.ts';
 
 import { getHTMLElementFriendlyName } from './utils.ts';
 
+/** Records each click on the document as an event on the active session part span. */
 export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
