@@ -350,16 +350,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
 
-  public override enable(): void {
-    if (typeof PerformanceObserver !== 'undefined') {
-      super.enable();
-    } else {
-      this._diag.debug(
-        'PerformanceObserver not supported, web vitals will not be collected',
-      );
-    }
-  }
-
   public override onEnable(): void {
     // web-vitals library doesn't support removing listeners, so only register once
     if (this._listenersRegistered) {
