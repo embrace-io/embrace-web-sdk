@@ -20,7 +20,7 @@ import zlib from 'node:zlib';
 import { COLORS, log, logSection } from '../../../scripts/build-config.ts';
 
 // Maximum bundle size (gzipped) — triggers hard failure to catch bloat/duplication early
-const MAX_BUNDLE_SIZE_KB = 62;
+const MAX_BUNDLE_SIZE_KB = 58;
 
 const BUNDLE_FILE = 'embrace-web-sdk.js';
 const BUNDLE_MAP_FILE = 'embrace-web-sdk.js.map';
@@ -45,7 +45,7 @@ function checkSyntaxCompliance() {
   const bundleFile = path.join(SDK_DIST_DIR, BUNDLE_FILE);
 
   const checks = [
-    { name: 'IIFE bundle (ES6)', file: bundleFile, esVersion: 'es6' },
+    { name: 'IIFE bundle (ES2022)', file: bundleFile, esVersion: 'es2022' },
     {
       name: 'ESM modules (ES2022)',
       pattern: `${SDK_DIST_DIR}/**/*.js`,
