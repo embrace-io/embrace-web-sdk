@@ -10,8 +10,6 @@
     }
   },
   "jsdelivr": "./dist/embrace-web-sdk.js",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
   "publishConfig": {
     "access": "public"
   },
@@ -39,14 +37,8 @@
     "THIRD_PARTY_NOTICES.txt"
   ],
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./react-instrumentation": {
-      "import": "./dist/react-instrumentation/index.js",
-      "require": "./dist/react-instrumentation/index.cjs"
-    },
+    ".": "./dist/index.js",
+    "./react-instrumentation": "./dist/react-instrumentation/index.js",
     "./package.json": "./package.json"
   },
   "typesVersions": {
