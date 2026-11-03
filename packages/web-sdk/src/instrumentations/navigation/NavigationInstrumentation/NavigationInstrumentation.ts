@@ -134,7 +134,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     this._removeRouteChangedListener =
       this._pageManager.addRouteChangedListener(this._onRouteChanged);
     this.setSessionPartListeners({
@@ -154,7 +154,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     );
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     this._removeRouteChangedListener?.();
     this._removeRouteChangedListener = null;
     this._endRouteSpan();

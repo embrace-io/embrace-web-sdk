@@ -14,6 +14,10 @@ The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sendin
 
 The React helpers move from `@embrace-io/web-sdk/react-instrumentation` to `@embrace-io/web-sdk/instrumentations/react`. The instrumentation classes, such as `DocumentLoadInstrumentation`, are exported from `@embrace-io/web-sdk/instrumentations`.
 
+### Instrumentation lifecycle hooks are protected
+
+`onEnable()` and `onDisable()` on the instrumentation classes are now protected and named `_onEnable()` and `_onDisable()`. Turn an instrumentation on and off with `enable()` and `disable()`, and read its state with `isEnabled()`.
+
 ### Removed instrumentation `diag` option
 
 The `diag` option is removed from every instrumentation's constructor arguments and from `WebVitalsInstrumentationConfig`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.

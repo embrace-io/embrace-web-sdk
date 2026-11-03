@@ -61,12 +61,12 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
     };
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     document.removeEventListener('click', this._onClickHandler);
     this._flushHandler();
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     document.addEventListener('click', this._onClickHandler);
     this.setSessionPartListeners({ end: this._flushHandler });
   }

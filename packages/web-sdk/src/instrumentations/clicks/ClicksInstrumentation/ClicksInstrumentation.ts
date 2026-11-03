@@ -72,11 +72,11 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
     };
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     document.removeEventListener('click', this._onClickHandler);
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     document.addEventListener('click', this._onClickHandler);
   }
 }

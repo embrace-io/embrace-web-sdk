@@ -39,7 +39,7 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     };
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     // Depth accrued before a disabled gap must not be credited to whichever
     // part is open when tracking resumes, so the seed is taken here, not at disable.
     this._resetTracking(null);
@@ -55,7 +55,7 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     window.removeEventListener('scroll', this._onScrollHandler);
   }
 

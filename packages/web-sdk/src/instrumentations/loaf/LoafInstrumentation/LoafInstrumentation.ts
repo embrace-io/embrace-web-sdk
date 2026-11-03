@@ -62,7 +62,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public onEnable(): void {
+  protected override _onEnable(): void {
     this._observer =
       createPerformanceObserver<PerformanceLongAnimationFrameTiming>(
         'long-animation-frame',
@@ -87,7 +87,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public onDisable(): void {
+  protected override _onDisable(): void {
     this._resetAccumulators();
 
     if (this._observer) {

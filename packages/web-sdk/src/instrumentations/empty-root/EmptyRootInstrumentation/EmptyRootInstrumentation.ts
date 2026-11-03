@@ -41,7 +41,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     this._observer.disconnect();
     for (const timeoutId of this._pendingEmptyChecks) {
       clearTimeout(timeoutId);
@@ -49,7 +49,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     this._pendingEmptyChecks.clear();
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     if (this._rootNode) {
       this._observer.observe(this._rootNode, { childList: true });
     }

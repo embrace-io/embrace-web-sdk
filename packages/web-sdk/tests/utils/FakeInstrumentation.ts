@@ -3,6 +3,8 @@ import { EmbraceInstrumentationBase } from '../../src/instrumentations/EmbraceIn
 export class FakeInstrumentation extends EmbraceInstrumentationBase {
   public startCount = 0;
   public endCount = 0;
+  public enableHookCalls = 0;
+  public disableHookCalls = 0;
 
   public constructor() {
     super({
@@ -12,11 +14,12 @@ export class FakeInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public override onDisable(): void {
-    // no-op
+  protected override _onDisable(): void {
+    this.disableHookCalls += 1;
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
+    this.enableHookCalls += 1;
     this.setSessionPartListeners({
       start: () => {
         this.startCount += 1;
