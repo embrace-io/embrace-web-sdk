@@ -96,7 +96,7 @@ Each test creates spans and logs with dynamic data (timestamps, IDs). These fiel
 - `timeUnixNano`
 - `observedTimeUnixNano`
 
-**Attributes:** only the *values* are ignored, for the keys listed in `IGNORED_ATTRIBUTES_LIST` (`utils/test-with-mock-api.ts`). Key presence and count are still compared, so an attribute the SDK stops emitting fails the comparison until the goldens are regenerated.
+**Attributes:** only the _values_ are ignored, for the keys listed in `IGNORED_ATTRIBUTES_LIST` (`utils/test-with-mock-api.ts`). Key presence and count are still compared, so an attribute the SDK stops emitting fails the comparison until the goldens are regenerated.
 
 When SDK changes affect the test output, update golden files:
 

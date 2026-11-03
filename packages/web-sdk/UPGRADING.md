@@ -59,12 +59,14 @@ If your app has direct dependencies on OTel JS packages ensure they are updated 
 import { sdk } from '@embrace-io/web-sdk';
 
 sdk.initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   logLevel: sdk.DiagLogLevel.INFO,
 });
 
-const myMethod = (span: sdk.Span) => { /* ... */ };
+const myMethod = (span: sdk.Span) => {
+  /* ... */
+};
 ```
 
 2.x version:
@@ -73,12 +75,14 @@ const myMethod = (span: sdk.Span) => { /* ... */ };
 import { initSDK, DiagLogLevel, Span } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   logLevel: DiagLogLevel.INFO,
 });
 
-const myMethod = (span: Span) => { /* ... */ };
+const myMethod = (span: Span) => {
+  /* ... */
+};
 ```
 
 ### CLI now operates on a build folder rather than individual files
@@ -100,8 +104,8 @@ npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" 
 See the breaking changes outlined in the [1.0.0 Release notes](https://github.com/embrace-io/embrace-web-sdk/releases/tag/1.0.0).
 
 In order to upgrade you will need to:
-* Update Embrace trace API calls from `startPerformanceSpan` to `startSpan`
-* Update any optional arguments being passed to `log.message` or `log.logException`
+- Update Embrace trace API calls from `startPerformanceSpan` to `startSpan`
+- Update any optional arguments being passed to `log.message` or `log.logException`
 
 ### Update start span calls
 
@@ -110,7 +114,7 @@ In order to upgrade you will need to:
 ```typescript
 import { trace } from '@embrace-io/web-sdk';
 
-const span = trace.startPerformanceSpan("span-name");
+const span = trace.startPerformanceSpan('span-name');
 ```
 
 1.x version:
@@ -118,7 +122,7 @@ const span = trace.startPerformanceSpan("span-name");
 ```typescript
 import { trace } from '@embrace-io/web-sdk';
 
-const span = trace.startSpan("span-name");
+const span = trace.startSpan('span-name');
 ```
 
 ### Update logging arguments
@@ -128,10 +132,15 @@ const span = trace.startSpan("span-name");
 ```typescript
 import { log } from '@embrace-io/web-sdk';
 
-log.message('Loading not finished in time.', 'error', {
-  keyA: 'valueA',
-  keYB: 'valueB'
-}, true);
+log.message(
+  'Loading not finished in time.',
+  'error',
+  {
+    keyA: 'valueA',
+    keYB: 'valueB',
+  },
+  true,
+);
 
 // ...
 
@@ -146,9 +155,9 @@ import { log } from '@embrace-io/web-sdk';
 log.message('Loading not finished in time.', 'error', {
   attributes: {
     keyA: 'valueA',
-    keYB: 'valueB'
+    keYB: 'valueB',
   },
-  includeStacktrace: true
+  includeStacktrace: true,
 });
 
 // ...

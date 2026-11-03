@@ -14,7 +14,7 @@ and how each instrumentation maps onto them.
 Every timing value the SDK handles is in one of two frames:
 
 - **Time origin.** `performance.timeOrigin` is the epoch timestamp of the
-  original hard navigation. It is fixed for the entire life of the page. Every time value from the Performance API is a [DOMHighResTimeStamp](https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/High_precision_timing#domhighrestimestamp) defined as *milliseconds since time origin*.
+  original hard navigation. It is fixed for the entire life of the page. Every time value from the Performance API is a [DOMHighResTimeStamp](https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/High_precision_timing#domhighrestimestamp) defined as _milliseconds since time origin_.
 - **Zero time.** The SDK's own concept: the moment the user started viewing
   what is currently on screen. It starts equal to time origin and moves
   forward on:
@@ -29,9 +29,9 @@ Every timing value the SDK handles is in one of two frames:
   Zero time is stored as that perf offset, and combined with `activationStart`
   by taking the latest reset point.
 
-The frames answer different questions. Time origin is for *"what wall-clock
-time did this event happen at"*; zero time is for *"how far into the current
-view did this event happen"*. Mixing them up produces timestamps shifted by
+The frames answer different questions. Time origin is for _"what wall-clock
+time did this event happen at"_; zero time is for _"how far into the current
+view did this event happen"_. Mixing them up produces timestamps shifted by
 the gap between the two frames, or durations measured from the wrong starting
 line.
 
@@ -46,16 +46,16 @@ an offset from time origin can be passed to `offsetToAbsoluteTime`.
 `timeOrigin` until the machine sleeps; see
 [Sleep and the origin history](#sleep-and-the-origin-history).
 
-| Method | Question it answers | Computation |
-| --- | --- | --- |
-| `offsetToAbsoluteTime(offset, entryStart = offset)` | What wall-clock epoch time does this raw offset correspond to? | `origin(entryStart) + offset` |
-| `getZeroTime(entryStart = zeroOffset)` | What is the epoch timestamp of the current view's start? | `origin(entryStart) + zeroOffset`, where `zeroOffset = max(activationStart, lastResetOffset)` |
-| `getOffsetFromOrigin()` | What is the raw offset right now? | `performance.now()` |
-| `getOffsetFromZeroTime(offset = now)` | How many ms after the current view started did this raw offset occur? | `max(0, offset - zeroOffset)` |
-| `getNow()` | What is the wall-clock epoch time right now? | `origin(now) + performance.now()` |
-| `getClockLag(origin?)` | How far behind `Date.now()` is the uncorrected perf clock? | `round(Date.now() - (origin + performance.now()))`, with `origin` defaulting to `timeOrigin` as read at startup |
-| `setZeroTimeOffset(offset)` | — (records the raw offset at which the current view started) | |
-| `checkDrift()` | — (starts a new origin segment if the machine slept) | |
+| Method                                              | Question it answers                                                   | Computation                                                                                                     |
+| --------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `offsetToAbsoluteTime(offset, entryStart = offset)` | What wall-clock epoch time does this raw offset correspond to?        | `origin(entryStart) + offset`                                                                                   |
+| `getZeroTime(entryStart = zeroOffset)`              | What is the epoch timestamp of the current view's start?              | `origin(entryStart) + zeroOffset`, where `zeroOffset = max(activationStart, lastResetOffset)`                   |
+| `getOffsetFromOrigin()`                             | What is the raw offset right now?                                     | `performance.now()`                                                                                             |
+| `getOffsetFromZeroTime(offset = now)`               | How many ms after the current view started did this raw offset occur? | `max(0, offset - zeroOffset)`                                                                                   |
+| `getNow()`                                          | What is the wall-clock epoch time right now?                          | `origin(now) + performance.now()`                                                                               |
+| `getClockLag(origin?)`                              | How far behind `Date.now()` is the uncorrected perf clock?            | `round(Date.now() - (origin + performance.now()))`, with `origin` defaulting to `timeOrigin` as read at startup |
+| `setZeroTimeOffset(offset)`                         | — (records the raw offset at which the current view started)          |                                                                                                                 |
+| `checkDrift()`                                      | — (starts a new origin segment if the machine slept)                  |                                                                                                                 |
 
 Zero time never participates in converting a raw offset to an epoch: the
 offset already contains the full distance from time origin, so
@@ -133,17 +133,17 @@ whether the span was started with a start time. Both spans below start at the
 same instant with the same value; only that flag differs:
 
 ```ts
-const a = tracer.startSpan('a');                             // no start time
-const b = tracer.startSpan('b', { startTime: Date.now() });  // the same value, passed explicitly
+const a = tracer.startSpan('a'); // no start time
+const b = tracer.startSpan('b', { startTime: Date.now() }); // the same value, passed explicitly
 // 3s awake, then 30 min asleep, then 5s awake
 a.end();
 b.end();
 ```
 
-| Span | Start | `end()` with no time | Duration |
-| --- | --- | --- | --- |
-| `a` | `Date.now()` (10:00:00), not marked as given | start + elapsed `performance.now()` = 10:00:08 | 8s |
-| `b` | `Date.now()` (10:00:00), marked as given | `Date.now()` = 10:30:08 | 30m 8s |
+| Span | Start                                        | `end()` with no time                           | Duration |
+| ---- | -------------------------------------------- | ---------------------------------------------- | -------- |
+| `a`  | `Date.now()` (10:00:00), not marked as given | start + elapsed `performance.now()` = 10:00:08 | 8s       |
+| `b`  | `Date.now()` (10:00:00), marked as given     | `Date.now()` = 10:30:08                        | 30m 8s   |
 
 A raw `performance.now()` offset passed as `startTime` or to `end()` or
 `addEvent()` is converted by OTel as `timeOrigin + offset` plus the lag
@@ -207,22 +207,22 @@ perceived. Do not rebase them onto `activationStart`.
 
 Timeline (times shown as wall clock for readability):
 
-| Wall clock | Event | Values |
-| --- | --- | --- |
-| 12:00:00.000 | Hard navigation | `timeOrigin = 1,700,000,000,000` |
-| 12:01:00.000 | User soft-navigates to `/checkout` | zero time resets to `1,700,000,060,000` |
-| 12:01:01.000 | Checkout hero image finishes rendering | the browser reports `entry.renderTime = 61,000` — still measured from time origin; the soft navigation does not reset the browser's clock |
-| 12:01:01.500 | SDK processes the entry and emits telemetry | — |
+| Wall clock   | Event                                       | Values                                                                                                                                    |
+| ------------ | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 12:00:00.000 | Hard navigation                             | `timeOrigin = 1,700,000,000,000`                                                                                                          |
+| 12:01:00.000 | User soft-navigates to `/checkout`          | zero time resets to `1,700,000,060,000`                                                                                                   |
+| 12:01:01.000 | Checkout hero image finishes rendering      | the browser reports `entry.renderTime = 61,000` — still measured from time origin; the soft navigation does not reset the browser's clock |
+| 12:01:01.500 | SDK processes the entry and emits telemetry | —                                                                                                                                         |
 
 Each method, applied to this scenario:
 
-| Call | Result | What it's for here |
-| --- | --- | --- |
-| `offsetToAbsoluteTime(61_000)` | `1,700,000,061,000` (12:01:01.000) | the span **end** — the real instant the render happened |
-| `getZeroTime()` | `1,700,000,060,000` (12:01:00.000) | the span **start** — anchoring the span to the current view's start so its duration is "time from view start until render" |
-| `getOffsetFromZeroTime(61_000)` | `61,000 - 60,000 = 1,000` | the `render_time` **attribute** — "rendered 1s into the current view" |
-| `getNow()` | `1,700,000,061,500` (12:01:01.500) | the default **log timestamp** when there is no event-specific offset to convert |
-| `getOffsetFromZeroTime()` | `61,500 - 60,000 = 1,500` | an attribute capturing "how far into the view is it right now" |
+| Call                            | Result                             | What it's for here                                                                                                         |
+| ------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `offsetToAbsoluteTime(61_000)`  | `1,700,000,061,000` (12:01:01.000) | the span **end** — the real instant the render happened                                                                    |
+| `getZeroTime()`                 | `1,700,000,060,000` (12:01:00.000) | the span **start** — anchoring the span to the current view's start so its duration is "time from view start until render" |
+| `getOffsetFromZeroTime(61_000)` | `61,000 - 60,000 = 1,000`          | the `render_time` **attribute** — "rendered 1s into the current view"                                                      |
+| `getNow()`                      | `1,700,000,061,500` (12:01:01.500) | the default **log timestamp** when there is no event-specific offset to convert                                            |
+| `getOffsetFromZeroTime()`       | `61,500 - 60,000 = 1,500`          | an attribute capturing "how far into the view is it right now"                                                             |
 
 The resulting span: start `12:01:00`, end `12:01:01`, duration **1s**, with a
 `render_time` attribute of **1,000ms** — all four numbers agree.
@@ -246,27 +246,27 @@ The three ways to get this wrong, with the same inputs:
 A tab on Chrome or Firefox, where `performance.now()` stops while the machine
 sleeps:
 
-| Wall clock | `performance.now()` | Event |
-| --- | --- | --- |
-| 12:00:00.000 | 0 | Hard navigation: `timeOrigin = 1,700,000,000,000` |
-| 12:10:00.000 | 600,000 | `log.message('before sleep')`: log A, no timestamp |
-| 12:10:01.000 | 601,000 | `trace.startSpan('upload')`: span S, no start time |
-| 12:10:03.000 | 603,000 | `blur` as the machine goes to sleep: the session part ends, and `checkDrift()` finds the clocks in agreement |
-| 12:10:03 – 12:40:03 | 603,000 | Asleep for 30 min: the perf clock does not advance |
-| 12:40:03.000 | 603,000 | Wake: `focus` starts a new session part, whose start reads `getNow()`. Its `checkDrift()` sees a 30 min gap and adds the segment `{ from: 603,000, origin: 1,700,001,800,000 }` |
-| 12:40:05.000 | 605,000 | `span.addEvent('retry', performance.now())` |
-| 12:40:08.000 | 608,000 | `span.end()`, no time |
-| 12:40:10.000 | 610,000 | `log.message('after sleep')`: log B, no timestamp |
+| Wall clock          | `performance.now()` | Event                                                                                                                                                                           |
+| ------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 12:00:00.000        | 0                   | Hard navigation: `timeOrigin = 1,700,000,000,000`                                                                                                                               |
+| 12:10:00.000        | 600,000             | `log.message('before sleep')`: log A, no timestamp                                                                                                                              |
+| 12:10:01.000        | 601,000             | `trace.startSpan('upload')`: span S, no start time                                                                                                                              |
+| 12:10:03.000        | 603,000             | `blur` as the machine goes to sleep: the session part ends, and `checkDrift()` finds the clocks in agreement                                                                    |
+| 12:10:03 – 12:40:03 | 603,000             | Asleep for 30 min: the perf clock does not advance                                                                                                                              |
+| 12:40:03.000        | 603,000             | Wake: `focus` starts a new session part, whose start reads `getNow()`. Its `checkDrift()` sees a 30 min gap and adds the segment `{ from: 603,000, origin: 1,700,001,800,000 }` |
+| 12:40:05.000        | 605,000             | `span.addEvent('retry', performance.now())`                                                                                                                                     |
+| 12:40:08.000        | 608,000             | `span.end()`, no time                                                                                                                                                           |
+| 12:40:10.000        | 610,000             | `log.message('after sleep')`: log B, no timestamp                                                                                                                               |
 
 What each one gets:
 
-| Signal | How it is converted | Result |
-| --- | --- | --- |
-| Log A | `EmbraceLoggerProvider`: no timestamp, so `getNow()` = `timeOrigin + 600,000` | `1,700,000,600,000` (12:10:00.000) |
-| Span S start | `EmbraceExtendedSpan.start()`: no start time, so `Date.now()`, marked as given. It also records `wallOrigin = Date.now() - performance.now()` = `1,700,000,000,000` | `1,700,000,601,000` (12:10:01.000) |
+| Signal        | How it is converted                                                                                                                                                                                         | Result                             |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Log A         | `EmbraceLoggerProvider`: no timestamp, so `getNow()` = `timeOrigin + 600,000`                                                                                                                               | `1,700,000,600,000` (12:10:00.000) |
+| Span S start  | `EmbraceExtendedSpan.start()`: no start time, so `Date.now()`, marked as given. It also records `wallOrigin = Date.now() - performance.now()` = `1,700,000,000,000`                                         | `1,700,000,601,000` (12:10:01.000) |
 | `retry` event | `wallOrigin + 605,000` is 12:10:05.000, while `offsetToAbsoluteTime(605,000)` uses the new segment, `1,700,001,800,000 + 605,000`. They differ by 30 min, more than the 1s threshold, so the second is used | `1,700,002,405,000` (12:40:05.000) |
-| Span S end | `end()` with no time: the start was given, so OTel uses `Date.now()` | `1,700,002,408,000` (12:40:08.000) |
-| Log B | `getNow()` = new origin `+ 610,000` | `1,700,002,410,000` (12:40:10.000) |
+| Span S end    | `end()` with no time: the start was given, so OTel uses `Date.now()`                                                                                                                                        | `1,700,002,408,000` (12:40:08.000) |
+| Log B         | `getNow()` = new origin `+ 610,000`                                                                                                                                                                         | `1,700,002,410,000` (12:40:10.000) |
 
 The span starts at 12:10:01 and ends at 12:40:08, a duration of **30m 7s**
 that includes the time asleep, with its `retry` event at 12:40:05, between the
@@ -298,62 +298,62 @@ relates to.
 ### Zero-time instrumentations
 
 These emit at least one value measured from zero time — they exist to describe
-the user's experience of the *current view*, so their timing attributes rebase
+the user's experience of the _current view_, so their timing attributes rebase
 onto it.
 
 #### ElementTimingInstrumentation
 
 One span per `element` timing entry.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| span start | — (artificial anchor: "view start") | `getZeroTime(entry.startTime)` |
-| span end | `entry.startTime` | `offsetToAbsoluteTime` |
-| `load` span event | `entry.loadTime` | `offsetToAbsoluteTime(entry.loadTime, entry.startTime)` |
-| `emb.element_timing.render_time` | `entry.renderTime` | `getOffsetFromZeroTime` |
-| `emb.element_timing.load_time` | `entry.loadTime` | `getOffsetFromZeroTime` |
-| `emb.element_timing.start_time` | `entry.startTime` | `getOffsetFromZeroTime` |
+| Telemetry field                  | Source                              | Method                                                  |
+| -------------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| span start                       | — (artificial anchor: "view start") | `getZeroTime(entry.startTime)`                          |
+| span end                         | `entry.startTime`                   | `offsetToAbsoluteTime`                                  |
+| `load` span event                | `entry.loadTime`                    | `offsetToAbsoluteTime(entry.loadTime, entry.startTime)` |
+| `emb.element_timing.render_time` | `entry.renderTime`                  | `getOffsetFromZeroTime`                                 |
+| `emb.element_timing.load_time`   | `entry.loadTime`                    | `getOffsetFromZeroTime`                                 |
+| `emb.element_timing.start_time`  | `entry.startTime`                   | `getOffsetFromZeroTime`                                 |
 
 #### UserTimingInstrumentation
 
 One span per `performance.measure()`, one log per `performance.mark()`.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| measure span start / end | `entry.startTime` (+ `entry.duration`) | `offsetToAbsoluteTime`, end with `entry.startTime` as `entryStart` |
-| mark log timestamp | `entry.startTime` | `offsetToAbsoluteTime` |
-| `emb.user_timing.start_time` | `entry.startTime` | `getOffsetFromZeroTime` |
-| `emb.user_timing.duration` | `entry.duration` | none — pure duration |
+| Telemetry field              | Source                                 | Method                                                             |
+| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| measure span start / end     | `entry.startTime` (+ `entry.duration`) | `offsetToAbsoluteTime`, end with `entry.startTime` as `entryStart` |
+| mark log timestamp           | `entry.startTime`                      | `offsetToAbsoluteTime`                                             |
+| `emb.user_timing.start_time` | `entry.startTime`                      | `getOffsetFromZeroTime`                                            |
+| `emb.user_timing.duration`   | `entry.duration`                       | none — pure duration                                               |
 
 #### SoftNavigationPerformanceInstrumentation
 
 One span per `soft-navigation` timing entry.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| span start / end | `entry.startTime` (+ `entry.duration`) | `offsetToAbsoluteTime`, end with `entry.startTime` as `entryStart` |
-| `emb.soft_navigation.start_time` | `entry.startTime` | `getOffsetFromZeroTime` |
-| `emb.soft_navigation.paint_time` | `entry.paintTime` | `getOffsetFromZeroTime` |
-| `emb.soft_navigation.presentation_time` | `entry.presentationTime` | `getOffsetFromZeroTime` |
-| `emb.soft_navigation.duration` | `entry.duration` | none — pure duration |
+| Telemetry field                         | Source                                 | Method                                                             |
+| --------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| span start / end                        | `entry.startTime` (+ `entry.duration`) | `offsetToAbsoluteTime`, end with `entry.startTime` as `entryStart` |
+| `emb.soft_navigation.start_time`        | `entry.startTime`                      | `getOffsetFromZeroTime`                                            |
+| `emb.soft_navigation.paint_time`        | `entry.paintTime`                      | `getOffsetFromZeroTime`                                            |
+| `emb.soft_navigation.presentation_time` | `entry.presentationTime`               | `getOffsetFromZeroTime`                                            |
+| `emb.soft_navigation.duration`          | `entry.duration`                       | none — pure duration                                               |
 
 #### FirstInteractionInstrumentation
 
 One log for the first click/keydown/scroll per session part.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| log timestamp | `event.timeStamp` | `offsetToAbsoluteTime` |
+| Telemetry field              | Source            | Method                  |
+| ---------------------------- | ----------------- | ----------------------- |
+| log timestamp                | `event.timeStamp` | `offsetToAbsoluteTime`  |
 | `emb.first_interaction.time` | `event.timeStamp` | `getOffsetFromZeroTime` |
 
 #### DOMStateInstrumentation
 
 One `dom-state` log per session part end.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| `dom_state.images_above_fold.timestamp` | — (the moment the fold measurement is taken) | `getNow()` |
-| `dom_state.images_above_fold.capture_time` | — (the same moment) | `getOffsetFromZeroTime()` |
+| Telemetry field                            | Source                                       | Method                    |
+| ------------------------------------------ | -------------------------------------------- | ------------------------- |
+| `dom_state.images_above_fold.timestamp`    | — (the moment the fold measurement is taken) | `getNow()`                |
+| `dom_state.images_above_fold.capture_time` | — (the same moment)                          | `getOffsetFromZeroTime()` |
 
 Both attributes are read back-to-back at fold-capture time and held until the session-part-end flush that actually sends the log —
 one as wall clock, one rebased onto zero time. The log's own timestamp is
@@ -390,22 +390,22 @@ One exception log per uncaught error / unhandled rejection. Log timestamp:
 
 One log per web-vital report.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| log timestamp (INP) | `attribution.interactionTime` | `offsetToAbsoluteTime` |
-| log timestamp (CLS) | earliest `entries[].startTime` — the layout shift window's start (fallback: `attribution.largestShiftTime`) | `offsetToAbsoluteTime` |
-| log timestamp (TTFB) | — (the moment the user started viewing the current view) | `getZeroTime()` |
-| log timestamp (LCP / FCP) | last `entries[].startTime` | `offsetToAbsoluteTime` |
-| log timestamp (no entries) | — | `getNow()` at emission |
-| `browser.web_vital.value` / `.delta` | computed by the `web-vitals` library | none — see below |
-| TTFB sub-part attributes (`redirect`, `domainLookup`, `tcpConnection`, `tlsNegotiation`, `serverResponse`, `unattributed`) | differences of `PerformanceNavigationTiming` fields | none — pure durations |
-| raw attribution body (`includeRawAttribution`) | `metric.attribution` primitives, verbatim | none — intentionally a raw debug dump |
+| Telemetry field                                                                                                            | Source                                                                                                      | Method                                |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| log timestamp (INP)                                                                                                        | `attribution.interactionTime`                                                                               | `offsetToAbsoluteTime`                |
+| log timestamp (CLS)                                                                                                        | earliest `entries[].startTime` — the layout shift window's start (fallback: `attribution.largestShiftTime`) | `offsetToAbsoluteTime`                |
+| log timestamp (TTFB)                                                                                                       | — (the moment the user started viewing the current view)                                                    | `getZeroTime()`                       |
+| log timestamp (LCP / FCP)                                                                                                  | last `entries[].startTime`                                                                                  | `offsetToAbsoluteTime`                |
+| log timestamp (no entries)                                                                                                 | —                                                                                                           | `getNow()` at emission                |
+| `browser.web_vital.value` / `.delta`                                                                                       | computed by the `web-vitals` library                                                                        | none — see below                      |
+| TTFB sub-part attributes (`redirect`, `domainLookup`, `tcpConnection`, `tlsNegotiation`, `serverResponse`, `unattributed`) | differences of `PerformanceNavigationTiming` fields                                                         | none — pure durations                 |
+| raw attribution body (`includeRawAttribution`)                                                                             | `metric.attribution` primitives, verbatim                                                                   | none — intentionally a raw debug dump |
 
 `metric.value` for time-based vitals is "time since navigation start" as
 computed by the upstream `web-vitals` library, which has its own bfcache
 handling (each restore counts as a fresh page visit) independent of the SDK's
 zero time. Standard vitals (LCP, FCP, TTFB) do not re-report on a
-*soft* navigation at all — only CLS (cumulative) and INP (per-interaction)
+_soft_ navigation at all — only CLS (cumulative) and INP (per-interaction)
 keep reporting through a soft-navigated visit. That is an upstream library
 boundary, not something the SDK's zero time influences.
 
@@ -416,14 +416,14 @@ load. Zero time is intentionally not involved: this measurement is by
 definition about the original hard navigation, and there is no "current view"
 concept for a one-time page-load report.
 
-| Telemetry field | Source | Method |
-| --- | --- | --- |
-| span start (all three span kinds) | `fetchStart` | `offsetToAbsoluteTime` |
-| span end | `responseEnd` / `loadEventEnd` | `offsetToAbsoluteTime` |
-| `firstPaint` / `firstContentfulPaint` span events | paint entry `startTime` | `offsetToAbsoluteTime` |
+| Telemetry field                                                               | Source                            | Method                            |
+| ----------------------------------------------------------------------------- | --------------------------------- | --------------------------------- |
+| span start (all three span kinds)                                             | `fetchStart`                      | `offsetToAbsoluteTime`            |
+| span end                                                                      | `responseEnd` / `loadEventEnd`    | `offsetToAbsoluteTime`            |
+| `firstPaint` / `firstContentfulPaint` span events                             | paint entry `startTime`           | `offsetToAbsoluteTime`            |
 | network span events (`domainLookupStart`, `connectStart`, `responseStart`, …) | navigation/resource timing fields | `offsetToAbsoluteTime`, see below |
 
-The document-load `addSpanNetworkEvent(s)` helpers check for zero on the *raw*
+The document-load `addSpanNetworkEvent(s)` helpers check for zero on the _raw_
 offset before converting: `0` means the mark did not happen or is hidden (e.g.
 `unloadEventStart` with no prior document, or network marks on opaque
 cross-origin resources), and converting it first would fabricate an event at
@@ -445,13 +445,13 @@ non-timing data, or "now". Their logs carry no timestamp, so
 `Date.now()`, which can be up to the 1s drift threshold away from the session
 part's recorded end.
 
-| Instrumentation | Timing data it emits |
-| --- | --- |
-| ServerTimingInstrumentation | `emb.server_timing.duration` — a duration reported by the server, frame-independent; log timestamp `getNow()` |
-| LoafInstrumentation | aggregated long-animation-frame durations (sums, maxima) — pure durations; both logs' timestamps `getNow()` |
-| MaxScrollDepthInstrumentation | log timestamp `getNow()`; otherwise pixels, percent, booleans |
-| EmptyRootInstrumentation | none — span event uses OTel's default "now" |
-| NavigationInstrumentation | route spans start/end at `getNow()`, which is genuinely when the route change occurs |
+| Instrumentation               | Timing data it emits                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| ServerTimingInstrumentation   | `emb.server_timing.duration` — a duration reported by the server, frame-independent; log timestamp `getNow()` |
+| LoafInstrumentation           | aggregated long-animation-frame durations (sums, maxima) — pure durations; both logs' timestamps `getNow()`   |
+| MaxScrollDepthInstrumentation | log timestamp`getNow()`; otherwise pixels, percent, booleans                                                  |
+| EmptyRootInstrumentation      | none — span event uses OTel's default "now"                                                                   |
+| NavigationInstrumentation     | route spans start/end at `getNow()`, which is genuinely when the route change occurs                          |
 
 ## Managers and internals
 
@@ -465,7 +465,7 @@ For completeness, the non-instrumentation consumers of the clock:
   Epoch numbers, `Date`s and `HrTime`s are kept as given.
 - **EmbraceUserSessionManager** — `getNow()` for user-session and
   session-part lifecycle timestamps (part span start/end, breadcrumb events,
-  rollover boundaries). These are genuinely "now" — the lifecycle event *is*
+  rollover boundaries). These are genuinely "now" — the lifecycle event _is_
   the current instant, not a raw offset in need of conversion. The part span
   start is passed explicitly, so a part starts and ends on the same clock.
 - **EmbraceTracerProvider** — the SDK's `TracerProvider`: the trace manager,

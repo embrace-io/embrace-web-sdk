@@ -1,4 +1,5 @@
 ---
+
 name: Feature request
 about: Suggest an idea for this project
 title: ''
@@ -29,6 +30,7 @@ Provide any additional technical context, such as links to relevant documentatio
 ---
 
 ### Checklist
+
 - [ ] I have checked the SDK documentation to confirm this feature does not already exist
 - [ ] I have searched open issues to ensure this feature has not already been requested
 - [ ] I have included all necessary details to understand the SDK-specific use case

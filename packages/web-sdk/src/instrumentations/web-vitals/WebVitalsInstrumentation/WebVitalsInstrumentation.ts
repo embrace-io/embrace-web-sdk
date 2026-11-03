@@ -85,8 +85,6 @@ const loafScriptsAttribution = (
   const attribution = metric.attribution as INPAttribution;
 
   try {
-    // suppress LoAF baseline errors
-    /* eslint-disable baseline-js/use-baseline */
     if (attribution.longAnimationFrameEntries.length > 0) {
       const scripts = new Map<
         string,
@@ -138,7 +136,6 @@ const loafScriptsAttribution = (
           );
       }
     }
-    /* eslint-enable baseline-js/use-baseline */
   } catch (e) {
     diag.error('error building loaf scripts for INP', e);
   }
@@ -153,7 +150,6 @@ const clsLayoutShiftsAttribution = (
   const attributes: Attributes = {};
 
   try {
-    /* eslint-disable baseline-js/use-baseline */
     const entries = metric.entries as LayoutShift[];
 
     if (entries.length > 0) {
@@ -176,7 +172,6 @@ const clsLayoutShiftsAttribution = (
           entries.length - MAX_CLS_LAYOUT_SHIFTS;
       }
     }
-    /* eslint-enable baseline-js/use-baseline */
   } catch (e) {
     diag.error('error building CLS layout shifts', e);
   }

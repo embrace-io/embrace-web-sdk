@@ -66,14 +66,14 @@ capturing telemetry:
 import { initSDK } from '@embrace-io/web-sdk';
 
 const result = initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
 });
 
 if (!!result) {
-  console.log("Successfully initialized the Embrace SDK");
+  console.log('Successfully initialized the Embrace SDK');
 } else {
-  console.log("Failed to initialize the Embrace SDK");
+  console.log('Failed to initialize the Embrace SDK');
 }
 ```
 
@@ -92,7 +92,7 @@ For the most basic usage simply start a span and end it after some operation com
 ```typescript
 import { trace } from '@embrace-io/web-sdk';
 
-const span = trace.startSpan("span-name");
+const span = trace.startSpan('span-name');
 
 someAsyncOperation()
   .then(() => span.end())
@@ -114,7 +114,7 @@ You can add basic context to sessions by emitting a breadcrumb that will be visi
 ```typescript
 import { session } from '@embrace-io/web-sdk';
 
-session.addBreadcrumb("something happened");
+session.addBreadcrumb('something happened');
 ```
 
 A full log message can also be emitted. Note that unlike emitting a breadcrumb a log is more heavy-weight and may
@@ -126,8 +126,8 @@ import { log } from '@embrace-io/web-sdk';
 log.message('Loading not finished in time.', 'error', {
   attributes: {
     propertyA: 'valueA',
-    propertyB: 'valueB'
-  }
+    propertyB: 'valueB',
+  },
 });
 ```
 
@@ -147,8 +147,8 @@ try {
     handled: true,
     attributes: {
       propertyA: 'valueA',
-      propertyB: 'valueB'
-    }
+      propertyB: 'valueB',
+    },
   });
 }
 ```
@@ -164,14 +164,14 @@ You can add custom properties to be included as part of the current session:
 ```typescript
 import { session } from '@embrace-io/web-sdk';
 
-session.addProperty("my-custom-property", "some value");
+session.addProperty('my-custom-property', 'some value');
 ```
 
 These properties will, by default, only be included in the current session.
 If you want to add permanent properties that are sent across all sessions, you can configure the lifespan option:
 
 ```typescript
-session.addProperty("my-custom-property", "some value", {
+session.addProperty('my-custom-property', 'some value', {
   lifespan: 'permanent',
 });
 ```
@@ -184,10 +184,10 @@ you use your `package.json` to track versions of your app then a way to keep thi
 value when initializing the SDK (assuming that your bundler provides a method for importing json files):
 
 ```typescript
-import * as packageInfo from "../<some-path>/package.json";
+import * as packageInfo from '../<some-path>/package.json';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
+  appID: 'YOUR_EMBRACE_APP_ID',
   appVersion: packageInfo.version,
 });
 ```
@@ -251,8 +251,8 @@ ones altogether) you can pass a `defaultInstrumentationConfig` object when initi
 import { initSDK } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   defaultInstrumentationConfig: {
     omit: new Set(['@opentelemetry/instrumentation-fetch']),
   },
@@ -268,8 +268,8 @@ For more advanced customization you can also include additional instrumentations
 import { initSDK } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   instrumentations: [myCustomInstrumentation],
 });
 ```
@@ -286,27 +286,30 @@ import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   spanExporters: [
     new OTLPTraceExporter({
       url: 'https://example.com/endpoint/for/traces',
       headers: {
-        'Authorization': 'Basic TOKEN'
-      }
+        Authorization: 'Basic TOKEN',
+      },
     }),
   ],
   logExporters: [
     new OTLPLogExporter({
       url: 'https://example.com/endpoint/for/logs',
       headers: {
-        'Authorization': 'Basic TOKEN'
-      }
+        Authorization: 'Basic TOKEN',
+      },
     }),
   ],
   defaultInstrumentationConfig: {
     network: {
-      ignoreUrls: ['https://example.com/endpoint/for/traces', 'https://example.com/endpoint/for/logs'],
+      ignoreUrls: [
+        'https://example.com/endpoint/for/traces',
+        'https://example.com/endpoint/for/logs',
+      ],
     },
   },
 });
@@ -345,14 +348,14 @@ that makes use of the sdk.
 The rest of this README assumes using the SDK from an NPM installation, here are some required changes to keep in mind
 as you refer to that documentation:
 
-1) Importing the sdk from node modules is no longer valid. Instead, reference it from the global `window` object:
+1. Importing the sdk from node modules is no longer valid. Instead, reference it from the global `window` object:
 
    ```diff
    - import { initSDK, log, page, session, trace, user } from '@embrace-io/web-sdk';
    + const { initSDK, log, page, session, trace, user } = window.EmbraceWebSdk;
    ```
 
-2) Our CLI tool does not support injecting an app version when loading from CDN since in that case our SDK is not
+2. Our CLI tool does not support injecting an app version when loading from CDN since in that case our SDK is not
    bundled with your code, instead you will need to make sure to pass in your app version when initializing the sdk as
    in the following example:
 
@@ -382,7 +385,7 @@ window.EmbraceWebSdkOnReady.onReady(() => {
     appVersion: '0.0.1',
     /*...*/
   });
-})
+});
 ```
 
 This is necessary to ensure that the SDK is fully loaded before you start using it.
@@ -400,8 +403,8 @@ initializing the SDK.
 import { initSDK } from '@embrace-io/web-sdk';
 
 const embraceSDK = initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   registerGlobally: false, // Prevents the SDK from registering itself globally
 });
 ```
@@ -413,8 +416,8 @@ and properties.
 import { initSDK } from '@embrace-io/web-sdk';
 
 const embraceSDK = initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   registerGlobally: false, // Prevents the SDK from registering itself globally
 });
 
@@ -429,10 +432,10 @@ log.message('This is a log message', 'info');
 
 Some instrumentation is still being registered globally and we're actively working on making it local for each instance:
 
-* Fetch and XHR instrumentations patch global functions (`globalThis.fetch` and `XMLHttpRequest.prototype`). When
+- Fetch and XHR instrumentations patch global functions (`globalThis.fetch` and `XMLHttpRequest.prototype`). When
   multiple SDK instances run on the same page each one installs its own wrapper and every instance produces spans for
   every network request.
-* Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that
+- Global error handler listens to all unhandled errors and rejections, all SDKs are going to report all the errors that
   are not caught.
 
 ## Network span forwarding
@@ -457,19 +460,19 @@ the additional header by configuring the fetch or XHR instrumentations with an a
 import { initSDK } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   defaultInstrumentationConfig: {
     '@opentelemetry/instrumentation-fetch': {
       propagateTraceHeaderCorsUrls: [
         /example\.com/, // propagates for any CORS requests with URLs that match the regex
-        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
+        'https://www.example.com/foo', // propagates for CORS requests to URLs that exactly match the string
       ],
     },
     '@opentelemetry/instrumentation-xml-http-request': {
       propagateTraceHeaderCorsUrls: [
         /example\.com/, // propagates for any CORS requests with URLs that match the regex
-        "https://www.example.com/foo", // propagates for CORS requests to URLs that exactly match the string
+        'https://www.example.com/foo', // propagates for CORS requests to URLs that exactly match the string
       ],
     },
   },
@@ -485,8 +488,8 @@ turned off if set:
 import { initSDK } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
 
   // The following are not supported alongside Network Span Forwarding and will cause that feature to turn off:
   // 1. Setting registerGlobally to false
@@ -495,7 +498,10 @@ initSDK({
   propagator: myCustomPropagator,
   // 3. Omitting both network instrumentations
   defaultInstrumentationConfig: {
-    omit: new Set(['@opentelemetry/instrumentation-fetch', '@opentelemetry/instrumentation-xml-http-request']),
+    omit: new Set([
+      '@opentelemetry/instrumentation-fetch',
+      '@opentelemetry/instrumentation-xml-http-request',
+    ]),
   },
 });
 ```
@@ -509,8 +515,8 @@ of what has been configured server-side:
 import { initSDK } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
 
   blockNetworkSpanForwarding: true,
 });
@@ -547,7 +553,7 @@ If you wish to customize the SDK behavior by configuring custom resources, expor
 you must ensure that you are using versions of the OTel packages that are compatible with our SDK:
 
 | Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
-|-----------------|---------------------|--------|----------------------------|
+| --------------- | ------------------- | ------ | -------------------------- |
 | ^2.0.0          | ^1.9.0              | ^2.0.3 | >=0.203.0 <0.300.0         |
 | 1.8.2           | ^1.9.0              | 1.30.1 | 0.57.2                     |
 
@@ -562,8 +568,8 @@ initializing as follows:
 import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   logLevel: DiagLogLevel.ALL,
 });
 ```
@@ -575,12 +581,18 @@ emitted:
 
 ```typescript
 import { initSDK, DiagLogLevel } from '@embrace-io/web-sdk';
-import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace'
+import {
+  ConsoleLogRecordExporter,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace';
 
 initSDK({
-  appID: "YOUR_EMBRACE_APP_ID",
-  appVersion: "YOUR_APP_VERSION",
+  appID: 'YOUR_EMBRACE_APP_ID',
+  appVersion: 'YOUR_APP_VERSION',
   logLevel: DiagLogLevel.INFO,
 
   // setup as exporters to output with the same batching as when exporting to a collector endpoint

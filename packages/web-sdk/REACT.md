@@ -1,6 +1,6 @@
 # Instrumenting a React app with the Embrace Web SDK
 
-You can use any of the Embrace Web SDK features in your React application. However, we provide some additional automatic 
+You can use any of the Embrace Web SDK features in your React application. However, we provide some additional automatic
 instrumentation to make it easier to instrument some common React libraries and patterns.
 
 > [!TIP]
@@ -35,7 +35,7 @@ const App = () => {
 
 ### React Router V6+ in declarative mode
 
-If you're using React Router V6 or later, you can use the `withEmbraceRouting` higher-order component (HOC) to wrap your `Routes` components. This will automatically track route changes. 
+If you're using React Router V6 or later, you can use the `withEmbraceRouting` higher-order component (HOC) to wrap your `Routes` components. This will automatically track route changes.
 
 ```typescript jsx
 import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
@@ -119,7 +119,7 @@ initSDK({
       shouldCleanupPathOptionsFromRouteName: false,
     },
   },
-})
+});
 ```
 
 ## Error Boundary

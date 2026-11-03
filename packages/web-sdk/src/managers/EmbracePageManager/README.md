@@ -70,7 +70,7 @@ sequenceDiagram
 new route. This matters because `EmbraceSessionPartBatchedSpanProcessor`
 doesn't tag spans with a session-part id — it queues every span as it ends
 and flushes the queue whenever a session-part span ends, so a span's
-attribution is decided by *ending order*, not by when it started.
+attribution is decided by _ending order_, not by when it started.
 `NavigationInstrumentation` ends its route span from the session-part-ended
 listener, which `EmbraceUserSessionManager.endSessionPartInternal` fires
 before ending the outgoing session-part span itself. Rolling over first

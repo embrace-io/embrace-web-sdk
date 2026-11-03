@@ -72,6 +72,8 @@
       },
       "style": {
         "recommended": true,
+        // the test domain's `it` default contradicts Playwright, whose only export is `test`
+        "useConsistentTestIt": "off",
         "useImportType": {
           "level": "error",
           "options": {
@@ -100,5 +102,14 @@
         "recommended": true
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      // test doubles are throwaway components, never remounted
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": { "correctness": { "noComponentHookFactories": "off" } }
+      }
+    }
+  ]
 }

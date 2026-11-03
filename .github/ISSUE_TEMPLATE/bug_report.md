@@ -1,4 +1,5 @@
 ---
+
 name: Bug report
 about: Create a report to help us improve the library
 title: ''
@@ -10,16 +11,19 @@ assignees: ''
 <!-- Before raising, please check if somebody else has already reported your issue. -->
 
 ### Describe the bug
+
 A clear and concise description of what the bug is.
 
 ### Steps to reproduce
+
 1. Calling API X
 2. Doing this in the browser...
 3. Throws error A or collects wrongly data B
 
 ### Environment
-* Browser:
-* Embrace SDK version:
+
+- Browser:
+- Embrace SDK version:
 
 <!--
   Below are a few approaches you might take to communicate the issue, in

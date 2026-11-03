@@ -1,4 +1,3 @@
-/* eslint-disable baseline-js/use-baseline */
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { Metric } from 'web-vitals';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
