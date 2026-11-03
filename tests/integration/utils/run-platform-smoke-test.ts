@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { exec } from 'node:child_process';
 import fs from 'node:fs';
 import { resolve } from 'node:path';
-import test from 'node:test';
+import { after, before, describe, it } from 'node:test';
 import { promisify } from 'node:util';
 import { resultsToMarkdownTable } from '../../utils/jsonToMarkdownTable.ts';
 import { TOTAL_GZIP_SIZE_THRESHOLD_IN_KB } from '../config/index.ts';
@@ -40,20 +40,20 @@ const runPlatformBuildSmokeTest = async (
     platformName = platformPath,
   }: RunPlatformBuildSmokeTestOptions,
 ) => {
-  await test.describe(`${platformName} Platform Tests`, async () => {
+  await describe(`${platformName} Platform Tests`, () => {
     const results: Record<
       string,
       Awaited<ReturnType<typeof processSondaReport>>
     > = {};
 
-    test.before(async () => {
+    before(async () => {
       await execAsync('npm run build:clean', {
         cwd: platformPath,
       });
     });
 
     for (const target of targets) {
-      await test.it(`should run build:${target} without errors`, async () => {
+      it(`should run build:${target} without errors`, async () => {
         try {
           const { stdout } = await execAsync(`npm run build:${target}`, {
             cwd: platformPath,
@@ -86,7 +86,7 @@ const runPlatformBuildSmokeTest = async (
       });
     }
 
-    test.after(() => {
+    after(() => {
       if (!includePlatformSizeTest) {
         return;
       }
