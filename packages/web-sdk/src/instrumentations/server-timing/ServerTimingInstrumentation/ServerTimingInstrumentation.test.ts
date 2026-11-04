@@ -111,11 +111,8 @@ describe('ServerTimingInstrumentation', () => {
         ]),
       ]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager });
 
       const logs = memoryExporter.getFinishedLogRecords();
       expect(logs).to.have.length(2);
@@ -147,14 +144,11 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
+      const instrumentation = new ServerTimingInstrumentation();
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
-      instrumentation.enable();
+      instrumentation.enable({ perf, limitManager });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
@@ -166,11 +160,8 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager });
 
       const loadListenerAdded = addEventListenerSpy.args.some(
         ([event]) => event === 'load',
@@ -203,11 +194,8 @@ describe('ServerTimingInstrumentation', () => {
           ]),
         ]);
 
-        const instrumentation = new ServerTimingInstrumentation({
-          perf,
-          limitManager,
-        });
-        instrumentation.enable();
+        const instrumentation = new ServerTimingInstrumentation();
+        instrumentation.enable({ perf, limitManager });
 
         const logs = memoryExporter.getFinishedLogRecords();
         expect(logs).to.have.length(1);
@@ -231,11 +219,8 @@ describe('ServerTimingInstrumentation', () => {
         ...DEFAULT_LIMITS,
         maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, server_timing: 2 },
       });
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager: customLimitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager: customLimitManager });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(2);
 
@@ -249,11 +234,8 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([makeServerTimingEntry()])]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
 
@@ -272,11 +254,8 @@ describe('ServerTimingInstrumentation', () => {
         .withArgs('navigation')
         .returns([makeNavigationEntry([])]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
@@ -286,11 +265,8 @@ describe('ServerTimingInstrumentation', () => {
     it('emits nothing when no navigation entry exists', () => {
       getEntriesByTypeStub.withArgs('navigation').returns([]);
 
-      const instrumentation = new ServerTimingInstrumentation({
-        perf,
-        limitManager,
-      });
-      instrumentation.enable();
+      const instrumentation = new ServerTimingInstrumentation();
+      instrumentation.enable({ perf, limitManager });
 
       expect(memoryExporter.getFinishedLogRecords()).to.have.length(0);
 
