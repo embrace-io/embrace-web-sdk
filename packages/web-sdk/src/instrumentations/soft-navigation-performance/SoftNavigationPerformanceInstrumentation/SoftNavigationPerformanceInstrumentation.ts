@@ -49,6 +49,7 @@ const PENDING_NAVIGATION_TTL_MS = 60_000;
 
 type PendingNavigation = { timestamp: number; url: string };
 
+/** Records a span for each soft navigation the browser reports through `soft-navigation` performance entries. */
 export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _eventObserver: PerformanceObserver | null = null;

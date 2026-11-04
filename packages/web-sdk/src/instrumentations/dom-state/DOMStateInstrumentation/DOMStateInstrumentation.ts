@@ -20,21 +20,7 @@ import {
 } from './constants.ts';
 import type { DOMStateInstrumentationArgs } from './types.ts';
 
-/*
-  Captures DOM-shape measurements as one `dom-state` log per session part end:
-  element count, average depth, and the document box, all measured at the part
-  end itself.
-
-  The fold measurement (images above the fold, the viewport they were judged
-  against, and its capture time as both `images_above_fold.timestamp` — wall
-  clock — and `images_above_fold.capture_time` — ms from zero time) describes
-  what the user sees first: at most one per page, taken only while a session
-  part is engaged, at the load event, at the first part start after a load
-  nobody watched, or at attach to an already loaded page. It rides the first
-  part-end log sent after the capture; the log itself keeps the part end's own
-  timestamp, since its other attributes (element count, document box, ...)
-  are measured at the flush, not at the earlier capture.
-*/
+/** Logs the shape of the DOM when each session part ends: element count, average depth, the document box and, once per page, the images above the fold. */
 export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onLoad: () => void;
   // The page's one attempt, spent inside the first engaged part whatever it yields.
@@ -110,6 +96,15 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     return navigation.loadEventStart > 0;
   }
 
+  // The fold measurement (images above the fold, the viewport they were judged
+  // against, and the capture time) describes what the user sees first: at most
+  // one per page, taken only while a session part is engaged, at the load event,
+  // at the first part start after a load nobody watched, or at attach to an
+  // already loaded page. The capture time is stamped as both
+  // `images_above_fold.timestamp` (wall clock) and
+  // `images_above_fold.capture_time` (ms from zero time). The measurement rides
+  // the first part-end log sent after the capture, and that log keeps the part
+  // end's own timestamp because its other attributes are measured at the flush.
   private _captureFoldMeasurement(): void {
     try {
       if (this._foldMeasured) {

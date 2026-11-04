@@ -6,7 +6,7 @@ import {
   ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../constants/index.ts';
-import type { SessionPartSpan } from '../instrumentations/index.ts';
+import type { SessionPartSpan } from '../instrumentations/session-part/index.ts';
 import { KEY_EMB_SOFT_NAVIGATION_SOURCE } from '../instrumentations/soft-navigation-performance/SoftNavigationPerformanceInstrumentation/constants.ts';
 
 export interface NetworkSpan extends ReadableSpan {

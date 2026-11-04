@@ -22,10 +22,7 @@ interface InteractionData {
   y?: number;
 }
 
-/*
-  Captures the first user input event in each session part and emits one log
-  per part. Listeners are detached after the first event is logged.
-*/
+/** Logs the first user input in each session part. */
 export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClick: (event: PointerEvent) => void;
   private readonly _onKeyDown: (event: KeyboardEvent) => void;

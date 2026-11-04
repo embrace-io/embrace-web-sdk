@@ -4,10 +4,8 @@ import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xm
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import type { LogManager } from '../api-logs/index.ts';
-import {
-  EmbraceInstrumentationBase,
-  EmptyRootInstrumentation,
-} from '../instrumentations/index.ts';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
+import { EmptyRootInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/index.ts';
 import {
   DEFAULT_LIMITS,

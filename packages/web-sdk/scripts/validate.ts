@@ -13,6 +13,7 @@
 
 import { execSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
@@ -110,7 +111,10 @@ function withPackedSDK(
   options: { packageJson: Record<string, unknown> },
   testCallback: (dir: string) => boolean,
 ) {
-  const tempDir = fs.mkdtempSync(path.join(SDK_ROOT, '.tmp'));
+  // Outside the repo, so bare imports cannot resolve from the workspace node_modules
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'embrace-web-sdk-validate-'),
+  );
 
   try {
     // Pack the SDK
@@ -123,11 +127,12 @@ function withPackedSDK(
       throw new Error('Failed to create npm package tarball');
     }
 
-    // Move tarball to temp directory
-    fs.renameSync(
+    // Copied, not renamed: the temp directory can be on another filesystem
+    fs.copyFileSync(
       path.join(SDK_ROOT, tarball),
       path.join(tempDir, 'package.tgz'),
     );
+    fs.rmSync(path.join(SDK_ROOT, tarball));
 
     // Create package.json
     fs.writeFileSync(
@@ -206,6 +211,30 @@ function testPackageInstallAndImports() {
         log('  ✓ ESM imports work', COLORS.green);
       } catch (error: unknown) {
         throw new Error(`ESM import failed: ${(error as Error).message}`);
+      }
+
+      // react is an optional peer, so it is not installed here; the subpath import fails if its graph imports react
+      const reactResolves =
+        spawnSync(
+          'node',
+          ['--input-type=module', '-e', "await import('react')"],
+          { cwd: tempDir, stdio: 'pipe' },
+        ).status === 0;
+      if (reactResolves) {
+        throw new Error(
+          'react resolves in the temp project, so the instrumentations subpath check would prove nothing',
+        );
+      }
+      try {
+        execSync(
+          `node --input-type=module -e "import { DocumentLoadInstrumentation } from '@embrace-io/web-sdk/instrumentations'; if (!DocumentLoadInstrumentation) process.exit(1);"`,
+          { cwd: tempDir, stdio: 'pipe' },
+        );
+        log('  ✓ Instrumentations subpath imports without react', COLORS.green);
+      } catch (error: unknown) {
+        throw new Error(
+          `Instrumentations subpath import failed: ${(error as Error).message}`,
+        );
       }
 
       return true;

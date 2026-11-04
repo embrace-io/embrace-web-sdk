@@ -1,5 +1,5 @@
 import { log, page, session, trace, user } from '@embrace-io/web-sdk';
-import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
+import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/instrumentations/react';
 
 import type { Span } from '@opentelemetry/api';
 import { useEffect, useState } from 'react';

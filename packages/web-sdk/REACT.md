@@ -15,7 +15,7 @@ Route tracking is enabled by default once `initSDK` runs — pick the helper bel
 If you're using React Router V4 or V5, you can use the `withEmbraceRoutingLegacy` higher-order component (HOC) to wrap your `Route` components. This will automatically track route changes. `EmbraceRoute` needs to be surrounded by a `<Switch>` component to properly capture the current path.
 
 ```typescript jsx
-import { withEmbraceRoutingLegacy } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRoutingLegacy } from '@embrace-io/web-sdk/instrumentations/react';
 import { Route, Router, Switch } from 'react-router-dom';
 
 const EmbraceRoute = withEmbraceRoutingLegacy(Route);
@@ -38,7 +38,7 @@ const App = () => {
 If you're using React Router V6 or later, you can use the `withEmbraceRouting` higher-order component (HOC) to wrap your `Routes` components. This will automatically track route changes.
 
 ```typescript jsx
-import { withEmbraceRouting } from '@embrace-io/web-sdk/react-instrumentation';
+import { withEmbraceRouting } from '@embrace-io/web-sdk/instrumentations/react';
 import { Route, Routes, BrowserRouter } from 'react-router-dom';
 
 const EmbraceRoutes = withEmbraceRouting(Routes);
@@ -61,7 +61,7 @@ const App = () => {
 When using data mode in React Router, you can listen to browser changes using `listenToRouterChanges` to automatically track route changes.
 
 ```typescript jsx
-import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
+import { listenToRouterChanges } from '@embrace-io/web-sdk/instrumentations/react';
 import {
   createBrowserRouter,
   RouterProvider,
@@ -127,7 +127,7 @@ initSDK({
 To capture rendering errors in your React components, you can use the `EmbraceErrorBoundary` component. This component will automatically capture errors that on any of its children components render and send them to Embrace.
 
 ```typescript jsx
-import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/react-instrumentation';
+import { EmbraceErrorBoundary } from '@embrace-io/web-sdk/instrumentations/react';
 
 const App = () => {
   return (

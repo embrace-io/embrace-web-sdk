@@ -31,6 +31,7 @@ type ScriptSummaryValue = {
 
 type ScriptSummaries = Map<string, ScriptSummaryValue>;
 
+/** Logs Long Animation Frame (`long-animation-frame`) entries with a summary of the scripts that ran in each frame. */
 export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
   private _isFirstEntry: boolean = true;

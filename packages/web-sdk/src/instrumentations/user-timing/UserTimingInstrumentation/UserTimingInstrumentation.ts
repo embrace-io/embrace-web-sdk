@@ -20,6 +20,7 @@ import type {
   UserTimingInstrumentationArgs,
 } from './types.ts';
 
+/** Records each `performance.measure()` entry as a span and each `performance.mark()` entry as a log. */
 export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _markObserver: PerformanceObserver | null = null;
   private _measureObserver: PerformanceObserver | null = null;

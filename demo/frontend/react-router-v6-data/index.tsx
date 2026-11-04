@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { listenToRouterChanges } from '@embrace-io/web-sdk/react-instrumentation';
+import { listenToRouterChanges } from '@embrace-io/web-sdk/instrumentations/react';
 import { StrictMode, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import {

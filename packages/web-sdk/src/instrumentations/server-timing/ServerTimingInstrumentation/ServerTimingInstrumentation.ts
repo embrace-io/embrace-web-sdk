@@ -9,6 +9,7 @@ import {
 } from './constants.ts';
 import type { ServerTimingInstrumentationArgs } from './types.ts';
 
+/** Logs the `Server-Timing` metrics of the page's navigation response. */
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private _performanceCollected: boolean = false;
 

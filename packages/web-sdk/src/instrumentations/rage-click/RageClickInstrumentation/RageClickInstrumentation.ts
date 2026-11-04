@@ -31,10 +31,7 @@ interface RageClickWindow {
   timeoutId: number;
 }
 
-/*
-  Detects when the user makes multiple rapid clicks ("rage clicks") in a target
-  area, and emits one log per rage click.
-*/
+/** Logs each rage click, a burst of rapid clicks on the same area of the page. */
 export class RageClickInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
   private readonly _flushHandler = (): void => {
