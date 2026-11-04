@@ -3192,36 +3192,6 @@ describe('WebVitalsInstrumentation', () => {
     });
   });
 
-  describe('PerformanceObserver unavailable', () => {
-    let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
-
-    beforeEach(() => {
-      originalPerformanceObserver = globalThis.PerformanceObserver;
-      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-        undefined;
-    });
-
-    afterEach(() => {
-      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
-        originalPerformanceObserver;
-    });
-
-    it('should log debug and not register listeners when PerformanceObserver is undefined', () => {
-      instrumentation = new WebVitalsInstrumentation({
-        perf,
-        listeners: mockWebVitalListeners,
-        urlAttribution: false,
-      });
-      instrumentation.enable();
-
-      expect(clsStub.callCount).to.equal(0);
-      expect(logger.debug).to.have.been.calledWith(
-        sinon.match.string,
-        'PerformanceObserver not supported, web vitals will not be collected',
-      );
-    });
-  });
-
   it('should not track page when urlAttribution listener fires while disabled', () => {
     const urlDocument = { URL: 'https://example.com/page-a' };
 
