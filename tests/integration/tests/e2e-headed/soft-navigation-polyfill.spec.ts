@@ -9,7 +9,7 @@
 // Headless Chromium does not generate PerformanceEventTiming entries for
 // Playwright synthetic clicks, so this test must run in headed mode where real
 // user interactions produce real entries.
-import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
+import type { IExportTraceServiceRequest } from '../../types.ts';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
 
 const BASE_URL = 'http://localhost:3016';

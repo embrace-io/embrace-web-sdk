@@ -1,11 +1,8 @@
-import type {
-  IExportLogsServiceRequest,
-  ILogRecord,
-} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
 import {
   DEFAULT_LCP_DELAY_MS,
   MAIN_THREAD_BLOCK_MS,
 } from '../../platforms/vite-test-harness/src/constants.ts';
+import type { IExportLogsServiceRequest, ILogRecord } from '../../types.ts';
 import test, { expect } from '../../utils/test-with-mock-api.ts';
 
 const BASE_URL = 'http://localhost:3017/';

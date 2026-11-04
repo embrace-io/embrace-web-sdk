@@ -1,7 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type { IExportMetricsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/metrics/internal-types.js';
-import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
+import type {
+  IExportLogsServiceRequest,
+  IExportMetricsServiceRequest,
+  IExportTraceServiceRequest,
+} from '../tests/integration/types.ts';
 import type { OtlpJson } from './utils.ts';
 import { gunzipCapped, logError, logWarn, readCappedBody } from './utils.ts';
 
@@ -53,7 +55,7 @@ const rejection = (
   cause?: unknown,
 ): OtlpRejection => ({ ok: false, status, message, cause });
 
-// JSON only: otlp-transformer can't decode protobuf requests.
+// JSON only: the collector has no protobuf decoder.
 const readOtlpRequest = async (
   req: IncomingMessage,
   signal: OtlpSignal,
