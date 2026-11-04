@@ -69,7 +69,7 @@ describe('NavigationInstrumentation', () => {
       .getFinishedSpans()
       .filter((s) => s.attributes['emb.type'] === 'ux.surface');
 
-  // The _isEnabled guard hides a leaked listener from span output, so the
+  // The isEnabled() guard hides a leaked listener from span output, so the
   // registrations on the page manager are counted directly.
   const trackRouteChangedListeners = () => {
     const addRouteChangedListener = pageManager.addRouteChangedListener;

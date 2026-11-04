@@ -65,7 +65,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
 
     if (!this._markObserver && !this._measureObserver) {
-      this._isEnabled = false;
+      throw new Error('could not observe mark or measure entries');
     }
   }
 
@@ -84,7 +84,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _processEntry(entry: PerformanceMark | PerformanceMeasure): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 

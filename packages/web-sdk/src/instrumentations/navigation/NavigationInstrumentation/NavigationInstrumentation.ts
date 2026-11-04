@@ -40,7 +40,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private readonly _onRouteChanged = (route: Route): void => {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
