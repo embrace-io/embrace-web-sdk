@@ -458,7 +458,7 @@ const expect = testWithMockApi.expect.extend({
 
     // First check if they have the same length
     if (received.length !== expected.length) {
-      const attributesDiff = diff(received, expected);
+      const attributesDiff = diff(expected, received);
 
       return {
         pass: false,
