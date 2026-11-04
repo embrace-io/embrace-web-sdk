@@ -2221,10 +2221,10 @@ describe('isolated instances', () => {
     expect(record?.attributes['emb.session_part_id']).to.equal(sessionPartId);
   });
 
-  it('should deliver telemetry emitted inside onEnable to the instance exporters', async () => {
+  it('should deliver telemetry emitted inside _onEnable to the instance exporters', async () => {
     class EmitOnEnableInstrumentation extends FakeInstrumentation {
-      public override onEnable(): void {
-        super.onEnable();
+      protected override _onEnable(): void {
+        super._onEnable();
         this.emit();
       }
     }
@@ -2247,7 +2247,7 @@ describe('isolated instances', () => {
     await result.flush();
 
     // registerInstrumentations attaches this instance's providers before it
-    // calls enable(), so anything emitted inside onEnable records here rather
+    // calls enable(), so anything emitted inside _onEnable records here rather
     // than on the API's no-op providers. Independent of any default
     // instrumentation, so an upstream change to that order fails this alone.
     expect(
