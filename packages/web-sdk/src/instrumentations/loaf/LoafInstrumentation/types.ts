@@ -8,5 +8,5 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type LoafInstrumentationArgs = {} & Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf'
+  'perf'
 >;

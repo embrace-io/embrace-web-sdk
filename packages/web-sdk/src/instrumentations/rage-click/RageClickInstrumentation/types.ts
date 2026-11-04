@@ -2,5 +2,5 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type RageClickInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf'
+  'perf'
 >;

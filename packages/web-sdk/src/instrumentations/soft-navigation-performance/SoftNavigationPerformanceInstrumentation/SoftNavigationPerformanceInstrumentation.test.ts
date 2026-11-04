@@ -1,10 +1,11 @@
 /* eslint-disable baseline-js/use-baseline */
+import { diag } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import {
@@ -165,6 +166,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -403,7 +405,6 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should not create an observer when soft-navigation entry type is unsupported', () => {
-    const diagLogger = new InMemoryDiagLogger();
     class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {
       public static override supportedEntryTypes: string[] = [];
     }
@@ -412,7 +413,6 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
     });
     instrumentation.enable();
@@ -485,15 +485,16 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       }
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
     });
     instrumentation.enable();
 
-    expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable');
+    expect(
+      logger.messagesFrom('error', 'SoftNavigationPerformanceInstrumentation'),
+    ).to.deep.equal(['failed to enable']);
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
@@ -562,6 +563,7 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -721,10 +723,9 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
   });
 
   it('skips a pending navigation and logs debug when currentEntry has no URL', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
@@ -740,9 +741,9 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     triggerClickEntries([makeClickEntry({ startTime: 100, duration: 200 })]);
 
     expect(spanExporter.getFinishedSpans()).to.have.length(0);
-    expect(diagLogger.getDebugLogs()).to.include(
-      'currententrychange fired with no URL, skipping',
-    );
+    expect(
+      logger.messagesFrom('debug', 'SoftNavigationPerformanceInstrumentation'),
+    ).to.deep.equal(['currententrychange fired with no URL, skipping']);
 
     instrumentation.disable();
   });
@@ -892,10 +893,9 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       }
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
@@ -904,7 +904,9 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
     });
     instrumentation.enable();
 
-    expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable polyfill');
+    expect(
+      logger.messagesFrom('error', 'SoftNavigationPerformanceInstrumentation'),
+    ).to.deep.equal(['failed to enable polyfill']);
     expect(currentEntryChangeListeners).to.have.length(0);
 
     instrumentation.disable();

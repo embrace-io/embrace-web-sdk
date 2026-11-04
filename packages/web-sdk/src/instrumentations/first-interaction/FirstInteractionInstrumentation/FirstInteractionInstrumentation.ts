@@ -32,11 +32,10 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
   private readonly _onScroll: (event: Event) => void;
   private _listenersAttached: boolean = false;
 
-  public constructor({ diag, perf }: FirstInteractionInstrumentationArgs = {}) {
+  public constructor({ perf }: FirstInteractionInstrumentationArgs = {}) {
     super({
       instrumentationName: 'FirstInteractionInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });
