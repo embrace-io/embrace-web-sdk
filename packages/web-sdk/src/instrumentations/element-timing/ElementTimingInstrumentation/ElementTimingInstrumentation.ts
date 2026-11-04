@@ -46,10 +46,6 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onEnable(): void {
-    if (this._observer) {
-      this._observer.disconnect();
-    }
-
     this._observer = createPerformanceObserver<PerformanceElementTiming>(
       'element',
       (entry) => this._processEntry(entry),

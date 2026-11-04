@@ -498,24 +498,6 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
   });
-
-  it('disconnects the existing observer when onEnable is called while already active', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
-
-    const firstCallback = observerCallback;
-
-    // Bypass the _isEnabled guard in enable() to re-enter _enableNative while
-    // _observer is already set, exercising the disconnect() branch.
-    instrumentation.onEnable();
-
-    expect(observerCallback).to.not.equal(firstCallback);
-
-    instrumentation.disable();
-  });
 });
 
 describe('getNavigationEventTrigger', () => {

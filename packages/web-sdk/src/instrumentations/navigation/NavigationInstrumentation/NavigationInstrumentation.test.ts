@@ -1,11 +1,13 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../../tests/utils/index.ts';
+import type { Route } from '../../../api-page/index.ts';
 import { page } from '../../../api-page/index.ts';
 import { session } from '../../../api-sessions/index.ts';
 import type { UserSessionManagerInternal } from '../../../managers/index.ts';
@@ -54,6 +56,28 @@ describe('NavigationInstrumentation', () => {
     memoryExporter
       .getFinishedSpans()
       .filter((s) => s.attributes['emb.type'] === 'ux.surface');
+
+  // The _isEnabled guard hides a leaked listener from span output, so the
+  // registrations on the page manager are counted directly.
+  const trackRouteChangedListeners = () => {
+    const addRouteChangedListener = pageManager.addRouteChangedListener;
+    let active = 0;
+    const add = sinon
+      .stub(pageManager, 'addRouteChangedListener')
+      .callsFake((listener: (route: Route) => void) => {
+        const remove = addRouteChangedListener(listener);
+        active += 1;
+        let removed = false;
+        return () => {
+          if (!removed) {
+            removed = true;
+            active -= 1;
+          }
+          remove();
+        };
+      });
+    return { add, active: () => active };
+  };
 
   it('should start a route span the first time a route is reported', () => {
     navigationInstrumentation = new NavigationInstrumentation({
@@ -345,6 +369,54 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
     expect(surfaceSpans()).to.have.lengthOf(0);
+  });
+
+  it('should not register a route listener before enable', () => {
+    const routeListeners = trackRouteChangedListeners();
+
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    expect(routeListeners.add.callCount).to.equal(0);
+    expect(routeListeners.active()).to.equal(0);
+  });
+
+  it('should remove its route listener when disabled', () => {
+    const routeListeners = trackRouteChangedListeners();
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+    navigationInstrumentation.enable();
+    expect(routeListeners.active()).to.equal(1);
+
+    navigationInstrumentation.disable();
+
+    expect(routeListeners.active()).to.equal(0);
+  });
+
+  it('should hold exactly one route listener across disable and enable cycles', () => {
+    const routeListeners = trackRouteChangedListeners();
+    navigationInstrumentation = new NavigationInstrumentation({
+      diag,
+      pageManager,
+    });
+
+    navigationInstrumentation.enable();
+    navigationInstrumentation.disable();
+    navigationInstrumentation.enable();
+    navigationInstrumentation.disable();
+    navigationInstrumentation.enable();
+
+    expect(routeListeners.add.callCount).to.equal(3);
+    expect(routeListeners.active()).to.equal(1);
+
+    pageManager.setCurrentRoute({ path: '/first', url: '/first' });
+    pageManager.setCurrentRoute({ path: '/second', url: '/second' });
+
+    expect(surfaceSpans().map((span) => span.name)).to.deep.equal(['/first']);
   });
 
   it('should end an open route span when disabled', () => {
