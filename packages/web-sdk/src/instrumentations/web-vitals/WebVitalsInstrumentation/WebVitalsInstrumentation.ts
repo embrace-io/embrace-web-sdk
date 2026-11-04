@@ -465,8 +465,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       return this.perf.offsetToAbsoluteTime(metricStartTime);
     }
 
-    // Soft navigation and bfcache restore reports have no entries, but their value counts
-    // from navigationStartTime. Hard navigations leave navigationStartTime at 0.
+    // FCP and LCP reports without entries (soft navigation FCP, bfcache restores) count their
+    // value from navigationStartTime. Hard navigations leave navigationStartTime at 0.
     if (
       (metric.name === 'FCP' || metric.name === 'LCP') &&
       metric.navigationStartTime

@@ -271,6 +271,75 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.hrTime).to.deep.equal([2, 500_000_000]);
   });
 
+  it('should use the navigation start plus the value as the timestamp for a bfcache LCP with no entries', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+    instrumentation.enable();
+
+    const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'LCP',
+      value: 300,
+      rating: 'good',
+      delta: 300,
+      id: 'm1',
+      entries: [],
+      navigationType: 'back-forward-cache',
+      navigationId: 1,
+      navigationStartTime: 3000,
+      attribution: {
+        timeToFirstByte: 0,
+        resourceLoadDelay: 0,
+        resourceLoadDuration: 0,
+        elementRenderDelay: 0,
+      },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal([3, 300_000_000]);
+  });
+
+  it('should use the report time for a hard navigation FCP with no entries', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+    instrumentation.enable();
+
+    const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'FCP',
+      value: 500,
+      rating: 'good',
+      delta: 500,
+      id: 'm1',
+      entries: [],
+      navigationType: 'navigate',
+      navigationId: 1,
+      navigationStartTime: 0,
+      attribution: {
+        timeToFirstByte: 0,
+        firstByteToFCP: 500,
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal([5, 0]);
+  });
+
   it('should report FCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
