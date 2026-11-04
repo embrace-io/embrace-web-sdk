@@ -1,6 +1,5 @@
-import type { Attributes, DiagLogger } from '@opentelemetry/api';
-import type { LogRecord } from '@opentelemetry/api-logs';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import type { Attributes, DiagLogger, LogRecord } from '@opentelemetry/api';
+import { SeverityNumber } from '@opentelemetry/api';
 import { millisToHrTime } from '@opentelemetry/core';
 import type {
   CLSMetricWithAttribution,

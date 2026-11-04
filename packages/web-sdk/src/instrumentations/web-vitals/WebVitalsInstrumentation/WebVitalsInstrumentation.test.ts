@@ -3001,8 +3001,10 @@ describe('WebVitalsInstrumentation', () => {
 
       const records = memoryExporter.getFinishedLogRecords();
       expect(records).to.have.lengthOf(1);
-      void expect(records[0].attributes[KEY_EMB_PAGE_PATH]).to.be.undefined;
-      void expect(records[0].attributes[KEY_EMB_PAGE_ID]).to.be.undefined;
+      expect(records[0].attributes).to.not.have.any.keys(
+        'app.surface.name',
+        'app.surface.id',
+      );
     });
   });
 

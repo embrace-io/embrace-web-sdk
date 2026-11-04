@@ -3,10 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Copied unchanged from https://github.com/open-telemetry/opentelemetry-browser/blob/4c2e48d4bb8dd769a31f6109ef0936f9b321bd07/packages/instrumentation/src/InstrumentationBase/types.ts
+// Copied unchanged from open-telemetry/opentelemetry-browser#548 (unmerged) at https://github.com/open-telemetry/opentelemetry-browser/blob/9191eb4db3f9b79414c1c10c611dd80984bc53e3/packages/instrumentation/src/InstrumentationBase/types.ts
 
-import type { TextMapPropagator, TracerProvider } from '@opentelemetry/api';
-import type { LoggerProvider } from '@opentelemetry/api-logs';
+import type {
+  LoggerProvider,
+  TextMapPropagator,
+  TracerProvider,
+} from '@opentelemetry/api';
 
 /**
  * The dependencies the SDK injects into every instrumentation. A dependency
@@ -29,9 +32,12 @@ export interface InstrumentationDeps {
 }
 
 /**
- * The public contract for a browser instrumentation. The SDK accepts any
- * object that implements it. `InstrumentationBase` is one implementation, but
- * an instrumentation can also implement this interface directly.
+ * The public contract for a browser instrumentation: what the SDK accepts in
+ * its `instrumentations` config and calls. New instrumentations, including
+ * third-party ones, should extend `InstrumentationBase` instead of
+ * implementing this interface directly: the base class provides the
+ * dependency locking, error containment and enable/disable lifecycle the SDK
+ * relies on.
  */
 export interface Instrumentation {
   /** The instrumentation scope name, for example `@my-org/instrumentation-foo`. */

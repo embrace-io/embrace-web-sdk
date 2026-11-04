@@ -42,10 +42,6 @@ export default {
             import.meta.dirname,
             'packages/browser-instrumentation-api/src/index.ts',
           ),
-          '#embrace-io/otlp-transformer': resolve(
-            import.meta.dirname,
-            'packages/otlp-transformer/src/index.ts',
-          ),
         },
       },
       optimizeDeps: {
@@ -65,8 +61,6 @@ export default {
           'react-router-domv4v5 > prop-types',
           'hoist-non-react-statics > react-is',
           'react-router-domv4v5 > react-router > path-to-regexp',
-          '@opentelemetry/otlp-transformer', // used by test utils for internal types
-          '@opentelemetry/instrumentation-fetch',
         ],
       },
       server: {

@@ -1,6 +1,5 @@
 import type { Counter, Span } from '@opentelemetry/api';
-import { metrics, trace } from '@opentelemetry/api';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs, metrics, SeverityNumber, trace } from '@opentelemetry/api';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './App.module.css';
 

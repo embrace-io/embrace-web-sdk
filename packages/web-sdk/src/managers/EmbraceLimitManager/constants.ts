@@ -1,6 +1,7 @@
 import type { EmbraceLimitManagerArgs } from './types.ts';
 
 export const DEFAULT_MAX_LOG_ATTRIBUTES = 50;
+export const DEFAULT_MAX_SPAN_EVENT_ATTRIBUTES = 20;
 
 export const DEFAULT_LIMITS: EmbraceLimitManagerArgs = {
   // These are per session limits, the counts of items against these maximums start over when `reset` is called on the

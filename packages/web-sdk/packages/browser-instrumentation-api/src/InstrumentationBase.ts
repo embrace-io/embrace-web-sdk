@@ -3,13 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Copied from https://github.com/open-telemetry/opentelemetry-browser/blob/4c2e48d4bb8dd769a31f6109ef0936f9b321bd07/packages/instrumentation/src/InstrumentationBase/InstrumentationBase.ts
+// Copied from open-telemetry/opentelemetry-browser#548 (unmerged) at https://github.com/open-telemetry/opentelemetry-browser/blob/9191eb4db3f9b79414c1c10c611dd80984bc53e3/packages/instrumentation/src/InstrumentationBase/InstrumentationBase.ts
 // Only the `toError` import path differs.
 
-import type { DiagLogger, TextMapPropagator, Tracer } from '@opentelemetry/api';
-import { diag, propagation, trace } from '@opentelemetry/api';
-import type { Logger } from '@opentelemetry/api-logs';
-import { logs } from '@opentelemetry/api-logs';
+import type {
+  DiagLogger,
+  Logger,
+  TextMapPropagator,
+  Tracer,
+} from '@opentelemetry/api';
+import { diag, logs, propagation, trace } from '@opentelemetry/api';
 import { toError } from './toError.ts';
 import type { Instrumentation, InstrumentationDeps } from './types.ts';
 

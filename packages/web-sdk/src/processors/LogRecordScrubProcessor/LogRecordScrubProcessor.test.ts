@@ -1,5 +1,5 @@
-import type { Logger } from '@opentelemetry/api-logs';
-import { logs } from '@opentelemetry/api-logs';
+import type { Logger } from '@opentelemetry/api';
+import { logs } from '@opentelemetry/api';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import { setupTestLogExporter } from '../../../tests/utils/index.ts';

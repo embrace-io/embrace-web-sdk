@@ -370,6 +370,7 @@ export interface SetupTracesArgs {
   pageManager: PageManager;
   perf: PerformanceManager;
   signalBuffer?: SignalBuffer;
+  diagLogger: DiagLogger;
 }
 
 export interface SetupLogsArgs {
@@ -387,6 +388,7 @@ export interface SetupLogsArgs {
   pageManager: PageManager;
   visibilityDoc: VisibilityStateDocument;
   signalBuffer?: SignalBuffer;
+  diagLogger: DiagLogger;
 }
 
 export interface SetupPageArgs {
