@@ -38,10 +38,10 @@ export default defineConfig([
       entryFileNames: 'embrace-web-sdk.js',
     },
   },
-  // ESM/CJS modules for package consumers
+  // ESM modules for package consumers
   {
     entry: ['src/**/*.ts', '!src/**/*.test.*'],
-    format: ['cjs', 'esm'],
+    format: ['esm'],
     target: 'es2022',
     outDir: 'dist',
     sourcemap: true,
@@ -56,7 +56,7 @@ export default defineConfig([
       },
     },
     attw: {
-      profile: 'strict',
+      profile: 'esm-only',
     },
   },
 ]);

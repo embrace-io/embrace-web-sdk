@@ -8,7 +8,7 @@
  * 2. Web API baseline (eslint-plugin-baseline-js on compiled output)
  * 3. Package exports & integrity (artifacts, sourcemaps, imports)
  * 4. Bundle size
- * 5. Module integrity (ESM/CJS separation)
+ * 5. Module integrity (no require() in ESM output)
  */
 
 import { execSync, spawnSync } from 'node:child_process';
@@ -30,8 +30,6 @@ const EXPECTED_FILES = [
   'dist/embrace-web-sdk.js.map',
   'dist/index.js',
   'dist/index.d.ts',
-  'dist/index.cjs',
-  'dist/index.d.cts',
 ];
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,12 +49,6 @@ function checkSyntaxCompliance() {
       name: 'ESM modules (ES2022)',
       pattern: `${SDK_DIST_DIR}/**/*.js`,
       exclude: `${bundleFile}*`,
-      esVersion: 'es2022',
-      modules: true,
-    },
-    {
-      name: 'CJS modules (ES2022)',
-      pattern: `${SDK_DIST_DIR}/**/*.cjs`,
       esVersion: 'es2022',
       modules: true,
     },
@@ -216,17 +208,6 @@ function testPackageInstallAndImports() {
         throw new Error(`ESM import failed: ${(error as Error).message}`);
       }
 
-      // Test CommonJS require
-      try {
-        execSync(
-          `node -e "const sdk = require('@embrace-io/web-sdk'); if (!sdk.initSDK) process.exit(1);"`,
-          { cwd: tempDir, stdio: 'pipe' },
-        );
-        log('  ✓ CommonJS require works', COLORS.green);
-      } catch (error: unknown) {
-        throw new Error(`CommonJS require failed: ${(error as Error).message}`);
-      }
-
       return true;
     });
   } catch (error: unknown) {
@@ -351,7 +332,7 @@ function checkBundleDuplicates() {
   }
 }
 
-// Validates ESM/CJS don't mix syntax (require() in .js or import in .cjs causes runtime errors)
+// Validates the ESM output has no require() calls, which throw at runtime
 function validateModuleSystemSeparation() {
   logSection('6. Module Integrity');
 
@@ -360,12 +341,6 @@ function validateModuleSystemSeparation() {
       name: 'require() in ESM files',
       pattern: 'require(',
       include: '*.js',
-      exclude: '*.cjs',
-    },
-    {
-      name: 'import in CJS files',
-      pattern: 'import',
-      include: '*.cjs',
     },
   ];
 
@@ -378,9 +353,6 @@ function validateModuleSystemSeparation() {
         SDK_DIST_DIR,
         `--include=${check.include}`,
       ];
-      if (check.exclude) {
-        args.push(`--exclude=${check.exclude}`);
-      }
 
       const result = spawnSync('grep', args, {
         encoding: 'utf-8',
