@@ -27,7 +27,7 @@ npm run lint:fix
 # Typecheck + ESLint baseline (tsc + eslint --max-warnings 0)
 npm run check
 
-# Validate built artifacts (es-check, bundle size, ESM/CJS split); run after build
+# Validate built artifacts (es-check, bundle size, no-require check); run after build
 npm run validate
 
 # Run demo dev server (http://localhost:4847)
@@ -64,8 +64,7 @@ transport/      HTTP transport with retry logic
 
 | Format | Target | Use Case                                |
 | ------ | ------ | --------------------------------------- |
-| ESM    | ES2022 | npm package (import)                    |
-| CJS    | ES2022 | npm package (require)                   |
+| ESM    | ES2022 | npm package (import, ESM-only)          |
 | IIFE   | ES6    | CDN script tag (`window.EmbraceWebSdk`) |
 
 ## Code Conventions

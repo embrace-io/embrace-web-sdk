@@ -6,8 +6,8 @@ import tseslint from 'typescript-eslint';
 export default defineConfig([
   globalIgnores(['**/*', '!dist/', '!dist/**/*']),
   {
-    files: ['dist/**/*.{js,ts,mjs,cjs}'],
-    ignores: ['dist/**/*.d.{js,ts,mjs,cjs}'],
+    files: ['dist/**/*.{js,ts,mjs}'],
+    ignores: ['dist/**/*.d.{js,ts,mjs}'],
     languageOptions: {
       parser: tseslint.parser,
       // enables type-aware linting to detect instance method usage
