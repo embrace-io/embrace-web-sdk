@@ -61,6 +61,24 @@ describe('getDefaultAttributeScrubbers', () => {
         'https://REDACTED:REDACTED@example.com/some/path/?foo=bar&token=REDACTED',
     },
     {
+      name: 'scrub credentials from a full url with no path',
+      key: 'url.full',
+      value: 'https://username:password@www.example.com',
+      expected: 'https://REDACTED:REDACTED@www.example.com',
+    },
+    {
+      name: 'leave a port and an @ in the path alone',
+      key: 'browser.url.full',
+      value: 'http://localhost:3000/@jane/posts',
+      expected: 'http://localhost:3000/@jane/posts',
+    },
+    {
+      name: 'leave a : and an @ in the query alone',
+      key: 'browser.url.full',
+      value: 'https://example.com/search?q=time:noon&to=jane@example.com',
+      expected: 'https://example.com/search?q=time:noon&to=jane@example.com',
+    },
+    {
       name: 'leave a url with no sensitive values alone',
       key: 'url.full',
       value: 'https://example.com/some/path/?foo=bar&foopw=safe&something=baz',

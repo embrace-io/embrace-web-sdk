@@ -188,7 +188,7 @@ type BaseSDKInitConfig = {
 
   /**
    * enableDefaultAttributeScrubbing specifies whether the default attribute scrubbers provided the SDK should be used.
-   * These default scrubbers redact sensitive information in various url.* attributes following the recommendations
+   * These default scrubbers redact sensitive information in various url.* attributes and in browser.url.full, following the recommendations
    * from: https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L33
    *
    * **default**: true

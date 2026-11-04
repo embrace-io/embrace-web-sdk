@@ -6,7 +6,8 @@ import {
 import type { AttributeScrubber } from '../common/index.ts';
 import { KEY_BROWSER_URL_FULL } from '../constants/index.ts';
 
-const HOST_CREDENTIALS_REGEX = /\/\/(.+):(.+)@(.+)\//;
+// Userinfo ends at the first `/`, `?` or `#`, so a port or an `@` later in the URL is not credentials.
+const HOST_CREDENTIALS_REGEX = /\/\/[^/?#@:]+:[^/?#@]*@/;
 
 // https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L41
 const DEFAULT_SENSITIVE_TOKENS = [
@@ -37,10 +38,7 @@ const scrubURL = ({
 
   if (scrubPath) {
     // scrub credentials passed via URL in form of `https://username:password@www.example.com/`
-    scrubbed = scrubbed.replace(
-      HOST_CREDENTIALS_REGEX,
-      '//REDACTED:REDACTED@$3/',
-    );
+    scrubbed = scrubbed.replace(HOST_CREDENTIALS_REGEX, '//REDACTED:REDACTED@');
   }
 
   if (scrubQuery) {
