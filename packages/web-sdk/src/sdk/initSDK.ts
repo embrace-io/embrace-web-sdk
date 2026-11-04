@@ -33,6 +33,8 @@ import {
   getLogEndpoint,
   getTraceEndpoint,
 } from '../exporters/index.ts';
+import type { EmbraceInstrumentationDeps } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceDynamicConfigManager,
@@ -345,17 +347,19 @@ export const initSDK = (
       loggerProvider,
       propagator: tracePropagator ?? undefined,
     };
+    // Only Embrace instrumentations get the managers, which are internal. Passed in both registerGlobally modes, so
+    // they use this instance's managers, not the global ones.
+    const embraceInstrumentationDeps: EmbraceInstrumentationDeps = {
+      ...instrumentationDeps,
+      userSessionManager,
+      logManager: embraceLogManager,
+      limitManager,
+      perf,
+      pageManager,
+    };
     const defaultInstrumentations = setupDefaultInstrumentations(
       defaultInstrumentationConfig,
-      registerGlobally
-        ? { pageManager, limitManager, signalBuffer }
-        : {
-            logManager: embraceLogManager,
-            userSessionManager,
-            pageManager,
-            limitManager,
-            signalBuffer,
-          },
+      { signalBuffer },
     );
     // The option type rejects OTel JS instrumentations, but JavaScript callers can still pass one.
     const userInstrumentations = instrumentations.filter((instrumentation) => {
@@ -388,7 +392,11 @@ export const initSDK = (
             instrumentations: [instrumentation],
           });
         } else {
-          instrumentation.enable(instrumentationDeps);
+          instrumentation.enable(
+            instrumentation instanceof EmbraceInstrumentationBase
+              ? embraceInstrumentationDeps
+              : instrumentationDeps,
+          );
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Unknown error.';

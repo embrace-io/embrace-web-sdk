@@ -79,11 +79,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report CLS metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(clsStub.calledOnce).to.be.true;
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -123,11 +122,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use largestShiftTime as timestamp for CLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -174,11 +172,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use the layout shift window start as the timestamp for CLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -204,11 +201,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use the metric entry start time as the timestamp for LCP', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -237,11 +233,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report FCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -288,11 +283,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report LCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -340,11 +334,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include LCP element type and bounding rect when the element is available', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -388,11 +381,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit LCP element attributes when the element is unavailable', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -424,11 +416,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should still emit the LCP record and log when reading the element throws', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -471,11 +462,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report INP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -579,11 +569,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include loaf_scripts in INP log record', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -626,11 +615,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should aggregate scripts across multiple loaf entries', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -671,11 +659,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include loaf_scripts when no LoAF entries are reported', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -719,11 +706,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include element_type when the entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -739,11 +725,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should use the tag name from the first entry with a resolvable target when earlier entries have none', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -760,11 +745,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should omit element_type when no entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -779,11 +763,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should log an error and omit element_type when computing it throws', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -803,11 +786,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report TTFB metrics with sub-part attributes', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -882,11 +864,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit TTFB sub-parts when navigationEntry is absent', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = ttfbStub.getCall(1).args[0] as WebVitalOnReport;
@@ -942,11 +923,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB sub-parts correctly with TLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1005,11 +985,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use finalResponseHeadersStart for serverResponse when greater than responseStart', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1065,11 +1044,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should fall back to responseStart when finalResponseHeadersStart is less than responseStart', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1125,11 +1103,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB sub-parts correctly with non-zero redirect', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1185,11 +1162,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should round fractional TTFB sub-part values to nearest millisecond', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1249,11 +1225,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should clamp negative TTFB sub-part durations to 0', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1308,11 +1283,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should round fractional negative TTFB sub-part durations to 0', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1367,11 +1341,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should ensure TTFB sub-parts sum to rounded total', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1445,11 +1418,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB other correctly with non-zero startTime', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1505,11 +1477,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report multiple metrics as separate log records', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const clsReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const lcpReportFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -1563,11 +1534,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not register duplicate callbacks when enable() is called multiple times', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     // Call enable() multiple times
     instrumentation.enable();
@@ -1578,11 +1548,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should log debug message when enable() is called on already registered listeners', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     instrumentation.disable();
     instrumentation.enable();
@@ -1595,11 +1564,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should pause emission when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1636,11 +1604,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should resume emission when enable() is called after disable()', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -1664,11 +1631,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should log debug message when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     instrumentation.disable();
 
@@ -1679,11 +1645,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report CLS metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(clsStub.calledTwice).to.be.true;
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -1726,11 +1691,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report CLS metrics with largest shift time, loadState and url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -1778,11 +1742,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include CLS layout shifts under the cap without a dropped count', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1850,11 +1813,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should cap CLS layout shifts at 50 and report the dropped count', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1894,11 +1856,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should fall back to an empty selector when a layout shift has no sources', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1933,11 +1894,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should capture the first (most impactful) source of a multi-source layout shift', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -1991,11 +1951,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not emit CLS layout shift attributes for non-CLS metrics', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
     clock.tick(5000);
@@ -2027,11 +1986,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report FCP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(fcpStub.calledTwice).to.be.true;
     const pageTrackFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2081,11 +2039,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report LCP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(lcpStub.calledTwice).to.be.true;
     const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2137,11 +2094,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report INP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(inpStub.calledTwice).to.be.true;
     const pageTrackFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2204,11 +2160,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report TTFB metrics with url attribution and raw attribution in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     void expect(ttfbStub.calledTwice).to.be.true;
     const pageTrackFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2284,11 +2239,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report multiple metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const clsPageTrack = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const clsEmit = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -2361,11 +2315,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit non-serializable attribution values from body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2411,11 +2364,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should preserve falsy primitive attribution values in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2447,11 +2399,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include boolean attribution values in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2483,12 +2434,11 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit body when includeRawAttribution is false', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
       includeRawAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const metricReportFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -2510,11 +2460,10 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not register reportAllChanges listeners when urlAttribution is false', () => {
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     expect(inpStub.callCount).to.equal(1);
     expect(lcpStub.callCount).to.equal(1);
@@ -2528,12 +2477,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(inpStub.callCount).to.equal(2);
       const changeFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2595,12 +2542,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(lcpStub.callCount).to.equal(2);
       const changeFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2654,12 +2599,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(clsStub.callCount).to.equal(2);
       const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2707,12 +2650,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(fcpStub.callCount).to.equal(2);
       const changeFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2764,12 +2705,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(ttfbStub.callCount).to.equal(2);
       const changeFunc = ttfbStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2839,12 +2778,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       void expect(clsStub.calledTwice).to.be.true;
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -2882,12 +2819,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setPageLabel('MyLabel');
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -2921,12 +2856,10 @@ describe('WebVitalsInstrumentation', () => {
       });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -2969,12 +2902,10 @@ describe('WebVitalsInstrumentation', () => {
       };
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3008,11 +2939,10 @@ describe('WebVitalsInstrumentation', () => {
   describe('page attribution', () => {
     it('should include page URL in log record when urlAttribution is true', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       // reportAllChanges listener registered first, emission listener second
       void expect(clsStub.calledTwice).to.be.true;
@@ -3045,11 +2975,10 @@ describe('WebVitalsInstrumentation', () => {
       const urlDocument = { URL: 'https://example.com/page-a' };
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3096,12 +3025,10 @@ describe('WebVitalsInstrumentation', () => {
       };
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/products/123' },
-        pageManager: mockPageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager: mockPageManager });
 
       const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3134,12 +3061,11 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include page attributes when urlAttribution is false', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       void expect(clsStub.calledOnce).to.be.true;
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
@@ -3163,11 +3089,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include page attributes when no reportAllChanges callback has fired', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       // Only call the emission listener, skip the reportAllChanges listener
       const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3195,11 +3120,10 @@ describe('WebVitalsInstrumentation', () => {
     const urlDocument = { URL: 'https://example.com/page-a' };
 
     instrumentation = new WebVitalsInstrumentation({
-      perf,
       listeners: mockWebVitalListeners,
       urlDocument,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf });
 
     const pageTrackFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
     const emitFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3233,7 +3157,6 @@ describe('WebVitalsInstrumentation', () => {
   describe('applyCustomLogRecordData hook', () => {
     it('should call the hook and allow modifying the log record', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
         applyCustomLogRecordData: (logRecord) => {
@@ -3243,7 +3166,7 @@ describe('WebVitalsInstrumentation', () => {
           };
         },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3266,14 +3189,13 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should log an error when the hook throws', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
         applyCustomLogRecordData: () => {
           throw new Error('hook error');
         },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3330,11 +3252,10 @@ describe('WebVitalsInstrumentation', () => {
       ]);
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3367,11 +3288,10 @@ describe('WebVitalsInstrumentation', () => {
         .returns([{ notRestoredReasons: null }]);
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3423,11 +3343,10 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: true to both listener registrations when supported', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          perf,
           listeners: mockWebVitalListeners,
           urlDocument,
         });
-        instrumentation.enable();
+        instrumentation.enable({ perf });
 
         void expect(clsStub.calledTwice).to.be.true;
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
@@ -3442,11 +3361,10 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to the TTFB listener registrations, since web-vitals reports a dummy zero TTFB for soft navigations', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          perf,
           listeners: mockWebVitalListeners,
           urlDocument,
         });
-        instrumentation.enable();
+        instrumentation.enable({ perf });
 
         void expect(ttfbStub.calledTwice).to.be.true;
         expect(ttfbStub.getCall(0).args[1]).to.deep.equal({
@@ -3461,12 +3379,11 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to both listener registrations when disabled', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          perf,
           listeners: mockWebVitalListeners,
           urlDocument,
           reportSoftNavs: false,
         });
-        instrumentation.enable();
+        instrumentation.enable({ perf });
 
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
           reportAllChanges: true,
@@ -3480,11 +3397,10 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to both listener registrations when unsupported', () => {
         stubSupportedEntryTypes([]);
         instrumentation = new WebVitalsInstrumentation({
-          perf,
           listeners: mockWebVitalListeners,
           urlDocument,
         });
-        instrumentation.enable();
+        instrumentation.enable({ perf });
 
         expect(clsStub.getCall(0).args[1]).to.deep.equal({
           reportAllChanges: true,
@@ -3498,12 +3414,11 @@ describe('WebVitalsInstrumentation', () => {
       it('should check soft-navigation support at enable(), not at construction', () => {
         stubSupportedEntryTypes([]);
         instrumentation = new WebVitalsInstrumentation({
-          perf,
           listeners: mockWebVitalListeners,
           urlDocument,
         });
         stubSupportedEntryTypes(['soft-navigation']);
-        instrumentation.enable();
+        instrumentation.enable({ perf });
 
         expect(clsStub.getCall(1).args[1]).to.deep.equal({
           reportSoftNavs: true,
@@ -3513,11 +3428,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should emit non-TTFB metrics for soft navigations', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3547,11 +3461,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include navigation_id and interaction_id when present on the metric', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3588,11 +3501,10 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should omit interaction_id when absent from the metric', () => {
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3622,11 +3534,10 @@ describe('WebVitalsInstrumentation', () => {
     it('should prefer navigationURL for browser.url.full on soft navigations', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3665,11 +3576,10 @@ describe('WebVitalsInstrumentation', () => {
     it('should prefer navigationURL for hard navigations when soft navigations are active', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3704,11 +3614,10 @@ describe('WebVitalsInstrumentation', () => {
     it('should keep the attributed-page URL for hard navigations when soft navigations are unsupported', () => {
       stubSupportedEntryTypes([]);
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3743,11 +3652,10 @@ describe('WebVitalsInstrumentation', () => {
     it('should fall back to the attributed-page URL for soft navigations without navigationURL', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
       const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3784,12 +3692,10 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
-        pageManager,
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf, pageManager });
 
       const changeFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
       const finalFunc = clsStub.getCall(1).args[0] as WebVitalOnReport;
@@ -3866,12 +3772,10 @@ describe('WebVitalsInstrumentation', () => {
       expect(partBId).to.not.equal(partAId);
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      instrumentation.enable({ perf, userSessionManager });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3904,12 +3808,10 @@ describe('WebVitalsInstrumentation', () => {
       const partBId = userSessionManager.getSessionPartId();
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      instrumentation.enable({ perf, userSessionManager });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3939,12 +3841,10 @@ describe('WebVitalsInstrumentation', () => {
       const partId = userSessionManager.getSessionPartId();
 
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      instrumentation.enable({ perf, userSessionManager });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 
@@ -3979,12 +3879,10 @@ describe('WebVitalsInstrumentation', () => {
 
       // ...and then web-vitals emitting right after
       instrumentation = new WebVitalsInstrumentation({
-        perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
       });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      instrumentation.enable({ perf, userSessionManager });
 
       const emitFunc = clsStub.getCall(0).args[0] as WebVitalOnReport;
 

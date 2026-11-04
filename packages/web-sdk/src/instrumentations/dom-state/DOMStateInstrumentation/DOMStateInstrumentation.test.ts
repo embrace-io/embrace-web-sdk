@@ -142,8 +142,7 @@ describe('DOMStateInstrumentation', () => {
   // session manager onto it, then initSDK enables it.
   const createInstrumentation = (): void => {
     instrumentation = new DOMStateInstrumentation();
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    instrumentation.enable({ userSessionManager });
   };
 
   // Nothing is emitted until a part ends: each part end sends one log, and the

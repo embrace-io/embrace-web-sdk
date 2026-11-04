@@ -173,11 +173,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should observe soft-navigation entries with buffered: true', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(observeOptions).to.deep.equal({
       type: 'soft-navigation',
@@ -188,11 +185,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should emit a span for a soft-navigation entry', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([
       makeEntry({
@@ -229,11 +223,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should span from startTime to startTime + duration', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -246,11 +237,9 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   it('stamps span_ids and log_ids collected from the signal buffer for its window', () => {
     const signalBuffer = new SignalBuffer();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       signalBuffer,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     signalBuffer.record({
       kind: 'span',
@@ -292,11 +281,9 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   it('stamps an empty type when a correlated signal has no emb.type', () => {
     const signalBuffer = new SignalBuffer();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       signalBuffer,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     signalBuffer.record({
       kind: 'span',
@@ -317,11 +304,9 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   it('stamps empty arrays when the signal buffer has no matches in the window', () => {
     const signalBuffer = new SignalBuffer();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       signalBuffer,
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -339,11 +324,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('does not stamp span_ids/log_ids when no signal buffer is provided', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([makeEntry({ startTime: 200, duration: 50 })]);
 
@@ -363,11 +345,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should omit paint/presentation time attributes when undefined', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([
       makeEntry({ paintTime: undefined, presentationTime: undefined }),
@@ -385,11 +364,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should omit paint/presentation time attributes when null', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([makeEntry({ paintTime: null, presentationTime: null })]);
 
@@ -414,11 +390,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     const diagLogger = setupTestDiagLogger({
       namespace: 'SoftNavigationPerformanceInstrumentation',
     });
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(observerCallback).to.be.null;
     void expect(instrumentation.isEnabled()).to.be.false;
@@ -430,11 +403,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should not emit spans after disable', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     instrumentation.disable();
 
@@ -450,11 +420,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
       ...DEFAULT_LIMITS,
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, soft_navigation: 2 },
     });
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager: customLimitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager: customLimitManager });
 
     triggerEntries([
       makeEntry({ navigationId: 0 }),
@@ -468,11 +435,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
   });
 
   it('should not enable twice', () => {
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
     const firstCallback = observerCallback;
 
     instrumentation.enable();
@@ -495,11 +459,8 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     const diagLogger = setupTestDiagLogger({
       namespace: 'SoftNavigationPerformanceInstrumentation',
     });
-    const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new SoftNavigationPerformanceInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(diagLogger.messages('error')).to.deep.equal([
       'enable failed: could not observe soft-navigation entries',
@@ -651,14 +612,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('enables the polyfill when soft-navigation is not supported but Navigation API and event type are available', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     expect(eventObserveOptions).to.deep.include({
       type: 'event',
@@ -672,14 +631,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('emits a polyfill span when a click entry matches a pending navigation', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     // Simulate: user clicks at t=100, navigation commits at t=150
     clock.tick(150);
@@ -707,15 +664,13 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
   it('stamps span_ids and log_ids collected from the signal buffer for its window', () => {
     const signalBuffer = new SignalBuffer();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       signalBuffer,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     // Click window is [100, 150] (navigation commits at t=150 below).
     signalBuffer.record({
@@ -760,14 +715,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('span start is at click startTime and end is at navigation commit', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -782,14 +735,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('does not emit a span when no click entry matches the navigation timestamp', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     clock.tick(500);
     triggerCurrentEntryChange();
@@ -807,14 +758,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       namespace: 'SoftNavigationPerformanceInstrumentation',
     });
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     mockNavigation.currentEntry = null;
     clock.tick(150);
@@ -832,14 +781,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('prunes pending navigations older than 60 s when a click entry arrives', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     // Navigation at t=0 (will be older than 60 s by the time the click arrives).
     triggerCurrentEntryChange();
@@ -870,14 +817,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('omits interaction_id when it is 0', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -896,14 +841,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('ignores non-click event entries', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -919,14 +862,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('does not emit polyfill spans after disable', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     instrumentation.disable();
 
@@ -945,14 +886,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, soft_navigation: 1 },
     });
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager: customLimitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager: customLimitManager });
 
     clock.tick(150);
     triggerCurrentEntryChange();
@@ -979,14 +918,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       namespace: 'SoftNavigationPerformanceInstrumentation',
     });
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     expect(diagLogger.messages('error')).to.deep.equal([
       'enable failed: could not observe event entries',
@@ -999,14 +936,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
   it('uses the destination URL from navigation.currentEntry at commit time', () => {
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager });
 
     mockNavigation.currentEntry = { url: 'https://example.com/first' };
     clock.tick(150);
@@ -1033,14 +968,12 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, soft_navigation: 1 },
     });
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
-      perf,
-      limitManager: customLimitManager,
       navigationHost: {
         navigation: mockNavigation as unknown as Navigation,
         location: { href: 'https://example.com', pathname: '/' },
       },
     });
-    instrumentation.enable();
+    instrumentation.enable({ perf, limitManager: customLimitManager });
 
     // Two navigations at distinct timestamps so each click entry matches one.
     clock.tick(150); // t = 150
