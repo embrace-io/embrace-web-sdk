@@ -1,8 +1,4 @@
-import type {
-  Instrumentation,
-  InstrumentationConfig,
-  InstrumentationModuleDefinition,
-} from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '#opentelemetry/browser-instrumentation-api';
 import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
 import type { SessionPartStartedEvent } from '../../api-sessions/index.ts';
@@ -13,7 +9,6 @@ import type {
 } from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
-import { InstrumentationAbstract } from '../InstrumentationAbstract/index.ts';
 import type { EmbraceInstrumentationBaseArgs } from './types.ts';
 
 type SessionPartListeners = {
@@ -25,11 +20,8 @@ type RemoveSessionPartListeners = {
   end?: () => void;
 };
 export abstract class EmbraceInstrumentationBase<
-    ConfigType extends InstrumentationConfig = InstrumentationConfig,
-  >
-  extends InstrumentationAbstract<ConfigType>
-  implements Instrumentation<ConfigType>
-{
+  ConfigType extends object = object,
+> extends InstrumentationBase<ConfigType> {
   private _userSessionManager: UserSessionManagerInternal;
   private _logManager: LogManager;
   private readonly _perf: PerformanceManager;
@@ -49,34 +41,6 @@ export abstract class EmbraceInstrumentationBase<
     this._limitManager = limitManager;
     this._userSessionManager = session.getUserSessionManager();
     this._logManager = log.getLogManager();
-  }
-
-  /*
-   * Backed by config.enabled rather than a field of its own: that is the flag
-   * registerInstrumentations reads to decide whether an instrumentation still
-   * needs starting, so the two must never disagree.
-   */
-  protected get _isEnabled(): boolean {
-    return this._config.enabled === true;
-  }
-
-  protected set _isEnabled(enabled: boolean) {
-    this._config.enabled = enabled;
-  }
-
-  /*
-   * The base setConfig writes enabled (true unless given), which would change
-   * _isEnabled with no _onEnable or _onDisable, so the flag is restored. The base
-   * constructor calls this while _config is {}, which constructs every
-   * instrumentation disabled: under registerGlobally: false the providers and
-   * per-instance managers are attached after construction, so
-   * registerInstrumentations starts it. _diag and this class's fields do not
-   * exist on that call; touch only _config here.
-   */
-  public override setConfig(config: ConfigType): void {
-    const wasEnabled = this._isEnabled;
-    super.setConfig(config);
-    this._isEnabled = wasEnabled;
   }
 
   /* Returns session provider */
@@ -101,17 +65,6 @@ export abstract class EmbraceInstrumentationBase<
 
   public setLimitManager(limitManager: LimitManagerInternal): void {
     this._limitManager = limitManager;
-  }
-
-  // no-op
-  // OTel uses `| void` but we use `| undefined` for semantic clarity.
-  // `void` in union types is confusing because it mixes "returns nothing" with "returns data or nothing".
-  // `undefined` better expresses the intent: this method may or may not return a value.
-  protected override init():
-    | InstrumentationModuleDefinition
-    | InstrumentationModuleDefinition[]
-    | undefined {
-    return;
   }
 
   public setLogManager(logManager: LogManager): void {
@@ -147,7 +100,7 @@ export abstract class EmbraceInstrumentationBase<
   }
 
   private _registerSessionPartListeners(): void {
-    if (this._isEnabled && this.userSessionManager) {
+    if (this.isEnabled() && this.userSessionManager) {
       this.unregisterSessionPartListeners();
 
       if (this._sessionPartListeners.start) {
@@ -166,33 +119,10 @@ export abstract class EmbraceInstrumentationBase<
     }
   }
 
+  /** Stops emitting and removes listeners. Patches stay. */
   public override disable(): void {
-    if (!this._isEnabled) {
-      return;
-    }
-
-    this._isEnabled = false;
-    this._onDisable();
+    super.disable();
+    // After super, so the base's _onEnable rollback and an _onDisable that throws still unregister.
     this.unregisterSessionPartListeners();
   }
-
-  public override enable(): void {
-    if (this._isEnabled) {
-      return;
-    }
-
-    this._isEnabled = true;
-    this._onEnable();
-  }
-
-  /** Whether the instrumentation is emitting now. */
-  public isEnabled(): boolean {
-    return this._isEnabled;
-  }
-
-  /* Only triggered when the instrumentation transitions to disabled */
-  protected _onDisable(): void {}
-
-  /* Only triggered when the instrumentation transitions to enabled */
-  protected _onEnable(): void {}
 }

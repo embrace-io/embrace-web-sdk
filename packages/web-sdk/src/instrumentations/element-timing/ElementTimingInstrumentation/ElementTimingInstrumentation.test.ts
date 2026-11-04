@@ -265,7 +265,7 @@ describe('ElementTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should not create an observer when element entry type is unsupported', () => {
+  it('stays off when element entry type is unsupported', () => {
     const logger = setupTestDiagLogger();
     class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {
       public static override supportedEntryTypes: string[] = [];
@@ -280,9 +280,11 @@ describe('ElementTimingInstrumentation', () => {
     instrumentation.enable();
 
     expect(observerCallback).to.be.null;
-    expect(logger.debug).to.have.been.calledWithMatch(
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(logger.error).to.have.been.calledWith(
       sinon.match.string,
-      sinon.match('element'),
+      'init failed, so this instrumentation stays off: element entries are not supported',
+      sinon.match.instanceOf(Error),
     );
 
     instrumentation.disable();
@@ -360,10 +362,28 @@ describe('ElementTimingInstrumentation', () => {
 
     expect(logger.error.firstCall).to.have.been.calledWithExactly(
       sinon.match.string,
-      'failed to enable',
+      'enable failed: could not observe element entries',
+      sinon.match.instanceOf(Error),
     );
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+
+  describe('isSupported', () => {
+    it('returns true when PerformanceObserver supports element entries', () => {
+      void expect(ElementTimingInstrumentation.isSupported()).to.be.true;
+    });
+
+    it('returns false when PerformanceObserver does not support element entries', () => {
+      class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {
+        public static override supportedEntryTypes: string[] = [];
+      }
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        UnsupportedMockPerformanceObserver;
+
+      void expect(ElementTimingInstrumentation.isSupported()).to.be.false;
+    });
   });
 });
