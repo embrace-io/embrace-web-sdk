@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
+import type {
+  IExportLogsServiceRequest,
+  IExportTraceServiceRequest,
+} from '../tests/integration/types.ts';
 import type { OtlpJson } from './utils.ts';
 import { gunzipCapped, readCappedBody } from './utils.ts';
 

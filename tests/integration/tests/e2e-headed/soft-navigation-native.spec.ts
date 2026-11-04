@@ -5,7 +5,7 @@
 // that the browser reports soft-navigation PerformanceObserver entries. The
 // playwright.config.headed.ts chromium-soft-nav-heuristics project supplies
 // that flag automatically.
-import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
+import type { IExportTraceServiceRequest } from '../../types.ts';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
 
 const BASE_URL = 'http://localhost:3016';

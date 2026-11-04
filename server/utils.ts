@@ -1,25 +1,21 @@
 import type { IncomingMessage } from 'node:http';
 import zlib from 'node:zlib';
+import pc from 'picocolors';
 import type {
   IAnyValue,
   IKeyValue,
-} from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
-import type { ILogRecord } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type { IResourceMetrics } from '@opentelemetry/otlp-transformer/build/esnext/metrics/internal-types.js';
-import type {
+  ILogRecord,
+  IResourceMetrics,
   IResourceSpans,
   ISpan,
-} from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
-import pc from 'picocolors';
+} from '../tests/integration/types.ts';
 
-// OTLP/JSON omits empty fields, including ones the otlp-transformer types mark required.
-type OtlpJson<T> = T extends Uint8Array
-  ? T
-  : T extends (infer Item)[]
-    ? OtlpJson<Item>[]
-    : T extends object
-      ? { [Key in keyof T]?: OtlpJson<T[Key]> }
-      : T;
+// OTLP/JSON omits empty fields, including ones the request types mark required.
+type OtlpJson<T> = T extends (infer Item)[]
+  ? OtlpJson<Item>[]
+  : T extends object
+    ? { [Key in keyof T]?: OtlpJson<T[Key]> }
+    : T;
 
 const attributeValueFromSpan = (span: OtlpJson<ISpan>, key: string) => {
   const attr = (span.attributes ?? []).find((attr) => attr.key === key);
@@ -78,11 +74,7 @@ const renderAttributeValue = (
     return `{${entries}}`;
   }
   if (value.bytesValue !== undefined && value.bytesValue !== null) {
-    const length =
-      typeof value.bytesValue === 'string'
-        ? value.bytesValue.length
-        : value.bytesValue.byteLength;
-    return `<${length} bytes>`;
+    return `<${value.bytesValue.length} bytes>`;
   }
   return '<empty>';
 };
@@ -348,8 +340,8 @@ const logReceivedSpans = (resourceSpans: OtlpJson<IResourceSpans>[]) => {
         total++;
         const embType = getEmbType(span) ?? '-';
         const dur = formatDurationMs(
-          span.startTimeUnixNano as string | number | undefined,
-          span.endTimeUnixNano as string | number | undefined,
+          span.startTimeUnixNano,
+          span.endTimeUnixNano,
         );
         logInfo(`Span: ${pc.cyan(span.name)} [emb.type=${embType}] dur=${dur}`);
       }
