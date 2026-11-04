@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Copied unchanged from https://github.com/open-telemetry/opentelemetry-browser/blob/4c2e48d4bb8dd769a31f6109ef0936f9b321bd07/packages/instrumentation/src/utils/toError.ts
+// Copied from https://github.com/open-telemetry/opentelemetry-browser/blob/4c2e48d4bb8dd769a31f6109ef0936f9b321bd07/packages/instrumentation/src/utils/toError.ts
+// with its `describe` helper named `toMessage`, so it does not shadow the test runner's `describe`.
 
 /**
  * Normalizes any thrown value to an `Error`, keeping a non-Error value as
@@ -15,14 +16,14 @@ export function toError(value: unknown): Error {
     if (value instanceof Error) {
       return value;
     }
-    return new Error(describe(value), { cause: value });
+    return new Error(toMessage(value), { cause: value });
   } catch {
     // A revoked Proxy throws on `instanceof` and on both conversions below.
     return new Error('thrown value could not be described', { cause: value });
   }
 }
 
-function describe(value: unknown): string {
+function toMessage(value: unknown): string {
   try {
     return String(value);
   } catch {

@@ -110,15 +110,6 @@
       "linter": {
         "rules": { "correctness": { "noComponentHookFactories": "off" } }
       }
-    },
-    {
-      // copied unchanged from opentelemetry-browser; its `describe` helper is not a Playwright test
-      "includes": ["**/browser-instrumentation-api/src/*.ts"],
-      "linter": {
-        "rules": {
-          "correctness": { "usePlaywrightValidDescribeCallback": "off" }
-        }
-      }
     }
   ]
 }
