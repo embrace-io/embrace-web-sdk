@@ -1,4 +1,7 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
 import {
   KEY_EMB_SESSION_PART_ID,
@@ -23,7 +26,7 @@ export class UserSessionLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord) {
+  public onEmit(logRecord: ReadWriteLogRecord) {
     const userSessionId =
       logRecord.attributes[KEY_EMB_USER_SESSION_ID] ??
       this._userSessionManager.getUserSessionId() ??

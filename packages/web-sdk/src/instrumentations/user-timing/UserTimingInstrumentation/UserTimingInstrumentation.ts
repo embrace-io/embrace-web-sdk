@@ -1,4 +1,4 @@
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api';
 import { EMB_PERFORMANCE_INSTRUMENTATIONS } from '../../../constants/attributes.ts';
 import {
   EMB_TYPES,
