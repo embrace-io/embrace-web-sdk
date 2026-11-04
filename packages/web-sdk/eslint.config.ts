@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig([
   globalIgnores(['**/*', '!src/', '!src/**/*']),
   {
-    files: ['src/**/*.{js,ts,mjs,cjs}'],
+    files: ['src/**/*.{js,ts,mjs}'],
     ignores: ['**/*.test.*'],
     languageOptions: {
       parser: tseslint.parser,
