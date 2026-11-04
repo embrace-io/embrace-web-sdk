@@ -39,6 +39,10 @@ The `instrumentations` option of `initSDK` uses the `Instrumentation` interface 
 
 - `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.
 
+### Removed `createReactRouterNavigationInstrumentation`
+
+`createReactRouterNavigationInstrumentation()` is removed from `@embrace-io/web-sdk/react-instrumentation`. It was deprecated and did nothing, because the SDK captures soft navigations by default. Remove it from the `instrumentations` option of `initSDK`. For templated route names, use `withEmbraceRouting`, `withEmbraceRoutingLegacy` or `listenToRouterChanges`, as described in [REACT.md](./REACT.md).
+
 ### Removed HTTP response size attributes
 
 The document fetch and resource fetch spans no longer set `http.response_content_length` and `http.response_content_length_uncompressed`. Read `http.response.body.size` and `http.response.decoded_body_size` instead, which carry the same values.
