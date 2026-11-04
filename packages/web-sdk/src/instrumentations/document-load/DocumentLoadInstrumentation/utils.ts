@@ -20,8 +20,8 @@ const RESOURCE_TIMING_MARKS = [
 ] as const;
 
 /*
- * Adapted from OpenTelemetry sdk-trace-web
- * https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/opentelemetry-sdk-trace-web/src/utils.ts
+ * Adapted from OpenTelemetry web-common
+ * https://github.com/open-telemetry/opentelemetry-js/blob/experimental/v0.300.0/experimental/packages/web-common/src/utils-resource-timings.ts
  */
 export const addSpanNetworkEvent = (
   span: Span,

@@ -1,7 +1,5 @@
-import type { Attributes, DiagLogger } from '@opentelemetry/api';
-import { diag } from '@opentelemetry/api';
-import type { Logger } from '@opentelemetry/api-logs';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import type { Attributes, DiagLogger, Logger } from '@opentelemetry/api';
+import { diag, logs, SeverityNumber } from '@opentelemetry/api';
 import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
