@@ -65,7 +65,7 @@ transport/      HTTP transport with retry logic
 | Format | Target | Use Case                                |
 | ------ | ------ | --------------------------------------- |
 | ESM    | ES2022 | npm package (import, ESM-only)          |
-| IIFE   | ES6    | CDN script tag (`window.EmbraceWebSdk`) |
+| IIFE   | ES2022 | CDN script tag (`window.EmbraceWebSdk`) |
 
 ## Code Conventions
 
@@ -137,7 +137,7 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 ### Browser Compatibility
 
 - Baseline Widely Available APIs only (eslint-plugin-baseline-js enforced)
-- CDN bundle targets ES6
+- CDN bundle targets ES2022
 
 ### Error Handling
 
