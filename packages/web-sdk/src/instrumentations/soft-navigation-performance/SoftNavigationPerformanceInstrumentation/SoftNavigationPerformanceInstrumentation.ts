@@ -102,7 +102,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     }
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     if (this._usePolyfill) {
       this._enablePolyfill();
     } else {
@@ -154,7 +154,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     }
   }
 
-  public onDisable(): void {
+  protected override _onDisable(): void {
     if (this._observer) {
       this._observer.disconnect();
       this._observer = null;
