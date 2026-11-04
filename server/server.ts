@@ -3,10 +3,11 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'node:http';
 import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// Deep imports: otlp-transformer exports only its response types, not the OTLP/JSON request shapes.
-import type { IExportLogsServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
-import type { ReceivedSpans } from '../tests/integration/types.ts';
+import type {
+  IExportLogsServiceRequest,
+  IExportTraceServiceRequest,
+  ReceivedSpans,
+} from '../tests/integration/types.ts';
 import {
   embraceIngestTypeOf,
   formatEmbraceIngestDrop,
