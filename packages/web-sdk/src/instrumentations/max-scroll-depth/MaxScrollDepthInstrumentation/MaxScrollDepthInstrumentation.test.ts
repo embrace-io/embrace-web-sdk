@@ -504,7 +504,7 @@ describe('MaxScrollDepthInstrumentation', () => {
   });
 
   it('keeps the tracked depth when enable is called again mid-part', () => {
-    // onEnable seeds the tracked depth, so the base class guard against
+    // _onEnable seeds the tracked depth, so the base class guard against
     // re-entering it is what stops a redundant enable() erasing an open part.
     scroll({ scrollY: 900, viewportHeight: 100, documentHeight: 1000 });
     scroll({ scrollY: 100, viewportHeight: 100, documentHeight: 1000 });
