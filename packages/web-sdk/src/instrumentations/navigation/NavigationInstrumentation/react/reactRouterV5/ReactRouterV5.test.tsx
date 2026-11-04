@@ -97,7 +97,7 @@ describe('ReactRouterV5Legacy', () => {
 
     // Enabled after the tracer provider is registered, as in initSDK: enabling
     // first would open the already-current route's span on the API's no-op tracer.
-    new NavigationInstrumentation({ pageManager }).enable();
+    new NavigationInstrumentation().enable({ pageManager });
   });
 
   it('create route spans', async () => {

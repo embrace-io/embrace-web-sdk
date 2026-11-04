@@ -7,10 +7,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
-import type {
-  Instrumentation,
-  InstrumentationDeps,
-} from '@opentelemetry/browser-api';
+import type { Instrumentation } from '@opentelemetry/browser-api';
 import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
@@ -33,6 +30,7 @@ import {
   getLogEndpoint,
   getTraceEndpoint,
 } from '../exporters/index.ts';
+import type { EmbraceInstrumentationDeps } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
 import {
   DEFAULT_LIMITS,
   DEFAULT_MAX_SPAN_EVENT_ATTRIBUTES,
@@ -341,22 +339,20 @@ export const initSDK = (
     });
 
     // Enabled last: enable(deps) and registerInstrumentations need the providers set up above.
-    const instrumentationDeps: InstrumentationDeps = {
+    // Passed in both registerGlobally modes, so instrumentations use this instance's managers, not the global ones.
+    const instrumentationDeps: EmbraceInstrumentationDeps = {
       tracerProvider,
       loggerProvider,
       propagator: tracePropagator ?? undefined,
+      userSessionManager,
+      logManager: embraceLogManager,
+      limitManager,
+      perf,
+      pageManager,
     };
     const defaultInstrumentations = setupDefaultInstrumentations(
       defaultInstrumentationConfig,
-      registerGlobally
-        ? { pageManager, limitManager, signalBuffer }
-        : {
-            logManager: embraceLogManager,
-            userSessionManager,
-            pageManager,
-            limitManager,
-            signalBuffer,
-          },
+      { signalBuffer },
     );
     // The option type rejects OTel JS instrumentations, but JavaScript callers can still pass one.
     const userInstrumentations = instrumentations.filter((instrumentation) => {
