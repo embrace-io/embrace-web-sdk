@@ -3,4 +3,4 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 export type EmptyRootInstrumentationArgs = {
   rootNode: Node | null;
   emptyCheckDelayMs?: number;
-} & Pick<EmbraceInstrumentationBaseArgs, 'diag' | 'perf'>;
+} & Pick<EmbraceInstrumentationBaseArgs, 'perf'>;

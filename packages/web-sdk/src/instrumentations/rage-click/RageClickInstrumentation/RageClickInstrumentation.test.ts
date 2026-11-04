@@ -1,9 +1,10 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  InMemoryDiagLogger,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -28,7 +29,6 @@ const TICK_AFTER_WINDOW = RAGE_CLICK_WINDOW_TIME + 50;
 describe('RageClickInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let instrumentation: RageClickInstrumentation;
-  let diag: InMemoryDiagLogger;
   let testContainer: HTMLElement;
   let clock: sinon.SinonFakeTimers;
   let userSessionManager: UserSessionManagerInternal;
@@ -48,7 +48,6 @@ describe('RageClickInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    diag = new InMemoryDiagLogger();
     testContainer = document.createElement('div');
     document.body.append(testContainer);
     clock = sinon.useFakeTimers();
@@ -58,6 +57,7 @@ describe('RageClickInstrumentation', () => {
     instrumentation.disable();
     testContainer.remove();
     clock.restore();
+    diag.disable();
   });
 
   const getRageClickLogs = () =>
@@ -66,14 +66,14 @@ describe('RageClickInstrumentation', () => {
       .filter((l) => l.eventName === 'rage-click');
 
   it('does not emit any rage-click log when no clicks happen', () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
 
     expect(getRageClickLogs()).to.have.lengthOf(0);
   });
 
   it('emits a rage-click log after 3 clicks on the same target within the window', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'checkout-btn';
@@ -101,7 +101,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('does not emit when fewer than 3 clicks occur in the window', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
@@ -115,7 +115,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('counts clicks within a radius of the first click, even on different targets', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const a = document.createElement('button');
     a.id = 'a';
@@ -168,7 +168,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('does not count clicks outside the radius and on a different target', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
 
     const a = document.createElement('button');
@@ -210,7 +210,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('marks interaction_type=tap when the first click is a touch PointerEvent', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('a');
@@ -243,7 +243,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('does not emit any log for clicks after disable()', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'a';
@@ -260,7 +260,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('emits the in-progress window if disable() is called in the middle of a rage click', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -286,7 +286,7 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('ignores click events whose target is not an Element', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
 
     for (let i = 0; i < 3; i++) {
@@ -301,7 +301,10 @@ describe('RageClickInstrumentation', () => {
   });
 
   it('logs an error if processing a click throws', () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'RageClickInstrumentation',
+    });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
@@ -314,9 +317,9 @@ describe('RageClickInstrumentation', () => {
     });
     target.dispatchEvent(evt);
 
-    expect(diag.getErrorLogs()).to.include(
+    expect(diagLogger.messages('error')).to.deep.equal([
       'failed to process rage-click candidate',
-    );
+    ]);
   });
 
   it('logs an error if emitting the rage-click log throws', async () => {
@@ -327,10 +330,10 @@ describe('RageClickInstrumentation', () => {
         throw new Error('boom');
       },
     };
-    instrumentation = new RageClickInstrumentation({
-      diag,
-      perf: throwingPerf,
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'RageClickInstrumentation',
     });
+    instrumentation = new RageClickInstrumentation({ perf: throwingPerf });
     instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
@@ -340,7 +343,9 @@ describe('RageClickInstrumentation', () => {
     target.click();
     await clock.tickAsync(TICK_AFTER_WINDOW);
 
-    expect(diag.getErrorLogs()).to.include('failed to emit rage-click log');
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'failed to emit rage-click log',
+    ]);
     expect(getRageClickLogs()).to.have.lengthOf(0);
   });
 
@@ -352,10 +357,10 @@ describe('RageClickInstrumentation', () => {
         throw new Error('boom');
       },
     };
-    instrumentation = new RageClickInstrumentation({
-      diag,
-      perf: throwingPerf,
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'RageClickInstrumentation',
     });
+    instrumentation = new RageClickInstrumentation({ perf: throwingPerf });
     instrumentation.enable();
     const target = document.createElement('button');
     testContainer.append(target);
@@ -365,7 +370,7 @@ describe('RageClickInstrumentation', () => {
     target.click();
 
     expect(() => instrumentation.disable()).not.to.throw();
-    expect(diag.getErrorLogs()).to.deep.equal([
+    expect(diagLogger.messages('error')).to.deep.equal([
       'failed to emit rage-click log',
     ]);
 
@@ -375,11 +380,13 @@ describe('RageClickInstrumentation', () => {
     target.click();
     await clock.tickAsync(TICK_AFTER_WINDOW);
 
-    expect(diag.getErrorLogs()).to.have.lengthOf(1);
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'failed to emit rage-click log',
+    ]);
   });
 
   it('emits one log per window across consecutive windows', async () => {
-    instrumentation = new RageClickInstrumentation({ diag });
+    instrumentation = new RageClickInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     target.id = 'a';
@@ -407,7 +414,7 @@ describe('RageClickInstrumentation', () => {
 
     beforeEach(() => {
       userSessionManager.startSessionPartInternal({ reason: 'init' });
-      instrumentation = new RageClickInstrumentation({ diag });
+      instrumentation = new RageClickInstrumentation();
       instrumentation.setUserSessionManager(userSessionManager);
       instrumentation.enable();
       target = document.createElement('button');

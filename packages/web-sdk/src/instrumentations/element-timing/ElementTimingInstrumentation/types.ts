@@ -2,7 +2,7 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type ElementTimingInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf' | 'limitManager'
+  'perf' | 'limitManager'
 >;
 
 export type PerformanceElementTiming = PerformanceEntry & {
