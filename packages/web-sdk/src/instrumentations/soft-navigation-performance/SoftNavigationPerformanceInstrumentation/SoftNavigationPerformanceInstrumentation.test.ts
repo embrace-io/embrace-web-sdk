@@ -411,6 +411,7 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       UnsupportedMockPerformanceObserver;
 
+    const logger = setupTestDiagLogger();
     const instrumentation = new SoftNavigationPerformanceInstrumentation({
       perf,
       limitManager,
@@ -418,6 +419,12 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
     instrumentation.enable();
 
     expect(observerCallback).to.be.null;
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(
+      logger.messagesFrom('error', 'SoftNavigationPerformanceInstrumentation'),
+    ).to.deep.equal([
+      'init failed, so this instrumentation stays off: neither soft-navigation entries nor the Navigation API and event entries are supported',
+    ]);
 
     instrumentation.disable();
   });
@@ -494,10 +501,72 @@ describe('SoftNavigationPerformanceInstrumentation', () => {
 
     expect(
       logger.messagesFrom('error', 'SoftNavigationPerformanceInstrumentation'),
-    ).to.deep.equal(['failed to enable']);
+    ).to.deep.equal([
+      'enable failed: could not observe soft-navigation entries',
+    ]);
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+});
+
+describe('SoftNavigationPerformanceInstrumentation.isSupported', () => {
+  let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+
+  const stubSupportedEntryTypes = (supportedEntryTypes: string[]) => {
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+      public static supportedEntryTypes = supportedEntryTypes;
+    };
+  };
+
+  beforeEach(() => {
+    originalPerformanceObserver = globalThis.PerformanceObserver;
+    mockNavigation = {
+      currentEntry: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
+  });
+
+  afterEach(() => {
+    (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+      originalPerformanceObserver;
+  });
+
+  it('returns true when soft-navigation entries are supported', () => {
+    stubSupportedEntryTypes(['soft-navigation']);
+
+    void expect(SoftNavigationPerformanceInstrumentation.isSupported()).to.be
+      .true;
+  });
+
+  it('returns true when event entries and the Navigation API are supported', () => {
+    stubSupportedEntryTypes(['event']);
+
+    void expect(
+      SoftNavigationPerformanceInstrumentation.isSupported({
+        navigation: mockNavigation as unknown as Navigation,
+        location: { href: 'https://example.com', pathname: '/' },
+      }),
+    ).to.be.true;
+  });
+
+  it('returns false when event entries are supported but the Navigation API is not', () => {
+    stubSupportedEntryTypes(['event']);
+
+    void expect(
+      SoftNavigationPerformanceInstrumentation.isSupported({
+        location: { href: 'https://example.com', pathname: '/' },
+      }),
+    ).to.be.false;
+  });
+
+  it('returns false when neither entry type is supported', () => {
+    stubSupportedEntryTypes([]);
+
+    void expect(SoftNavigationPerformanceInstrumentation.isSupported()).to.be
+      .false;
   });
 });
 
@@ -906,8 +975,9 @@ describe('SoftNavigationPerformanceInstrumentation — polyfill', () => {
 
     expect(
       logger.messagesFrom('error', 'SoftNavigationPerformanceInstrumentation'),
-    ).to.deep.equal(['failed to enable polyfill']);
+    ).to.deep.equal(['enable failed: could not observe event entries']);
     expect(currentEntryChangeListeners).to.have.length(0);
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     instrumentation.disable();
   });

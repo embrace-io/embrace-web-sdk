@@ -2,7 +2,6 @@ import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import type { LogRecord } from '@opentelemetry/api-logs';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { millisToHrTime } from '@opentelemetry/core';
-import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import type {
   CLSMetricWithAttribution,
   INPAttribution,
@@ -300,7 +299,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _urlDocument: URLDocument;
   private readonly _urlAttribution: boolean;
   private readonly _includeRawAttribution: boolean;
-  private readonly _softNavsActive: boolean;
+  private readonly _reportSoftNavs: boolean;
+  private _softNavsActive: boolean = false;
   private readonly _pageManager: PageManager;
   private readonly _attributedPage: Record<
     Metric['name'],
@@ -337,10 +337,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._urlDocument = urlDocument ?? window.document;
     this._urlAttribution = urlAttribution;
     this._includeRawAttribution = includeRawAttribution;
-    this._softNavsActive =
-      reportSoftNavs && isEntryTypeSupported('soft-navigation');
+    this._reportSoftNavs = reportSoftNavs;
     this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
+  }
+
+  protected override _init(): void {
+    this._softNavsActive =
+      this._reportSoftNavs && isEntryTypeSupported('soft-navigation');
   }
 
   protected override _onDisable(): void {
@@ -368,7 +372,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       if (this._urlAttribution) {
         this._listeners[name]?.(
           (metric) => {
-            if (!this._isEnabled) {
+            if (!this.isEnabled()) {
               return;
             }
             if (metric.name === 'CLS') {
@@ -396,7 +400,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
       this._listeners[name]?.(
         (metric) => {
-          if (!this._isEnabled) {
+          if (!this.isEnabled()) {
             return;
           }
           this._emitWebVital(metric);
@@ -538,14 +542,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     };
 
     if (this._applyCustomLogRecordData) {
-      safeExecuteInTheMiddle(
-        () => this._applyCustomLogRecordData?.(logRecord),
-        (error) => {
-          if (error) {
-            this._diag.error('applyCustomLogRecordData hook failed', error);
-          }
-        },
-        true,
+      this._safeExecute('applyCustomLogRecordData hook failed', () =>
+        this._applyCustomLogRecordData?.(logRecord),
       );
     }
 

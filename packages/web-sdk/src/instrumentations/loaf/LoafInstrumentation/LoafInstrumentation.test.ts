@@ -322,7 +322,7 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should no-op when PerformanceObserver does not support long-animation-frame', () => {
+  it('stays off when PerformanceObserver does not support long-animation-frame', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
       public static supportedEntryTypes = ['resource', 'navigation'];
       public observe(): void {}
@@ -336,8 +336,9 @@ describe('LoafInstrumentation', () => {
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(logger.messagesFrom('debug', 'LoafInstrumentation')).to.deep.equal([
-      'long-animation-frame not supported, skipping',
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(logger.messagesFrom('error', 'LoafInstrumentation')).to.deep.equal([
+      'init failed, so this instrumentation stays off: long-animation-frame entries are not supported',
     ]);
     expect(observerCallback).to.be.null;
 
@@ -769,11 +770,26 @@ describe('LoafInstrumentation', () => {
     instrumentation.enable();
 
     expect(logger.messagesFrom('error', 'LoafInstrumentation')).to.deep.equal([
-      'failed to enable',
+      'enable failed: could not observe long-animation-frame entries',
     ]);
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+
+  describe('isSupported', () => {
+    it('returns true when PerformanceObserver supports long-animation-frame', () => {
+      void expect(LoafInstrumentation.isSupported()).to.be.true;
+    });
+
+    it('returns false when PerformanceObserver does not support long-animation-frame', () => {
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
+        public static supportedEntryTypes = ['resource'];
+      };
+
+      void expect(LoafInstrumentation.isSupported()).to.be.false;
+    });
   });
 
   describe('script summary', () => {

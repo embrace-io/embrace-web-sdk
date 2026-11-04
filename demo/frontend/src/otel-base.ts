@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 import { DiagLogLevel, initSDK, user } from '@embrace-io/web-sdk';
-import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { LogRecordExporter } from '@opentelemetry/sdk-logs';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { SpanExporter } from '@opentelemetry/sdk-trace';
@@ -13,8 +12,10 @@ const APP_ID = import.meta.env.VITE_APP_ID;
 const DATA_URL = import.meta.env.VITE_DATA_URL;
 const CONFIG_URL = import.meta.env.VITE_CONFIG_URL;
 
+type SDKInitConfig = NonNullable<Parameters<typeof initSDK>[0]>;
+
 const setupSDK = (
-  instrumentations?: Instrumentation[],
+  instrumentations?: SDKInitConfig['instrumentations'],
   extraSpanExporters: SpanExporter[] = [],
   extraLogExporters: LogRecordExporter[] = [],
 ) => {

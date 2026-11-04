@@ -10,6 +10,15 @@ CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sd
 
 The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sending to Embrace needs at least Chrome and Edge 85, Firefox 113, Safari 16.4 and Samsung Internet 14.
 
+### Instrumentations follow the OpenTelemetry browser lifecycle
+
+The `instrumentations` option of `initSDK` uses the `Instrumentation` interface from `@opentelemetry/browser-api` instead of the one from `@opentelemetry/instrumentation`:
+
+- Build a custom instrumentation on `InstrumentationBase` from [`@opentelemetry/browser-api`](https://www.npmjs.com/package/@opentelemetry/browser-api), or implement its `Instrumentation` interface (`instrumentationName`, `enable(deps)`, `disable()` and `isEnabled()`). `initSDK` calls `enable()` on each one with its tracer provider, logger provider and propagator.
+- `initSDK` skips an instrumentation built on `@opentelemetry/instrumentation` and logs an error.
+- Under `registerGlobally: false`, the document load span continues the trace of a `<meta name="traceparent">` tag through the `propagator` option, or through the SDK's W3C trace context propagator when Network Span Forwarding is on. With 2.x it used the global propagator.
+- When the `rootNode` of `defaultInstrumentationConfig['empty-root']` is null, the SDK logs an error through `diag` instead of a warning.
+
 ### Removed `defaultInstrumentationConfig` fields
 
 - `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.

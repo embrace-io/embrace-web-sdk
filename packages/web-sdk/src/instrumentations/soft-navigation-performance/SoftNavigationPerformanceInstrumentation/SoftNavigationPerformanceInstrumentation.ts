@@ -85,21 +85,27 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     this._signalBuffer = signalBuffer;
   }
 
-  public override enable(): void {
-    if (isEntryTypeSupported('soft-navigation')) {
-      this._usePolyfill = false;
-      super.enable();
-    } else if (
-      this._navigationHost.navigation &&
-      isEntryTypeSupported('event')
+  /** Whether this browser reports soft navigations, natively or through the Navigation API and event timing. initSDK skips the default instance when it does not. */
+  public static isSupported(
+    navigationHost: NavigationHost = window as NavigationHost,
+  ): boolean {
+    return (
+      isEntryTypeSupported('soft-navigation') ||
+      (navigationHost.navigation !== undefined && isEntryTypeSupported('event'))
+    );
+  }
+
+  protected override _init(): void {
+    if (
+      !SoftNavigationPerformanceInstrumentation.isSupported(
+        this._navigationHost,
+      )
     ) {
-      this._usePolyfill = true;
-      super.enable();
-    } else {
-      this._diag.debug(
-        'soft-navigation and navigation API not supported, skipping',
+      throw new Error(
+        'neither soft-navigation entries nor the Navigation API and event entries are supported',
       );
     }
+    this._usePolyfill = !isEntryTypeSupported('soft-navigation');
   }
 
   protected override _onEnable(): void {
@@ -118,14 +124,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     );
 
     if (!this._observer) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable');
-      return;
+      throw new Error('could not observe soft-navigation entries');
     }
   }
 
   private _enablePolyfill(): void {
-    // biome-ignore lint/style/noNonNullAssertion: enable() is only called when navigationHost.navigation is defined
+    // biome-ignore lint/style/noNonNullAssertion: _init() only picks the polyfill when navigationHost.navigation is defined
     const nav = this._navigationHost.navigation!;
 
     nav.addEventListener('currententrychange', this._handleCurrentEntryChange);
@@ -144,13 +148,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     );
 
     if (!this._eventObserver) {
-      nav.removeEventListener(
-        'currententrychange',
-        this._handleCurrentEntryChange,
-      );
-      this._isEnabled = false;
-      this._diag.error('failed to enable polyfill');
-      return;
+      throw new Error('could not observe event entries');
     }
   }
 
@@ -198,7 +196,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _processEntry(entry: PerformanceSoftNavigationTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
@@ -244,7 +242,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _processClickEntry(entry: PerformanceEventTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
@@ -276,7 +274,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     navigationTimestamp: number,
     url: string,
   ): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
