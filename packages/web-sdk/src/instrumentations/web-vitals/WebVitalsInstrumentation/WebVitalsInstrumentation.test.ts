@@ -237,6 +237,40 @@ describe('WebVitalsInstrumentation', () => {
     expect(record.hrTime).to.deep.equal([3, 0]);
   });
 
+  it('should use the navigation start plus the value as the timestamp for a soft navigation FCP with no entries', () => {
+    instrumentation = new WebVitalsInstrumentation({
+      diag,
+      perf,
+      listeners: mockWebVitalListeners,
+      urlAttribution: false,
+    });
+    instrumentation.enable();
+
+    const metricReportFunc = fcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+    clock.tick(5000);
+
+    metricReportFunc({
+      name: 'FCP',
+      value: 500,
+      rating: 'good',
+      delta: 500,
+      id: 'm1',
+      entries: [],
+      navigationType: 'soft-navigation',
+      navigationId: 2,
+      navigationStartTime: 2000,
+      attribution: {
+        timeToFirstByte: 0,
+        firstByteToFCP: 500,
+        loadState: 'complete',
+      },
+    } as MetricWithAttribution);
+
+    const record = memoryExporter.getFinishedLogRecords()[0];
+    expect(record.hrTime).to.deep.equal([2, 500_000_000]);
+  });
+
   it('should report FCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
       diag,
