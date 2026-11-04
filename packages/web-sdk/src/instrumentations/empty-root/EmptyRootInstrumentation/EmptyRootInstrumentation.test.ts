@@ -26,6 +26,7 @@ describe('EmptyInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: EmptyRootInstrumentation;
   let userSessionManager: UserSessionManagerInternal;
+  let clock: sinon.SinonFakeTimers | undefined;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -47,6 +48,43 @@ describe('EmptyInstrumentation', () => {
   afterEach(() => {
     instrumentation.disable();
     diag.disable();
+    clock?.restore();
+    clock = undefined;
+  });
+
+  it('should not emit from an empty check that was pending when disabled', async () => {
+    // The user session manager armed real timers in beforeEach and clears them when the part ends
+    clock = sinon.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout'],
+      shouldClearNativeTimers: true,
+    });
+    const rootNode = document.createElement('div');
+    const child = document.createElement('div');
+    rootNode.append(child);
+
+    instrumentation = new EmptyRootInstrumentation({
+      rootNode,
+      emptyCheckDelayMs: 10,
+    });
+    instrumentation.enable();
+
+    child.remove();
+
+    // MutationObserver callbacks run as a microtask queued before this await resolves
+    await Promise.resolve();
+    expect(clock.countTimers()).to.equal(1);
+
+    instrumentation.disable();
+    expect(clock.countTimers()).to.equal(0);
+
+    clock.tick(10);
+
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    expect(finishedSpans[0].events).to.have.lengthOf(0);
   });
 
   it('should add a span event to the session part when the root node becomes empty', async () => {
