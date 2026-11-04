@@ -535,7 +535,7 @@ in modern build pipelines. OpenTelemetry set their current minimum language feat
 SDK targets this as well to ensure compatibility. See more details in
 the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
 
-We also provide a CDN version that is transpiled down to ES6/ES2015 for maximum compatibility with older browsers.
+The CDN version targets ES2022 too.
 
 ## Troubleshooting
 
