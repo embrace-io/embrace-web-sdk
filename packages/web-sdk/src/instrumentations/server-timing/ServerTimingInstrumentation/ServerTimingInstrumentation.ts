@@ -25,16 +25,12 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     // The navigation entry is added to the performance entry buffer while the
     // document is created, before any script runs, and its serverTiming comes
     // from the response headers, so there is nothing to observe:
     // https://w3c.github.io/navigation-timing/#dfn-create-the-navigation-timing-entry
     this._readServerTiming();
-  }
-
-  public override onDisable(): void {
-    // The one read happened at enable; there is nothing to undo.
   }
 
   private _readServerTiming(): void {

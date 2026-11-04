@@ -41,7 +41,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     this._allowedEntries = allowedEntries;
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     this._seenEntries = new Set();
 
     this._markObserver = createPerformanceObserver<PerformanceMark>(
@@ -69,7 +69,7 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public onDisable(): void {
+  protected override _onDisable(): void {
     if (this._markObserver) {
       this._markObserver.disconnect();
       this._markObserver = null;
