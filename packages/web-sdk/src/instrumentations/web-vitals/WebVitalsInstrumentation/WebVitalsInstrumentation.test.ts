@@ -3496,6 +3496,13 @@ describe('WebVitalsInstrumentation', () => {
 
   describe('soft navigations', () => {
     let originalPerformanceObserver: typeof globalThis.PerformanceObserver;
+    let originalPerformanceSoftNavigation: unknown;
+
+    const stubPerformanceSoftNavigation = (prototype: object) => {
+      (globalThis as Record<string, unknown>)['PerformanceSoftNavigation'] = {
+        prototype,
+      };
+    };
 
     // Soft navigation support is browser dependent, so every test that depends on
     // it stubs the entry type rather than inheriting whatever the runner bundles.
@@ -3503,15 +3510,23 @@ describe('WebVitalsInstrumentation', () => {
       (globalThis as Record<string, unknown>)['PerformanceObserver'] = class {
         public static supportedEntryTypes = types;
       };
+      stubPerformanceSoftNavigation({
+        getLargestInteractionContentfulPaint: () => null,
+      });
     };
 
     beforeEach(() => {
       originalPerformanceObserver = globalThis.PerformanceObserver;
+      originalPerformanceSoftNavigation = (
+        globalThis as Record<string, unknown>
+      )['PerformanceSoftNavigation'];
     });
 
     afterEach(() => {
       (globalThis as Record<string, unknown>)['PerformanceObserver'] =
         originalPerformanceObserver;
+      (globalThis as Record<string, unknown>)['PerformanceSoftNavigation'] =
+        originalPerformanceSoftNavigation;
     });
 
     describe('listener registration', () => {
@@ -3706,6 +3721,40 @@ describe('WebVitalsInstrumentation', () => {
         .undefined;
     });
 
+    it('should omit navigation_id when the metric has navigation id 0', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+
+      const emitFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc({
+        name: 'LCP',
+        value: 22,
+        rating: 'good',
+        delta: 0,
+        id: 'm5',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 0,
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes).to.not.have.property(
+        'browser.web_vital.navigation_id',
+      );
+    });
+
     it('should prefer navigationURL for browser.url.full on soft navigations', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
@@ -3809,6 +3858,49 @@ describe('WebVitalsInstrumentation', () => {
         rating: 'poor',
         delta: 0,
         id: 'm6b',
+        entries: [],
+        navigationType: 'navigate',
+        navigationId: 1,
+        navigationURL: 'https://example.com/page-b',
+        attribution: {
+          timeToFirstByte: 0,
+          resourceLoadDelay: 0,
+          resourceLoadDuration: 0,
+          elementRenderDelay: 0,
+        },
+      } as MetricWithAttribution;
+
+      pageTrackFunc(metric);
+      emitFunc(metric);
+
+      const record = memoryExporter.getFinishedLogRecords()[0];
+      expect(record.attributes[KEY_BROWSER_URL_FULL]).to.equal(
+        'https://example.com/page-a',
+      );
+    });
+
+    // Older flagged Chromium lists the entry type but exposes the largest interaction
+    // contentful paint as an attribute, and web-vitals does not segment metrics there.
+    it('should keep the attributed-page URL for hard navigations when the soft navigation API lacks getLargestInteractionContentfulPaint', () => {
+      stubSupportedEntryTypes(['soft-navigation']);
+      stubPerformanceSoftNavigation({});
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument: { URL: 'https://example.com/page-a' },
+      });
+      instrumentation.enable();
+
+      const pageTrackFunc = lcpStub.getCall(0).args[0] as WebVitalOnReport;
+      const emitFunc = lcpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const metric = {
+        name: 'LCP',
+        value: 22,
+        rating: 'poor',
+        delta: 0,
+        id: 'm6c',
         entries: [],
         navigationType: 'navigate',
         navigationId: 1,

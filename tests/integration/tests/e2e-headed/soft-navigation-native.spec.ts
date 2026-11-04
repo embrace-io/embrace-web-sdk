@@ -1,10 +1,8 @@
 // Headed-only test for the native soft navigation path. Run with:
 //   npx playwright test --config playwright.config.headed.ts
 //
-// Requires Chrome launched with --enable-features=SoftNavigationHeuristics so
-// that the browser reports soft-navigation PerformanceObserver entries. The
-// playwright.config.headed.ts chromium-soft-nav-heuristics project supplies
-// that flag automatically.
+// Requires an installed Chrome 151+ (channel 'chrome'), which reports
+// soft-navigation PerformanceObserver entries by default.
 import type { IExportTraceServiceRequest } from '../../types.ts';
 import testWithMockApi from '../../utils/test-with-mock-api.ts';
 

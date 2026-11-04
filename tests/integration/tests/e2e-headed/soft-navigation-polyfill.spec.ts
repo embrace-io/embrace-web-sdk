@@ -2,9 +2,10 @@
 //   npx playwright test --config playwright.config.headed.ts
 //
 // The polyfill is active when the browser does not support the native
-// soft-navigation PerformanceObserver entry type. Chrome requires the
-// --enable-features=SoftNavigationHeuristics flag for native support, so the
-// polyfill fires automatically in a standard browser window.
+// soft-navigation PerformanceObserver entry type. Chrome 151+ supports it by
+// default, so the chromium-soft-nav-polyfill project in
+// playwright.config.headed.ts launches installed Chrome with
+// --disable-features=SoftNavigationHeuristics to turn native support off.
 //
 // Headless Chromium does not generate PerformanceEventTiming entries for
 // Playwright synthetic clicks, so this test must run in headed mode where real

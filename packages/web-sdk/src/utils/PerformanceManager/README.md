@@ -404,10 +404,13 @@ One log per web-vital report.
 `metric.value` for time-based vitals is "time since navigation start" as
 computed by the upstream `web-vitals` library, which has its own bfcache
 handling (each restore counts as a fresh page visit) independent of the SDK's
-zero time. Standard vitals (LCP, FCP, TTFB) do not re-report on a
-_soft_ navigation at all — only CLS (cumulative) and INP (per-interaction)
-keep reporting through a soft-navigated visit. That is an upstream library
-boundary, not something the SDK's zero time influences.
+zero time. When `reportSoftNavs` is on (the default) and the browser supports
+native `soft-navigation` entries, `web-vitals` reports FCP, LCP, CLS, and INP
+again for each _soft_ navigation, with values relative to the soft
+navigation's start. TTFB is reported only for the hard navigation: for soft
+navigations `web-vitals` reports a fixed value of zero, so the TTFB listener
+keeps `reportSoftNavs` off. The SDK's zero time does not change any of these
+values.
 
 #### DocumentLoadInstrumentation
 

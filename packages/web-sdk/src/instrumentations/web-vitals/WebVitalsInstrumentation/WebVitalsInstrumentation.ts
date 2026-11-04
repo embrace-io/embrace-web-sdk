@@ -339,8 +339,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._urlDocument = urlDocument ?? window.document;
     this._urlAttribution = urlAttribution;
     this._includeRawAttribution = includeRawAttribution;
+    // Same check as web-vitals' checkSoftNavsEnabled: older flagged Chromium lists the entry
+    // type but has no getLargestInteractionContentfulPaint, and web-vitals ignores soft navs there.
     this._softNavsActive =
-      reportSoftNavs && isEntryTypeSupported('soft-navigation');
+      reportSoftNavs &&
+      isEntryTypeSupported('soft-navigation') &&
+      typeof globalThis.PerformanceSoftNavigation?.prototype
+        ?.getLargestInteractionContentfulPaint === 'function';
     this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
   }
@@ -491,7 +496,10 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         [KEY_BROWSER_WEB_VITAL_RATING]: metric.rating,
         [KEY_BROWSER_WEB_VITAL_ID]: metric.id,
         [KEY_BROWSER_WEB_VITAL_NAVIGATION_TYPE]: metric.navigationType,
-        [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId,
+        // web-vitals reports 0 when the browser exposes no navigation id.
+        ...(metric.navigationId
+          ? { [KEY_BROWSER_WEB_VITAL_NAVIGATION_ID]: metric.navigationId }
+          : {}),
         ...(metric.navigationInteractionId !== undefined
           ? {
               [KEY_BROWSER_WEB_VITAL_INTERACTION_ID]:
