@@ -429,7 +429,8 @@ describe('DocumentLoad Instrumentation', () => {
 
     // activationStart moves zero time 200ms past time origin, so the two frames differ
     it('should stamp network events at time origin plus their timing marks', (done) => {
-      plugin = new DocumentLoadInstrumentation({
+      plugin = new DocumentLoadInstrumentation();
+      plugin.enable({
         perf: new OTelPerformanceManager({
           timeOrigin: window.performance.timeOrigin,
           now: () => window.performance.now(),
@@ -438,7 +439,6 @@ describe('DocumentLoad Instrumentation', () => {
           ],
         }),
       });
-      plugin.enable();
 
       setTimeout(() => {
         const [fetchSpan, loadSpan] = exporter.getFinishedSpans();

@@ -3,34 +3,18 @@ import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import type { LogManager } from '../api-logs/index.ts';
 import {
   ElementTimingInstrumentation,
-  EmbraceInstrumentationBase,
   EmptyRootInstrumentation,
   LoafInstrumentation,
   SoftNavigationPerformanceInstrumentation,
 } from '../instrumentations/index.ts';
-import type { UserSessionManagerInternal } from '../managers/index.ts';
-import {
-  DEFAULT_LIMITS,
-  EmbraceLimitManager,
-  EmbracePageManager,
-} from '../managers/index.ts';
 import { setupDefaultInstrumentations } from './setupDefaultInstrumentations.ts';
-import type {
-  DefaultInstrumentationConfig,
-  SetupDefaultInstrumentationsArgs,
-} from './types.ts';
+import type { DefaultInstrumentationConfig } from './types.ts';
 
 const { expect } = chai;
 
 type DefaultInstrumentations = ReturnType<typeof setupDefaultInstrumentations>;
-
-const makeSetupArgs = (): SetupDefaultInstrumentationsArgs => ({
-  pageManager: new EmbracePageManager(),
-  limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-});
 
 const getFetch = (instrumentations: DefaultInstrumentations) =>
   instrumentations.find(
@@ -59,7 +43,7 @@ describe('setupDefaultInstrumentations', () => {
             ignoreUrls: [/fetch-pattern/],
           },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
@@ -76,7 +60,7 @@ describe('setupDefaultInstrumentations', () => {
             ignoreUrls: [/xhr-pattern/],
           },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(getXHR(instrumentations).getConfig().ignoreUrls).to.deep.equal([
@@ -88,7 +72,7 @@ describe('setupDefaultInstrumentations', () => {
     it('uses only network.ignoreUrls when no instrumentation ignoreUrls are set', () => {
       const instrumentations = setupDefaultInstrumentations(
         { network: { ignoreUrls: [/network-only/] } },
-        makeSetupArgs(),
+        {},
       );
 
       expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
@@ -109,7 +93,7 @@ describe('setupDefaultInstrumentations', () => {
             ignoreUrls: [/xhr-only/],
           },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal([
@@ -121,10 +105,7 @@ describe('setupDefaultInstrumentations', () => {
     });
 
     it('produces an empty ignoreUrls when no ignoreUrls are set', () => {
-      const instrumentations = setupDefaultInstrumentations(
-        {},
-        makeSetupArgs(),
-      );
+      const instrumentations = setupDefaultInstrumentations({}, {});
 
       expect(getFetch(instrumentations).getConfig().ignoreUrls).to.deep.equal(
         [],
@@ -135,10 +116,7 @@ describe('setupDefaultInstrumentations', () => {
 
   describe('empty-root opt-in', () => {
     it('omits EmptyRootInstrumentation by default', () => {
-      const instrumentations = setupDefaultInstrumentations(
-        {},
-        makeSetupArgs(),
-      );
+      const instrumentations = setupDefaultInstrumentations({}, {});
 
       expect(
         instrumentations.some((i) => i instanceof EmptyRootInstrumentation),
@@ -148,7 +126,7 @@ describe('setupDefaultInstrumentations', () => {
     it('includes EmptyRootInstrumentation when opted in', () => {
       const instrumentations = setupDefaultInstrumentations(
         { 'empty-root': { rootNode: document.body } },
-        makeSetupArgs(),
+        {},
       );
 
       expect(
@@ -195,7 +173,7 @@ describe('setupDefaultInstrumentations', () => {
         {
           'soft-navigation-performance': { navigationHost: hostWithNavigation },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(hasInstance(instrumentations, LoafInstrumentation)).to.equal(
@@ -216,10 +194,7 @@ describe('setupDefaultInstrumentations', () => {
         'soft-navigation',
       ]);
 
-      const instrumentations = setupDefaultInstrumentations(
-        {},
-        makeSetupArgs(),
-      );
+      const instrumentations = setupDefaultInstrumentations({}, {});
 
       expect(hasInstance(instrumentations, LoafInstrumentation)).to.equal(true);
       expect(
@@ -241,7 +216,7 @@ describe('setupDefaultInstrumentations', () => {
             navigationHost: hostWithoutNavigation,
           },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(
@@ -256,7 +231,7 @@ describe('setupDefaultInstrumentations', () => {
         {
           'soft-navigation-performance': { navigationHost: hostWithNavigation },
         },
-        makeSetupArgs(),
+        {},
       );
 
       expect(
@@ -265,80 +240,17 @@ describe('setupDefaultInstrumentations', () => {
     });
   });
 
-  describe('manager wiring', () => {
-    it('calls setUserSessionManager and setLogManager exactly once per Embrace instrumentation', () => {
-      const originalSetSessionManager =
-        EmbraceInstrumentationBase.prototype.setUserSessionManager;
-      const originalSetLogManager =
-        EmbraceInstrumentationBase.prototype.setLogManager;
-
-      // Some instrumentations (e.g. LoafInstrumentation) call methods on the
-      // session manager inside their setUserSessionManager override, so the
-      // sentinel needs to be call-shaped. A Proxy that returns a no-op function
-      // for every property read keeps the tested wiring independent of the
-      // exact methods each instrumentation invokes during setup.
-      const sentinelSession = new Proxy(
-        {},
-        { get: () => () => undefined },
-      ) as UserSessionManagerInternal;
-      const sentinelLog = new Proxy(
-        {},
-        { get: () => () => undefined },
-      ) as LogManager;
-
-      let sessionCalls = 0;
-      let logCalls = 0;
-
-      EmbraceInstrumentationBase.prototype.setUserSessionManager = function (
-        m,
-      ) {
-        if (m === sentinelSession) sessionCalls++;
-        originalSetSessionManager.call(this, m);
-      };
-      EmbraceInstrumentationBase.prototype.setLogManager = function (m) {
-        if (m === sentinelLog) logCalls++;
-        originalSetLogManager.call(this, m);
-      };
-
-      try {
-        const instrumentations = setupDefaultInstrumentations(
-          { 'empty-root': { rootNode: document.body } },
-          {
-            pageManager: new EmbracePageManager(),
-            limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-            logManager: sentinelLog,
-            userSessionManager: sentinelSession,
-          },
-        );
-
-        const embraceCount = instrumentations.filter(
-          (i) => i instanceof EmbraceInstrumentationBase,
-        ).length;
-        expect(embraceCount).to.be.greaterThan(0);
-        expect(sessionCalls).to.equal(embraceCount);
-        expect(logCalls).to.equal(embraceCount);
-      } finally {
-        EmbraceInstrumentationBase.prototype.setUserSessionManager =
-          originalSetSessionManager;
-        EmbraceInstrumentationBase.prototype.setLogManager =
-          originalSetLogManager;
-      }
-    });
-  });
-
   describe('enabling', () => {
     /*
-     * Under registerGlobally: false the per-instance managers, set here after
-     * construction, and the providers, passed by initSDK, reach an
-     * instrumentation only after it is built. Anything enabled on return
-     * would emit its start-up telemetry to no-op tracers and loggers, and
-     * document-load, server-timing and dom-state latch that one collection
-     * and never retry.
+     * initSDK passes the providers and the SDK's managers to enable() only
+     * after an instrumentation is built. Anything enabled on return would emit
+     * its start-up telemetry to no-op tracers and loggers, and document-load,
+     * server-timing and dom-state latch that one collection and never retry.
      */
     it('returns instrumentations that are not enabled yet', () => {
       const instrumentations = setupDefaultInstrumentations(
         { 'empty-root': { rootNode: document.body } },
-        makeSetupArgs(),
+        {},
       );
 
       expect(instrumentations).to.have.length.greaterThan(0);
@@ -360,10 +272,7 @@ describe('setupDefaultInstrumentations', () => {
         'document-load': { enabled: true },
         'web-vital': { enabled: true },
       } as unknown as DefaultInstrumentationConfig;
-      const instrumentations = setupDefaultInstrumentations(
-        untypedConfig,
-        makeSetupArgs(),
-      );
+      const instrumentations = setupDefaultInstrumentations(untypedConfig, {});
 
       for (const instrumentation of instrumentations) {
         expect(
@@ -377,7 +286,7 @@ describe('setupDefaultInstrumentations', () => {
     // registerInstrumentations calls enable() on every instrumentation whose
     // config still reports it disabled.
     it('has fetch and XHR enabled exactly once by registerInstrumentations', () => {
-      const all = setupDefaultInstrumentations({}, makeSetupArgs());
+      const all = setupDefaultInstrumentations({}, {});
       const instrumentations = [getFetch(all), getXHR(all)];
       const enableSpies = instrumentations.map((instrumentation) =>
         sinon.spy(instrumentation, 'enable'),

@@ -9,8 +9,6 @@ import type {
   MetricWithAttribution,
   TTFBAttribution,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.ts';
-import { page } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
 import {
   EMB_TYPES,
@@ -300,7 +298,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private readonly _includeRawAttribution: boolean;
   private readonly _reportSoftNavs: boolean;
   private _softNavsActive: boolean = false;
-  private readonly _pageManager: PageManager;
   private readonly _attributedPage: Record<
     Metric['name'],
     AttributedPage | undefined
@@ -317,19 +314,16 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _listenersRegistered: boolean = false;
 
   public constructor({
-    perf,
     listeners = WEB_VITALS_ID_TO_LISTENER,
     urlDocument,
     urlAttribution = true,
     includeRawAttribution = true,
     reportSoftNavs = true,
-    pageManager,
     applyCustomLogRecordData,
   }: WebVitalsInstrumentationConfig = {}) {
     super({
       instrumentationName: 'WebVitalsInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
     this._listeners = listeners;
@@ -337,7 +331,6 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._urlAttribution = urlAttribution;
     this._includeRawAttribution = includeRawAttribution;
     this._reportSoftNavs = reportSoftNavs;
-    this._pageManager = pageManager ?? page.getPageManager();
     this._applyCustomLogRecordData = applyCustomLogRecordData;
   }
 
@@ -412,9 +405,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _currentAttributedPage(): AttributedPage {
     return {
       fullURL: this._urlDocument.URL,
-      path: this._pageManager.getCurrentRoute()?.path,
-      pageID: this._pageManager.getCurrentPageId() ?? undefined,
-      label: this._pageManager.getPageLabel() ?? undefined,
+      path: this.pageManager.getCurrentRoute()?.path,
+      pageID: this.pageManager.getCurrentPageId() ?? undefined,
+      label: this.pageManager.getPageLabel() ?? undefined,
     };
   }
 

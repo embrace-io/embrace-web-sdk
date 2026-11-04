@@ -12,7 +12,6 @@ import {
   ATTR_FIRST_INTERACTION_Y,
   FIRST_INTERACTION_EVENT_NAME,
 } from './constants.ts';
-import type { FirstInteractionInstrumentationArgs } from './types.ts';
 
 interface InteractionData {
   interactionType: FirstInteractionType;
@@ -32,11 +31,10 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
   private readonly _onScroll: (event: Event) => void;
   private _listenersAttached: boolean = false;
 
-  public constructor({ perf }: FirstInteractionInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'FirstInteractionInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 

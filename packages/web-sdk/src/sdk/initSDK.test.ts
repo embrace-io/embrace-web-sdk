@@ -2472,6 +2472,37 @@ describe('isolated instances', () => {
     expect(instrumentation.propagatorAtEnable).to.equal(propagator);
   });
 
+  it('should pass the instance managers to an instrumentation in the instrumentations option under registerGlobally: false', () => {
+    const instrumentation = new FakeInstrumentation();
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      instrumentations: [instrumentation],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+    expect(instrumentation.managers.userSessionManager()).to.equal(
+      result.session,
+    );
+    expect(instrumentation.managers.logManager()).to.equal(result.log);
+    expect(instrumentation.managers.pageManager()).to.equal(result.page);
+
+    const startCount = instrumentation.startCount;
+    (result.session as UserSessionManagerInternal).endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+    (result.session as UserSessionManagerInternal).startSessionPartInternal({
+      reason: 'web_activity',
+    });
+    expect(instrumentation.startCount).to.equal(startCount + 1);
+  });
+
   it('should record fetch spans into the instance exporter under registerGlobally: false', async () => {
     const isolatedSpanExporter = new InMemorySpanExporter();
     const result = initSDK({

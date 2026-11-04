@@ -4,7 +4,6 @@
  */
 
 import type { Span } from '@opentelemetry/api';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/index.ts';
 
 export type DocumentLoadCustomAttributeFunction = (span: Span) => void;
 
@@ -13,10 +12,7 @@ export type ResourceFetchCustomAttributeFunction = (
   resource: PerformanceResourceTiming,
 ) => void;
 
-export type DocumentLoadInstrumentationArgs = Pick<
-  EmbraceInstrumentationBaseArgs,
-  'perf'
-> & {
+export type DocumentLoadInstrumentationArgs = {
   /** Function for adding custom attributes on the document load, document fetch and or resource fetch spans */
   applyCustomAttributesOnSpan?: {
     documentLoad?: DocumentLoadCustomAttributeFunction;

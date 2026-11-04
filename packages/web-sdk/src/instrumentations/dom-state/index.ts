@@ -1,4 +1,1 @@
-export {
-  DOMStateInstrumentation,
-  type DOMStateInstrumentationArgs,
-} from './DOMStateInstrumentation/index.ts';
+export { DOMStateInstrumentation } from './DOMStateInstrumentation/index.ts';

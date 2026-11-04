@@ -1,5 +1,4 @@
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
-import type { GlobalExceptionInstrumentationArgs } from './types.ts';
 
 export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onErrorHandler: (event: ErrorEvent) => void;
@@ -7,11 +6,10 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
     event: PromiseRejectionEvent,
   ) => void;
 
-  public constructor({ perf }: GlobalExceptionInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'GlobalExceptionInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
     this._onErrorHandler = (event: ErrorEvent) => {

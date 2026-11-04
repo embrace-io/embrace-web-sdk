@@ -20,14 +20,12 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
   public constructor({
-    perf,
     shouldTrack,
     innerTextForElement,
   }: ClicksInstrumentationArgs = {}) {
     super({
       instrumentationName: 'ClicksInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 

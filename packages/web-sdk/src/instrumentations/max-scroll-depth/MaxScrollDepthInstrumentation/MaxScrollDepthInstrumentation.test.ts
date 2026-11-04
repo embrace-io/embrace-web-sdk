@@ -172,8 +172,7 @@ describe('MaxScrollDepthInstrumentation', () => {
     stubGeometry();
 
     instrumentation = new MaxScrollDepthInstrumentation();
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    instrumentation.enable({ userSessionManager });
   });
 
   afterEach(() => {
