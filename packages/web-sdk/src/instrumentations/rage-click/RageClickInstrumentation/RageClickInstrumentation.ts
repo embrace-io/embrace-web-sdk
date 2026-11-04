@@ -46,11 +46,10 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
   };
   private _eventWindow: RageClickWindow | null = null;
 
-  public constructor({ diag, perf }: RageClickInstrumentationArgs = {}) {
+  public constructor({ perf }: RageClickInstrumentationArgs = {}) {
     super({
       instrumentationName: 'RageClickInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });
