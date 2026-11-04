@@ -1,4 +1,3 @@
-import type { DiagLogger } from '@opentelemetry/api';
 import type { LogRecord } from '@opentelemetry/api-logs';
 import type {
   Metric,
@@ -46,7 +45,6 @@ export interface WebVitalsInstrumentationConfig {
   urlDocument?: URLDocument;
   urlAttribution?: boolean;
   pageManager?: PageManager;
-  diag?: DiagLogger;
   perf?: PerformanceManager;
 
   /** @deprecated All vitals metrics are tracked */

@@ -6,7 +6,7 @@ export type UserTimingEntryFilter =
 
 export type UserTimingInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf' | 'limitManager'
+  'perf' | 'limitManager'
 > & {
   /**
    * Allowlist filter for mark and measure entries.

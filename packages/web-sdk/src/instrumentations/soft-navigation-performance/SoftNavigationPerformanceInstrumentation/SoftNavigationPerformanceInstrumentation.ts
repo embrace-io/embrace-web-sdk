@@ -68,7 +68,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   };
 
   public constructor({
-    diag,
     perf,
     limitManager,
     navigationHost = window as NavigationHost,
@@ -77,7 +76,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     super({
       instrumentationName: 'SoftNavigationPerformanceInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       limitManager,
       config: {},
