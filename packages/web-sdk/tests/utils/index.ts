@@ -28,6 +28,7 @@ export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
 export { InMemoryStorage } from './InMemoryStorage.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mock-entities/index.ts';
+export { setupTestDiagLogger } from './setupTestDiagLogger.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';
 export { setupTestStorage } from './setupTestStorage.ts';
 export { setupTestTraceExporter } from './setupTestTraceExporter.ts';
