@@ -1,0 +1,25 @@
+{
+  "name": "@embrace-io/browser-instrumentation-api",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stand-in for @opentelemetry/browser-instrumentation-api until it is published",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.223.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "clean": "emb-rm dist"
+  }
+}
