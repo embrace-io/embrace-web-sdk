@@ -1606,10 +1606,10 @@ describe('initSDK', () => {
         user.clearUserId();
         user.getEmbraceUserId();
 
-        // user session (using deprecated method names)
-        session.getSessionId();
-        session.getSessionSpan();
-        session.getSessionStartTime();
+        // user session
+        session.getUserSessionId();
+        session.getSessionPartSpan();
+        session.getUserSessionStartTime();
         session.addProperty('r1', 'my-resource-attr');
         session.removeProperty('r2');
       }).to.not.throw();
@@ -2157,9 +2157,9 @@ describe('isolated instances', () => {
 
     expect(logExporter.getFinishedLogRecords()).to.have.lengthOf(0);
 
-    // Deprecated public path — must be a no-op against the unregistered global.
-    session.endSessionSpan();
-    // New internal path through the proxy's underlying manager — also a no-op.
+    // Public path must be a no-op against the unregistered global.
+    session.endUserSession();
+    // Internal path through the proxy's underlying manager is also a no-op.
     session
       .getUserSessionManager()
       .endSessionPartInternal({ reason: 'web_foreground_inactivity' });
