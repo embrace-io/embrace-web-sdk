@@ -222,6 +222,12 @@ describe('UserTimingInstrumentation', () => {
       'mark not supported, skipping observer',
       'measure not supported, skipping observer',
     ]);
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'failed to enable mark observer',
+      'failed to enable measure observer',
+      'enable failed: could not observe mark or measure entries',
+    ]);
 
     instrumentation.disable();
   });

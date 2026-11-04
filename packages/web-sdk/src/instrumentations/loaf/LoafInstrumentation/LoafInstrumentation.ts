@@ -49,15 +49,18 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
   }
 
-  public override enable(): void {
-    if (isEntryTypeSupported('long-animation-frame')) {
-      super.enable();
-    } else {
-      this._diag.debug('long-animation-frame not supported, skipping');
+  /** Whether this browser reports long-animation-frame entries. */
+  public static isSupported(): boolean {
+    return isEntryTypeSupported('long-animation-frame');
+  }
+
+  protected override _init(): void {
+    // TODO: throw a NotSupportedError DOMException once https://github.com/open-telemetry/opentelemetry-browser/issues/569 is released, so the base logs it at debug level
+    if (!LoafInstrumentation.isSupported()) {
+      throw new Error('long-animation-frame entries are not supported');
     }
   }
 
@@ -70,9 +73,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
       );
 
     if (!this._observer) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable');
-      return;
+      throw new Error('could not observe long-animation-frame entries');
     }
 
     this.setSessionPartListeners({
@@ -96,7 +97,7 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _processEntry(entry: PerformanceLongAnimationFrameTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 

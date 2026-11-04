@@ -37,7 +37,6 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
       instrumentationName: 'FirstInteractionInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
 
     this._onClick = (event: PointerEvent): void => {

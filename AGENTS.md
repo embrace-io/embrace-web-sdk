@@ -7,6 +7,7 @@ Observability SDK for web applications built on OpenTelemetry. Captures Spans (t
 **NEVER**:
 
 - Reference change-history in code, comments, or commits (`updated`, `legacy`, `old`, `previously`, "renamed from"). Describing a freshly-created runtime entity as `new` (e.g. "the new span") is fine
+  - `LegacyOTelInstrumentation` is a temporary name for the default fetch and XHR instrumentations, which stay on OTel JS until they move to OpenTelemetry Browser. `initSDK` accepts only OpenTelemetry Browser instrumentations
 - Name competing observability vendors in source or docs
 
 **ALWAYS**:

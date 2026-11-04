@@ -12,7 +12,6 @@ export class GlobalExceptionInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'GlobalExceptionInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
     this._onErrorHandler = (event: ErrorEvent) => {
       this.logManager.logException(event.error || event.message, {

@@ -78,28 +78,34 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
       instrumentationVersion: '1.0.0',
       perf,
       limitManager,
-      config: {},
     });
 
     this._navigationHost = navigationHost;
     this._signalBuffer = signalBuffer;
   }
 
-  public override enable(): void {
-    if (isEntryTypeSupported('soft-navigation')) {
-      this._usePolyfill = false;
-      super.enable();
-    } else if (
-      this._navigationHost.navigation &&
-      isEntryTypeSupported('event')
+  /** Whether this browser reports soft navigations, natively or through the Navigation API and event timing. */
+  public static isSupported(
+    navigationHost: NavigationHost = window as NavigationHost,
+  ): boolean {
+    return (
+      isEntryTypeSupported('soft-navigation') ||
+      (Boolean(navigationHost.navigation) && isEntryTypeSupported('event'))
+    );
+  }
+
+  protected override _init(): void {
+    // TODO: throw a NotSupportedError DOMException once https://github.com/open-telemetry/opentelemetry-browser/issues/569 is released, so the base logs it at debug level
+    if (
+      !SoftNavigationPerformanceInstrumentation.isSupported(
+        this._navigationHost,
+      )
     ) {
-      this._usePolyfill = true;
-      super.enable();
-    } else {
-      this._diag.debug(
-        'soft-navigation and navigation API not supported, skipping',
+      throw new Error(
+        'neither soft-navigation entries nor the Navigation API and event entries are supported',
       );
     }
+    this._usePolyfill = !isEntryTypeSupported('soft-navigation');
   }
 
   protected override _onEnable(): void {
@@ -118,14 +124,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     );
 
     if (!this._observer) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable');
-      return;
+      throw new Error('could not observe soft-navigation entries');
     }
   }
 
   private _enablePolyfill(): void {
-    // biome-ignore lint/style/noNonNullAssertion: enable() is only called when navigationHost.navigation is defined
+    // biome-ignore lint/style/noNonNullAssertion: _init() only picks the polyfill when navigationHost.navigation is defined
     const nav = this._navigationHost.navigation!;
 
     nav.addEventListener('currententrychange', this._handleCurrentEntryChange);
@@ -144,13 +148,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     );
 
     if (!this._eventObserver) {
-      nav.removeEventListener(
-        'currententrychange',
-        this._handleCurrentEntryChange,
-      );
-      this._isEnabled = false;
-      this._diag.error('failed to enable polyfill');
-      return;
+      throw new Error('could not observe event entries');
     }
   }
 
@@ -198,7 +196,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _processEntry(entry: PerformanceSoftNavigationTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
@@ -244,7 +242,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _processClickEntry(entry: PerformanceEventTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
@@ -276,7 +274,7 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
     navigationTimestamp: number,
     url: string,
   ): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 
