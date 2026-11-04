@@ -343,13 +343,13 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     this._applyCustomLogRecordData = applyCustomLogRecordData;
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     // web-vitals library doesn't support removing listeners, so we pause emission
     // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     // web-vitals library doesn't support removing listeners, so only register once
     if (this._listenersRegistered) {
       this._diag.debug(

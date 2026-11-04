@@ -54,7 +54,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     };
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     if (this._hasLoadEventFired()) {
       // Attaching to a page that already loaded: no load event is coming, and
       // a part already running fired part-start before the listener below
@@ -92,7 +92,7 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
     });
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     window.removeEventListener('load', this._onLoad);
     this._pendingFoldAttributes = null;
   }
