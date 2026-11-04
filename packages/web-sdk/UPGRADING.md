@@ -6,6 +6,10 @@
 
 CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sdk')` fails with `ERR_REQUIRE_ESM` on Node versions that cannot load ES modules, and any case where it loads is unsupported. Load the SDK with `import` or a bundler; from a CommonJS file, use dynamic `import()`. TypeScript projects need `moduleResolution` set to `bundler`, `node16` or `nodenext` to resolve the package's types.
 
+### Removed HTTP response size attributes
+
+The document fetch and resource fetch spans no longer set `http.response_content_length` and `http.response_content_length_uncompressed`. Read `http.response.body.size` and `http.response.decoded_body_size` instead, which carry the same values.
+
 ### Removed session methods
 
 The deprecated `session` methods from 2.21.0 are removed. Methods with a replacement:
