@@ -38,14 +38,9 @@ describe('sessionAPI', () => {
         invocation: () => session.addProperty(undefined, undefined),
       },
       {
-        name: 'addSessionStartedListener',
+        name: 'removeProperty',
         // @ts-expect-error
-        invocation: () => session.addSessionStartedListener(null),
-      },
-      {
-        name: 'addSessionEndedListener',
-        // @ts-expect-error
-        invocation: () => session.addSessionEndedListener(null),
+        invocation: () => session.removeProperty(undefined),
       },
     ];
 

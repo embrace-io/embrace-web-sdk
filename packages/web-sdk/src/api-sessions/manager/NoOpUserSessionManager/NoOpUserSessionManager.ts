@@ -25,38 +25,6 @@ export class NoOpUserSessionManager implements UserSessionManagerInternal {
     // do nothing.
   }
 
-  public endSessionSpan(): void {
-    // do nothing.
-  }
-
-  public currentSessionAsReadableSpan(): null {
-    return null;
-  }
-
-  public getSessionId = () => null;
-
-  public getPreviousSessionId = () => null;
-
-  public getSessionSpan(): null {
-    return null;
-  }
-
-  public getSessionStartTime(): null {
-    return null;
-  }
-
-  public startSessionSpan(): void {
-    // do nothing.
-  }
-
-  public addSessionStartedListener(_listener: () => void): () => void {
-    return () => {};
-  }
-
-  public addSessionEndedListener(_listener: () => void): () => void {
-    return () => {};
-  }
-
   public getUserSessionId(): string | null {
     return null;
   }
