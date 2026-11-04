@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
@@ -32,14 +31,6 @@ export default {
   files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   plugins: [
     vitePlugin({
-      resolve: {
-        alias: {
-          '#embrace-io/otlp-transformer': resolve(
-            import.meta.dirname,
-            'packages/otlp-transformer/src/index.ts',
-          ),
-        },
-      },
       optimizeDeps: {
         // Vite dependency optimization can cause flakiness in CI test runs, turn it off except for the specific modules
         // where we need to convert from cjs to esm
@@ -57,8 +48,6 @@ export default {
           'react-router-domv4v5 > prop-types',
           'hoist-non-react-statics > react-is',
           'react-router-domv4v5 > react-router > path-to-regexp',
-          '@opentelemetry/otlp-transformer', // used by test utils for internal types
-          '@opentelemetry/instrumentation-fetch',
         ],
       },
       server: {
