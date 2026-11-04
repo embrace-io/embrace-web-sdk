@@ -2,7 +2,6 @@
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import {
-  InMemoryDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -22,7 +21,6 @@ const { expect } = chai;
 describe('ClicksInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: ClicksInstrumentation;
-  let diag: InMemoryDiagLogger;
   let userSessionManager: UserSessionManagerInternal;
   let testContainer: HTMLElement;
 
@@ -32,7 +30,6 @@ describe('ClicksInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    diag = new InMemoryDiagLogger();
     userSessionManager = new EmbraceUserSessionManager({
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
@@ -52,9 +49,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it('should add a span event to the session part when a click is detected', () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'HEY';
@@ -82,9 +77,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it('should not record clicks for disabled elements', () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
     const target = document.createElement('button');
     target.disabled = true;
@@ -101,9 +94,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it("should include the target's className if available", () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'HEY';
@@ -132,9 +123,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it("should truncate the target's innerText if too long", () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
     const target = document.createElement('div');
     target.innerText = 'my long inner text, plus some extra text';
@@ -162,9 +151,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it('should record multiple clicks', () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
 
     const t1 = document.createElement('button');
@@ -221,9 +208,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it('should stop recording after the instrumentation has been disabled', () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
 
     const t1 = document.createElement('button');
@@ -257,9 +242,7 @@ describe('ClicksInstrumentation', () => {
   });
 
   it('should not record if the session part is not active', () => {
-    instrumentation = new ClicksInstrumentation({
-      diag,
-    });
+    instrumentation = new ClicksInstrumentation();
     instrumentation.enable();
 
     const t1 = document.createElement('button');
@@ -293,7 +276,6 @@ describe('ClicksInstrumentation', () => {
 
   it('should allow tracking to be omitted for certain elements', () => {
     instrumentation = new ClicksInstrumentation({
-      diag,
       shouldTrack: (element) => !element.hasAttribute('data-is-sensitive'),
     });
     instrumentation.enable();
@@ -330,7 +312,6 @@ describe('ClicksInstrumentation', () => {
 
   it('should allow the inner text parsing to be customized for certain elements', () => {
     instrumentation = new ClicksInstrumentation({
-      diag,
       innerTextForElement: (element) =>
         element.hasAttribute('data-is-sensitive')
           ? '[REDACTED]'

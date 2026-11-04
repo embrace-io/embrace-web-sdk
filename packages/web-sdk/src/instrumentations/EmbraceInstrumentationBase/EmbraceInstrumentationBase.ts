@@ -41,15 +41,10 @@ export abstract class EmbraceInstrumentationBase<
     instrumentationName,
     instrumentationVersion,
     config,
-    diag,
     perf,
     limitManager,
   }: EmbraceInstrumentationBaseArgs<ConfigType>) {
     super(instrumentationName, instrumentationVersion, config);
-    // optionally override the diag logger from the base class
-    if (diag) {
-      this._diag = diag;
-    }
     this._perf = perf ?? new OTelPerformanceManager();
     this._limitManager = limitManager;
     this._userSessionManager = session.getUserSessionManager();

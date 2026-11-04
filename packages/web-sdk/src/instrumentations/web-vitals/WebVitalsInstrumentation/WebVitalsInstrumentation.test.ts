@@ -1,3 +1,4 @@
+import { diag } from '@opentelemetry/api';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -9,8 +10,8 @@ import type {
   MetricWithAttribution,
 } from 'web-vitals/attribution';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   setupTestWebVitalListeners,
@@ -41,7 +42,7 @@ const urlDocument = { URL: 'https://example.com' };
 describe('WebVitalsInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let instrumentation: WebVitalsInstrumentation;
-  let diag: InMemoryDiagLogger;
+  let diagLogger: ReturnType<typeof setupTestDiagLogger>;
   let perf: MockPerformanceManager;
   let clock: sinon.SinonFakeTimers;
   let mockWebVitalListeners: WebVitalListeners;
@@ -59,7 +60,7 @@ describe('WebVitalsInstrumentation', () => {
     memoryExporter.reset();
     clock = sinon.useFakeTimers();
     perf = new MockPerformanceManager(clock);
-    diag = new InMemoryDiagLogger();
+    diagLogger = setupTestDiagLogger({ namespace: 'WebVitalsInstrumentation' });
     const testWebVitalListeners = setupTestWebVitalListeners();
 
     mockWebVitalListeners = testWebVitalListeners.listeners;
@@ -71,13 +72,13 @@ describe('WebVitalsInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     clock.restore();
     instrumentation.disable();
   });
 
   it('should report CLS metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -122,7 +123,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use largestShiftTime as timestamp for CLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -174,7 +174,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use the layout shift window start as the timestamp for CLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -205,7 +204,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use the metric entry start time as the timestamp for LCP', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -239,7 +237,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report FCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -291,7 +288,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report LCP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -344,7 +340,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include LCP element type and bounding rect when the element is available', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -393,7 +388,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit LCP element attributes when the element is unavailable', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -430,7 +424,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should still emit the LCP record and log when reading the element throws', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -471,14 +464,13 @@ describe('WebVitalsInstrumentation', () => {
       'emb.web_vital.attribution.elementType',
       'emb.web_vital.attribution.elementBoundingRect',
     ]);
-    expect(diag.getErrorLogs()).to.include(
+    expect(diagLogger.messages('error')).to.deep.equal([
       'error building LCP element attribution',
-    );
+    ]);
   });
 
   it('should report INP metrics as a log record', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -587,7 +579,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include loaf_scripts in INP log record', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -635,7 +626,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should aggregate scripts across multiple loaf entries', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -681,7 +671,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include loaf_scripts when no LoAF entries are reported', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -730,7 +719,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include element_type when the entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -751,7 +739,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should use the tag name from the first entry with a resolvable target when earlier entries have none', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -773,7 +760,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should omit element_type when no entry has a resolvable target', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -793,7 +779,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should log an error and omit element_type when computing it throws', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -810,15 +795,14 @@ describe('WebVitalsInstrumentation', () => {
       const records = memoryExporter.getFinishedLogRecords();
       expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
         .be.undefined;
-      expect(diag.getErrorLogs()).to.include(
+      expect(diagLogger.messages('error')).to.deep.equal([
         'error building INP element type attribution',
-      );
+      ]);
     });
   });
 
   it('should report TTFB metrics with sub-part attributes', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -898,7 +882,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit TTFB sub-parts when navigationEntry is absent', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -959,7 +942,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB sub-parts correctly with TLS', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1023,7 +1005,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should use finalResponseHeadersStart for serverResponse when greater than responseStart', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1084,7 +1065,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should fall back to responseStart when finalResponseHeadersStart is less than responseStart', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1145,7 +1125,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB sub-parts correctly with non-zero redirect', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1206,7 +1185,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should round fractional TTFB sub-part values to nearest millisecond', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1271,7 +1249,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should clamp negative TTFB sub-part durations to 0', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1331,7 +1308,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should round fractional negative TTFB sub-part durations to 0', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1391,7 +1367,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should ensure TTFB sub-parts sum to rounded total', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1470,7 +1445,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should compute TTFB other correctly with non-zero startTime', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1531,7 +1505,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report multiple metrics as separate log records', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1590,7 +1563,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not register duplicate callbacks when enable() is called multiple times', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1606,7 +1578,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should log debug message when enable() is called on already registered listeners', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1616,14 +1587,14 @@ describe('WebVitalsInstrumentation', () => {
     instrumentation.disable();
     instrumentation.enable();
 
-    expect(diag.getDebugLogs()).to.include(
+    expect(diagLogger.messages('debug')).to.deep.equal([
+      'WebVitalsInstrumentation disabled, pausing emission',
       'WebVitalsInstrumentation listeners already registered, resuming emission',
-    );
+    ]);
   });
 
   it('should pause emission when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1665,7 +1636,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should resume emission when enable() is called after disable()', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1694,7 +1664,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should log debug message when disable() is called', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1703,14 +1672,13 @@ describe('WebVitalsInstrumentation', () => {
 
     instrumentation.disable();
 
-    expect(diag.getDebugLogs()).to.include(
+    expect(diagLogger.messages('debug')).to.deep.equal([
       'WebVitalsInstrumentation disabled, pausing emission',
-    );
+    ]);
   });
 
   it('should report CLS metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -1758,7 +1726,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report CLS metrics with largest shift time, loadState and url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -1811,7 +1778,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include CLS layout shifts under the cap without a dropped count', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1884,7 +1850,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should cap CLS layout shifts at 50 and report the dropped count', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1929,7 +1894,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should fall back to an empty selector when a layout shift has no sources', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -1969,7 +1933,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should capture the first (most impactful) source of a multi-source layout shift', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2028,7 +1991,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not emit CLS layout shift attributes for non-CLS metrics', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2065,7 +2027,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report FCP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -2120,7 +2081,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report LCP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -2177,7 +2137,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report INP metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -2245,7 +2204,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report TTFB metrics with url attribution and raw attribution in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -2326,7 +2284,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should report multiple metrics with url attribution', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -2404,7 +2361,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit non-serializable attribution values from body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2455,7 +2411,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should preserve falsy primitive attribution values in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2492,7 +2447,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should include boolean attribution values in body', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2529,7 +2483,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should omit body when includeRawAttribution is false', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2557,7 +2510,6 @@ describe('WebVitalsInstrumentation', () => {
 
   it('should not register reportAllChanges listeners when urlAttribution is false', () => {
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlAttribution: false,
@@ -2576,7 +2528,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -2644,7 +2595,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -2704,7 +2654,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -2758,7 +2707,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -2816,7 +2764,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -2892,7 +2839,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument,
@@ -2936,7 +2882,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setPageLabel('MyLabel');
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument,
@@ -2976,7 +2921,6 @@ describe('WebVitalsInstrumentation', () => {
       });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument,
@@ -3025,7 +2969,6 @@ describe('WebVitalsInstrumentation', () => {
       };
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument,
@@ -3063,7 +3006,6 @@ describe('WebVitalsInstrumentation', () => {
   describe('page attribution', () => {
     it('should include page URL in log record when urlAttribution is true', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3101,7 +3043,6 @@ describe('WebVitalsInstrumentation', () => {
       const urlDocument = { URL: 'https://example.com/page-a' };
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument,
@@ -3153,7 +3094,6 @@ describe('WebVitalsInstrumentation', () => {
       };
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/products/123' },
@@ -3192,7 +3132,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include page attributes when urlAttribution is false', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3222,7 +3161,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should not include page attributes when no reportAllChanges callback has fired', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3255,7 +3193,6 @@ describe('WebVitalsInstrumentation', () => {
     const urlDocument = { URL: 'https://example.com/page-a' };
 
     instrumentation = new WebVitalsInstrumentation({
-      diag,
       perf,
       listeners: mockWebVitalListeners,
       urlDocument,
@@ -3294,7 +3231,6 @@ describe('WebVitalsInstrumentation', () => {
   describe('applyCustomLogRecordData hook', () => {
     it('should call the hook and allow modifying the log record', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3328,7 +3264,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should log an error when the hook throws', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3354,9 +3289,9 @@ describe('WebVitalsInstrumentation', () => {
 
       // record is still emitted despite hook failure
       expect(memoryExporter.getFinishedLogRecords()).to.have.lengthOf(1);
-      expect(diag.getErrorLogs()).to.include(
+      expect(diagLogger.messages('error')).to.deep.equal([
         'applyCustomLogRecordData hook failed',
-      );
+      ]);
     });
   });
 
@@ -3393,7 +3328,6 @@ describe('WebVitalsInstrumentation', () => {
       ]);
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3431,7 +3365,6 @@ describe('WebVitalsInstrumentation', () => {
         .returns([{ notRestoredReasons: null }]);
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3488,7 +3421,6 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: true to both listener registrations when supported', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          diag,
           perf,
           listeners: mockWebVitalListeners,
           urlDocument,
@@ -3508,7 +3440,6 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to the TTFB listener registrations, since web-vitals reports a dummy zero TTFB for soft navigations', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          diag,
           perf,
           listeners: mockWebVitalListeners,
           urlDocument,
@@ -3528,7 +3459,6 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to both listener registrations when disabled', () => {
         stubSupportedEntryTypes(['soft-navigation']);
         instrumentation = new WebVitalsInstrumentation({
-          diag,
           perf,
           listeners: mockWebVitalListeners,
           urlDocument,
@@ -3548,7 +3478,6 @@ describe('WebVitalsInstrumentation', () => {
       it('should pass reportSoftNavs: false to both listener registrations when unsupported', () => {
         stubSupportedEntryTypes([]);
         instrumentation = new WebVitalsInstrumentation({
-          diag,
           perf,
           listeners: mockWebVitalListeners,
           urlDocument,
@@ -3567,7 +3496,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should emit non-TTFB metrics for soft navigations', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3602,7 +3530,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should include navigation_id and interaction_id when present on the metric', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3644,7 +3571,6 @@ describe('WebVitalsInstrumentation', () => {
 
     it('should omit interaction_id when absent from the metric', () => {
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3679,7 +3605,6 @@ describe('WebVitalsInstrumentation', () => {
     it('should prefer navigationURL for browser.url.full on soft navigations', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3723,7 +3648,6 @@ describe('WebVitalsInstrumentation', () => {
     it('should prefer navigationURL for hard navigations when soft navigations are active', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3763,7 +3687,6 @@ describe('WebVitalsInstrumentation', () => {
     it('should keep the attributed-page URL for hard navigations when soft navigations are unsupported', () => {
       stubSupportedEntryTypes([]);
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3803,7 +3726,6 @@ describe('WebVitalsInstrumentation', () => {
     it('should fall back to the attributed-page URL for soft navigations without navigationURL', () => {
       stubSupportedEntryTypes(['soft-navigation']);
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: { URL: 'https://example.com/page-a' },
@@ -3845,7 +3767,6 @@ describe('WebVitalsInstrumentation', () => {
       pageManager.setCurrentRoute({ path: '/first/:id', url: '/first/123' });
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlDocument: testDocument,
@@ -3928,7 +3849,6 @@ describe('WebVitalsInstrumentation', () => {
       expect(partBId).to.not.equal(partAId);
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -3967,7 +3887,6 @@ describe('WebVitalsInstrumentation', () => {
       const partBId = userSessionManager.getSessionPartId();
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -4003,7 +3922,6 @@ describe('WebVitalsInstrumentation', () => {
       const partId = userSessionManager.getSessionPartId();
 
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
@@ -4044,7 +3962,6 @@ describe('WebVitalsInstrumentation', () => {
 
       // ...and then web-vitals emitting right after
       instrumentation = new WebVitalsInstrumentation({
-        diag,
         perf,
         listeners: mockWebVitalListeners,
         urlAttribution: false,
