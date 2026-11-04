@@ -4,6 +4,7 @@ import {
   ATTR_URL_QUERY,
 } from '@opentelemetry/semantic-conventions';
 import type { AttributeScrubber } from '../common/index.ts';
+import { KEY_BROWSER_URL_FULL } from '../constants/index.ts';
 
 const HOST_CREDENTIALS_REGEX = /\/\/(.+):(.+)@(.+)\//;
 
@@ -63,12 +64,19 @@ export const getDefaultAttributeScrubbers = (
     'g',
   );
 
+  const scrubFullURL = (value: string) =>
+    scrubURL({ value, queryParamRegex, scrubPath: true, scrubQuery: true });
+
   return [
     {
       // https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L30
       key: ATTR_URL_FULL,
-      scrub: (value: string) =>
-        scrubURL({ value, queryParamRegex, scrubPath: true, scrubQuery: true }),
+      scrub: scrubFullURL,
+    },
+    {
+      // The SDK sets this to the page URL on every span and log record.
+      key: KEY_BROWSER_URL_FULL,
+      scrub: scrubFullURL,
     },
     {
       // https://github.com/open-telemetry/semantic-conventions/blob/3b64cb31022feaacb410bfd6e571c1f19b5fbce0/docs/registry/attributes/url.md?plain=1#L57

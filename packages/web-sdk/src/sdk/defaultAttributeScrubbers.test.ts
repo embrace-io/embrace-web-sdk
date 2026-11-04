@@ -53,6 +53,14 @@ describe('getDefaultAttributeScrubbers', () => {
         'https://example.com/some/path/?foo=REDACTED&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
     },
     {
+      name: 'scrub credentials and sensitive query string params from browser full url',
+      key: 'browser.url.full',
+      value:
+        'https://username:password@example.com/some/path/?foo=bar&token=abcde',
+      expected:
+        'https://REDACTED:REDACTED@example.com/some/path/?foo=bar&token=REDACTED',
+    },
+    {
       name: 'leave a url with no sensitive values alone',
       key: 'url.full',
       value: 'https://example.com/some/path/?foo=bar&foopw=safe&something=baz',
