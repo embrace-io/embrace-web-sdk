@@ -1,4 +1,1 @@
-export {
-  RageClickInstrumentation,
-  type RageClickInstrumentationArgs,
-} from './RageClickInstrumentation/index.ts';
+export { RageClickInstrumentation } from './RageClickInstrumentation/index.ts';

@@ -6,43 +6,19 @@ export {
   ClicksInstrumentation,
   type ClicksInstrumentationArgs,
 } from './clicks/index.ts';
-export {
-  DOMStateInstrumentation,
-  type DOMStateInstrumentationArgs,
-} from './dom-state/index.ts';
+export { DOMStateInstrumentation } from './dom-state/index.ts';
 export { EmbraceInstrumentationBase } from './EmbraceInstrumentationBase/index.ts';
-export {
-  ElementTimingInstrumentation,
-  type ElementTimingInstrumentationArgs,
-} from './element-timing/index.ts';
-export {
-  GlobalExceptionInstrumentation,
-  type GlobalExceptionInstrumentationArgs,
-} from './exceptions/index.ts';
-export {
-  FirstInteractionInstrumentation,
-  type FirstInteractionInstrumentationArgs,
-} from './first-interaction/index.ts';
-export {
-  LoafInstrumentation,
-  type LoafInstrumentationArgs,
-} from './loaf/index.ts';
-export {
-  MaxScrollDepthInstrumentation,
-  type MaxScrollDepthInstrumentationArgs,
-} from './max-scroll-depth/index.ts';
+export { ElementTimingInstrumentation } from './element-timing/index.ts';
+export { GlobalExceptionInstrumentation } from './exceptions/index.ts';
+export { FirstInteractionInstrumentation } from './first-interaction/index.ts';
+export { LoafInstrumentation } from './loaf/index.ts';
+export { MaxScrollDepthInstrumentation } from './max-scroll-depth/index.ts';
 export {
   NavigationInstrumentation,
   type NavigationInstrumentationArgs,
 } from './navigation/index.ts';
-export {
-  RageClickInstrumentation,
-  type RageClickInstrumentationArgs,
-} from './rage-click/index.ts';
-export {
-  ServerTimingInstrumentation,
-  type ServerTimingInstrumentationArgs,
-} from './server-timing/index.ts';
+export { RageClickInstrumentation } from './rage-click/index.ts';
+export { ServerTimingInstrumentation } from './server-timing/index.ts';
 export type { SessionPartSpan } from './session-part/index.ts';
 export {
   SoftNavigationPerformanceInstrumentation,

@@ -13,14 +13,12 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _pendingEmptyChecks = new Set<TimeoutRef>();
 
   public constructor({
-    perf,
     rootNode,
     emptyCheckDelayMs = 500,
   }: EmptyRootInstrumentationArgs) {
     super({
       instrumentationName: 'EmptyRootInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 

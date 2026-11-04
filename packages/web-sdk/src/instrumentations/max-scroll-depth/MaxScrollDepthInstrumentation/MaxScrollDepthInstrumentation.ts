@@ -10,7 +10,6 @@ import {
   ATTR_MAX_SCROLL_DEPTH_PIXELS,
   MAX_SCROLL_DEPTH_EVENT_NAME,
 } from './constants.ts';
-import type { MaxScrollDepthInstrumentationArgs } from './types.ts';
 
 /*
   Tracks how far the user scrolls during a session part and emits telemetry when the part ends.
@@ -23,11 +22,10 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
   private _hasScrolled = false;
   private _maxScrollY = 0;
 
-  public constructor({ perf }: MaxScrollDepthInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'MaxScrollDepthInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 

@@ -16,11 +16,15 @@ import {
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
+import { log } from '../../api-logs/index.ts';
+import { page } from '../../api-page/index.ts';
 import { session } from '../../api-sessions/index.ts';
 import type { UserSessionManagerInternal } from '../../managers/index.ts';
 import {
   DEFAULT_LIMITS,
   EmbraceLimitManager,
+  EmbraceLogManager,
+  EmbracePageManager,
   EmbraceUserSessionManager,
 } from '../../managers/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
@@ -84,17 +88,94 @@ describe('EmbraceInstrumentationBase', () => {
     ).to.deep.equal(['my log']);
   });
 
+  const createUserSessionManager = (): UserSessionManagerInternal =>
+    new EmbraceUserSessionManager({
+      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
+      perf: new OTelPerformanceManager(),
+      storage: setupTestStorage(),
+      visibilityDoc: window.document,
+    });
+
+  describe('managers', () => {
+    it('throws from every manager getter before the first enable()', () => {
+      for (const [name, read] of Object.entries(instrumentation.managers)) {
+        expect(read).to.throw(
+          `FakeInstrumentation: ${name} is not available until enable() is called`,
+        );
+      }
+    });
+
+    it('uses the managers passed to the first enable()', () => {
+      const userSessionManager = createUserSessionManager();
+      const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
+      const logManager = new EmbraceLogManager({
+        userSessionManager,
+        limitManager,
+        storage: setupTestStorage(),
+        visibilityDoc: window.document,
+      });
+      const perf = new OTelPerformanceManager();
+      const pageManager = new EmbracePageManager();
+
+      instrumentation.enable({
+        userSessionManager,
+        logManager,
+        limitManager,
+        perf,
+        pageManager,
+      });
+
+      expect(instrumentation.managers.userSessionManager()).to.equal(
+        userSessionManager,
+      );
+      expect(instrumentation.managers.logManager()).to.equal(logManager);
+      expect(instrumentation.managers.limitManager()).to.equal(limitManager);
+      expect(instrumentation.managers.perf()).to.equal(perf);
+      expect(instrumentation.managers.pageManager()).to.equal(pageManager);
+    });
+
+    it('keeps the managers from the first enable() after a disable and a later enable()', () => {
+      const firstManager = createUserSessionManager();
+      const secondManager = createUserSessionManager();
+
+      instrumentation.enable({ userSessionManager: firstManager });
+      instrumentation.disable();
+      instrumentation.enable({ userSessionManager: secondManager });
+
+      expect(instrumentation.managers.userSessionManager()).to.equal(
+        firstManager,
+      );
+      secondManager.startSessionPartInternal({ reason: 'init' });
+      expect(instrumentation.startCount).to.equal(0);
+      firstManager.startSessionPartInternal({ reason: 'init' });
+      expect(instrumentation.startCount).to.equal(1);
+    });
+
+    it('falls back to the global managers and no limits when enable() passes none', () => {
+      instrumentation.enable();
+
+      expect(instrumentation.managers.userSessionManager()).to.equal(
+        session.getUserSessionManager(),
+      );
+      expect(instrumentation.managers.logManager()).to.equal(
+        log.getLogManager(),
+      );
+      expect(instrumentation.managers.pageManager()).to.equal(
+        page.getPageManager(),
+      );
+      expect(instrumentation.managers.limitManager()).to.equal(undefined);
+      expect(instrumentation.managers.perf()).to.be.instanceOf(
+        OTelPerformanceManager,
+      );
+    });
+  });
+
   describe('session part listeners', () => {
     let userSessionManager: UserSessionManagerInternal;
 
     beforeEach(() => {
-      userSessionManager = new EmbraceUserSessionManager({
-        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        perf: new OTelPerformanceManager(),
-        storage: setupTestStorage(),
-        visibilityDoc: window.document,
-      });
+      userSessionManager = createUserSessionManager();
       session.setGlobalUserSessionManager(userSessionManager);
     });
 
@@ -145,21 +226,14 @@ describe('EmbraceInstrumentationBase', () => {
       expect(instrumentation.endCount).to.equal(0);
     });
 
-    it('re-binds listeners to a user session manager set after enable', () => {
+    it('listens on the user session manager passed to enable() instead of the global one', () => {
+      const instanceManager = createUserSessionManager();
       instrumentation = new FakeInstrumentation();
-      instrumentation.enable();
+      instrumentation.enable({ userSessionManager: instanceManager });
 
-      const replacementManager = new EmbraceUserSessionManager({
-        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-        limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
-        perf: new OTelPerformanceManager(),
-        storage: setupTestStorage(),
-        visibilityDoc: window.document,
-      });
-      instrumentation.setUserSessionManager(replacementManager);
-
-      replacementManager.startSessionPartInternal({ reason: 'init' });
-
+      userSessionManager.startSessionPartInternal({ reason: 'init' });
+      expect(instrumentation.startCount).to.equal(0);
+      instanceManager.startSessionPartInternal({ reason: 'init' });
       expect(instrumentation.startCount).to.equal(1);
     });
 

@@ -1,4 +1,1 @@
-export {
-  FirstInteractionInstrumentation,
-  type FirstInteractionInstrumentationArgs,
-} from './FirstInteractionInstrumentation/index.ts';
+export { FirstInteractionInstrumentation } from './FirstInteractionInstrumentation/index.ts';

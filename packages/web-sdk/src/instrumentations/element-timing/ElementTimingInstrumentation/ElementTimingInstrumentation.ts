@@ -14,23 +14,15 @@ import {
   KEY_EMB_ELEMENT_TIMING_START_TIME,
   KEY_EMB_ELEMENT_TIMING_URL,
 } from './constants.ts';
-import type {
-  ElementTimingInstrumentationArgs,
-  PerformanceElementTiming,
-} from './types.ts';
+import type { PerformanceElementTiming } from './types.ts';
 
 export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   private _observer: PerformanceObserver | null = null;
 
-  public constructor({
-    perf,
-    limitManager,
-  }: ElementTimingInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'ElementTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
-      limitManager,
       config: {},
     });
   }

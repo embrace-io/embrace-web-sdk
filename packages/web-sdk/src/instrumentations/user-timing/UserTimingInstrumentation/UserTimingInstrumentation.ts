@@ -26,16 +26,10 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private _seenEntries: Set<string> = new Set();
   private readonly _allowedEntries: UserTimingEntryFilter | undefined;
 
-  public constructor({
-    perf,
-    limitManager,
-    allowedEntries,
-  }: UserTimingInstrumentationArgs = {}) {
+  public constructor({ allowedEntries }: UserTimingInstrumentationArgs = {}) {
     super({
       instrumentationName: 'UserTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
-      limitManager,
       config: {},
     });
     this._allowedEntries = allowedEntries;

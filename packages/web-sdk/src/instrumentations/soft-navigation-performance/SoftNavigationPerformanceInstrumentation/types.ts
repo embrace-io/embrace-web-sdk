@@ -1,11 +1,7 @@
 import type { NavigationHost } from '../../../common/index.ts';
 import type { SignalBuffer } from '../../../processors/utils/SignalBuffer.ts';
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/types.ts';
 
-export type SoftNavigationPerformanceInstrumentationArgs = Pick<
-  EmbraceInstrumentationBaseArgs,
-  'perf' | 'limitManager'
-> & {
+export type SoftNavigationPerformanceInstrumentationArgs = {
   navigationHost?: NavigationHost;
   signalBuffer?: SignalBuffer;
 };

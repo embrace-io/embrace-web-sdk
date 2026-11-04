@@ -1,13 +1,8 @@
-import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentationBase/types.ts';
-
 export type UserTimingEntryFilter =
   | string[]
   | ((entry: PerformanceMark | PerformanceMeasure) => boolean);
 
-export type UserTimingInstrumentationArgs = Pick<
-  EmbraceInstrumentationBaseArgs,
-  'perf' | 'limitManager'
-> & {
+export type UserTimingInstrumentationArgs = {
   /**
    * Allowlist filter for mark and measure entries.
    *

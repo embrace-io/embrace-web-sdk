@@ -328,8 +328,8 @@ describe('RageClickInstrumentation', () => {
       },
     };
     const diagLogger = setupTestDiagLogger();
-    instrumentation = new RageClickInstrumentation({ perf: throwingPerf });
-    instrumentation.enable();
+    instrumentation = new RageClickInstrumentation();
+    instrumentation.enable({ perf: throwingPerf });
     const target = document.createElement('button');
     testContainer.append(target);
 
@@ -353,8 +353,8 @@ describe('RageClickInstrumentation', () => {
       },
     };
     const diagLogger = setupTestDiagLogger();
-    instrumentation = new RageClickInstrumentation({ perf: throwingPerf });
-    instrumentation.enable();
+    instrumentation = new RageClickInstrumentation();
+    instrumentation.enable({ perf: throwingPerf });
     const target = document.createElement('button');
     testContainer.append(target);
 
@@ -408,8 +408,7 @@ describe('RageClickInstrumentation', () => {
     beforeEach(() => {
       userSessionManager.startSessionPartInternal({ reason: 'init' });
       instrumentation = new RageClickInstrumentation();
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      instrumentation.enable({ userSessionManager });
       target = document.createElement('button');
       target.id = 'a';
       testContainer.append(target);

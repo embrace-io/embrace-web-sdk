@@ -16,7 +16,6 @@ import {
   RAGE_CLICK_THRESHOLD,
   RAGE_CLICK_WINDOW_TIME,
 } from './constants.ts';
-import type { RageClickInstrumentationArgs } from './types.ts';
 
 /**
  * Rage clicks are tracked in an "event window" defined by the first click. The
@@ -47,11 +46,10 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
   };
   private _eventWindow: RageClickWindow | null = null;
 
-  public constructor({ perf }: RageClickInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'RageClickInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 

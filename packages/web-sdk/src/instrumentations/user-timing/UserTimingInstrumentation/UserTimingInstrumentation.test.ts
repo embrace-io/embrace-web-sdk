@@ -158,8 +158,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should create two buffered observers for mark and measure', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     expect(markObserveOptions).to.deep.equal({ type: 'mark', buffered: true });
     expect(measureObserveOptions).to.deep.equal({
@@ -174,8 +174,8 @@ describe('UserTimingInstrumentation', () => {
     const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = ['measure'];
 
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     expect(markObserveOptions).to.be.null;
     expect(measureObserveOptions).to.not.be.null;
@@ -190,8 +190,8 @@ describe('UserTimingInstrumentation', () => {
     const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = ['mark'];
 
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     expect(markObserveOptions).to.not.be.null;
     expect(measureObserveOptions).to.be.null;
@@ -206,8 +206,8 @@ describe('UserTimingInstrumentation', () => {
     const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = [];
 
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     expect(markObserveOptions).to.be.null;
     expect(measureObserveOptions).to.be.null;
@@ -230,8 +230,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should emit a log for a mark entry', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([
       makeMark({ name: 'my-mark', startTime: 150, duration: 0 }),
@@ -254,10 +254,8 @@ describe('UserTimingInstrumentation', () => {
   it('should set log timestamp to epochMillis of entry startTime', () => {
     clock.tick(1000);
     const timeOriginPerf = new MockPerformanceManager(clock);
-    const instrumentation = new UserTimingInstrumentation({
-      perf: timeOriginPerf,
-    });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf: timeOriginPerf });
 
     triggerMarkEntries([
       makeMark({ name: 'timed-mark', startTime: 150, duration: 0 }),
@@ -280,10 +278,8 @@ describe('UserTimingInstrumentation', () => {
     sleepingPerf.sleep(60 * 60 * 1000);
     clock.tick(500);
 
-    const instrumentation = new UserTimingInstrumentation({
-      perf: sleepingPerf,
-    });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf: sleepingPerf });
 
     triggerMeasureEntries([
       makeMeasure({ name: 'across-sleep', startTime: 400, duration: 600 }),
@@ -297,8 +293,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should create a span for a measure entry', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMeasureEntries([
       makeMeasure({ name: 'my-measure', startTime: 50, duration: 300 }),
@@ -327,8 +323,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should set detail as a span attribute for measure entries with detail', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMeasureEntries([
       makeMeasure({
@@ -346,8 +342,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should deduplicate entries with the same name on the same URL', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([
       makeMark({ name: 'auth-start' }),
@@ -361,8 +357,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should allow the same name after URL changes', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
     const originalHref = location.href;
 
     triggerMarkEntries([makeMark({ name: 'page-load' })]);
@@ -383,11 +379,8 @@ describe('UserTimingInstrumentation', () => {
       ...DEFAULT_LIMITS,
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, user_timing_mark: markCap },
     });
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      limitManager: capLimitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager: capLimitManager });
 
     triggerMarkEntries(
       Array.from({ length: markCap + 2 }, (_, i) =>
@@ -409,11 +402,8 @@ describe('UserTimingInstrumentation', () => {
         user_timing_measure: measureCap,
       },
     });
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      limitManager: capLimitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager: capLimitManager });
 
     triggerMeasureEntries(
       Array.from({ length: measureCap + 2 }, (_, i) =>
@@ -432,11 +422,8 @@ describe('UserTimingInstrumentation', () => {
       ...DEFAULT_LIMITS,
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, user_timing_mark: markCap },
     });
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      limitManager: capLimitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager: capLimitManager });
 
     triggerMarkEntries(
       Array.from({ length: markCap }, (_, i) =>
@@ -455,8 +442,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should not enforce cap when no limitManager is provided', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     // Without a limitManager, all entries should be emitted
     triggerMarkEntries(
@@ -469,8 +456,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should not emit after disable', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
     instrumentation.disable();
 
     triggerMarkEntries([makeMark({ name: 'late-mark' })]);
@@ -480,8 +467,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should serialize detail as JSON string in log body', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([
       makeMark({ name: 'auth', detail: { phase: 'login', attempt: 2 } }),
@@ -497,8 +484,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should not set body when detail is null', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([makeMark({ name: 'no-detail', detail: null })]);
 
@@ -510,8 +497,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should not set body when detail is undefined', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     const entry = makeMark({ name: 'no-detail-undef' });
     (entry as unknown as Record<string, unknown>)['detail'] = undefined;
@@ -525,8 +512,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should disconnect both observers on disable', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     expect(markObserverDisconnected).to.be.false;
     expect(measureObserverDisconnected).to.be.false;
@@ -538,8 +525,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should reset deduplication state after disable and re-enable', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([makeMark({ name: 'once' })]);
     expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
@@ -555,8 +542,8 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should not double-enable when enable is called twice', () => {
-    const instrumentation = new UserTimingInstrumentation({ perf });
-    instrumentation.enable();
+    const instrumentation = new UserTimingInstrumentation();
+    instrumentation.enable({ perf });
 
     triggerMarkEntries([makeMark({ name: 'x' })]);
     expect(memoryExporter.getFinishedLogRecords()).to.have.length(1);
@@ -566,8 +553,8 @@ describe('UserTimingInstrumentation', () => {
 
   describe('allowedEntries filter', () => {
     it('should capture all entries when no filter is provided', () => {
-      const instrumentation = new UserTimingInstrumentation({ perf });
-      instrumentation.enable();
+      const instrumentation = new UserTimingInstrumentation();
+      instrumentation.enable({ perf });
 
       triggerMarkEntries([
         makeMark({ name: 'app-start' }),
@@ -580,10 +567,9 @@ describe('UserTimingInstrumentation', () => {
 
     it('should only capture entries whose name is in the string array', () => {
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: ['app-start', 'app-ready'],
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       triggerMarkEntries([
         makeMark({ name: 'app-start' }),
@@ -602,10 +588,9 @@ describe('UserTimingInstrumentation', () => {
 
     it('should ignore all entries when the string array is empty', () => {
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: [],
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       triggerMarkEntries([makeMark({ name: 'app-start' })]);
       triggerMeasureEntries([makeMeasure({ name: 'render' })]);
@@ -616,10 +601,9 @@ describe('UserTimingInstrumentation', () => {
 
     it('should capture entries for which the callback returns true', () => {
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: (entry) => entry.name.startsWith('app-'),
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       triggerMarkEntries([
         makeMark({ name: 'app-start' }),
@@ -639,13 +623,12 @@ describe('UserTimingInstrumentation', () => {
     it('should pass the full entry to the callback', () => {
       const received: Array<PerformanceMark | PerformanceMeasure> = [];
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: (entry) => {
           received.push(entry);
           return true;
         },
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       const mark = makeMark({ name: 'app-start', startTime: 42 });
       triggerMarkEntries([mark]);
@@ -659,10 +642,9 @@ describe('UserTimingInstrumentation', () => {
 
     it('should apply the filter before deduplication', () => {
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: ['app-start'],
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       // 'vendor' is filtered out — should not consume a dedup slot
       triggerMarkEntries([
@@ -677,10 +659,9 @@ describe('UserTimingInstrumentation', () => {
 
     it('should apply the filter to measures', () => {
       const instrumentation = new UserTimingInstrumentation({
-        perf,
         allowedEntries: (entry) => entry.entryType === 'mark',
       });
-      instrumentation.enable();
+      instrumentation.enable({ perf });
 
       triggerMarkEntries([makeMark({ name: 'app-start' })]);
       triggerMeasureEntries([makeMeasure({ name: 'render' })]);

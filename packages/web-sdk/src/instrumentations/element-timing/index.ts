@@ -1,4 +1,1 @@
-export {
-  ElementTimingInstrumentation,
-  type ElementTimingInstrumentationArgs,
-} from './ElementTimingInstrumentation/index.ts';
+export { ElementTimingInstrumentation } from './ElementTimingInstrumentation/index.ts';

@@ -1,6 +1,5 @@
 import type { Span } from '@opentelemetry/api';
-import type { PageManager, Route } from '../../../api-page/index.ts';
-import { page } from '../../../api-page/index.ts';
+import type { Route } from '../../../api-page/index.ts';
 import type { SessionPartStartedEvent } from '../../../api-sessions/index.ts';
 import {
   EMB_TYPES,
@@ -18,7 +17,6 @@ const PATH_OPTIONS_RE = /\([^()]+\)/g;
 
 export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private readonly _shouldCleanupPathOptionsFromRouteName: boolean = true;
-  private readonly _pageManager: PageManager;
   private _currentRouteSpan: Span | null = null;
   private _currentRouteSpanUrl: string | null = null;
   private _currentRouteSpanPath: string | undefined = undefined;
@@ -26,8 +24,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
   public constructor({
     shouldCleanupPathOptionsFromRouteName = true,
-    pageManager,
-  }: NavigationInstrumentationArgs) {
+  }: NavigationInstrumentationArgs = {}) {
     super({
       instrumentationName: 'NavigationInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -36,7 +33,6 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     this._shouldCleanupPathOptionsFromRouteName =
       shouldCleanupPathOptionsFromRouteName;
-    this._pageManager = pageManager ?? page.getPageManager();
   }
 
   private readonly _onRouteChanged = (route: Route): void => {
@@ -67,7 +63,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       attributes: {
         [KEY_EMB_TYPE]: EMB_TYPES.Surface,
         [KEY_EMB_PAGE_PATH]: route.path ? pathName : undefined,
-        [KEY_EMB_PAGE_ID]: this._pageManager.getCurrentPageId() || undefined,
+        [KEY_EMB_PAGE_ID]: this.pageManager.getCurrentPageId() || undefined,
       },
     });
     this._currentRouteSpanUrl = route.url;
@@ -127,15 +123,16 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
       return;
     }
 
-    const currentRoute = this._pageManager.getCurrentRoute();
+    const currentRoute = this.pageManager.getCurrentRoute();
     if (currentRoute) {
       this._onRouteChanged(currentRoute);
     }
   };
 
   protected override _onEnable(): void {
-    this._removeRouteChangedListener =
-      this._pageManager.addRouteChangedListener(this._onRouteChanged);
+    this._removeRouteChangedListener = this.pageManager.addRouteChangedListener(
+      this._onRouteChanged,
+    );
     this.setSessionPartListeners({
       start: this._onSessionPartStarted,
       end: this._onSessionPartEnded,
@@ -143,7 +140,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
 
     // No route listener exists while disabled, so a route set before enabling
     // is replayed here to open its span.
-    const currentRoute = this._pageManager.getCurrentRoute();
+    const currentRoute = this.pageManager.getCurrentRoute();
     if (currentRoute) {
       this._onRouteChanged(currentRoute);
     }
