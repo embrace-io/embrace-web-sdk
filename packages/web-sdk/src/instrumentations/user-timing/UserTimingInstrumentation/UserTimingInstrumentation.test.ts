@@ -1,5 +1,4 @@
-import { diag } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { diag, SeverityNumber } from '@opentelemetry/api';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';

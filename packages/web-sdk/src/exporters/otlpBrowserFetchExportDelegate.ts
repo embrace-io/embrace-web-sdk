@@ -5,7 +5,7 @@ import {
 import type {
   IExporterMetricsHelper,
   ISerializer,
-} from '#embrace-io/otlp-transformer'; // internal package: https://nodejs.org/api/packages.html#imports
+} from '@opentelemetry/otlp-transformer';
 import {
   createFetchTransport,
   createRetryingTransport,

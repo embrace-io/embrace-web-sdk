@@ -1,11 +1,11 @@
 import type { ExportResult } from '@opentelemetry/core';
 import { ExportResultCode } from '@opentelemetry/core';
-import * as chai from 'chai';
-import * as sinon from 'sinon';
 import {
   JsonTraceSerializer,
   TraceExporterMetricsHelper,
-} from '#embrace-io/otlp-transformer'; // internal package: https://nodejs.org/api/packages.html#imports
+} from '@opentelemetry/otlp-transformer';
+import * as chai from 'chai';
+import * as sinon from 'sinon';
 import { mockSpan } from '../../tests/utils/mock-entities/ReadableSpan.ts';
 import { createOtlpBrowserFetchExportDelegate } from './otlpBrowserFetchExportDelegate.ts';
 import type { OtlpFetchExporterConfig } from './types.ts';

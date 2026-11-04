@@ -1,11 +1,14 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 
 export class FakeLogRecordProcessor implements LogRecordProcessor {
   public forceFlush(): Promise<void> {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord) {
+  public onEmit(logRecord: ReadWriteLogRecord) {
     logRecord.setAttributes({
       fake: 'my-attr',
     });

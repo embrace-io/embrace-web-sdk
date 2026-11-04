@@ -1,4 +1,7 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import type { PageManager } from '../../api-page/index.ts';
 import {
   KEY_APP_SURFACE_LABEL,
@@ -19,7 +22,7 @@ export class PageLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord): void {
+  public onEmit(logRecord: ReadWriteLogRecord): void {
     // If the log already has page attributes, do not override them
     if (
       !logRecord.attributes[KEY_EMB_PAGE_PATH] ||

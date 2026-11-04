@@ -1,7 +1,7 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type {
   LoggerProvider,
-  LoggerProviderConfig,
+  LoggerProviderOptions,
 } from '@opentelemetry/sdk-logs';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import type {
@@ -20,6 +20,6 @@ export interface EmbraceLogManagerArgs {
   storage: NamespacedStorage;
 }
 
-export interface EmbraceLoggerProviderArgs extends LoggerProviderConfig {
+export interface EmbraceLoggerProviderArgs extends LoggerProviderOptions {
   perf: PerformanceManager;
 }

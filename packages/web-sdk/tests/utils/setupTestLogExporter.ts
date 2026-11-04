@@ -1,4 +1,4 @@
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
 import {
   InMemoryLogRecordExporter,

@@ -1,4 +1,4 @@
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api';
 import type { Metric } from 'web-vitals';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/index.ts';
 import { generateWebVitalID } from '../../../utils/generateWebVitalID.ts';

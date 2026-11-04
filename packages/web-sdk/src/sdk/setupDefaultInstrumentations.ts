@@ -1,7 +1,7 @@
-import type { Instrumentation } from '@opentelemetry/browser-api';
 import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
+import type { Instrumentation } from '#opentelemetry/browser-api';
 import {
   ClicksInstrumentation,
   DOMStateInstrumentation,

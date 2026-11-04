@@ -1,4 +1,4 @@
-import type { LogRecord } from '@opentelemetry/api-logs';
+import type { LogRecord } from '@opentelemetry/api';
 import type {
   Metric,
   MetricWithAttribution,

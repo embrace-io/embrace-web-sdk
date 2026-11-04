@@ -1,5 +1,9 @@
-import type { TimeInput } from '@opentelemetry/api';
-import type { Logger, LoggerOptions, LogRecord } from '@opentelemetry/api-logs';
+import type {
+  Logger,
+  LoggerOptions,
+  LogRecord,
+  TimeInput,
+} from '@opentelemetry/api';
 import { LoggerProvider } from '@opentelemetry/sdk-logs';
 import type { PerformanceManager } from '../../utils/index.ts';
 import type { EmbraceLoggerProviderArgs } from './types.ts';

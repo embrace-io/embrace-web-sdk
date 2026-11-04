@@ -1,7 +1,8 @@
 {
-  "name": "@embrace-io/otlp-transformer",
+  "name": "@embrace-io/browser-api",
   "version": "0.0.0",
   "private": true,
+  "description": "Stand-in for @opentelemetry/browser-api until it is published for @opentelemetry/api 1.10",
   "type": "module",
   "exports": {
     ".": {
@@ -13,6 +14,9 @@
     "dist"
   ],
   "sideEffects": false,
+  "peerDependencies": {
+    "@opentelemetry/api": ">=1.10.0 <1.11.0"
+  },
   "scripts": {
     "build": "tsdown",
     "clean": "emb-rm dist"
