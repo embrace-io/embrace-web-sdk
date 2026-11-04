@@ -405,7 +405,8 @@ One log per web-vital report.
 computed by the upstream `web-vitals` library, which has its own bfcache
 handling (each restore counts as a fresh page visit) independent of the SDK's
 zero time. When `reportSoftNavs` is on (the default) and the browser supports
-native `soft-navigation` entries, `web-vitals` reports FCP, LCP, CLS, and INP
+native `soft-navigation` entries with
+`PerformanceSoftNavigation.getLargestInteractionContentfulPaint()`, `web-vitals` reports FCP, LCP, CLS, and INP
 again for each _soft_ navigation, with values relative to the soft
 navigation's start. TTFB is reported only for the hard navigation: for soft
 navigations `web-vitals` reports a fixed value of zero, so the TTFB listener
