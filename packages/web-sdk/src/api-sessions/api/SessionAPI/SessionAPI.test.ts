@@ -41,16 +41,6 @@ const createMockUserSessionManager = (): UserSessionManagerInternal => ({
   getSessionPartProperties: sinon.stub().returns({}),
   // User-session lifecycle
   endUserSession: sinon.stub(),
-  // Deprecated forwarders (delegated to underlying manager)
-  getSessionId: sinon.stub().returns('userSessionId'),
-  getPreviousSessionId: sinon.stub().returns(null),
-  getSessionStartTime: sinon.stub().returns(1000),
-  endSessionSpan: sinon.stub(),
-  startSessionSpan: sinon.stub(),
-  getSessionSpan: sinon.stub().returns({} as Span),
-  addSessionStartedListener: sinon.stub().returns(() => {}),
-  addSessionEndedListener: sinon.stub().returns(() => {}),
-  currentSessionAsReadableSpan: sinon.stub().returns(null),
   // Tracer wiring
   setTracerProvider: sinon.stub(),
 });
@@ -114,37 +104,5 @@ describe('SessionAPI', () => {
     void expect(userSessionManager.removeProperty).to.have.been.calledOnceWith(
       'key',
     );
-  });
-
-  it('should forward deprecated getSessionId, getSessionStartTime, getSessionSpan to the manager', () => {
-    const userSessionManager = createMockUserSessionManager();
-    sessionAPI.setGlobalUserSessionManager(userSessionManager);
-
-    expect(sessionAPI.getSessionId()).to.equal('userSessionId');
-    void expect(userSessionManager.getSessionId).to.have.been.calledOnce;
-
-    expect(sessionAPI.getSessionStartTime()).to.equal(1000);
-    void expect(userSessionManager.getSessionStartTime).to.have.been.calledOnce;
-
-    void expect(sessionAPI.getSessionSpan()).to.not.be.null;
-    void expect(userSessionManager.getSessionSpan).to.have.been.calledOnce;
-  });
-
-  it('should return null for deprecated getPreviousSessionId without delegating and noop deprecated listeners/startSessionSpan', () => {
-    const userSessionManager = createMockUserSessionManager();
-    sessionAPI.setGlobalUserSessionManager(userSessionManager);
-
-    void expect(sessionAPI.getPreviousSessionId()).to.be.null;
-    expect(() => sessionAPI.addSessionStartedListener(() => {})).to.not.throw();
-    expect(() => sessionAPI.addSessionEndedListener(() => {})).to.not.throw();
-    expect(() => sessionAPI.startSessionSpan()).to.not.throw();
-  });
-
-  it('should forward endSessionSpan to the manager', () => {
-    const userSessionManager = createMockUserSessionManager();
-    sessionAPI.setGlobalUserSessionManager(userSessionManager);
-
-    sessionAPI.endSessionSpan();
-    void expect(userSessionManager.endSessionSpan).to.have.been.calledOnce;
   });
 });

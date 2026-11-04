@@ -1,5 +1,26 @@
 # Upgrading
 
+## 2.x to 3.0
+
+### ESM only
+
+CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sdk')` fails with `ERR_REQUIRE_ESM` on Node versions that cannot load ES modules, and any case where it loads is unsupported. Load the SDK with `import` or a bundler; from a CommonJS file, use dynamic `import()`. TypeScript projects need `moduleResolution` set to `bundler`, `node16` or `nodenext` to resolve the package's types.
+
+### Removed session methods
+
+The deprecated `session` methods from 2.21.0 are removed. Methods with a replacement:
+
+| Removed                          | Replacement                          |
+| -------------------------------- | ------------------------------------ |
+| `session.getSessionId()`         | `session.getUserSessionId()`         |
+| `session.getSessionStartTime()`  | `session.getUserSessionStartTime()`  |
+| `session.endSessionSpan()`       | `session.endUserSession()`           |
+| `session.getSessionSpan()`       | `session.getSessionPartSpan()`       |
+| `session.getPreviousSessionId()` | `session.getPreviousUserSessionId()` |
+
+`session.startSessionSpan()`, `session.currentSessionAsReadableSpan()`, `session.addSessionStartedListener()` and
+`session.addSessionEndedListener()` did nothing in 2.x and have no replacement.
+
 ## 2.x to 2.21.0
 
 The session API now distinguishes between a **user session** (the full period of user engagement, which can span

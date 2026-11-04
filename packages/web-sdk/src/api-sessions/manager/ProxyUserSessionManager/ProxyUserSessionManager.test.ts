@@ -41,16 +41,6 @@ describe('ProxyUserSessionManager', () => {
       getSessionPartProperties: sinon.stub().returns({}),
       // User-session lifecycle
       endUserSession: sinon.stub(),
-      // Deprecated forwarders (delegated to underlying manager)
-      getSessionId: sinon.stub().returns('mockSessionId'),
-      getPreviousSessionId: sinon.stub().returns(null),
-      getSessionStartTime: sinon.stub().returns(123_456),
-      endSessionSpan: sinon.stub(),
-      startSessionSpan: sinon.stub(),
-      getSessionSpan: sinon.stub().returns({} as Span),
-      addSessionStartedListener: sinon.stub().returns(() => {}),
-      addSessionEndedListener: sinon.stub().returns(() => {}),
-      currentSessionAsReadableSpan: sinon.stub().returns(null),
       // Tracer wiring
       setTracerProvider: sinon.stub(),
     };
@@ -143,46 +133,6 @@ describe('ProxyUserSessionManager', () => {
       expect(mockDelegate.removeProperty).to.have.been.calledOnceWith(
         'some-custom-key',
       );
-    });
-
-    it('should forward deprecated getSessionId to the userSessionManager', () => {
-      expect(proxyUserSessionManager.getSessionId()).to.equal('mockSessionId');
-      void expect(mockDelegate.getSessionId).to.have.been.calledOnce;
-    });
-
-    it('should return null from deprecated getPreviousSessionId without delegating', () => {
-      void expect(proxyUserSessionManager.getPreviousSessionId()).to.be.null;
-      void expect(mockDelegate.getPreviousSessionId).to.not.have.been.called;
-    });
-
-    it('should forward deprecated getSessionStartTime to the userSessionManager', () => {
-      expect(proxyUserSessionManager.getSessionStartTime()).to.equal(123_456);
-      void expect(mockDelegate.getSessionStartTime).to.have.been.calledOnce;
-    });
-
-    it('should forward deprecated getSessionSpan to the userSessionManager', () => {
-      void expect(proxyUserSessionManager.getSessionSpan()).to.not.be.null;
-      void expect(mockDelegate.getSessionSpan).to.have.been.calledOnce;
-    });
-
-    it('should delegate endSessionSpan to the userSessionManager', () => {
-      proxyUserSessionManager.endSessionSpan();
-      expect(mockDelegate.endSessionSpan).to.have.been.calledOnce;
-    });
-
-    it('should no-op startSessionSpan without delegating', () => {
-      proxyUserSessionManager.startSessionSpan();
-      void expect(mockDelegate.startSessionSpan).to.not.have.been.called;
-    });
-
-    it('should return a no-op unsubscribe from deprecated session listeners without delegating', () => {
-      const u1 = proxyUserSessionManager.addSessionStartedListener(() => {});
-      const u2 = proxyUserSessionManager.addSessionEndedListener(() => {});
-      expect(() => u1()).to.not.throw();
-      expect(() => u2()).to.not.throw();
-      void expect(mockDelegate.addSessionStartedListener).to.not.have.been
-        .called;
-      void expect(mockDelegate.addSessionEndedListener).to.not.have.been.called;
     });
   });
 
