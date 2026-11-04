@@ -7,7 +7,7 @@ import { InMemoryStorage } from './InMemoryStorage/index.ts';
  * `SecurityError` when the browser blocks storage for the page (cookies
  * blocked for the site, sandboxed iframes), and some webviews return null.
  */
-export const getWindowStorageWithInMemoryFallback = (
+export const getWindowStorageOrInMemory = (
   name: 'localStorage' | 'sessionStorage',
   diag: DiagLogger,
 ): Storage => {

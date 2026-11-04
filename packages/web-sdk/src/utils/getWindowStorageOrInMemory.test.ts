@@ -3,12 +3,12 @@ import {
   blockWindowStorage,
   InMemoryDiagLogger,
 } from '../../tests/utils/index.ts';
-import { getWindowStorageWithInMemoryFallback } from './getWindowStorageWithInMemoryFallback.ts';
+import { getWindowStorageOrInMemory } from './getWindowStorageOrInMemory.ts';
 import { InMemoryStorage } from './InMemoryStorage/index.ts';
 
 const { expect } = chai;
 
-describe('getWindowStorageWithInMemoryFallback', () => {
+describe('getWindowStorageOrInMemory', () => {
   let diag: InMemoryDiagLogger;
   let restoreStorage: (() => void) | undefined;
 
@@ -22,12 +22,12 @@ describe('getWindowStorageWithInMemoryFallback', () => {
   });
 
   it('returns the browser storage when the page can access it', () => {
-    expect(getWindowStorageWithInMemoryFallback('localStorage', diag)).to.equal(
+    expect(getWindowStorageOrInMemory('localStorage', diag)).to.equal(
       window.localStorage,
     );
-    expect(
-      getWindowStorageWithInMemoryFallback('sessionStorage', diag),
-    ).to.equal(window.sessionStorage);
+    expect(getWindowStorageOrInMemory('sessionStorage', diag)).to.equal(
+      window.sessionStorage,
+    );
     expect(diag.getWarnLogs()).to.have.lengthOf(0);
   });
 
@@ -35,7 +35,7 @@ describe('getWindowStorageWithInMemoryFallback', () => {
     it(`falls back to in-memory storage when reading ${name} throws`, () => {
       restoreStorage = blockWindowStorage(name);
 
-      expect(getWindowStorageWithInMemoryFallback(name, diag)).to.be.instanceOf(
+      expect(getWindowStorageOrInMemory(name, diag)).to.be.instanceOf(
         InMemoryStorage,
       );
       expect(diag.getWarnLogs()).to.deep.equal([
@@ -46,7 +46,7 @@ describe('getWindowStorageWithInMemoryFallback', () => {
     it(`falls back to in-memory storage when ${name} is null`, () => {
       restoreStorage = blockWindowStorage(name, 'null');
 
-      expect(getWindowStorageWithInMemoryFallback(name, diag)).to.be.instanceOf(
+      expect(getWindowStorageOrInMemory(name, diag)).to.be.instanceOf(
         InMemoryStorage,
       );
       expect(diag.getWarnLogs()).to.deep.equal([
