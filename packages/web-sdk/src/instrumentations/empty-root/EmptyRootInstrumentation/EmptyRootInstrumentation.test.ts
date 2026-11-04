@@ -1,7 +1,10 @@
+import { diag } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import {
-  InMemoryDiagLogger,
+  setupTestDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -16,12 +19,12 @@ import {
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { EmptyRootInstrumentation } from './EmptyRootInstrumentation.ts';
 
+chai.use(sinonChai);
 const { expect } = chai;
 
 describe('EmptyInstrumentation', () => {
   let memoryExporter: InMemorySpanExporter;
   let instrumentation: EmptyRootInstrumentation;
-  let diag: InMemoryDiagLogger;
   let userSessionManager: UserSessionManagerInternal;
 
   before(() => {
@@ -30,7 +33,6 @@ describe('EmptyInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    diag = new InMemoryDiagLogger();
     userSessionManager = new EmbraceUserSessionManager({
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
@@ -44,6 +46,7 @@ describe('EmptyInstrumentation', () => {
 
   afterEach(() => {
     instrumentation.disable();
+    diag.disable();
   });
 
   it('should add a span event to the session part when the root node becomes empty', async () => {
@@ -54,7 +57,6 @@ describe('EmptyInstrumentation', () => {
     rootNode.append(child1, child2);
 
     instrumentation = new EmptyRootInstrumentation({
-      diag,
       rootNode,
       emptyCheckDelayMs: 10,
     });
@@ -106,7 +108,6 @@ describe('EmptyInstrumentation', () => {
     rootNode.append(child1, child2);
 
     instrumentation = new EmptyRootInstrumentation({
-      diag,
       rootNode,
       emptyCheckDelayMs: 10,
     });
@@ -138,7 +139,6 @@ describe('EmptyInstrumentation', () => {
     rootNode.append(child1, child2);
 
     instrumentation = new EmptyRootInstrumentation({
-      diag,
       rootNode,
       emptyCheckDelayMs: 10,
     });
@@ -172,7 +172,6 @@ describe('EmptyInstrumentation', () => {
     container.append(rootNode);
 
     instrumentation = new EmptyRootInstrumentation({
-      diag,
       rootNode,
       emptyCheckDelayMs: 10,
     });
@@ -197,16 +196,17 @@ describe('EmptyInstrumentation', () => {
   });
 
   it('should handle supplied root node being null', async () => {
+    const logger = setupTestDiagLogger();
     instrumentation = new EmptyRootInstrumentation({
-      diag,
       rootNode: null,
       emptyCheckDelayMs: 10,
     });
     instrumentation.enable();
 
-    expect(diag.getWarnLogs()).to.deep.equal([
+    expect(logger.warn).to.have.been.calledOnceWithExactly(
+      sinon.match.string,
       "supplied root node was null, this instrumentation won't be enabled",
-    ]);
+    );
 
     // Yield so that the mutation observer callbacks can trigger
     await new Promise((r) => setTimeout(r, 1));
