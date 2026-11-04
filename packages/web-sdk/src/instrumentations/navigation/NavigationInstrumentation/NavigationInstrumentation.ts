@@ -31,7 +31,6 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'NavigationInstrumentation',
       instrumentationVersion: '1.0.0',
-      config: {},
     });
 
     this._shouldCleanupPathOptionsFromRouteName =
@@ -40,7 +39,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private readonly _onRouteChanged = (route: Route): void => {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 

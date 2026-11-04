@@ -7,6 +7,11 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
+import type {
+  Instrumentation,
+  InstrumentationDeps,
+} from '@opentelemetry/browser-api';
+import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
 import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
@@ -290,15 +295,16 @@ export const initSDK = (
       'soft-navigation-performance',
     );
     const signalBuffer = softNavigationEnabled ? new SignalBuffer() : undefined;
+    const tracePropagator = nsfValid
+      ? new EmbraceW3CTraceContextPropagator()
+      : propagator;
 
     const { tracerProvider, embraceTraceManager } = setupTraces({
       resource: resourceWithWebSDKAttributes,
       userManager,
       spanExporters,
       spanProcessors,
-      propagator: nsfValid
-        ? new EmbraceW3CTraceContextPropagator()
-        : propagator,
+      propagator: tracePropagator,
       contextManager,
       attributeScrubbers: finalAttributeScrubbers,
       registerGlobally,
@@ -331,35 +337,64 @@ export const initSDK = (
       signalBuffer,
     });
 
-    // We require setupInstrumentation to run last, after setupLogs and setupTraces. This is how OTel works wrt
-    // the dependencies between instrumentations and global providers. We need the providers for tracers, and logs to be
-    // setup before we enable instrumentations.
-    if (!registerGlobally) {
-      registerInstrumentations({
-        tracerProvider,
-        loggerProvider,
-        instrumentations: [
-          setupDefaultInstrumentations(defaultInstrumentationConfig, {
+    // Enabled last: enable(deps) and registerInstrumentations need the providers set up above.
+    const instrumentationDeps: InstrumentationDeps = {
+      tracerProvider,
+      loggerProvider,
+      propagator: tracePropagator ?? undefined,
+    };
+    const defaultInstrumentations = setupDefaultInstrumentations(
+      defaultInstrumentationConfig,
+      registerGlobally
+        ? { pageManager, limitManager, signalBuffer }
+        : {
             logManager: embraceLogManager,
             userSessionManager,
             pageManager,
             limitManager,
             signalBuffer,
-          }),
-          ...instrumentations,
-        ],
-      });
-    } else {
-      registerInstrumentations({
-        instrumentations: [
-          setupDefaultInstrumentations(defaultInstrumentationConfig, {
-            pageManager,
-            limitManager,
-            signalBuffer,
-          }),
-          ...instrumentations,
-        ],
-      });
+          },
+    );
+    // The option type rejects OTel JS instrumentations, but JavaScript callers can still pass one.
+    const userInstrumentations = instrumentations.filter((instrumentation) => {
+      if (typeof instrumentation !== 'object' || instrumentation === null) {
+        diagLogger.error(
+          `skipped ${String(instrumentation)}: only OpenTelemetry Browser instrumentations are supported`,
+        );
+        return false;
+      }
+      if (!isLegacyOTelInstrumentation(instrumentation)) {
+        return true;
+      }
+      // Left as it is: the caller may also register it, with registerInstrumentations.
+      diagLogger.error(
+        `skipped ${instrumentation.instrumentationName}: only OpenTelemetry Browser instrumentations are supported`,
+      );
+      return false;
+    });
+    // Per item so both kinds still enable in array order, and a throwing enable()
+    // neither stops the rest nor fails initSDK after the globals are set.
+    for (const instrumentation of [
+      ...defaultInstrumentations,
+      ...userInstrumentations,
+    ]) {
+      try {
+        if (isLegacyOTelInstrumentation(instrumentation)) {
+          registerInstrumentations({
+            tracerProvider,
+            loggerProvider,
+            instrumentations: [instrumentation],
+          });
+        } else {
+          instrumentation.enable(instrumentationDeps);
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Unknown error.';
+        diagLogger.error(
+          `failed to enable ${instrumentation.instrumentationName}: ${message}`,
+          e,
+        );
+      }
     }
 
     diagLogger.info('successfully initialized the SDK');
@@ -396,6 +431,13 @@ export const initSDK = (
     return false;
   }
 };
+
+// The default fetch and XHR instrumentations are OTel JS ones, which take providers through
+// setters, so registerInstrumentations drives them.
+const isLegacyOTelInstrumentation = (
+  instrumentation: Instrumentation | LegacyOTelInstrumentation,
+): instrumentation is LegacyOTelInstrumentation =>
+  'setTracerProvider' in instrumentation;
 
 const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
   const embraceUserManager = new EmbraceUserManager({

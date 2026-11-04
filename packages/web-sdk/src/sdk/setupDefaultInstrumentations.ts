@@ -1,4 +1,6 @@
-import type { Instrumentation } from '@opentelemetry/instrumentation';
+import { diag } from '@opentelemetry/api';
+import type { Instrumentation } from '@opentelemetry/browser-api';
+import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import {
@@ -33,8 +35,10 @@ export const setupDefaultInstrumentations = (
     limitManager,
     signalBuffer,
   }: SetupDefaultInstrumentationsArgs,
-): Instrumentation[] => {
-  const instrumentations: Instrumentation[] = [];
+): Array<Instrumentation | LegacyOTelInstrumentation> => {
+  const instrumentations: Array<Instrumentation | LegacyOTelInstrumentation> =
+    [];
+  const diagLogger = diag.createComponentLogger({ namespace: 'embrace-sdk' });
 
   if (!config.omit?.has('exception')) {
     instrumentations.push(
@@ -68,8 +72,14 @@ export const setupDefaultInstrumentations = (
     );
   }
 
+  // TODO: remove the isSupported() checks below once https://github.com/open-telemetry/opentelemetry-browser/issues/569 is released; they only keep
+  // _init()'s unsupported-browser error out of the console
   if (!config.omit?.has('loaf')) {
-    instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
+    if (LoafInstrumentation.isSupported()) {
+      instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
+    } else {
+      diagLogger.debug('loaf not supported, skipping');
+    }
   }
 
   if (!config.omit?.has('user-timing')) {
@@ -77,22 +87,34 @@ export const setupDefaultInstrumentations = (
   }
 
   if (!config.omit?.has('element-timing')) {
-    instrumentations.push(
-      new ElementTimingInstrumentation({
-        limitManager,
-        ...config['element-timing'],
-      }),
-    );
+    if (ElementTimingInstrumentation.isSupported()) {
+      instrumentations.push(
+        new ElementTimingInstrumentation({
+          limitManager,
+          ...config['element-timing'],
+        }),
+      );
+    } else {
+      diagLogger.debug('element-timing not supported, skipping');
+    }
   }
 
   if (!config.omit?.has('soft-navigation-performance')) {
-    instrumentations.push(
-      new SoftNavigationPerformanceInstrumentation({
-        limitManager,
-        signalBuffer,
-        ...config['soft-navigation-performance'],
-      }),
-    );
+    if (
+      SoftNavigationPerformanceInstrumentation.isSupported(
+        config['soft-navigation-performance']?.navigationHost,
+      )
+    ) {
+      instrumentations.push(
+        new SoftNavigationPerformanceInstrumentation({
+          limitManager,
+          signalBuffer,
+          ...config['soft-navigation-performance'],
+        }),
+      );
+    } else {
+      diagLogger.debug('soft-navigation-performance not supported, skipping');
+    }
   }
 
   if (!config.omit?.has('document-load')) {
@@ -118,13 +140,8 @@ export const setupDefaultInstrumentations = (
     );
   }
 
-  /*
-   * Upstream patches fetch and XHR from the constructor unless enabled is false.
-   * Starting them disabled gives every instrumentation here one lifecycle:
-   * registerInstrumentations enables all of them. Upstream enable() never
-   * writes config.enabled back, so these two report false for their lifetime;
-   * getConfig().enabled is not a liveness signal.
-   */
+  // Upstream patches fetch and XHR in the constructor unless enabled is false; initSDK enables them once the providers exist.
+  // Upstream enable() never sets config.enabled, so it reads false for their lifetime.
   if (!config.omit?.has('@opentelemetry/instrumentation-fetch')) {
     instrumentations.push(
       new FetchInstrumentation({

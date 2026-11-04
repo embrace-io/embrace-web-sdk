@@ -260,8 +260,12 @@ initSDK({
 
 View the type definition for `defaultInstrumentationConfig` to see the full set of configuration options.
 
-For more advanced customization you can also include additional instrumentations as long as they conform to the
-`Instrumentation` interface:
+For more advanced customization you can also include additional instrumentations. Each one must be an OpenTelemetry
+Browser instrumentation: built on `InstrumentationBase` from
+[`@opentelemetry/browser-api`](https://www.npmjs.com/package/@opentelemetry/browser-api), or implementing its `Instrumentation`
+interface (`instrumentationName`, `enable(deps)`, `disable()` and `isEnabled()`). `initSDK` calls `enable()` on each one
+with its tracer provider, logger provider and propagator: the `propagator` option, or the SDK's W3C trace context
+propagator when Network Span Forwarding is on:
 
 ```typescript
 import { initSDK } from '@embrace-io/web-sdk';
@@ -272,6 +276,9 @@ initSDK({
   instrumentations: [myCustomInstrumentation],
 });
 ```
+
+`initSDK` skips an instrumentation built on `@opentelemetry/instrumentation` and logs an error. It does not change the
+instrumentation, which enables itself when constructed and reports through the global providers.
 
 ## Custom exporters
 

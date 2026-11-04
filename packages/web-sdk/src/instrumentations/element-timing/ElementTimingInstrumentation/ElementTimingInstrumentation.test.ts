@@ -263,7 +263,7 @@ describe('ElementTimingInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should not create an observer when element entry type is unsupported', () => {
+  it('stays off when element entry type is unsupported', () => {
     const diagLogger = setupTestDiagLogger({
       namespace: 'ElementTimingInstrumentation',
     });
@@ -280,8 +280,9 @@ describe('ElementTimingInstrumentation', () => {
     instrumentation.enable();
 
     expect(observerCallback).to.be.null;
-    expect(diagLogger.messages('debug')).to.deep.equal([
-      'element not supported, skipping',
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'init failed, so this instrumentation stays off: element entries are not supported',
     ]);
 
     instrumentation.disable();
@@ -359,9 +360,28 @@ describe('ElementTimingInstrumentation', () => {
     });
     instrumentation.enable();
 
-    expect(diagLogger.messages('error')).to.deep.equal(['failed to enable']);
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'enable failed: could not observe element entries',
+    ]);
+    void expect(instrumentation.isEnabled()).to.be.false;
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
+  });
+
+  describe('isSupported', () => {
+    it('returns true when PerformanceObserver supports element entries', () => {
+      void expect(ElementTimingInstrumentation.isSupported()).to.be.true;
+    });
+
+    it('returns false when PerformanceObserver does not support element entries', () => {
+      class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {
+        public static override supportedEntryTypes: string[] = [];
+      }
+      (globalThis as Record<string, unknown>)['PerformanceObserver'] =
+        UnsupportedMockPerformanceObserver;
+
+      void expect(ElementTimingInstrumentation.isSupported()).to.be.false;
+    });
   });
 });

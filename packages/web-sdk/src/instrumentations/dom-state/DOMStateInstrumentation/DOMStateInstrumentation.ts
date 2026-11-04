@@ -46,7 +46,6 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'DOMStateInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
 
     this._onLoad = (): void => {

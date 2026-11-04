@@ -52,7 +52,6 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'RageClickInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
 
     this._onClickHandler = (event: MouseEvent): void => {

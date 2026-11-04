@@ -10,6 +10,16 @@ CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sd
 
 The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sending to Embrace needs at least Chrome and Edge 85, Firefox 113, Safari 16.4 and Samsung Internet 14.
 
+### Instrumentations follow the OpenTelemetry browser lifecycle
+
+The `instrumentations` option of `initSDK` uses the `Instrumentation` interface from `@opentelemetry/browser-api` instead of the one from `@opentelemetry/instrumentation`:
+
+- Build a custom instrumentation on `InstrumentationBase` from [`@opentelemetry/browser-api`](https://www.npmjs.com/package/@opentelemetry/browser-api), or implement its `Instrumentation` interface (`instrumentationName`, `enable(deps)`, `disable()` and `isEnabled()`). `initSDK` calls `enable()` on each one with its tracer provider, logger provider and propagator: the `propagator` option, or the SDK's W3C trace context propagator when Network Span Forwarding is on.
+- `initSDK` skips an instrumentation built on `@opentelemetry/instrumentation` and logs an error. It does not change the instrumentation, which enables itself when constructed and reports through the global providers. Use its OpenTelemetry Browser equivalent from `@opentelemetry/browser-instrumentation` where one exists, or register it yourself with `registerInstrumentations` from `@opentelemetry/instrumentation` after `initSDK`. It reaches the SDK through the global providers, so this needs `registerGlobally: true`.
+- Under `registerGlobally: false`, the document load span continues the trace of a `<meta name="traceparent">` tag through the `propagator` option. Without it, it uses the global propagator, as it did with 2.x.
+- When the `rootNode` of `defaultInstrumentationConfig['empty-root']` is null, the SDK logs an error through `diag` instead of a warning.
+- When the browser cannot observe navigation entries, the document load instrumentation logs an error through `diag` and stays off, instead of logging a warning.
+
 ### Removed `defaultInstrumentationConfig` fields
 
 - `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`. `initSDK` installs a console logger on that channel; to send instrumentation logs to your own logger, call `diag.setLogger` from `@opentelemetry/api` after `initSDK` returns. Messages logged during `initSDK` still go to the console.
