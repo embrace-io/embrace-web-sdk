@@ -4,7 +4,7 @@
  */
 
 import type { Attributes, HrTime } from '@opentelemetry/api';
-import { context, propagation, trace } from '@opentelemetry/api';
+import { context, diag, propagation, trace } from '@opentelemetry/api';
 import {
   hrTimeToMilliseconds,
   TRACE_PARENT_HEADER,
@@ -21,6 +21,7 @@ import {
 import { assert } from 'chai';
 import type { SinonStubbedFunction } from 'sinon';
 import * as sinon from 'sinon';
+import { setupTestDiagLogger } from '../../../../tests/utils/index.ts';
 import type { EmbracePerformanceNavigationTiming } from '../../../utils/index.ts';
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { DocumentLoadInstrumentation } from '../index.ts';
@@ -290,6 +291,7 @@ describe('DocumentLoad Instrumentation', () => {
   afterEach(() => {
     sandbox.restore();
     context.disable();
+    diag.disable();
     Object.defineProperty(window.document, 'readyState', {
       writable: true,
       value: 'complete',
@@ -1762,16 +1764,8 @@ describe('DocumentLoad Instrumentation', () => {
 
     it('should warn and collect nothing when the navigation entry type is unobservable', async () => {
       FakePerformanceObserver.supportedEntryTypes = [];
-      const warnings: string[] = [];
-      plugin = new DocumentLoadInstrumentation({
-        diag: {
-          verbose: () => {},
-          debug: () => {},
-          info: () => {},
-          warn: (message: string) => warnings.push(message),
-          error: () => {},
-        },
-      });
+      const logger = setupTestDiagLogger();
+      plugin = new DocumentLoadInstrumentation();
       plugin.setTracerProvider(provider);
 
       plugin.enable();
@@ -1779,7 +1773,12 @@ describe('DocumentLoad Instrumentation', () => {
 
       assert.strictEqual(FakePerformanceObserver.instances.length, 0);
       assert.strictEqual(documentLoadSpans().length, 0);
-      assert.strictEqual(warnings.length, 1);
+      assert.deepStrictEqual(
+        logger.messagesFrom('warn', 'DocumentLoadInstrumentation'),
+        [
+          'navigation entries are not observable, document load will not be collected',
+        ],
+      );
     });
   });
 

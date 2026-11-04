@@ -1,3 +1,4 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { timeInputToHrTime } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
@@ -5,8 +6,8 @@ import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -150,6 +151,7 @@ describe('UserTimingInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     MockPerformanceObserver.supportedEntryTypes = ['mark', 'measure'];
@@ -170,54 +172,52 @@ describe('UserTimingInstrumentation', () => {
   });
 
   it('should skip mark observer when mark is unsupported', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = ['measure'];
 
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      diag: diagLogger,
-    });
+    const instrumentation = new UserTimingInstrumentation({ perf });
     instrumentation.enable();
 
     expect(markObserveOptions).to.be.null;
     expect(measureObserveOptions).to.not.be.null;
-    expect(diagLogger.getDebugLogs().some((m) => m.includes('mark'))).to.be
-      .true;
+    expect(
+      logger.messagesFrom('debug', 'UserTimingInstrumentation'),
+    ).to.deep.equal(['mark not supported, skipping observer']);
 
     instrumentation.disable();
   });
 
   it('should skip measure observer when measure is unsupported', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = ['mark'];
 
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      diag: diagLogger,
-    });
+    const instrumentation = new UserTimingInstrumentation({ perf });
     instrumentation.enable();
 
     expect(markObserveOptions).to.not.be.null;
     expect(measureObserveOptions).to.be.null;
-    expect(diagLogger.getDebugLogs().some((m) => m.includes('measure'))).to.be
-      .true;
+    expect(
+      logger.messagesFrom('debug', 'UserTimingInstrumentation'),
+    ).to.deep.equal(['measure not supported, skipping observer']);
 
     instrumentation.disable();
   });
 
   it('should skip both observers when neither type is supported', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const logger = setupTestDiagLogger();
     MockPerformanceObserver.supportedEntryTypes = [];
 
-    const instrumentation = new UserTimingInstrumentation({
-      perf,
-      diag: diagLogger,
-    });
+    const instrumentation = new UserTimingInstrumentation({ perf });
     instrumentation.enable();
 
     expect(markObserveOptions).to.be.null;
     expect(measureObserveOptions).to.be.null;
-    expect(diagLogger.getDebugLogs()).to.have.length(2);
+    expect(
+      logger.messagesFrom('debug', 'UserTimingInstrumentation'),
+    ).to.deep.equal([
+      'mark not supported, skipping observer',
+      'measure not supported, skipping observer',
+    ]);
 
     instrumentation.disable();
   });

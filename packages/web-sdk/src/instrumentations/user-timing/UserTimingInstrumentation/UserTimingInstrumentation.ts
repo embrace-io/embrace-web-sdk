@@ -27,7 +27,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   private readonly _allowedEntries: UserTimingEntryFilter | undefined;
 
   public constructor({
-    diag,
     perf,
     limitManager,
     allowedEntries,
@@ -35,7 +34,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'UserTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       limitManager,
       config: {},
