@@ -7,7 +7,7 @@ export default defineConfig([
   {
     entry: { 'embrace-web-sdk': 'src/index.ts' },
     format: 'iife',
-    target: 'es6',
+    target: 'es2022',
     outDir: 'dist',
     sourcemap: true,
     platform: 'browser',
