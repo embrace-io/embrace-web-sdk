@@ -241,9 +241,11 @@ describe('EmptyInstrumentation', () => {
     });
     instrumentation.enable();
 
-    expect(logger.warn).to.have.been.calledOnceWithExactly(
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(logger.error).to.have.been.calledWithExactly(
       sinon.match.string,
-      "supplied root node was null, this instrumentation won't be enabled",
+      'init failed, so this instrumentation stays off: rootNode is null',
+      sinon.match.instanceOf(Error),
     );
 
     // Yield so that the mutation observer callbacks can trigger

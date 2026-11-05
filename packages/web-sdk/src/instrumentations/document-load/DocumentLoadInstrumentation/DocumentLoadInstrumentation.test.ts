@@ -284,7 +284,6 @@ describe('DocumentLoad Instrumentation', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       FakePerformanceObserver;
     plugin = new DocumentLoadInstrumentation();
-    plugin.setTracerProvider(provider);
     exporter.reset();
   });
 
@@ -317,11 +316,8 @@ describe('DocumentLoad Instrumentation', () => {
       assert.ok(plugin instanceof DocumentLoadInstrumentation);
     });
 
-    /*
-     * Construction only wires the instrumentation up; registerInstrumentations
-     * attaches the providers and enables it afterwards, so nothing may be
-     * collected until then.
-     */
+    // Construction only stores the config; the first enable() resolves the
+    // tracer and starts collecting, so nothing may be collected until then.
     it('should not collect until it is enabled', async () => {
       const spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
       spyEntries.withArgs('navigation').returns([entries]);
@@ -329,7 +325,6 @@ describe('DocumentLoad Instrumentation', () => {
       spyEntries.withArgs('paint').returns([]);
 
       plugin = new DocumentLoadInstrumentation();
-      plugin.setTracerProvider(provider);
       await afterPendingTasks();
 
       assert.strictEqual(documentLoadSpans().length, 0);
@@ -443,7 +438,6 @@ describe('DocumentLoad Instrumentation', () => {
           ],
         }),
       });
-      plugin.setTracerProvider(provider);
       plugin.enable();
 
       setTimeout(() => {
@@ -927,6 +921,20 @@ describe('DocumentLoad Instrumentation', () => {
           );
 
           assert.strictEqual(exporter.getFinishedSpans().length, 2);
+          done();
+        }, 100);
+      });
+
+      it('should extract the server context with the propagator passed to enable()', (done) => {
+        const propagator = new W3CTraceContextPropagator();
+        const extract = sandbox.spy(propagator, 'extract');
+        plugin.enable({ propagator });
+        setTimeout(() => {
+          sinon.assert.calledOnce(extract);
+          assert.deepStrictEqual(extract.firstCall.args[1], {
+            traceparent:
+              '00-ab42124a3c573678d4d8b21ba52df3bf-d21f7bc17caa5aba-01',
+          });
           done();
         }, 100);
       });
@@ -1766,7 +1774,6 @@ describe('DocumentLoad Instrumentation', () => {
       FakePerformanceObserver.supportedEntryTypes = [];
       const logger = setupTestDiagLogger();
       plugin = new DocumentLoadInstrumentation();
-      plugin.setTracerProvider(provider);
 
       plugin.enable();
       await afterPendingTasks();
