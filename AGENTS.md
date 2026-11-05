@@ -49,6 +49,7 @@ processors/     Span/Log processing chain (scrubbing, batching, session correlat
 exporters/      OTLP serialization for Embrace backend
 instrumentations/  Auto-capture plugins (web-vitals, clicks, rage-click, navigation, exceptions, etc.); fetch/XHR use upstream OTel instrumentations
 sdk/            Entry point (initSDK) and configuration
+semconv/        Attribute constants weaver generates from the embrace-semconv registry; never hand-edit, run `make generate` in `packages/web-sdk/semconv/`
 transport/      HTTP transport with retry logic
 ```
 
