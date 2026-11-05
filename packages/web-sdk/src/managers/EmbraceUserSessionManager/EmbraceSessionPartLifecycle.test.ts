@@ -47,9 +47,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    // Clear storage before constructing the manager: the constructor
-    // reads the permanent-properties blob, so leftover state from a
-    // previous test would otherwise leak into _permanentProperties.
+    // The manager reads properties and user-session state from storage, so
+    // leftover state from a previous test would otherwise leak in.
     inMemoryStorage.clear();
     diag = new InMemoryDiagLogger();
     storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
@@ -267,7 +266,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     // Properties are user-session-scoped, not part-scoped. addProperty
     // eager-initializes user-session state if none exists yet, so a write
     // made before the first part is stored in the state row and gets stamped
-    // on the part span when it starts.
+    // on the part span when it ends.
     manager.addProperty('queued-property', 'queued-value');
     manager.startSessionPartInternal({ reason: 'init' });
     manager.endSessionPartInternal({ reason: 'background' });
@@ -681,6 +680,99 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     const finishedSpans = memoryExporter.getFinishedSpans();
     expect(finishedSpans).to.have.lengthOf(2);
     expect(finishedSpans[1].attributes).to.have.property(attributeKey, value);
+  });
+
+  describe('another tab sharing storage', () => {
+    const createOtherTab = () =>
+      new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+
+    const storedState = () => {
+      const raw = inMemoryStorage.getItem('embrace_user_session_state');
+
+      return raw === null
+        ? null
+        : (JSON.parse(raw) as {
+            userSessionId: string;
+            inactivityDeadlineTs: number | null;
+          });
+    };
+
+    // The other tab ends the user session while it has no part, then starts a
+    // part, which creates the next user session.
+    const startNextUserSessionInOtherTab = () => {
+      const otherTab = createOtherTab();
+
+      otherTab.endUserSession();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+
+      return otherTab;
+    };
+
+    it('stamps a user-session property the other tab sets during the part', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().addProperty('cart-size', '3');
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it('stamps a permanent property the other tab sets during the part', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().addProperty('plan', 'pro', { lifespan: 'permanent' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.plan',
+        'pro',
+      );
+    });
+
+    it('reports the user session the other tab started', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      const otherTab = startNextUserSessionInOtherTab();
+
+      expect(manager.getUserSessionId()).to.equal(otherTab.getUserSessionId());
+    });
+
+    it("doesn't overwrite the other tab's user session when the part ends", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+      // The other tab's part is still active, so its user session has no
+      // inactivity deadline.
+      void expect(storedState()?.inactivityDeadlineTs).to.be.null;
+    });
+
+    it("doesn't clear the other tab's user session when the part ends as final", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+    });
   });
 
   it('should leave the persisted user-session-scoped entry intact when a permanent flip fails to write', () => {

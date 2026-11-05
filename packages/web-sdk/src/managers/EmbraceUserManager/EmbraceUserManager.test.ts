@@ -139,9 +139,9 @@ describe('EmbraceUserManager', () => {
 
     expect(manager.getUserId()).to.equal(null);
 
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(1);
-    expect(warningLogs[0]).to.contain('failed to read');
+    // The constructor's failed write already moved the storage to memory, so
+    // this read doesn't reach the failing storage.
+    expect(diag.getWarnLogs()).to.have.lengthOf(0);
   });
 
   it('should handle setting an external user id when storage is failing', () => {
@@ -172,8 +172,8 @@ describe('EmbraceUserManager', () => {
       manager.clearUserId();
     }).not.to.throw();
 
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(1);
-    expect(warningLogs[0]).to.contain('failed to remove');
+    // The constructor's failed write already moved the storage to memory, so
+    // this removal doesn't reach the failing storage.
+    expect(diag.getWarnLogs()).to.have.lengthOf(0);
   });
 });

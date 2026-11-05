@@ -544,8 +544,8 @@ describe('EmbraceUserSessionManager', () => {
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs2 = manager.getUserSessionAttributes();
 
-      // Storage is unavailable, so the in-memory session the manager already
-      // holds stays authoritative; a fresh user session is not minted per part.
+      // Storage keeps the writes it couldn't persist in memory for the page, so
+      // the next part reads the same user session instead of minting a fresh one.
       expect(attrs2?.['emb.user_session_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
@@ -587,18 +587,15 @@ describe('EmbraceUserSessionManager', () => {
       manager.endSessionPartInternal({ reason: 'background' });
 
       // Past the default 30 min inactivity timeout. No timer runs for the
-      // inactivity deadline, so the next start reads it from the in-memory row
-      // and finds it expired.
+      // inactivity deadline, so the next start reads it from the copy storage
+      // keeps in memory and finds it expired.
       clock.tick(31 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
       const attrs2 = manager.getUserSessionAttributes();
 
-      // The in-memory session stays authoritative only while it is live: once
-      // its inactivity deadline passes, the next part rolls a fresh user session
-      // instead of resurrecting the expired one. The user-session number cannot
-      // advance because the shared counter is also stored in unavailable
-      // storage.
+      // Once its inactivity deadline passes, the next part rolls a fresh user
+      // session instead of resurrecting the expired one.
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
@@ -642,8 +639,8 @@ describe('EmbraceUserSessionManager', () => {
       const attrs1 = manager.getUserSessionAttributes();
 
       // Let the live timer fire while the part is still active. It ends the part
-      // with a final reason, which nulls the in-memory row, so the fallback must
-      // not resurrect it on the next start: the expired session is gone for good.
+      // with a final reason, which clears the stored row, so the next start must
+      // not resurrect it: the expired session is gone for good.
       clock.tick(60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
@@ -658,11 +655,10 @@ describe('EmbraceUserSessionManager', () => {
       );
     });
 
-    it('does not resurrect in-memory state once a write has persisted and storage clears', () => {
-      // Storage works at first, so the manager persists and flips _hasStoredState
-      // true. Then the row is wiped (sibling tab, eviction). An empty read after
-      // a successful persist is a genuine clear, not an outage, so the next part
-      // start must create a fresh user session rather than reuse the in-memory one.
+    it('does not resurrect a user session after storage is cleared', () => {
+      // Storage works, then the row is wiped (sibling tab, eviction). The next
+      // part start must create a fresh user session rather than reuse the one
+      // that was wiped.
       const manager = createManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
