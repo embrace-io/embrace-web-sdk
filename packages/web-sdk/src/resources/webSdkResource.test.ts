@@ -160,9 +160,13 @@ describe('webSdkResource', () => {
       void expect(appInstanceId).to.have.lengthOf(32);
 
       // Read fails: NamespacedStorage warns.
-      // Write fails: NamespacedStorage flips disabled and emits one error.
-      expect(diagLogger.getWarnLogs()).to.have.lengthOf(1);
+      // Write fails: NamespacedStorage flips disabled and emits one error, and
+      // warns again when copying its keys into memory can't read the storage.
+      expect(diagLogger.getWarnLogs()).to.have.lengthOf(2);
       expect(diagLogger.getWarnLogs()[0]).to.contain('failed to read');
+      expect(diagLogger.getWarnLogs()[1]).to.contain(
+        'failed to read storage length',
+      );
       expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
       expect(diagLogger.getErrorLogs()[0]).to.contain('writes disabled');
     });

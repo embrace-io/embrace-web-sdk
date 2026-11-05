@@ -1384,7 +1384,7 @@ describe('EmbraceLogManager', () => {
       );
     });
 
-    it('should default to exception number 1 when storage is failing', () => {
+    it('should count exceptions within the page when storage is failing', () => {
       manager = new EmbraceLogManager({
         userSessionManager,
         limitManager,
@@ -1403,7 +1403,7 @@ describe('EmbraceLogManager', () => {
       );
       expect(finishedLogs[1].attributes).to.have.property(
         'emb.exception_number',
-        1,
+        2,
       );
     });
 
