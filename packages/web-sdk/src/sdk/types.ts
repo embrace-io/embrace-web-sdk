@@ -25,17 +25,9 @@ import type {
 } from '../common/index.ts';
 import type {
   ClicksInstrumentationArgs,
-  DOMStateInstrumentationArgs,
   DocumentLoadInstrumentationArgs,
-  ElementTimingInstrumentationArgs,
   EmptyRootInstrumentationArgs,
-  FirstInteractionInstrumentationArgs,
-  GlobalExceptionInstrumentationArgs,
-  LoafInstrumentationArgs,
-  MaxScrollDepthInstrumentationArgs,
   NavigationInstrumentationArgs,
-  RageClickInstrumentationArgs,
-  ServerTimingInstrumentationArgs,
   SoftNavigationPerformanceInstrumentationArgs,
   UserTimingInstrumentationArgs,
   WebVitalsInstrumentationConfig,
@@ -420,10 +412,6 @@ interface NetworkInstrumentationArgs {
 }
 
 export interface SetupDefaultInstrumentationsArgs {
-  logManager?: LogManager;
-  userSessionManager?: UserSessionManagerInternal;
-  pageManager?: PageManager;
-  limitManager?: LimitManagerInternal;
   signalBuffer?: SignalBuffer;
 }
 
@@ -433,19 +421,11 @@ export interface SetupDefaultInstrumentationsArgs {
  */
 export interface DefaultInstrumentationConfig {
   omit?: Set<OptionalInstrumentations>;
-  exception?: GlobalExceptionInstrumentationArgs;
   click?: ClicksInstrumentationArgs;
-  'rage-click'?: RageClickInstrumentationArgs;
-  'max-scroll-depth'?: MaxScrollDepthInstrumentationArgs;
-  'first-interaction'?: FirstInteractionInstrumentationArgs;
   'web-vital'?: WebVitalsInstrumentationConfig;
-  loaf?: LoafInstrumentationArgs;
   'user-timing'?: UserTimingInstrumentationArgs;
-  'element-timing'?: ElementTimingInstrumentationArgs;
-  'server-timing'?: ServerTimingInstrumentationArgs;
   'soft-navigation-performance'?: SoftNavigationPerformanceInstrumentationArgs;
   'document-load'?: DocumentLoadInstrumentationArgs;
-  'dom-state'?: DOMStateInstrumentationArgs;
   navigation?: NavigationInstrumentationArgs;
 
   // Convenience to allow common config arguments for '@opentelemetry/instrumentation-fetch' and

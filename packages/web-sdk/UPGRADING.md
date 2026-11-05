@@ -38,6 +38,11 @@ The `instrumentations` option of `initSDK` uses the `Instrumentation` interface 
 ### Removed `defaultInstrumentationConfig` fields
 
 - `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.
+- The SDK passes its own managers to its instrumentations, so the entries no longer accept them:
+  - `perf` is removed from the `click`, `document-load`, `empty-root`, `soft-navigation-performance`, `user-timing` and `web-vital` entries.
+  - `limitManager` is removed from the `soft-navigation-performance` and `user-timing` entries.
+  - `pageManager` is removed from the `navigation` and `web-vital` entries.
+- The `exception`, `rage-click`, `max-scroll-depth`, `first-interaction`, `loaf`, `element-timing`, `server-timing` and `dom-state` entries are removed, because these instrumentations have no options left. To turn one of them off, add its name to `defaultInstrumentationConfig.omit`.
 
 ### Removed `createReactRouterNavigationInstrumentation`
 

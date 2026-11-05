@@ -1,6 +1,8 @@
 import { InstrumentationBase } from '#opentelemetry/browser-instrumentation-api';
 import type { LogManager } from '../../api-logs/index.ts';
 import { log } from '../../api-logs/index.ts';
+import type { PageManager } from '../../api-page/index.ts';
+import { page } from '../../api-page/index.ts';
 import type { SessionPartStartedEvent } from '../../api-sessions/index.ts';
 import { session } from '../../api-sessions/index.ts';
 import type {
@@ -9,7 +11,10 @@ import type {
 } from '../../managers/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import { OTelPerformanceManager } from '../../utils/index.ts';
-import type { EmbraceInstrumentationBaseArgs } from './types.ts';
+import type {
+  EmbraceInstrumentationBaseArgs,
+  EmbraceInstrumentationDeps,
+} from './types.ts';
 
 type SessionPartListeners = {
   start?: (event: SessionPartStartedEvent) => void;
@@ -19,13 +24,18 @@ type RemoveSessionPartListeners = {
   start?: () => void;
   end?: () => void;
 };
+interface EmbraceManagers {
+  userSessionManager: UserSessionManagerInternal;
+  logManager: LogManager;
+  limitManager: LimitManagerInternal | undefined;
+  perf: PerformanceManager;
+  pageManager: PageManager;
+}
+
 export abstract class EmbraceInstrumentationBase<
   ConfigType extends object = object,
 > extends InstrumentationBase<ConfigType> {
-  private _userSessionManager: UserSessionManagerInternal;
-  private _logManager: LogManager;
-  private readonly _perf: PerformanceManager;
-  private _limitManager: LimitManagerInternal | undefined;
+  private _managers: EmbraceManagers | undefined;
   private _removeSessionPartListeners: RemoveSessionPartListeners = {};
   private _sessionPartListeners: SessionPartListeners = {};
 
@@ -33,54 +43,58 @@ export abstract class EmbraceInstrumentationBase<
     instrumentationName,
     instrumentationVersion,
     config,
-    perf,
-    limitManager,
   }: EmbraceInstrumentationBaseArgs<ConfigType>) {
     super(instrumentationName, instrumentationVersion, config);
-    this._perf = perf ?? new OTelPerformanceManager();
-    this._limitManager = limitManager;
-    this._userSessionManager = session.getUserSessionManager();
-    this._logManager = log.getLogManager();
   }
 
-  /* Returns session provider */
-  protected get userSessionManager(): UserSessionManagerInternal {
-    return this._userSessionManager;
-  }
-
-  /* Returns log manager */
-  protected get logManager(): LogManager {
-    return this._logManager;
-  }
-
-  /* Returns the performance manager */
-  protected get perf(): PerformanceManager {
-    return this._perf;
-  }
-
-  /* Returns the limit manager */
-  protected get limitManager(): LimitManagerInternal | undefined {
-    return this._limitManager;
-  }
-
-  public setLimitManager(limitManager: LimitManagerInternal): void {
-    this._limitManager = limitManager;
-  }
-
-  public setLogManager(logManager: LogManager): void {
-    this._logManager = logManager;
-  }
-
-  public setUserSessionManager(
-    userSessionManager: UserSessionManagerInternal,
-  ): void {
-    this._userSessionManager = userSessionManager;
-    this._registerSessionPartListeners();
-  }
-
-  /*
-   * Management of session part listeners
+  /**
+   * Starts emitting. The first call locks the Embrace managers in `deps`, the
+   * same way it locks the tracer and logger providers.
    */
+  public override enable(deps?: EmbraceInstrumentationDeps): void {
+    // Locked before super.enable(), which runs _init() and _onEnable().
+    this._managers ??= {
+      userSessionManager:
+        deps?.userSessionManager ?? session.getUserSessionManager(),
+      logManager: deps?.logManager ?? log.getLogManager(),
+      limitManager: deps?.limitManager,
+      perf: deps?.perf ?? new OTelPerformanceManager(),
+      pageManager: deps?.pageManager ?? page.getPageManager(),
+    };
+    super.enable(deps);
+  }
+
+  /** Stops emitting and removes listeners. Patches stay. */
+  public override disable(): void {
+    super.disable();
+    // After super, so the base's _onEnable rollback and an _onDisable that throws still unregister.
+    this.unregisterSessionPartListeners();
+  }
+
+  /** Throws until the first `enable()`. */
+  protected get userSessionManager(): UserSessionManagerInternal {
+    return this._requireManagers('userSessionManager').userSessionManager;
+  }
+
+  /** Throws until the first `enable()`. */
+  protected get logManager(): LogManager {
+    return this._requireManagers('logManager').logManager;
+  }
+
+  /** Throws until the first `enable()`. */
+  protected get perf(): PerformanceManager {
+    return this._requireManagers('perf').perf;
+  }
+
+  /** Throws until the first `enable()`. Undefined means no limits apply. */
+  protected get limitManager(): LimitManagerInternal | undefined {
+    return this._requireManagers('limitManager').limitManager;
+  }
+
+  /** Throws until the first `enable()`. */
+  protected get pageManager(): PageManager {
+    return this._requireManagers('pageManager').pageManager;
+  }
 
   protected setSessionPartListeners(listeners: SessionPartListeners): void {
     this._sessionPartListeners = listeners;
@@ -99,8 +113,17 @@ export abstract class EmbraceInstrumentationBase<
     this._removeSessionPartListeners = {};
   }
 
+  private _requireManagers(name: keyof EmbraceManagers): EmbraceManagers {
+    if (!this._managers) {
+      throw new Error(
+        `${this.instrumentationName}: ${name} is not available until enable() is called`,
+      );
+    }
+    return this._managers;
+  }
+
   private _registerSessionPartListeners(): void {
-    if (this.isEnabled() && this.userSessionManager) {
+    if (this.isEnabled()) {
       this.unregisterSessionPartListeners();
 
       if (this._sessionPartListeners.start) {
@@ -117,12 +140,5 @@ export abstract class EmbraceInstrumentationBase<
           );
       }
     }
-  }
-
-  /** Stops emitting and removes listeners. Patches stay. */
-  public override disable(): void {
-    super.disable();
-    // After super, so the base's _onEnable rollback and an _onDisable that throws still unregister.
-    this.unregisterSessionPartListeners();
   }
 }

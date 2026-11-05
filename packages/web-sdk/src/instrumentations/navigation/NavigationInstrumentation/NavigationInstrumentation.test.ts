@@ -92,10 +92,8 @@ describe('NavigationInstrumentation', () => {
   };
 
   it('should start a route span the first time a route is reported', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     const pageId = pageManager.getCurrentPageId();
@@ -130,10 +128,8 @@ describe('NavigationInstrumentation', () => {
       url: '/already-set',
     });
 
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     expect(surfaceSpans()).to.have.lengthOf(0);
 
@@ -158,10 +154,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should not start a new span or log anything for a redundant report of the same route', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -178,10 +172,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should rename the open span in place when the same url resolves to a different path', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     // The raw pathname reported first (e.g. by EmbracePageManager on soft
     // nav — a complete, valid route on its own), then a react-router
@@ -216,10 +208,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('falls back to the url as the span name and app.surface.name when path is not yet known', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     // EmbracePageManager reports a path-less route on soft navigation (it
     // never guesses path); the router integration's own correction for the
@@ -249,10 +239,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('keeps the span named by url, never unnamed, when no path ever arrives for that navigation', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ url: '/products/123' });
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
@@ -266,10 +254,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('does not start a duplicate span when a path-less route is replayed for the same url', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     // e.g. _onEnable's replay of an already-set route, followed by
     // _onSessionPartStarted's replay of the same route when a session part
@@ -286,10 +272,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should end the old span and start a new one immediately when the url changes, with no session-part boundary needed', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
     expect(surfaceSpans()).to.have.lengthOf(0);
@@ -305,10 +289,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should clean up the path options from the route name if configured', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)/:type(typeA|typeB)',
@@ -323,10 +305,9 @@ describe('NavigationInstrumentation', () => {
 
   it('should not clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
       shouldCleanupPathOptionsFromRouteName: false,
     });
-    navigationInstrumentation.enable();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({
       path: '/test/:time(hourly|daily|weekly|monthly)',
@@ -342,10 +323,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should apply path-options cleanup through the rename path too', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/test/hourly', url: '/test/hourly' });
     pageManager.setCurrentRoute({
@@ -359,10 +338,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should be a no-op when not enabled', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
     navigationInstrumentation.disable();
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -374,9 +351,7 @@ describe('NavigationInstrumentation', () => {
   it('should not register a route listener before enable', () => {
     const routeListeners = trackRouteChangedListeners();
 
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
+    navigationInstrumentation = new NavigationInstrumentation();
 
     expect(routeListeners.add.callCount).to.equal(0);
     expect(routeListeners.active()).to.equal(0);
@@ -384,10 +359,8 @@ describe('NavigationInstrumentation', () => {
 
   it('should remove its route listener when disabled', () => {
     const routeListeners = trackRouteChangedListeners();
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
     expect(routeListeners.active()).to.equal(1);
 
     navigationInstrumentation.disable();
@@ -397,11 +370,9 @@ describe('NavigationInstrumentation', () => {
 
   it('should hold exactly one route listener across disable and enable cycles', () => {
     const routeListeners = trackRouteChangedListeners();
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
+    navigationInstrumentation = new NavigationInstrumentation();
 
-    navigationInstrumentation.enable();
+    navigationInstrumentation.enable({ pageManager });
     navigationInstrumentation.disable();
     navigationInstrumentation.enable();
     navigationInstrumentation.disable();
@@ -417,10 +388,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should end an open route span when disabled', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     expect(surfaceSpans()).to.have.lengthOf(0);
@@ -433,10 +402,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should end an open route span when the session part ends, even without a url change', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -454,10 +421,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should open a new route span when a session part starts with no route change (e.g. resuming from the background)', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
     userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -474,10 +439,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should not open a spurious span for the outgoing route when a session part starts from a soft-navigation rollover', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     userSessionManager.startSessionPartInternal({ reason: 'init' });
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
@@ -506,10 +469,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should not throw when a session part ends with no open route span', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     expect(() => {
       userSessionManager.startSessionPartInternal({ reason: 'init' });
@@ -520,10 +481,8 @@ describe('NavigationInstrumentation', () => {
   });
 
   it('should work correctly after disable() then enable()', () => {
-    navigationInstrumentation = new NavigationInstrumentation({
-      pageManager,
-    });
-    navigationInstrumentation.enable();
+    navigationInstrumentation = new NavigationInstrumentation();
+    navigationInstrumentation.enable({ pageManager });
 
     pageManager.setCurrentRoute({ path: '/first', url: '/first' });
 

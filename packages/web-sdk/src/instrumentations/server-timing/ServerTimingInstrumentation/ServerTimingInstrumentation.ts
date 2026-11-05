@@ -7,20 +7,14 @@ import {
   KEY_EMB_SERVER_TIMING_NAME,
   SERVER_TIMING_EVENT_NAME,
 } from './constants.ts';
-import type { ServerTimingInstrumentationArgs } from './types.ts';
 
 export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
   private _performanceCollected: boolean = false;
 
-  public constructor({
-    perf,
-    limitManager,
-  }: ServerTimingInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'ServerTimingInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
-      limitManager,
       config: {},
     });
   }

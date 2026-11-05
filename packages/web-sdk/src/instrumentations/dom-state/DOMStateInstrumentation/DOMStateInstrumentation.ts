@@ -18,7 +18,6 @@ import {
   DOM_STATE_EVENT_NAME,
   DOM_STATE_MAX_TRAVERSED_ELEMENTS,
 } from './constants.ts';
-import type { DOMStateInstrumentationArgs } from './types.ts';
 
 /*
   Captures DOM-shape measurements as one `dom-state` log per session part end:
@@ -41,11 +40,10 @@ export class DOMStateInstrumentation extends EmbraceInstrumentationBase {
   private _foldMeasured: boolean = false;
   private _pendingFoldAttributes: Attributes | null = null;
 
-  public constructor({ perf }: DOMStateInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'DOMStateInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
 
