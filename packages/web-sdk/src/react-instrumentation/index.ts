@@ -1,4 +1,4 @@
-// Exposes all React-specific instrumentation in a way that is easy to tree-shake. Eventually this should be replaced by its own package.
+// Its own entry because it imports react, an optional peer that the main entry must not require.
 
 import { EmbraceErrorBoundary } from '../instrumentations/exceptions/react/EmbraceErrorBoundary/index.ts';
 import { createReactRouterNavigationInstrumentation } from '../instrumentations/navigation/NavigationInstrumentation/react/createReactRouterNavigationInstrumentation.ts';
