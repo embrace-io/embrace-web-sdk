@@ -1,6 +1,9 @@
 import { diag } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
 import { KEY_EMB_TYPE } from '../../constants/index.ts';
 import type { SignalBuffer } from '../utils/SignalBuffer.ts';
@@ -18,7 +21,7 @@ export class SignalCorrelationLogRecordProcessor implements LogRecordProcessor {
     this._buffer = buffer;
   }
 
-  public onEmit(logRecord: SdkLogRecord): void {
+  public onEmit(logRecord: ReadWriteLogRecord): void {
     try {
       const uid = logRecord.attributes[ATTR_LOG_RECORD_UID];
       // Stamped upstream by UserSessionLogRecordProcessor; if that ordering

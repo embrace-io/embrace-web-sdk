@@ -10,6 +10,22 @@ CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sd
 
 The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sending to Embrace needs at least Chrome and Edge 85, Firefox 113, Safari 16.4 and Samsung Internet 14.
 
+### OpenTelemetry JS 3.0
+
+The SDK depends on OpenTelemetry JS 3.0 (`@opentelemetry/api` 1.10, the 3.x SDK packages and the 0.300 experimental packages). See the [OpenTelemetry JS 3.x migration guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/3.x/migration-guide.md) for the full list of upstream changes.
+
+- `@opentelemetry/api-logs` is removed. Import `logs`, `SeverityNumber` and the other Logs API types from `@opentelemetry/api`. A `logs.getLogger()` call made through `@opentelemetry/api-logs` gets a no-op logger, so its logs do not reach Embrace.
+- Objects that you pass to `initSDK`, such as span and log processors, exporters and resources, must come from the 3.x SDK packages (`@opentelemetry/sdk-trace`, `@opentelemetry/sdk-logs` and `@opentelemetry/resources`). `@opentelemetry/sdk-logs` removes two type aliases: use `ReadWriteLogRecord` instead of `SdkLogRecord`, and `LoggerProviderOptions` instead of `LoggerProviderConfig`.
+- If your app also loads OpenTelemetry JS 2.x (`@opentelemetry/api` 1.9), both API copies share one global object. The copy that registers something first (a `diag` logger, tracer provider, logger provider, propagator or context manager) owns it, and every registration from the other copy fails. `initSDK` registers its `diag` logger before its providers, so when the 2.x copy registers first, the SDK's providers are not global and the global `diag` drops the SDK's messages. Upgrade the other OpenTelemetry packages in the app to 3.x. When the SDK cannot register its global `TracerProvider` or `LoggerProvider` for another reason, such as a provider that is already registered, it logs a warning through `diag`.
+- `@opentelemetry/api` 1.10 makes `AttributeValue` an alias of `AnyValue`, which is `unknown`. The `attributes` option of `log.message()` and `log.logException()` now accepts objects, mixed-type arrays, `Uint8Array` and `null` without a type error. The SDK converts every value of this option to a string with `toString()`: an object becomes `'[object Object]'`, an array or `Uint8Array` becomes its elements separated by commas, and `null` becomes an empty string.
+- Span attributes keep object, mixed-type array, `Uint8Array` and `null` values and export them as nested OTLP values. With 2.x, the span dropped these values. Log records that you emit through `logs.getLogger()` kept them with 2.x too. Span event attributes still accept only strings, numbers, booleans and arrays of one of these types.
+- A log attribute whose value is `undefined` is dropped. With 2.x, the log record kept it and the SDK exported it with an empty value, for example `app.surface.name` on the web vital logs of a page without a route.
+- A span event keeps at most 20 attributes and drops the rest. OpenTelemetry JS 2.x did not enforce a limit on span event attributes.
+- Attribute scrubbing, both the default scrubbers and your `attributeScrubbers`, only changes an attribute whose value is a string. The SDK does not scrub an object or array value, or the strings inside it.
+- The spans of `@opentelemetry/instrumentation-fetch` and `@opentelemetry/instrumentation-xml-http-request` have the instrumentation scope version `0.300.0` instead of `0.223.0`. Update queries and filters that match on this version.
+- Installs need Node.js 22.15 or later. On earlier versions, npm reports `EBADENGINE`, and installs fail when `engine-strict` is set.
+- The OpenTelemetry packages select their browser code with `#platform` subpath imports, so your bundler must support the `imports` and `exports` fields of `package.json`. This needs webpack 5.54 or later, Jest 29.4 or later, and Metro 0.81.3 or later. Parcel needs [package exports enabled](https://parceljs.org/features/dependency-resolution/#enabling-package-exports).
+
 ### Instrumentations follow the OpenTelemetry browser lifecycle
 
 The `instrumentations` option of `initSDK` uses the `Instrumentation` interface from OpenTelemetry Browser instead of the one from `@opentelemetry/instrumentation`:

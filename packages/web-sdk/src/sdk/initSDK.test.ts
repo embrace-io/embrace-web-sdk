@@ -8,10 +8,11 @@ import {
   DiagConsoleLogger,
   DiagLogLevel,
   diag,
+  logs,
   propagation,
+  SeverityNumber,
   trace,
 } from '@opentelemetry/api';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { CompositePropagator } from '@opentelemetry/core';
 import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
@@ -752,6 +753,57 @@ describe('initSDK', () => {
     void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
   });
 
+  describe('when a global provider cannot be registered', () => {
+    let registrationStub: SinonStub | undefined;
+
+    afterEach(() => {
+      registrationStub?.restore();
+      registrationStub = undefined;
+    });
+
+    it('should warn when the global TracerProvider is not registered', () => {
+      registrationStub = sinon
+        .stub(trace, 'setGlobalTracerProvider')
+        .returns(false);
+      const diagLogger = new InMemoryDiagLogger();
+
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+      });
+      void expect(result).not.to.be.false;
+
+      expect(diagLogger.getWarnLogs()).to.include(
+        'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
+      );
+      expect(diagLogger.getWarnLogs()).not.to.include(
+        'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
+      );
+    });
+
+    it('should warn when the global LoggerProvider is not registered', () => {
+      registrationStub = sinon
+        .stub(logs, 'setGlobalLoggerProvider')
+        .returns(false);
+      const diagLogger = new InMemoryDiagLogger();
+
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+      });
+      void expect(result).not.to.be.false;
+
+      expect(diagLogger.getWarnLogs()).to.include(
+        'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
+      );
+      expect(diagLogger.getWarnLogs()).not.to.include(
+        'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
+      );
+    });
+  });
+
   it('should allow setting dynamic config through the SDK', () => {
     const refreshRemoteConfigStub = sinon.stub();
     const setConfigStub = sinon.stub();
@@ -1284,7 +1336,7 @@ describe('initSDK', () => {
       for (let i = 0; i < exportedEvents.length; i++) {
         // Default OTel limiting of events drops the oldest events when the limit
         // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L223
+        // https://github.com/open-telemetry/opentelemetry-js/blob/v3.0.0/packages/sdk-trace/src/Span.ts#L232
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
           `span-event-${expected.toString()}`,
@@ -1365,11 +1417,7 @@ describe('initSDK', () => {
       ]);
     });
 
-    // This limit is not applied. It appears to be a bug in the OTel package, which does not use the
-    // attributePerEventCountLimit config:
-    // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
-    // biome-ignore lint/suspicious/noSkippedTests: waiting on OTel bugfix https://github.com/open-telemetry/opentelemetry-js/pull/6479
-    xit('should apply limits on the attributes of an individual span event', async () => {
+    it('should apply limits on the attributes of an individual span event', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
         appID: 'abc12',

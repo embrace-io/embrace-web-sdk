@@ -37,7 +37,8 @@ const getFetch = (instrumentations: DefaultInstrumentations) =>
     (i) => i instanceof FetchInstrumentation,
   ) as FetchInstrumentation;
 
-// Upstream fetch and XHR have no isEnabled(); config.enabled: false is what keeps them from patching at construction.
+// Fetch and XHR are checked by config.enabled, not isEnabled(): registerInstrumentations
+// enables only instrumentations whose config reports them disabled, so a true flag would skip them.
 const isEnabled = (instrumentation: DefaultInstrumentations[number]) =>
   'getConfig' in instrumentation
     ? instrumentation.getConfig().enabled

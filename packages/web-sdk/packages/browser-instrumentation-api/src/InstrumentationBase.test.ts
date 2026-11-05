@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Ported to Mocha, Chai and sinon from https://github.com/open-telemetry/opentelemetry-browser/blob/4c2e48d4bb8dd769a31f6109ef0936f9b321bd07/packages/instrumentation/src/InstrumentationBase/InstrumentationBase.test.ts
+// Ported to Mocha, Chai and sinon from open-telemetry/opentelemetry-browser#548 (unmerged) at https://github.com/open-telemetry/opentelemetry-browser/blob/9191eb4db3f9b79414c1c10c611dd80984bc53e3/packages/instrumentation/src/InstrumentationBase/InstrumentationBase.test.ts
 
 import type { TextMapPropagator } from '@opentelemetry/api';
 import { diag, propagation, trace } from '@opentelemetry/api';
