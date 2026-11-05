@@ -22,6 +22,7 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _currentRouteSpan: Span | null = null;
   private _currentRouteSpanUrl: string | null = null;
   private _currentRouteSpanPath: string | undefined = undefined;
+  private _removeRouteChangedListener: (() => void) | null = null;
 
   public constructor({
     shouldCleanupPathOptionsFromRouteName = true,
@@ -36,7 +37,6 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     this._shouldCleanupPathOptionsFromRouteName =
       shouldCleanupPathOptionsFromRouteName;
     this._pageManager = pageManager ?? page.getPageManager();
-    this._pageManager.addRouteChangedListener(this._onRouteChanged);
   }
 
   private readonly _onRouteChanged = (route: Route): void => {
@@ -133,14 +133,16 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     }
   };
 
-  public override onEnable = () => {
+  public override onEnable(): void {
+    this._removeRouteChangedListener =
+      this._pageManager.addRouteChangedListener(this._onRouteChanged);
     this.setSessionPartListeners({
       start: this._onSessionPartStarted,
       end: this._onSessionPartEnded,
     });
 
-    // Route changes while disabled are dropped by the _isEnabled guard, so a
-    // route set before enabling is replayed here to open its span.
+    // No route listener exists while disabled, so a route set before enabling
+    // is replayed here to open its span.
     const currentRoute = this._pageManager.getCurrentRoute();
     if (currentRoute) {
       this._onRouteChanged(currentRoute);
@@ -149,12 +151,14 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
     this._diag.debug(
       'NavigationInstrumentation enabled, listening for navigation events.',
     );
-  };
+  }
 
-  public override onDisable = () => {
+  public override onDisable(): void {
+    this._removeRouteChangedListener?.();
+    this._removeRouteChangedListener = null;
     this._endRouteSpan();
     this._diag.debug(
       'NavigationInstrumentation disabled, stopped listening for navigation events.',
     );
-  };
+  }
 }

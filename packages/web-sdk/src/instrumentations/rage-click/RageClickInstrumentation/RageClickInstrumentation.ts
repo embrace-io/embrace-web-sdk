@@ -1,5 +1,6 @@
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
+import type { TimeoutRef } from '../../../utils/index.ts';
 import { getSelector } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { InteractionType } from './constants.ts';
@@ -28,7 +29,7 @@ interface RageClickWindow {
   count: number;
   interactionType: InteractionType;
   timestamp: number;
-  timeoutId: number;
+  timeoutId: TimeoutRef;
 }
 
 /*
@@ -65,7 +66,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     document.removeEventListener('click', this._onClickHandler);
-    this._flush();
+    this._flushHandler();
   }
 
   public override onEnable(): void {
@@ -92,10 +93,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
         count: 1,
         interactionType,
         timestamp: event.timeStamp,
-        timeoutId: window.setTimeout(
-          this._flushHandler,
-          RAGE_CLICK_WINDOW_TIME,
-        ),
+        timeoutId: setTimeout(this._flushHandler, RAGE_CLICK_WINDOW_TIME),
       };
 
       return;
@@ -120,7 +118,7 @@ export class RageClickInstrumentation extends EmbraceInstrumentationBase {
     const eventWindow = this._eventWindow;
 
     // Ensure the current window is reset, regardless of whether we emit the log or not
-    window.clearTimeout(eventWindow.timeoutId);
+    clearTimeout(eventWindow.timeoutId);
     this._eventWindow = null;
 
     if (eventWindow.count < RAGE_CLICK_THRESHOLD) {
