@@ -8,5 +8,10 @@
     "lib": ["ES2022", "DOM"],
     "types": ["mocha"]
   },
-  "include": ["src", "tests", "scripts"]
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "packages/browser-instrumentation-api/src"
+  ]
 }

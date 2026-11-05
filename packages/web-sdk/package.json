@@ -7,6 +7,10 @@
     "#embrace-io/otlp-transformer": {
       "embrace": "./packages/otlp-transformer/src/index.ts",
       "default": "./packages/otlp-transformer/dist/index.js"
+    },
+    "#opentelemetry/browser-instrumentation-api": {
+      "embrace": "./packages/browser-instrumentation-api/src/index.ts",
+      "default": "./packages/browser-instrumentation-api/dist/index.js"
     }
   },
   "jsdelivr": "./dist/embrace-web-sdk.js",
@@ -18,7 +22,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "emb-rm dist .sonda",
-    "build": "npm run build --prefix packages/otlp-transformer && tsdown",
+    "build": "npm run build --prefix packages/otlp-transformer && npm run build --prefix packages/browser-instrumentation-api && tsdown",
     "dev": "tsdown --watch --no-clean",
     "test": "web-test-runner",
     "test:watch": "npm run test -- --watch",
