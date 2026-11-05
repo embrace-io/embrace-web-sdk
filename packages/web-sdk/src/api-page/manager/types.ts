@@ -15,6 +15,13 @@ export interface PageManager {
 
   getCurrentPageId: () => string | null;
 
+  /**
+   * The document URL when the current route was set, or null when no route is set.
+   * Read with the page id and route so that they all describe the same page.
+   * @internal SDK use only
+   */
+  getCurrentPageURL: () => string | null;
+
   setPageLabel: (label: string) => void;
 
   getPageLabel: () => string | null;
