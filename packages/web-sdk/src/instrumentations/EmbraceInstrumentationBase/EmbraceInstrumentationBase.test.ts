@@ -20,32 +20,28 @@ const { expect } = chai;
 
 describe('EmbraceInstrumentationBase', () => {
   let instrumentation: FakeInstrumentation;
-  let onEnableSpy: sinon.SinonSpy;
-  let onDisableSpy: sinon.SinonSpy;
 
   beforeEach(() => {
     instrumentation = new FakeInstrumentation();
-    onEnableSpy = sinon.spy(instrumentation, 'onEnable');
-    onDisableSpy = sinon.spy(instrumentation, 'onDisable');
   });
 
   afterEach(() => {
     sinon.restore();
   });
 
-  it('fires onEnable once when enabling a disabled instrumentation', () => {
+  it('fires _onEnable once when enabling a disabled instrumentation', () => {
     instrumentation.enable();
     instrumentation.enable();
 
-    expect(onEnableSpy).to.have.been.calledOnce;
+    expect(instrumentation.enableHookCalls).to.equal(1);
   });
 
-  it('fires onDisable once when disabling an enabled instrumentation', () => {
+  it('fires _onDisable once when disabling an enabled instrumentation', () => {
     instrumentation.enable();
     instrumentation.disable();
     instrumentation.disable();
 
-    expect(onDisableSpy).to.have.been.calledOnce;
+    expect(instrumentation.disableHookCalls).to.equal(1);
   });
 
   it('fires each hook once per state flip across a full toggle cycle', () => {
@@ -53,13 +49,13 @@ describe('EmbraceInstrumentationBase', () => {
     instrumentation.disable();
     instrumentation.enable();
 
-    expect(onEnableSpy).to.have.been.calledTwice;
-    expect(onDisableSpy).to.have.been.calledOnce;
+    expect(instrumentation.enableHookCalls).to.equal(2);
+    expect(instrumentation.disableHookCalls).to.equal(1);
   });
 
   // registerInstrumentations only enables instrumentations whose config still
   // reports them disabled, so a setConfig that flips the flag would leave the
-  // instrumentation permanently skipped with onEnable never run.
+  // instrumentation permanently skipped with _onEnable never run.
   it('keeps a constructed instrumentation disabled across setConfig', () => {
     instrumentation.setConfig({ enabled: true });
 
@@ -67,7 +63,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     instrumentation.enable();
 
-    expect(onEnableSpy).to.have.been.calledOnce;
+    expect(instrumentation.enableHookCalls).to.equal(1);
   });
 
   it('keeps an enabled instrumentation enabled across setConfig', () => {
@@ -78,7 +74,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     instrumentation.disable();
 
-    expect(onDisableSpy).to.have.been.calledOnce;
+    expect(instrumentation.disableHookCalls).to.equal(1);
   });
 
   describe('session part listeners', () => {
