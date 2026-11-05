@@ -37,15 +37,16 @@ jobs:
           source versions.env
           echo "version=$WEAVER_VERSION" >> "$GITHUB_OUTPUT"
 
-      # `$/` is GitHub's syntax for this repository's own actions, at the commit running.
+      # Pinned to the weaver v0.26.1 tag's commit, so the action and the CLI pin move together.
       - name: Install Weaver
-        uses: $/.github/actions/setup-weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@38befce4bc68fe320d20f189465c93835ac20c12 # v0.26.1
         with:
           version: ${{ steps.weaver.outputs.version }}
 
       - name: Regenerate the code
         run: make generate
 
+      # `$/` is GitHub's syntax for this repository's own actions, at the commit running.
       - name: Compare committed code with the regenerated code
         uses: $/.github/actions/assert-no-drift
         with:
