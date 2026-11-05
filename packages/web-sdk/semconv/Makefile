@@ -7,9 +7,6 @@ SHELL := /usr/bin/env bash
 # The weaver version is pinned in versions.env, which CI reads too.
 include versions.env
 
-# The repo root's .github/actions, whose setup-weaver install script is shared with CI.
-ACTIONS_DIR := $(or $(shell git rev-parse --show-toplevel 2>/dev/null),.)/.github/actions
-
 # The registry the code is generated from, pinned to a release. The templates' filter chooses
 # which of its keys are generated (templates/registry/typescript/weaver.yaml).
 SOURCE_REGISTRY := https://github.com/embrace-io/embrace-semconv@v0.3.0[model]
@@ -39,9 +36,14 @@ generate: require-weaver require-jq
 validate-generated: generate
 	cd .. && npm run check
 
-# Install the weaver version pinned in versions.env into ~/.local/bin.
+# Install the weaver version pinned in versions.env with the release's own installer, the same
+# one CI's setup-weaver action runs. It verifies the download's sha256 (when `sha256sum` is
+# available) and installs into ~/.cargo/bin, or $$WEAVER_INSTALL_DIR/bin when that is set. It is
+# told not to edit shell startup files, and prints the PATH entry to add instead.
 install-weaver:
-	WEAVER_VERSION=$(WEAVER_VERSION) bash "$(ACTIONS_DIR)/setup-weaver/install-weaver.sh"
+	curl --proto '=https' --tlsv1.2 -LsSf \
+	  "https://github.com/open-telemetry/weaver/releases/download/$(WEAVER_VERSION)/weaver-installer.sh" \
+	  | WEAVER_NO_MODIFY_PATH=1 sh
 
 # Fail if weaver is not on PATH; warn if it is not the version pinned in versions.env.
 require-weaver:
