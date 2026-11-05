@@ -247,6 +247,11 @@ the following user session rather than the one being created.
 a sticky write-disabled flag, logs one error, and silently no-ops further
 writes. `getItem` and `removeItem` keep trying.
 
+When the page can't access `localStorage` at all (the browser blocks storage for
+the page and the getter throws, or a webview returns null), `initSDK` backs
+`NamespacedStorage` with an in-memory store instead. The user session then lasts
+only for that page and isn't shared with other tabs.
+
 The manager treats its in-memory state as locally authoritative: every mutating
 call (`addProperty`, `removeProperty`, lifecycle bookkeeping) updates memory
 first and then persists best-effort. Failed writes are not rolled back, so the
