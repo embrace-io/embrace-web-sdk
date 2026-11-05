@@ -11,7 +11,6 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _rootNode: Node | null;
 
   public constructor({
-    diag,
     perf,
     rootNode,
     emptyCheckDelayMs = 500,
@@ -19,7 +18,6 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'EmptyRootInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

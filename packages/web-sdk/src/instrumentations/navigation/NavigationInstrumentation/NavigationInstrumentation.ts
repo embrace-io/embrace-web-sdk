@@ -24,14 +24,12 @@ export class NavigationInstrumentation extends EmbraceInstrumentationBase {
   private _currentRouteSpanPath: string | undefined = undefined;
 
   public constructor({
-    diag,
     shouldCleanupPathOptionsFromRouteName = true,
     pageManager,
   }: NavigationInstrumentationArgs) {
     super({
       instrumentationName: 'NavigationInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       config: {},
     });
 

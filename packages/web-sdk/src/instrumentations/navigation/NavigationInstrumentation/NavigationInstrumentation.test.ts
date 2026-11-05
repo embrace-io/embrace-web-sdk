@@ -1,7 +1,8 @@
+import { diag } from '@opentelemetry/api';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import {
-  InMemoryDiagLogger,
+  setupTestDiagLogger,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -23,7 +24,7 @@ const { expect } = chai;
 describe('NavigationInstrumentation', () => {
   let navigationInstrumentation: NavigationInstrumentation;
   let memoryExporter: InMemorySpanExporter;
-  let diag: InMemoryDiagLogger;
+  let logger: ReturnType<typeof setupTestDiagLogger>;
   let pageManager: EmbracePageManager;
   let userSessionManager: UserSessionManagerInternal;
 
@@ -33,7 +34,7 @@ describe('NavigationInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    diag = new InMemoryDiagLogger();
+    logger = setupTestDiagLogger();
     pageManager = new EmbracePageManager();
     // EmbracePageManager's constructor sets an initial route from the test
     // page's real location; reset to the clean "no route yet" state these
@@ -50,6 +51,17 @@ describe('NavigationInstrumentation', () => {
     session.setGlobalUserSessionManager(userSessionManager);
   });
 
+  afterEach(() => {
+    diag.disable();
+  });
+
+  // The user session manager also logs to the global diag, so keep only this
+  // instrumentation's namespace to assert an exact sequence.
+  const navigationDebugLogs = () =>
+    logger.debug.args
+      .filter(([namespace]) => namespace === 'NavigationInstrumentation')
+      .map(([, message]) => message);
+
   const surfaceSpans = () =>
     memoryExporter
       .getFinishedSpans()
@@ -57,7 +69,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should start a route span the first time a route is reported', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -78,7 +89,7 @@ describe('NavigationInstrumentation', () => {
       'app.surface.id': pageId,
     });
 
-    expect(diag.getDebugLogs()).to.deep.equal([
+    expect(navigationDebugLogs()).to.deep.equal([
       'NavigationInstrumentation enabled, listening for navigation events.',
       'Starting route span for url: /test/123',
       'Ending route span for url: /test/123',
@@ -96,7 +107,6 @@ describe('NavigationInstrumentation', () => {
     });
 
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -112,7 +122,7 @@ describe('NavigationInstrumentation', () => {
 
   it('should fall back to the global page manager when none is provided', () => {
     page.setGlobalPageManager(pageManager);
-    navigationInstrumentation = new NavigationInstrumentation({ diag });
+    navigationInstrumentation = new NavigationInstrumentation({});
     navigationInstrumentation.enable();
 
     page.setCurrentRoute({ path: '/test/:id', url: '/test/123' });
@@ -125,7 +135,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should not start a new span or log anything for a redundant report of the same route', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -136,7 +145,7 @@ describe('NavigationInstrumentation', () => {
     pageManager.setCurrentRoute({ path: '/other', url: '/other' });
 
     expect(surfaceSpans()).to.have.lengthOf(1);
-    expect(diag.getDebugLogs()).to.deep.equal([
+    expect(navigationDebugLogs()).to.deep.equal([
       'NavigationInstrumentation enabled, listening for navigation events.',
       'Starting route span for url: /test/123',
       'Ending route span for url: /test/123',
@@ -146,7 +155,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should rename the open span in place when the same url resolves to a different path', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -174,7 +182,7 @@ describe('NavigationInstrumentation', () => {
       '/products/:id',
     );
 
-    expect(diag.getDebugLogs()).to.deep.equal([
+    expect(navigationDebugLogs()).to.deep.equal([
       'NavigationInstrumentation enabled, listening for navigation events.',
       'Starting route span for url: /products/123',
       'Resolved route span path to: /products/:id',
@@ -185,7 +193,6 @@ describe('NavigationInstrumentation', () => {
 
   it('falls back to the url as the span name and app.surface.name when path is not yet known', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -208,7 +215,7 @@ describe('NavigationInstrumentation', () => {
       '/products/:id',
     );
 
-    expect(diag.getDebugLogs()).to.deep.equal([
+    expect(navigationDebugLogs()).to.deep.equal([
       'NavigationInstrumentation enabled, listening for navigation events.',
       'Starting route span for url: /products/123',
       'Resolved route span path to: /products/:id',
@@ -219,7 +226,6 @@ describe('NavigationInstrumentation', () => {
 
   it('keeps the span named by url, never unnamed, when no path ever arrives for that navigation', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -237,7 +243,6 @@ describe('NavigationInstrumentation', () => {
 
   it('does not start a duplicate span when a path-less route is replayed for the same url', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -258,7 +263,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should end the old span and start a new one immediately when the url changes, with no session-part boundary needed', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -278,7 +282,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -296,7 +299,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should not clean up the path options from the route name if configured', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
       shouldCleanupPathOptionsFromRouteName: false,
     });
@@ -317,7 +319,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should apply path-options cleanup through the rename path too', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -335,7 +336,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should be a no-op when not enabled', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -349,7 +349,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should end an open route span when disabled', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -366,7 +365,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should end an open route span when the session part ends, even without a url change', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -381,12 +379,13 @@ describe('NavigationInstrumentation', () => {
     expect(finishedSpans).to.have.lengthOf(1);
     expect(finishedSpans[0].name).to.equal('/test/:id');
 
-    expect(diag.getDebugLogs()).to.include('Session ended, ending route span.');
+    expect(navigationDebugLogs()).to.include(
+      'Session ended, ending route span.',
+    );
   });
 
   it('should open a new route span when a session part starts with no route change (e.g. resuming from the background)', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -407,7 +406,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should not open a spurious span for the outgoing route when a session part starts from a soft-navigation rollover', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -440,7 +438,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should not throw when a session part ends with no open route span', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
@@ -455,7 +452,6 @@ describe('NavigationInstrumentation', () => {
 
   it('should work correctly after disable() then enable()', () => {
     navigationInstrumentation = new NavigationInstrumentation({
-      diag,
       pageManager,
     });
     navigationInstrumentation.enable();
