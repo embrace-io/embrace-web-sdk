@@ -46,13 +46,6 @@ export class UserTimingInstrumentation extends EmbraceInstrumentationBase {
   public override onEnable(): void {
     this._seenEntries = new Set();
 
-    if (this._markObserver) {
-      this._markObserver.disconnect();
-    }
-    if (this._measureObserver) {
-      this._measureObserver.disconnect();
-    }
-
     this._markObserver = createPerformanceObserver<PerformanceMark>(
       'mark',
       this._processEntry.bind(this),

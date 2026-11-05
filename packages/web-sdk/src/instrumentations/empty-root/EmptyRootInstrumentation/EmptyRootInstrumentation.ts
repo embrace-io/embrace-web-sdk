@@ -1,3 +1,4 @@
+import type { TimeoutRef } from '../../../utils/index.ts';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { EmptyRootInstrumentationArgs } from './types.ts';
 
@@ -9,6 +10,7 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _observer: MutationObserver;
   private readonly _emptyCheckDelayMs: number;
   private readonly _rootNode: Node | null;
+  private readonly _pendingEmptyChecks = new Set<TimeoutRef>();
 
   public constructor({
     diag,
@@ -46,6 +48,10 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
 
   public override onDisable(): void {
     this._observer.disconnect();
+    for (const timeoutId of this._pendingEmptyChecks) {
+      clearTimeout(timeoutId);
+    }
+    this._pendingEmptyChecks.clear();
   }
 
   public override onEnable(): void {
@@ -76,9 +82,11 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
           `checking if it's empty in ${this._emptyCheckDelayMs}ms`,
       );
 
-      window.setTimeout(() => {
+      const timeoutId = setTimeout(() => {
+        this._pendingEmptyChecks.delete(timeoutId);
         this._checkForEmptyRootNode();
       }, this._emptyCheckDelayMs);
+      this._pendingEmptyChecks.add(timeoutId);
     }
   }
 

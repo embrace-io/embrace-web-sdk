@@ -113,10 +113,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _enableNative(): void {
-    if (this._observer) {
-      this._observer.disconnect();
-    }
-
     this._observer = createPerformanceObserver<PerformanceSoftNavigationTiming>(
       'soft-navigation',
       (entry) => this._processEntry(entry),
@@ -131,10 +127,6 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   }
 
   private _enablePolyfill(): void {
-    if (this._eventObserver) {
-      this._eventObserver.disconnect();
-    }
-
     // biome-ignore lint/style/noNonNullAssertion: enable() is only called when navigationHost.navigation is defined
     const nav = this._navigationHost.navigation!;
 
