@@ -14,6 +14,7 @@ export {
   fakeFetchGetBody,
   fakeFetchGetConfigUrl,
   fakeFetchGetKeepalive,
+  fakeFetchGetLogsBodies,
   fakeFetchGetMethod,
   fakeFetchGetOptions,
   fakeFetchGetRequestHeaders,
