@@ -198,20 +198,15 @@ describe('initSDK', () => {
   let logExporter: InMemoryLogRecordExporter;
   let fetchStub: SinonStub;
 
-  before(() => {
+  beforeEach(() => {
     spanExporter = new InMemorySpanExporter();
     logExporter = new InMemoryLogRecordExporter();
-  });
-
-  beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     fetchStub = fakeFetchInstall();
   });
 
   afterEach(() => {
-    spanExporter.reset();
-    logExporter.reset();
     trace.disable();
     logs.disable();
     diag.disable();
@@ -2087,20 +2082,15 @@ describe('isolated instances', () => {
   let spanExporter: InMemorySpanExporter;
   let logExporter: InMemoryLogRecordExporter;
 
-  before(() => {
+  beforeEach(() => {
     spanExporter = new InMemorySpanExporter();
     logExporter = new InMemoryLogRecordExporter();
-  });
-
-  beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
     fakeFetchInstall();
   });
 
   afterEach(() => {
-    spanExporter.reset();
-    logExporter.reset();
     fakeFetchRestore();
   });
 
