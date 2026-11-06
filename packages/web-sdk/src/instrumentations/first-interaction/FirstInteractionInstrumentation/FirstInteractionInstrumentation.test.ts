@@ -1,9 +1,12 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
+import * as sinon from 'sinon';
+import sinonChai from 'sinon-chai';
 import {
   createTestDynamicConfigManager,
-  InMemoryDiagLogger,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
 } from '../../../../tests/utils/index.ts';
@@ -17,12 +20,12 @@ import {
 import { OTelPerformanceManager } from '../../../utils/index.ts';
 import { FirstInteractionInstrumentation } from './FirstInteractionInstrumentation.ts';
 
+chai.use(sinonChai);
 const { expect } = chai;
 
 describe('FirstInteractionInstrumentation', () => {
   let memoryExporter: InMemoryLogRecordExporter;
   let instrumentation: FirstInteractionInstrumentation;
-  let diag: InMemoryDiagLogger;
   let testContainer: HTMLElement;
   let userSessionManager: UserSessionManagerInternal;
 
@@ -32,7 +35,6 @@ describe('FirstInteractionInstrumentation', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    diag = new InMemoryDiagLogger();
     testContainer = document.createElement('div');
     document.body.append(testContainer);
 
@@ -50,6 +52,7 @@ describe('FirstInteractionInstrumentation', () => {
   afterEach(() => {
     instrumentation.disable();
     testContainer.remove();
+    diag.disable();
   });
 
   const getLogs = () =>
@@ -58,14 +61,14 @@ describe('FirstInteractionInstrumentation', () => {
       .filter((l) => l.eventName === 'first-interaction');
 
   it('does not emit any log when no interaction happens', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     expect(getLogs()).to.have.lengthOf(0);
   });
 
   it('emits a click event on click with pointerType=mouse', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -97,7 +100,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('emits a tap event on click with pointerType=touch', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('a');
@@ -126,7 +129,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('emits a keypress event on keydown with no coordinates', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const input = document.createElement('input');
@@ -152,7 +155,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('emits a scroll event with element_type=document and empty selector', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     document.dispatchEvent(new Event('scroll', { bubbles: true }));
@@ -171,7 +174,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('emits only once across multiple interactions', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -211,7 +214,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('re-registers listeners on session part start', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -261,7 +264,7 @@ describe('FirstInteractionInstrumentation', () => {
     const target = document.createElement('button');
     testContainer.append(target);
 
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
     instrumentation.disable();
 
@@ -278,7 +281,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('does not re-register on session part start after disable()', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
     instrumentation.disable();
 
@@ -299,7 +302,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('does not re-attach listeners when they are already attached', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     // Listeners are attached on enable(); calling enable() again while they
@@ -323,7 +326,7 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('ignores a second handler that fires after listeners are detached', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -355,7 +358,8 @@ describe('FirstInteractionInstrumentation', () => {
   });
 
   it('logs a diagnostic error when emitting fails', () => {
-    instrumentation = new FirstInteractionInstrumentation({ diag });
+    const diagLogger = setupTestDiagLogger();
+    instrumentation = new FirstInteractionInstrumentation();
     instrumentation.enable();
 
     const target = document.createElement('button');
@@ -375,6 +379,9 @@ describe('FirstInteractionInstrumentation', () => {
       }),
     );
 
-    expect(diag.getErrorLogs().length).to.be.greaterThan(0);
+    expect(diagLogger.error).to.have.been.calledWithMatch(
+      sinon.match.string,
+      sinon.match.string,
+    );
   });
 });
