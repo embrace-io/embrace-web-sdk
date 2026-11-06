@@ -6,6 +6,10 @@
 
 CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sdk')` fails with `ERR_REQUIRE_ESM` on Node versions that cannot load ES modules, and any case where it loads is unsupported. Load the SDK with `import` or a bundler; from a CommonJS file, use dynamic `import()`. TypeScript projects need `moduleResolution` set to `bundler`, `node16` or `nodenext` to resolve the package's types.
 
+### CDN bundle targets ES2022
+
+The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sending to Embrace needs at least Chrome and Edge 85, Firefox 113, Safari 16.4 and Samsung Internet 14.
+
 ### Removed `defaultInstrumentationConfig` fields
 
 - `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`.
