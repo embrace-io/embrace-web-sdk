@@ -29,11 +29,19 @@ const filterBrowserLogs = ({ args, type }) => {
 export default {
   nodeResolve: true,
   testsFinishTimeout: 5000,
-  files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+  files: [
+    'src/**/*.test.ts',
+    'src/**/*.test.tsx',
+    'packages/browser-instrumentation-api/src/**/*.test.ts',
+  ],
   plugins: [
     vitePlugin({
       resolve: {
         alias: {
+          '#opentelemetry/browser-instrumentation-api': resolve(
+            import.meta.dirname,
+            'packages/browser-instrumentation-api/src/index.ts',
+          ),
           '#embrace-io/otlp-transformer': resolve(
             import.meta.dirname,
             'packages/otlp-transformer/src/index.ts',
