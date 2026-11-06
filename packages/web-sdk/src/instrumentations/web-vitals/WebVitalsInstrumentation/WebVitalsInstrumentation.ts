@@ -43,7 +43,9 @@ import {
 } from './attributes.ts';
 import {
   ALL_WEB_VITALS,
+  INTERACTION_TARGET_EVENT_TYPES,
   MAX_CLS_LAYOUT_SHIFTS,
+  MAX_INTERACTION_TARGET_RECORDS,
   MAX_LOAF_SCRIPT_ENTRIES,
   MAX_LOAF_SCRIPT_URL_LENGTH,
   WEB_VITAL_EVENT_NAME,
@@ -59,6 +61,11 @@ type AttributedPage = {
   path?: string;
   pageID?: string;
   label?: string;
+};
+
+type InteractionTargetRecord = {
+  selector: string;
+  elementType: string;
 };
 
 const roundClamp = (value: number): number => Math.round(Math.max(0, value));
@@ -181,6 +188,7 @@ const clsLayoutShiftsAttribution = (
 
 const inpAttribution = (
   metric: MetricWithAttribution,
+  interactionTarget: InteractionTargetRecord | undefined,
   diag: DiagLogger,
 ): Attributes => {
   const attributes: Attributes = {};
@@ -191,7 +199,8 @@ const inpAttribution = (
       (entry) => entry.target,
     )?.target as Element | null | undefined;
 
-    const tagName = target?.tagName?.toLowerCase();
+    const tagName =
+      interactionTarget?.elementType ?? target?.tagName?.toLowerCase();
 
     if (tagName) {
       attributes[`${KEY_EMB_WEB_VITAL_ATTRIBUTION_PREFIX}element_type`] =
@@ -316,6 +325,44 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   private _clsMetricId: string | undefined = undefined;
   private _applyCustomLogRecordData?: (logRecord: LogRecord) => void;
   private _listenersRegistered: boolean = false;
+  private readonly _interactionTargetRecords = new Map<
+    number,
+    InteractionTargetRecord
+  >();
+  private _pinnedInteractionTarget:
+    | { interactionId: number; record: InteractionTargetRecord }
+    | undefined = undefined;
+
+  // PerformanceEventTiming.target is null once its node leaves the document,
+  // and web-vitals reads it after the next paint. The selector is taken here
+  // while the node is attached. event.timeStamp equals the entry startTime.
+  private readonly _onInteractionEvent = (event: Event): void => {
+    try {
+      const target = event.target;
+      if (
+        !(target instanceof Element) ||
+        this._interactionTargetRecords.has(event.timeStamp)
+      ) {
+        return;
+      }
+      this._interactionTargetRecords.set(event.timeStamp, {
+        selector: getSelector(target),
+        elementType: target.tagName.toLowerCase(),
+      });
+      if (
+        this._interactionTargetRecords.size > MAX_INTERACTION_TARGET_RECORDS
+      ) {
+        const oldestTimeStamp = this._interactionTargetRecords
+          .keys()
+          .next().value;
+        if (oldestTimeStamp !== undefined) {
+          this._interactionTargetRecords.delete(oldestTimeStamp);
+        }
+      }
+    } catch (e) {
+      this._diag.error('error recording INP interaction target', e);
+    }
+  };
 
   public constructor({
     diag,
@@ -349,6 +396,7 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
     // web-vitals library doesn't support removing listeners, so we pause emission
     // https://github.com/GoogleChrome/web-vitals/issues/357#issuecomment-1593439036
     this._diag.debug('WebVitalsInstrumentation disabled, pausing emission');
+    this._detachInteractionTargetListeners();
   }
 
   public override enable(): void {
@@ -362,6 +410,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public override onEnable(): void {
+    this._attachInteractionTargetListeners();
+
     // web-vitals library doesn't support removing listeners, so only register once
     if (this._listenersRegistered) {
       this._diag.debug(
@@ -399,6 +449,11 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
                 this._attributedPage.CLS = this._currentAttributedPage();
               }
             } else {
+              if (metric.name === 'INP') {
+                // web-vitals emits the final INP at page hide. Later input can delete
+                // the cached record of this interaction before then.
+                this._pinInteractionTarget(metric);
+              }
               this._attributedPage[metric.name] = this._currentAttributedPage();
             }
           },
@@ -425,6 +480,58 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       pageID: this._pageManager.getCurrentPageId() ?? undefined,
       label: this._pageManager.getPageLabel() ?? undefined,
     };
+  }
+
+  private _attachInteractionTargetListeners(): void {
+    const opts: AddEventListenerOptions = { capture: true, passive: true };
+    for (const type of INTERACTION_TARGET_EVENT_TYPES) {
+      document.addEventListener(type, this._onInteractionEvent, opts);
+    }
+  }
+
+  private _detachInteractionTargetListeners(): void {
+    const opts: EventListenerOptions = { capture: true };
+    for (const type of INTERACTION_TARGET_EVENT_TYPES) {
+      document.removeEventListener(type, this._onInteractionEvent, opts);
+    }
+  }
+
+  private _findInteractionTarget(
+    metric: MetricWithAttribution,
+  ): InteractionTargetRecord | undefined {
+    try {
+      const entries = metric.entries as PerformanceEventTiming[];
+      // eslint-disable-next-line baseline-js/use-baseline -- INP entries exist only where Event Timing is supported
+      const interactionId = entries[0]?.interactionId;
+      if (
+        interactionId &&
+        this._pinnedInteractionTarget?.interactionId === interactionId
+      ) {
+        return this._pinnedInteractionTarget.record;
+      }
+      for (const entry of entries) {
+        const record = this._interactionTargetRecords.get(entry.startTime);
+        if (record) {
+          return record;
+        }
+      }
+    } catch (e) {
+      this._diag.error('error resolving INP interaction target', e);
+    }
+    return undefined;
+  }
+
+  private _pinInteractionTarget(metric: MetricWithAttribution): void {
+    const record = this._findInteractionTarget(metric);
+    if (!record) {
+      return;
+    }
+    const entries = metric.entries as PerformanceEventTiming[];
+    // eslint-disable-next-line baseline-js/use-baseline -- INP entries exist only where Event Timing is supported
+    const interactionId = entries[0]?.interactionId;
+    if (interactionId) {
+      this._pinnedInteractionTarget = { interactionId, record };
+    }
   }
 
   private _getTimeForMetric(metric: MetricWithAttribution): number {
@@ -471,6 +578,8 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
 
   private _emitWebVital(metric: MetricWithAttribution): void {
     const attributedPage = this._attributedPage[metric.name];
+    const interactionTarget =
+      metric.name === 'INP' ? this._findInteractionTarget(metric) : undefined;
     // Resolve by the metric's own event time rather than reading the
     // currently active part: web-vitals can defer a metric's report well
     // past when its underlying entry occurred (e.g. INP/CLS finalize on
@@ -526,7 +635,9 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
         ...(metric.name === 'INP'
           ? loafScriptsAttribution(metric, this._diag)
           : {}),
-        ...(metric.name === 'INP' ? inpAttribution(metric, this._diag) : {}),
+        ...(metric.name === 'INP'
+          ? inpAttribution(metric, interactionTarget, this._diag)
+          : {}),
         ...(metric.name === 'TTFB'
           ? ttfbSubPartsAttribution(metric, this._diag)
           : {}),
@@ -540,9 +651,14 @@ export class WebVitalsInstrumentation extends EmbraceInstrumentationBase {
       body: this._includeRawAttribution
         ? JSON.stringify(
             Object.fromEntries(
-              Object.entries(metric.attribution).filter(([, v]) =>
-                isPrimitiveValue(v),
-              ),
+              Object.entries(
+                interactionTarget
+                  ? {
+                      ...metric.attribution,
+                      interactionTarget: interactionTarget.selector,
+                    }
+                  : metric.attribution,
+              ).filter(([, v]) => isPrimitiveValue(v)),
             ),
           )
         : undefined,

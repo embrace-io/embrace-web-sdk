@@ -30,6 +30,7 @@ import {
   EmbracePageManager,
   EmbraceUserSessionManager,
 } from '../../../managers/index.ts';
+import { MAX_INTERACTION_TARGET_RECORDS } from './constants.ts';
 import type { WebVitalListeners, WebVitalOnReport } from './types.ts';
 import { WebVitalsInstrumentation } from './WebVitalsInstrumentation.ts';
 
@@ -812,6 +813,330 @@ describe('WebVitalsInstrumentation', () => {
         .be.undefined;
       expect(diag.getErrorLogs()).to.include(
         'error building INP element type attribution',
+      );
+    });
+  });
+
+  describe('interaction target capture', () => {
+    let fixture: HTMLDivElement;
+    let button: HTMLButtonElement;
+
+    beforeEach(() => {
+      fixture = document.createElement('div');
+      fixture.id = 'inp-fixture';
+      button = document.createElement('button');
+      button.className = 'item';
+      fixture.appendChild(button);
+      document.body.appendChild(fixture);
+    });
+
+    afterEach(() => {
+      fixture.remove();
+    });
+
+    // Event.timeStamp is coarsened, so two events made in a row can share it.
+    const dispatchInput = (
+      target: Element,
+      type: string,
+      previousTimeStamp?: number,
+    ): number => {
+      let event: Event;
+      do {
+        event = type.startsWith('key')
+          ? new KeyboardEvent(type, { bubbles: true })
+          : new PointerEvent(type, { bubbles: true });
+      } while (event.timeStamp === previousTimeStamp);
+      target.dispatchEvent(event);
+      return event.timeStamp;
+    };
+
+    const inpMetric = (
+      entries: Partial<PerformanceEventTiming>[],
+      interactionTarget?: string,
+    ) =>
+      ({
+        name: 'INP',
+        value: 300,
+        rating: 'needs-improvement',
+        delta: 300,
+        id: 'm-target',
+        entries,
+        navigationType: 'navigate',
+        navigationId: 1,
+        attribution: {
+          interactionTarget,
+          interactionTime: 1000,
+          nextPaintTime: 1300,
+          interactionType: 'pointer',
+          processedEventEntries: [],
+          longAnimationFrameEntries: [],
+          inputDelay: 10,
+          processingDuration: 250,
+          presentationDelay: 40,
+          loadState: 'complete',
+        },
+      }) as unknown as MetricWithAttribution;
+
+    it('should listen for input events on document in the capture phase', () => {
+      const addEventListenerSpy = sinon.spy(document, 'addEventListener');
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      addEventListenerSpy.restore();
+
+      for (const type of [
+        'pointerdown',
+        'pointerup',
+        'click',
+        'keydown',
+        'keyup',
+      ]) {
+        expect(addEventListenerSpy).to.have.been.calledWith(
+          type,
+          sinon.match.func,
+          { capture: true, passive: true },
+        );
+      }
+    });
+
+    it('should use the selector captured at dispatch when the INP target left the DOM', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      const timeStamp = dispatchInput(button, 'pointerdown');
+      button.remove();
+      emitFunc(
+        inpMetric([
+          {
+            name: 'pointerdown',
+            startTime: timeStamp,
+            interactionId: 11,
+            target: null,
+          },
+        ]),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const body = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body['interactionTarget']).to.equal('#inp-fixture>button.item');
+      expect(
+        records[0].attributes['emb.web_vital.attribution.element_type'],
+      ).to.equal('button');
+    });
+
+    it('should prefer the captured selector over the web-vitals interactionTarget', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      const timeStamp = dispatchInput(button, 'pointerdown');
+      emitFunc(
+        inpMetric(
+          [
+            {
+              name: 'pointerdown',
+              startTime: timeStamp,
+              interactionId: 11,
+              target: null,
+            },
+          ],
+          'HTML > BODY > DIV > BUTTON',
+        ),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const body = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body['interactionTarget']).to.equal('#inp-fixture>button.item');
+    });
+
+    it('should keep the web-vitals interactionTarget when no captured event matches the INP entries', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      emitFunc(
+        inpMetric(
+          [
+            {
+              name: 'pointerdown',
+              startTime: -1,
+              interactionId: 12,
+              target: null,
+            },
+          ],
+          'some-target',
+        ),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const body = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body['interactionTarget']).to.equal('some-target');
+      expect(records[0].attributes['emb.web_vital.attribution.element_type']).to
+        .be.undefined;
+    });
+
+    it('should use the pinned record when the final INP entries match no cached event', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlDocument,
+      });
+      instrumentation.enable();
+      const changeFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+      const finalFunc = inpStub.getCall(1).args[0] as WebVitalOnReport;
+
+      const timeStamp = dispatchInput(button, 'pointerdown');
+      changeFunc(
+        inpMetric([
+          {
+            name: 'pointerdown',
+            startTime: timeStamp,
+            interactionId: 21,
+            target: null,
+          },
+        ]),
+      );
+      finalFunc(
+        inpMetric([
+          {
+            name: 'pointerdown',
+            startTime: -1,
+            interactionId: 21,
+            target: null,
+          },
+        ]),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const body = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body['interactionTarget']).to.equal('#inp-fixture>button.item');
+    });
+
+    it('should delete the oldest captured event after MAX_INTERACTION_TARGET_RECORDS newer events', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      const firstTimeStamp = dispatchInput(button, 'pointerdown');
+      let previousTimeStamp = firstTimeStamp;
+      for (let i = 0; i < MAX_INTERACTION_TARGET_RECORDS; i++) {
+        previousTimeStamp = dispatchInput(
+          fixture,
+          'keydown',
+          previousTimeStamp,
+        );
+      }
+      emitFunc(
+        inpMetric(
+          [
+            {
+              name: 'pointerdown',
+              startTime: firstTimeStamp,
+              interactionId: 31,
+              target: null,
+            },
+          ],
+          'some-target',
+        ),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      const body = JSON.parse(records[0].body as string) as Record<
+        string,
+        unknown
+      >;
+      expect(body['interactionTarget']).to.equal('some-target');
+    });
+
+    it('should stop capturing input events while disabled and resume after enable()', () => {
+      instrumentation = new WebVitalsInstrumentation({
+        diag,
+        perf,
+        listeners: mockWebVitalListeners,
+        urlAttribution: false,
+      });
+      instrumentation.enable();
+      const emitFunc = inpStub.getCall(0).args[0] as WebVitalOnReport;
+
+      instrumentation.disable();
+      const whileDisabled = dispatchInput(button, 'pointerdown');
+      instrumentation.enable();
+      const afterEnable = dispatchInput(button, 'keydown', whileDisabled);
+
+      emitFunc(
+        inpMetric(
+          [
+            {
+              name: 'pointerdown',
+              startTime: whileDisabled,
+              interactionId: 41,
+              target: null,
+            },
+          ],
+          'some-target',
+        ),
+      );
+      emitFunc(
+        inpMetric(
+          [
+            {
+              name: 'keydown',
+              startTime: afterEnable,
+              interactionId: 42,
+              target: null,
+            },
+          ],
+          'some-target',
+        ),
+      );
+
+      const records = memoryExporter.getFinishedLogRecords();
+      expect(records).to.have.lengthOf(2);
+      const bodies = records.map(
+        (record) =>
+          JSON.parse(record.body as string) as Record<string, unknown>,
+      );
+      expect(bodies[0]['interactionTarget']).to.equal('some-target');
+      expect(bodies[1]['interactionTarget']).to.equal(
+        '#inp-fixture>button.item',
       );
     });
   });
