@@ -207,6 +207,7 @@ describe('NamespacedStorage', () => {
         storage.setItem('key', 'value');
 
         expect(window[name].getItem('fromWindow__key')).to.equal('value');
+        expect(storage.persistsBeyondPage).to.equal(true);
         expect(diag.getWarnLogs()).to.have.lengthOf(0);
       });
 
@@ -217,6 +218,7 @@ describe('NamespacedStorage', () => {
 
         expect(storage.setItem('key', 'value')).to.equal(true);
         expect(storage.getItem('key')).to.equal('value');
+        expect(storage.persistsBeyondPage).to.equal(false);
         expect(diag.getWarnLogs()).to.deep.equal([
           `${name} is not accessible; keeping its data in memory for this page`,
         ]);
@@ -229,6 +231,7 @@ describe('NamespacedStorage', () => {
 
         expect(storage.setItem('key', 'value')).to.equal(true);
         expect(storage.getItem('key')).to.equal('value');
+        expect(storage.persistsBeyondPage).to.equal(false);
         expect(diag.getWarnLogs()).to.deep.equal([
           `${name} is not accessible; keeping its data in memory for this page`,
         ]);

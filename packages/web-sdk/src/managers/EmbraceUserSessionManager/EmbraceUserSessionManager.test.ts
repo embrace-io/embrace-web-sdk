@@ -640,7 +640,7 @@ describe('EmbraceUserSessionManager', () => {
 
       // Let the live timer fire while the part is still active. It ends the part
       // with a final reason, which clears the stored row, so the next start must
-      // not resurrect it: the expired session is gone for good.
+      // not resurrect it: the expired user session is gone for good.
       clock.tick(60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });

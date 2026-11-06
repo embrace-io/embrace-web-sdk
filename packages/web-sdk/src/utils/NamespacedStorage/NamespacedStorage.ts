@@ -31,6 +31,7 @@ export class NamespacedStorage {
   private readonly _keyPrefix: string;
   private _storage: Storage;
   private _writeDisabled: boolean = false;
+  private _persistsBeyondPage: boolean = true;
 
   /**
    * Wraps the page's `localStorage` or `sessionStorage`, or an
@@ -59,6 +60,7 @@ export class NamespacedStorage {
       storage: new InMemoryStorage(),
     });
 
+    inMemory._persistsBeyondPage = false;
     inMemory._diag.warn(
       `${name} is not accessible; keeping its data in memory for this page`,
       String(failure),
@@ -77,6 +79,11 @@ export class NamespacedStorage {
       diag.createComponentLogger({ namespace: 'NamespacedStorage' });
     this._keyPrefix = namespace ? `${namespace}__` : '';
     this._storage = storage;
+  }
+
+  /** False when the page can't access storage, so data only lives in memory. */
+  public get persistsBeyondPage(): boolean {
+    return this._persistsBeyondPage;
   }
 
   /**

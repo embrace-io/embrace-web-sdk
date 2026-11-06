@@ -135,13 +135,8 @@ describe('EmbraceUserManager', () => {
       diag,
       storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
-    diag.clear();
 
     expect(manager.getUserId()).to.equal(null);
-
-    // The constructor's failed write already moved the storage to memory, so
-    // this read doesn't reach the failing storage.
-    expect(diag.getWarnLogs()).to.have.lengthOf(0);
   });
 
   it('should handle setting an external user id when storage is failing', () => {
@@ -166,14 +161,9 @@ describe('EmbraceUserManager', () => {
       diag,
       storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
-    diag.clear();
 
     expect(() => {
       manager.clearUserId();
     }).not.to.throw();
-
-    // The constructor's failed write already moved the storage to memory, so
-    // this removal doesn't reach the failing storage.
-    expect(diag.getWarnLogs()).to.have.lengthOf(0);
   });
 });

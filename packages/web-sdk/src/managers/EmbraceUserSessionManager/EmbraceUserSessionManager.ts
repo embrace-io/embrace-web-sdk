@@ -307,7 +307,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return null;
     }
 
-    const previousUserSessionId = this.getPreviousUserSessionId() ?? '';
+    const previousUserSessionId =
+      state.previousUserSessionId ?? this._previousUserSessionId ?? '';
 
     // `session.id` / `session.previous_id` are left to the customer.
     return {
@@ -591,6 +592,16 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const bareValue = limitedSessionProperty.value;
 
     if (options?.lifespan === 'permanent') {
+      // A permanent property has to outlast the page, and storage the page
+      // can't access only lives in memory.
+      if (!this._storage.persistsBeyondPage) {
+        this._diag.warn(
+          'Storage unavailable; rejecting permanent property write.',
+        );
+
+        return;
+      }
+
       const permanentProperties = this._permanentPropertiesStore.read();
 
       // Reject the write if storage is unavailable: a property that can't
@@ -903,8 +914,18 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
+    const { userSessionId } = state;
+
     this._maxDurationTimeout = setTimeout(() => {
       this._maxDurationTimeout = null;
+
+      // The timer can outlive its user session, for example when it expired
+      // and another tab started the next one. Only end the one it was armed
+      // for.
+      if (this._userSessionStore.read()?.userSessionId !== userSessionId) {
+        return;
+      }
+
       this._rolloverUserSession('max_duration_reached');
     }, remaining);
   }
