@@ -155,6 +155,11 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
       expectedAttributeSuffix: 'concurrent_limit',
     },
     {
+      name: 'should handle the transport hitting the concurrent request limit',
+      errorMessage: 'Concurrent request limit reached',
+      expectedAttributeSuffix: 'concurrent_limit',
+    },
+    {
       name: 'should handle the exporter encountering a fetch error',
       errorMessage: 'Fetch request errored',
       expectedAttributeSuffix: 'fetch_error',

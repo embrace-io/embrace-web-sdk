@@ -8,7 +8,7 @@ import {
   fakeFetchRestore,
   InMemoryDiagLogger,
 } from '../../../tests/utils/index.ts';
-import { _resetKeepaliveTracking, FetchTransport } from './FetchTransport.ts';
+import { _resetInflightTracking, FetchTransport } from './FetchTransport.ts';
 
 const { expect } = chai;
 
@@ -105,7 +105,7 @@ describe('FetchTransport', () => {
   let diagLogger: InMemoryDiagLogger;
 
   beforeEach(() => {
-    _resetKeepaliveTracking();
+    _resetInflightTracking();
     fakeFetchInstall();
     diagLogger = new InMemoryDiagLogger();
     diag.setLogger(diagLogger, DiagLogLevel.ALL);
@@ -173,43 +173,6 @@ describe('FetchTransport', () => {
       // Clean up
       deferred.resolve(new Response('ok', { status: 200 }));
       await first;
-    });
-
-    it('should disable keepalive when concurrent count reaches 9', async () => {
-      const deferreds: Deferred[] = [];
-      const stub = reinstallFetch();
-
-      for (let i = 0; i < 9; i++) {
-        const d = createDeferred();
-        deferreds.push(d);
-        stub.onCall(i).returns(d.promise);
-      }
-      stub.onCall(9).resolves(new Response('ok', { status: 200 }));
-
-      const transport = makeTransport();
-      const tinyPayload = new Uint8Array(1);
-
-      // Start 9 concurrent requests
-      const pending = [];
-      for (let i = 0; i < 9; i++) {
-        pending.push(transport.send(tinyPayload, 5000));
-        await Promise.resolve();
-      }
-
-      for (let i = 0; i < 9; i++) {
-        expect(fakeFetchGetKeepalive(i)).to.equal(true);
-      }
-
-      // 10th request should exceed concurrent limit
-      await transport.send(tinyPayload, 5000);
-
-      expect(fakeFetchGetKeepalive(9)).to.equal(false);
-
-      // Clean up
-      for (const d of deferreds) {
-        d.resolve(new Response('ok', { status: 200 }));
-      }
-      await Promise.all(pending);
     });
 
     it('should decrement counters after request completes', async () => {
@@ -539,39 +502,6 @@ describe('FetchTransport', () => {
       expect(match).to.be.a('string');
     });
 
-    it('should log debug when keepalive is downgraded for concurrent count', async () => {
-      const deferreds: Deferred[] = [];
-      const stub = reinstallFetch();
-
-      for (let i = 0; i < 9; i++) {
-        const d = createDeferred();
-        deferreds.push(d);
-        stub.onCall(i).returns(d.promise);
-      }
-      stub.onCall(9).resolves(new Response('ok', { status: 200 }));
-
-      const transport = makeTransport();
-      const tinyPayload = new Uint8Array(1);
-
-      const pending = [];
-      for (let i = 0; i < 9; i++) {
-        pending.push(transport.send(tinyPayload, 5000));
-        await Promise.resolve();
-      }
-
-      // 10th request should trigger the debug log
-      await transport.send(tinyPayload, 5000);
-
-      const debugs = diagLogger.getDebugLogs();
-      const match = debugs.find((msg) => msg.includes('concurrent count'));
-      expect(match).to.be.a('string');
-
-      for (const d of deferreds) {
-        d.resolve(new Response('ok', { status: 200 }));
-      }
-      await Promise.all(pending);
-    });
-
     it('should log debug when fetch throws a transient error', async () => {
       reinstallFetch().rejects(new TypeError('Failed to fetch'));
 
@@ -732,6 +662,127 @@ describe('FetchTransport', () => {
       await transport.send(payload30k, 5000);
 
       expect(fakeFetchGetKeepalive(1)).to.equal(true);
+    });
+  });
+
+  describe('inflight request limit', () => {
+    it('should defer a request while 3 requests are inflight', async () => {
+      const deferreds = [createDeferred(), createDeferred(), createDeferred()];
+      const stub = reinstallFetch();
+      deferreds.forEach((deferred, index) => {
+        stub.onCall(index).returns(deferred.promise);
+      });
+      const transport = makeTransport();
+
+      const pending = deferreds.map(() => transport.send(smallPayload, 5000));
+      const result = await transport.send(smallPayload, 5000);
+
+      expect(result).to.deep.equal({
+        status: 'retryable',
+        error: new Error('Concurrent request limit reached'),
+      });
+      expect(stub.callCount).to.equal(3);
+      const match = diagLogger
+        .getDebugLogs()
+        .find((msg) => msg.includes('requests inflight at limit of 3'));
+      expect(match).to.be.a('string');
+
+      for (const deferred of deferreds) {
+        deferred.resolve(new Response('ok', { status: 200 }));
+      }
+      await Promise.all(pending);
+      await flushBodyDrain();
+    });
+
+    it('should hold a slot until the response body drains', async () => {
+      const bodies = [
+        createPendingBody(),
+        createPendingBody(),
+        createPendingBody(),
+      ];
+      const stub = reinstallFetch();
+      bodies.forEach((body, index) => {
+        stub.onCall(index).resolves(new Response(body.stream, { status: 200 }));
+      });
+      stub.onCall(3).resolves(new Response('ok', { status: 200 }));
+      const transport = makeTransport();
+
+      await Promise.all(bodies.map(() => transport.send(smallPayload, 5000)));
+      const overLimitResult = await transport.send(smallPayload, 5000);
+
+      expect(overLimitResult.status).to.equal('retryable');
+      expect(stub.callCount).to.equal(3);
+
+      bodies[0].close();
+      await flushBodyDrain();
+      const result = await transport.send(smallPayload, 5000);
+
+      expect(result.status).to.equal('success');
+      expect(stub.callCount).to.equal(4);
+
+      bodies[1].close();
+      bodies[2].close();
+      await flushBodyDrain();
+    });
+
+    it('should free a slot when the response body fails to drain', async () => {
+      const bodies = [
+        createPendingBody(),
+        createPendingBody(),
+        createPendingBody(),
+      ];
+      const stub = reinstallFetch();
+      bodies.forEach((body, index) => {
+        stub.onCall(index).resolves(new Response(body.stream, { status: 200 }));
+      });
+      stub.onCall(3).resolves(new Response('ok', { status: 200 }));
+      const transport = makeTransport();
+
+      await Promise.all(bodies.map(() => transport.send(smallPayload, 5000)));
+      bodies[0].fail(new Error('body errored'));
+      await flushBodyDrain();
+      const result = await transport.send(smallPayload, 5000);
+
+      expect(result.status).to.equal('success');
+      expect(stub.callCount).to.equal(4);
+
+      bodies[1].close();
+      bodies[2].close();
+      await flushBodyDrain();
+    });
+
+    it('should free a slot when fetch throws', async () => {
+      const stub = reinstallFetch();
+      stub.rejects(new TypeError('Failed to fetch'));
+      const transport = makeTransport();
+
+      for (let attempt = 0; attempt < 4; attempt++) {
+        await transport.send(smallPayload, 5000);
+      }
+
+      expect(stub.callCount).to.equal(4);
+    });
+
+    it('should free a slot when compression fails', async () => {
+      const original = globalThis.CompressionStream;
+      globalThis.CompressionStream = class {
+        constructor() {
+          throw new Error('CompressionStream not supported');
+        }
+      } as unknown as typeof CompressionStream;
+
+      const gzipTransport = makeTransport({ compression: 'gzip' });
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await gzipTransport.send(smallPayload, 5000);
+      }
+
+      globalThis.CompressionStream = original;
+
+      const stub = reinstallFetch();
+      const result = await makeTransport().send(smallPayload, 5000);
+
+      expect(result.status).to.equal('success');
+      expect(stub.callCount).to.equal(1);
     });
   });
 });

@@ -86,7 +86,10 @@ export class EmbraceSessionPartBatchedSpanProcessor implements SpanProcessor {
           const errorMessage = result.error?.message || 'unknown error';
           let failureReason: ExportFailureReason = 'unknown';
 
-          if (errorMessage === 'Concurrent export limit reached') {
+          if (
+            errorMessage === 'Concurrent export limit reached' ||
+            errorMessage === 'Concurrent request limit reached'
+          ) {
             failureReason = 'concurrent_limit';
           } else if (errorMessage === 'Fetch request errored') {
             failureReason = 'fetch_error';

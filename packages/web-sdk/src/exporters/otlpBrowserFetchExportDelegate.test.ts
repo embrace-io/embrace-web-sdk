@@ -56,10 +56,14 @@ describe('createOtlpBrowserFetchExportDelegate', () => {
     expect(result.error?.message).to.equal('400 Fetch request failed');
   });
 
-  it('should fail exports beyond the concurrency limit', () => {
-    sinon
-      .stub(window, 'fetch')
-      .callsFake(() => new Promise<Response>(() => {}));
+  it('should fail exports beyond the concurrency limit', async () => {
+    const pendingFetches: Array<(response: Response) => void> = [];
+    sinon.stub(window, 'fetch').callsFake(
+      () =>
+        new Promise<Response>((resolve) => {
+          pendingFetches.push(resolve);
+        }),
+    );
     const delegate = createTestDelegate();
 
     const settledResults: ExportResult[] = [];
@@ -77,6 +81,13 @@ describe('createOtlpBrowserFetchExportDelegate', () => {
     );
     // the two pending exports must not have settled
     expect(settledResults).to.have.lengthOf(0);
+
+    // The transport counts open requests for the whole page, so later tests
+    // in this file need these requests closed.
+    for (const resolveFetch of pendingFetches) {
+      resolveFetch(new Response());
+    }
+    await delegate.forceFlush();
   });
 
   it('should free up the queue once pending exports settle', async () => {

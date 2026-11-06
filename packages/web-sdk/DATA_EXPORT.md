@@ -15,6 +15,10 @@ help ensure the transmission of data even if the page has been closed. If possib
 failures following an exponential backoff. See [FetchTransport](./src/transport/FetchTransport/FetchTransport.ts) and
 [RetryingTransport](./src/transport/RetryingTransport/RetryingTransport.ts) for more details.
 
+The SDK keeps at most 3 export requests open at the same time. A request stays open until its response body is fully
+read. When 3 requests are open, a new export retries with backoff within its 30 second timeout. This stops an
+unresponsive endpoint from holding the browser connections that your app needs.
+
 > [!NOTE]
 > The Fetch API's `keepalive` property is supported by all modern browsers, however it was a relatively recent addition
 > to Firefox and may not exist on some older versions of that browser in particular. Refer to this [Browser compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request/keepalive#browser_compatibility)

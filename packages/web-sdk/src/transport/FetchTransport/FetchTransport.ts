@@ -11,16 +11,19 @@ import type { FetchRequestParameters } from './types.ts';
 // https://fetch.spec.whatwg.org/#http-network-or-cache-fetch
 const KEEPALIVE_BYTE_BUDGET = 49152; // 48KiB
 
-// Chrome enforces a 9-request concurrent keepalive limit per renderer process.
-const MAX_KEEPALIVE_REQUESTS = 9;
+// Browsers open at most 6 HTTP/1.1 connections per host. A stalled collector
+// on a host that the page also calls must leave half of them to the page. The
+// cap is also under Chrome's 9-request concurrent keepalive limit per renderer
+// process, so keepalive needs only the byte budget check.
+const MAX_INFLIGHT_REQUESTS = 3;
 
 let inflightKeepaliveBytes = 0;
-let inflightKeepaliveCount = 0;
+let inflightRequestCount = 0;
 
 /** @internal for testing only */
-export function _resetKeepaliveTracking(): void {
+export function _resetInflightTracking(): void {
   inflightKeepaliveBytes = 0;
-  inflightKeepaliveCount = 0;
+  inflightRequestCount = 0;
 }
 
 /**
@@ -156,13 +159,29 @@ export class FetchTransport implements IExporterTransport {
       }
     };
 
-    // The quota frees only once the body drains, so the drain releases it.
-    const releaseKeepalive = () => {
+    // The connection stays open until the body drains, so the drain returns the
+    // request slot and the keepalive bytes.
+    const release = () => {
       clearTimeoutIfSet();
+      inflightRequestCount--;
+      // reservedBytes stays 0 for a request sent without keepalive.
       inflightKeepaliveBytes -= reservedBytes;
-      inflightKeepaliveCount--;
     };
     let drainOwnsCleanup = false;
+
+    if (inflightRequestCount >= MAX_INFLIGHT_REQUESTS) {
+      clearTimeoutIfSet();
+      diag.debug(
+        `Fetch transport deferred a request: ${inflightRequestCount} requests inflight at limit of ${MAX_INFLIGHT_REQUESTS}`,
+      );
+      // Retryable, so the retrying transport sends it again once a slot frees,
+      // within the export deadline.
+      return {
+        status: 'retryable',
+        error: new Error('Concurrent request limit reached'),
+      };
+    }
+    inflightRequestCount++;
 
     try {
       if (this._config.compression === 'gzip') {
@@ -180,20 +199,16 @@ export class FetchTransport implements IExporterTransport {
         headers['Content-Length'] = request.length.toString();
       }
 
-      const wouldExceedBytes =
-        inflightKeepaliveBytes + request.byteLength > KEEPALIVE_BYTE_BUDGET;
-      const wouldExceedCount = inflightKeepaliveCount >= MAX_KEEPALIVE_REQUESTS;
-      keepalive = !wouldExceedBytes && !wouldExceedCount;
+      keepalive =
+        inflightKeepaliveBytes + request.byteLength <= KEEPALIVE_BYTE_BUDGET;
 
       if (keepalive) {
         reservedBytes = request.byteLength;
         inflightKeepaliveBytes += reservedBytes;
-        inflightKeepaliveCount++;
       } else {
-        const reason = wouldExceedBytes
-          ? `inflight bytes (${inflightKeepaliveBytes} + ${request.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget`
-          : `concurrent count (${inflightKeepaliveCount}) at limit of ${MAX_KEEPALIVE_REQUESTS}`;
-        diag.debug(`Sending without keepalive: ${reason}`);
+        diag.debug(
+          `Sending without keepalive: inflight bytes (${inflightKeepaliveBytes} + ${request.byteLength}) would exceed ${KEEPALIVE_BYTE_BUDGET}B budget`,
+        );
       }
 
       const response = await fetch(this._config.url, {
@@ -211,8 +226,8 @@ export class FetchTransport implements IExporterTransport {
       // cleanup in `finally`.
       drainOwnsCleanup = true;
       // Trailing the drain keeps the abort signal armed, so a stalled body can
-      // hold neither the budget nor the timer forever.
-      void drained.finally(keepalive ? releaseKeepalive : clearTimeoutIfSet);
+      // hold neither the request slot, the budget nor the timer forever.
+      void drained.finally(release);
 
       if (response.ok) {
         return { status: 'success' };
@@ -247,11 +262,7 @@ export class FetchTransport implements IExporterTransport {
       // Only the paths that threw before a response reach this: once the drain
       // exists it does the cleanup.
       if (!drainOwnsCleanup) {
-        if (keepalive) {
-          releaseKeepalive();
-        } else {
-          clearTimeoutIfSet();
-        }
+        release();
       }
     }
   }
