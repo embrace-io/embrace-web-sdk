@@ -62,10 +62,6 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   }
 
   public onEnable(): void {
-    if (this._observer) {
-      this._observer.disconnect();
-    }
-
     this._observer =
       createPerformanceObserver<PerformanceLongAnimationFrameTiming>(
         'long-animation-frame',
