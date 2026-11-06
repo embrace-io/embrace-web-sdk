@@ -8,6 +8,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+  blockWindowStorage,
   createTestDynamicConfigManager,
   FailingStorage,
   InMemoryDiagLogger,
@@ -772,6 +773,77 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(storedState()?.userSessionId).to.equal(
         otherTab.getUserSessionId(),
       );
+    });
+
+    it("doesn't clear the other tab's user session when this tab's max-duration timer fires", () => {
+      // This tab arms its max-duration timer for its user session, which then
+      // expires from inactivity.
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+      clock.tick(12 * 60 * 60 * 1000 - 10 * 60 * 1000);
+
+      // The other tab starts the next user session before this tab's timer
+      // fires.
+      const otherTab = createOtherTab();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(11 * 60 * 1000);
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+    });
+  });
+
+  describe('storage the page cannot reach', () => {
+    let restoreStorage: () => void;
+    let unreachableStorageManager: EmbraceUserSessionManager;
+
+    beforeEach(() => {
+      restoreStorage = blockWindowStorage('localStorage');
+      unreachableStorageManager = new EmbraceUserSessionManager({
+        diag,
+        storage: NamespacedStorage.fromWindow('localStorage', { diag }),
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+    });
+
+    afterEach(() => {
+      restoreStorage();
+    });
+
+    it('keeps user-session properties for the page', () => {
+      unreachableStorageManager.startSessionPartInternal({ reason: 'init' });
+      unreachableStorageManager.addProperty('cart-size', '3');
+      unreachableStorageManager.endSessionPartInternal({
+        reason: 'background',
+      });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it('rejects permanent properties with a warning', () => {
+      unreachableStorageManager.startSessionPartInternal({ reason: 'init' });
+      unreachableStorageManager.addProperty('plan', 'pro', {
+        lifespan: 'permanent',
+      });
+      unreachableStorageManager.endSessionPartInternal({
+        reason: 'background',
+      });
+
+      expect(
+        memoryExporter.getFinishedSpans()[0].attributes,
+      ).to.not.have.property('emb.properties.plan');
+      expect(
+        diag
+          .getWarnLogs()
+          .some((log) => log.includes('rejecting permanent property write')),
+      ).to.equal(true);
     });
   });
 

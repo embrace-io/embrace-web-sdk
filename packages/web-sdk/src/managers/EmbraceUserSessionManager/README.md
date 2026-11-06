@@ -267,9 +267,13 @@ one other tabs and the next page load also see. Lifecycle writes are kept even
 when they only reach memory. Cross-tab visibility is the cost: nothing this tab
 writes after the failure reaches other tabs.
 
-In `addProperty(key, val, { lifespan: 'permanent' })`, the session-scoped entry
-for the same key is stripped only after the permanent blob persists, so a failed
-permanent write does not drop the previously-visible session value.
+When the page can't access storage at all, user-session-scoped properties are
+kept for the page, since the user session only lasts that long, and permanent
+properties are rejected with a warning, since they can't outlast the page.
+
+In `addProperty(key, val, { lifespan: 'permanent' })`, the user-session-scoped
+entry for the same key is stripped only after the permanent blob persists, so a
+failed permanent write does not drop the previously-visible user-session value.
 
 A storage write failure never terminates the user session.
 
