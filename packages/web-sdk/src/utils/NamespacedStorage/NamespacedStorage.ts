@@ -1,5 +1,6 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import { diag } from '@opentelemetry/api';
+import { InMemoryStorage } from '../InMemoryStorage/index.ts';
 
 interface NamespacedStorageArgs {
   storage: Storage;
@@ -16,10 +17,11 @@ interface NamespacedStorageArgs {
  * to `null`/empty results.
  *
  * The first `setItem` failure flips a sticky `_writeDisabled` flag and
- * emits one error; subsequent `setItem` calls silently return `false`
- * without attempting the underlying write, so a one-time quota error or
- * revoked permission does not keep throwing on every attempt. Reads,
- * removes, and clears continue to work.
+ * emits one error, so a one-time quota error or revoked permission does not
+ * keep throwing on every attempt. The wrapper then copies its keys into an
+ * `InMemoryStorage` and uses that for the rest of the page, so the SDK keeps
+ * its own state even though nothing more reaches storage. `setItem` keeps
+ * returning `false`, so callers that need a value to persist can reject it.
  *
  * An empty namespace skips the key prefix; the wrapper then exposes the
  * underlying storage's full keyspace with only the safety layer applied.
@@ -27,8 +29,45 @@ interface NamespacedStorageArgs {
 export class NamespacedStorage {
   private readonly _diag: DiagLogger;
   private readonly _keyPrefix: string;
-  private readonly _storage: Storage;
+  private _storage: Storage;
   private _writeDisabled: boolean = false;
+  private _persistsBeyondPage: boolean = true;
+
+  /**
+   * Wraps the page's `localStorage` or `sessionStorage`, or an
+   * `InMemoryStorage` when the page can't access it. Reading the getter throws
+   * a `SecurityError` when the browser blocks storage for the page (cookies
+   * blocked for the site, sandboxed iframes), and some webviews return null.
+   */
+  public static fromWindow(
+    name: 'localStorage' | 'sessionStorage',
+    args: Omit<NamespacedStorageArgs, 'storage'>,
+  ): NamespacedStorage {
+    let failure: unknown = `${name} is null`;
+
+    try {
+      const storage = window[name] as Storage | null;
+
+      if (storage) {
+        return new NamespacedStorage({ ...args, storage });
+      }
+    } catch (error) {
+      failure = error;
+    }
+
+    const inMemory = new NamespacedStorage({
+      ...args,
+      storage: new InMemoryStorage(),
+    });
+
+    inMemory._persistsBeyondPage = false;
+    inMemory._diag.warn(
+      `${name} is not accessible; keeping its data in memory for this page`,
+      String(failure),
+    );
+
+    return inMemory;
+  }
 
   public constructor({
     namespace,
@@ -40,6 +79,11 @@ export class NamespacedStorage {
       diag.createComponentLogger({ namespace: 'NamespacedStorage' });
     this._keyPrefix = namespace ? `${namespace}__` : '';
     this._storage = storage;
+  }
+
+  /** False when the page can't access storage, so data only lives in memory. */
+  public get persistsBeyondPage(): boolean {
+    return this._persistsBeyondPage;
   }
 
   /**
@@ -111,16 +155,21 @@ export class NamespacedStorage {
   }
 
   public setItem(key: string, value: string): boolean {
-    if (this._writeDisabled) {
-      return false;
+    const keyName = this._keyName(key);
+
+    if (!this._writeDisabled) {
+      try {
+        this._storage.setItem(keyName, value);
+
+        return true;
+      } catch (e) {
+        this._switchToMemory(e);
+      }
     }
-    try {
-      this._storage.setItem(this._keyName(key), value);
-      return true;
-    } catch (e) {
-      this._disableWrites(e);
-      return false;
-    }
+
+    this._storage.setItem(keyName, value);
+
+    return false;
   }
 
   private _keyName(key: string): string {
@@ -138,12 +187,23 @@ export class NamespacedStorage {
   }
 
   // Log only error.name: error.message can leak the stored value on some browsers.
-  private _disableWrites(error: unknown): void {
-    if (this._writeDisabled) {
-      return;
+  private _switchToMemory(error: unknown): void {
+    const memory = new InMemoryStorage();
+
+    // Copied first, so the page keeps reading what it stored before the failure.
+    for (const key of this.keys()) {
+      const value = this.getItem(key);
+
+      if (value !== null) {
+        memory.setItem(this._keyName(key), value);
+      }
     }
+
+    this._storage = memory;
     this._writeDisabled = true;
+
     const errorName = error instanceof Error ? error.name : 'UnknownError';
+
     this._diag.error(
       'writes disabled after failure; continuing in-memory only',
       errorName,
