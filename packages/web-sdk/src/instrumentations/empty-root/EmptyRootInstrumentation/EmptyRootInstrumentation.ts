@@ -7,7 +7,7 @@ import type { EmptyRootInstrumentationArgs } from './types.ts';
   event on the session part span if it ever finds it empty.
  */
 export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
-  private readonly _observer: MutationObserver;
+  private _observer: MutationObserver | null = null;
   private readonly _emptyCheckDelayMs: number;
   private readonly _rootNode: Node | null;
   private readonly _pendingEmptyChecks = new Set<TimeoutRef>();
@@ -26,26 +26,19 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
 
     this._rootNode = rootNode;
     this._emptyCheckDelayMs = emptyCheckDelayMs;
-
-    this._observer = new MutationObserver(
-      (mutationList: MutationRecord[], _observer: MutationObserver) => {
-        this._observerCallback(mutationList);
-      },
-    );
   }
 
-  public override enable(): void {
-    if (this._rootNode) {
-      super.enable();
-    } else {
-      this._diag.warn(
-        "supplied root node was null, this instrumentation won't be enabled",
-      );
+  protected override _init(): void {
+    if (!this._rootNode) {
+      throw new Error('rootNode is null');
     }
+    this._observer = new MutationObserver((mutationList: MutationRecord[]) => {
+      this._observerCallback(mutationList);
+    });
   }
 
   protected override _onDisable(): void {
-    this._observer.disconnect();
+    this._observer?.disconnect();
     for (const timeoutId of this._pendingEmptyChecks) {
       clearTimeout(timeoutId);
     }
@@ -53,7 +46,8 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   }
 
   protected override _onEnable(): void {
-    if (this._rootNode) {
+    // Only narrows types: _init() has already thrown when either is missing.
+    if (this._observer && this._rootNode) {
       this._observer.observe(this._rootNode, { childList: true });
     }
   }
