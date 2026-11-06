@@ -662,40 +662,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return this._addListener(this._sessionPartEndedListeners, listener);
   }
 
-  public getSessionId(): string | null {
-    return this.getUserSessionId();
-  }
-
-  public getPreviousSessionId(): null {
-    return null;
-  }
-
-  public getSessionStartTime(): number | null {
-    return this.getUserSessionStartTime();
-  }
-
-  public endSessionSpan(): void {
-    this.endUserSession();
-  }
-
-  public startSessionSpan(): void {}
-
-  public getSessionSpan(): ExtendedSpan | null {
-    return this.getSessionPartSpan();
-  }
-
-  public currentSessionAsReadableSpan(): null {
-    return null;
-  }
-
-  public addSessionStartedListener(_listener: () => void): () => void {
-    return () => {};
-  }
-
-  public addSessionEndedListener(_listener: () => void): () => void {
-    return () => {};
-  }
-
   /**
    * Returns the persisted user-session state, rotating to a fresh one if
    * the persisted row is missing or expired. Arms the max-duration timer
