@@ -271,7 +271,7 @@ describe('NavigationInstrumentation', () => {
     });
     navigationInstrumentation.enable();
 
-    // e.g. onEnable's replay of an already-set route, followed by
+    // e.g. _onEnable's replay of an already-set route, followed by
     // _onSessionPartStarted's replay of the same route when a session part
     // starts with no navigation in between — both report the same url with
     // no path yet.
