@@ -140,7 +140,7 @@ describe('DOMStateInstrumentation', () => {
   };
 
   // Mirrors the SDK: construction wires the instrumentation up and the user
-  // session manager onto it, then registerInstrumentations enables it.
+  // session manager onto it, then initSDK enables it.
   const createInstrumentation = (): void => {
     instrumentation = new DOMStateInstrumentation();
     instrumentation.setUserSessionManager(userSessionManager);

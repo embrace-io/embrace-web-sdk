@@ -239,10 +239,11 @@ describe('EmptyInstrumentation', () => {
     });
     instrumentation.enable();
 
+    void expect(instrumentation.isEnabled()).to.be.false;
     expect(
-      logger.messagesFrom('warn', 'EmptyRootInstrumentation'),
+      logger.messagesFrom('error', 'EmptyRootInstrumentation'),
     ).to.deep.equal([
-      "supplied root node was null, this instrumentation won't be enabled",
+      'init failed, so this instrumentation stays off: rootNode is null',
     ]);
 
     // Yield so that the mutation observer callbacks can trigger
