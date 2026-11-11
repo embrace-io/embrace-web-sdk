@@ -4,7 +4,7 @@ import type { EmbraceInstrumentationBaseArgs } from '../../EmbraceInstrumentatio
 
 export type SoftNavigationPerformanceInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf' | 'limitManager'
+  'perf' | 'limitManager'
 > & {
   navigationHost?: NavigationHost;
   signalBuffer?: SignalBuffer;
