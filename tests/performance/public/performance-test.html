@@ -90,7 +90,7 @@
         }
 
         runOnReady(() => {
-          window.EmbraceWebSdk.session.endSessionSpan();
+          window.EmbraceWebSdk.session.endUserSession();
           client.flush();
         });
       }
