@@ -1,4 +1,3 @@
-import { resolve } from 'node:path';
 import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin';
 import { playwrightLauncher } from '@web/test-runner-playwright';
 
@@ -29,21 +28,9 @@ const filterBrowserLogs = ({ args, type }) => {
 export default {
   nodeResolve: true,
   testsFinishTimeout: 5000,
-  files: [
-    'src/**/*.test.ts',
-    'src/**/*.test.tsx',
-    'packages/browser-api/src/**/*.test.ts',
-  ],
+  files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   plugins: [
     vitePlugin({
-      resolve: {
-        alias: {
-          '#opentelemetry/browser-api': resolve(
-            import.meta.dirname,
-            'packages/browser-api/src/index.ts',
-          ),
-        },
-      },
       optimizeDeps: {
         // Vite dependency optimization can cause flakiness in CI test runs, turn it off except for the specific modules
         // where we need to convert from cjs to esm

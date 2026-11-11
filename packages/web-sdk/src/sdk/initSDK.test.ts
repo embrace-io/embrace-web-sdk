@@ -13,6 +13,8 @@ import {
   SeverityNumber,
   trace,
 } from '@opentelemetry/api';
+import type { Instrumentation } from '@opentelemetry/browser-api';
+import { InstrumentationBase } from '@opentelemetry/browser-api';
 import { CompositePropagator } from '@opentelemetry/core';
 import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
@@ -29,8 +31,6 @@ import type { SinonStub } from 'sinon';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
-import type { Instrumentation } from '#opentelemetry/browser-api';
-import { InstrumentationBase } from '#opentelemetry/browser-api';
 import {
   blockWindowStorage,
   FakeInstrumentation,

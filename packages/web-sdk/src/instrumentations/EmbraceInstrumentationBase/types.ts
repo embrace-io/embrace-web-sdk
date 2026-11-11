@@ -1,4 +1,4 @@
-import type { InstrumentationDeps } from '#opentelemetry/browser-api';
+import type { InstrumentationDeps } from '@opentelemetry/browser-api';
 import type { LogManager } from '../../api-logs/index.ts';
 import type { PageManager } from '../../api-page/index.ts';
 import type {
