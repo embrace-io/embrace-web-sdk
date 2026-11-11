@@ -1,3 +1,5 @@
+export { InMemoryStorage } from '../../src/utils/InMemoryStorage/index.ts';
+export { blockWindowStorage } from './blockWindowStorage.ts';
 export {
   createTestDynamicConfigManager,
   NOT_SAMPLED_UUID,
@@ -25,7 +27,6 @@ export {
   fakeFetchWasCalled,
 } from './fakeFetch.ts';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
-export { InMemoryStorage } from './InMemoryStorage.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mock-entities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';

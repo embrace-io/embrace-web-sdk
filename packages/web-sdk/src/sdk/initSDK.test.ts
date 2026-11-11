@@ -26,6 +26,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
 import {
+  blockWindowStorage,
   FakeInstrumentation,
   FakeLogRecordProcessor,
   FakeSpanProcessor,
@@ -786,6 +787,30 @@ describe('initSDK', () => {
     } finally {
       // Restore CompressionStream
       (globalThis as never)['CompressionStream'] = originalCompressionStream;
+    }
+  });
+
+  describe('blocked storage', () => {
+    let restoreStorage: (() => void) | undefined;
+
+    afterEach(() => {
+      restoreStorage?.();
+      restoreStorage = undefined;
+    });
+
+    for (const name of ['localStorage', 'sessionStorage'] as const) {
+      it(`should initialize when reading ${name} throws`, () => {
+        restoreStorage = blockWindowStorage(name);
+        const diagLogger = new InMemoryDiagLogger();
+
+        const result = initSDK({ appID: 'app12', diagLogger });
+
+        void expect(result).not.to.be.false;
+        expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+        expect(diagLogger.getWarnLogs()).to.include(
+          `${name} is not accessible; keeping its data in memory for this page`,
+        );
+      });
     }
   });
 

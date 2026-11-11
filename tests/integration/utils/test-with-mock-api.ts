@@ -2,28 +2,24 @@ import fs from 'node:fs';
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
-import type {
-  IKeyValue,
-  Resource,
-} from '@opentelemetry/otlp-transformer/build/esnext/common/internal-types.js';
-import type {
-  IExportLogsServiceRequest,
-  ILogRecord,
-  IResourceLogs,
-  IScopeLogs,
-} from '@opentelemetry/otlp-transformer/build/esnext/logs/internal-types.js';
-import type {
-  IEvent,
-  IExportTraceServiceRequest,
-  IResourceSpans,
-  IScopeSpans,
-  ISpan,
-} from '@opentelemetry/otlp-transformer/build/esnext/trace/internal-types.js';
 import { test as base } from '@playwright/test';
 import chalk from 'chalk';
 import { diff } from 'jest-diff';
 import type { Request, Route } from 'playwright';
-import type { ReceivedSpans } from '../types.ts';
+import type {
+  IEvent,
+  IExportLogsServiceRequest,
+  IExportTraceServiceRequest,
+  IKeyValue,
+  ILogRecord,
+  IResource,
+  IResourceLogs,
+  IResourceSpans,
+  IScopeLogs,
+  IScopeSpans,
+  ISpan,
+  ReceivedSpans,
+} from '../types.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -431,8 +427,7 @@ const isExcludedSpan = (entity: ISpan | ILogRecord): boolean => {
 
 const isResourceSpan = (
   entity: IResourceSpans | IResourceLogs,
-): entity is IResourceSpans =>
-  (entity as IResourceSpans).scopeSpans !== undefined;
+): entity is IResourceSpans => 'scopeSpans' in entity;
 
 const isScopeSpan = (entity: IScopeSpans | IScopeLogs): entity is IScopeSpans =>
   (entity as IScopeSpans).spans !== undefined;
@@ -458,7 +453,7 @@ const expect = testWithMockApi.expect.extend({
 
     // First check if they have the same length
     if (received.length !== expected.length) {
-      const attributesDiff = diff(received, expected);
+      const attributesDiff = diff(expected, received);
 
       return {
         pass: false,
@@ -571,7 +566,7 @@ const expect = testWithMockApi.expect.extend({
       };
     }
   },
-  toMatchResource: (received: Resource, expected: Resource) => {
+  toMatchResource: (received: IResource, expected: IResource) => {
     expect({
       droppedAttributesCount: received.droppedAttributesCount,
     }).toEqual({

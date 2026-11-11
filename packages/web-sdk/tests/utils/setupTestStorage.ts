@@ -1,5 +1,5 @@
+import { InMemoryStorage } from '../../src/utils/InMemoryStorage/index.ts';
 import { NamespacedStorage } from '../../src/utils/NamespacedStorage/index.ts';
-import { InMemoryStorage } from './InMemoryStorage.ts';
 
 /**
  * Constructs an isolated `NamespacedStorage` backed by a fresh
