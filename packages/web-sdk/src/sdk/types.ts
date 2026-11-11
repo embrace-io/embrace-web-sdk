@@ -4,7 +4,6 @@ import type {
   DiagLogLevel,
   TextMapPropagator,
 } from '@opentelemetry/api';
-import type { Instrumentation } from '@opentelemetry/browser-api';
 import type { FetchInstrumentationConfig } from '@opentelemetry/instrumentation-fetch';
 import type { XMLHttpRequestInstrumentationConfig } from '@opentelemetry/instrumentation-xml-http-request';
 import type { Resource } from '@opentelemetry/resources';
@@ -14,6 +13,7 @@ import type {
   LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 import type { SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace';
+import type { Instrumentation } from '#opentelemetry/browser-api';
 import type { LogManager } from '../api-logs/index.ts';
 import type { PageManager } from '../api-page/index.ts';
 import type { UserSessionManager } from '../api-sessions/index.ts';
@@ -370,6 +370,7 @@ export interface SetupTracesArgs {
   pageManager: PageManager;
   perf: PerformanceManager;
   signalBuffer?: SignalBuffer;
+  diagLogger: DiagLogger;
 }
 
 export interface SetupLogsArgs {
@@ -387,6 +388,7 @@ export interface SetupLogsArgs {
   pageManager: PageManager;
   visibilityDoc: VisibilityStateDocument;
   signalBuffer?: SignalBuffer;
+  diagLogger: DiagLogger;
 }
 
 export interface SetupPageArgs {
