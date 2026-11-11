@@ -7,6 +7,7 @@ import {
   propagation,
   trace,
 } from '@opentelemetry/api';
+import type { Instrumentation } from '@opentelemetry/browser-api';
 import type { Instrumentation as LegacyOTelInstrumentation } from '@opentelemetry/instrumentation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
@@ -17,7 +18,6 @@ import {
   BatchSpanProcessor,
   StackContextManager,
 } from '@opentelemetry/sdk-trace';
-import type { Instrumentation } from '#opentelemetry/browser-api';
 import { log } from '../api-logs/index.ts';
 import { page } from '../api-page/index.ts';
 import { session } from '../api-sessions/index.ts';
