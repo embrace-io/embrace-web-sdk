@@ -3,12 +3,6 @@
   "version": "2.33.0",
   "description": "Embrace Web SDK",
   "type": "module",
-  "imports": {
-    "#opentelemetry/browser-api": {
-      "embrace": "./packages/browser-api/src/index.ts",
-      "default": "./packages/browser-api/dist/index.js"
-    }
-  },
   "jsdelivr": "./dist/embrace-web-sdk.js",
   "publishConfig": {
     "access": "public"
@@ -16,7 +10,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "emb-rm dist .sonda",
-    "build": "npm run build --prefix packages/browser-api && tsdown",
+    "build": "tsdown",
     "dev": "tsdown --watch --no-clean",
     "test": "web-test-runner",
     "test:watch": "npm run test -- --watch",
@@ -64,6 +58,7 @@
   ],
   "dependencies": {
     "@opentelemetry/api": ">=1.10.0 <1.11.0",
+    "@opentelemetry/browser-api": "^0.2.0",
     "@opentelemetry/core": "3.0.0",
     "@opentelemetry/instrumentation": "^0.300.0",
     "@opentelemetry/instrumentation-fetch": "^0.300.0",
