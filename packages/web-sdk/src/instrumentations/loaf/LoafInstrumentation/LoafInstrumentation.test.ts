@@ -136,11 +136,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should observe long-animation-frame entries', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     expect(observeOptions).to.deep.equal({
       type: 'long-animation-frame',
@@ -151,11 +148,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should emit a report on session part end with correct aggregate metrics', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({
@@ -198,11 +192,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should calculate work duration correctly', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     // renderStart present: work = renderStart - startTime = 150 - 100 = 50
     // renderStart = 0 (falsy): work = duration = 80
@@ -224,11 +215,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should calculate style and layout duration correctly', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     // styleAndLayoutStart present: startTime + duration - styleAndLayoutStart = 100 + 100 - 180 = 20
     // styleAndLayoutStart = 0: contributes 0
@@ -252,11 +240,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should skip first entry for total blocking duration calculation', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 100, firstUIEventTimestamp: 0 }),
@@ -278,11 +263,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should filter interaction-driven entries from total blocking duration', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 100, firstUIEventTimestamp: 0 }),
@@ -304,11 +286,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should not emit report when there are no entries', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
@@ -329,11 +308,8 @@ describe('LoafInstrumentation', () => {
     };
 
     const logger = setupTestDiagLogger();
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     void expect(instrumentation.isEnabled()).to.be.false;
     expect(logger.messagesFrom('error', 'LoafInstrumentation')).to.deep.equal([
@@ -345,11 +321,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should not process entries when disabled', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     instrumentation.disable();
 
@@ -368,22 +341,16 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should disconnect observer on disable', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     instrumentation.disable();
     expect(observerDisconnected).to.be.true;
   });
 
   it('should handle longestDurationExcludingFirst when only one entry', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([makeEntry({ duration: 100 })]);
     userSessionManager.endSessionPartInternal({
@@ -402,11 +369,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should rate total blocking duration as good at exact 200ms boundary', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
@@ -427,11 +391,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should rate total blocking duration as needs-improvement at 201ms', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
@@ -454,11 +415,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should rate total blocking duration as needs-improvement at exact 600ms boundary', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
@@ -481,11 +439,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should rate total blocking duration as poor at 601ms', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([
       makeEntry({ blockingDuration: 0 }),
@@ -506,11 +461,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should not create duplicate observers when enable() is called twice', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     // The observer attaches on enable(); a second enable() must be a no-op.
     instrumentation.enable();
@@ -528,55 +480,9 @@ describe('LoafInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('should re-register session part end listener when setUserSessionManager is called', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
-
-    triggerEntries([makeEntry({ duration: 60 })]);
-
-    // Create a second session manager and switch to it
-    const limitManager2 = new EmbraceLimitManager(DEFAULT_LIMITS);
-    const storage2 = setupTestStorage();
-    const userSessionManager2 = new EmbraceUserSessionManager({
-      dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
-      limitManager: limitManager2,
-      perf,
-      storage: storage2,
-      visibilityDoc: window.document,
-    });
-    userSessionManager2.startSessionPartInternal({ reason: 'init' });
-    const logManager2 = new EmbraceLogManager({
-      userSessionManager: userSessionManager2,
-      limitManager: limitManager2,
-      storage: storage2,
-      visibilityDoc: window.document,
-    });
-    log.setGlobalLogManager(logManager2);
-    instrumentation.setUserSessionManager(userSessionManager2);
-
-    triggerEntries([makeEntry({ duration: 90 })]);
-    userSessionManager2.endSessionPartInternal({
-      reason: 'web_foreground_inactivity',
-    });
-
-    const reports = memoryExporter
-      .getFinishedLogRecords()
-      .filter((l) => l.eventName === 'emb-loaf-report');
-    expect(reports).to.have.lengthOf(1);
-    expect(reports[0].attributes['emb.tbd.loaf_total_duration']).to.equal(150);
-
-    instrumentation.disable();
-  });
-
   it('should not emit a log record when disable() is called', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
@@ -589,9 +495,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should generate a unique web vital id per session part', () => {
-    const instrumentation = new LoafInstrumentation({ perf });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([makeEntry({ duration: 100 })]);
     userSessionManager.endSessionPartInternal({
@@ -623,11 +528,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should not bleed accumulated data across session parts', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([makeEntry({ duration: 100 }), makeEntry({ duration: 80 })]);
 
@@ -670,11 +572,8 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should clamp negative style and layout duration to zero', () => {
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     // styleAndLayoutStart > startTime + duration would produce negative value
     triggerEntries([
@@ -701,11 +600,8 @@ describe('LoafInstrumentation', () => {
 
   it('should handle error in entry processing gracefully', () => {
     const logger = setupTestDiagLogger();
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     // Trigger an entry that will cause an error by passing a broken object
     triggerEntries([
@@ -725,11 +621,8 @@ describe('LoafInstrumentation', () => {
 
   it('should handle error in flush report gracefully', () => {
     const logger = setupTestDiagLogger();
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     triggerEntries([makeEntry()]);
 
@@ -762,11 +655,8 @@ describe('LoafInstrumentation', () => {
     };
 
     const logger = setupTestDiagLogger();
-    const instrumentation = new LoafInstrumentation({
-      perf,
-    });
-    instrumentation.setUserSessionManager(userSessionManager);
-    instrumentation.enable();
+    const instrumentation = new LoafInstrumentation();
+    instrumentation.enable({ perf, userSessionManager });
 
     expect(logger.messagesFrom('error', 'LoafInstrumentation')).to.deep.equal([
       'enable failed: could not observe long-animation-frame entries',
@@ -793,9 +683,8 @@ describe('LoafInstrumentation', () => {
 
   describe('script summary', () => {
     it('should emit script summary log with correct aggregated data', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([
         makeEntry({
@@ -840,9 +729,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should group scripts by sourceURL across multiple LoAF entries', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([
         makeEntry({
@@ -883,9 +771,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should limit script entries to 250', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       // 251 scripts with unique URLs and incrementing durations (script 0 has lowest duration)
       const scripts = Array.from({ length: 251 }, (_, i) =>
@@ -913,9 +800,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should not emit script summary log when no scripts present', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([makeEntry({ scripts: [] })]);
 
@@ -932,9 +818,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should reset script summaries between session parts', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([
         makeEntry({
@@ -985,9 +870,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should group scripts with empty sourceURL under (inline)', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([
         makeEntry({
@@ -1024,9 +908,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should round float durations to integers in script summary', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       triggerEntries([
         makeEntry({ duration: 80 }),
@@ -1064,9 +947,8 @@ describe('LoafInstrumentation', () => {
     });
 
     it('should truncate script URLs longer than 2048 characters with ellipsis', () => {
-      const instrumentation = new LoafInstrumentation({ perf });
-      instrumentation.setUserSessionManager(userSessionManager);
-      instrumentation.enable();
+      const instrumentation = new LoafInstrumentation();
+      instrumentation.enable({ perf, userSessionManager });
 
       const longURL = `https://example.com/${'a'.repeat(2100)}`;
       const truncatedURL = `https://example.com/${'a'.repeat(2028)}...`;

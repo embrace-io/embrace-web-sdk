@@ -1,4 +1,1 @@
-export {
-  MaxScrollDepthInstrumentation,
-  type MaxScrollDepthInstrumentationArgs,
-} from './MaxScrollDepthInstrumentation/index.ts';
+export { MaxScrollDepthInstrumentation } from './MaxScrollDepthInstrumentation/index.ts';

@@ -21,7 +21,6 @@ import {
   MAX_SCRIPT_ENTRIES,
   MAX_SCRIPT_URL_LENGTH,
 } from './constants.ts';
-import type { LoafInstrumentationArgs } from './types.ts';
 
 type ScriptSummaryValue = {
   totalDuration: number;
@@ -44,11 +43,10 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _totalBlockingDuration = 0;
   private _scriptSummaries: ScriptSummaries = new Map();
 
-  public constructor({ perf }: LoafInstrumentationArgs = {}) {
+  public constructor() {
     super({
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
       config: {},
     });
   }

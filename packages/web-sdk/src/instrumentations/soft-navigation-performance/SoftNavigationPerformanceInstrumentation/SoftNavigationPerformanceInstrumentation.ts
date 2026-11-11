@@ -68,16 +68,12 @@ export class SoftNavigationPerformanceInstrumentation extends EmbraceInstrumenta
   };
 
   public constructor({
-    perf,
-    limitManager,
     navigationHost = window as NavigationHost,
     signalBuffer,
   }: SoftNavigationPerformanceInstrumentationArgs = {}) {
     super({
       instrumentationName: 'SoftNavigationPerformanceInstrumentation',
       instrumentationVersion: '1.0.0',
-      perf,
-      limitManager,
       config: {},
     });
 

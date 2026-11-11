@@ -100,11 +100,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should observe element entries with buffered: true', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(observeOptions).to.deep.equal({ type: 'element', buffered: true });
 
@@ -112,11 +109,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should emit a span for an element timing entry', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([
       makeEntry({
@@ -156,11 +150,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not add a load event when loadTime is 0', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([
       makeEntry({ loadTime: 0, renderTime: 200, startTime: 200 }),
@@ -175,11 +166,8 @@ describe('ElementTimingInstrumentation', () => {
   it('should span from navigation start to element startTime', () => {
     clock.tick(1000);
     const timeOriginPerf = new MockPerformanceManager(clock);
-    const instrumentation = new ElementTimingInstrumentation({
-      perf: timeOriginPerf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf: timeOriginPerf, limitManager });
 
     triggerEntries([makeEntry({ startTime: 250 })]);
 
@@ -200,11 +188,8 @@ describe('ElementTimingInstrumentation', () => {
     clock.setSystemTime(resetEpoch);
     timeOriginPerf.setZeroTimeOffset(resetEpoch - timeOrigin);
 
-    const instrumentation = new ElementTimingInstrumentation({
-      perf: timeOriginPerf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf: timeOriginPerf, limitManager });
 
     triggerEntries([
       makeEntry({ startTime: 700, renderTime: 700, loadTime: 650 }),
@@ -227,11 +212,8 @@ describe('ElementTimingInstrumentation', () => {
     perf.sleep(60 * 60 * 1000);
     clock.tick(500);
 
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([
       makeEntry({ startTime: 800, renderTime: 800, loadTime: 0 }),
@@ -249,11 +231,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should set element attribute to undefined when entry.element is null', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     triggerEntries([makeEntry({ element: null })]);
 
@@ -271,11 +250,8 @@ describe('ElementTimingInstrumentation', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       UnsupportedMockPerformanceObserver;
 
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(observerCallback).to.be.null;
     void expect(instrumentation.isEnabled()).to.be.false;
@@ -289,11 +265,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not emit spans after disable', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     instrumentation.disable();
 
@@ -309,11 +282,8 @@ describe('ElementTimingInstrumentation', () => {
       ...DEFAULT_LIMITS,
       maxAllowed: { ...DEFAULT_LIMITS.maxAllowed, element_timing: 2 },
     });
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager: customLimitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager: customLimitManager });
 
     triggerEntries([
       makeEntry({ identifier: 'el-0' }),
@@ -327,11 +297,8 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not enable twice', () => {
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
     const firstCallback = observerCallback;
 
     instrumentation.enable();
@@ -352,11 +319,8 @@ describe('ElementTimingInstrumentation', () => {
     };
 
     const logger = setupTestDiagLogger();
-    const instrumentation = new ElementTimingInstrumentation({
-      perf,
-      limitManager,
-    });
-    instrumentation.enable();
+    const instrumentation = new ElementTimingInstrumentation();
+    instrumentation.enable({ perf, limitManager });
 
     expect(
       logger.messagesFrom('error', 'ElementTimingInstrumentation'),
