@@ -132,6 +132,7 @@ Golden files are nondeterministic: instance IDs, trace/span IDs, and timestamps 
 
 - Hardcode contract / wire-format values in tests (attribute keys, payload shapes). Importing them defeats the test. Importing purely-internal constants is fine
 - No test-only escape hatches (`_setX`/`_resetX`). If defensive code is unreachable, delete it rather than expose a hook to cover it
+- Instrumentations log through a component logger on the global `diag`. Install `setupTestDiagLogger({ namespace: 'RageClickInstrumentation' })` with the instrumentation's name, since other components log to the same channel, and assert `messages(level)` with `deep.equal`. Use `InMemoryDiagLogger` only where a `diag` or `diagLogger` is injected (managers, processors, `initSDK`)
 
 ## Constraints
 
