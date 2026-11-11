@@ -344,6 +344,40 @@ describe('RageClickInstrumentation', () => {
     expect(getRageClickLogs()).to.have.lengthOf(0);
   });
 
+  it('logs an error and still removes the click listener if flushing on disable() throws', async () => {
+    const realPerf = new OTelPerformanceManager();
+    const throwingPerf: PerformanceManager = {
+      ...realPerf,
+      offsetToAbsoluteTime: () => {
+        throw new Error('boom');
+      },
+    };
+    instrumentation = new RageClickInstrumentation({
+      diag,
+      perf: throwingPerf,
+    });
+    instrumentation.enable();
+    const target = document.createElement('button');
+    testContainer.append(target);
+
+    target.click();
+    target.click();
+    target.click();
+
+    expect(() => instrumentation.disable()).not.to.throw();
+    expect(diag.getErrorLogs()).to.deep.equal([
+      'failed to emit rage-click log',
+    ]);
+
+    // A listener still attached would open a window whose timer flush logs a second error.
+    target.click();
+    target.click();
+    target.click();
+    await clock.tickAsync(TICK_AFTER_WINDOW);
+
+    expect(diag.getErrorLogs()).to.have.lengthOf(1);
+  });
+
   it('emits one log per window across consecutive windows', async () => {
     instrumentation = new RageClickInstrumentation({ diag });
     instrumentation.enable();
