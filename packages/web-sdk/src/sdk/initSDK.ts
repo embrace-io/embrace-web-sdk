@@ -9,7 +9,10 @@ import {
 import { logs } from '@opentelemetry/api-logs';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { emptyResource } from '@opentelemetry/resources';
-import type { LogRecordProcessor } from '@opentelemetry/sdk-logs';
+import type {
+  BatchLogRecordProcessorBrowserOptions,
+  LogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import { BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace';
 import {
@@ -271,13 +274,24 @@ export const initSDK = (
         userSessionManager,
       });
 
-      embraceLogProcessor = new BatchLogRecordProcessor({
-        exporter: new EmbraceLogExporter({
-          appID: validatedAppID,
-          embraceDataURL,
-          userID: enduserPseudoID,
-        }),
-      });
+      // TODO: drop this annotation and its import with the OTel JS 3.0 upgrade,
+      // where the browser processor's options declare this flag. On 0.x the
+      // default type entry resolves to the Node processor, which lacks it.
+      const embraceLogProcessorOptions: BatchLogRecordProcessorBrowserOptions =
+        {
+          exporter: new EmbraceLogExporter({
+            appID: validatedAppID,
+            embraceDataURL,
+            userID: enduserPseudoID,
+          }),
+          // The built-in hide flush registers in this constructor, before the
+          // session manager's listener, so it would run before the part ends and
+          // miss the logs its end listeners emit. setupLogs flushes after it.
+          disableAutoFlushOnDocumentHide: true,
+        };
+      embraceLogProcessor = new BatchLogRecordProcessor(
+        embraceLogProcessorOptions,
+      );
     }
 
     const pageManager = setupPage({
@@ -560,6 +574,17 @@ const setupLogs = ({
 
   if (embraceLogProcessor) {
     finalLogProcessors.push(embraceLogProcessor);
+    // Replaces the processor's disabled hide flush. Must be added after the
+    // session manager's visibilitychange listener (attached in
+    // setTracerProvider): that one ends the part, and the logs its end
+    // listeners emit have to be buffered before this flush takes them.
+    visibilityDoc.addEventListener?.('visibilitychange', () => {
+      if (visibilityDoc.visibilityState === 'hidden') {
+        embraceLogProcessor.forceFlush().catch((error: unknown) => {
+          diag.warn('failed to flush logs on visibilitychange', error);
+        });
+      }
+    });
   }
 
   // The log manager, the instrumentations and, when registered globally, the OTel logs API

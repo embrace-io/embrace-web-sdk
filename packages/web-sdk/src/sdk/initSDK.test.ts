@@ -31,6 +31,7 @@ import {
   FakeLogRecordProcessor,
   FakeSpanProcessor,
   fakeFetchGetConfigUrl,
+  fakeFetchGetLogsBodies,
   fakeFetchGetSpansBody,
   fakeFetchGetSpansRequestHeaders,
   fakeFetchInstall,
@@ -1015,6 +1016,54 @@ describe('initSDK', () => {
           { key: 'sdk_platform', value: { stringValue: 'web' } },
         ],
       });
+    });
+
+    it('should export logs emitted at part end when the tab becomes hidden', async () => {
+      fakeFetchRespondWith('');
+      const result = initSDK({
+        appID: 'abc12',
+        appVersion: 'my-app-version',
+        defaultInstrumentationConfig: {
+          omit: new Set([
+            '@opentelemetry/instrumentation-fetch',
+            'document-load',
+          ]),
+        },
+      });
+      void expect(result).not.to.be.false;
+      await new Promise((r) => setTimeout(r, 1));
+
+      // Earlier tests leave their SDK instances' document listeners attached, so
+      // the marker is emitted only by this instance's part end listener.
+      session.getUserSessionManager().addSessionPartEndedListener(() => {
+        logs
+          .getLogger('test-logger')
+          .emit({ body: 'emitted-at-part-end', severityNumber: 9 });
+      });
+
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      try {
+        document.dispatchEvent(new Event('visibilitychange'));
+      } finally {
+        delete (document as { visibilityState?: unknown }).visibilityState;
+      }
+      await new Promise((r) => setTimeout(r, 1));
+
+      const exportedTexts = await Promise.all(
+        fakeFetchGetLogsBodies().map((body) =>
+          new Response(
+            new Response(body).body?.pipeThrough(
+              new DecompressionStream('gzip'),
+            ),
+          ).text(),
+        ),
+      );
+      expect(
+        exportedTexts.filter((text) => text.includes('emitted-at-part-end')),
+      ).to.have.lengthOf(1);
     });
 
     it('should not include unfinished spans ', async () => {
