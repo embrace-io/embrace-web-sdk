@@ -207,7 +207,6 @@ describe('NamespacedStorage', () => {
         storage.setItem('key', 'value');
 
         expect(window[name].getItem('fromWindow__key')).to.equal('value');
-        expect(storage.persistsBeyondPage).to.equal(true);
         expect(diag.getWarnLogs()).to.have.lengthOf(0);
       });
 
@@ -218,7 +217,6 @@ describe('NamespacedStorage', () => {
 
         expect(storage.setItem('key', 'value')).to.equal(true);
         expect(storage.getItem('key')).to.equal('value');
-        expect(storage.persistsBeyondPage).to.equal(false);
         expect(diag.getWarnLogs()).to.deep.equal([
           `${name} is not accessible; keeping its data in memory for this page`,
         ]);
@@ -231,7 +229,6 @@ describe('NamespacedStorage', () => {
 
         expect(storage.setItem('key', 'value')).to.equal(true);
         expect(storage.getItem('key')).to.equal('value');
-        expect(storage.persistsBeyondPage).to.equal(false);
         expect(diag.getWarnLogs()).to.deep.equal([
           `${name} is not accessible; keeping its data in memory for this page`,
         ]);
@@ -441,6 +438,80 @@ describe('NamespacedStorage', () => {
 
       void expect(storage.getItem('memory')).to.be.null;
       expect(storage.keys()).to.deep.equal(['persisted']);
+    });
+
+    it('still removes values from storage after writes are disabled', () => {
+      let allowWrites: boolean = true;
+      const quotaLimited: Storage = {
+        get length() {
+          return inMemoryStorage.length;
+        },
+        clear: () => {
+          inMemoryStorage.clear();
+        },
+        getItem: (k) => inMemoryStorage.getItem(k),
+        key: (i) => inMemoryStorage.key(i),
+        removeItem: (k) => {
+          inMemoryStorage.removeItem(k);
+        },
+        setItem: (k, v) => {
+          if (!allowWrites) {
+            throw new Error('QuotaExceeded');
+          }
+
+          inMemoryStorage.setItem(k, v);
+        },
+      };
+      const storage = new NamespacedStorage({
+        storage: quotaLimited,
+        namespace: 'prefix',
+        diag,
+      });
+
+      storage.setItem('user', 'id');
+      allowWrites = false;
+      storage.setItem('other', 'value');
+
+      expect(storage.removeItem('user')).to.equal(true);
+
+      void expect(inMemoryStorage.getItem('prefix__user')).to.be.null;
+      void expect(storage.getItem('user')).to.be.null;
+    });
+
+    it('reads values it never wrote from storage after writes are disabled', () => {
+      let allowWrites: boolean = true;
+      const quotaLimited: Storage = {
+        get length() {
+          return inMemoryStorage.length;
+        },
+        clear: () => {
+          inMemoryStorage.clear();
+        },
+        getItem: (k) => inMemoryStorage.getItem(k),
+        key: (i) => inMemoryStorage.key(i),
+        removeItem: (k) => {
+          inMemoryStorage.removeItem(k);
+        },
+        setItem: (k, v) => {
+          if (!allowWrites) {
+            throw new Error('QuotaExceeded');
+          }
+
+          inMemoryStorage.setItem(k, v);
+        },
+      };
+      const storage = new NamespacedStorage({
+        storage: quotaLimited,
+        namespace: 'prefix',
+        diag,
+      });
+
+      allowWrites = false;
+      storage.setItem('unsaved', 'value');
+      // Another tab writes after this tab's writes were disabled.
+      inMemoryStorage.setItem('prefix__shared', 'from another tab');
+
+      expect(storage.getItem('shared')).to.equal('from another tab');
     });
 
     it('serves writes from memory when every storage call throws', () => {

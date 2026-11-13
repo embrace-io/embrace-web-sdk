@@ -95,8 +95,8 @@ import {
 /**
  * Parts are engagement-gated (visible AND focused), so only one part can be
  * active at a time. User-session state lives in storage, shared by every tab:
- * reads go to storage and each write changes one field of what's stored, so a
- * tab never writes back a copy another tab has since replaced.
+ * reads go to storage, and each write starts from a fresh read and changes
+ * only its own fields.
  */
 export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _userSessionStore: UserSessionStore;
@@ -328,7 +328,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   public endUserSession(): void {
-    if (!this._userSessionStore.read()) {
+    if (!this._sessionPartSpan && !this._userSessionStore.read()) {
       this._diag.debug(
         'Trying to end user session, but there is no active session. This is a no-op.',
       );
@@ -592,62 +592,26 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const bareValue = limitedSessionProperty.value;
 
     if (options?.lifespan === 'permanent') {
-      // A permanent property has to outlast the page, and storage the page
-      // can't access only lives in memory.
-      if (!this._storage.persistsBeyondPage) {
-        this._diag.warn(
-          'Storage unavailable; rejecting permanent property write.',
-        );
-
-        return;
-      }
-
-      const permanentProperties = this._permanentPropertiesStore.read();
-
-      // Reject the write if storage is unavailable: a property that can't
-      // persist would silently diverge from what other tabs (and the next
-      // page load) see, which is worse than no property at all.
-      if (
-        !this._permanentPropertiesStore.write({
-          ...permanentProperties,
-          [bareKey]: bareValue,
-        })
-      ) {
-        // Storage keeps a failed write in memory for the page, so restore the
-        // previous properties.
-        this._permanentPropertiesStore.write(permanentProperties);
-        this._diag.warn(
-          'Storage unavailable; rejecting permanent property write.',
-        );
-
-        return;
-      }
-
+      this._permanentPropertiesStore.write({
+        ...this._permanentPropertiesStore.read(),
+        [bareKey]: bareValue,
+      });
       this._removeFromUserSessionProperties(bareKey);
 
       return;
     }
 
-    // Ensure a state row exists to hold the write.
-    // addProperty can fire before any part has started.
+    // addProperty can fire before any part has started, so this may create
+    // the user session that holds the property.
     const { state } = this._loadOrCreateUserSessionState(this._perf.getNow());
-    const withProperty = {
+
+    this._userSessionStore.write({
       ...state,
       userSessionProperties: {
         ...state.userSessionProperties,
         [bareKey]: bareValue,
       },
-    };
-
-    if (!this._userSessionStore.write(withProperty)) {
-      // Roll back so callers don't observe a value that won't persist.
-      // Storage keeps failed writes in memory for the page, so the user
-      // session itself stays.
-      this._userSessionStore.write(state);
-      this._diag.warn(
-        'Storage unavailable; rejecting user-session property write.',
-      );
-    }
+    });
   }
 
   public removeProperty(propertyKey: string): void {
@@ -737,9 +701,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   /**
    * Returns the stored user-session state, rotating to a fresh one if the
-   * stored row is missing or expired. Arms the max-duration timer when
-   * needed. The caller is responsible for persisting (the helper does not
-   * write to storage).
+   * stored row is missing or expired, and re-arms the max-duration timer.
+   * Rotating bumps the stored user-session number; the caller persists the
+   * state row.
    */
   private _loadOrCreateUserSessionState(now: number): {
     state: UserSessionState;
@@ -812,8 +776,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   /**
    * Records the inactivity deadline on the user-session row so the next
-   * part start can detect expiry. The max-duration timer stays valid
-   * because userSessionMaxEndTs doesn't change between parts.
+   * part start can detect expiry, only while storage still holds the part's
+   * user session. Otherwise clears the max-duration timer armed for it.
    */
   private _continueUserSessionAfterPartEnd(
     now: number,
@@ -864,17 +828,33 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         userSessionEndReason,
         timestamp: boundaryTimestamp,
       });
+
+      // A manual end ends the user session that's current now, even one
+      // another tab started after this part did, which the part end leaves
+      // alone.
+      if (userSessionEndReason === 'manual') {
+        this._clearStoredUserSession();
+      }
+
       this.startSessionPartInternal({
         reason: 'user_session_rollover',
         timestamp: boundaryTimestamp,
       });
+
       return;
     }
 
-    this._previousUserSessionId =
-      this._userSessionStore.read()?.userSessionId ?? null;
-    this._userSessionStore.clear();
+    this._clearStoredUserSession();
     this._clearMaxDurationTimer();
+  }
+
+  private _clearStoredUserSession(): void {
+    const stored = this._userSessionStore.read();
+
+    if (stored) {
+      this._previousUserSessionId = stored.userSessionId;
+      this._userSessionStore.clear();
+    }
   }
 
   /**
@@ -921,8 +901,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
       // The timer can outlive its user session, for example when it expired
       // and another tab started the next one. Only end the one it was armed
-      // for.
-      if (this._userSessionStore.read()?.userSessionId !== userSessionId) {
+      // for, which this tab's part may still belong to after another tab
+      // cleared it.
+      if (
+        this._sessionPartUserSessionId !== userSessionId &&
+        this._userSessionStore.read()?.userSessionId !== userSessionId
+      ) {
         return;
       }
 

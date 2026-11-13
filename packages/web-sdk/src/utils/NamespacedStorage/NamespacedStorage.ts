@@ -10,18 +10,18 @@ interface NamespacedStorageArgs {
 
 /**
  * `Storage`-shaped wrapper that isolates the SDK from storage errors and
- * optionally namespaces keys with a prefix. Mutation methods return `true`
- * on success and `false` when the call failed or writes have been disabled.
+ * optionally namespaces keys with a prefix. `setItem` returns `false` when the
+ * value didn't reach storage; `removeItem` and `clear` return `false` when
+ * removing from storage failed.
  *
  * Read failures (`getItem`, `key`, `length`) log at warn level and degrade
  * to `null`/empty results.
  *
  * The first `setItem` failure flips a sticky `_writeDisabled` flag and
  * emits one error, so a one-time quota error or revoked permission does not
- * keep throwing on every attempt. The wrapper then copies its keys into an
- * `InMemoryStorage` and uses that for the rest of the page, so the SDK keeps
- * its own state even though nothing more reaches storage. `setItem` keeps
- * returning `false`, so callers that need a value to persist can reject it.
+ * keep throwing on every attempt. Writes from then on are kept in memory for
+ * the page and read before storage, so the SDK keeps its own state. Removals
+ * still reach storage, since removing needs no quota.
  *
  * An empty namespace skips the key prefix; the wrapper then exposes the
  * underlying storage's full keyspace with only the safety layer applied.
@@ -29,9 +29,10 @@ interface NamespacedStorageArgs {
 export class NamespacedStorage {
   private readonly _diag: DiagLogger;
   private readonly _keyPrefix: string;
-  private _storage: Storage;
+  private readonly _storage: Storage;
   private _writeDisabled: boolean = false;
-  private _persistsBeyondPage: boolean = true;
+  // Writes that failed to reach storage, read before it.
+  private readonly _unsaved = new Map<string, string>();
 
   /**
    * Wraps the page's `localStorage` or `sessionStorage`, or an
@@ -60,7 +61,6 @@ export class NamespacedStorage {
       storage: new InMemoryStorage(),
     });
 
-    inMemory._persistsBeyondPage = false;
     inMemory._diag.warn(
       `${name} is not accessible; keeping its data in memory for this page`,
       String(failure),
@@ -81,25 +81,22 @@ export class NamespacedStorage {
     this._storage = storage;
   }
 
-  /** False when the page can't access storage, so data only lives in memory. */
-  public get persistsBeyondPage(): boolean {
-    return this._persistsBeyondPage;
-  }
-
   /**
    * Logical keys when namespaced; raw underlying keys otherwise (may include
-   * foreign keys sharing the origin's storage). Best-effort: indices that
-   * throw are skipped, returns empty on bulk failure.
+   * foreign keys sharing the origin's storage), plus writes that failed to
+   * reach storage. Best-effort: indices that throw are skipped, and a failed
+   * length read skips the underlying keys.
    */
   public keys(): string[] {
-    let length: number;
+    const result: string[] = [];
+    let length = 0;
+
     try {
       length = this._storage.length;
     } catch (e) {
       this._diag.warn('failed to read storage length', String(e));
-      return [];
     }
-    const result: string[] = [];
+
     for (let i = 0; i < length; i++) {
       try {
         const key = this._storage.key(i);
@@ -120,6 +117,15 @@ export class NamespacedStorage {
         );
       }
     }
+
+    for (const keyName of this._unsaved.keys()) {
+      const key = keyName.substring(this._keyPrefix.length);
+
+      if (!result.includes(key)) {
+        result.push(key);
+      }
+    }
+
     return result;
   }
 
@@ -138,8 +144,15 @@ export class NamespacedStorage {
   }
 
   public getItem(key: string): string | null {
+    const keyName = this._keyName(key);
+    const unsaved = this._unsaved.get(keyName);
+
+    if (unsaved !== undefined) {
+      return unsaved;
+    }
+
     try {
-      return this._storage.getItem(this._keyName(key));
+      return this._storage.getItem(keyName);
     } catch (e) {
       this._diag.warn(`failed to read ${key}`, String(e));
       return null;
@@ -163,11 +176,11 @@ export class NamespacedStorage {
 
         return true;
       } catch (e) {
-        this._switchToMemory(e);
+        this._disableWrites(e);
       }
     }
 
-    this._storage.setItem(keyName, value);
+    this._unsaved.set(keyName, value);
 
     return false;
   }
@@ -177,6 +190,8 @@ export class NamespacedStorage {
   }
 
   private _safeRemove(keyName: string): boolean {
+    this._unsaved.delete(keyName);
+
     try {
       this._storage.removeItem(keyName);
       return true;
@@ -187,23 +202,12 @@ export class NamespacedStorage {
   }
 
   // Log only error.name: error.message can leak the stored value on some browsers.
-  private _switchToMemory(error: unknown): void {
-    const memory = new InMemoryStorage();
-
-    // Copied first, so the page keeps reading what it stored before the failure.
-    for (const key of this.keys()) {
-      const value = this.getItem(key);
-
-      if (value !== null) {
-        memory.setItem(this._keyName(key), value);
-      }
+  private _disableWrites(error: unknown): void {
+    if (this._writeDisabled) {
+      return;
     }
-
-    this._storage = memory;
     this._writeDisabled = true;
-
     const errorName = error instanceof Error ? error.name : 'UnknownError';
-
     this._diag.error(
       'writes disabled after failure; continuing in-memory only',
       errorName,
