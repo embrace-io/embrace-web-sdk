@@ -39,7 +39,7 @@ The `UserSessionManager` interface exposes the following methods.
 | `getUserSessionId()`                | Returns the current user session UUID or `null`.                                                                                                                                                                                                                                                                                                                                                         |
 | `getPreviousUserSessionId()`        | Returns the prior user session UUID or `null`.                                                                                                                                                                                                                                                                                                                                                           |
 | `getUserSessionStartTime()`         | Returns wall-clock milliseconds since Unix epoch, or `null`.                                                                                                                                                                                                                                                                                                                                             |
-| `endUserSession()`                  | Ends the current user session. Subject to a 5 second cooldown. No-op if no user session is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason.                                                                                                                                                               |
+| `endUserSession()`                  | Ends the current user session, including one another tab started after this tab's part did. Subject to a 5 second cooldown. No-op if no user session is stored and no part is active. If no session part is active when called, the user session ends silently because there is no part span to carry the termination reason.                                                                            |
 | `addBreadcrumb(name)`               | Adds an `emb-breadcrumb` event to the active session-part span. Dropped if no part is active.                                                                                                                                                                                                                                                                                                            |
 | `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry is stored in the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it ends. |
 | `removeProperty(key)`               | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute.                                                                                                                                                                                                                                                                                             |
@@ -231,12 +231,12 @@ the 30 second throttle, and cleared on session-part end.
 
 ### Keys
 
-| Key                            | Contents                                                                                                             | Lifetime                                                                                                                                                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, every part end (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Only ever incremented.                                                                                                                                                                                                                           |
-| `embrace_session_part_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                              |
-| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.          | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                   |
+| Key                            | Contents                                                                                                             | Lifetime                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Only ever incremented.                                                                                                                                                                                                                                                                                  |
+| `embrace_session_part_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                     |
+| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.          | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                          |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -249,31 +249,24 @@ the following user session rather than the one being created.
 ### Failure handling
 
 `NamespacedStorage` wraps `localStorage` access. The first `setItem` throw flips
-a sticky write-disabled flag and logs one error. It then copies its keys into an
-in-memory store and uses that for the rest of the page, so the tab keeps its
-user session even though nothing more reaches storage.
+a sticky write-disabled flag and logs one error. Writes from then on are kept in
+memory for the page and read before storage, so the tab keeps its user session.
+Removals still reach storage, and everything else is still read from it.
 
 When the page can't access `localStorage` at all (the browser blocks storage for
 the page and the getter throws, or a webview returns null),
 `NamespacedStorage.fromWindow` uses an in-memory store from the start. In both
-cases the user session then lasts only for that page and isn't shared with other
-tabs.
+cases nothing this tab writes afterward reaches other tabs or the next page
+load.
 
 Storage is the manager's source of truth: every read goes to storage, and every
 mutating call (`addProperty`, `removeProperty`, lifecycle bookkeeping) reads the
-stored state, changes what it needs, and writes it back. Property writes that
-don't reach storage are rejected and rolled back, so a value this tab reports is
-one other tabs and the next page load also see. Lifecycle writes are kept even
-when they only reach memory. Cross-tab visibility is the cost: nothing this tab
-writes after the failure reaches other tabs.
-
-When the page can't access storage at all, user-session-scoped properties are
-kept for the page, since the user session only lasts that long, and permanent
-properties are rejected with a warning, since they can't outlast the page.
+stored state, changes what it needs, and writes it back. Writes that only reach
+memory, property writes included, are kept for the page: other tabs can't
+persist anything either, so rejecting them would only drop telemetry.
 
 In `addProperty(key, val, { lifespan: 'permanent' })`, the user-session-scoped
-entry for the same key is stripped only after the permanent blob persists, so a
-failed permanent write does not drop the previously-visible user-session value.
+entry for the same key is removed, so a key lives in one scope at a time.
 
 A storage write failure never terminates the user session.
 
@@ -316,8 +309,8 @@ Several specific edge cases are handled:
 - Part finalization isolates a throwing `setAttributes` call from the span end,
   so a poisoned permanent-property value cannot drop the part span from the
   export.
-- A tab never writes onto, or clears, a user session another tab has started.
-  Its part end writes the inactivity deadline, or clears the stored row on a
+- A part end never writes onto, or clears, a user session another tab has
+  started. It writes the inactivity deadline, or clears the stored row on a
   final end, only while the stored user session is still the one the part
   started in. When it isn't, the part end also drops the max-duration timer
   armed for the old user session, so that timer can't end the new one.
