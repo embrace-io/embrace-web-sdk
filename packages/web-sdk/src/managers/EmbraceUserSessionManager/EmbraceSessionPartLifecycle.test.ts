@@ -8,6 +8,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
+  blockWindowStorage,
   createTestDynamicConfigManager,
   FailingStorage,
   InMemoryDiagLogger,
@@ -47,9 +48,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   beforeEach(() => {
     memoryExporter.reset();
-    // Clear storage before constructing the manager: the constructor
-    // reads the permanent-properties blob, so leftover state from a
-    // previous test would otherwise leak into _permanentProperties.
+    // The manager reads properties and user-session state from storage, so
+    // leftover state from a previous test would otherwise leak in.
     inMemoryStorage.clear();
     diag = new InMemoryDiagLogger();
     storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
@@ -267,7 +267,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     // Properties are user-session-scoped, not part-scoped. addProperty
     // eager-initializes user-session state if none exists yet, so a write
     // made before the first part is stored in the state row and gets stamped
-    // on the part span when it starts.
+    // on the part span when it ends.
     manager.addProperty('queued-property', 'queued-value');
     manager.startSessionPartInternal({ reason: 'init' });
     manager.endSessionPartInternal({ reason: 'background' });
@@ -683,11 +683,228 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     expect(finishedSpans[1].attributes).to.have.property(attributeKey, value);
   });
 
+  describe('another tab sharing storage', () => {
+    const createOtherTab = () =>
+      new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+
+    const storedState = () => {
+      const raw = inMemoryStorage.getItem('embrace_user_session_state');
+
+      return raw === null
+        ? null
+        : (JSON.parse(raw) as {
+            userSessionId: string;
+            inactivityDeadlineTs: number | null;
+          });
+    };
+
+    // The other tab ends the user session while it has no part, then starts a
+    // part, which creates the next user session.
+    const startNextUserSessionInOtherTab = () => {
+      const otherTab = createOtherTab();
+
+      otherTab.endUserSession();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+
+      return otherTab;
+    };
+
+    it('stamps a user-session property the other tab sets during the part', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().addProperty('cart-size', '3');
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it('stamps a permanent property the other tab sets during the part', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().addProperty('plan', 'pro', { lifespan: 'permanent' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.plan',
+        'pro',
+      );
+    });
+
+    it('reports the user session the other tab started', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      const otherTab = startNextUserSessionInOtherTab();
+
+      expect(manager.getUserSessionId()).to.equal(otherTab.getUserSessionId());
+    });
+
+    it("doesn't overwrite the other tab's user session when the part ends", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+      // The other tab's part is still active, so its user session has no
+      // inactivity deadline.
+      void expect(storedState()?.inactivityDeadlineTs).to.be.null;
+    });
+
+    it("doesn't clear the other tab's user session when the part ends as final", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+    });
+
+    it("doesn't clear the other tab's user session when this tab's max-duration timer fires", () => {
+      // This tab arms its max-duration timer for its user session, which then
+      // expires from inactivity.
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({ reason: 'background' });
+      clock.tick(12 * 60 * 60 * 1000 - 10 * 60 * 1000);
+
+      // The other tab starts the next user session before this tab's timer
+      // fires.
+      const otherTab = createOtherTab();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      clock.tick(11 * 60 * 1000);
+
+      expect(storedState()?.userSessionId).to.equal(
+        otherTab.getUserSessionId(),
+      );
+    });
+
+    it("rolls this tab's part over at max duration after another tab cleared the same user session", () => {
+      const shortLivedManager = new EmbraceUserSessionManager({
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: createTestDynamicConfigManager({
+          userSessionMaxDurationSeconds: 3600,
+          userSessionForegroundInactivityTimeoutSeconds: 3600,
+        }),
+      });
+      shortLivedManager.startSessionPartInternal({ reason: 'init' });
+      const userSessionId = shortLivedManager.getUserSessionId();
+
+      // Another tab's timer for the same user session fires first and clears
+      // it.
+      clock.tick(3600 * 1000 - 1);
+      inMemoryStorage.removeItem('embrace_user_session_state');
+      clock.tick(1);
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.user_session_termination_reason',
+        'max_duration_reached',
+      );
+      void expect(shortLivedManager.getUserSessionId()).to.not.be.null;
+      expect(shortLivedManager.getUserSessionId()).to.not.equal(userSessionId);
+    });
+
+    it('ends the user session another tab started when endUserSession() is called during this part', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+      const otherUserSessionId = otherTab.getUserSessionId();
+      // Past the endUserSession() cooldown the other tab started.
+      clock.tick(5000);
+
+      manager.endUserSession();
+
+      void expect(manager.getUserSessionId()).to.not.be.null;
+      expect(manager.getUserSessionId()).to.not.equal(otherUserSessionId);
+      expect(manager.getPreviousUserSessionId()).to.equal(otherUserSessionId);
+    });
+
+    it('ends the part when endUserSession() is called after storage was cleared', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const userSessionId = manager.getUserSessionId();
+      inMemoryStorage.removeItem('embrace_user_session_state');
+
+      manager.endUserSession();
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.user_session_termination_reason',
+        'manual',
+      );
+      void expect(manager.getUserSessionId()).to.not.be.null;
+      expect(manager.getUserSessionId()).to.not.equal(userSessionId);
+    });
+  });
+
+  describe('storage the page cannot reach', () => {
+    let restoreStorage: () => void;
+    let unreachableStorageManager: EmbraceUserSessionManager;
+
+    beforeEach(() => {
+      restoreStorage = blockWindowStorage('localStorage');
+      unreachableStorageManager = new EmbraceUserSessionManager({
+        diag,
+        storage: NamespacedStorage.fromWindow('localStorage', { diag }),
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+    });
+
+    afterEach(() => {
+      restoreStorage();
+    });
+
+    it('keeps user-session properties for the page', () => {
+      unreachableStorageManager.startSessionPartInternal({ reason: 'init' });
+      unreachableStorageManager.addProperty('cart-size', '3');
+      unreachableStorageManager.endSessionPartInternal({
+        reason: 'background',
+      });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it('keeps permanent properties for the page', () => {
+      unreachableStorageManager.startSessionPartInternal({ reason: 'init' });
+      unreachableStorageManager.addProperty('plan', 'pro', {
+        lifespan: 'permanent',
+      });
+      unreachableStorageManager.endSessionPartInternal({
+        reason: 'background',
+      });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.plan',
+        'pro',
+      );
+    });
+  });
+
   it('should leave the persisted user-session-scoped entry intact when a permanent flip fails to write', () => {
-    // Regression: an addProperty(key, val, {lifespan: 'permanent'}) call that
-    // fails to persist must not strip a pre-existing user-session-scoped
-    // entry for the same key, otherwise other tabs lose visibility into a
-    // value the SDK has already promised them.
+    // An addProperty(key, val, {lifespan: 'permanent'}) call that fails to
+    // persist keeps the flip in this page's memory only, so other tabs keep
+    // seeing the stored user-session-scoped value.
     const backing = new InMemoryStorage();
     let permanentWriteShouldFail: boolean = false;
     const partiallyFailingStorage: Storage = {
@@ -734,7 +951,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     expect(state.userSessionProperties).to.have.property('cart', '3');
   });
 
-  it('should reject the property write when storage is unavailable for a user-session-scoped property', () => {
+  it('should keep a user-session-scoped property for the page when storage writes fail', () => {
     const failingManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
@@ -750,17 +967,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     expect(() => failingManager.addProperty('flag', 'on')).to.not.throw();
 
-    // The property is rejected entirely: a value that can't persist would
-    // diverge from what other tabs (and the next page load) see, which is
-    // worse than no property at all.
-    expect(failingManager.getSessionPartProperties()).to.not.have.property(
+    expect(failingManager.getSessionPartProperties()).to.have.property(
       'flag',
+      'on',
     );
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
-    expect(diag.getWarnLogs().some((l) => l.includes('rejecting'))).to.equal(
-      true,
-    );
   });
 
   it('should clear permanent properties from the blob when removed', () => {
@@ -922,7 +1134,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
   });
 
-  it('should reject the property write when storage is unavailable for a permanent property', () => {
+  it('should keep a permanent property for the page when storage writes fail', () => {
     const failingManager = new EmbraceUserSessionManager({
       diag,
       limitManager,
@@ -940,16 +1152,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       failingManager.addProperty('flag', 'on', { lifespan: 'permanent' }),
     ).to.not.throw();
 
-    // The property is rejected entirely so callers don't see a value that
-    // won't persist to other tabs or survive a reload.
-    expect(failingManager.getSessionPartProperties()).to.not.have.property(
+    expect(failingManager.getSessionPartProperties()).to.have.property(
       'flag',
+      'on',
     );
     expect(diag.getErrorLogs()).to.have.lengthOf(1);
     expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
-    expect(diag.getWarnLogs().some((l) => l.includes('rejecting'))).to.equal(
-      true,
-    );
   });
 
   it('should not throw when storage write fails while removing the last permanent property', () => {

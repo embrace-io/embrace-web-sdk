@@ -63,7 +63,6 @@ import {
   EMBRACE_LAST_END_USER_SESSION_TS_KEY,
   EMBRACE_SESSION_PART_NUMBER_KEY,
   EMBRACE_USER_SESSION_NUMBER_KEY,
-  EMBRACE_USER_SESSION_STATE_KEY,
   END_USER_SESSION_COOLDOWN_MS,
   FINAL_SESSION_PART_END_REASONS,
   MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
@@ -88,29 +87,29 @@ import {
   addActivityListeners,
   createUserSessionState,
   isUserSessionExpired,
-  readPermanentProperties,
-  readUserSessionState,
+  PermanentPropertiesStore,
   removeActivityListeners,
-  storePermanentProperties,
+  UserSessionStore,
 } from './utils/index.ts';
 
 /**
- * Parts are engagement-gated (visible AND focused), so only one part can
- * be active at a time. Engagement exclusivity lets us treat storage as
- * a plain shared row read on engagement and written on changes.
+ * Parts are engagement-gated (visible AND focused), so only one part can be
+ * active at a time. User-session state lives in storage, shared by every tab:
+ * reads go to storage, and each write starts from a fresh read and changes
+ * only its own fields.
  */
 export class EmbraceUserSessionManager implements UserSessionManagerInternal {
-  private _state: UserSessionState | null = null;
+  private readonly _userSessionStore: UserSessionStore;
+  private readonly _permanentPropertiesStore: PermanentPropertiesStore;
   private _previousUserSessionId: string | null = null;
   private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
-  // Bare keys; the wire-format prefix is applied at stamp time.
-  private _permanentProperties: Record<string, string> = {};
-  // Distinguishes "another tab wiped storage after we wrote" from "we
-  // never managed to write in the first place"; see
-  // _continueUserSessionAfterPartEnd.
-  private _hasStoredState: boolean = false;
 
   private _activeSessionPartId: string | null = null;
+  // The user session the active part belongs to. Ending the part writes the
+  // inactivity deadline, or clears the user session on a final end, only while
+  // storage still holds this one, so it never changes a user session another
+  // tab has started since.
+  private _sessionPartUserSessionId: string | null = null;
   // Rollover history backing getSessionPartIdAt, cleared once the user
   // session ends, so it covers as much ground as possible before eviction
   // rather than resetting on every visibility cycle.
@@ -169,10 +168,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._storage = storage;
     this._limitManager = limitManager;
     this._dynamicConfigManager = dynamicConfigManager;
-    this._permanentProperties = readPermanentProperties(
-      this._storage,
-      this._diag,
-    );
+    this._userSessionStore = new UserSessionStore({
+      storage,
+      diag: this._diag,
+    });
+    this._permanentPropertiesStore = new PermanentPropertiesStore({
+      storage,
+      diag: this._diag,
+    });
     this._tracer = trace.getTracer('embrace-web-sdk-session-parts');
     this._target = target;
     this._activityEvents = activityEvents;
@@ -270,9 +273,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const { state, created } = this._loadOrCreateUserSessionState(
       this._perf.getNow(),
     );
-    this._state = state;
+
     if (created) {
-      this._storeState();
+      this._userSessionStore.write(state);
     }
   }
 
@@ -281,43 +284,51 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   public getUserSessionId(): string | null {
-    return this._state?.userSessionId ?? null;
+    return this._userSessionStore.read()?.userSessionId ?? null;
   }
 
   public getPreviousUserSessionId(): string | null {
     // Fall back to in-memory for the brief window during user-session end
     // where storage is cleared but the just-ended id is still held.
-    return this._state?.previousUserSessionId ?? this._previousUserSessionId;
+    return (
+      this._userSessionStore.read()?.previousUserSessionId ??
+      this._previousUserSessionId
+    );
   }
 
   public getUserSessionStartTime(): number | null {
-    return this._state?.userSessionStartTs ?? null;
+    return this._userSessionStore.read()?.userSessionStartTs ?? null;
   }
 
   public getUserSessionAttributes(): UserSessionAttributes | null {
-    if (!this._state) {
+    const state = this._userSessionStore.read();
+
+    if (!state) {
       return null;
     }
-    const previousUserSessionId = this.getPreviousUserSessionId() ?? '';
+
+    const previousUserSessionId =
+      state.previousUserSessionId ?? this._previousUserSessionId ?? '';
+
     // `session.id` / `session.previous_id` are left to the customer.
     return {
-      [KEY_EMB_USER_SESSION_ID]: this._state.userSessionId,
+      [KEY_EMB_USER_SESSION_ID]: state.userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
-      [KEY_EMB_USER_SESSION_NUMBER]: this._state.userSessionNumber,
-      [KEY_EMB_USER_SESSION_PART_INDEX]: this._state.userSessionPartIndex,
+      [KEY_EMB_USER_SESSION_NUMBER]: state.userSessionNumber,
+      [KEY_EMB_USER_SESSION_PART_INDEX]: state.userSessionPartIndex,
       [KEY_EMB_SESSION_PART_NUMBER]: this._currentSessionPartNumber ?? 0,
-      [KEY_EMB_USER_SESSION_START_TS]: this._state.userSessionStartTs,
+      [KEY_EMB_USER_SESSION_START_TS]: state.userSessionStartTs,
       [KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS]:
-        this._state.userSessionMaxDurationSeconds,
+        state.userSessionMaxDurationSeconds,
       [KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS]:
-        this._state.userSessionInactivityTimeoutSeconds,
+        state.userSessionInactivityTimeoutSeconds,
       [KEY_EMB_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS]:
-        this._state.userSessionForegroundInactivityTimeoutSeconds,
+        state.userSessionForegroundInactivityTimeoutSeconds,
     };
   }
 
   public endUserSession(): void {
-    if (!this._state) {
+    if (!this._sessionPartSpan && !this._userSessionStore.read()) {
       this._diag.debug(
         'Trying to end user session, but there is no active session. This is a no-op.',
       );
@@ -419,6 +430,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       );
     } catch (error) {
       this._activeSessionPartId = null;
+      this._sessionPartUserSessionId = null;
       this._diag.error('Error starting session part span', error);
       return;
     }
@@ -453,6 +465,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._clearSessionPartInactivityTimer();
 
     const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
+    const partUserSessionId = this._sessionPartUserSessionId;
 
     // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd cannot
     // push them forward: the caller's timestamp (when given) becomes the span
@@ -519,17 +532,23 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
       this._currentSessionPartNumber = null;
+      this._sessionPartUserSessionId = null;
       this._limitManager.reset();
     }
 
     if (isFinalSessionPart) {
-      this._previousUserSessionId = this._state?.userSessionId ?? null;
-      this._state = null;
-      this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
+      this._previousUserSessionId = partUserSessionId;
+
+      // The user session ended, so it's cleared for every tab, unless another
+      // tab has already started the next one.
+      if (this._userSessionStore.read()?.userSessionId === partUserSessionId) {
+        this._userSessionStore.clear();
+      }
+
       this._clearMaxDurationTimer();
       this._sessionPartHistory = [];
     } else {
-      this._continueUserSessionAfterPartEnd(now);
+      this._continueUserSessionAfterPartEnd(now, partUserSessionId);
     }
   }
 
@@ -573,42 +592,26 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     const bareValue = limitedSessionProperty.value;
 
     if (options?.lifespan === 'permanent') {
-      const candidate = {
-        ...this._permanentProperties,
+      this._permanentPropertiesStore.write({
+        ...this._permanentPropertiesStore.read(),
         [bareKey]: bareValue,
-      };
-      // Reject the write if storage is unavailable: a property that can't
-      // persist would silently diverge from what other tabs (and the next
-      // page load) see, which is worse than no property at all.
-      if (!storePermanentProperties(this._storage, candidate)) {
-        this._diag.warn(
-          'Storage unavailable; rejecting permanent property write.',
-        );
-        return;
-      }
-      this._permanentProperties = candidate;
+      });
       this._removeFromUserSessionProperties(bareKey);
+
       return;
     }
 
-    // Ensure a state row exists to hold the write.
-    // addProperty can fire before any part has started.
+    // addProperty can fire before any part has started, so this may create
+    // the user session that holds the property.
     const { state } = this._loadOrCreateUserSessionState(this._perf.getNow());
-    this._state = {
+
+    this._userSessionStore.write({
       ...state,
       userSessionProperties: {
         ...state.userSessionProperties,
         [bareKey]: bareValue,
       },
-    };
-    if (!this._storeState()) {
-      // Roll back so callers don't observe a value that won't persist.
-      // The user session itself stays in memory.
-      this._state = state;
-      this._diag.warn(
-        'Storage unavailable; rejecting user-session property write.',
-      );
-    }
+    });
   }
 
   public removeProperty(propertyKey: string): void {
@@ -631,8 +634,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
    */
   public getSessionPartProperties(): Record<string, string> {
     return {
-      ...this._permanentProperties,
-      ...(this._state?.userSessionProperties ?? {}),
+      ...this._permanentPropertiesStore.read(),
+      ...(this._userSessionStore.read()?.userSessionProperties ?? {}),
     };
   }
 
@@ -697,21 +700,16 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   /**
-   * Returns the persisted user-session state, rotating to a fresh one if
-   * the persisted row is missing or expired. Arms the max-duration timer
-   * when needed. The caller is responsible for assigning the result to
-   * `_state` and for persisting (the helper does not write to storage).
+   * Returns the stored user-session state, rotating to a fresh one if the
+   * stored row is missing or expired, and re-arms the max-duration timer.
+   * Rotating bumps the stored user-session number; the caller persists the
+   * state row.
    */
   private _loadOrCreateUserSessionState(now: number): {
     state: UserSessionState;
     created: boolean;
   } {
-    let state = readUserSessionState(this._storage, this._diag);
-    // Never persisted (writes disabled): keep the in-memory session rather than
-    // mint a fresh one per part. After a persist, an empty read is a real clear.
-    if (!state && !this._hasStoredState && this._state) {
-      state = this._state;
-    }
+    let state = this._userSessionStore.read();
     let created = false;
     if (!state || isUserSessionExpired(state, now)) {
       if (state) {
@@ -766,50 +764,44 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag,
     );
 
-    this._state = {
+    this._sessionPartUserSessionId = state.userSessionId;
+    this._userSessionStore.write({
       ...state,
       userSessionPartIndex: state.userSessionPartIndex + 1,
       // A part is active, so any pending inactivity deadline no longer
       // applies; it is rewritten when the part ends.
       inactivityDeadlineTs: null,
-    };
-    this._storeState();
+    });
   }
 
   /**
    * Records the inactivity deadline on the user-session row so the next
-   * part start can detect expiry. The max-duration timer stays valid
-   * because userSessionMaxEndTs doesn't change between parts.
+   * part start can detect expiry, only while storage still holds the part's
+   * user session. Otherwise clears the max-duration timer armed for it.
    */
-  private _continueUserSessionAfterPartEnd(now: number): void {
-    if (!this._state) {
+  private _continueUserSessionAfterPartEnd(
+    now: number,
+    partUserSessionId: string | null,
+  ): void {
+    const state = this._userSessionStore.read();
+
+    // The part's user session is gone (site data wiped, quota eviction) or
+    // another tab replaced it. Don't recreate or overwrite it: the next part
+    // start reads whatever is stored. Carry the part's user session forward
+    // so a fresh one can back-link to it, and drop the max-duration timer
+    // armed for it so it can't end another tab's user session.
+    if (!state || state.userSessionId !== partUserSessionId) {
+      this._previousUserSessionId = partUserSessionId;
       this._clearMaxDurationTimer();
+
       return;
     }
 
-    // If the state row was present at part start but is gone now (user
-    // wiped site data, quota eviction, sibling tab cleared), don't
-    // resurrect it from memory. Drop in-memory state so the next part
-    // start creates a fresh user session; carry the just-ended id
-    // forward so the next session can back-link to it.
-    // _hasStoredState gates this: if we never persisted in the first
-    // place, the in-memory copy stays authoritative.
-    if (
-      this._hasStoredState &&
-      this._storage.getItem(EMBRACE_USER_SESSION_STATE_KEY) === null
-    ) {
-      this._previousUserSessionId = this._state.userSessionId;
-      this._state = null;
-      this._clearMaxDurationTimer();
-      return;
-    }
-
-    this._state = {
-      ...this._state,
+    this._userSessionStore.write({
+      ...state,
       inactivityDeadlineTs:
-        now + this._state.userSessionInactivityTimeoutSeconds * 1000,
-    };
-    this._storeState();
+        now + state.userSessionInactivityTimeoutSeconds * 1000,
+    });
   }
 
   /**
@@ -836,17 +828,33 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         userSessionEndReason,
         timestamp: boundaryTimestamp,
       });
+
+      // A manual end ends the user session that's current now, even one
+      // another tab started after this part did, which the part end leaves
+      // alone.
+      if (userSessionEndReason === 'manual') {
+        this._clearStoredUserSession();
+      }
+
       this.startSessionPartInternal({
         reason: 'user_session_rollover',
         timestamp: boundaryTimestamp,
       });
+
       return;
     }
 
-    this._previousUserSessionId = this._state?.userSessionId ?? null;
-    this._state = null;
-    this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
+    this._clearStoredUserSession();
     this._clearMaxDurationTimer();
+  }
+
+  private _clearStoredUserSession(): void {
+    const stored = this._userSessionStore.read();
+
+    if (stored) {
+      this._previousUserSessionId = stored.userSessionId;
+      this._userSessionStore.clear();
+    }
   }
 
   /**
@@ -886,8 +894,22 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
+    const { userSessionId } = state;
+
     this._maxDurationTimeout = setTimeout(() => {
       this._maxDurationTimeout = null;
+
+      // The timer can outlive its user session, for example when it expired
+      // and another tab started the next one. Only end the one it was armed
+      // for, which this tab's part may still belong to after another tab
+      // cleared it.
+      if (
+        this._sessionPartUserSessionId !== userSessionId &&
+        this._userSessionStore.read()?.userSessionId !== userSessionId
+      ) {
+        return;
+      }
+
       this._rolloverUserSession('max_duration_reached');
     }, remaining);
   }
@@ -1005,14 +1027,17 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   private _startSessionPartInactivityTimer(): void {
     this._clearSessionPartInactivityTimer();
-    // Callers only arm this with an active part, so the early return is a type
-    // guard rather than a live path.
-    if (!this._state) {
-      return;
-    }
+
+    // The stored row can go missing mid-part, for example when site data is
+    // cleared.
+    const timeoutSeconds =
+      this._userSessionStore.read()
+        ?.userSessionForegroundInactivityTimeoutSeconds ??
+      DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS;
+
     this._sessionPartInactivityTimer = setTimeout(
       this._onSessionPartInactivity,
-      this._state.userSessionForegroundInactivityTimeoutSeconds * 1000,
+      timeoutSeconds * 1000,
     );
   }
 
@@ -1050,40 +1075,27 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     }
   }
 
-  private _storeState(): boolean {
-    if (!this._state) {
-      return false;
-    }
-    const stored = this._storage.setItem(
-      EMBRACE_USER_SESSION_STATE_KEY,
-      JSON.stringify(this._state),
-    );
-    if (stored) {
-      this._hasStoredState = true;
-    }
-    return stored;
-  }
-
   private _removeFromPermanentProperties(bareKey: string): void {
-    if (!(bareKey in this._permanentProperties)) {
+    const permanentProperties = this._permanentPropertiesStore.read();
+
+    if (!(bareKey in permanentProperties)) {
       return;
     }
-    const pruned = { ...this._permanentProperties };
+
+    const pruned = { ...permanentProperties };
     delete pruned[bareKey];
-    this._permanentProperties = pruned;
-    storePermanentProperties(this._storage, pruned);
+    this._permanentPropertiesStore.write(pruned);
   }
 
   private _removeFromUserSessionProperties(bareKey: string): void {
-    if (!this._state || !(bareKey in this._state.userSessionProperties)) {
+    const state = this._userSessionStore.read();
+
+    if (!state || !(bareKey in state.userSessionProperties)) {
       return;
     }
-    const pruned = { ...this._state.userSessionProperties };
+
+    const pruned = { ...state.userSessionProperties };
     delete pruned[bareKey];
-    this._state = {
-      ...this._state,
-      userSessionProperties: pruned,
-    };
-    this._storeState();
+    this._userSessionStore.write({ ...state, userSessionProperties: pruned });
   }
 }
