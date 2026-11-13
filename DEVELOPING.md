@@ -91,9 +91,10 @@ generated file is committed, and the `Semconv CI validation` workflow fails when
 it differs from a fresh regeneration.
 
 To use another key the registry defines, add it to that filter. To move to a new
-registry release, change `SOURCE_REGISTRY`. Then, from `packages/web-sdk/semconv/`:
+registry release, change `SOURCE_REGISTRY`. Then:
 
 ```sh
+cd packages/web-sdk/semconv/
 make install-weaver     # once, if weaver is not on PATH
 make validate-generated # regenerates src/semconv/, then runs the package's check script
 ```
