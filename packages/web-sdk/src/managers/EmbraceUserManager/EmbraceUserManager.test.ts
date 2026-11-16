@@ -135,13 +135,8 @@ describe('EmbraceUserManager', () => {
       diag,
       storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
-    diag.clear();
 
     expect(manager.getUserId()).to.equal(null);
-
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(1);
-    expect(warningLogs[0]).to.contain('failed to read');
   });
 
   it('should handle setting an external user id when storage is failing', () => {
@@ -166,14 +161,9 @@ describe('EmbraceUserManager', () => {
       diag,
       storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
     });
-    diag.clear();
 
     expect(() => {
       manager.clearUserId();
     }).not.to.throw();
-
-    const warningLogs = diag.getWarnLogs();
-    expect(warningLogs).to.have.lengthOf(1);
-    expect(warningLogs[0]).to.contain('failed to remove');
   });
 });

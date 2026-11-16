@@ -1,6 +1,7 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import * as chai from 'chai';
 import {
+  blockWindowStorage,
   FailingStorage,
   InMemoryDiagLogger,
   InMemoryStorage,
@@ -186,6 +187,55 @@ describe('NamespacedStorage', () => {
     });
   });
 
+  describe('fromWindow', () => {
+    let restoreStorage: (() => void) | undefined;
+
+    afterEach(() => {
+      restoreStorage?.();
+      restoreStorage = undefined;
+      window.localStorage.removeItem('fromWindow__key');
+      window.sessionStorage.removeItem('fromWindow__key');
+    });
+
+    for (const name of ['localStorage', 'sessionStorage'] as const) {
+      it(`wraps ${name} when the page can access it`, () => {
+        const storage = NamespacedStorage.fromWindow(name, {
+          namespace: 'fromWindow',
+          diag,
+        });
+
+        storage.setItem('key', 'value');
+
+        expect(window[name].getItem('fromWindow__key')).to.equal('value');
+        expect(diag.getWarnLogs()).to.have.lengthOf(0);
+      });
+
+      it(`keeps data in memory when reading ${name} throws`, () => {
+        restoreStorage = blockWindowStorage(name);
+
+        const storage = NamespacedStorage.fromWindow(name, { diag });
+
+        expect(storage.setItem('key', 'value')).to.equal(true);
+        expect(storage.getItem('key')).to.equal('value');
+        expect(diag.getWarnLogs()).to.deep.equal([
+          `${name} is not accessible; keeping its data in memory for this page`,
+        ]);
+      });
+
+      it(`keeps data in memory when ${name} is null`, () => {
+        restoreStorage = blockWindowStorage(name, 'null');
+
+        const storage = NamespacedStorage.fromWindow(name, { diag });
+
+        expect(storage.setItem('key', 'value')).to.equal(true);
+        expect(storage.getItem('key')).to.equal('value');
+        expect(diag.getWarnLogs()).to.deep.equal([
+          `${name} is not accessible; keeping its data in memory for this page`,
+        ]);
+      });
+    }
+  });
+
   describe('error handling', () => {
     it('returns null and warns when getItem throws', () => {
       const storage = new NamespacedStorage({
@@ -341,6 +391,139 @@ describe('NamespacedStorage', () => {
 
       expect(diag.getErrorLogs()).to.have.lengthOf(1);
       expect(diag.getWarnLogs()).to.have.lengthOf(0);
+    });
+
+    it('keeps writes made after writes are disabled in memory for the page', () => {
+      let allowWrites: boolean = true;
+      const flakyStorage: Storage = {
+        get length() {
+          return inMemoryStorage.length;
+        },
+        clear: () => {
+          inMemoryStorage.clear();
+        },
+        getItem: (k) => inMemoryStorage.getItem(k),
+        key: (i) => inMemoryStorage.key(i),
+        removeItem: (k) => {
+          inMemoryStorage.removeItem(k);
+        },
+        setItem: (k, v) => {
+          if (!allowWrites) {
+            throw new Error('QuotaExceeded');
+          }
+
+          inMemoryStorage.setItem(k, v);
+        },
+      };
+      const storage = new NamespacedStorage({
+        storage: flakyStorage,
+        namespace: 'prefix',
+        diag,
+      });
+
+      storage.setItem('persisted', 'value');
+      allowWrites = false;
+
+      // false: neither value reached the underlying storage.
+      expect(storage.setItem('memory', 'kept')).to.equal(false);
+      expect(storage.setItem('persisted', 'replaced')).to.equal(false);
+
+      expect(storage.getItem('memory')).to.equal('kept');
+      expect(storage.getItem('persisted')).to.equal('replaced');
+      expect(storage.keys()).to.have.members(['persisted', 'memory']);
+      void expect(inMemoryStorage.getItem('prefix__memory')).to.be.null;
+      expect(inMemoryStorage.getItem('prefix__persisted')).to.equal('value');
+
+      storage.removeItem('memory');
+
+      void expect(storage.getItem('memory')).to.be.null;
+      expect(storage.keys()).to.deep.equal(['persisted']);
+    });
+
+    it('still removes values from storage after writes are disabled', () => {
+      let allowWrites: boolean = true;
+      const quotaLimited: Storage = {
+        get length() {
+          return inMemoryStorage.length;
+        },
+        clear: () => {
+          inMemoryStorage.clear();
+        },
+        getItem: (k) => inMemoryStorage.getItem(k),
+        key: (i) => inMemoryStorage.key(i),
+        removeItem: (k) => {
+          inMemoryStorage.removeItem(k);
+        },
+        setItem: (k, v) => {
+          if (!allowWrites) {
+            throw new Error('QuotaExceeded');
+          }
+
+          inMemoryStorage.setItem(k, v);
+        },
+      };
+      const storage = new NamespacedStorage({
+        storage: quotaLimited,
+        namespace: 'prefix',
+        diag,
+      });
+
+      storage.setItem('user', 'id');
+      allowWrites = false;
+      storage.setItem('other', 'value');
+
+      expect(storage.removeItem('user')).to.equal(true);
+
+      void expect(inMemoryStorage.getItem('prefix__user')).to.be.null;
+      void expect(storage.getItem('user')).to.be.null;
+    });
+
+    it('reads values it never wrote from storage after writes are disabled', () => {
+      let allowWrites: boolean = true;
+      const quotaLimited: Storage = {
+        get length() {
+          return inMemoryStorage.length;
+        },
+        clear: () => {
+          inMemoryStorage.clear();
+        },
+        getItem: (k) => inMemoryStorage.getItem(k),
+        key: (i) => inMemoryStorage.key(i),
+        removeItem: (k) => {
+          inMemoryStorage.removeItem(k);
+        },
+        setItem: (k, v) => {
+          if (!allowWrites) {
+            throw new Error('QuotaExceeded');
+          }
+
+          inMemoryStorage.setItem(k, v);
+        },
+      };
+      const storage = new NamespacedStorage({
+        storage: quotaLimited,
+        namespace: 'prefix',
+        diag,
+      });
+
+      allowWrites = false;
+      storage.setItem('unsaved', 'value');
+      // Another tab writes after this tab's writes were disabled.
+      inMemoryStorage.setItem('prefix__shared', 'from another tab');
+
+      expect(storage.getItem('shared')).to.equal('from another tab');
+    });
+
+    it('serves writes from memory when every storage call throws', () => {
+      const storage = new NamespacedStorage({
+        storage: new FailingStorage(),
+        diag,
+      });
+
+      expect(storage.setItem('key', 'value')).to.equal(false);
+
+      expect(storage.getItem('key')).to.equal('value');
+      expect(diag.getErrorLogs()).to.have.lengthOf(1);
     });
 
     it('continues iterating when storage.key(i) throws for some indices', () => {

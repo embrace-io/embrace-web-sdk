@@ -66,7 +66,6 @@ import {
   getWebSDKResource,
 } from '../resources/index.ts';
 import {
-  getWindowStorageOrInMemory,
   NamespacedStorage,
   nsfConfigValidation,
   OTelPerformanceManager,
@@ -174,14 +173,12 @@ export const initSDK = (
     }
 
     const namespace = appID ?? undefined;
-    const sdkLocalStorage = new NamespacedStorage({
+    const sdkLocalStorage = NamespacedStorage.fromWindow('localStorage', {
       namespace,
-      storage: getWindowStorageOrInMemory('localStorage', diagLogger),
       diag: diagLogger,
     });
-    const sdkTabStorage = new NamespacedStorage({
+    const sdkTabStorage = NamespacedStorage.fromWindow('sessionStorage', {
       namespace,
-      storage: getWindowStorageOrInMemory('sessionStorage', diagLogger),
       diag: diagLogger,
     });
 

@@ -13,7 +13,6 @@ export {
 } from './getNonBaselineNavigationTiming.ts';
 export { getSelector } from './getSelector.ts';
 export { getVisibilityState } from './getVisibilityState.ts';
-export { getWindowStorageOrInMemory } from './getWindowStorageOrInMemory.ts';
 export { GLOBAL_CONFIG } from './globalConfig.ts';
 export { InMemoryStorage } from './InMemoryStorage/index.ts';
 export { isDeviceIdEnabled } from './isDeviceIdEnabled.ts';
