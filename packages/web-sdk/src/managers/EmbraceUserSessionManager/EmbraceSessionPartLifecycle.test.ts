@@ -1,3 +1,4 @@
+import { logs } from '@opentelemetry/api-logs';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
   InMemorySpanExporter,
@@ -14,11 +15,13 @@ import {
   InMemoryDiagLogger,
   InMemoryStorage,
   MockPerformanceManager,
+  setupTestLogExporter,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
 import { KEY_EMB_PAGE_LOAD } from '../../constants/index.ts';
+import { UserSessionLogRecordProcessor } from '../../processors/index.ts';
 import { NamespacedStorage } from '../../utils/NamespacedStorage/NamespacedStorage.ts';
 import type { PerformanceManager } from '../../utils/PerformanceManager/types.ts';
 import {
@@ -716,6 +719,10 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       return otherTab;
     };
 
+    afterEach(() => {
+      logs.disable();
+    });
+
     it('stamps a user-session property the other tab sets during the part', () => {
       manager.startSessionPartInternal({ reason: 'init' });
       createOtherTab().addProperty('cart-size', '3');
@@ -765,6 +772,25 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       const partAttributes = memoryExporter.getFinishedSpans()[0].attributes;
       expect(partAttributes).to.have.property('emb.properties.cart-size', '3');
       expect(partAttributes).to.not.have.property('emb.properties.other-only');
+    });
+
+    it("stamps the part's own user session on logs after another tab starts the next one", () => {
+      const logExporter = setupTestLogExporter([
+        new UserSessionLogRecordProcessor({ userSessionManager: manager }),
+      ]);
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partUserSessionId = manager.getUserSessionId();
+      const sessionPartId = manager.getSessionPartId();
+
+      startNextUserSessionInOtherTab();
+      logs.getLogger('test').emit({ body: 'after the other tab' });
+
+      const { attributes } = logExporter.getFinishedLogRecords()[0];
+      expect(attributes).to.have.property(
+        'emb.user_session_id',
+        partUserSessionId,
+      );
+      expect(attributes).to.have.property('emb.session_part_id', sessionPartId);
     });
 
     it("keeps reporting the part's user session after another tab cleared it", () => {
