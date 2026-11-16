@@ -105,11 +105,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _maxDurationTimeout: ReturnType<typeof setTimeout> | null = null;
 
   private _activeSessionPartId: string | null = null;
-  // The user session the active part belongs to. Ending the part writes the
-  // inactivity deadline, or clears the user session on a final end, only while
-  // storage still holds this one, so it never changes a user session another
-  // tab has started since.
-  private _sessionPartUserSessionId: string | null = null;
   // Rollover history backing getSessionPartIdAt, cleared once the user
   // session ends, so it covers as much ground as possible before eviction
   // rather than resetting on every visibility cycle.
@@ -430,7 +425,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       );
     } catch (error) {
       this._activeSessionPartId = null;
-      this._sessionPartUserSessionId = null;
+      this._userSessionStore.unpin();
       this._diag.error('Error starting session part span', error);
       return;
     }
@@ -465,7 +460,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._clearSessionPartInactivityTimer();
 
     const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
-    const partUserSessionId = this._sessionPartUserSessionId;
+    const partUserSessionId =
+      this._userSessionStore.read()?.userSessionId ?? null;
 
     // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd cannot
     // push them forward: the caller's timestamp (when given) becomes the span
@@ -532,7 +528,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
       this._currentSessionPartNumber = null;
-      this._sessionPartUserSessionId = null;
+      this._userSessionStore.unpin();
       this._limitManager.reset();
     }
 
@@ -750,9 +746,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   /**
-   * Bumps the part counter and arms the max-duration timer. Relies on
-   * `_loadOrCreateUserSessionState` to provide a non-null, non-expired state,
-   * so `getUserSessionAttributes()` is guaranteed non-null after this.
+   * Bumps the part counter, arms the max-duration timer, and pins the part's
+   * user session. Relies on `_loadOrCreateUserSessionState` to provide a
+   * non-null, non-expired state, so `getUserSessionAttributes()` is
+   * guaranteed non-null after this.
    */
   private _beginUserSessionForPartStart(): void {
     const now = this._perf.getNow();
@@ -764,14 +761,16 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag,
     );
 
-    this._sessionPartUserSessionId = state.userSessionId;
-    this._userSessionStore.write({
+    const partState = {
       ...state,
       userSessionPartIndex: state.userSessionPartIndex + 1,
       // A part is active, so any pending inactivity deadline no longer
       // applies; it is rewritten when the part ends.
       inactivityDeadlineTs: null,
-    });
+    };
+
+    this._userSessionStore.write(partState);
+    this._userSessionStore.pin(partState);
   }
 
   /**
@@ -903,10 +902,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // and another tab started the next one. Only end the one it was armed
       // for, which this tab's part may still belong to after another tab
       // cleared it.
-      if (
-        this._sessionPartUserSessionId !== userSessionId &&
-        this._userSessionStore.read()?.userSessionId !== userSessionId
-      ) {
+      if (this._userSessionStore.read()?.userSessionId !== userSessionId) {
         return;
       }
 
@@ -1028,8 +1024,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private _startSessionPartInactivityTimer(): void {
     this._clearSessionPartInactivityTimer();
 
-    // The stored row can go missing mid-part, for example when site data is
-    // cleared.
     const timeoutSeconds =
       this._userSessionStore.read()
         ?.userSessionForegroundInactivityTimeoutSeconds ??

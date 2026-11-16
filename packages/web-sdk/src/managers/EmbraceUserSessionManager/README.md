@@ -124,9 +124,10 @@ the same final part span.
 
 ### End behavior
 
-On end, the manager reads the user-session and permanent properties from
-storage, so values other tabs wrote are included, builds the end attributes, and
-applies them to the part span before ending it. A throwing attribute write is
+On end, the manager reads the permanent properties and the part's user-session
+properties (see [Reads during a part](#reads-during-a-part)), so values other
+tabs wrote are included, builds the end attributes, and applies them to the
+part span before ending it. A throwing attribute write is
 isolated from the span end, so a poisoned property value cannot prevent the span
 from ending. Part-end subscribers are notified.
 
@@ -287,6 +288,18 @@ part span at part end. Tab B reads storage on every access, so it sees the value
 right away: it's stamped on Tab B's next part end. Permanent properties work the
 same way.
 
+### Reads during a part
+
+While a part is open, the manager reports the part's own user session: from
+storage while it still holds that one, otherwise from the last value this tab
+read or wrote for it. `getUserSessionId()`, `getPreviousUserSessionId()`,
+`getUserSessionStartTime()`, and the user-session attributes and properties
+stamped on the part and on log records all follow this rule, so a part's
+telemetry is stamped with the user session it started in, even after another
+tab replaced or cleared it. Property changes made during the part from then on
+apply to the part's user session in this tab only, and are never written onto
+the stored one. Once the part ends, reads follow storage again.
+
 ### Rollover cascade
 
 There is no explicit cascade. When one tab ends a user session, the state row
@@ -390,7 +403,7 @@ another window).
 | `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                            |
 | `emb.is_final_session_part = 1`       | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`).                            |
 | `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one).              |
-| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes.                                                            |
+| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes to the part's user session.                                 |
 | `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                      |
 | Counter keys                          | Per-part counts populated by instrumentations.                                                                 |
 
@@ -406,7 +419,7 @@ emitted by `EmbraceSessionPartBatchedSpanProcessor`, not by per-span ID stamping
 | Attribute                      | Value                                                                                                        |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | `log.record.uid`               | Fresh UUID per record.                                                                                       |
-| `emb.user_session_id`          | UUID of the enclosing user session; `''` when there is none.                                                 |
+| `emb.user_session_id`          | UUID of the active part's user session, otherwise the stored one; `''` when there is none.                   |
 | `emb.user_session_previous_id` | UUID of the prior user session; `''` on the first.                                                           |
 | `emb.session_part_id`          | Part active at emit time, keeping a value an earlier processor already stamped; `''` when no part is active. |
 

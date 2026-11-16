@@ -99,6 +99,80 @@ describe('UserSessionStore', () => {
     void expect(backing.getItem(STATE_KEY)).to.be.null;
   });
 
+  describe('pinned user session', () => {
+    let otherTab: UserSessionStore;
+    let state: ReturnType<typeof createState>;
+
+    beforeEach(() => {
+      otherTab = new UserSessionStore({
+        storage: new NamespacedStorage({ storage: backing, diag }),
+        diag,
+      });
+      state = createState();
+      store.write(state);
+      store.pin(state);
+    });
+
+    it('reads the pinned user session after another tab replaces it', () => {
+      otherTab.write(createState());
+
+      expect(store.read()).to.equal(state);
+    });
+
+    it('reads the pinned user session after another tab clears it', () => {
+      otherTab.clear();
+
+      expect(store.read()).to.equal(state);
+    });
+
+    it('refreshes the pin from writes and reads of the same user session', () => {
+      const ownWrite = { ...state, userSessionProperties: { own: '1' } };
+      store.write(ownWrite);
+
+      expect(store.read()).to.deep.equal(ownWrite);
+
+      const otherTabWrite = {
+        ...ownWrite,
+        userSessionProperties: { own: '1', other: '2' },
+      };
+      otherTab.write(otherTabWrite);
+
+      expect(store.read()).to.deep.equal(otherTabWrite);
+
+      otherTab.write(createState());
+
+      expect(store.read()).to.deep.equal(otherTabWrite);
+    });
+
+    it('only updates the pin when storage holds another user session', () => {
+      const replacement = createState();
+      otherTab.write(replacement);
+      const ownWrite = { ...state, userSessionProperties: { own: '1' } };
+
+      expect(store.write(ownWrite)).to.equal(false);
+
+      expect(store.read()).to.deep.equal(ownWrite);
+      expect(otherTab.read()).to.deep.equal(replacement);
+    });
+
+    it("doesn't write the pinned user session back after another tab clears it", () => {
+      otherTab.clear();
+
+      store.write({ ...state, userSessionProperties: { own: '1' } });
+
+      void expect(backing.getItem(STATE_KEY)).to.be.null;
+    });
+
+    it('reads storage again once unpinned', () => {
+      const replacement = createState();
+      otherTab.write(replacement);
+
+      store.unpin();
+
+      expect(store.read()).to.deep.equal(replacement);
+    });
+  });
+
   it('keeps the state for the page when storage writes fail', () => {
     const failingStorage = new NamespacedStorage({
       storage: new FailingStorage(),

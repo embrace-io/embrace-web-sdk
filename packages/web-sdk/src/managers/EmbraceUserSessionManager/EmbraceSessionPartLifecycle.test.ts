@@ -747,6 +747,66 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(manager.getUserSessionId()).to.equal(otherTab.getUserSessionId());
     });
 
+    it("stamps the part's own user session when another tab starts the next one", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partUserSessionId = manager.getUserSessionId();
+      manager.addProperty('cart-size', '3');
+
+      const otherTab = startNextUserSessionInOtherTab();
+      otherTab.addProperty('other-only', 'yes');
+
+      expect(manager.getUserSessionAttributes()).to.have.property(
+        'emb.user_session_id',
+        partUserSessionId,
+      );
+
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      const partAttributes = memoryExporter.getFinishedSpans()[0].attributes;
+      expect(partAttributes).to.have.property('emb.properties.cart-size', '3');
+      expect(partAttributes).to.not.have.property('emb.properties.other-only');
+    });
+
+    it("keeps reporting the part's user session after another tab cleared it", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const partUserSessionId = manager.getUserSessionId();
+
+      inMemoryStorage.removeItem('embrace_user_session_state');
+
+      expect(manager.getUserSessionId()).to.equal(partUserSessionId);
+      expect(manager.getUserSessionAttributes()).to.have.property(
+        'emb.user_session_id',
+        partUserSessionId,
+      );
+    });
+
+    it('keeps a property set after another tab replaced the user session on this part only', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.addProperty('cart-size', '3');
+
+      expect(otherTab.getSessionPartProperties()).to.not.have.property(
+        'cart-size',
+      );
+
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it("reports the other tab's user session once this tab's part ends", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const otherTab = startNextUserSessionInOtherTab();
+
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(manager.getUserSessionId()).to.equal(otherTab.getUserSessionId());
+    });
+
     it("doesn't overwrite the other tab's user session when the part ends", () => {
       manager.startSessionPartInternal({ reason: 'init' });
       const otherTab = startNextUserSessionInOtherTab();
