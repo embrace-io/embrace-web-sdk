@@ -1,6 +1,6 @@
 import { DiagLogLevel, diag } from '@opentelemetry/api';
 import { millisToHrTime } from '@opentelemetry/core';
-import type { SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type { ReadWriteLogRecord } from '@opentelemetry/sdk-logs';
 import { ATTR_LOG_RECORD_UID } from '@opentelemetry/semantic-conventions/incubating';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -14,11 +14,11 @@ const { expect } = chai;
 const fakeLogRecord = (
   attributes: Record<string, unknown>,
   epochMillis: number,
-): SdkLogRecord =>
+): ReadWriteLogRecord =>
   ({
     attributes,
     hrTime: millisToHrTime(epochMillis),
-  }) as unknown as SdkLogRecord;
+  }) as unknown as ReadWriteLogRecord;
 
 describe('SignalCorrelationLogRecordProcessor', () => {
   let diagLogger: InMemoryDiagLogger;

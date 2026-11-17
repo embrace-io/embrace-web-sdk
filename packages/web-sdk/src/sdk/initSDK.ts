@@ -3,10 +3,10 @@ import {
   DiagConsoleLogger,
   DiagLogLevel,
   diag,
+  logs,
   propagation,
   trace,
 } from '@opentelemetry/api';
-import { logs } from '@opentelemetry/api-logs';
 import type {
   Instrumentation,
   InstrumentationDeps,
@@ -35,6 +35,7 @@ import {
 } from '../exporters/index.ts';
 import {
   DEFAULT_LIMITS,
+  DEFAULT_MAX_SPAN_EVENT_ATTRIBUTES,
   EmbraceDynamicConfigManager,
   EmbraceLimitManager,
   EmbraceLoggerProvider,
@@ -313,6 +314,7 @@ export const initSDK = (
       pageManager,
       perf,
       signalBuffer,
+      diagLogger,
     });
 
     userSessionManager.setTracerProvider(tracerProvider);
@@ -335,6 +337,7 @@ export const initSDK = (
       pageManager,
       visibilityDoc: window.document,
       signalBuffer,
+      diagLogger,
     });
 
     // Enabled last: enable(deps) and registerInstrumentations need the providers set up above.
@@ -487,6 +490,7 @@ const setupTraces = ({
   pageManager,
   perf,
   signalBuffer,
+  diagLogger,
 }: SetupTracesArgs) => {
   const finalSpanProcessors: SpanProcessor[] = [
     ...spanProcessors,
@@ -530,6 +534,7 @@ const setupTraces = ({
       // Breadcrumbs are stored as events on the session part span, add a
       // buffer here so that there is room for our internal events
       eventCountLimit: DEFAULT_LIMITS.maxAllowed.breadcrumb * 2,
+      attributePerEventCountLimit: DEFAULT_MAX_SPAN_EVENT_ATTRIBUTES,
     },
   });
 
@@ -539,7 +544,12 @@ const setupTraces = ({
 
   if (registerGlobally) {
     embraceTrace.setGlobalTraceManager(embraceTraceManager);
-    trace.setGlobalTracerProvider(tracerProvider);
+    // Fails for the same reasons as setGlobalLoggerProvider in setupLogs
+    if (!trace.setGlobalTracerProvider(tracerProvider)) {
+      diagLogger.warn(
+        'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
+      );
+    }
     // Unset leaves the no-op propagator: no traceparent inject or extract
     if (propagator) {
       propagation.setGlobalPropagator(propagator);
@@ -568,6 +578,7 @@ const setupLogs = ({
   pageManager,
   visibilityDoc,
   signalBuffer,
+  diagLogger,
 }: SetupLogsArgs) => {
   const finalLogProcessors: LogRecordProcessor[] = [
     ...logProcessors,
@@ -617,7 +628,13 @@ const setupLogs = ({
   });
 
   if (registerGlobally) {
-    logs.setGlobalLoggerProvider(loggerProvider);
+    // Fails when a LoggerProvider is already registered, or when the page's OTel global
+    // belongs to another API version (such as api 1.9 from OTel JS 2.x).
+    if (!logs.setGlobalLoggerProvider(loggerProvider)) {
+      diagLogger.warn(
+        'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
+      );
+    }
     log.setGlobalLogManager(embraceLogManager);
   }
 
