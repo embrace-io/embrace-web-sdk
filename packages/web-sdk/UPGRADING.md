@@ -104,6 +104,7 @@ npx embrace-web-cli upload --app-version "APP_VERSION" -a "YOUR_EMBRACE_APP_ID" 
 See the breaking changes outlined in the [1.0.0 Release notes](https://github.com/embrace-io/embrace-web-sdk/releases/tag/1.0.0).
 
 In order to upgrade you will need to:
+
 - Update Embrace trace API calls from `startPerformanceSpan` to `startSpan`
 - Update any optional arguments being passed to `log.message` or `log.logException`
 
