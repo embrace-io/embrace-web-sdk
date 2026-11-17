@@ -1067,16 +1067,15 @@ describe('DOMStateInstrumentation', () => {
     const diagLogger = setupTestDiagLogger({
       namespace: 'DOMStateInstrumentation',
     });
+    const error = new Error('diag debug failed');
     // Scoped to this namespace: other components also log to the global diag channel.
-    diagLogger.debug
-      .withArgs('DOMStateInstrumentation')
-      .throws(new Error('diag debug failed'));
+    diagLogger.debug.withArgs('DOMStateInstrumentation').throws(error);
     expect(() => {
       instrumentation = new DOMStateInstrumentation();
       instrumentation.enable();
     }).to.not.throw();
-    expect(diagLogger.messages('error')).to.deep.equal([
-      'failed to capture dom-state fold measurement',
+    expect(diagLogger.calls('error')).to.deep.equal([
+      ['failed to capture dom-state fold measurement', error],
     ]);
   });
 
