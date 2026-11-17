@@ -8,7 +8,7 @@ export const getBfcacheNotRestoredReasons = (
     | EmbracePerformanceNavigationTiming
     | undefined = getNonBaselineNavigationTiming(),
 ): string[] | undefined => {
-  // notRestoredReasons is not Baseline widely available (Chromium only), so it is read optionally
+  // eslint-disable-next-line baseline-js/use-baseline -- diagnostic-only attribute, omitted where unsupported
   const notRestoredReasons = performanceNavigationTiming?.notRestoredReasons;
   return notRestoredReasons?.reasons?.map((r) => r.reason);
 };

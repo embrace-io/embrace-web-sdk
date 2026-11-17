@@ -453,7 +453,8 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private _isCacheValidated(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    // deliveryType is not Baseline widely available, so an engine without it never reads 'cache'.
+    // deliveryType is Chromium only, so an engine without it never reads 'cache'.
+    // eslint-disable-next-line baseline-js/use-baseline -- deliveryType is newly available, not widely available; read optionally
     return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
