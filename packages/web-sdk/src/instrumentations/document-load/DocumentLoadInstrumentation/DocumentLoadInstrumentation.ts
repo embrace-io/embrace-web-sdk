@@ -454,7 +454,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
     // deliveryType is Chromium only, so an engine without it never reads 'cache'.
-    // eslint-disable-next-line baseline-js/use-baseline -- deliveryType is newly available, not widely available; read optionally
     return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
