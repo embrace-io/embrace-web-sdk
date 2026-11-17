@@ -66,7 +66,7 @@ export abstract class EmbraceInstrumentationBase<
 
   /*
    * The base setConfig writes enabled (true unless given), which would change
-   * _isEnabled with no onEnable or onDisable, so the flag is restored. The base
+   * _isEnabled with no _onEnable or _onDisable, so the flag is restored. The base
    * constructor calls this while _config is {}, which constructs every
    * instrumentation disabled: under registerGlobally: false the providers and
    * per-instance managers are attached after construction, so
@@ -172,7 +172,7 @@ export abstract class EmbraceInstrumentationBase<
     }
 
     this._isEnabled = false;
-    this.onDisable();
+    this._onDisable();
     this.unregisterSessionPartListeners();
   }
 
@@ -182,12 +182,17 @@ export abstract class EmbraceInstrumentationBase<
     }
 
     this._isEnabled = true;
-    this.onEnable();
+    this._onEnable();
+  }
+
+  /** Whether the instrumentation is emitting now. */
+  public isEnabled(): boolean {
+    return this._isEnabled;
   }
 
   /* Only triggered when the instrumentation transitions to disabled */
-  protected abstract onDisable(): void;
+  protected _onDisable(): void {}
 
   /* Only triggered when the instrumentation transitions to enabled */
-  public abstract onEnable(): void;
+  protected _onEnable(): void {}
 }

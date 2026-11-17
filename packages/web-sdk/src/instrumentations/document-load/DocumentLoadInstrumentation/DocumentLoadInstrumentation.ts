@@ -471,7 +471,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     // An unbuffered subscription registered after the load event is never
     // notified, so the finished entry is read off the timeline instead.
     this._collectIfLoadEventFinished();
@@ -500,7 +500,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     }
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     this._disconnectObserver();
   }
 }
