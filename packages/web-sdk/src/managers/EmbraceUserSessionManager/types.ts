@@ -23,6 +23,19 @@ export interface UserSessionState {
   readonly schemaVersion: number;
   readonly userSessionId: string;
   /**
+   * Pre-generated ID of the user session that follows this one, so every tab
+   * that creates the successor creates the same one. Missing on user sessions
+   * created by SDK versions without it.
+   */
+  readonly nextUserSessionId?: string;
+  /**
+   * Set once the user session ended. The row stays in storage so a tab that
+   * missed the end can still create the same successor; its
+   * `inactivityDeadlineTs` is the end time, so SDK versions that don't know
+   * this field treat it as expired.
+   */
+  readonly ended?: boolean;
+  /**
    * Null on the first user session since the first visit or after a
    * permanent storage clear.
    */

@@ -140,9 +140,9 @@ max-duration deadline is fixed at creation and keeps running, so it is not
 re-armed.
 
 Each part remembers the user session it started in. The deadline is written,
-and a final part end clears the stored user session, only while the stored
-user session is still that one. If another tab has replaced it or site data
-was cleared, the part end leaves storage alone.
+and a final part end marks the stored user session as ended, only while the
+stored user session is still that one. If another tab has replaced or ended it,
+or site data was cleared, the part end leaves storage alone.
 
 When the end reason is final (`user_session_ended` or `web_foreground_inactivity`)
 the final part span is additionally stamped `emb.is_final_session_part = 1` and,
@@ -152,19 +152,28 @@ when a `userSessionEndReason` is supplied, `emb.user_session_termination_reason`
 
 ### Creation
 
-User-session creation is lazy. No user-session object exists between
-`endUserSession()` and the next engaged part start. On that start the manager
-reads the stored state; if it is missing or expired it records the prior id as
-the previous-session link and mints a fresh user session. It then advances the
+User-session creation is lazy. Between the end of a user session and the next
+engaged part start, storage holds the ended user session and the getters report
+none. On that start the manager reads the stored state; if it is missing,
+expired or ended, it creates the next user session from it: the stored
+user session's `nextUserSessionId` as the ID, its number plus one, and its ID as
+the previous ID. Every tab that creates the successor therefore creates the same
+one. With no predecessor, or one stored by an SDK version without
+`nextUserSessionId`, the ID is random, and with no predecessor the number comes
+from the `embrace_user_session_number` counter. It then advances the
 within-session part index and the cross-visit part-number counter
 (`embrace_session_part_number`), marks a part active, persists the state, and
 arms the max-duration timer.
 
 ### Expiry
 
-A stored user session is treated as expired when any of the following holds:
+A stored user session is treated as over when any of the following holds:
 
-- The clock jumped backwards (`now` is before the recorded start timestamp).
+- It is an ended marker.
+- The clock jumped backwards: `now` is more than a minute before the recorded
+  start timestamp. Each tab's clock can be up to a second off the wall clock, so
+  a user session another tab just created can start slightly in this tab's
+  future.
 - The max-duration boundary has passed.
 - An inactivity deadline was recorded at the last part end and has elapsed.
 
@@ -191,10 +200,15 @@ through a rollover.
 | `inactivity`           | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
 On rollover the manager samples one boundary timestamp, ends the active part as
-final with that timestamp, clears the stored user session, and starts the next
-part with the same timestamp so the two part spans tile without a gap. The
-follow-up start mints a fresh user session if the tab is still engaged, or
-silently no-ops if not (the next engagement event will create it).
+final with that timestamp, marks the stored user session as ended, and starts
+the next part with the same timestamp so the two part spans tile without a gap.
+The follow-up start creates the next user session if the tab is still engaged,
+or silently no-ops if not (the next engagement event will create it).
+
+An ended user session stays in storage as an ended marker: the same row with
+`ended: true`, `inactivityDeadlineTs` set to the end time, and no properties. A
+tab that missed the end can still create the same successor from it, and SDK
+versions that don't know `ended` read it as expired.
 
 ## Timers
 
@@ -232,12 +246,12 @@ the 30 second throttle, and cleared on session-part end.
 
 ### Keys
 
-| Key                            | Contents                                                                                                             | Lifetime                                                                                                                                                                                                                                                                                                                         |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, previous id, start ts, max-end ts, numbers, durations, deadline, properties) | Cleared when the user session ends (final part end, or rollover with no active part). Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Only ever incremented.                                                                                                                                                                                                                                                                                  |
-| `embrace_session_part_number`  | Monotonic integer string.                                                                                            | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                     |
-| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.          | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                          |
+| Key                            | Contents                                                                                                                                  | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag) | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                 | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
+| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                 | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
+| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                               | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -296,16 +310,17 @@ read or wrote for it. `getUserSessionId()`, `getPreviousUserSessionId()`,
 `getUserSessionStartTime()`, and the user-session attributes and properties
 stamped on the part and on log records all follow this rule, so a part's
 telemetry is stamped with the user session it started in, even after another
-tab replaced or cleared it. Property changes made during the part from then on
+tab replaced, ended or cleared it. Property changes made during the part from then on
 apply to the part's user session in this tab only, and are never written onto
 the stored one. Once the part ends, reads follow storage again.
 
 ### Rollover cascade
 
 There is no explicit cascade. When one tab ends a user session, the state row
-is deleted. The next tab to attempt a part start reads `null`, mints a fresh
-user session, and the rollover propagates naturally. The previous user-session
-ID is linked through `previousUserSessionId` in the new blob.
+becomes an ended marker. The next tab to attempt a part start creates the next
+user session from it, and the rollover propagates naturally. Tabs that start a
+part at the same moment, or reach max duration together, create the same next
+user session, linked to the ended one through `previousUserSessionId`.
 
 ### Dead tab
 
@@ -322,9 +337,9 @@ Several specific edge cases are handled:
 - Part finalization isolates a throwing `setAttributes` call from the span end,
   so a poisoned permanent-property value cannot drop the part span from the
   export.
-- A part end never writes onto, or clears, a user session another tab has
-  started. It writes the inactivity deadline, or clears the stored row on a
-  final end, only while the stored user session is still the one the part
+- A part end never writes onto, or ends, a user session another tab has
+  started. It writes the inactivity deadline, or marks the stored row as ended
+  on a final end, only while the stored user session is still the one the part
   started in. When it isn't, the part end also drops the max-duration timer
   armed for the old user session, so that timer can't end the new one.
 

@@ -21,6 +21,12 @@ export const SESSION_PART_SPAN_NAME = 'emb-session-part';
 export const FINAL_SESSION_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
   new Set(['user_session_ended', 'web_foreground_inactivity']);
 
+/**
+ * Each tab's clock can be up to `DRIFT_THRESHOLD_MS` off the wall clock, so a
+ * user session another tab just created can start slightly in this tab's
+ * future. Only a larger gap counts as the clock moving backwards.
+ */
+export const CLOCK_SKEW_TOLERANCE_MS = 60 * 1000;
 export const DEFAULT_USER_SESSION_MAX_DURATION_SECONDS = 12 * 60 * 60;
 export const MIN_USER_SESSION_MAX_DURATION_SECONDS = 1 * 60 * 60;
 export const MAX_USER_SESSION_MAX_DURATION_SECONDS = 24 * 60 * 60;

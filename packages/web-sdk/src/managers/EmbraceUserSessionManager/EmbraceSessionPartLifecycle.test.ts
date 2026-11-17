@@ -704,6 +704,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         ? null
         : (JSON.parse(raw) as {
             userSessionId: string;
+            nextUserSessionId?: string;
+            ended?: boolean;
             inactivityDeadlineTs: number | null;
           });
     };
@@ -791,6 +793,188 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         partUserSessionId,
       );
       expect(attributes).to.have.property('emb.session_part_id', sessionPartId);
+    });
+
+    it('creates the same next user session as another tab that read the same ended one', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+      const endedRow = inMemoryStorage.getItem('embrace_user_session_state');
+      manager.startSessionPartInternal({ reason: 'web_activity' });
+      const nextUserSessionId = manager.getUserSessionId();
+
+      // Another tab read the ended row before this tab's write reached it.
+      const otherTabStorage = new InMemoryStorage();
+      otherTabStorage.setItem('embrace_user_session_state', endedRow as string);
+      const otherTab = new EmbraceUserSessionManager({
+        diag,
+        storage: new NamespacedStorage({ storage: otherTabStorage, diag }),
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+      otherTab.startSessionPartInternal({ reason: 'init' });
+
+      expect(otherTab.getUserSessionId()).to.equal(nextUserSessionId);
+    });
+
+    it('ends up in the same next user session as another tab when both reach max duration', () => {
+      const createShortLivedTab = () =>
+        new EmbraceUserSessionManager({
+          diag,
+          storage,
+          limitManager,
+          perf,
+          visibilityDoc: window.document,
+          dynamicConfigManager: createTestDynamicConfigManager({
+            userSessionMaxDurationSeconds: 3600,
+            userSessionForegroundInactivityTimeoutSeconds: 3600,
+          }),
+        });
+      const thisTab = createShortLivedTab();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const otherTab = createShortLivedTab();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      const nextUserSessionId = storedState()?.nextUserSessionId;
+
+      clock.tick(3600 * 1000);
+
+      expect(thisTab.getUserSessionId()).to.equal(nextUserSessionId);
+      expect(otherTab.getUserSessionId()).to.equal(nextUserSessionId);
+    });
+
+    it('links the next user session to one another tab ended', () => {
+      const otherTab = createOtherTab();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      const endedUserSessionId = otherTab.getUserSessionId();
+      otherTab.endSessionPartInternal({ reason: 'background' });
+      otherTab.endUserSession();
+
+      manager.startSessionPartInternal({ reason: 'init' });
+
+      expect(manager.getPreviousUserSessionId()).to.equal(endedUserSessionId);
+      expect(manager.getUserSessionAttributes()).to.have.property(
+        'emb.user_session_number',
+        2,
+      );
+    });
+
+    it("doesn't write over the ended marker from a part still open in the ended user session", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().endUserSession();
+      const endedRaw = inMemoryStorage.getItem('embrace_user_session_state');
+      clock.tick(1000);
+
+      manager.addProperty('cart-size', '3');
+      manager.endSessionPartInternal({ reason: 'background' });
+
+      expect(inMemoryStorage.getItem('embrace_user_session_state')).to.equal(
+        endedRaw,
+      );
+    });
+
+    it("doesn't rewrite another tab's ended marker when this tab's part ends as final", () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      createOtherTab().endUserSession();
+      const endedRaw = inMemoryStorage.getItem('embrace_user_session_state');
+      clock.tick(1000);
+
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+
+      expect(inMemoryStorage.getItem('embrace_user_session_state')).to.equal(
+        endedRaw,
+      );
+    });
+
+    it('creates the same next user session as another tab that read the same live one before either ended it', () => {
+      const createShortLivedTab = (tabStorage: NamespacedStorage) =>
+        new EmbraceUserSessionManager({
+          diag,
+          storage: tabStorage,
+          limitManager,
+          perf,
+          visibilityDoc: window.document,
+          dynamicConfigManager: createTestDynamicConfigManager({
+            userSessionMaxDurationSeconds: 3600,
+            userSessionForegroundInactivityTimeoutSeconds: 3600,
+          }),
+        });
+      const thisTab = createShortLivedTab(storage);
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const nextUserSessionId = storedState()?.nextUserSessionId;
+
+      // Each tab works from its own copy of the same live user session, as if
+      // neither saw the other's writes before its timer fired.
+      const otherTabBacking = new InMemoryStorage();
+      otherTabBacking.setItem(
+        'embrace_user_session_state',
+        inMemoryStorage.getItem('embrace_user_session_state') as string,
+      );
+      const otherTab = createShortLivedTab(
+        new NamespacedStorage({ storage: otherTabBacking, diag }),
+      );
+      otherTab.startSessionPartInternal({ reason: 'init' });
+
+      clock.tick(3600 * 1000);
+
+      expect(thisTab.getUserSessionId()).to.equal(nextUserSessionId);
+      expect(otherTab.getUserSessionId()).to.equal(nextUserSessionId);
+    });
+
+    it('creates the next user session from the ended one it read, even if another tab replaces it right after', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+      const endedRaw = inMemoryStorage.getItem(
+        'embrace_user_session_state',
+      ) as string;
+      const { nextUserSessionId } = JSON.parse(endedRaw) as {
+        nextUserSessionId: string;
+      };
+
+      // Another tab creates the next user session from the same ended one.
+      createOtherTab().startSessionPartInternal({ reason: 'init' });
+
+      const thisTabBacking = new InMemoryStorage();
+      thisTabBacking.setItem(
+        'embrace_user_session_state',
+        inMemoryStorage.getItem('embrace_user_session_state') as string,
+      );
+      const getItem = thisTabBacking.getItem.bind(thisTabBacking);
+      let staleRead: string | null = null;
+      thisTabBacking.getItem = (key) => {
+        if (key === 'embrace_user_session_state' && staleRead !== null) {
+          const value = staleRead;
+          staleRead = null;
+
+          return value;
+        }
+
+        return getItem(key);
+      };
+      const thisTab = new EmbraceUserSessionManager({
+        diag,
+        storage: new NamespacedStorage({ storage: thisTabBacking, diag }),
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+      // This tab's first read still sees the ended user session; any later
+      // read sees the one the other tab created.
+      staleRead = endedRaw;
+
+      thisTab.startSessionPartInternal({ reason: 'init' });
+
+      expect(thisTab.getUserSessionId()).to.equal(nextUserSessionId);
     });
 
     it("keeps reporting the part's user session after another tab cleared it", () => {
@@ -935,6 +1119,111 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       );
       void expect(manager.getUserSessionId()).to.not.be.null;
       expect(manager.getUserSessionId()).to.not.equal(userSessionId);
+    });
+  });
+
+  describe('ended user session', () => {
+    const storedState = () =>
+      JSON.parse(
+        inMemoryStorage.getItem('embrace_user_session_state') as string,
+      ) as {
+        userSessionId: string;
+        nextUserSessionId?: string;
+        ended?: boolean;
+        inactivityDeadlineTs: number | null;
+        userSessionProperties: Record<string, string>;
+      };
+
+    it('leaves an ended marker and reports no user session', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const endedUserSessionId = manager.getUserSessionId();
+      manager.addProperty('cart-size', '3');
+      manager.endSessionPartInternal({ reason: 'background' });
+      clock.tick(1000);
+
+      manager.endUserSession();
+
+      expect(storedState()).to.deep.include({
+        userSessionId: endedUserSessionId,
+        ended: true,
+        inactivityDeadlineTs: 1000,
+        userSessionProperties: {},
+      });
+      void expect(manager.getUserSessionId()).to.be.null;
+      void expect(manager.getUserSessionAttributes()).to.be.null;
+      expect(manager.getPreviousUserSessionId()).to.equal(endedUserSessionId);
+    });
+
+    it('creates the next user session from the one that ended', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const ended = manager.getUserSessionAttributes();
+      const { nextUserSessionId } = storedState();
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+
+      manager.startSessionPartInternal({ reason: 'web_activity' });
+
+      expect(manager.getUserSessionAttributes()).to.include({
+        'emb.user_session_id': nextUserSessionId,
+        'emb.user_session_previous_id': ended?.['emb.user_session_id'],
+        'emb.user_session_number': 2,
+      });
+      expect(inMemoryStorage.getItem('embrace_user_session_number')).to.equal(
+        '2',
+      );
+    });
+
+    it('counts from the stored user session number when there is no previous user session', () => {
+      inMemoryStorage.setItem('embrace_user_session_number', '7');
+
+      manager.startSessionPartInternal({ reason: 'init' });
+
+      expect(manager.getUserSessionAttributes()).to.have.property(
+        'emb.user_session_number',
+        8,
+      );
+    });
+
+    it('ignores endUserSession() after the user session ended', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+      const endedRaw = inMemoryStorage.getItem('embrace_user_session_state');
+
+      manager.endUserSession();
+
+      expect(inMemoryStorage.getItem('embrace_user_session_state')).to.equal(
+        endedRaw,
+      );
+      void expect(inMemoryStorage.getItem('embrace_last_end_user_session_ts'))
+        .to.be.null;
+    });
+
+    it('creates a random next user session when the ended one has no next ID', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+      const ended = manager.getUserSessionAttributes();
+      manager.endSessionPartInternal({ reason: 'background' });
+      // A row written by an SDK version without nextUserSessionId, expired.
+      const { nextUserSessionId: _, ...withoutNextId } = storedState();
+      inMemoryStorage.setItem(
+        'embrace_user_session_state',
+        JSON.stringify({ ...withoutNextId, inactivityDeadlineTs: 0 }),
+      );
+
+      manager.startSessionPartInternal({ reason: 'foreground' });
+
+      const next = manager.getUserSessionAttributes();
+      expect(next?.['emb.user_session_id']).to.have.lengthOf(32);
+      expect(next?.['emb.user_session_id']).to.not.equal(
+        ended?.['emb.user_session_id'],
+      );
+      expect(next?.['emb.user_session_previous_id']).to.equal(
+        ended?.['emb.user_session_id'],
+      );
     });
   });
 
@@ -1377,17 +1666,19 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     it('should not write a continuation snapshot to storage during endUserSession', () => {
-      // An inactivity-deadline write during termination races the state clear
-      // and emits a stray storage event. The manager skips the deadline write
-      // when the reason is 'user_session_ended', so termination produces only
-      // a clear followed by the new user session's first write.
-      const stateOps: Array<'set' | 'remove'> = [];
+      // An inactivity-deadline write during termination would emit a stray
+      // storage event. The manager skips the deadline write when the reason is
+      // 'user_session_ended', so termination produces only the ended marker
+      // followed by the new user session's first write.
+      const stateOps: Array<'end' | 'set' | 'remove'> = [];
       const spyBacking = new InMemoryStorage();
       const originalSet = spyBacking.setItem.bind(spyBacking);
       const originalRemove = spyBacking.removeItem.bind(spyBacking);
       spyBacking.setItem = (key, value) => {
         if (key === 'embrace_user_session_state') {
-          stateOps.push('set');
+          stateOps.push(
+            (JSON.parse(value) as { ended?: boolean }).ended ? 'end' : 'set',
+          );
         }
         originalSet(key, value);
       };
@@ -1412,10 +1703,9 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       localManager.endUserSession();
 
-      // Exactly two storage ops: remove (clear the dying session), then set
-      // (start the rollover session). No intermediate set with a stale
-      // continuation snapshot.
-      expect(stateOps).to.deep.equal(['remove', 'set']);
+      // Exactly two storage ops: the ended marker, then the rollover user
+      // session. No intermediate set with a stale continuation snapshot.
+      expect(stateOps).to.deep.equal(['end', 'set']);
     });
 
     it('should mark part as final when max duration timer fires during active part', () => {

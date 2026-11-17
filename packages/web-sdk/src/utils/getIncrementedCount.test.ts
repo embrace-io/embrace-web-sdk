@@ -27,6 +27,14 @@ describe('getIncrementedCount', () => {
     expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(1);
   });
 
+  it('should count from the given value instead of the stored one', () => {
+    const storage = setupTestStorage();
+    getIncrementedCount(storage, 'my-key', diag);
+
+    expect(getIncrementedCount(storage, 'my-key', diag, 6)).to.equal(7);
+    expect(getIncrementedCount(storage, 'my-key', diag)).to.equal(8);
+  });
+
   it('should count within the page when storage is unavailable', () => {
     const storage = new NamespacedStorage({
       storage: new FailingStorage(),
