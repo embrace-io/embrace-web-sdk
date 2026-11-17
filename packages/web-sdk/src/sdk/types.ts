@@ -168,7 +168,7 @@ type BaseSDKInitConfig = {
   logProcessors?: LogRecordProcessor[];
 
   /**
-   * logLevel controls the verbosity of the SDK console logging
+   * logLevel controls the verbosity of the diagnostics written to diagLogger
    *
    * **default**: DiagLogLevel.ERROR
    */
@@ -202,6 +202,14 @@ type BaseSDKInitConfig = {
    */
   additionalQueryParamsToScrub?: string[];
 
+  /**
+   * diagLogger receives the diagnostics of the SDK, its instrumentations and the OpenTelemetry components it uses, at
+   * logLevel and above. initSDK installs it as the global `diag` logger, so a call from a component logger passes the
+   * component's namespace first, such as `'embrace-sdk'`. It must not write back to the global `diag`, as a logger from
+   * `diag.createComponentLogger` does.
+   *
+   * **default**: a console logger
+   */
   diagLogger?: DiagLogger;
 
   /**

@@ -44,7 +44,7 @@ import {
   fakeFetchRespondWith,
   fakeFetchRestore,
   fakeFetchWasCalled,
-  InMemoryDiagLogger,
+  setupTestDiagLogger,
   setupTestWebVitalListeners,
 } from '../../tests/utils/index.ts';
 import { log, NoOpLogManager, ProxyLogManager } from '../api-logs/index.ts';
@@ -223,20 +223,20 @@ describe('initSDK', () => {
   });
 
   it('should require an appID when not setting custom exporters', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     // @ts-expect-error need to bypass type checking to test this invalid configuration
     const result = initSDK({ diagLogger });
     void expect(result).to.be.false;
 
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
+    expect(diagLogger.messages('error')).to.have.lengthOf(1);
+    expect(diagLogger.messages('error')[0]).to.equal(
       'failed to initialize the SDK: when appID is omitted, at least one logExporter or spanExporter must be set',
     );
   });
 
   describe('appVersion validation', () => {
     it('should reject empty string', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         appVersion: '',
@@ -244,14 +244,14 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: if appVersion is specified, it cannot be an empty string.',
       );
     });
 
     it('should reject whitespace-only', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         appVersion: '   ',
@@ -259,14 +259,14 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: if appVersion is specified, it cannot be an empty string.',
       );
     });
 
     it('should reject number', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         // @ts-expect-error testing runtime behavior with invalid type
@@ -275,14 +275,14 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: if appVersion is specified, it must be a string. Received 123',
       );
     });
 
     it('should reject null', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         // @ts-expect-error testing runtime behavior with invalid type
@@ -291,38 +291,38 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: if appVersion is specified, it must be a string. Received null',
       );
     });
 
     it('should accept undefined', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         diagLogger,
       });
       void expect(result).not.to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+      expect(diagLogger.messages('error')).to.have.lengthOf(0);
     });
   });
 
   describe('appID validation', () => {
     it('should ensure specified string is 5 characters long', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({ appID: 'long-app-id', diagLogger });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received "long-app-id"',
       );
     });
 
     it('should reject number', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         // @ts-expect-error testing runtime behavior with invalid type
         appID: 12345,
@@ -330,14 +330,14 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: appID must be a string, or omitted if not using Embrace. Received 12345',
       );
     });
 
     it('should reject null', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         // @ts-expect-error testing runtime behavior with invalid type
         appID: null,
@@ -345,39 +345,39 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: appID must be a string, or omitted if not using Embrace. Received null',
       );
     });
 
     it('should reject undefined without exporters', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       // @ts-expect-error intentionally missing appID
       const result = initSDK({
         diagLogger,
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: when appID is omitted, at least one logExporter or spanExporter must be set',
       );
     });
 
     it('should accept undefined with exporters', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         logExporters: [logExporter],
         spanExporters: [spanExporter],
         diagLogger,
       });
       void expect(result).not.to.be.false;
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+      expect(diagLogger.messages('error')).to.have.lengthOf(0);
     });
 
     it('should reject empty string', () => {
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: '',
         logExporters: [logExporter],
@@ -385,8 +385,8 @@ describe('initSDK', () => {
       });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: appID should be 5 characters long, or omitted if not using Embrace. Received ""',
       );
     });
@@ -619,7 +619,7 @@ describe('initSDK', () => {
   });
 
   it('should keep initializing and enable later instrumentations when one fails to enable', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const throwingInstrumentation: Instrumentation = {
       instrumentationName: 'ThrowingInstrumentation',
       enable: () => {
@@ -642,13 +642,14 @@ describe('initSDK', () => {
 
     void expect(result).not.to.be.false;
     void expect(laterInstrumentation.isEnabled()).to.be.true;
-    expect(diagLogger.getErrorLogs()).to.include(
+    expect(diagLogger.calls('error')).to.deep.include([
       'failed to enable ThrowingInstrumentation: enable broke',
-    );
+      new Error('enable broke'),
+    ]);
   });
 
   it('should skip an entry that is not an object and enable later instrumentations', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const laterInstrumentation = new FakeInstrumentation();
 
     const result = initSDK({
@@ -667,13 +668,13 @@ describe('initSDK', () => {
 
     void expect(result).not.to.be.false;
     void expect(laterInstrumentation.isEnabled()).to.be.true;
-    expect(diagLogger.getErrorLogs()).to.include(
+    expect(diagLogger.messages('error')).to.include(
       'skipped null: only OpenTelemetry Browser instrumentations are supported',
     );
   });
 
   it('should skip a user-supplied OTel JS instrumentation and enable later instrumentations', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const legacyOTelInstrumentation = {
       instrumentationName: 'LegacyOTelInstrumentation',
       instrumentationVersion: '1.0.0',
@@ -704,7 +705,7 @@ describe('initSDK', () => {
     void expect(legacyOTelInstrumentation.enable.called).to.be.false;
     void expect(legacyOTelInstrumentation.setTracerProvider.called).to.be.false;
     void expect(laterInstrumentation.isEnabled()).to.be.true;
-    expect(diagLogger.getErrorLogs()).to.include(
+    expect(diagLogger.messages('error')).to.include(
       'skipped LegacyOTelInstrumentation: only OpenTelemetry Browser instrumentations are supported',
     );
   });
@@ -785,19 +786,20 @@ describe('initSDK', () => {
       registrationStub = sinon
         .stub(trace, 'setGlobalTracerProvider')
         .returns(false);
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
 
       const result = initSDK({
         appID: 'abc12',
         diagLogger,
+        logLevel: DiagLogLevel.WARN,
         defaultInstrumentationConfig: { omit: new Set(['document-load']) },
       });
       void expect(result).not.to.be.false;
 
-      expect(diagLogger.getWarnLogs()).to.include(
+      expect(diagLogger.messages('warn')).to.include(
         'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
       );
-      expect(diagLogger.getWarnLogs()).not.to.include(
+      expect(diagLogger.messages('warn')).not.to.include(
         'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
       );
     });
@@ -806,19 +808,20 @@ describe('initSDK', () => {
       registrationStub = sinon
         .stub(logs, 'setGlobalLoggerProvider')
         .returns(false);
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
 
       const result = initSDK({
         appID: 'abc12',
         diagLogger,
+        logLevel: DiagLogLevel.WARN,
         defaultInstrumentationConfig: { omit: new Set(['document-load']) },
       });
       void expect(result).not.to.be.false;
 
-      expect(diagLogger.getWarnLogs()).to.include(
+      expect(diagLogger.messages('warn')).to.include(
         'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
       );
-      expect(diagLogger.getWarnLogs()).not.to.include(
+      expect(diagLogger.messages('warn')).not.to.include(
         'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
       );
     });
@@ -835,7 +838,7 @@ describe('initSDK', () => {
       }),
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const result = initSDK({
       appID: 'abc12',
       diagLogger,
@@ -928,7 +931,7 @@ describe('initSDK', () => {
   });
 
   it('should not initialize on restricted protocols', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const result = initSDK({
       appID: 'app12',
       diagLogger,
@@ -938,26 +941,26 @@ describe('initSDK', () => {
     });
     void expect(result).to.be.false;
 
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-    expect(diagLogger.getErrorLogs()[0]).to.equal(
+    expect(diagLogger.messages('error')).to.have.lengthOf(1);
+    expect(diagLogger.messages('error')[0]).to.equal(
       'failed to initialize the SDK: not initializing due to restricted protocol: http:',
     );
   });
 
   it('should not initialize on file protocol by default', () => {
     const spy = sinon.spy(Set.prototype, 'has').withArgs('http:');
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const result = initSDK({ appID: 'app12', diagLogger });
 
     // Faking the protocol as 'file:' would be a better test, but we can't easily override window.location.protocol, so
     // verify that the protocol was checked against the right default set
     expect(spy.getCall(0).thisValue).to.deep.equal(new Set(['file:']));
     void expect(result).not.to.be.false;
-    expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+    expect(diagLogger.messages('error')).to.have.lengthOf(0);
   });
 
   it('should not initialize when CompressionStream is unavailable and sending to Embrace', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const originalCompressionStream = (globalThis as never)[
       'CompressionStream'
     ];
@@ -967,8 +970,8 @@ describe('initSDK', () => {
       const result = initSDK({ appID: 'app12', diagLogger });
       void expect(result).to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(1);
-      expect(diagLogger.getErrorLogs()[0]).to.equal(
+      expect(diagLogger.messages('error')).to.have.lengthOf(1);
+      expect(diagLogger.messages('error')[0]).to.equal(
         'failed to initialize the SDK: CompressionStream is not supported in this browser and required for data compression.',
       );
     } finally {
@@ -978,7 +981,7 @@ describe('initSDK', () => {
   });
 
   it('should initialize when CompressionStream is unavailable but using custom exporters', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
     const originalCompressionStream = (globalThis as never)[
       'CompressionStream'
     ];
@@ -992,7 +995,7 @@ describe('initSDK', () => {
       });
       void expect(result).not.to.be.false;
 
-      expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
+      expect(diagLogger.messages('error')).to.have.lengthOf(0);
     } finally {
       // Restore CompressionStream
       (globalThis as never)['CompressionStream'] = originalCompressionStream;
@@ -1010,13 +1013,17 @@ describe('initSDK', () => {
     for (const name of ['localStorage', 'sessionStorage'] as const) {
       it(`should initialize when reading ${name} throws`, () => {
         restoreStorage = blockWindowStorage(name);
-        const diagLogger = new InMemoryDiagLogger();
+        const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
 
-        const result = initSDK({ appID: 'app12', diagLogger });
+        const result = initSDK({
+          appID: 'app12',
+          diagLogger,
+          logLevel: DiagLogLevel.WARN,
+        });
 
         void expect(result).not.to.be.false;
-        expect(diagLogger.getErrorLogs()).to.have.lengthOf(0);
-        expect(diagLogger.getWarnLogs()).to.include(
+        expect(diagLogger.messages('error')).to.have.lengthOf(0);
+        expect(diagLogger.messages('warn')).to.include(
           `${name} is not accessible; keeping its data in memory for this page`,
         );
       });
@@ -1797,16 +1804,17 @@ describe('initSDK', () => {
         }),
       };
 
-      const diagLogger = new InMemoryDiagLogger();
+      const diagLogger = setupTestDiagLogger({ namespace: 'embrace-sdk' });
       const result = initSDK({
         appID: 'abc12',
         diagLogger,
+        logLevel: DiagLogLevel.DEBUG,
         dynamicSDKConfigManager: myCustomConfigManager,
         logExporters: [logExporter],
         spanExporters: [spanExporter],
       });
       void expect(result).to.be.false;
-      expect(diagLogger.getDebugLogs()).to.be.deep.equal([
+      expect(diagLogger.messages('debug')).to.be.deep.equal([
         'No existing app instance ID found in session storage, creating a new one',
         'SDK is disabled, skipping initialization.',
       ]);
@@ -1954,6 +1962,39 @@ describe('initSDK', () => {
       void expect(consoleInfoStub.called).to.be.false;
       void expect(consoleWarnStub.called).to.be.false;
       void expect(consoleErrorStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('diagLogger', () => {
+    it('should receive the diagnostics of other components', () => {
+      const diagLogger = setupTestDiagLogger({ namespace: 'testing' });
+
+      const result = initSDK({ appID: 'abc12', diagLogger });
+      void expect(result).not.to.be.false;
+      diag.createComponentLogger({ namespace: 'testing' }).error('error');
+
+      expect(diagLogger.messages('error')).to.deep.equal(['error']);
+    });
+
+    it('should receive only the diagnostics at logLevel and above', () => {
+      const diagLogger = setupTestDiagLogger({ namespace: 'testing' });
+
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        logLevel: DiagLogLevel.WARN,
+      });
+      void expect(result).not.to.be.false;
+      const testingLogger = diag.createComponentLogger({
+        namespace: 'testing',
+      });
+      testingLogger.info('info');
+      testingLogger.warn('warning');
+      testingLogger.error('error');
+
+      expect(diagLogger.messages('info')).to.deep.equal([]);
+      expect(diagLogger.messages('warn')).to.deep.equal(['warning']);
+      expect(diagLogger.messages('error')).to.deep.equal(['error']);
     });
   });
 
