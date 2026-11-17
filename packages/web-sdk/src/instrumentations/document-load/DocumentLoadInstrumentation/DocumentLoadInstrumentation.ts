@@ -27,8 +27,6 @@ import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_HTTP_RESPONSE_BODY_SIZE,
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
   ATTR_HTTP_RESPONSE_SIZE,
   ATTR_URL_FULL,
   ATTR_USER_AGENT_ORIGINAL,
@@ -336,18 +334,6 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
     span: Span,
     resource: EmbracePerformanceResourceTiming,
   ): void {
-    // TODO: remove these deprecated HTTP semconv keys in 3.0; custom-exporter consumers still read them
-    span.setAttribute(
-      ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-      resource.encodedBodySize,
-    );
-    if (resource.decodedBodySize !== resource.encodedBodySize) {
-      span.setAttribute(
-        ATTR_HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
-        resource.decodedBodySize,
-      );
-    }
-
     span.setAttribute(KEY_EMB_TYPE, EMB_TYPES.ResourceFetch);
 
     /* eslint-disable baseline-js/use-baseline -- not widely available (Safari lacks renderBlockingStatus and responseStatus; deliveryType is newly available); read optionally */
