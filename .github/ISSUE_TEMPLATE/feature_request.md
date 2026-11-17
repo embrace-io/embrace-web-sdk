@@ -17,6 +17,7 @@ Provide a clear, concise description of the problem that this feature would addr
 
 **Describe the ideal solution**
 Outline how you envision the feature working within the SDK. Include details like:
+
 - Function/method name suggestions
 - Expected inputs and outputs
 - Any relevant SDK configurations or options

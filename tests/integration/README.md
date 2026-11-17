@@ -25,6 +25,7 @@ The integration tests consist of two phases:
 Build tests verify the SDK can be built correctly for each platform and checks bundle sizes.
 
 **Platforms tested:**
+
 - Webpack 5 (es2015)
 - Vite 6 (es2015)
 - Vite 7 (es2015)
@@ -33,11 +34,13 @@ Build tests verify the SDK can be built correctly for each platform and checks b
 - Next.js 16 (Webpack, Turbopack) with Pages Router and App Router
 
 **Run only build tests:**
+
 ```bash
 npm run build-platforms
 ```
 
 **What they verify:**
+
 - SDK builds without errors
 - Bundle sizes are within expected ranges (via Sonda)
 - Generated output is placed in the correct location for e2e tests
@@ -49,11 +52,13 @@ Build test results are stored in `tests/integration/build-test-results/`.
 End-to-end tests verify the built SDK works in real applications and communicates with the Embrace backend correctly.
 
 **Platforms tested:**
+
 - Next.js 15 (Webpack, Turbopack) with Pages Router and App Router
 - Next.js 16 (Webpack, Turbopack) with Pages Router and App Router
 - CDN (IIFE bundle)
 
 **Run only e2e tests:**
+
 ```bash
 # Build tests must run first
 npm run build-platforms
@@ -62,6 +67,7 @@ npx playwright test
 ```
 
 **What they verify:**
+
 - Page loads without errors
 - SDK auto-instruments correctly (expected number of spans created)
 - Sessions can be manually ended and are sent to the server
@@ -74,6 +80,7 @@ npx playwright test
 - Server receives spans and logs with correct attributes
 
 E2E tests run in three browsers:
+
 - Chromium
 - Firefox
 - WebKit (Safari)
@@ -87,12 +94,14 @@ Golden files verify that SDK output matches the expected structure. They're stor
 Each test creates spans and logs with dynamic data (timestamps, IDs). These fields are ignored during comparison:
 
 **Span fields (ignored):**
+
 - `traceId`
 - `spanId`
 - `startTimeUnixNano`
 - `endTimeUnixNano`
 
 **Log fields (ignored):**
+
 - `timeUnixNano`
 - `observedTimeUnixNano`
 
@@ -109,6 +118,7 @@ Golden files are still recorded with actual values so you can verify the changes
 ## Platform Setup
 
 Each platform is a separate directory under `platforms/` with its own:
+
 - `package.json` with build scripts
 - `src/` directory with the test app
 - `dist/` output (created during build tests)
@@ -118,6 +128,7 @@ Each platform is a separate directory under `platforms/` with its own:
 The parent `tests-integration` package is a workspace package and declares `@embrace-io/web-sdk` and `@embrace-io/web-cli` as workspace dependencies (using `*` wildcards).
 
 Individual platform directories under `platforms/` are not workspace packages and use `file:` references:
+
 ```json
 {
   "@embrace-io/web-sdk": "file:../../../../packages/web-sdk",
@@ -221,6 +232,7 @@ window.EMBRACE_CURRENT_USER_SESSION_ID = getCurrentUserSessionId();
 ### Tests fail after SDK changes
 
 Rebuild the SDK before running tests:
+
 ```bash
 npm run build
 npm run test:integration
@@ -229,6 +241,7 @@ npm run test:integration
 ### E2E tests timeout
 
 Check that:
+
 1. Build tests passed (required for e2e setup)
 2. The correct number of spans is set in `numberOfExpectedSpans`
 3. Required buttons are present and use correct labels
@@ -237,6 +250,7 @@ Check that:
 ### Golden file mismatches
 
 Verify intentional SDK changes, then update golden files:
+
 ```bash
 npm run test:integration:update-golden
 ```
@@ -244,11 +258,13 @@ npm run test:integration:update-golden
 ### Platform dependencies not linked
 
 Ensure workspace dependencies are installed:
+
 ```bash
 npm install
 ```
 
 Then reinstall platform dependencies:
+
 ```bash
 npm run install-dependencies
 ```
