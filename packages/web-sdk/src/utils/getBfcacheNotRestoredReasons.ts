@@ -8,6 +8,7 @@ export const getBfcacheNotRestoredReasons = (
     | EmbracePerformanceNavigationTiming
     | undefined = getNonBaselineNavigationTiming(),
 ): string[] | undefined => {
+  // notRestoredReasons is not Baseline widely available (Chromium only), so it is read optionally
   const notRestoredReasons = performanceNavigationTiming?.notRestoredReasons;
   return notRestoredReasons?.reasons?.map((r) => r.reason);
 };

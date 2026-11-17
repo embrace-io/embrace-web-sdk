@@ -206,7 +206,7 @@ export class OTelPerformanceManager implements PerformanceManager {
 
   private _getNavigationActivationStart(): Offset {
     const entry = this.getNavigationEntry();
-    // Only prerendered pages have a nonzero value, and prerendering only exists where this is supported
+    // activationStart is not Baseline widely available (Chromium only). Only prerendered pages have a nonzero value, and prerendering only exists where this is supported
     return entry?.activationStart ?? 0;
   }
 }

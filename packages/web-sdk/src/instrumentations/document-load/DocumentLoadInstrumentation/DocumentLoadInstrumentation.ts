@@ -453,7 +453,7 @@ export class DocumentLoadInstrumentation extends EmbraceInstrumentationBase {
   private _isCacheValidated(
     resource: EmbracePerformanceResourceTiming,
   ): boolean {
-    // deliveryType is Chromium only, so an engine without it never reads 'cache'.
+    // deliveryType is not Baseline widely available, so an engine without it never reads 'cache'.
     return resource.transferSize === 300 && resource.deliveryType !== 'cache';
   }
 
