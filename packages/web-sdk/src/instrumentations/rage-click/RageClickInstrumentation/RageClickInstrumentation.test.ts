@@ -308,25 +308,27 @@ describe('RageClickInstrumentation', () => {
     const target = document.createElement('button');
     testContainer.append(target);
 
+    const error = new Error('boom');
     const evt = new MouseEvent('click', { bubbles: true });
     Object.defineProperty(evt, 'timeStamp', {
       get: () => {
-        throw new Error('boom');
+        throw error;
       },
     });
     target.dispatchEvent(evt);
 
-    expect(diagLogger.messages('error')).to.deep.equal([
-      'failed to process rage-click candidate',
+    expect(diagLogger.calls('error')).to.deep.equal([
+      ['failed to process rage-click candidate', error],
     ]);
   });
 
   it('logs an error if emitting the rage-click log throws', async () => {
+    const error = new Error('boom');
     const realPerf = new OTelPerformanceManager();
     const throwingPerf: PerformanceManager = {
       ...realPerf,
       offsetToAbsoluteTime: () => {
-        throw new Error('boom');
+        throw error;
       },
     };
     const diagLogger = setupTestDiagLogger({
@@ -342,8 +344,8 @@ describe('RageClickInstrumentation', () => {
     target.click();
     await clock.tickAsync(TICK_AFTER_WINDOW);
 
-    expect(diagLogger.messages('error')).to.deep.equal([
-      'failed to emit rage-click log',
+    expect(diagLogger.calls('error')).to.deep.equal([
+      ['failed to emit rage-click log', error],
     ]);
     expect(getRageClickLogs()).to.have.lengthOf(0);
   });
