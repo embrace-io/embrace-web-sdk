@@ -13,7 +13,6 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
   private readonly _pendingEmptyChecks = new Set<TimeoutRef>();
 
   public constructor({
-    diag,
     perf,
     rootNode,
     emptyCheckDelayMs = 500,
@@ -21,7 +20,6 @@ export class EmptyRootInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'EmptyRootInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

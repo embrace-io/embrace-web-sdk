@@ -15,7 +15,7 @@ export type ResourceFetchCustomAttributeFunction = (
 
 export type DocumentLoadInstrumentationArgs = Pick<
   EmbraceInstrumentationBaseArgs,
-  'diag' | 'perf'
+  'perf'
 > & {
   /** Function for adding custom attributes on the document load, document fetch and or resource fetch spans */
   applyCustomAttributesOnSpan?: {

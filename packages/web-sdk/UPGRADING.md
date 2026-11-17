@@ -10,6 +10,10 @@ CommonJS is not supported. The package is ESM only: `require('@embrace-io/web-sd
 
 The CDN bundle (`embrace-web-sdk.js`) is built for ES2022 instead of ES6. Sending to Embrace needs at least Chrome and Edge 85, Firefox 113, Safari 16.4 and Samsung Internet 14.
 
+### Removed `defaultInstrumentationConfig` fields
+
+- `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`. `initSDK` installs a console logger on that channel; to send instrumentation logs to your own logger, call `diag.setLogger` from `@opentelemetry/api` after `initSDK` returns. Messages logged during `initSDK` still go to the console.
+
 ### Removed HTTP response size attributes
 
 The document fetch and resource fetch spans no longer set `http.response_content_length` and `http.response_content_length_uncompressed`. Read `http.response.body.size` and `http.response.decoded_body_size` instead, which carry the same values.

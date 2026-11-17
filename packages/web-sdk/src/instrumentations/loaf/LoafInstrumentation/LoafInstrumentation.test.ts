@@ -1,10 +1,11 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -129,6 +130,7 @@ describe('LoafInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
@@ -327,15 +329,18 @@ describe('LoafInstrumentation', () => {
       public disconnect(): void {}
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'LoafInstrumentation',
+    });
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(diagLogger.getDebugLogs().length).to.be.greaterThan(0);
+    expect(diagLogger.messages('debug')).to.deep.equal([
+      'long-animation-frame not supported, skipping',
+    ]);
     expect(observerCallback).to.be.null;
 
     instrumentation.disable();
@@ -697,10 +702,11 @@ describe('LoafInstrumentation', () => {
   });
 
   it('should handle error in entry processing gracefully', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'LoafInstrumentation',
+    });
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
@@ -714,16 +720,19 @@ describe('LoafInstrumentation', () => {
       } as PerformanceLongAnimationFrameTiming,
     ]);
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'error processing long-animation-frame entry',
+    ]);
 
     instrumentation.disable();
   });
 
   it('should handle error in flush report gracefully', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'LoafInstrumentation',
+    });
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
@@ -740,7 +749,9 @@ describe('LoafInstrumentation', () => {
       reason: 'web_foreground_inactivity',
     });
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'error emitting loaf report',
+    ]);
 
     instrumentation['logger'].emit = originalEmit;
     instrumentation.disable();
@@ -756,15 +767,16 @@ describe('LoafInstrumentation', () => {
       }
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'LoafInstrumentation',
+    });
     const instrumentation = new LoafInstrumentation({
       perf,
-      diag: diagLogger,
     });
     instrumentation.setUserSessionManager(userSessionManager);
     instrumentation.enable();
 
-    expect(diagLogger.getErrorLogs().length).to.be.greaterThan(0);
+    expect(diagLogger.messages('error')).to.deep.equal(['failed to enable']);
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();
