@@ -8,7 +8,6 @@ import {
   DOMStateInstrumentation,
   DocumentLoadInstrumentation,
   ElementTimingInstrumentation,
-  EmbraceInstrumentationBase,
   EmptyRootInstrumentation,
   FirstInteractionInstrumentation,
   GlobalExceptionInstrumentation,
@@ -28,22 +27,14 @@ import type {
 
 export const setupDefaultInstrumentations = (
   config: DefaultInstrumentationConfig = {},
-  {
-    logManager,
-    userSessionManager,
-    pageManager,
-    limitManager,
-    signalBuffer,
-  }: SetupDefaultInstrumentationsArgs,
+  { signalBuffer }: SetupDefaultInstrumentationsArgs,
 ): Array<Instrumentation | LegacyOTelInstrumentation> => {
   const instrumentations: Array<Instrumentation | LegacyOTelInstrumentation> =
     [];
   const diagLogger = diag.createComponentLogger({ namespace: 'embrace-sdk' });
 
   if (!config.omit?.has('exception')) {
-    instrumentations.push(
-      new GlobalExceptionInstrumentation(config['exception']),
-    );
+    instrumentations.push(new GlobalExceptionInstrumentation());
   }
 
   if (!config.omit?.has('click')) {
@@ -51,32 +42,26 @@ export const setupDefaultInstrumentations = (
   }
 
   if (!config.omit?.has('rage-click')) {
-    instrumentations.push(new RageClickInstrumentation(config['rage-click']));
+    instrumentations.push(new RageClickInstrumentation());
   }
 
   if (!config.omit?.has('max-scroll-depth')) {
-    instrumentations.push(
-      new MaxScrollDepthInstrumentation(config['max-scroll-depth']),
-    );
+    instrumentations.push(new MaxScrollDepthInstrumentation());
   }
 
   if (!config.omit?.has('first-interaction')) {
-    instrumentations.push(
-      new FirstInteractionInstrumentation(config['first-interaction']),
-    );
+    instrumentations.push(new FirstInteractionInstrumentation());
   }
 
   if (!config.omit?.has('web-vital')) {
-    instrumentations.push(
-      new WebVitalsInstrumentation({ ...config['web-vital'], pageManager }),
-    );
+    instrumentations.push(new WebVitalsInstrumentation(config['web-vital']));
   }
 
   // TODO: remove the isSupported() checks below once https://github.com/open-telemetry/opentelemetry-browser/issues/569 is released; they only keep
   // _init()'s unsupported-browser error out of the console
   if (!config.omit?.has('loaf')) {
     if (LoafInstrumentation.isSupported()) {
-      instrumentations.push(new LoafInstrumentation({ ...config['loaf'] }));
+      instrumentations.push(new LoafInstrumentation());
     } else {
       diagLogger.debug('loaf not supported, skipping');
     }
@@ -88,12 +73,7 @@ export const setupDefaultInstrumentations = (
 
   if (!config.omit?.has('element-timing')) {
     if (ElementTimingInstrumentation.isSupported()) {
-      instrumentations.push(
-        new ElementTimingInstrumentation({
-          limitManager,
-          ...config['element-timing'],
-        }),
-      );
+      instrumentations.push(new ElementTimingInstrumentation());
     } else {
       diagLogger.debug('element-timing not supported, skipping');
     }
@@ -107,7 +87,6 @@ export const setupDefaultInstrumentations = (
     ) {
       instrumentations.push(
         new SoftNavigationPerformanceInstrumentation({
-          limitManager,
           signalBuffer,
           ...config['soft-navigation-performance'],
         }),
@@ -124,20 +103,13 @@ export const setupDefaultInstrumentations = (
   }
 
   if (!config.omit?.has('dom-state')) {
-    instrumentations.push(new DOMStateInstrumentation(config['dom-state']));
+    instrumentations.push(new DOMStateInstrumentation());
   }
 
-  instrumentations.push(
-    new NavigationInstrumentation({ pageManager, ...config['navigation'] }),
-  );
+  instrumentations.push(new NavigationInstrumentation(config['navigation']));
 
   if (!config.omit?.has('server-timing')) {
-    instrumentations.push(
-      new ServerTimingInstrumentation({
-        limitManager,
-        ...config['server-timing'],
-      }),
-    );
+    instrumentations.push(new ServerTimingInstrumentation());
   }
 
   // Upstream patches fetch and XHR in the constructor unless enabled is false; initSDK enables them once the providers exist.
@@ -173,22 +145,6 @@ export const setupDefaultInstrumentations = (
     instrumentations.push(
       new EmptyRootInstrumentation({ ...config['empty-root'] }),
     );
-  }
-
-  for (const instrumentation of instrumentations) {
-    if (instrumentation instanceof EmbraceInstrumentationBase) {
-      if (userSessionManager) {
-        instrumentation.setUserSessionManager(userSessionManager);
-      }
-
-      if (logManager) {
-        instrumentation.setLogManager(logManager);
-      }
-
-      if (limitManager) {
-        instrumentation.setLimitManager(limitManager);
-      }
-    }
   }
 
   return instrumentations;

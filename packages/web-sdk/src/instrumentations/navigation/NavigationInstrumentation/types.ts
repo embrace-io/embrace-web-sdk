@@ -1,5 +1,3 @@
-import type { PageManager } from '../../../api-page/index.ts';
-
 export type NavigationInstrumentationArgs = {
   /**
    * If set to `true`, the instrumentation will remove path options from the route name.
@@ -8,7 +6,4 @@ export type NavigationInstrumentationArgs = {
    * *default*: true
    */
   shouldCleanupPathOptionsFromRouteName?: boolean;
-
-  /** @internal SDK use only */
-  pageManager?: PageManager;
 };

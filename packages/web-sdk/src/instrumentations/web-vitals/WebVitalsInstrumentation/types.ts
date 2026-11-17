@@ -4,9 +4,7 @@ import type {
   MetricWithAttribution,
   ReportOpts,
 } from 'web-vitals/attribution';
-import type { PageManager } from '../../../api-page/index.ts';
 import type { URLDocument } from '../../../common/index.ts';
-import type { PerformanceManager } from '../../../utils/index.ts';
 
 /** @deprecated All vitals metrics are tracked */
 export type TrackingLevel = 'core' | 'all';
@@ -44,8 +42,6 @@ export interface WebVitalsInstrumentationConfig {
   listeners?: WebVitalListeners;
   urlDocument?: URLDocument;
   urlAttribution?: boolean;
-  pageManager?: PageManager;
-  perf?: PerformanceManager;
 
   /** @deprecated All vitals metrics are tracked */
   trackingLevel?: TrackingLevel;
