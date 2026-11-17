@@ -85,6 +85,30 @@ describe('EmptyInstrumentation', () => {
     expect(finishedSpans[0].events).to.have.lengthOf(0);
   });
 
+  it('should observe the root node again after disable() and enable()', async () => {
+    clock = sinon.useFakeTimers({
+      toFake: ['setTimeout', 'clearTimeout'],
+      shouldClearNativeTimers: true,
+    });
+    const rootNode = document.createElement('div');
+    const child = document.createElement('div');
+    rootNode.append(child);
+
+    instrumentation = new EmptyRootInstrumentation({
+      rootNode,
+      emptyCheckDelayMs: 10,
+    });
+    instrumentation.enable();
+    instrumentation.disable();
+    instrumentation.enable();
+
+    child.remove();
+
+    // MutationObserver callbacks run as a microtask queued before this await resolves
+    await Promise.resolve();
+    expect(clock.countTimers()).to.equal(1);
+  });
+
   it('should add a span event to the session part when the root node becomes empty', async () => {
     const rootNode = document.createElement('div');
     const child1 = document.createElement('div');
@@ -241,8 +265,9 @@ describe('EmptyInstrumentation', () => {
     });
     instrumentation.enable();
 
-    expect(diagLogger.messages('warn')).to.deep.equal([
-      "supplied root node was null, this instrumentation won't be enabled",
+    void expect(instrumentation.isEnabled()).to.be.false;
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'init failed, so this instrumentation stays off: rootNode is null',
     ]);
 
     // Yield so that the mutation observer callbacks can trigger
