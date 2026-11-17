@@ -38,9 +38,17 @@ The `instrumentations` option of `initSDK` uses the `Instrumentation` interface 
 - When the `rootNode` of `defaultInstrumentationConfig['empty-root']` is null, the SDK logs an error through `diag` instead of a warning.
 - When the browser cannot observe navigation entries, the document load instrumentation logs an error through `diag` and stays off, instead of logging a warning.
 
+### `diagLogger` is the global `diag` logger
+
+`initSDK` installs the `diagLogger` option as the global `diag` logger in place of its console logger, so it also receives the diagnostics of the instrumentations and the OpenTelemetry components:
+
+- `logLevel` applies to `diagLogger`. With the default `DiagLogLevel.ERROR`, it no longer receives warnings or lower levels.
+- A call from a component logger passes the component's namespace first, so the SDK's own messages arrive as `('embrace-sdk', message)`.
+- A logger from `diag.createComponentLogger` writes back to the global `diag`, so it cannot be the `diagLogger`.
+
 ### Removed `defaultInstrumentationConfig` fields
 
-- `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`. `initSDK` installs a console logger on that channel; to send instrumentation logs to your own logger, call `diag.setLogger` from `@opentelemetry/api` after `initSDK` returns. Messages logged during `initSDK` still go to the console.
+- `diag` is removed from every entry that configures an Embrace instrumentation, such as `document-load` and `web-vital`. Instrumentations log through the global `diag` channel, so set the verbosity with the `logLevel` option of `initSDK`. To send them to your own logger, pass it as the `diagLogger` option of `initSDK`.
 - The SDK passes its own managers to its instrumentations, so the entries no longer accept them:
   - `perf` is removed from the `click`, `document-load`, `empty-root`, `soft-navigation-performance`, `user-timing` and `web-vital` entries.
   - `limitManager` is removed from the `soft-navigation-performance` and `user-timing` entries.

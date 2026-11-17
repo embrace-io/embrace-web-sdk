@@ -112,9 +112,7 @@ export const initSDK = (
     logLevel = DiagLogLevel.ERROR,
     embraceDataURL,
     embraceConfigURL,
-    diagLogger = diag.createComponentLogger({
-      namespace: 'embrace-sdk',
-    }),
+    diagLogger: providedDiagLogger,
     dynamicSDKConfigManager: providedDynamicSDKConfigManager,
     dynamicSDKConfig,
     registerGlobally = true,
@@ -123,6 +121,7 @@ export const initSDK = (
     useDocumentTitleAsPageLabel = true,
   }: SDKInitConfig = {} as SDKInitConfig,
 ): SDKControl | false => {
+  const diagLogger = diag.createComponentLogger({ namespace: 'embrace-sdk' });
   try {
     if (registerGlobally) {
       const existingSDK = registry.registered();
@@ -134,7 +133,7 @@ export const initSDK = (
       }
     }
 
-    diag.setLogger(new DiagConsoleLogger(), {
+    diag.setLogger(providedDiagLogger ?? new DiagConsoleLogger(), {
       logLevel,
     });
 
