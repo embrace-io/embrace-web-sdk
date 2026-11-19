@@ -1,3 +1,4 @@
+import { trace } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
@@ -1146,12 +1147,27 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(storedState()).to.deep.include({
         userSessionId: endedUserSessionId,
         ended: true,
+        endReason: 'manual',
         inactivityDeadlineTs: 1000,
         userSessionProperties: {},
       });
       void expect(manager.getUserSessionId()).to.be.null;
       void expect(manager.getUserSessionAttributes()).to.be.null;
       expect(manager.getPreviousUserSessionId()).to.equal(endedUserSessionId);
+    });
+
+    it('records an inactivity end on the ended marker', () => {
+      manager.startSessionPartInternal({ reason: 'init' });
+
+      manager.endSessionPartInternal({
+        reason: 'web_foreground_inactivity',
+        userSessionEndReason: 'inactivity',
+      });
+
+      expect(storedState()).to.include({
+        ended: true,
+        endReason: 'inactivity',
+      });
     });
 
     it('creates the next user session from the one that ended', () => {
@@ -1223,6 +1239,358 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       );
       expect(next?.['emb.user_session_previous_id']).to.equal(
         ended?.['emb.user_session_id'],
+      );
+    });
+  });
+
+  describe('reacting to another tab', () => {
+    const NAMESPACE = 'other-tab-test';
+    const STATE_KEY = `${NAMESPACE}__embrace_user_session_state`;
+
+    // Other test files share `localStorage`, so only this namespace's keys
+    // are touched.
+    const removeNamespaceKeys = () => {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith(`${NAMESPACE}__`)) {
+          localStorage.removeItem(key);
+        }
+      }
+    };
+
+    // The other tab's storage: its writes reach `localStorage` and are
+    // recorded as the `storage` events this tab would receive, which have to
+    // carry the real `localStorage`.
+    class OtherTabStorage implements Storage {
+      public events: StorageEvent[] = [];
+
+      public get length(): number {
+        return localStorage.length;
+      }
+
+      public key(index: number): string | null {
+        return localStorage.key(index);
+      }
+
+      public getItem(key: string): string | null {
+        return localStorage.getItem(key);
+      }
+
+      public setItem(key: string, value: string): void {
+        this._record(key, () => localStorage.setItem(key, value));
+      }
+
+      public removeItem(key: string): void {
+        this._record(key, () => localStorage.removeItem(key));
+      }
+
+      public clear(): void {
+        removeNamespaceKeys();
+        this.events.push(
+          new StorageEvent('storage', {
+            key: null,
+            storageArea: localStorage,
+          }),
+        );
+      }
+
+      private _record(key: string, change: () => void): void {
+        const oldValue = localStorage.getItem(key);
+
+        change();
+        this.events.push(
+          new StorageEvent('storage', {
+            key,
+            oldValue,
+            newValue: localStorage.getItem(key),
+            storageArea: localStorage,
+          }),
+        );
+      }
+    }
+
+    let otherTabStorage: OtherTabStorage;
+    let thisTabTarget: EventTarget;
+    let thisTab: EmbraceUserSessionManager;
+    let otherTab: EmbraceUserSessionManager;
+
+    const createTab = (
+      tabStorage: Storage,
+      target: EventTarget,
+      {
+        dynamicConfigManager = TEST_DYNAMIC_CONFIG_MANAGER,
+        visibilityDoc = window.document,
+      }: {
+        dynamicConfigManager?: ReturnType<
+          typeof createTestDynamicConfigManager
+        >;
+        visibilityDoc?: VisibilityStateDocument;
+      } = {},
+    ) =>
+      new EmbraceUserSessionManager({
+        diag,
+        storage: new NamespacedStorage({
+          storage: tabStorage,
+          namespace: NAMESPACE,
+          diag,
+        }),
+        limitManager,
+        perf,
+        visibilityDoc,
+        dynamicConfigManager,
+        target,
+      });
+
+    const setUpTabs = (
+      options: Parameters<typeof createTab>[2] = {},
+      otherTabOptions: Parameters<typeof createTab>[2] = options,
+    ) => {
+      thisTab = createTab(localStorage, thisTabTarget, options);
+      thisTab.setTracerProvider(trace.getTracerProvider());
+      otherTab = createTab(otherTabStorage, new EventTarget(), otherTabOptions);
+    };
+
+    // Dispatches, in order, the events the other tab's writes fired.
+    const deliverOtherTabWrites = () => {
+      const { events } = otherTabStorage;
+
+      otherTabStorage.events = [];
+
+      for (const event of events) {
+        thisTabTarget.dispatchEvent(event);
+      }
+    };
+
+    const storedState = () =>
+      JSON.parse(localStorage.getItem(STATE_KEY) as string) as {
+        userSessionId: string;
+        nextUserSessionId: string;
+        ended?: boolean;
+      };
+
+    const ONE_HOUR_USER_SESSION = createTestDynamicConfigManager({
+      userSessionMaxDurationSeconds: 3600,
+      userSessionForegroundInactivityTimeoutSeconds: 3600,
+    });
+
+    beforeEach(() => {
+      removeNamespaceKeys();
+      otherTabStorage = new OtherTabStorage();
+      thisTabTarget = new EventTarget();
+    });
+
+    afterEach(() => {
+      thisTab._shutdown();
+      otherTab._shutdown();
+      removeNamespaceKeys();
+    });
+
+    it('ends the part when another tab ends the user session and starts the next one in the next user session', () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const partId = thisTab.getSessionPartId();
+      const { nextUserSessionId } = storedState();
+
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.include({
+        'emb.session_part_id': partId,
+        'emb.session_part_end_reason': 'user_session_ended',
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'manual',
+      });
+      expect(thisTab.getUserSessionId()).to.equal(nextUserSessionId);
+      expect(storedState().userSessionId).to.equal(nextUserSessionId);
+
+      thisTab.endSessionPartInternal({ reason: 'background' });
+
+      expect(memoryExporter.getFinishedSpans()[1].attributes).to.have.property(
+        'emb.session_part_start_reason',
+        'user_session_rollover',
+      );
+    });
+
+    it('stamps a property another tab sets just before ending the user session', () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+
+      otherTab.addProperty('cart-size', '3');
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
+        'emb.properties.cart-size',
+        '3',
+      );
+    });
+
+    it("ends the part when another tab's max-duration timer ends the user session first", () => {
+      setUpTabs({ dynamicConfigManager: ONE_HOUR_USER_SESSION });
+      otherTab.addProperty('armed', 'yes');
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const { nextUserSessionId } = storedState();
+      // This tab's own timer is late, as after sleep.
+      thisTab._clearMaxDurationTimer();
+      // Input keeps the foreground inactivity timer from ending the part.
+      clock.tick(3000 * 1000);
+      thisTabTarget.dispatchEvent(new Event('keydown'));
+
+      clock.tick(600 * 1000);
+      deliverOtherTabWrites();
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.include({
+        'emb.session_part_end_reason': 'user_session_ended',
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'max_duration_reached',
+      });
+      expect(thisTab.getUserSessionId()).to.equal(nextUserSessionId);
+    });
+
+    it('ends the part for inactivity without starting another when another tab ends the user session for inactivity', () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const partId = thisTab.getSessionPartId();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      // This tab's input keeps its own foreground inactivity timer later than
+      // the other tab's.
+      clock.tick(1000 * 1000);
+      thisTabTarget.dispatchEvent(new Event('keydown'));
+
+      clock.tick(800 * 1000);
+      deliverOtherTabWrites();
+
+      const thisTabPart = memoryExporter
+        .getFinishedSpans()
+        .find((span) => span.attributes['emb.session_part_id'] === partId);
+      expect(thisTabPart?.attributes).to.include({
+        'emb.session_part_end_reason': 'web_foreground_inactivity',
+        'emb.user_session_termination_reason': 'inactivity',
+      });
+      void expect(thisTab.getSessionPartId()).to.be.null;
+    });
+
+    it('ends the part as a max-duration end when another tab replaces the user session after its max end', () => {
+      setUpTabs({ dynamicConfigManager: ONE_HOUR_USER_SESSION });
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      // This tab's own timer is late, as after sleep.
+      thisTab._clearMaxDurationTimer();
+      clock.tick(3000 * 1000);
+      thisTabTarget.dispatchEvent(new Event('keydown'));
+      clock.tick(600 * 1000);
+
+      otherTab.addProperty('cart-size', '3');
+      const replacement = storedState().userSessionId;
+      deliverOtherTabWrites();
+
+      expect(memoryExporter.getFinishedSpans()[0].attributes).to.include({
+        'emb.session_part_end_reason': 'user_session_ended',
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'max_duration_reached',
+      });
+      expect(thisTab.getUserSessionId()).to.equal(replacement);
+      void expect(thisTab.getSessionPartId()).to.not.be.null;
+    });
+
+    it('ends the part without a termination reason or a next part when another tab clears storage', () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+
+      otherTabStorage.clear();
+      deliverOtherTabWrites();
+
+      const { attributes } = memoryExporter.getFinishedSpans()[0];
+      expect(attributes).to.include({
+        'emb.session_part_end_reason': 'user_session_ended',
+        'emb.is_final_session_part': 1,
+      });
+      expect(attributes).to.not.have.property(
+        'emb.user_session_termination_reason',
+      );
+      void expect(thisTab.getSessionPartId()).to.be.null;
+    });
+
+    it("writes the part's user session back over a stale end of the one it follows", () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const endedUserSession = JSON.parse(
+        localStorage.getItem(STATE_KEY) as string,
+      ) as Record<string, unknown>;
+      thisTab.endUserSession();
+      const partId = thisTab.getSessionPartId();
+      const current = storedState();
+
+      // Another tab ends the same user session after reading it before this
+      // tab's end reached it.
+      otherTabStorage.setItem(
+        STATE_KEY,
+        JSON.stringify({
+          ...endedUserSession,
+          ended: true,
+          endReason: 'max_duration_reached',
+          inactivityDeadlineTs: 0,
+          userSessionProperties: {},
+        }),
+      );
+      deliverOtherTabWrites();
+
+      expect(thisTab.getSessionPartId()).to.equal(partId);
+      expect(storedState()).to.include({
+        userSessionId: current.userSessionId,
+      });
+      void expect(storedState().ended).to.be.undefined;
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(1);
+    });
+
+    it("writes the part's user session back over a stale live copy of the one it follows", () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const previousRaw = localStorage.getItem(STATE_KEY) as string;
+      thisTab.endUserSession();
+      const partId = thisTab.getSessionPartId();
+      const current = storedState();
+
+      otherTabStorage.setItem(STATE_KEY, previousRaw);
+      deliverOtherTabWrites();
+
+      expect(thisTab.getSessionPartId()).to.equal(partId);
+      expect(storedState().userSessionId).to.equal(current.userSessionId);
+    });
+
+    it("doesn't start a part when another tab ends the user session and none is open here", () => {
+      setUpTabs();
+
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      void expect(thisTab.getSessionPartId()).to.be.null;
+      expect(memoryExporter.getFinishedSpans()).to.have.lengthOf(0);
+    });
+
+    it("doesn't mark the part final when this tab isn't focused", () => {
+      let focused = true;
+      setUpTabs(
+        {
+          visibilityDoc: {
+            visibilityState: 'visible',
+            hasFocus: () => focused,
+          },
+        },
+        {},
+      );
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      focused = false;
+
+      otherTab.endUserSession();
+      deliverOtherTabWrites();
+
+      const { attributes } = memoryExporter.getFinishedSpans()[0];
+      expect(attributes).to.have.property(
+        'emb.session_part_end_reason',
+        'user_session_ended',
+      );
+      expect(attributes).to.not.have.property('emb.is_final_session_part');
+      expect(attributes).to.not.have.property(
+        'emb.user_session_termination_reason',
       );
     });
   });
@@ -1785,19 +2153,22 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
       clock.tick(3601 * 1000);
 
-      // Max-duration ended the old part and cleared the user session, but
-      // the rollover startSessionPartInternal skipped because the tab is hidden.
+      // Max-duration ended the old part and the user session, but the
+      // rollover startSessionPartInternal skipped because the tab is hidden.
+      // The tab isn't focused, so its part isn't the final one.
       void expect(localManager.getSessionPartSpan()).to.be.null;
       void expect(localManager.getSessionPartId()).to.be.null;
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
-        'emb.is_final_session_part',
-        1,
+        'emb.session_part_end_reason',
+        'user_session_ended',
       );
-      expect(finishedSpans[0].attributes).to.have.property(
+      expect(finishedSpans[0].attributes).to.not.have.property(
+        'emb.is_final_session_part',
+      );
+      expect(finishedSpans[0].attributes).to.not.have.property(
         'emb.user_session_termination_reason',
-        'max_duration_reached',
       );
 
       // Tab becomes engaged again. The manager's _onEngagementChange would

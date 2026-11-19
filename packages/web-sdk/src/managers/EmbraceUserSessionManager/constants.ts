@@ -15,10 +15,11 @@ export const EMBRACE_LAST_END_USER_SESSION_TS_KEY =
 export const SESSION_PART_SPAN_NAME = 'emb-session-part';
 
 /**
- * Part end reasons that also terminate the enclosing user session, so the
- * part is stamped as the final one (`emb.is_final_session_part`).
+ * Part end reasons that also end the enclosing user session. Of the session
+ * parts that end with it, only the one in the focused tab is stamped as the
+ * final one (`emb.is_final_session_part`).
  */
-export const FINAL_SESSION_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
+export const USER_SESSION_ENDING_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
   new Set(['user_session_ended', 'web_foreground_inactivity']);
 
 /**

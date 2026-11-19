@@ -96,31 +96,31 @@ by design.
 
 `SessionPartStartReason` enumerates every reason a session part can begin:
 
-| Value                   | Trigger                                                                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `init`                  | SDK init flow on page load.                                                                                                                  |
-| `foreground`            | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path.               |
-| `web_activity`          | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle. |
-| `web_soft_navigation`   | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part.                     |
-| `user_session_rollover` | Begins the next user session's first part immediately after a user session ends.                                                             |
+| Value                   | Trigger                                                                                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `init`                  | SDK init flow on page load.                                                                                                                   |
+| `foreground`            | `visibilitychange` to visible or `focus` while no part is active and the tab is engaged. Also covers the BFCache restore path.                |
+| `web_activity`          | `keydown`, `mousedown`, `mousemove`, or `scroll` while no part is active and the tab is engaged. Subject to the 30 second activity throttle.  |
+| `web_soft_navigation`   | A soft navigation rolled the active part over, starting the next part in the same user session. Stamped on the new part.                      |
+| `user_session_rollover` | Begins the next user session's first part immediately after a user session ends, in this tab or, after a manual or max-duration end, another. |
 
 ### End triggers
 
 `SessionPartEndReason` enumerates every reason a session part can end:
 
-| Value                       | Trigger                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.  |
-| `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because the focused and visible tab received no user input for that long. |
-| `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                            |
-| `user_session_ended`        | The active part is ended as part of a user-session rollover, triggered by manual `endUserSession()` or max-duration expiry.                                                           |
+| Value                       | Trigger                                                                                                                                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.                              |
+| `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because the focused and visible tab received no user input for that long, in this tab or another.     |
+| `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                                                        |
+| `user_session_ended`        | The active part is ended because its user session ended: a rollover triggered by manual `endUserSession()` or max-duration expiry, in this tab or another, or another tab replacing or clearing the user session. |
 
 The part-level `web_foreground_inactivity` is distinct from the
 user-session-level `inactivity` reason in the
 [`UserSessionEndReason`](#termination) table below: when the foreground
 inactivity timer fires it stamps `web_foreground_inactivity` as the part end
 reason and `inactivity` as the enclosing user session's termination reason on
-the same final part span.
+the same span, when it's the final part.
 
 ### End behavior
 
@@ -131,8 +131,8 @@ part span before ending it. A throwing attribute write is
 isolated from the span end, so a poisoned property value cannot prevent the span
 from ending. Part-end subscribers are notified.
 
-If the end reason is not final (in practice `background`), the user session
-continues: an inactivity deadline of
+If the end reason doesn't end the user session (in practice `background`), the
+user session continues: an inactivity deadline of
 `now + userSessionInactivityTimeoutSeconds * 1000` is written into the state
 blob, computed from the actual call time rather than any anchored span-end
 timestamp, so an anchored part end cannot move the deadline earlier. The
@@ -140,13 +140,15 @@ max-duration deadline is fixed at creation and keeps running, so it is not
 re-armed.
 
 Each part remembers the user session it started in. The deadline is written,
-and a final part end marks the stored user session as ended, only while the
-stored user session is still that one. If another tab has replaced or ended it,
+and a part end that ends the user session marks the stored user session as
+ended, only while the stored user session is still that one. If another tab has replaced or ended it,
 or site data was cleared, the part end leaves storage alone.
 
-When the end reason is final (`user_session_ended` or `web_foreground_inactivity`)
-the final part span is additionally stamped `emb.is_final_session_part = 1` and,
-when a `userSessionEndReason` is supplied, `emb.user_session_termination_reason`.
+When the end reason also ends the user session (`user_session_ended` or
+`web_foreground_inactivity`), every tab's open part ends with it, but only the
+part in the focused tab is the final one. Its span is additionally stamped
+`emb.is_final_session_part = 1` and, when a `userSessionEndReason` is supplied,
+`emb.user_session_termination_reason`.
 
 ## User-session lifecycle
 
@@ -199,16 +201,18 @@ through a rollover.
 | `max_duration_reached` | Max-duration timer fires.                                 | Yes                                                                                                                                                                                                                                                                                                                                     |
 | `inactivity`           | Foreground inactivity timer fires while a part is active. | Yes, stamped as the user-session termination reason on the final part span, paired with that part's `web_foreground_inactivity` end reason. When the inactivity deadline is instead found expired at the next part start (no part was active to run the timer), the prior part span has already been exported, so no reason is stamped. |
 
-On rollover the manager samples one boundary timestamp, ends the active part as
-final with that timestamp, marks the stored user session as ended, and starts
+On rollover the manager samples one boundary timestamp, ends the active part
+with that timestamp, marks the stored user session as ended, and starts
 the next part with the same timestamp so the two part spans tile without a gap.
 The follow-up start creates the next user session if the tab is still engaged,
 or silently no-ops if not (the next engagement event will create it).
 
 An ended user session stays in storage as an ended marker: the same row with
-`ended: true`, `inactivityDeadlineTs` set to the end time, and no properties. A
-tab that missed the end can still create the same successor from it, and SDK
-versions that don't know `ended` read it as expired.
+`ended: true`, `endReason` set to the `UserSessionEndReason`,
+`inactivityDeadlineTs` set to the end time, and no properties. A tab that missed
+the end can still create the same successor from it, other tabs end their parts
+with the same reason, and SDK versions that don't know `ended` read it as
+expired.
 
 ## Timers
 
@@ -246,12 +250,12 @@ the 30 second throttle, and cleared on session-part end.
 
 ### Keys
 
-| Key                            | Contents                                                                                                                                  | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag) | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
-| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                 | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
-| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                 | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
-| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                               | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
+| Key                            | Contents                                                                                                                                              | Lifetime                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `embrace_user_session_state`   | JSON-serialized `UserSessionState` (id, next id, previous id, start ts, max-end ts, numbers, durations, deadline, properties, ended flag, end reason) | Replaced by an ended marker when the user session ends (final part end, or rollover with no active part), and by the next user session when it starts. Written on every part start, on a non-final part end while it still holds that part's user session (to update `inactivityDeadlineTs`), and on every user-session-scoped `addProperty` / `removeProperty` call while a user session exists. |
+| `embrace_user_session_number`  | Monotonic integer string.                                                                                                                             | Persisted across visits. Set to each new user session's number; incremented when a user session has no predecessor.                                                                                                                                                                                                                                                                               |
+| `embrace_session_part_number`  | Monotonic integer string.                                                                                                                             | Persisted across visits. Bumped at every session-part start.                                                                                                                                                                                                                                                                                                                                      |
+| `embrace_permanent_properties` | JSON object mapping each permanent property key, without the `emb.properties.` prefix, to its string value.                                           | Persisted across visits. Survives user-session boundaries. Written on every permanent `addProperty`, and on `removeProperty` when the key is a permanent property. Removed when the last permanent property is removed.                                                                                                                                                                           |
 
 `userSessionMaxDurationSeconds`, `userSessionInactivityTimeoutSeconds`, and `userSessionForegroundInactivityTimeoutSeconds` are frozen into the state blob at
 session creation. A remote-config change does not affect a user session already
@@ -292,7 +296,9 @@ A storage write failure never terminates the user session.
 A session part can only start when the tab is visible and focused. Only the
 focused tab can hold a part. A tab that loses focus ends its part with reason
 `background`. With one active part at a time, there's no write contention
-during active parts and no need for cross-tab event listeners.
+during active parts. Another tab can still end or replace the user session
+while this tab's part is open, for example a hidden tab calling
+`endUserSession()`: see [Reacting to other tabs](#reacting-to-other-tabs).
 
 ### Property visibility
 
@@ -314,11 +320,43 @@ tab replaced, ended or cleared it. Property changes made during the part from th
 apply to the part's user session in this tab only, and are never written onto
 the stored one. Once the part ends, reads follow storage again.
 
+### Reacting to other tabs
+
+The manager listens for `storage` events on the user-session key, which fire
+when another tab writes it. With no part open it does nothing, since reads
+already follow storage. With a part open:
+
+- A write of the part's own live user session refreshes the pinned copy, so a
+  property another tab adds reaches the part even when that tab replaces the
+  user session right after.
+- When the part's user session ends in another tab, the part ends the same way:
+  `user_session_ended`, or `web_foreground_inactivity` for an inactivity end,
+  with the termination reason from the ended marker when it's the final part.
+  After a manual or max-duration end, the next part starts right away with
+  `user_session_rollover`, in the next user session, created from the ended
+  one if no tab has written it yet.
+- When another user session replaces the part's without its end reaching this
+  tab, the part ends with `user_session_ended`, as a max-duration end when its
+  user session is past its max end, and the next part starts in the stored user
+  session.
+- When storage is cleared, the part ends with `user_session_ended` and no
+  termination reason, and the next activity starts the next part.
+- A write of the user session the part's follows is stale, since the part's only
+  exists because that one ended. The manager writes the part's user session
+  back over it.
+
+The listener never creates a user session other than the stored one's
+pre-generated successor, so tabs reacting to the same change end up in the same
+user session. Each reaction writes the user-session key at most once, when it
+starts the next part, and other tabs only refresh their pinned copy from that
+write, so reactions don't loop.
+
 ### Rollover cascade
 
-There is no explicit cascade. When one tab ends a user session, the state row
-becomes an ended marker. The next tab to attempt a part start creates the next
-user session from it, and the rollover propagates naturally. Tabs that start a
+When one tab ends a user session, the state row becomes an ended marker, and
+other tabs with an open part end it. The next tab to attempt a part start
+creates the next user session from the marker, and the rollover propagates
+naturally. Tabs that start a
 part at the same moment, or reach max duration together, create the same next
 user session, linked to the ended one through `previousUserSessionId`.
 
@@ -409,18 +447,18 @@ another window).
 
 ### Stamped at session-part end
 
-| Attribute                             | Condition                                                                                                      |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `emb.session_part_end_reason`         | Always. One of `SessionPartEndReason`.                                                                         |
-| `emb.sdk_startup_duration`            | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration.                 |
-| `emb.sdk_load_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran. |
-| `emb.sdk_init_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered.    |
-| `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                            |
-| `emb.is_final_session_part = 1`       | When the end reason is final (`user_session_ended` or `web_foreground_inactivity`).                            |
-| `emb.user_session_termination_reason` | When the end reason is final and a `userSessionEndReason` was passed (both final paths pass one).              |
-| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes to the part's user session.                                 |
-| `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                      |
-| Counter keys                          | Per-part counts populated by instrumentations.                                                                 |
+| Attribute                             | Condition                                                                                                                                     |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `emb.session_part_end_reason`         | Always. One of `SessionPartEndReason`.                                                                                                        |
+| `emb.sdk_startup_duration`            | Cold-start part only, once `initSDK` records it. Milliseconds, ceiled. The `initSDK` duration.                                                |
+| `emb.sdk_load_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when the SDK's code first ran.                                |
+| `emb.sdk_init_origin_offset`          | Cold-start part only, once `initSDK` records it. Milliseconds since time origin when `initSDK` was entered.                                   |
+| `emb.page_load`                       | Cold-start part only. `true` when `document.readyState` was `complete` at part end.                                                           |
+| `emb.is_final_session_part = 1`       | When the end reason ends the user session (`user_session_ended` or `web_foreground_inactivity`) and the tab is focused.                       |
+| `emb.user_session_termination_reason` | On the final part, when the end reason is known: always for this tab's own ends, and for another tab's end when its ended marker records one. |
+| `emb.properties.*`                    | Refreshed from storage to capture cross-tab writes to the part's user session.                                                                |
+| `emb.app.applied_limit.*`             | Diagnostic counts from the limit manager.                                                                                                     |
+| Counter keys                          | Per-part counts populated by instrumentations.                                                                                                |
 
 ### Stamped on every other span
 

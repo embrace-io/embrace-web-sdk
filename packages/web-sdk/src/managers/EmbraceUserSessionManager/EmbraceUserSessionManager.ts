@@ -64,7 +64,6 @@ import {
   EMBRACE_SESSION_PART_NUMBER_KEY,
   EMBRACE_USER_SESSION_NUMBER_KEY,
   END_USER_SESSION_COOLDOWN_MS,
-  FINAL_SESSION_PART_END_REASONS,
   MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_MAX_DURATION_SECONDS,
@@ -72,6 +71,7 @@ import {
   MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MIN_USER_SESSION_MAX_DURATION_SECONDS,
   SESSION_PART_SPAN_NAME,
+  USER_SESSION_ENDING_PART_END_REASONS,
 } from './constants.ts';
 import type {
   EmbraceUserSessionManagerArgs,
@@ -83,6 +83,7 @@ import type {
   UserSessionManagerInternal,
   UserSessionState,
 } from './types.ts';
+import type { UserSessionChange } from './utils/index.ts';
 import {
   addActivityListeners,
   createEndedUserSessionState,
@@ -142,6 +143,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   private readonly _activityEvents: ReadonlyArray<string>;
   private readonly _onActivityThrottled: (event: Event) => void;
   private _sessionPartInactivityTimer: TimeoutRef | null = null;
+  private _removeUserSessionChangeListener: (() => void) | null = null;
 
   public constructor({
     dynamicConfigManager,
@@ -167,6 +169,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._userSessionStore = new UserSessionStore({
       storage,
       diag: this._diag,
+      target,
     });
     this._permanentPropertiesStore = new PermanentPropertiesStore({
       storage,
@@ -263,6 +266,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onFocus: this._onFocus,
       onBlur: this._onBlur,
     });
+    this._removeUserSessionChangeListener =
+      this._userSessionStore.addUserSessionChangeListener(
+        this._onUserSessionChange,
+      );
     // Eager state init so getUserSessionId() returns a real id before the
     // first part starts, and so other tabs see the row when we create a
     // fresh session here.
@@ -460,7 +467,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
+    const endsUserSession = USER_SESSION_ENDING_PART_END_REASONS.has(reason);
+    // Every tab's open part ends with the user session, but only one is the
+    // final part: the one in the focused tab.
+    const isFinalSessionPart =
+      endsUserSession && this._visibilityDoc.hasFocus();
     const partUserSessionId =
       this._userSessionStore.read()?.userSessionId ?? null;
 
@@ -533,15 +544,17 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._limitManager.reset();
     }
 
-    if (isFinalSessionPart) {
+    if (endsUserSession) {
       this._previousUserSessionId = partUserSessionId;
 
       const stored = this._readCurrentUserSession();
 
       // The user session ended for every tab, unless another tab has already
-      // started the next one.
+      // ended it or started the next one.
       if (stored?.userSessionId === partUserSessionId) {
-        this._userSessionStore.write(createEndedUserSessionState(stored, now));
+        this._userSessionStore.write(
+          createEndedUserSessionState(stored, now, userSessionEndReason),
+        );
       }
 
       this._clearMaxDurationTimer();
@@ -852,7 +865,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // another tab started after this part did, which the part end leaves
       // alone.
       if (userSessionEndReason === 'manual') {
-        this._endStoredUserSession();
+        this._endStoredUserSession(userSessionEndReason);
       }
 
       this.startSessionPartInternal({
@@ -863,44 +876,54 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    this._endStoredUserSession();
+    this._endStoredUserSession(userSessionEndReason);
     this._clearMaxDurationTimer();
   }
 
-  private _endStoredUserSession(): void {
+  private _endStoredUserSession(
+    userSessionEndReason: UserSessionEndReason,
+  ): void {
     const stored = this._readCurrentUserSession();
 
     if (stored) {
       this._previousUserSessionId = stored.userSessionId;
       this._userSessionStore.write(
-        createEndedUserSessionState(stored, this._perf.getNow()),
+        createEndedUserSessionState(
+          stored,
+          this._perf.getNow(),
+          userSessionEndReason,
+        ),
       );
     }
   }
 
   /**
-   * Ends the active part and starts a new one within the same user session.
-   * The user session is preserved while the part counters advance, so the
-   * caller's `endReason`/`startReason` must both be non-final. Both spans share
-   * one boundary timestamp so they tile without a gap; the caller may supply it
-   * (for example the timestamp of the triggering event), defaulting to now. A
-   * no-op when no part is active: there is nothing to roll over and the next
-   * engagement starts one.
+   * Ends the active part and starts the next one. When `endReason` doesn't end
+   * the user session, the user session is preserved while the part counters
+   * advance; when it does, the next part starts in the next user session. Both
+   * spans share one boundary timestamp so they tile without a gap; the caller
+   * may supply it (for example the timestamp of the triggering event),
+   * defaulting to now. A no-op when no part is active: there is nothing to roll
+   * over and the next engagement starts one.
    */
-
   public rolloverSessionPartInternal({
     endReason,
     startReason,
+    userSessionEndReason,
     timestamp,
   }: RolloverSessionPartOptions): void {
     if (!this._sessionPartSpan) {
       return;
     }
+
     const boundaryTimestamp = timestamp ?? this._perf.getNow();
+
     this.endSessionPartInternal({
       reason: endReason,
+      userSessionEndReason,
       timestamp: boundaryTimestamp,
     });
+
     this.startSessionPartInternal({
       reason: startReason,
       timestamp: boundaryTimestamp,
@@ -957,9 +980,59 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onFocus: this._onFocus,
       onBlur: this._onBlur,
     });
+    this._removeUserSessionChangeListener?.();
+    this._removeUserSessionChangeListener = null;
     this._clearSessionPartInactivityTimer();
     this._clearMaxDurationTimer();
   }
+
+  // Storage no longer holds the open part's live user session.
+  private readonly _onUserSessionChange = (change: UserSessionChange): void => {
+    if (change.kind === 'ended') {
+      const { endReason } = change;
+
+      if (endReason === 'manual' || endReason === 'max_duration_reached') {
+        this.rolloverSessionPartInternal({
+          endReason: 'user_session_ended',
+          startReason: 'user_session_rollover',
+          userSessionEndReason: endReason,
+        });
+      } else {
+        // After an inactivity end the user is idle, so the next activity
+        // starts the next part.
+        this.endSessionPartInternal({
+          reason:
+            endReason === 'inactivity'
+              ? 'web_foreground_inactivity'
+              : 'user_session_ended',
+          userSessionEndReason: endReason,
+        });
+      }
+
+      return;
+    }
+
+    if (change.kind === 'cleared') {
+      // Nothing says why, and there's no user session to follow, so the next
+      // activity starts the next part.
+      this.endSessionPartInternal({ reason: 'user_session_ended' });
+
+      return;
+    }
+
+    // The replaced user session's end didn't reach this tab. The common cause
+    // is it passing its max end while this tab's timer was late after sleep.
+    const part = this._userSessionStore.read();
+
+    this.rolloverSessionPartInternal({
+      endReason: 'user_session_ended',
+      startReason: 'user_session_rollover',
+      userSessionEndReason:
+        part && this._perf.getNow() >= part.userSessionMaxEndTs
+          ? 'max_duration_reached'
+          : undefined,
+    });
+  };
 
   private readonly _onActivity = (): void => {
     try {

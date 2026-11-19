@@ -159,6 +159,30 @@ export class NamespacedStorage {
     }
   }
 
+  /**
+   * Returns the `storage` event's key without the namespace; `null` for a
+   * cleared storage, and `undefined` for another storage area, another
+   * namespace, or a key kept in memory after a failed write.
+   */
+  public keyChangedBy(event: StorageEvent): string | null | undefined {
+    if (event.storageArea !== this._storage) {
+      return undefined;
+    }
+
+    if (event.key === null) {
+      return null;
+    }
+
+    if (
+      !event.key.startsWith(this._keyPrefix) ||
+      this._unsaved.has(event.key)
+    ) {
+      return undefined;
+    }
+
+    return event.key.substring(this._keyPrefix.length);
+  }
+
   public key(index: number): string | null {
     return this.keys()[index] ?? null;
   }

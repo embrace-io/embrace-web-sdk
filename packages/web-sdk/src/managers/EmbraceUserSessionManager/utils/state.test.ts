@@ -53,10 +53,12 @@ describe('user session state', () => {
     const ended = createEndedUserSessionState(
       { ...createState(), userSessionProperties: { plan: 'pro' } },
       NOW + 1000,
+      'manual',
     );
 
     expect(ended).to.deep.include({
       ended: true,
+      endReason: 'manual',
       inactivityDeadlineTs: NOW + 1000,
       userSessionProperties: {},
     });

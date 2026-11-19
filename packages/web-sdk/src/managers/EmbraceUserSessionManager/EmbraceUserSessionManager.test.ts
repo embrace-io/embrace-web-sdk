@@ -388,6 +388,26 @@ describe('EmbraceUserSessionManager', () => {
       void expect(manager.getSessionPartId()).to.not.equal(partIdBefore);
     });
 
+    it('passes the user session end reason to the part end and starts the next part in the next user session', () => {
+      const manager = createManager();
+      const endSpy = sinon.spy(manager, 'endSessionPartInternal');
+      manager.startSessionPartInternal({ reason: 'init' });
+      const userSessionIdBefore = manager.getUserSessionId();
+
+      manager.rolloverSessionPartInternal({
+        endReason: 'user_session_ended',
+        startReason: 'user_session_rollover',
+        userSessionEndReason: 'manual',
+      });
+
+      expect(lastEndCall(endSpy)).to.deep.include({
+        reason: 'user_session_ended',
+        userSessionEndReason: 'manual',
+      });
+      void expect(manager.getSessionPartId()).to.not.be.null;
+      expect(manager.getUserSessionId()).to.not.equal(userSessionIdBefore);
+    });
+
     it('keeps the same user session across the rollover', () => {
       const manager = createManager();
       manager.startSessionPartInternal({ reason: 'init' });
