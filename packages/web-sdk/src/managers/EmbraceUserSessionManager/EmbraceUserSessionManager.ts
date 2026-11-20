@@ -71,7 +71,6 @@ import {
   MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MIN_USER_SESSION_MAX_DURATION_SECONDS,
   SESSION_PART_SPAN_NAME,
-  USER_SESSION_ENDING_PART_END_REASONS,
 } from './constants.ts';
 import type {
   EmbraceUserSessionManagerArgs,
@@ -88,6 +87,7 @@ import {
   addActivityListeners,
   createEndedUserSessionState,
   createUserSessionState,
+  getUserSessionInactivityEndTs,
   isUserSessionEnded,
   PermanentPropertiesStore,
   removeActivityListeners,
@@ -471,7 +471,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const endsUserSession = USER_SESSION_ENDING_PART_END_REASONS.has(reason);
+    // An idle part ends the user session only when no tab had activity within
+    // its timeout, which the caller signals with the `inactivity` reason.
+    const endsUserSession =
+      reason === 'user_session_ended' ||
+      (reason === 'web_foreground_inactivity' &&
+        userSessionEndReason === 'inactivity');
     const partUserSessionId =
       this._userSessionStore.read()?.userSessionId ?? null;
     const sessionPartId = this._activeSessionPartId;
@@ -577,9 +582,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._clearMaxDurationTimer();
       this._sessionPartHistory = [];
     } else {
-      // The user was here until now, so the inactivity timeout counts from
-      // when they left this tab, as the deadline does.
-      if (sessionPartId !== null) {
+      // The user was here until now, unless the part ended because they were
+      // idle, so the inactivity timeout counts from when they left this tab, as
+      // the deadline does.
+      if (sessionPartId !== null && reason !== 'web_foreground_inactivity') {
         this._userSessionStore.recordActivityAfterPartEnd(now, sessionPartId);
       }
 
@@ -1152,13 +1158,33 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (this._activeSessionPartId === null) {
         return;
       }
+
+      // This tab's part is idle. The user session ends too only when no tab
+      // had activity within its timeout.
+      const state = this._userSessionStore.read();
+      const lastActivityTs = this._userSessionStore.readLastActivity()?.ts;
+
+      if (
+        !state ||
+        lastActivityTs === undefined ||
+        this._perf.getNow() >=
+          getUserSessionInactivityEndTs(state, lastActivityTs)
+      ) {
+        this._diag.debug(
+          'foreground inactivity timer fired; ending current part and user session',
+        );
+        this.endSessionPartInternal({
+          reason: 'web_foreground_inactivity',
+          userSessionEndReason: 'inactivity',
+        });
+
+        return;
+      }
+
       this._diag.debug(
-        'foreground inactivity timer fired; ending current part and user session',
+        'foreground inactivity timer fired while another tab is active; ending current part',
       );
-      this.endSessionPartInternal({
-        reason: 'web_foreground_inactivity',
-        userSessionEndReason: 'inactivity',
-      });
+      this.endSessionPartInternal({ reason: 'web_foreground_inactivity' });
     } catch (e) {
       this._diag.warn('Error handling foreground inactivity timer', e);
     }
