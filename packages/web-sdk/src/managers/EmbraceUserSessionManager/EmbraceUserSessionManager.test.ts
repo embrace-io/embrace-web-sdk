@@ -652,7 +652,7 @@ describe('EmbraceUserSessionManager', () => {
     it('mints a fresh user session when the live foreground inactivity timer fires', () => {
       const manager = createFailingStorageManager({
         userSessionForegroundInactivityTimeoutSeconds: 60,
-        userSessionInactivityTimeoutSeconds: 1800,
+        userSessionInactivityTimeoutSeconds: 60,
       });
 
       manager.startSessionPartInternal({ reason: 'init' });

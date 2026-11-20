@@ -427,14 +427,16 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
     splitManager.startSessionPartInternal({ reason: 'init' });
 
-    // Live timer fires on the 60s foreground value, not the 1800s inactivity value.
+    // Live timer fires on the 60s foreground value, not the 1800s inactivity
+    // value. It ends only the part: the user session lasts until 1800s after
+    // the last activity.
     clock.tick(60 * 1000 - 1);
     expect(endSpy2.called).to.equal(false);
     clock.tick(1);
     expect(endSpy2.callCount).to.equal(1);
     const endOptions2 = endSpy2.lastCall.args[0] as EndSessionPartOptions;
     expect(endOptions2.reason).to.equal('web_foreground_inactivity');
-    expect(endOptions2.userSessionEndReason).to.equal('inactivity');
+    void expect(endOptions2.userSessionEndReason).to.be.undefined;
 
     splitManager._shutdown();
   });

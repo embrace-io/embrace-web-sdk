@@ -1468,13 +1468,17 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       setUpTabs();
       thisTab.startSessionPartInternal({ reason: 'init' });
       const partId = thisTab.getSessionPartId();
-      otherTab.startSessionPartInternal({ reason: 'init' });
-      // This tab's input keeps its own foreground inactivity timer later than
-      // the other tab's.
-      clock.tick(1000 * 1000);
-      thisTabTarget.dispatchEvent(new Event('keydown'));
 
-      clock.tick(800 * 1000);
+      otherTabStorage.setItem(
+        STATE_KEY,
+        JSON.stringify({
+          ...JSON.parse(localStorage.getItem(STATE_KEY) as string),
+          ended: true,
+          endReason: 'inactivity',
+          inactivityDeadlineTs: 0,
+          userSessionProperties: {},
+        }),
+      );
       deliverOtherTabWrites();
 
       const thisTabPart = memoryExporter
@@ -1485,6 +1489,54 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         'emb.user_session_termination_reason': 'inactivity',
       });
       void expect(thisTab.getSessionPartId()).to.be.null;
+    });
+
+    it("ends only an idle tab's part while another tab is active, then the user session once every tab is idle", () => {
+      setUpTabs();
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      const thisTabPartId = thisTab.getSessionPartId();
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      const otherTabPartId = otherTab.getSessionPartId();
+      const userSessionId = thisTab.getUserSessionId();
+      clock.tick(1000 * 1000);
+      thisTabTarget.dispatchEvent(new Event('keydown'));
+
+      // The other tab has had no input for its timeout, but this tab has.
+      clock.tick(800 * 1000);
+
+      const partSpan = (id: string | null) =>
+        memoryExporter
+          .getFinishedSpans()
+          .find((span) => span.attributes['emb.session_part_id'] === id);
+      expect(partSpan(otherTabPartId)?.attributes).to.have.property(
+        'emb.session_part_end_reason',
+        'web_foreground_inactivity',
+      );
+      expect(partSpan(otherTabPartId)?.attributes).to.not.have.property(
+        'emb.user_session_termination_reason',
+      );
+      void expect(storedState().ended).to.be.undefined;
+      expect(storedState().userSessionId).to.equal(userSessionId);
+      expect(thisTab.getSessionPartId()).to.equal(thisTabPartId);
+      // An idle part's end isn't activity.
+      expect(
+        JSON.parse(
+          localStorage.getItem(`${NAMESPACE}__embrace_last_activity`) as string,
+        ),
+      ).to.deep.equal({ ts: 1000 * 1000, sessionPartId: thisTabPartId });
+
+      // Now this tab has had no input for its timeout either.
+      clock.tick(1000 * 1000);
+
+      expect(partSpan(thisTabPartId)?.attributes).to.include({
+        'emb.session_part_end_reason': 'web_foreground_inactivity',
+        'emb.is_final_session_part': 1,
+        'emb.user_session_termination_reason': 'inactivity',
+      });
+      expect(storedState()).to.include({
+        userSessionId,
+        ended: true,
+      });
     });
 
     it('ends the part as a max-duration end when another tab replaces the user session after its max end', () => {

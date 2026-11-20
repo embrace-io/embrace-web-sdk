@@ -6,6 +6,7 @@ export { PermanentPropertiesStore } from './PermanentPropertiesStore.ts';
 export {
   createEndedUserSessionState,
   createUserSessionState,
+  getUserSessionInactivityEndTs,
   isUserSessionEnded,
 } from './state.ts';
 export type {
