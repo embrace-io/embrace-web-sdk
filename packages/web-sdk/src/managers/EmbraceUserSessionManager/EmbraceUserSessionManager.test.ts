@@ -1294,7 +1294,7 @@ describe('EmbraceUserSessionManager', () => {
       void expect(readStoredDeadline()).to.be.null;
     });
 
-    it('should not expire on inactivity when recovering a session with no prior part-end', () => {
+    it('should expire a user session from its last activity when its tab closed with the part open', () => {
       const manager1 = createManager({
         userSessionMaxDurationSeconds: 12 * 60 * 60,
       });
@@ -1315,7 +1315,10 @@ describe('EmbraceUserSessionManager', () => {
       manager2.startSessionPartInternal({ reason: 'init' });
       const attrs2 = manager2.getUserSessionAttributes();
 
-      expect(attrs2?.['emb.user_session_id']).to.equal(
+      expect(attrs2?.['emb.user_session_id']).to.not.equal(
+        attrs1?.['emb.user_session_id'],
+      );
+      expect(attrs2?.['emb.user_session_previous_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
     });
