@@ -6,6 +6,7 @@ import {
 } from '../../../../tests/utils/index.ts';
 import { NamespacedStorage } from '../../../utils/index.ts';
 import { createUserSessionState } from './state.ts';
+import type { UserSessionChange } from './UserSessionStore.ts';
 import { UserSessionStore } from './UserSessionStore.ts';
 
 const { expect } = chai;
@@ -186,6 +187,147 @@ describe('UserSessionStore', () => {
       store.unpin();
 
       expect(store.read()).to.deep.equal(replacement);
+    });
+  });
+
+  describe('changes from other tabs', () => {
+    const NAMESPACE = 'user-session-store-test';
+    const NAMESPACED_STATE_KEY = `${NAMESPACE}__${STATE_KEY}`;
+    let target: EventTarget;
+    let listeningStore: UserSessionStore;
+    let changes: UserSessionChange[];
+    let removeListener: () => void;
+    let state: ReturnType<typeof createState>;
+
+    // A real `storage` event has to carry the real `localStorage`, which other
+    // test files share, so only this namespace's key is written.
+    const otherTabWrites = (value: object | null) => {
+      const newValue = value === null ? null : JSON.stringify(value);
+
+      if (newValue === null) {
+        localStorage.removeItem(NAMESPACED_STATE_KEY);
+      } else {
+        localStorage.setItem(NAMESPACED_STATE_KEY, newValue);
+      }
+
+      target.dispatchEvent(
+        new StorageEvent('storage', {
+          key: NAMESPACED_STATE_KEY,
+          newValue,
+          storageArea: localStorage,
+        }),
+      );
+    };
+
+    beforeEach(() => {
+      target = new EventTarget();
+      changes = [];
+      listeningStore = new UserSessionStore({
+        storage: new NamespacedStorage({
+          storage: localStorage,
+          namespace: NAMESPACE,
+          diag,
+        }),
+        diag,
+        target,
+      });
+      removeListener = listeningStore.addUserSessionChangeListener((change) =>
+        changes.push(change),
+      );
+      state = createState();
+      listeningStore.write(state);
+      listeningStore.pin(state);
+    });
+
+    afterEach(() => {
+      removeListener();
+      localStorage.removeItem(NAMESPACED_STATE_KEY);
+    });
+
+    it("refreshes the pin from another tab's write of the pinned user session", () => {
+      const otherTabWrite = {
+        ...state,
+        userSessionProperties: { other: '1' },
+      };
+
+      otherTabWrites(otherTabWrite);
+      // The other tab replaced the user session before this tab handled the
+      // write, so only the event carries the property.
+      localStorage.setItem(NAMESPACED_STATE_KEY, JSON.stringify(createState()));
+
+      expect(listeningStore.read()).to.deep.equal(otherTabWrite);
+      expect(changes).to.deep.equal([]);
+    });
+
+    it('reports an end of the pinned user session with its reason', () => {
+      otherTabWrites({ ...state, ended: true, endReason: 'manual' });
+
+      expect(changes).to.deep.equal([{ kind: 'ended', endReason: 'manual' }]);
+    });
+
+    it('reports a replacement of the pinned user session', () => {
+      otherTabWrites(createState());
+
+      expect(changes).to.deep.equal([{ kind: 'replaced' }]);
+    });
+
+    it('reports a removal or a clear of the pinned user session', () => {
+      otherTabWrites(null);
+      target.dispatchEvent(
+        new StorageEvent('storage', { key: null, storageArea: localStorage }),
+      );
+
+      expect(changes).to.deep.equal([{ kind: 'cleared' }, { kind: 'cleared' }]);
+    });
+
+    it('writes the pin back over a stale write of the user session it follows', () => {
+      const predecessor = createState();
+      const next = {
+        ...createState(),
+        previousUserSessionId: predecessor.userSessionId,
+      };
+      listeningStore.write(next);
+      listeningStore.pin(next);
+
+      otherTabWrites({ ...predecessor, ended: true });
+
+      expect(
+        JSON.parse(localStorage.getItem(NAMESPACED_STATE_KEY) as string),
+      ).to.deep.equal(next);
+      expect(changes).to.deep.equal([]);
+    });
+
+    it('calls every listener, even after one throws', () => {
+      const otherChanges: UserSessionChange[] = [];
+      const removeThrowing = listeningStore.addUserSessionChangeListener(() => {
+        throw new Error('listener failed');
+      });
+      const removeOther = listeningStore.addUserSessionChangeListener(
+        (change) => otherChanges.push(change),
+      );
+
+      otherTabWrites(createState());
+
+      expect(changes).to.deep.equal([{ kind: 'replaced' }]);
+      expect(otherChanges).to.deep.equal([{ kind: 'replaced' }]);
+      removeThrowing();
+      removeOther();
+    });
+
+    it('ignores writes while nothing is pinned', () => {
+      listeningStore.unpin();
+
+      otherTabWrites(createState());
+
+      expect(changes).to.deep.equal([]);
+    });
+
+    it('stops calling a listener once it is removed', () => {
+      removeListener();
+
+      otherTabWrites(createState());
+
+      expect(changes).to.deep.equal([]);
     });
   });
 

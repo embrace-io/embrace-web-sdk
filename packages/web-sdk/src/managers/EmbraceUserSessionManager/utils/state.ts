@@ -1,3 +1,4 @@
+import type { UserSessionEndReason } from '../../../api-sessions/index.ts';
 import { generateUUID } from '../../../utils/index.ts';
 import {
   CLOCK_SKEW_TOLERANCE_MS,
@@ -59,9 +60,11 @@ export const createUserSessionState = ({
 export const createEndedUserSessionState = (
   state: UserSessionState,
   now: number,
+  endReason?: UserSessionEndReason,
 ): UserSessionState => ({
   ...state,
   ended: true,
+  endReason,
   inactivityDeadlineTs: now,
   userSessionProperties: {},
 });

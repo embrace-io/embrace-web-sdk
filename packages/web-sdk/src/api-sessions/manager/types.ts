@@ -94,6 +94,9 @@ export interface UserSessionManager {
    *
    * Subject to a 5-second cooldown.
    *
+   * Session parts open in other tabs end too, and only the one in the focused
+   * tab is the final part.
+   *
    * If no part is active when called, the user session is still ended and
    * the next foreground part begins a new one, but no part span can have
    * `emb.user_session_termination_reason='manual'` (the attribute is only
@@ -130,14 +133,15 @@ export type StartSessionOptions = {
 // prefix. The part-level `web_foreground_inactivity` and the user-session-level
 // `inactivity` are distinct: when the foreground inactivity timer fires it
 // stamps `web_foreground_inactivity` as the part end reason and `inactivity` as
-// the enclosing user session's termination reason on the same final part span.
+// the enclosing user session's termination reason on the same span, when it's
+// the final part.
 
 export type SessionPartStartReason =
   | 'init' // first part on SDK init (page load); covers the hard-nav load side
   | 'foreground' // tab became engaged via visibilitychange (visible) or focus while no part was active
   | 'web_activity' // user input on an engaged tab with no active part, typically after foreground inactivity ended the previous part
   | 'web_soft_navigation' // soft navigation started the next part in the same user session
-  | 'user_session_rollover'; // synchronous user-session rollover forced a new part (endUserSession API / max-duration timer)
+  | 'user_session_rollover'; // user-session rollover forced a new part (endUserSession API / max-duration timer, in this tab or another)
 
 // Wrapped in an object, rather than passing the reason as a bare argument,
 // so listeners can gain more fields later without a signature change.
@@ -147,9 +151,9 @@ export interface SessionPartStartedEvent {
 
 export type SessionPartEndReason =
   | 'background' // tab disengaged via visibilitychange (hidden) or blur. Also covers hard-nav unload and BFCache freeze (pagehide is not listened to)
-  | 'web_foreground_inactivity' // no user input on the focused and visible tab for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session. The span ends when the timer fires
+  | 'web_foreground_inactivity' // no user input on the focused and visible tab for `userSessionForegroundInactivityTimeoutSeconds`; also ends the enclosing user session, and session parts open in other tabs end with it. The span ends when the timer fires
   | 'web_soft_navigation' // rolled the part over on a soft navigation. Not final, the user session continues
-  | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration); stamped on the span by the manager
+  | 'user_session_ended'; // closed because the enclosing user session ended (manual endUserSession, max-duration), in this tab or another, or another tab replaced or cleared it; stamped on the span by the manager
 
 export type UserSessionEndReason =
   | 'manual'

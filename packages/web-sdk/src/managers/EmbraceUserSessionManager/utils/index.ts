@@ -8,4 +8,5 @@ export {
   createUserSessionState,
   isUserSessionEnded,
 } from './state.ts';
+export type { UserSessionChange } from './UserSessionStore.ts';
 export { UserSessionStore } from './UserSessionStore.ts';
