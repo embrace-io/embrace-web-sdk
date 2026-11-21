@@ -106,8 +106,10 @@ export class EmbracePageManager implements PageManager {
     event: NavigationCurrentEntryChangeEvent,
   ): void => {
     // Skip same-URL replacements (e.g. framework hydration via history.replaceState).
+    // Firefox can fire with a null `from`, unlike the spec:
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1999668
     // eslint-disable-next-line baseline-js/use-baseline
-    if (event.from.url === this._navigationHost.location.href) {
+    if (event.from?.url === this._navigationHost.location.href) {
       return;
     }
 

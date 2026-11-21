@@ -12,9 +12,11 @@ chai.use(sinonChai);
 const { expect } = chai;
 
 class FakeNavigation extends EventTarget {
-  public fire(from: string, timeStamp = performance.now()): void {
+  // `null` mirrors Firefox, which can fire with no outgoing entry:
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=1999668
+  public fire(from: string | null, timeStamp = performance.now()): void {
     const event = Object.assign(new Event('currententrychange'), {
-      from: { url: from },
+      from: from === null ? null : { url: from },
     }) as NavigationCurrentEntryChangeEvent;
     Object.defineProperty(event, 'timeStamp', {
       value: timeStamp,
@@ -335,6 +337,16 @@ describe('EmbracePageManager', () => {
       // The same-url replacement keeps the route and does not roll over.
       expect(manager.getCurrentRoute()).to.equal(routeAtConstruction);
       void expect(rolloverStub.notCalled).to.be.true;
+    });
+
+    it('treats a null `from` as a soft navigation', () => {
+      const manager = createPageManager();
+
+      navigationHost.location.pathname = '/settings';
+      navigation.fire(null);
+
+      void expect(rolloverStub.calledOnce).to.be.true;
+      expect(manager.getCurrentRoute()).to.deep.equal({ url: '/settings' });
     });
 
     it('still updates the route when no userSessionManager is provided', () => {
