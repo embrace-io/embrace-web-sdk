@@ -190,6 +190,42 @@ describe('UserSessionStore', () => {
     });
   });
 
+  describe('last activity', () => {
+    const LAST_ACTIVITY_KEY = 'embrace_last_activity';
+
+    it('returns nothing when nothing valid is stored', () => {
+      void expect(store.readLastActivity()).to.be.null;
+
+      backing.setItem(LAST_ACTIVITY_KEY, '{not json');
+
+      void expect(store.readLastActivity()).to.be.null;
+
+      backing.setItem(LAST_ACTIVITY_KEY, JSON.stringify({ ts: 'soon' }));
+
+      void expect(store.readLastActivity()).to.be.null;
+    });
+
+    it('keeps the later activity', () => {
+      store.recordActivity(2000, 'part-a');
+      store.recordActivity(1000, 'part-b');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: 'part-a',
+      });
+    });
+
+    it('replaces an activity at the same time', () => {
+      store.recordActivity(2000, null);
+      store.recordActivity(2000, 'part-a');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: 'part-a',
+      });
+    });
+  });
+
   describe('changes from other tabs', () => {
     const NAMESPACE = 'user-session-store-test';
     const NAMESPACED_STATE_KEY = `${NAMESPACE}__${STATE_KEY}`;

@@ -56,7 +56,8 @@ export interface UserSessionState {
    */
   readonly userSessionMaxDurationSeconds: number;
   /**
-   * Fixed at user session creation. Sets `inactivityDeadlineTs` at part end.
+   * Fixed at user session creation. The user session expires once no tab has
+   * had activity for this long.
    */
   readonly userSessionInactivityTimeoutSeconds: number;
   /**
@@ -67,7 +68,8 @@ export interface UserSessionState {
   /**
    * Absolute timestamp after which the user session expires
    * (part-end call time + `userSessionInactivityTimeoutSeconds * 1000`). Set on
-   * part end; null while a part is active. Checked at the next part start.
+   * part end; null while a part is active. Only checked when no last activity
+   * is stored, since SDK versions without it expire user sessions from this.
    */
   readonly inactivityDeadlineTs: number | null;
   /**

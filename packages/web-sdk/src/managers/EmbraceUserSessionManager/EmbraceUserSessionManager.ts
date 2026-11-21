@@ -445,6 +445,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       id: activeSessionPartId,
       startTimeEpochMillis,
     });
+    this._userSessionStore.recordActivity(
+      this._perf.getNow(),
+      activeSessionPartId,
+    );
 
     this._startSessionPartInactivityTimer();
 
@@ -469,9 +473,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     const endsUserSession = USER_SESSION_ENDING_PART_END_REASONS.has(reason);
     // Every tab's open part ends with the user session, but only one is the
-    // final part: the one in the focused tab.
+    // final part: the one with the latest activity in any tab.
     const isFinalSessionPart =
-      endsUserSession && this._visibilityDoc.hasFocus();
+      endsUserSession &&
+      this._userSessionStore.readLastActivity()?.sessionPartId ===
+        this._activeSessionPartId;
     const partUserSessionId =
       this._userSessionStore.read()?.userSessionId ?? null;
 
@@ -560,6 +566,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._clearMaxDurationTimer();
       this._sessionPartHistory = [];
     } else {
+      // The user was here until now, so the inactivity timeout counts from
+      // when they left this tab, as the deadline does.
+      this._userSessionStore.recordActivity(now, null);
       this._continueUserSessionAfterPartEnd(now, partUserSessionId);
     }
   }
@@ -731,7 +740,14 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   } {
     let state = this._userSessionStore.read();
     let created = false;
-    if (!state || isUserSessionEnded(state, now)) {
+    if (
+      !state ||
+      isUserSessionEnded(
+        state,
+        now,
+        this._userSessionStore.readLastActivity()?.ts ?? null,
+      )
+    ) {
       // The user session the next one follows, from the same read that found
       // it over, so another tab's write can't land in between. Every tab that
       // creates the successor derives the same ID and number from it.
@@ -829,6 +845,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
+    // TODO: stop writing the deadline once SDK versions that expire user
+    // sessions from it, rather than from the shared last activity, are no
+    // longer in use.
     this._userSessionStore.write({
       ...state,
       inactivityDeadlineTs:
@@ -1043,6 +1062,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         this.startSessionPartInternal({ reason: 'web_activity' });
         return;
       }
+      this._userSessionStore.recordActivity(
+        this._perf.getNow(),
+        this._activeSessionPartId,
+      );
       this._startSessionPartInactivityTimer();
     } catch (e) {
       this._diag.warn('Error handling activity event', e);
@@ -1089,8 +1112,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       if (engaged && active) {
         // Redundant engagement event while a part is already active (browser
         // quirk: an extra focus/visibility fire that isn't a real transition).
-        // Re-arm the foreground inactivity timer since the event still implies
-        // presence.
+        // It still implies presence, so it counts as activity, which also makes
+        // a tab the user switches back to the one with the latest activity.
+        this._userSessionStore.recordActivity(
+          this._perf.getNow(),
+          this._activeSessionPartId,
+        );
         this._startSessionPartInactivityTimer();
       }
     } catch (e) {

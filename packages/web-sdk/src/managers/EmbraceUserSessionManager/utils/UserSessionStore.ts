@@ -2,6 +2,7 @@ import type { DiagLogger } from '@opentelemetry/api';
 import type { UserSessionEndReason } from '../../../api-sessions/index.ts';
 import type { NamespacedStorage } from '../../../utils/index.ts';
 import {
+  EMBRACE_LAST_ACTIVITY_KEY,
   EMBRACE_USER_SESSION_STATE_KEY,
   USER_SESSION_STATE_SCHEMA_VERSION,
 } from '../constants.ts';
@@ -13,6 +14,22 @@ export interface UserSessionStoreArgs {
   /** Where `storage` events arrive; defaults to `window`. */
   target?: EventTarget;
 }
+
+/** The latest activity in any tab, and the session part it happened in. */
+export interface LastActivity {
+  readonly ts: number;
+  readonly sessionPartId: string | null;
+}
+
+const isLastActivity = (value: unknown): value is LastActivity => {
+  const { ts, sessionPartId } = (value ?? {}) as Record<string, unknown>;
+
+  return (
+    typeof ts === 'number' &&
+    Number.isFinite(ts) &&
+    (sessionPartId === null || typeof sessionPartId === 'string')
+  );
+};
 
 /** How a write to storage changed the pinned user session. */
 export type UserSessionChange =
@@ -112,6 +129,43 @@ export class UserSessionStore {
     }
 
     return this._writeToStorage(state);
+  }
+
+  /**
+   * Kept in its own key so frequent activity writes don't rewrite the
+   * user-session state. Null when nothing valid is stored.
+   */
+  public readLastActivity(): LastActivity | null {
+    const raw = this._storage.getItem(EMBRACE_LAST_ACTIVITY_KEY);
+
+    if (raw === null) {
+      return null;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(raw);
+
+      return isLastActivity(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Keeps the later of the stored activity and this one. An activity at the
+   * same time replaces the stored one, so a session part starting at a
+   * rollover's boundary wins over the part that ended there.
+   */
+  public recordActivity(ts: number, sessionPartId: string | null): void {
+    const stored = this.readLastActivity();
+
+    if (stored && stored.ts > ts) {
+      return;
+    }
+
+    const activity: LastActivity = { ts, sessionPartId };
+
+    this._storage.setItem(EMBRACE_LAST_ACTIVITY_KEY, JSON.stringify(activity));
   }
 
   public pin(state: UserSessionState): void {
