@@ -85,8 +85,9 @@ import type {
 } from './types.ts';
 import {
   addActivityListeners,
+  createEndedUserSessionState,
   createUserSessionState,
-  isUserSessionExpired,
+  isUserSessionEnded,
   PermanentPropertiesStore,
   removeActivityListeners,
   UserSessionStore,
@@ -279,24 +280,24 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   public getUserSessionId(): string | null {
-    return this._userSessionStore.read()?.userSessionId ?? null;
+    return this._readCurrentUserSession()?.userSessionId ?? null;
   }
 
   public getPreviousUserSessionId(): string | null {
     // Fall back to in-memory for the brief window during user-session end
     // where storage is cleared but the just-ended id is still held.
     return (
-      this._userSessionStore.read()?.previousUserSessionId ??
+      this._readCurrentUserSession()?.previousUserSessionId ??
       this._previousUserSessionId
     );
   }
 
   public getUserSessionStartTime(): number | null {
-    return this._userSessionStore.read()?.userSessionStartTs ?? null;
+    return this._readCurrentUserSession()?.userSessionStartTs ?? null;
   }
 
   public getUserSessionAttributes(): UserSessionAttributes | null {
-    const state = this._userSessionStore.read();
+    const state = this._readCurrentUserSession();
 
     if (!state) {
       return null;
@@ -323,7 +324,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   public endUserSession(): void {
-    if (!this._sessionPartSpan && !this._userSessionStore.read()) {
+    if (!this._sessionPartSpan && !this._readCurrentUserSession()) {
       this._diag.debug(
         'Trying to end user session, but there is no active session. This is a no-op.',
       );
@@ -535,10 +536,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     if (isFinalSessionPart) {
       this._previousUserSessionId = partUserSessionId;
 
-      // The user session ended, so it's cleared for every tab, unless another
-      // tab has already started the next one.
-      if (this._userSessionStore.read()?.userSessionId === partUserSessionId) {
-        this._userSessionStore.clear();
+      const stored = this._readCurrentUserSession();
+
+      // The user session ended for every tab, unless another tab has already
+      // started the next one.
+      if (stored?.userSessionId === partUserSessionId) {
+        this._userSessionStore.write(createEndedUserSessionState(stored, now));
       }
 
       this._clearMaxDurationTimer();
@@ -631,7 +634,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   public getSessionPartProperties(): Record<string, string> {
     return {
       ...this._permanentPropertiesStore.read(),
-      ...(this._userSessionStore.read()?.userSessionProperties ?? {}),
+      ...(this._readCurrentUserSession()?.userSessionProperties ?? {}),
     };
   }
 
@@ -695,11 +698,19 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     return () => {};
   }
 
+  // An ended user session stays in storage so the next one can follow it, but
+  // it's no longer the current one.
+  private _readCurrentUserSession(): UserSessionState | null {
+    const state = this._userSessionStore.read();
+
+    return state?.ended ? null : state;
+  }
+
   /**
-   * Returns the stored user-session state, rotating to a fresh one if the
-   * stored row is missing or expired, and re-arms the max-duration timer.
-   * Rotating bumps the stored user-session number; the caller persists the
-   * state row.
+   * Returns the stored user-session state, rotating to the next one if the
+   * stored row is missing, expired or ended, and re-arms the max-duration
+   * timer. Rotating writes the user-session number counter; the caller
+   * persists the state row.
    */
   private _loadOrCreateUserSessionState(now: number): {
     state: UserSessionState;
@@ -707,15 +718,23 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   } {
     let state = this._userSessionStore.read();
     let created = false;
-    if (!state || isUserSessionExpired(state, now)) {
-      if (state) {
-        this._previousUserSessionId = state.userSessionId;
+    if (!state || isUserSessionEnded(state, now)) {
+      // The user session the next one follows, from the same read that found
+      // it over, so another tab's write can't land in between. Every tab that
+      // creates the successor derives the same ID and number from it.
+      const predecessor = state;
+
+      if (predecessor) {
+        this._previousUserSessionId = predecessor.userSessionId;
       }
+
       const userSessionNumber = getIncrementedCount(
         this._storage,
         EMBRACE_USER_SESSION_NUMBER_KEY,
         this._diag,
+        predecessor?.userSessionNumber,
       );
+
       // Refresh remote config for the next user session. The fetch is async,
       // so it is written to the cache after this session's durations are frozen
       // below; this session uses the currently cached config. Skipped on cold
@@ -730,6 +749,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       } = this._resolveUserSessionDurations();
       state = createUserSessionState({
         now,
+        userSessionId: predecessor?.nextUserSessionId,
         previousUserSessionId: this._previousUserSessionId,
         userSessionMaxDurationSeconds,
         userSessionInactivityTimeoutSeconds,
@@ -782,7 +802,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     now: number,
     partUserSessionId: string | null,
   ): void {
-    const state = this._userSessionStore.read();
+    const state = this._readCurrentUserSession();
 
     // The part's user session is gone (site data wiped, quota eviction) or
     // another tab replaced it. Don't recreate or overwrite it: the next part
@@ -832,7 +852,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // another tab started after this part did, which the part end leaves
       // alone.
       if (userSessionEndReason === 'manual') {
-        this._clearStoredUserSession();
+        this._endStoredUserSession();
       }
 
       this.startSessionPartInternal({
@@ -843,16 +863,18 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    this._clearStoredUserSession();
+    this._endStoredUserSession();
     this._clearMaxDurationTimer();
   }
 
-  private _clearStoredUserSession(): void {
-    const stored = this._userSessionStore.read();
+  private _endStoredUserSession(): void {
+    const stored = this._readCurrentUserSession();
 
     if (stored) {
       this._previousUserSessionId = stored.userSessionId;
-      this._userSessionStore.clear();
+      this._userSessionStore.write(
+        createEndedUserSessionState(stored, this._perf.getNow()),
+      );
     }
   }
 
@@ -902,7 +924,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // and another tab started the next one. Only end the one it was armed
       // for, which this tab's part may still belong to after another tab
       // cleared it.
-      if (this._userSessionStore.read()?.userSessionId !== userSessionId) {
+      if (this._readCurrentUserSession()?.userSessionId !== userSessionId) {
         return;
       }
 
@@ -1082,7 +1104,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   private _removeFromUserSessionProperties(bareKey: string): void {
-    const state = this._userSessionStore.read();
+    const state = this._readCurrentUserSession();
 
     if (!state || !(bareKey in state.userSessionProperties)) {
       return;

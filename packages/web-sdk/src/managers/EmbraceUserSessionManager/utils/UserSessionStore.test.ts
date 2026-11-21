@@ -90,13 +90,12 @@ describe('UserSessionStore', () => {
     void expect(backing.getItem(STATE_KEY)).to.be.null;
   });
 
-  it('clears the stored state', () => {
-    store.write(createState());
+  it('reads an ended user session like any other', () => {
+    const ended = { ...createState(), ended: true };
 
-    store.clear();
+    store.write(ended);
 
-    void expect(store.read()).to.be.null;
-    void expect(backing.getItem(STATE_KEY)).to.be.null;
+    expect(store.read()).to.deep.equal(ended);
   });
 
   describe('pinned user session', () => {
@@ -119,8 +118,8 @@ describe('UserSessionStore', () => {
       expect(store.read()).to.equal(state);
     });
 
-    it('reads the pinned user session after another tab clears it', () => {
-      otherTab.clear();
+    it('reads the pinned user session after storage is cleared', () => {
+      backing.removeItem(STATE_KEY);
 
       expect(store.read()).to.equal(state);
     });
@@ -155,12 +154,29 @@ describe('UserSessionStore', () => {
       expect(otherTab.read()).to.deep.equal(replacement);
     });
 
-    it("doesn't write the pinned user session back after another tab clears it", () => {
-      otherTab.clear();
+    it("doesn't write the pinned user session back after storage is cleared", () => {
+      backing.removeItem(STATE_KEY);
 
       store.write({ ...state, userSessionProperties: { own: '1' } });
 
       void expect(backing.getItem(STATE_KEY)).to.be.null;
+    });
+
+    it('keeps the live pin after another tab ends the same user session', () => {
+      otherTab.write({ ...state, ended: true });
+
+      expect(store.read()).to.equal(state);
+    });
+
+    it("doesn't write over another tab's ended marker for the pinned user session", () => {
+      const ended = { ...state, ended: true };
+      otherTab.write(ended);
+
+      expect(
+        store.write({ ...state, userSessionProperties: { own: '1' } }),
+      ).to.equal(false);
+
+      expect(otherTab.read()).to.deep.equal(ended);
     });
 
     it('reads storage again once unpinned', () => {

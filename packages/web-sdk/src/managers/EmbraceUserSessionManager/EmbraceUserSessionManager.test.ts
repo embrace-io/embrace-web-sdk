@@ -1175,6 +1175,28 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   describe('clock anomaly handling', () => {
+    it("should keep a stored session that starts slightly ahead of this tab's clock", () => {
+      const manager1 = createManager();
+      manager1.startSessionPartInternal({ reason: 'init' });
+      const userSessionId = manager1.getUserSessionId();
+      manager1.endSessionPartInternal({ reason: 'background' });
+
+      // Another tab's clock runs half a second ahead of this one.
+      const state = JSON.parse(
+        inMemoryStorage.getItem('embrace_user_session_state') as string,
+      ) as { userSessionStartTs: number };
+      state.userSessionStartTs += 500;
+      inMemoryStorage.setItem(
+        'embrace_user_session_state',
+        JSON.stringify(state),
+      );
+
+      const manager2 = createManager();
+      manager2.startSessionPartInternal({ reason: 'init' });
+
+      expect(manager2.getUserSessionId()).to.equal(userSessionId);
+    });
+
     it('should start a fresh session when device time is before stored session start', () => {
       const manager1 = createManager();
       manager1.startSessionPartInternal({ reason: 'init' });

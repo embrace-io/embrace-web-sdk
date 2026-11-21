@@ -29,10 +29,13 @@ const isValidStoredUserSessionState = (
  * The user-session state shared by every tab. Reads and writes go to storage,
  * so a tab never writes back a copy another tab has since replaced.
  *
+ * An ended user session stays in storage, marked `ended`, until the next one
+ * replaces it, so the next one can follow it.
+ *
  * While a session part is open, the store pins the part's user session. Reads
  * return it, refreshed from storage while storage still holds it, so the part
- * keeps reporting its own user session after another tab replaced or cleared
- * it. Writes to it from then on only update the pin.
+ * keeps reporting its own user session after another tab replaced, ended or
+ * cleared it. Writes to it from then on only update the pin.
  */
 export class UserSessionStore {
   private readonly _storage: NamespacedStorage;
@@ -60,7 +63,7 @@ export class UserSessionStore {
   public write(state: UserSessionState): boolean {
     if (
       this._pinned?.userSessionId === state.userSessionId &&
-      this._readStored()?.userSessionId !== state.userSessionId
+      !this._holdsLive(this._readStored(), state.userSessionId)
     ) {
       this._pinned = state;
 
@@ -74,10 +77,6 @@ export class UserSessionStore {
     this._refreshPinned(state);
 
     return this._storage.setItem(EMBRACE_USER_SESSION_STATE_KEY, raw);
-  }
-
-  public clear(): void {
-    this._storage.removeItem(EMBRACE_USER_SESSION_STATE_KEY);
   }
 
   public pin(state: UserSessionState): void {
@@ -106,9 +105,17 @@ export class UserSessionStore {
   }
 
   private _refreshPinned(state: UserSessionState | null): void {
-    if (state && state.userSessionId === this._pinned?.userSessionId) {
+    if (this._pinned && this._holdsLive(state, this._pinned.userSessionId)) {
       this._pinned = state;
     }
+  }
+
+  // Storage still holds this user session, and it hasn't ended.
+  private _holdsLive(
+    state: UserSessionState | null,
+    userSessionId: string,
+  ): state is UserSessionState {
+    return state?.userSessionId === userSessionId && !state.ended;
   }
 
   // Returns null, after logging, when the stored state can't be trusted.
