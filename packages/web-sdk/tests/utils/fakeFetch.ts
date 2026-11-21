@@ -10,6 +10,7 @@ const withRequest = (arg: unknown) => arg instanceof window.Request;
 // the same stub, so tests must address a call by its endpoint rather than by its
 // absolute position in the fetch history.
 const SPANS_PATH = '/v2/spans';
+const LOGS_PATH = '/v2/logs';
 const CONFIG_PATH = '/v2/config';
 
 let fetchStub: SinonStub | undefined;
@@ -122,6 +123,17 @@ export const fakeFetchGetSpansBody = (spansExportNumber = 0) =>
 
 export const fakeFetchGetSpansRequestHeaders = (spansExportNumber = 0) =>
   fakeFetchGetRequestHeaders(nthCallToPath(SPANS_PATH, spansExportNumber));
+
+export const fakeFetchGetLogsBodies = () => {
+  const total = fetchStub?.callCount ?? 0;
+  const bodies: Array<ReturnType<typeof fakeFetchGetBody>> = [];
+  for (let i = 0; i < total; i++) {
+    if (callUrl(i)?.includes(LOGS_PATH)) {
+      bodies.push(fakeFetchGetBody(i));
+    }
+  }
+  return bodies;
+};
 
 export const fakeFetchGetConfigUrl = (configCallNumber = 0) =>
   fakeFetchGetUrl(nthCallToPath(CONFIG_PATH, configCallNumber));
