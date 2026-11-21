@@ -46,7 +46,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     # also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
@@ -131,7 +131,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
     # staging and production run test-sdk-multiple-browsers, and development just runs regular test-sdk
     if: ${{ needs.environment.outputs.name != 'development' }}
     timeout-minutes: 10
@@ -204,7 +204,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
     if: ${{ needs.environment.outputs.name == 'development' || needs.environment.outputs.name == 'staging' }}
     timeout-minutes: 10
@@ -391,7 +391,7 @@ jobs:
       - environment
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
     permissions:
       pull-requests: write
     # Run on PRs, also run these in staging so that we generate code coverage for pushes to main
