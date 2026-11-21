@@ -1,5 +1,3 @@
-import type { SessionPartEndReason } from '../../api-sessions/manager/types.ts';
-
 export const EMBRACE_USER_SESSION_STATE_KEY = 'embrace_user_session_state';
 /**
  * Bump when UserSessionState's shape changes incompatibly. Persisted blobs
@@ -14,14 +12,6 @@ export const EMBRACE_LAST_END_USER_SESSION_TS_KEY =
 export const EMBRACE_LAST_ACTIVITY_KEY = 'embrace_last_activity';
 
 export const SESSION_PART_SPAN_NAME = 'emb-session-part';
-
-/**
- * Part end reasons that also end the enclosing user session. Of the session
- * parts that end with it, only the one with the latest activity in any tab is
- * stamped as the final one (`emb.is_final_session_part`).
- */
-export const USER_SESSION_ENDING_PART_END_REASONS: ReadonlySet<SessionPartEndReason> =
-  new Set(['user_session_ended', 'web_foreground_inactivity']);
 
 /**
  * Each tab's clock can be up to `DRIFT_THRESHOLD_MS` off the wall clock, so a

@@ -25,9 +25,19 @@ export const isUserSessionEnded = (
   now >= state.userSessionMaxEndTs ||
   (lastActivityTs === null
     ? state.inactivityDeadlineTs !== null && now >= state.inactivityDeadlineTs
-    : now >=
-      Math.max(lastActivityTs, state.userSessionStartTs) +
-        state.userSessionInactivityTimeoutSeconds * 1000);
+    : now >= getUserSessionInactivityEndTs(state, lastActivityTs));
+
+/**
+ * When the user session expires without more activity in any tab: the
+ * inactivity timeout after the latest activity or the user session's start,
+ * whichever is later.
+ */
+export const getUserSessionInactivityEndTs = (
+  state: UserSessionState,
+  lastActivityTs: number,
+): number =>
+  Math.max(lastActivityTs, state.userSessionStartTs) +
+  state.userSessionInactivityTimeoutSeconds * 1000;
 
 export interface CreateUserSessionStateArgs {
   now: number;
