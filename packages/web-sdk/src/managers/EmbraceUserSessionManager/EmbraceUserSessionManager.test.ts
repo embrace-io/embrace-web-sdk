@@ -265,7 +265,6 @@ describe('EmbraceUserSessionManager', () => {
 
     const lastEnd = lastEndCall(endSpy);
     expect(lastEnd?.reason).to.equal('user_session_ended');
-    expect(lastEnd?.userSessionEndReason).to.equal('max_duration_reached');
     expect(lastEnd?.timestamp).to.equal(60 * 60 * 1000);
   });
 
@@ -294,7 +293,7 @@ describe('EmbraceUserSessionManager', () => {
     expect(startSpy.callCount).to.be.at.least(2);
   });
 
-  it('should provide termination info when max duration fires', () => {
+  it('should end the part with the user session when max duration fires', () => {
     const manager = createManager({
       userSessionMaxDurationSeconds: 3600,
       userSessionInactivityTimeoutSeconds: 3600,
@@ -306,10 +305,7 @@ describe('EmbraceUserSessionManager', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     clock.tick(3601 * 1000);
 
-    expect(lastEndCall(endSpy)).to.deep.include({
-      reason: 'user_session_ended',
-      userSessionEndReason: 'max_duration_reached',
-    });
+    expect(lastEndCall(endSpy)?.reason).to.equal('user_session_ended');
   });
 
   it('should handle manual termination via endUserSession', () => {
@@ -325,7 +321,7 @@ describe('EmbraceUserSessionManager', () => {
     expect(startSpy.callCount).to.be.at.least(2);
   });
 
-  it('should provide termination info during manual termination', () => {
+  it('should end the part with the user session during manual termination', () => {
     const manager = createManager();
 
     const endSpy = sinon.spy(manager, 'endSessionPartInternal');
@@ -333,10 +329,7 @@ describe('EmbraceUserSessionManager', () => {
     manager.startSessionPartInternal({ reason: 'init' });
     manager.endUserSession();
 
-    expect(lastEndCall(endSpy)).to.deep.include({
-      reason: 'user_session_ended',
-      userSessionEndReason: 'manual',
-    });
+    expect(lastEndCall(endSpy)?.reason).to.equal('user_session_ended');
   });
 
   it('should be a no-op when ending session with no active session', () => {

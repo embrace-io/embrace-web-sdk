@@ -117,10 +117,7 @@ describe('ReactRouterV5Legacy', () => {
 
     // Ends the last navigated route's still-open span too, since a route
     // span must not outlive the session part it started in.
-    userSessionManager.endSessionPartInternal({
-      reason: 'user_session_ended',
-      userSessionEndReason: 'manual',
-    });
+    userSessionManager.endSessionPartInternal({ reason: 'user_session_ended' });
     tearDown();
 
     const routeSpans = memoryExporter

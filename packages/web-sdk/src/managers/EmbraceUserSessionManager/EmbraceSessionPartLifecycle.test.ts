@@ -847,14 +847,11 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       void expect(storedState()?.inactivityDeadlineTs).to.be.null;
     });
 
-    it("doesn't clear the other tab's user session when the part ends as final", () => {
+    it("doesn't clear the other tab's user session when the part ends the user session", () => {
       manager.startSessionPartInternal({ reason: 'init' });
       const otherTab = startNextUserSessionInOtherTab();
 
-      manager.endSessionPartInternal({
-        reason: 'web_foreground_inactivity',
-        userSessionEndReason: 'inactivity',
-      });
+      manager.endSessionPartInternal({ reason: 'web_foreground_inactivity' });
 
       expect(storedState()?.userSessionId).to.equal(
         otherTab.getUserSessionId(),
@@ -901,8 +898,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       clock.tick(1);
 
       expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
-        'emb.user_session_termination_reason',
-        'max_duration_reached',
+        'emb.session_part_end_reason',
+        'user_session_ended',
       );
       void expect(shortLivedManager.getUserSessionId()).to.not.be.null;
       expect(shortLivedManager.getUserSessionId()).to.not.equal(userSessionId);
@@ -930,8 +927,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       manager.endUserSession();
 
       expect(memoryExporter.getFinishedSpans()[0].attributes).to.have.property(
-        'emb.user_session_termination_reason',
-        'manual',
+        'emb.session_part_end_reason',
+        'user_session_ended',
       );
       void expect(manager.getUserSessionId()).to.not.be.null;
       expect(manager.getUserSessionId()).to.not.equal(userSessionId);
@@ -1357,25 +1354,6 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(localManager.getSessionPartId()).to.not.equal(null);
     });
 
-    it('should mark the session part as final when user session terminates', () => {
-      manager.startSessionPartInternal({ reason: 'init' });
-      manager.endUserSession();
-
-      const finishedSpans = memoryExporter.getFinishedSpans();
-      // endUserSession ends the dying part and starts a rollover part;
-      // the test assertion only checks the dying part's attributes.
-      expect(finishedSpans.length).to.be.at.least(1);
-      const endedSpan = finishedSpans[0];
-      expect(endedSpan.attributes).to.have.property(
-        'emb.is_final_session_part',
-        1,
-      );
-      expect(endedSpan.attributes).to.have.property(
-        'emb.user_session_termination_reason',
-        'manual',
-      );
-    });
-
     it('should not write a continuation snapshot to storage during endUserSession', () => {
       // An inactivity-deadline write during termination races the state clear
       // and emits a stray storage event. The manager skips the deadline write
@@ -1418,7 +1396,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(stateOps).to.deep.equal(['remove', 'set']);
     });
 
-    it('should mark part as final when max duration timer fires during active part', () => {
+    it('should end the part with the user session when the max duration timer fires during an active part', () => {
       const localManager = new EmbraceUserSessionManager({
         diag,
         storage,
@@ -1440,12 +1418,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       expect(finishedSpans.length).to.be.at.least(1);
       const endedSpan = finishedSpans[0];
       expect(endedSpan.attributes).to.have.property(
-        'emb.is_final_session_part',
-        1,
-      );
-      expect(endedSpan.attributes).to.have.property(
-        'emb.user_session_termination_reason',
-        'max_duration_reached',
+        'emb.session_part_end_reason',
+        'user_session_ended',
       );
     });
 
@@ -1502,12 +1476,8 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       const finishedSpans = memoryExporter.getFinishedSpans();
       expect(finishedSpans).to.have.lengthOf(1);
       expect(finishedSpans[0].attributes).to.have.property(
-        'emb.is_final_session_part',
-        1,
-      );
-      expect(finishedSpans[0].attributes).to.have.property(
-        'emb.user_session_termination_reason',
-        'max_duration_reached',
+        'emb.session_part_end_reason',
+        'user_session_ended',
       );
 
       // Tab becomes engaged again. The manager's _onEngagementChange would
@@ -1524,8 +1494,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should find the inactivity deadline expired on the next part start and roll a new user session', () => {
       // No timer runs for the inactivity deadline; the next part start finds it
-      // expired, after the previous part span has already been exported
-      // without emb.is_final_session_part.
+      // expired.
       const localManager = new EmbraceUserSessionManager({
         diag,
         perf,
