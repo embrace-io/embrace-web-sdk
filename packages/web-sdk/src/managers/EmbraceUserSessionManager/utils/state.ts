@@ -33,6 +33,7 @@ export interface CreateUserSessionStateArgs {
   now: number;
   userSessionId?: string;
   previousUserSessionId: string | null;
+  previousFinalSessionPartId?: string | null;
   userSessionMaxDurationSeconds: number;
   userSessionInactivityTimeoutSeconds: number;
   userSessionForegroundInactivityTimeoutSeconds: number;
@@ -43,6 +44,7 @@ export const createUserSessionState = ({
   now,
   userSessionId = generateUUID(),
   previousUserSessionId,
+  previousFinalSessionPartId = null,
   userSessionMaxDurationSeconds,
   userSessionInactivityTimeoutSeconds,
   userSessionForegroundInactivityTimeoutSeconds,
@@ -52,6 +54,7 @@ export const createUserSessionState = ({
   userSessionId,
   nextUserSessionId: generateUUID(),
   previousUserSessionId,
+  previousFinalSessionPartId,
   userSessionStartTs: now,
   userSessionMaxEndTs: now + userSessionMaxDurationSeconds * 1000,
   userSessionNumber,
@@ -68,10 +71,12 @@ export const createEndedUserSessionState = (
   state: UserSessionState,
   now: number,
   endReason?: UserSessionEndReason,
+  finalSessionPartId: string | null = null,
 ): UserSessionState => ({
   ...state,
   ended: true,
   endReason,
+  finalSessionPartId,
   inactivityDeadlineTs: now,
   userSessionProperties: {},
 });

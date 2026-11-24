@@ -28,6 +28,21 @@ describe('user session state', () => {
     expect(state.nextUserSessionId).to.not.equal(state.userSessionId);
   });
 
+  it("copies the previous user session's final session part", () => {
+    void expect(createState().previousFinalSessionPartId).to.be.null;
+    expect(
+      createUserSessionState({
+        now: NOW,
+        previousUserSessionId: 'previous',
+        previousFinalSessionPartId: 'part-a',
+        userSessionMaxDurationSeconds: 43200,
+        userSessionInactivityTimeoutSeconds: 1800,
+        userSessionForegroundInactivityTimeoutSeconds: 1800,
+        userSessionNumber: 2,
+      }).previousFinalSessionPartId,
+    ).to.equal('part-a');
+  });
+
   it('uses the given user session ID', () => {
     expect(createState('A'.repeat(32)).userSessionId).to.equal('A'.repeat(32));
   });
@@ -100,11 +115,13 @@ describe('user session state', () => {
       { ...createState(), userSessionProperties: { plan: 'pro' } },
       NOW + 1000,
       'manual',
+      'part-a',
     );
 
     expect(ended).to.deep.include({
       ended: true,
       endReason: 'manual',
+      finalSessionPartId: 'part-a',
       inactivityDeadlineTs: NOW + 1000,
       userSessionProperties: {},
     });

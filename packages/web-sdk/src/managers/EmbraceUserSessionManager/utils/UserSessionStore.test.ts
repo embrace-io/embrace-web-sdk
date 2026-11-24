@@ -215,6 +215,28 @@ describe('UserSessionStore', () => {
       });
     });
 
+    it('keeps the stored part when another part ends', () => {
+      store.recordActivity(1000, 'part-a');
+
+      store.recordActivityAfterPartEnd(2000, 'part-b');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: 'part-a',
+      });
+    });
+
+    it('clears the stored part when that part ends', () => {
+      store.recordActivity(1000, 'part-a');
+
+      store.recordActivityAfterPartEnd(2000, 'part-a');
+
+      expect(store.readLastActivity()).to.deep.equal({
+        ts: 2000,
+        sessionPartId: null,
+      });
+    });
+
     it('replaces an activity at the same time', () => {
       store.recordActivity(2000, null);
       store.recordActivity(2000, 'part-a');
@@ -223,6 +245,55 @@ describe('UserSessionStore', () => {
         ts: 2000,
         sessionPartId: 'part-a',
       });
+    });
+  });
+
+  describe('final session part', () => {
+    it("is the latest activity's part while the user session is stored live", () => {
+      const state = createState();
+      store.write(state);
+      store.recordActivity(1000, 'part-a');
+
+      expect(store.readFinalSessionPartId(state.userSessionId)).to.equal(
+        'part-a',
+      );
+    });
+
+    it("is the latest activity's part when nothing is stored", () => {
+      store.recordActivity(1000, 'part-a');
+
+      expect(store.readFinalSessionPartId('any')).to.equal('part-a');
+    });
+
+    it('is the one recorded on the ended marker', () => {
+      const state = createState();
+      store.write({ ...state, ended: true, finalSessionPartId: 'part-a' });
+      store.recordActivity(1000, 'part-b');
+
+      expect(store.readFinalSessionPartId(state.userSessionId)).to.equal(
+        'part-a',
+      );
+    });
+
+    it('is the one the next user session copied', () => {
+      const state = createState();
+      store.write({
+        ...createState(),
+        previousUserSessionId: state.userSessionId,
+        previousFinalSessionPartId: 'part-a',
+      });
+      store.recordActivity(1000, 'part-b');
+
+      expect(store.readFinalSessionPartId(state.userSessionId)).to.equal(
+        'part-a',
+      );
+    });
+
+    it('is unknown when an unrelated user session is stored', () => {
+      store.write(createState());
+      store.recordActivity(1000, 'part-a');
+
+      void expect(store.readFinalSessionPartId('another')).to.be.null;
     });
   });
 

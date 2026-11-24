@@ -42,6 +42,16 @@ export interface UserSessionState {
    */
   readonly endReason?: UserSessionEndReason;
   /**
+   * The session part with the latest activity when the user session ended, set
+   * on its ended marker. That part is the final one, whenever it ends.
+   */
+  readonly finalSessionPartId?: string | null;
+  /**
+   * The previous user session's `finalSessionPartId`, copied when this one was
+   * created from it, for that user session's parts that end afterward.
+   */
+  readonly previousFinalSessionPartId?: string | null;
+  /**
    * Null on the first user session since the first visit or after a
    * permanent storage clear.
    */

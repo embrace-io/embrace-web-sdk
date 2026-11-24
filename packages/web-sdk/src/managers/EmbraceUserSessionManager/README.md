@@ -148,7 +148,11 @@ or site data was cleared, the part end leaves storage alone.
 
 When the end reason also ends the user session (`user_session_ended` or
 `web_foreground_inactivity`), every tab's open part ends with it, but only the
-part with the latest activity in any tab is the final one. Its span is additionally stamped
+part with the latest activity when the user session ended is the final one. The
+tab that ends it records that part on the ended marker (`finalSessionPartId`),
+and the next user session copies it (`previousFinalSessionPartId`), so a part
+that starts in the next user session first can't take the flag from one that
+ends after it. The final part's span is additionally stamped
 `emb.is_final_session_part = 1` and, when a `userSessionEndReason` is supplied,
 `emb.user_session_termination_reason`.
 
@@ -185,7 +189,8 @@ A stored user session is treated as over when any of the following holds:
   inactivity deadline written at the last part end decides instead.
 
 No timer runs for `userSessionInactivityTimeoutSeconds`. Expiry is checked at
-the next part start.
+the next part start. A part span that has already been exported never
+retroactively receives `emb.is_final_session_part`.
 
 ### Last activity
 
@@ -195,13 +200,14 @@ session part it happened in:
 - at part start
 - on throttled user input, and on a redundant focus or visibility event, while
   a part is open
-- at a part end that doesn't end the user session, with no session part
+- at a part end that doesn't end the user session, keeping the stored session
+  part unless it's the one that ended, so another tab's open part stays the
+  final candidate
 
 A write keeps the later of the stored and new times, and one at the same time
 replaces the stored one, so a part starting at a rollover's boundary wins over
 the part that ended there. An inactivity end records nothing, since the user
-was idle. A part span that has already been exported never
-retroactively receives `emb.is_final_session_part`.
+was idle.
 
 ### Termination
 
@@ -229,7 +235,8 @@ or silently no-ops if not (the next engagement event will create it).
 
 An ended user session stays in storage as an ended marker: the same row with
 `ended: true`, `endReason` set to the `UserSessionEndReason`,
-`inactivityDeadlineTs` set to the end time, and no properties. A tab that missed
+`finalSessionPartId` set to the final part, `inactivityDeadlineTs` set to the
+end time, and no properties. A tab that missed
 the end can still create the same successor from it, other tabs end their parts
 with the same reason, and SDK versions that don't know `ended` read it as
 expired.

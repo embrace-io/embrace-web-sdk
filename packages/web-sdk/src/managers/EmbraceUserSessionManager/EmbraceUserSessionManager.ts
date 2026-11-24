@@ -472,14 +472,17 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     this._clearSessionPartInactivityTimer();
 
     const endsUserSession = USER_SESSION_ENDING_PART_END_REASONS.has(reason);
-    // Every tab's open part ends with the user session, but only one is the
-    // final part: the one with the latest activity in any tab.
-    const isFinalSessionPart =
-      endsUserSession &&
-      this._userSessionStore.readLastActivity()?.sessionPartId ===
-        this._activeSessionPartId;
     const partUserSessionId =
       this._userSessionStore.read()?.userSessionId ?? null;
+    const sessionPartId = this._activeSessionPartId;
+    // Every tab's open part ends with the user session, but only one is the
+    // final part: the one with the latest activity when it ended.
+    const finalSessionPartId =
+      endsUserSession && partUserSessionId !== null
+        ? this._userSessionStore.readFinalSessionPartId(partUserSessionId)
+        : null;
+    const isFinalSessionPart =
+      endsUserSession && finalSessionPartId === sessionPartId;
 
     // Two stamps, captured upfront so an unbounded SpanProcessor.onEnd cannot
     // push them forward: the caller's timestamp (when given) becomes the span
@@ -559,7 +562,12 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       // ended it or started the next one.
       if (stored?.userSessionId === partUserSessionId) {
         this._userSessionStore.write(
-          createEndedUserSessionState(stored, now, userSessionEndReason),
+          createEndedUserSessionState(
+            stored,
+            now,
+            userSessionEndReason,
+            finalSessionPartId,
+          ),
         );
       }
 
@@ -568,7 +576,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     } else {
       // The user was here until now, so the inactivity timeout counts from
       // when they left this tab, as the deadline does.
-      this._userSessionStore.recordActivity(now, null);
+      if (sessionPartId !== null) {
+        this._userSessionStore.recordActivityAfterPartEnd(now, sessionPartId);
+      }
+
       this._continueUserSessionAfterPartEnd(now, partUserSessionId);
     }
   }
@@ -780,6 +791,11 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         now,
         userSessionId: predecessor?.nextUserSessionId,
         previousUserSessionId: this._previousUserSessionId,
+        previousFinalSessionPartId: predecessor
+          ? this._userSessionStore.readFinalSessionPartId(
+              predecessor.userSessionId,
+            )
+          : null,
         userSessionMaxDurationSeconds,
         userSessionInactivityTimeoutSeconds,
         userSessionForegroundInactivityTimeoutSeconds,
@@ -911,6 +927,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
           stored,
           this._perf.getNow(),
           userSessionEndReason,
+          this._userSessionStore.readFinalSessionPartId(stored.userSessionId),
         ),
       );
     }

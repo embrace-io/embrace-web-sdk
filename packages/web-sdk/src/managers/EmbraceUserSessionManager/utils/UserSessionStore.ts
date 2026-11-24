@@ -163,9 +163,53 @@ export class UserSessionStore {
       return;
     }
 
-    const activity: LastActivity = { ts, sessionPartId };
+    this._writeLastActivity({ ts, sessionPartId });
+  }
 
-    this._storage.setItem(EMBRACE_LAST_ACTIVITY_KEY, JSON.stringify(activity));
+  /**
+   * Records the end of a session part that doesn't end the user session. The
+   * stored part stays the final candidate, unless it's the one that ended.
+   */
+  public recordActivityAfterPartEnd(
+    ts: number,
+    endedSessionPartId: string,
+  ): void {
+    const stored = this.readLastActivity();
+
+    if (stored && stored.ts > ts) {
+      return;
+    }
+
+    this._writeLastActivity({
+      ts,
+      sessionPartId:
+        stored?.sessionPartId === endedSessionPartId
+          ? null
+          : (stored?.sessionPartId ?? null),
+    });
+  }
+
+  /**
+   * The session part that's final for `userSessionId`: the one recorded when
+   * it ended, or, while it's still stored live or nothing is stored, the one
+   * with the latest activity. Null when neither is known.
+   */
+  public readFinalSessionPartId(userSessionId: string): string | null {
+    const stored = this._readStored();
+
+    if (!stored || (stored.userSessionId === userSessionId && !stored.ended)) {
+      return this.readLastActivity()?.sessionPartId ?? null;
+    }
+
+    if (stored.userSessionId === userSessionId) {
+      return stored.finalSessionPartId ?? null;
+    }
+
+    if (stored.previousUserSessionId === userSessionId) {
+      return stored.previousFinalSessionPartId ?? null;
+    }
+
+    return null;
   }
 
   public pin(state: UserSessionState): void {
@@ -233,6 +277,10 @@ export class UserSessionStore {
         );
       }
     }
+  }
+
+  private _writeLastActivity(activity: LastActivity): void {
+    this._storage.setItem(EMBRACE_LAST_ACTIVITY_KEY, JSON.stringify(activity));
   }
 
   private _writeToStorage(state: UserSessionState): boolean {
