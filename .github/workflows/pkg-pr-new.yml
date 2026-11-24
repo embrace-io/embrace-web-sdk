@@ -8,6 +8,9 @@ on:
 
 permissions: {}
 
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
 jobs:
   publish:
     runs-on: ubuntu-latest
