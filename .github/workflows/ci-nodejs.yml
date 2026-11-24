@@ -11,6 +11,7 @@ permissions:
   contents: read
 
 env:
+  TURBO_TELEMETRY_DISABLED: 1
   LINT_STATUS_FILE: lint.success.txt
   TYPE_CHECK_STATUS_FILE: type_check.success.txt
   TEST_STATUS_FILE: test.success.txt
