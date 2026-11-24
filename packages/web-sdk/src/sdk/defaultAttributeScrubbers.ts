@@ -12,7 +12,7 @@ const DEFAULT_SENSITIVE_TOKENS = [
   'AWSAccessKeyId',
   'Signature',
   'sig',
-  '`X-Goog-Signature',
+  'X-Goog-Signature',
   'password',
   'auth',
   'pw',
