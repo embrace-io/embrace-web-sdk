@@ -6,6 +6,7 @@ export {
   SAMPLED_UUID,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from './constants.ts';
+export { deleteIndexedDB } from './deleteIndexedDB.ts';
 export { FailingStorage } from './FailingStorage.ts';
 export { FakeInstrumentation } from './FakeInstrumentation.ts';
 export { FakeLogRecordProcessor } from './FakeLogRecordProcessor.ts';
@@ -27,6 +28,7 @@ export {
   fakeFetchWasCalled,
 } from './fakeFetch.ts';
 export { InMemoryDiagLogger } from './InMemoryDiagLogger.ts';
+export { InMemorySessionPartCounters } from './InMemorySessionPartCounters.ts';
 export { MockPerformanceManager } from './MockPerformanceManager.ts';
 export { mockSpan } from './mock-entities/index.ts';
 export { setupTestLogExporter } from './setupTestLogExporter.ts';

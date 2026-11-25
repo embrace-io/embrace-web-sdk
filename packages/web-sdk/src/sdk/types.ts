@@ -347,6 +347,9 @@ export interface SetupUserSessionArgs {
   perf: PerformanceManager;
   registerGlobally?: boolean;
   sdkLocalStorage: NamespacedStorage;
+  /** Keeps the IndexedDB session part counters apart per app. */
+  namespace?: string;
+  diag: DiagLogger;
   visibilityDoc: VisibilityStateDocument;
   dynamicConfigManager: DynamicConfigManager;
 }

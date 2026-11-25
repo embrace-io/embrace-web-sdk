@@ -195,13 +195,12 @@ const App = () => {
     const updateSessionPart = () => {
       const activePartId = userSessionManager.getSessionPartId();
       setSessionPartId(activePartId);
-      const attrs = userSessionManager.getUserSessionAttributes();
-      setUserSessionPartIndex(attrs?.['emb.user_session_part_index'] ?? null);
+      const counts = userSessionManager.getSessionPartCounts();
+      setUserSessionPartIndex(counts?.userSessionPartIndex ?? null);
       // Cumulative counter: hold the last value across part boundaries so the
-      // row doesn't blank out between parts. The SDK coalesces the counter to
-      // 0 when no part is active, so gate the update on an actual active part.
-      if (activePartId !== null && attrs) {
-        setSessionPartNumber(attrs['emb.session_part_number']);
+      // row doesn't blank out between parts.
+      if (counts) {
+        setSessionPartNumber(counts.sessionPartNumber);
       }
       const spanAttrs = userSessionManager.getSessionPartSpan()?.attributes;
       const reason = spanAttrs?.['emb.session_part_start_reason'];

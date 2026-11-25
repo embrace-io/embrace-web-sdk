@@ -1,7 +1,8 @@
 import type { DiagLogger } from '@opentelemetry/api';
 import type { NamespacedStorage } from './NamespacedStorage/index.ts';
 
-const readCount = (
+// Reads a global counter shared across all tabs, 0 when it isn't stored.
+export const getStoredCount = (
   storage: NamespacedStorage,
   key: string,
   diag: DiagLogger,
@@ -29,7 +30,7 @@ export const getIncrementedCount = (
   diag: DiagLogger,
   current?: number,
 ): number => {
-  const number = (current ?? readCount(storage, key, diag)) + 1;
+  const number = (current ?? getStoredCount(storage, key, diag)) + 1;
 
   storage.setItem(key, number.toString());
 

@@ -3,6 +3,15 @@ export {
   removeActivityListeners,
 } from './activity.ts';
 export { PermanentPropertiesStore } from './PermanentPropertiesStore.ts';
+export type {
+  IncrementSessionPartCountsArgs,
+  SessionPartCounters,
+  SessionPartCounts,
+} from './SessionPartCounters.ts';
+export {
+  IndexedDBSessionPartCounters,
+  LocalStorageSessionPartCounters,
+} from './SessionPartCounters.ts';
 export {
   createEndedUserSessionState,
   createUserSessionState,

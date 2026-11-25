@@ -6,6 +6,7 @@ import type {
   UserSessionAttributes,
   UserSessionManagerInternal,
 } from '../../../managers/EmbraceUserSessionManager/types.ts';
+import type { SessionPartCounts } from '../../../managers/EmbraceUserSessionManager/utils/index.ts';
 import type { PropertyOptions, SessionPartStartedEvent } from '../index.ts';
 
 export class NoOpUserSessionManager implements UserSessionManagerInternal {
@@ -80,6 +81,10 @@ export class NoOpUserSessionManager implements UserSessionManagerInternal {
   public endUserSession(): void {}
 
   public getSessionPartId(): string | null {
+    return null;
+  }
+
+  public getSessionPartCounts(): SessionPartCounts | null {
     return null;
   }
 

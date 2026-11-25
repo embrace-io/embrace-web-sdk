@@ -20,4 +20,7 @@ export {
 } from './EmbraceTraceManager/index.ts';
 export { EmbraceUserManager } from './EmbraceUserManager/index.ts';
 export type { UserSessionManagerInternal } from './EmbraceUserSessionManager/index.ts';
-export { EmbraceUserSessionManager } from './EmbraceUserSessionManager/index.ts';
+export {
+  EmbraceUserSessionManager,
+  IndexedDBSessionPartCounters,
+} from './EmbraceUserSessionManager/index.ts';

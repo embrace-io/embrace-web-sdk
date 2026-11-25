@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   createTestDynamicConfigManager,
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -81,6 +82,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     target = new FakeTarget();
     visibilityDoc = new FakeVisibilityDoc();
     manager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new MockPerformanceManager(clock),
       storage: setupTestStorage(),
@@ -411,6 +413,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
 
   it('arms the foreground inactivity timer from the foreground value, not the inactivity value', () => {
     const splitManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
       perf: new MockPerformanceManager(clock),
       storage: setupTestStorage(),

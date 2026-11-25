@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import {
   FakeInstrumentation,
+  InMemorySessionPartCounters,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
 } from '../../../tests/utils/index.ts';
@@ -86,6 +87,7 @@ describe('EmbraceInstrumentationBase', () => {
 
     beforeEach(() => {
       userSessionManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
         perf: new OTelPerformanceManager(),
@@ -147,6 +149,7 @@ describe('EmbraceInstrumentationBase', () => {
       instrumentation.enable();
 
       const replacementManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager: new EmbraceLimitManager(DEFAULT_LIMITS),
         perf: new OTelPerformanceManager(),

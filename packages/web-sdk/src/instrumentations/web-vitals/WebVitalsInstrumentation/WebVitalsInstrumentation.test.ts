@@ -10,6 +10,7 @@ import type {
 } from 'web-vitals/attribution';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
@@ -3905,6 +3906,7 @@ describe('WebVitalsInstrumentation', () => {
       const limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
       const storage = setupTestStorage();
       userSessionManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager,
         perf,

@@ -13,6 +13,10 @@ import type {
   PerformanceManager,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
+import type {
+  SessionPartCounters,
+  SessionPartCounts,
+} from './utils/SessionPartCounters.ts';
 
 export interface UserSessionState {
   /**
@@ -100,10 +104,6 @@ export interface UserSessionAttributes {
   readonly 'emb.user_session_previous_id': string;
   /** Monotonic from 1 across all visits by this browser. */
   readonly 'emb.user_session_number': number;
-  /** 1-indexed within the user session. */
-  readonly 'emb.user_session_part_index': number;
-  /** Monotonic from 1 across all visits by this browser; bumps per part. */
-  readonly 'emb.session_part_number': number;
   /** Milliseconds since the Unix epoch. */
   readonly 'emb.user_session_start_ts': number;
   /** Whole seconds. */
@@ -159,6 +159,12 @@ export interface UserSessionManagerInternal extends UserSessionManager {
   getSessionPartProperties: () => Record<string, string>;
 
   getSessionPartId: () => string | null;
+
+  /**
+   * The open part's counters, once they're reserved shortly after it starts.
+   * Null before that, and while no part is open.
+   */
+  getSessionPartCounts: () => SessionPartCounts | null;
 
   /**
    * Resolves the session part active at a given timestamp, based on a
@@ -235,6 +241,8 @@ export interface EmbraceUserSessionManagerArgs {
    * Input events that count as user interaction with a foreground tab.
    */
   activityEvents?: ReadonlyArray<string>;
+  /** Hands out the counters of each session part that starts. */
+  sessionPartCounters: SessionPartCounters;
 }
 
 export interface SDKStartupTimings {

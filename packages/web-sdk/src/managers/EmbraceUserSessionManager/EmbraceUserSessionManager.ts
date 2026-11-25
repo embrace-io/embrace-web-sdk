@@ -61,7 +61,6 @@ import {
   DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   DEFAULT_USER_SESSION_MAX_DURATION_SECONDS,
   EMBRACE_LAST_END_USER_SESSION_TS_KEY,
-  EMBRACE_SESSION_PART_NUMBER_KEY,
   EMBRACE_USER_SESSION_NUMBER_KEY,
   END_USER_SESSION_COOLDOWN_MS,
   MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
@@ -82,7 +81,11 @@ import type {
   UserSessionManagerInternal,
   UserSessionState,
 } from './types.ts';
-import type { UserSessionChange } from './utils/index.ts';
+import type {
+  SessionPartCounters,
+  SessionPartCounts,
+  UserSessionChange,
+} from './utils/index.ts';
 import {
   addActivityListeners,
   createEndedUserSessionState,
@@ -114,10 +117,8 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     id: string;
     startTimeEpochMillis: number;
   }> = [];
-  // Held for the part's lifetime so getUserSessionAttributes() reads
-  // during the part return its starting value, even if another tab bumps
-  // the shared counter while this tab is mid-disengagement.
-  private _currentSessionPartNumber: number | null = null;
+  private readonly _sessionPartCounters: SessionPartCounters;
+  private _sessionPartCounts: SessionPartCounts | null = null;
   private _sessionPartSpan: ExtendedSpan | null = null;
   private _activeSessionPartCounts: Record<string, number> | null = null;
   // Marks the first part of the page lifetime so it can be reported as a
@@ -155,6 +156,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     target = window,
     activityThrottleMs = DEFAULT_ACTIVITY_THROTTLE_MS,
     activityEvents = DEFAULT_ACTIVITY_EVENTS,
+    sessionPartCounters,
   }: EmbraceUserSessionManagerArgs) {
     this._diag =
       diagParam ??
@@ -177,6 +179,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
     });
     this._tracer = trace.getTracer('embrace-web-sdk-session-parts');
     this._target = target;
+    this._sessionPartCounters = sessionPartCounters;
     this._activityEvents = activityEvents;
     this._onActivityThrottled = throttle(this._onActivity, activityThrottleMs);
   }
@@ -318,8 +321,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       [KEY_EMB_USER_SESSION_ID]: state.userSessionId,
       [KEY_EMB_USER_SESSION_PREVIOUS_ID]: previousUserSessionId,
       [KEY_EMB_USER_SESSION_NUMBER]: state.userSessionNumber,
-      [KEY_EMB_USER_SESSION_PART_INDEX]: state.userSessionPartIndex,
-      [KEY_EMB_SESSION_PART_NUMBER]: this._currentSessionPartNumber ?? 0,
       [KEY_EMB_USER_SESSION_START_TS]: state.userSessionStartTs,
       [KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS]:
         state.userSessionMaxDurationSeconds,
@@ -359,6 +360,10 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   public getSessionPartId(): string | null {
     return this._activeSessionPartId;
+  }
+
+  public getSessionPartCounts(): SessionPartCounts | null {
+    return this._sessionPartCounts;
   }
 
   public getSessionPartIdAt(timestampEpochMillis: number): string | null {
@@ -449,6 +454,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._perf.getNow(),
       activeSessionPartId,
     );
+    this._reserveSessionPartCounts();
 
     this._startSessionPartInactivityTimer();
 
@@ -505,6 +511,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         ...this._activeSessionPartCounts,
         ...this._limitManager.getDiagnosticCounts(),
       };
+
       if (this._coldStart) {
         endAttrs[KEY_EMB_PAGE_LOAD] =
           this._visibilityDoc.readyState === 'complete';
@@ -556,7 +563,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._coldStart = false;
       this._activeSessionPartId = null;
       this._activeSessionPartCounts = null;
-      this._currentSessionPartNumber = null;
+      this._sessionPartCounts = null;
       this._userSessionStore.unpin();
       this._limitManager.reset();
     }
@@ -820,24 +827,16 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   /**
-   * Bumps the part counter, arms the max-duration timer, and pins the part's
-   * user session. Relies on `_loadOrCreateUserSessionState` to provide a
-   * non-null, non-expired state, so `getUserSessionAttributes()` is
-   * guaranteed non-null after this.
+   * Arms the max-duration timer and pins the part's user session. Relies on
+   * `_loadOrCreateUserSessionState` to provide a non-null, non-expired state,
+   * so `getUserSessionAttributes()` is guaranteed non-null after this.
    */
   private _beginUserSessionForPartStart(sessionPartId: string): void {
     const now = this._perf.getNow();
     const { state } = this._loadOrCreateUserSessionState(now);
 
-    this._currentSessionPartNumber = getIncrementedCount(
-      this._storage,
-      EMBRACE_SESSION_PART_NUMBER_KEY,
-      this._diag,
-    );
-
     const partState = {
       ...state,
-      userSessionPartIndex: state.userSessionPartIndex + 1,
       // A part is active, so any pending inactivity deadline no longer
       // applies; it is rewritten when the part ends.
       inactivityDeadlineTs: null,
@@ -845,6 +844,59 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._userSessionStore.write(partState);
     this._userSessionStore.pin(partState, sessionPartId);
+  }
+
+  // Reserves the open part's counters without holding up its start, and sets
+  // them on its span once reserved.
+  private _reserveSessionPartCounts(): void {
+    // Kept for when the increment completes, by which time a later part can
+    // be open.
+    const sessionPartId = this._activeSessionPartId;
+    const state = this._userSessionStore.read();
+
+    if (!sessionPartId || !state) {
+      return;
+    }
+
+    void this._sessionPartCounters
+      .increment({
+        userSessionId: state.userSessionId,
+        storedUserSessionPartIndex: state.userSessionPartIndex,
+      })
+      .then((counts) => {
+        this._applySessionPartCounts(sessionPartId, counts);
+      })
+      .catch((error: unknown) => {
+        this._diag.warn('Error reserving session part counters', error);
+      });
+  }
+
+  private _applySessionPartCounts(
+    sessionPartId: string,
+    counts: SessionPartCounts,
+  ): void {
+    // The part ended first and goes out without them.
+    if (this._activeSessionPartId !== sessionPartId || !this._sessionPartSpan) {
+      return;
+    }
+
+    this._sessionPartCounts = counts;
+    this._sessionPartSpan.setAttributes({
+      [KEY_EMB_SESSION_PART_NUMBER]: counts.sessionPartNumber,
+      [KEY_EMB_USER_SESSION_PART_INDEX]: counts.userSessionPartIndex,
+    });
+
+    const state = this._readCurrentUserSession();
+
+    // Increments in `localStorage`, here and in SDK versions that only count
+    // there, start from the row's index. Another tab can have recorded a
+    // higher one already.
+    if (state && state.userSessionPartIndex < counts.userSessionPartIndex) {
+      this._userSessionStore.write({
+        ...state,
+        userSessionPartIndex: counts.userSessionPartIndex,
+      });
+    }
   }
 
   /**

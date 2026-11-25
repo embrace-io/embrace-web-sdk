@@ -3,6 +3,7 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import type React from 'react';
 import {
+  InMemorySessionPartCounters,
   setupTestLogExporter,
   setupTestStorage,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -46,6 +47,7 @@ describe('EmbraceErrorBoundary', () => {
     const perf = new OTelPerformanceManager();
     logManager = new EmbraceLogManager({
       userSessionManager: new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
         limitManager,
         perf,

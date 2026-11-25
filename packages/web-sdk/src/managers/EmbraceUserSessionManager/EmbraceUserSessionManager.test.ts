@@ -6,6 +6,7 @@ import {
   createTestDynamicConfigManager,
   FailingStorage,
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   InMemoryStorage,
   MockPerformanceManager,
 } from '../../../tests/utils/index.ts';
@@ -39,13 +40,24 @@ describe('EmbraceUserSessionManager', () => {
   let storage: NamespacedStorage;
   let diag: InMemoryDiagLogger;
   let clock: sinon.SinonFakeTimers;
+  // Shared by every manager a test creates, so a test can wait for each part's
+  // counters.
+  let counters: InMemorySessionPartCounters;
 
   beforeEach(() => {
     inMemoryStorage = new InMemoryStorage();
     diag = new InMemoryDiagLogger();
     storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
+    counters = new InMemorySessionPartCounters(storage);
     clock = sinon.useFakeTimers({ now: 0 });
   });
+
+  // The index handed out to the latest part.
+  const latestPartIndex = async () => {
+    const handedOut = await counters.settled();
+
+    return handedOut[handedOut.length - 1]?.userSessionPartIndex;
+  };
 
   afterEach(() => {
     clock.restore();
@@ -60,6 +72,7 @@ describe('EmbraceUserSessionManager', () => {
     perf = new MockPerformanceManager(clock),
   ) =>
     new EmbraceUserSessionManager({
+      sessionPartCounters: counters,
       diag,
       perf,
       storage,
@@ -77,6 +90,7 @@ describe('EmbraceUserSessionManager', () => {
     userSessionForegroundInactivityTimeoutSeconds?: number;
   }) =>
     new EmbraceUserSessionManager({
+      sessionPartCounters: counters,
       diag,
       perf: new MockPerformanceManager(clock),
       storage: new NamespacedStorage({ storage: new FailingStorage(), diag }),
@@ -93,6 +107,7 @@ describe('EmbraceUserSessionManager', () => {
   ) => {
     const refreshRemoteConfig = sinon.stub();
     const manager = new EmbraceUserSessionManager({
+      sessionPartCounters: counters,
       diag,
       perf: new MockPerformanceManager(clock),
       storage,
@@ -107,15 +122,16 @@ describe('EmbraceUserSessionManager', () => {
     return { manager, config, refreshRemoteConfig };
   };
 
-  it('should create a session on first part start', () => {
+  it('should create a session on first part start', async () => {
     const manager = createManager();
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs = manager.getUserSessionAttributes();
 
     void expect(attrs).to.not.be.null;
     expect(attrs?.['emb.user_session_id']).to.have.lengthOf(32);
     expect(attrs?.['emb.user_session_number']).to.equal(1);
-    expect(attrs?.['emb.user_session_part_index']).to.equal(1);
+    expect(await latestPartIndex()).to.equal(1);
     expect(attrs?.['emb.user_session_start_ts']).to.be.a('number');
     expect(attrs?.['emb.user_session_max_duration_seconds']).to.equal(43200);
     expect(attrs?.['emb.user_session_inactivity_timeout_seconds']).to.equal(
@@ -135,10 +151,11 @@ describe('EmbraceUserSessionManager', () => {
     ).to.equal(90);
   });
 
-  it('should continue session across parts within timeout', () => {
+  it('should continue session across parts within timeout', async () => {
     const manager = createManager();
 
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs1 = manager.getUserSessionAttributes();
     // background ends the part but keeps the user session alive (foreground
     // inactivity ends both the part and the user session in one step).
@@ -148,19 +165,21 @@ describe('EmbraceUserSessionManager', () => {
     clock.tick(29 * 60 * 1000);
 
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs2 = manager.getUserSessionAttributes();
 
     expect(attrs2?.['emb.user_session_id']).to.equal(
       attrs1?.['emb.user_session_id'],
     );
     expect(attrs2?.['emb.user_session_number']).to.equal(1);
-    expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
+    expect(await latestPartIndex()).to.equal(2);
   });
 
-  it('should start a session when inactivity timeout expires', () => {
+  it('should start a session when inactivity timeout expires', async () => {
     const manager = createManager();
 
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs1 = manager.getUserSessionAttributes();
     manager.endSessionPartInternal({ reason: 'background' });
 
@@ -168,13 +187,14 @@ describe('EmbraceUserSessionManager', () => {
     clock.tick(31 * 60 * 1000);
 
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs2 = manager.getUserSessionAttributes();
 
     expect(attrs2?.['emb.user_session_id']).to.not.equal(
       attrs1?.['emb.user_session_id'],
     );
     expect(attrs2?.['emb.user_session_number']).to.equal(2);
-    expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+    expect(await latestPartIndex()).to.equal(1);
   });
 
   it('should start a session when max duration expires', () => {
@@ -345,9 +365,10 @@ describe('EmbraceUserSessionManager', () => {
     expect(diag.getDebugLogs()).to.have.lengthOf(1);
   });
 
-  it('should share state across manager instances via storage', () => {
+  it('should share state across manager instances via storage', async () => {
     const manager1 = createManager();
     manager1.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs1 = manager1.getUserSessionAttributes();
     // background keeps the user session alive; another tab joining
     // should adopt it. (foreground inactivity ends both part and user session.)
@@ -356,12 +377,13 @@ describe('EmbraceUserSessionManager', () => {
     // Simulate another tab creating a manager with the same storage
     const manager2 = createManager();
     manager2.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs2 = manager2.getUserSessionAttributes();
 
     expect(attrs2?.['emb.user_session_id']).to.equal(
       attrs1?.['emb.user_session_id'],
     );
-    expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
+    expect(await latestPartIndex()).to.equal(2);
   });
 
   describe('rolloverSessionPartInternal', () => {
@@ -408,23 +430,23 @@ describe('EmbraceUserSessionManager', () => {
       expect(manager.getUserSessionId()).to.not.equal(userSessionIdBefore);
     });
 
-    it('keeps the same user session across the rollover', () => {
+    it('keeps the same user session across the rollover', async () => {
       const manager = createManager();
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrsBefore = manager.getUserSessionAttributes();
 
       manager.rolloverSessionPartInternal({
         endReason: 'web_soft_navigation',
         startReason: 'web_soft_navigation',
       });
+      await counters.settled();
 
       const attrsAfter = manager.getUserSessionAttributes();
       expect(attrsAfter?.['emb.user_session_id']).to.equal(
         attrsBefore?.['emb.user_session_id'],
       );
-      expect(attrsAfter?.['emb.user_session_part_index']).to.equal(
-        (attrsBefore?.['emb.user_session_part_index'] ?? 0) + 1,
-      );
+      expect(await latestPartIndex()).to.equal(2);
     });
 
     it('is a no-op when no part is active', () => {
@@ -551,10 +573,11 @@ describe('EmbraceUserSessionManager', () => {
       expect(diag.getErrorLogs()[0]).to.contain('writes disabled');
     });
 
-    it('continues the same user session across parts', () => {
+    it('continues the same user session across parts', async () => {
       const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
@@ -562,6 +585,7 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(29 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager.getUserSessionAttributes();
 
       // Storage keeps the writes it couldn't persist in memory for the page, so
@@ -569,13 +593,14 @@ describe('EmbraceUserSessionManager', () => {
       expect(attrs2?.['emb.user_session_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(2);
+      expect(await latestPartIndex()).to.equal(2);
     });
 
-    it('keeps one user session across repeated parts', () => {
+    it('keeps one user session across repeated parts', async () => {
       const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const userSessionId =
         manager.getUserSessionAttributes()?.['emb.user_session_id'];
 
@@ -590,19 +615,19 @@ describe('EmbraceUserSessionManager', () => {
         manager.endSessionPartInternal({ reason: 'background' });
         clock.tick(5 * 60 * 1000);
         manager.startSessionPartInternal({ reason: 'init' });
+        await counters.settled();
 
         const attrs = manager.getUserSessionAttributes();
         expect(attrs?.['emb.user_session_id']).to.equal(userSessionId);
-        expect(attrs?.['emb.user_session_part_index']).to.equal(
-          expectedPartIndex,
-        );
+        expect(await latestPartIndex()).to.equal(expectedPartIndex);
       }
     });
 
-    it('mints a fresh user session when the next part starts after the inactivity timeout', () => {
+    it('mints a fresh user session when the next part starts after the inactivity timeout', async () => {
       const manager = createFailingStorageManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
@@ -612,6 +637,7 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(31 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager.getUserSessionAttributes();
 
       // Once its inactivity deadline passes, the next part rolls a fresh user
@@ -619,7 +645,7 @@ describe('EmbraceUserSessionManager', () => {
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(await latestPartIndex()).to.equal(1);
       // The fresh user session back-links to the one that just expired, even
       // though that link was never persisted.
       expect(attrs2?.['emb.user_session_previous_id']).to.equal(
@@ -627,12 +653,13 @@ describe('EmbraceUserSessionManager', () => {
       );
     });
 
-    it('mints a fresh user session when the max duration expires', () => {
+    it('mints a fresh user session when the max duration expires', async () => {
       const manager = createFailingStorageManager({
         userSessionMaxDurationSeconds: 3600,
       });
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
@@ -641,21 +668,23 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(3601 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager.getUserSessionAttributes();
 
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(await latestPartIndex()).to.equal(1);
     });
 
-    it('mints a fresh user session when the live foreground inactivity timer fires', () => {
+    it('mints a fresh user session when the live foreground inactivity timer fires', async () => {
       const manager = createFailingStorageManager({
         userSessionForegroundInactivityTimeoutSeconds: 60,
         userSessionInactivityTimeoutSeconds: 60,
       });
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager.getUserSessionAttributes();
 
       // Let the live timer fire while the part is still active. It ends the part
@@ -664,24 +693,26 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager.getUserSessionAttributes();
 
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(await latestPartIndex()).to.equal(1);
       expect(attrs2?.['emb.user_session_previous_id']).to.equal(
         attrs1?.['emb.user_session_id'],
       );
     });
 
-    it('does not resurrect a user session after storage is cleared', () => {
+    it('does not resurrect a user session after storage is cleared', async () => {
       // Storage works, then the row is wiped (sibling tab, eviction). The next
       // part start must create a fresh user session rather than reuse the one
       // that was wiped.
       const manager = createManager();
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager.getUserSessionAttributes();
       manager.endSessionPartInternal({ reason: 'background' });
 
@@ -689,12 +720,13 @@ describe('EmbraceUserSessionManager', () => {
       clock.tick(5 * 60 * 1000);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager.getUserSessionAttributes();
 
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(await latestPartIndex()).to.equal(1);
     });
   });
 
@@ -767,9 +799,10 @@ describe('EmbraceUserSessionManager', () => {
     expect(manager.getUserSessionId()).to.not.equal(firstSessionId);
   });
 
-  it('should persist session state to storage', () => {
+  it('should persist session state to storage', async () => {
     const manager = createManager();
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
 
     const raw = inMemoryStorage.getItem('embrace_user_session_state');
     expect(raw).to.not.be.null;
@@ -790,12 +823,14 @@ describe('EmbraceUserSessionManager', () => {
     void expect(manager.getUserSessionId()).to.be.null;
   });
 
-  it('should create a different user session after endUserSession', () => {
+  it('should create a different user session after endUserSession', async () => {
     const manager = createManager();
 
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     const attrs1 = manager.getUserSessionAttributes();
     manager.endUserSession();
+    await counters.settled();
 
     // After endUserSession the merged manager auto-starts a rollover part,
     // so getUserSessionAttributes already reflects the new session.
@@ -805,15 +840,16 @@ describe('EmbraceUserSessionManager', () => {
       attrs1?.['emb.user_session_id'],
     );
     expect(attrs2?.['emb.user_session_number']).to.equal(2);
-    expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+    expect(await latestPartIndex()).to.equal(1);
   });
 
-  it('should not resurrect cleared state on a part-end-driven persist', () => {
+  it('should not resurrect cleared state on a part-end-driven persist', async () => {
     // If a user wipes site data (or the browser evicts it) while a part
     // is active, an end-driven persist could re-write the in-memory
     // state and silently restore everything. Honor the clear instead.
     const manager = createManager();
     manager.startSessionPartInternal({ reason: 'init' });
+    await counters.settled();
     expect(inMemoryStorage.getItem('embrace_user_session_state')).to.not.be
       .null;
 
@@ -831,9 +867,8 @@ describe('EmbraceUserSessionManager', () => {
     // Next engagement starts a brand-new user session rather than
     // continuing the cleared one.
     manager.startSessionPartInternal({ reason: 'web_activity' });
-    expect(
-      manager.getUserSessionAttributes()?.['emb.user_session_part_index'],
-    ).to.equal(1);
+    await counters.settled();
+    expect(await latestPartIndex()).to.equal(1);
   });
 
   it('should clear storage after endUserSession-driven termination', () => {
@@ -1417,11 +1452,12 @@ describe('EmbraceUserSessionManager', () => {
   });
 
   describe('clock anomaly: jump forward past userSessionMaxEndTs', () => {
-    it('should detect a forward clock jump as an expired session on the next part start', () => {
+    it('should detect a forward clock jump as an expired session on the next part start', async () => {
       const manager1 = createManager({
         userSessionMaxDurationSeconds: 60 * 60,
       });
       manager1.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs1 = manager1.getUserSessionAttributes();
       manager1.endSessionPartInternal({ reason: 'background' });
       // Cancel manager1's max-duration timer so it doesn't auto-rollover during
@@ -1436,13 +1472,14 @@ describe('EmbraceUserSessionManager', () => {
         userSessionMaxDurationSeconds: 60 * 60,
       });
       manager2.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       const attrs2 = manager2.getUserSessionAttributes();
 
       expect(attrs2?.['emb.user_session_id']).to.not.equal(
         attrs1?.['emb.user_session_id'],
       );
       expect(attrs2?.['emb.user_session_number']).to.equal(2);
-      expect(attrs2?.['emb.user_session_part_index']).to.equal(1);
+      expect(await latestPartIndex()).to.equal(1);
     });
   });
 

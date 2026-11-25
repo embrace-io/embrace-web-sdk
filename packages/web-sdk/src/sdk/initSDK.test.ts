@@ -27,6 +27,7 @@ import sinonChai from 'sinon-chai';
 import type { MetricWithAttribution } from 'web-vitals/attribution';
 import {
   blockWindowStorage,
+  deleteIndexedDB,
   FakeInstrumentation,
   FakeLogRecordProcessor,
   FakeSpanProcessor,
@@ -198,7 +199,11 @@ describe('initSDK', () => {
   let logExporter: InMemoryLogRecordExporter;
   let fetchStub: SinonStub;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // The session part counters are kept in IndexedDB, which outlives each
+    // test like localStorage. Deleted first, so storage is cleared after any
+    // write a previous test's pending work makes meanwhile.
+    await deleteIndexedDB('abc12__embrace_session_part_counters');
     spanExporter = new InMemorySpanExporter();
     logExporter = new InMemoryLogRecordExporter();
     localStorage.clear();
@@ -830,6 +835,12 @@ describe('initSDK', () => {
 
       // Needed to allow the browser detector resources to be grabbed
       await new Promise((r) => setTimeout(r, 1));
+
+      // The part's counters are set once IndexedDB hands them out, which
+      // writes the part number back to localStorage.
+      while (!localStorage.getItem('abc12__embrace_session_part_number')) {
+        await new Promise((r) => setTimeout(r, 1));
+      }
 
       const sessionPartId = session.getUserSessionManager().getSessionPartId();
       // EmbracePageManager sets the initial route from the current location

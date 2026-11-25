@@ -14,6 +14,7 @@ import {
   createTestDynamicConfigManager,
   FailingStorage,
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   InMemoryStorage,
   MockPerformanceManager,
   setupTestLogExporter,
@@ -31,6 +32,11 @@ import {
 } from '../EmbraceLimitManager/index.ts';
 import { EmbraceExtendedSpan } from '../EmbraceTraceManager/EmbraceExtendedSpan.ts';
 import { EmbraceUserSessionManager } from './EmbraceUserSessionManager.ts';
+import type {
+  IncrementSessionPartCountsArgs,
+  SessionPartCounters,
+  SessionPartCounts,
+} from './utils/index.ts';
 
 chai.use(sinonChai);
 const { expect } = chai;
@@ -44,6 +50,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   let limitManager: EmbraceLimitManager;
   let perf: PerformanceManager;
   let clock: sinon.SinonFakeTimers;
+  let counters: InMemorySessionPartCounters;
 
   before(() => {
     memoryExporter = setupTestTraceExporter();
@@ -57,6 +64,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     inMemoryStorage.clear();
     diag = new InMemoryDiagLogger();
     storage = new NamespacedStorage({ storage: inMemoryStorage, diag });
+    counters = new InMemorySessionPartCounters(storage);
     clock = sinon.useFakeTimers({ now: 0 });
     perf = new MockPerformanceManager(clock);
     limitManager = new EmbraceLimitManager({
@@ -76,6 +84,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
 
     manager = new EmbraceUserSessionManager({
+      sessionPartCounters: counters,
       diag,
       storage,
       limitManager,
@@ -129,6 +138,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     clock.setSystemTime(timeOrigin);
     const sleepingPerf = new MockPerformanceManager(clock);
     const localManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       storage,
       limitManager,
@@ -319,6 +329,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       hasFocus: () => true,
     };
     const localManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       visibilityDoc,
       limitManager,
       perf,
@@ -360,6 +371,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         hasFocus: () => hasFocus,
       };
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         visibilityDoc,
         limitManager,
         perf,
@@ -378,6 +390,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should call the session start listener when starting a session', () => {
     const listener = sinon.stub();
     const localManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       limitManager,
       perf,
       storage,
@@ -401,6 +414,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   it('should call the session ended listener when ending a session', () => {
     let listenerSessionPartId: string | null = null;
     const localManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       limitManager,
       perf,
       storage,
@@ -672,6 +686,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     manager.endSessionPartInternal({ reason: 'background' });
 
     const secondManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       storage,
       limitManager,
@@ -690,6 +705,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   describe('another tab sharing storage', () => {
     const createOtherTab = () =>
       new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -804,6 +820,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     it('keeps the part with the latest activity final after another tab started the next user session first', () => {
       const createShortLivedTab = () =>
         new EmbraceUserSessionManager({
+          sessionPartCounters: new InMemorySessionPartCounters(),
           diag,
           storage,
           limitManager,
@@ -886,6 +903,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       const otherTabStorage = new InMemoryStorage();
       otherTabStorage.setItem('embrace_user_session_state', endedRow as string);
       const otherTab = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage: new NamespacedStorage({ storage: otherTabStorage, diag }),
         limitManager,
@@ -901,6 +919,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     it('ends up in the same next user session as another tab when both reach max duration', () => {
       const createShortLivedTab = () =>
         new EmbraceUserSessionManager({
+          sessionPartCounters: new InMemorySessionPartCounters(),
           diag,
           storage,
           limitManager,
@@ -972,6 +991,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     it('creates the same next user session as another tab that read the same live one before either ended it', () => {
       const createShortLivedTab = (tabStorage: NamespacedStorage) =>
         new EmbraceUserSessionManager({
+          sessionPartCounters: new InMemorySessionPartCounters(),
           diag,
           storage: tabStorage,
           limitManager,
@@ -1038,6 +1058,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         return getItem(key);
       };
       const thisTab = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage: new NamespacedStorage({ storage: thisTabBacking, diag }),
         limitManager,
@@ -1142,6 +1163,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it("rolls this tab's part over at max duration after another tab cleared the same user session", () => {
       const shortLivedManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -1421,6 +1443,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       } = {},
     ) =>
       new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage: new NamespacedStorage({
           storage: tabStorage,
@@ -1867,6 +1890,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     beforeEach(() => {
       restoreStorage = blockWindowStorage('localStorage');
       unreachableStorageManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage: NamespacedStorage.fromWindow('localStorage', { diag }),
         limitManager,
@@ -1931,6 +1955,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       },
     };
     const flipManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       limitManager,
       perf,
@@ -1961,6 +1986,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   it('should keep a user-session-scoped property for the page when storage writes fail', () => {
     const failingManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       limitManager,
       perf,
@@ -2119,6 +2145,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   it('should still emit a session part span when storage is failing', () => {
     const failingManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       limitManager,
       perf,
@@ -2144,6 +2171,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
   it('should keep a permanent property for the page when storage writes fail', () => {
     const failingManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       limitManager,
       perf,
@@ -2191,6 +2219,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       clear: () => backing.clear(),
     };
     const flakyManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       diag,
       limitManager,
       perf,
@@ -2232,7 +2261,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   describe('user session attribute integration', () => {
-    it('should attach user session attributes to the session part span', () => {
+    it('should attach user session attributes to the session part span', async () => {
       const exporter = new InMemorySpanExporter();
       const tracerProvider = new TracerProvider({
         spanProcessors: [new SimpleSpanProcessor({ exporter })],
@@ -2240,6 +2269,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       manager.setTracerProvider(tracerProvider);
 
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       manager.endSessionPartInternal({ reason: 'background' });
 
       const finishedSpans = exporter.getFinishedSpans();
@@ -2260,6 +2290,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should restart parts after endUserSession via the rollover flow', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2323,6 +2354,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       };
 
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage: new NamespacedStorage({ storage: spyBacking, diag }),
         limitManager,
@@ -2343,6 +2375,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should mark part as final when max duration timer fires during active part', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2391,6 +2424,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       };
 
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         perf,
         storage,
@@ -2450,6 +2484,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       // expired, after the previous part span has already been exported
       // without emb.is_final_session_part.
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         perf,
         storage,
@@ -2489,6 +2524,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
         spanProcessors: [new SimpleSpanProcessor({ exporter })],
       });
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2564,6 +2600,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should stamp "user_session_rollover" on the part span started by max-duration timer', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2639,10 +2676,12 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
   });
 
   describe('emb.session_part_number', () => {
-    it('emits a 1-indexed monotonic counter on the part span, persisted across visits', () => {
+    it('emits a 1-indexed monotonic counter on the part span, persisted across visits', async () => {
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       manager.endSessionPartInternal({ reason: 'background' });
       manager.startSessionPartInternal({ reason: 'init' });
+      await counters.settled();
       manager.endSessionPartInternal({ reason: 'background' });
 
       const finishedSpans = memoryExporter.getFinishedSpans();
@@ -2658,9 +2697,164 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
     });
   });
 
+  describe('shared session part counters', () => {
+    // Hands out each part's counters only when the test reserves them, as
+    // IndexedDB does some time after the part starts.
+    const createDeferredCounters = () => {
+      const increments: Array<{
+        args: IncrementSessionPartCountsArgs;
+        promise: Promise<SessionPartCounts>;
+        resolve: (counts: SessionPartCounts) => void;
+      }> = [];
+      const deferredCounters: SessionPartCounters = {
+        increment: (args) => {
+          let resolve: (counts: SessionPartCounts) => void = () => {};
+          const promise = new Promise<SessionPartCounts>((resolvePromise) => {
+            resolve = resolvePromise;
+          });
+
+          increments.push({ args, promise, resolve });
+
+          return promise;
+        },
+      };
+
+      // The manager's handler is registered first, so it has run once the
+      // increment's promise is awaited here.
+      const reserve = async (index: number, counts: SessionPartCounts) => {
+        increments[index].resolve(counts);
+        await increments[index].promise;
+      };
+
+      return { deferredCounters, increments, reserve };
+    };
+
+    const createManagerWith = (sessionPartCounters: SessionPartCounters) =>
+      new EmbraceUserSessionManager({
+        sessionPartCounters,
+        diag,
+        storage,
+        limitManager,
+        perf,
+        visibilityDoc: window.document,
+        dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
+      });
+
+    const readStoredUserSession = () =>
+      JSON.parse(
+        inMemoryStorage.getItem('embrace_user_session_state') as string,
+      ) as { userSessionId: string; userSessionPartIndex: number };
+
+    it("sets the counters on the part span once they're reserved, and records the index on the user-session row", async () => {
+      const { deferredCounters, increments, reserve } =
+        createDeferredCounters();
+      const localManager = createManagerWith(deferredCounters);
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+
+      expect(increments).to.have.lengthOf(1);
+      expect(increments[0].args).to.deep.equal({
+        userSessionId: localManager.getUserSessionId(),
+        storedUserSessionPartIndex: 0,
+      });
+
+      void expect(localManager.getSessionPartCounts()).to.be.null;
+
+      await reserve(0, { sessionPartNumber: 7, userSessionPartIndex: 3 });
+
+      expect(readStoredUserSession().userSessionPartIndex).to.equal(3);
+      expect(localManager.getSessionPartCounts()).to.deep.equal({
+        sessionPartNumber: 7,
+        userSessionPartIndex: 3,
+      });
+
+      localManager.endSessionPartInternal({ reason: 'background' });
+
+      void expect(localManager.getSessionPartCounts()).to.be.null;
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.include({
+        'emb.session_part_number': 7,
+        'emb.user_session_part_index': 3,
+      });
+      expect(readStoredUserSession().userSessionPartIndex).to.equal(3);
+    });
+
+    it("leaves the counters off a part that ends before they're reserved", async () => {
+      const { deferredCounters, reserve } = createDeferredCounters();
+      const localManager = createManagerWith(deferredCounters);
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'background' });
+      await reserve(0, { sessionPartNumber: 1, userSessionPartIndex: 1 });
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.not.have.property('emb.session_part_number');
+      expect(span.attributes).to.not.have.property(
+        'emb.user_session_part_index',
+      );
+      // Nothing carries it, so the row doesn't count it.
+      expect(readStoredUserSession().userSessionPartIndex).to.equal(0);
+    });
+
+    it('keeps a late reservation off the next part', async () => {
+      const { deferredCounters, reserve } = createDeferredCounters();
+      const localManager = createManagerWith(deferredCounters);
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+      localManager.endSessionPartInternal({ reason: 'background' });
+      localManager.startSessionPartInternal({ reason: 'init' });
+      await reserve(1, { sessionPartNumber: 2, userSessionPartIndex: 2 });
+      await reserve(0, { sessionPartNumber: 1, userSessionPartIndex: 1 });
+      localManager.endSessionPartInternal({ reason: 'background' });
+
+      const [, second] = memoryExporter.getFinishedSpans();
+      expect(second.attributes).to.include({
+        'emb.session_part_number': 2,
+        'emb.user_session_part_index': 2,
+      });
+      expect(readStoredUserSession().userSessionPartIndex).to.equal(2);
+    });
+
+    it("doesn't lower the index another tab recorded on the row", async () => {
+      const { deferredCounters, reserve } = createDeferredCounters();
+      const thisTab = createManagerWith(deferredCounters);
+      const otherTab = createManagerWith(deferredCounters);
+
+      thisTab.startSessionPartInternal({ reason: 'init' });
+      otherTab.startSessionPartInternal({ reason: 'init' });
+      await reserve(1, { sessionPartNumber: 2, userSessionPartIndex: 2 });
+      await reserve(0, { sessionPartNumber: 1, userSessionPartIndex: 1 });
+      thisTab.endSessionPartInternal({ reason: 'background' });
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.include({
+        'emb.session_part_number': 1,
+        'emb.user_session_part_index': 1,
+      });
+      expect(readStoredUserSession().userSessionPartIndex).to.equal(2);
+    });
+
+    it('warns and leaves the counters off when they cannot be reserved', async () => {
+      const failure = Promise.reject(new Error('counters unavailable'));
+      const localManager = createManagerWith({ increment: () => failure });
+
+      localManager.startSessionPartInternal({ reason: 'init' });
+      await clock.tickAsync(0);
+      localManager.endSessionPartInternal({ reason: 'background' });
+
+      const [span] = memoryExporter.getFinishedSpans();
+      expect(span.attributes).to.not.have.property('emb.session_part_number');
+      expect(diag.getWarnLogs()).to.include(
+        'Error reserving session part counters',
+      );
+    });
+  });
+
   describe('continuation inactivity handling', () => {
     it('should clear the persisted inactivity deadline when a part continues an active user session', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         perf,
         storage,
@@ -2697,6 +2891,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('computes the persisted inactivity deadline from now even when the part end is anchored', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         perf,
         storage,
@@ -2825,6 +3020,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
       manager.endSessionPartInternal({ reason: 'background' });
 
       const secondManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2920,6 +3116,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should set emb.page_load = true when readyState is complete at part end', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2936,6 +3133,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should set emb.page_load = false when readyState is not complete at part end', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,
@@ -2952,6 +3150,7 @@ describe('EmbraceUserSessionManager session part lifecycle', () => {
 
     it('should not set emb.page_load on non-cold-start parts', () => {
       const localManager = new EmbraceUserSessionManager({
+        sessionPartCounters: new InMemorySessionPartCounters(),
         diag,
         storage,
         limitManager,

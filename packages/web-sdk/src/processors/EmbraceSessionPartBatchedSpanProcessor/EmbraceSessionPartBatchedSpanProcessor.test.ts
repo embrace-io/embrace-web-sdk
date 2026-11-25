@@ -7,6 +7,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
   InMemoryDiagLogger,
+  InMemorySessionPartCounters,
   setupTestStorage,
   setupTestTraceExporter,
   TEST_DYNAMIC_CONFIG_MANAGER,
@@ -70,6 +71,7 @@ describe('EmbraceSessionPartBatchedSpanProcessor', () => {
     });
 
     userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf: new OTelPerformanceManager(),

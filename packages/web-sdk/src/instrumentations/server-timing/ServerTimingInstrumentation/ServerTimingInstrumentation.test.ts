@@ -3,6 +3,7 @@ import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
+  InMemorySessionPartCounters,
   MockPerformanceManager,
   setupTestLogExporter,
   setupTestStorage,
@@ -54,6 +55,7 @@ describe('ServerTimingInstrumentation', () => {
     limitManager = new EmbraceLimitManager(DEFAULT_LIMITS);
     const storage = setupTestStorage();
     const userSessionManager = new EmbraceUserSessionManager({
+      sessionPartCounters: new InMemorySessionPartCounters(),
       dynamicConfigManager: TEST_DYNAMIC_CONFIG_MANAGER,
       limitManager,
       perf,
