@@ -513,6 +513,35 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  it('should not throw when emitting a log record throws', () => {
+    // As on a browser without Object.hasOwn, which OpenTelemetry JS 3 calls for every attribute.
+    const throwingLoggerProvider = {
+      getLogger: () => ({
+        emit: () => {
+          throw new TypeError('Object.hasOwn is not a function');
+        },
+      }),
+    };
+    const diagLogger = new InMemoryDiagLogger();
+    const manager = new EmbraceLogManager({
+      diag: diagLogger,
+      userSessionManager,
+      limitManager,
+      loggerProvider: throwingLoggerProvider as unknown as LoggerProvider,
+      storage,
+      visibilityDoc: window.document,
+    });
+
+    expect(() => {
+      manager.logException(new Error('this is an exception'));
+      manager.message('this is a message', 'error');
+    }).to.not.throw();
+    expect(diagLogger.getErrorLogs()).to.deep.equal([
+      'failed to log an exception',
+      'failed to log a message',
+    ]);
+  });
+
   it('should log an exception from a custom Error class', () => {
     expect(() => {
       manager.logException(new MyError('this is an exception'));

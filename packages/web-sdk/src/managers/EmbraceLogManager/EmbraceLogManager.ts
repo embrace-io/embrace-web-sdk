@@ -99,7 +99,15 @@ export class EmbraceLogManager implements LogManager {
     }
   }
 
-  public logException(
+  public logException(error: unknown, options?: LogExceptionOptions) {
+    try {
+      this._logException(error, options);
+    } catch (e) {
+      this._diag.error('failed to log an exception', e);
+    }
+  }
+
+  private _logException(
     error: unknown,
     {
       handled = true,
@@ -172,6 +180,18 @@ export class EmbraceLogManager implements LogManager {
   }
 
   public message(
+    message: string,
+    severity: LogSeverity,
+    options?: LogMessageOptions,
+  ) {
+    try {
+      this._message(message, severity, options);
+    } catch (e) {
+      this._diag.error('failed to log a message', e);
+    }
+  }
+
+  private _message(
     message: string,
     severity: LogSeverity,
     {
