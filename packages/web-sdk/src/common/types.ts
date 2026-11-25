@@ -1,11 +1,10 @@
 // Useful for testing so that we can pass in a document-like object and change its visibilityState
 export interface VisibilityStateDocument {
   visibilityState: DocumentVisibilityState;
-  hasFocus: () => boolean;
-  // Optional so test fakes that only need visibilityState/hasFocus stay
-  // valid. The real `window.document` always provides these; consumers
-  // that depend on document-level events (e.g., the session manager
-  // listening for `visibilitychange`) guard with optional chaining.
+  // Optional so test fakes that only need visibilityState stay valid. The
+  // real `window.document` always provides these; consumers that depend on
+  // document-level events (e.g., the session manager listening for
+  // `visibilitychange`) guard with optional chaining.
   readyState?: DocumentReadyState;
   addEventListener?: (
     type: string,

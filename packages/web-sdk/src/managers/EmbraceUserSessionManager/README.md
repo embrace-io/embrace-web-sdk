@@ -18,9 +18,8 @@ The manager tracks two distinct things:
   JSON blob in `localStorage` under `embrace_user_session_state`. It spans tabs
   and outlives any single page load.
 - **Session part.** A contiguous foreground engagement window on one tab,
-  represented as a span with `emb.type = ux.session_part`. Exactly one session
-  part is active across all tabs at any time, because a part can only start when
-  the tab is both visible and focused.
+  represented as a span with `emb.type = ux.session_part`. Each visible tab
+  holds its own session part, so several can be open at once across tabs.
 
 A user session contains one or more session parts, indexed within the user
 session by `emb.user_session_part_index`. Each session part also has
@@ -85,10 +84,8 @@ entirely. Zeros would read as "loaded at navigation start".
 ### Start
 
 A session part starts only when the tab is engaged at call time, meaning
-both of the following are true:
-
-- `document.visibilityState === 'visible'`
-- `document.hasFocus()` returns `true`
+`document.visibilityState === 'visible'`. Focus isn't required, so tabs side by
+side or behind a focused window each hold a part.
 
 A start request while a part is already active is a warn-level no-op. A request
 while the tab is not engaged is a debug-level no-op. Parts are foreground-only
@@ -112,7 +109,7 @@ by design.
 
 | Value                       | Trigger                                                                                                                                                                                                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `background`                | `visibilitychange` to hidden or `blur`. Also covers hard-nav unload and BFCache freeze, since blur or an earlier `visibilitychange` to hidden ends the part before `pagehide` fires.                                                                                                         |
+| `background`                | `visibilitychange` to hidden. Also covers hard-nav unload and BFCache freeze, since `visibilitychange` to hidden fires with `pagehide`, or earlier, and ends the part.                                                                                                                       |
 | `web_foreground_inactivity` | The foreground inactivity timer (`userSessionForegroundInactivityTimeoutSeconds`, default 30 minutes) fires because this tab received no user input for that long. Also ends the user session when no tab had activity within `userSessionInactivityTimeoutSeconds`, in this tab or another. |
 | `web_soft_navigation`       | A soft navigation rolled the active part over. Not a final reason: the enclosing user session continues and a new part starts immediately.                                                                                                                                                   |
 | `user_session_ended`        | The active part is ended because its user session ended: a rollover triggered by manual `endUserSession()` or max-duration expiry, in this tab or another, or another tab replacing or clearing the user session.                                                                            |
@@ -204,7 +201,7 @@ the final candidate: the open session part with the latest activity of its own
 (`sessionPartId`, `sessionPartActivityTs`). It's written:
 
 - at part start
-- on throttled user input, and on a redundant focus or visibility event, while
+- on throttled user input, and on a focus or redundant visibility event, while
   a part is open
 - at a part end that doesn't end the user session
 
@@ -263,7 +260,7 @@ expired.
 | ------------------------- | ------------------------------------------------------------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Max duration              | `DEFAULT_USER_SESSION_MAX_DURATION_SECONDS`                  | 12 hours   | `MIN_USER_SESSION_MAX_DURATION_SECONDS` (1h) to `MAX_USER_SESSION_MAX_DURATION_SECONDS` (24h)                                    | Ends the user session and rolls into the next (`max_duration_reached`).                                                                                                                                                                                                  |
 | User-session inactivity   | `DEFAULT_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS`            | 30 minutes | `MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS` (24h)                       | Not a live timer. Stored as `userSessionInactivityTimeoutSeconds`; at part end the manager records `now + userSessionInactivityTimeoutSeconds * 1000` as the inactivity deadline (from the actual call time, not the anchored span end), checked on the next part start. |
-| Foreground inactivity     | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`) and the enclosing user session (`inactivity`).                                                               |
+| Foreground inactivity     | `DEFAULT_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` | 30 minutes | `MIN_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (30s) to `MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS` (24h) | Live `setTimeout` armed from `userSessionForegroundInactivityTimeoutSeconds` while a part is active; on fire it ends the part (`web_foreground_inactivity`), and the user session (`inactivity`) when no tab had activity within its timeout.                            |
 | Activity throttle         | `DEFAULT_ACTIVITY_THROTTLE_MS`                               | 30 seconds | n/a                                                                                                                              | At most one foreground inactivity timer reset per throttle interval; input inside the interval is ignored. Overridable with `activityThrottleMs`.                                                                                                                        |
 | `endUserSession` cooldown | `END_USER_SESSION_COOLDOWN_MS`                               | 5 seconds  | n/a                                                                                                                              | Calls within 5 seconds of the last call are silently ignored.                                                                                                                                                                                                            |
 
@@ -375,14 +372,18 @@ asynchronously, so a part start doesn't wait on it:
 
 ## Cross-tab behavior
 
-### Engagement mutex
+### Concurrent parts
 
-A session part can only start when the tab is visible and focused. Only the
-focused tab can hold a part. A tab that loses focus ends its part with reason
-`background`. With one active part at a time, there's no write contention
-during active parts. Another tab can still end or replace the user session
-while this tab's part is open, for example a hidden tab calling
-`endUserSession()`: see [Reacting to other tabs](#reacting-to-other-tabs).
+A session part can start in any visible tab, focused or not, so tabs side by
+side or behind a focused window each hold their own part. Losing focus doesn't
+end a part; hiding the tab does. The open parts share one user session:
+
+- When it ends or is replaced in one tab, every other tab ends or rolls over its
+  part (see [Reacting to other tabs](#reacting-to-other-tabs)).
+- The open part with the latest activity of its own is the final one (see
+  [Last activity](#last-activity)).
+- Their counters stay distinct (see
+  [Session part counters](#session-part-counters)).
 
 ### Property visibility
 
@@ -470,22 +471,20 @@ Several specific edge cases are handled:
 
 There is no BFCache-specific code in the manager and no `pagehide`/`pageshow`
 listener. Behavior is absorbed by the engagement-transition events the manager
-already listens to (`blur`, `focus`, `visibilitychange`), per the HTML
+already listens to (`focus`, `visibilitychange`), per the HTML
 [unload a document][unload-spec] algorithm and the event ordering observed in
 the browsers below:
 
-- **Active-tab unload** (hard nav OR BFCache freeze). On a focus-shifting nav
-  (address-bar typing, omnibox suggestion), `blur` fires first while
-  `visibilityState` is still `'visible'` and ends the part as `background`.
-  On a programmatic `location.href` nav, no `blur` fires; instead `pagehide`
-  and `visibilitychange` to hidden fire in the same task at navigation commit,
-  and the `visibilitychange` listener ends the part as `background`. In
-  both cases the part is ended before any `pagehide` handler could run.
+- **Active-tab unload** (hard nav OR BFCache freeze). At navigation commit,
+  `pagehide` and `visibilitychange` to hidden fire in the same task, and the
+  `visibilitychange` listener ends the part as `background`. A navigation that
+  moves focus first (address-bar typing, omnibox suggestion) fires `blur` while
+  the tab is still visible, which doesn't end the part.
 - **Backgrounded-tab unload**. `visibilitychange` to hidden already fired
   earlier (when the user switched away), ending the part as `background`
   at that moment. The later `pagehide` is on an already-ended part.
 - **BFCache restore**. Per the spec, `focus` and `visibilitychange` to
-  `'visible'` fire before `pageshow`. The combined visible+focused transition
+  `'visible'` fire before `pageshow`. The `visibilitychange` to `'visible'`
   starts a new part as `foreground`; `pageshow` would be redundant. This
   path is spec-derived rather than empirically verified here because Playwright
   suppresses BFCache (`pageshow.persisted` is always `false` on `goBack()`).
@@ -589,21 +588,19 @@ Why it happens:
 1. Wiring the tracer provider materializes the user-session state, so
    `getUserSessionId()` returns a real id immediately.
 2. The init flow then requests an `'init'` part, but that request no-ops when
-   the tab is not engaged (`!document.hasFocus()` or
-   `visibilityState === 'hidden'`), because parts are foreground-only by design.
-3. Until the next engagement event fires (`focus`/`visibilitychange`), no part
-   is active. Logs that pass through `UserSessionLogRecordProcessor` in that
-   window end up with `emb.session_part_id: ''`. Spans are not affected; only
-   the session-part span itself has IDs, and other spans are correlated
-   server-side via the batched envelope.
+   the tab is hidden (`visibilityState === 'hidden'`, for example a page opened
+   in a background tab), because parts are foreground-only by design.
+3. Until the tab becomes visible, no part is active. Logs that pass through
+   `UserSessionLogRecordProcessor` in that window end up with
+   `emb.session_part_id: ''`. Spans are not affected; only the session-part span
+   itself has IDs, and other spans are correlated server-side via the batched
+   envelope.
 
-How to reproduce: open the demo in a non-focused tab (or under headless
-Playwright). The vite dev server stamps `Server-Timing` headers on every
-served file; `ServerTimingInstrumentation` turns each into an
-`emb-server-timing` log. The log batch flushed when the first user
-interaction finally promotes the tab to engaged has `emb.user_session_id`
-but `emb.session_part_id=''`, while subsequent batches in the same
-collector flush have a real part id.
+How to reproduce: open the demo in a background tab. The vite dev server stamps
+`Server-Timing` headers on every served file; `ServerTimingInstrumentation`
+turns each into an `emb-server-timing` log. The log batch flushed when the tab
+first becomes visible has `emb.user_session_id` but `emb.session_part_id=''`,
+while subsequent batches in the same collector flush have a real part id.
 
 The wire contract still holds (key is always present; `''` means "no part
 active"), so this is not a serialization bug. Open question whether to

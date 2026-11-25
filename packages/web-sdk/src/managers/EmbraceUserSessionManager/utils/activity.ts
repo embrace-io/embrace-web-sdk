@@ -7,7 +7,6 @@ export interface ActivityListenersArgs {
   onActivity: (event: Event) => void;
   onVisibilityChange: (event: Event) => void;
   onFocus: (event: Event) => void;
-  onBlur: (event: Event) => void;
 }
 
 export const addActivityListeners = ({
@@ -17,16 +16,15 @@ export const addActivityListeners = ({
   onActivity,
   onVisibilityChange,
   onFocus,
-  onBlur,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.addEventListener(event, onActivity);
   }
   // Tab visibility flips (switch tabs, minimize, OS app switch).
   visibilityDoc.addEventListener?.('visibilitychange', onVisibilityChange);
-  // Window focus changes (alt-tab, click into DevTools, multi-monitor).
+  // Window focus arriving (alt-tab back, click into the document) shows the
+  // user is present. Losing it doesn't end the part: the tab is still visible.
   target.addEventListener('focus', onFocus);
-  target.addEventListener('blur', onBlur);
 };
 
 export const removeActivityListeners = ({
@@ -36,12 +34,10 @@ export const removeActivityListeners = ({
   onActivity,
   onVisibilityChange,
   onFocus,
-  onBlur,
 }: ActivityListenersArgs): void => {
   for (const event of activityEvents) {
     target.removeEventListener(event, onActivity);
   }
   visibilityDoc.removeEventListener?.('visibilitychange', onVisibilityChange);
   target.removeEventListener('focus', onFocus);
-  target.removeEventListener('blur', onBlur);
 };

@@ -991,7 +991,6 @@ describe('EmbraceLogManager', () => {
   it('should record the state attribute when a log occurs in the background', () => {
     const visibilityDoc: VisibilityStateDocument = {
       visibilityState: 'hidden',
-      hasFocus: () => false,
     };
     const backgroundManager = new EmbraceLogManager({
       userSessionManager,

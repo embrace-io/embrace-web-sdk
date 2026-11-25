@@ -48,7 +48,6 @@ import {
   clampNumber,
   generateUUID,
   getIncrementedCount,
-  getVisibilityState,
   isTabEngaged,
   throttle,
 } from '../../utils/index.ts';
@@ -98,8 +97,9 @@ import {
 } from './utils/index.ts';
 
 /**
- * Parts are engagement-gated (visible AND focused), so only one part can be
- * active at a time. User-session state lives in storage, shared by every tab:
+ * Parts are engagement-gated: each visible tab holds its own, so several can
+ * be open at once across tabs. User-session state lives in storage, shared by
+ * every tab:
  * reads go to storage, and each write starts from a fresh read and changes
  * only its own fields.
  */
@@ -267,7 +267,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
-      onBlur: this._onBlur,
     });
     this._removeUserSessionChangeListener =
       this._userSessionStore.addUserSessionChangeListener(
@@ -398,12 +397,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       return;
     }
 
-    // Parts are foreground-only: a part corresponds to a tab that is both
-    // visible AND focused.
-    if (
-      getVisibilityState(this._visibilityDoc) === EMB_STATES.Background ||
-      !this._visibilityDoc.hasFocus()
-    ) {
+    // Parts are foreground-only: a part corresponds to a visible tab, focused
+    // or not.
+    if (!isTabEngaged(this._visibilityDoc)) {
       this._diag.debug(
         `skipping session part start (reason: ${reason}) because the tab is not engaged`,
       );
@@ -1075,7 +1071,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       onActivity: this._onActivityThrottled,
       onVisibilityChange: this._onVisibilityChange,
       onFocus: this._onFocus,
-      onBlur: this._onBlur,
     });
     this._removeUserSessionChangeListener?.();
     this._removeUserSessionChangeListener = null;
@@ -1151,26 +1146,23 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   };
 
   // Tab visibility flipped (switch tabs, minimize, OS app switch). Drives
-  // the engagement transition off the current visibilityState/hasFocus pair.
+  // the engagement transition off the current visibilityState. pagehide and
+  // pageshow are not listened to: on unload, visibilitychange to hidden fires
+  // in the same task as pagehide and ends the part (see README "Unload and
+  // BFCache handling" for the verified cross-engine ordering). The part end
+  // doubles as the unload flush via
+  // EmbraceSessionPartBatchedSpanProcessor.onEnd's synchronous keepalive
+  // export.
+  // https://developer.chrome.com/docs/web-platform/page-lifecycle-api
   private readonly _onVisibilityChange = (): void => {
     this._handleEngagementTransition('visibilitychange');
   };
 
-  // Window focus arrived (alt-tab back, clicked into the document). hasFocus
-  // is now true; engagement transition resolves whether to start a part.
+  // Window focus arrived (alt-tab back, clicked into the document). The user
+  // is present, so a visible tab starts a part or records activity on its
+  // open one.
   private readonly _onFocus = (): void => {
     this._handleEngagementTransition('focus');
-  };
-
-  // Window focus lost (alt-tab, DevTools, another window). Engagement
-  // transition ends the active part as background. pagehide/pageshow
-  // are not listened to: blur or visibilitychange-to-hidden end the part
-  // first (see README "Unload and BFCache handling" for the verified
-  // cross-engine ordering). The part-end doubles as the unload flush via
-  // EmbraceSessionPartBatchedSpanProcessor.onEnd's synchronous keepalive export.
-  // https://developer.chrome.com/docs/web-platform/page-lifecycle-api
-  private readonly _onBlur = (): void => {
-    this._handleEngagementTransition('blur');
   };
 
   private _handleEngagementTransition(source: string): void {
@@ -1189,10 +1181,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
         return;
       }
       if (engaged && active) {
-        // Redundant engagement event while a part is already active (browser
-        // quirk: an extra focus/visibility fire that isn't a real transition).
-        // It still implies presence, so it counts as activity, which also makes
-        // a tab the user switches back to the one with the latest activity.
+        // A focus event, or a redundant visibility fire, while a part is open.
+        // It implies presence, so it counts as activity, which also makes a
+        // tab the user switches back to the one with the latest activity.
         this._userSessionStore.recordActivity(
           this._perf.getNow(),
           sessionPartId,

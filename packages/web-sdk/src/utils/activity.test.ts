@@ -5,27 +5,16 @@ import { isTabEngaged } from './index.ts';
 const { expect } = chai;
 
 describe('activity', () => {
-  it('returns true when the document is has focus', () => {
+  it('returns true when the document is visible', () => {
     const visibilityDoc: VisibilityStateDocument = {
-      hasFocus: () => true,
       visibilityState: 'visible',
     };
 
     expect(isTabEngaged(visibilityDoc)).to.be.true;
   });
 
-  it('returns false when the document does not have focus', () => {
-    const visibilityDoc: VisibilityStateDocument = {
-      hasFocus: () => false,
-      visibilityState: 'visible',
-    };
-
-    expect(isTabEngaged(visibilityDoc)).to.be.false;
-  });
-
   it('returns false when the document is hidden', () => {
     const visibilityDoc: VisibilityStateDocument = {
-      hasFocus: () => true,
       visibilityState: 'hidden',
     };
 
