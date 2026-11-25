@@ -2,7 +2,6 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
-  serverExternalPackages: ['@opentelemetry/instrumentation'],
   experimental: {
     // Adds OS Native trust certificates.
     // Required for next to download fonts from Google.
