@@ -48,6 +48,11 @@ const subAppDeepLinkFallback = (): PluginOption => ({
 export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/embrace-web-sdk/' : '/',
   plugins: [Sonda({ enabled: false }), subAppDeepLinkFallback()],
+  // Serve bundled chunks in dev so resource timing and document-load spans
+  // match a production build instead of one request per module.
+  experimental: {
+    bundledDev: true,
+  },
   server: {
     headers: {
       'Server-Timing': 'db;dur=78,cache;dur=0;desc="HIT",render;dur=163',
