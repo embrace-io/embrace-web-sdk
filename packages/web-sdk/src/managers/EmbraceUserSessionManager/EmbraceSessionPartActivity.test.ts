@@ -195,11 +195,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
     clock.tick(FOREGROUND_INACTIVITY_MS);
 
     expect(endReasons()).to.deep.equal(['web_foreground_inactivity']);
-    // The part end reason is web-prefixed, but the enclosing user session's
-    // termination reason stays unprefixed for cross-platform correlation.
-    expect(
-      (endSpy.lastCall.args[0] as EndSessionPartOptions).userSessionEndReason,
-    ).to.equal('inactivity');
     void expect(manager.getSessionPartId()).to.be.null;
   });
 
@@ -231,10 +226,7 @@ describe('EmbraceUserSessionManager browser activity', () => {
     manager.startSessionPartInternal({ reason: 'init' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS / 2);
-    manager.endSessionPartInternal({
-      reason: 'user_session_ended',
-      userSessionEndReason: 'manual',
-    });
+    manager.endSessionPartInternal({ reason: 'user_session_ended' });
 
     clock.tick(FOREGROUND_INACTIVITY_MS);
     expect(endReasons()).to.deep.equal(['user_session_ended']);
@@ -434,7 +426,6 @@ describe('EmbraceUserSessionManager browser activity', () => {
     expect(endSpy2.callCount).to.equal(1);
     const endOptions2 = endSpy2.lastCall.args[0] as EndSessionPartOptions;
     expect(endOptions2.reason).to.equal('web_foreground_inactivity');
-    expect(endOptions2.userSessionEndReason).to.equal('inactivity');
 
     splitManager._shutdown();
   });

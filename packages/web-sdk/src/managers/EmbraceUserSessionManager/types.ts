@@ -3,7 +3,6 @@ import type {
   SessionPartEndReason,
   SessionPartStartedEvent,
   SessionPartStartReason,
-  UserSessionEndReason,
   UserSessionManager,
 } from '../../api-sessions/manager/types.ts';
 import type { VisibilityStateDocument } from '../../common/index.ts';
@@ -91,13 +90,6 @@ export interface StartSessionPartOptions {
 
 export interface EndSessionPartOptions {
   readonly reason: SessionPartEndReason;
-  /**
-   * Termination reason for the enclosing user session; only meaningful
-   * when the part-end reason also ends the user session
-   * (`user_session_ended` or `web_foreground_inactivity`). Ignored
-   * otherwise.
-   */
-  readonly userSessionEndReason?: UserSessionEndReason;
   /** Epoch millis anchoring the part span end; defaults to now. */
   readonly timestamp?: number;
 }

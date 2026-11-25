@@ -15,7 +15,6 @@ import {
   EMB_STATES,
   EMB_TYPES,
   KEY_EMB_COLD_START,
-  KEY_EMB_IS_FINAL_SESSION_PART,
   KEY_EMB_PAGE_LOAD,
   KEY_EMB_SDK_INIT_ORIGIN_OFFSET,
   KEY_EMB_SDK_LOAD_ORIGIN_OFFSET,
@@ -34,7 +33,6 @@ import {
   KEY_EMB_USER_SESSION_PART_INDEX,
   KEY_EMB_USER_SESSION_PREVIOUS_ID,
   KEY_EMB_USER_SESSION_START_TS,
-  KEY_EMB_USER_SESSION_TERMINATION_REASON,
   KEY_PREFIX_EMB_PROPERTIES,
 } from '../../constants/index.ts';
 import type { ExtendedSpan } from '../../index.ts';
@@ -64,7 +62,6 @@ import {
   EMBRACE_SESSION_PART_NUMBER_KEY,
   EMBRACE_USER_SESSION_NUMBER_KEY,
   END_USER_SESSION_COOLDOWN_MS,
-  FINAL_SESSION_PART_END_REASONS,
   MAX_USER_SESSION_FOREGROUND_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MAX_USER_SESSION_MAX_DURATION_SECONDS,
@@ -72,6 +69,7 @@ import {
   MIN_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS,
   MIN_USER_SESSION_MAX_DURATION_SECONDS,
   SESSION_PART_SPAN_NAME,
+  USER_SESSION_ENDING_PART_END_REASONS,
 } from './constants.ts';
 import type {
   EmbraceUserSessionManagerArgs,
@@ -447,7 +445,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
   public endSessionPartInternal({
     reason,
-    userSessionEndReason,
     timestamp,
   }: EndSessionPartOptions): void {
     if (!this._sessionPartSpan) {
@@ -459,7 +456,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
 
     this._clearSessionPartInactivityTimer();
 
-    const isFinalSessionPart = FINAL_SESSION_PART_END_REASONS.has(reason);
+    const endsUserSession = USER_SESSION_ENDING_PART_END_REASONS.has(reason);
     const partUserSessionId =
       this._userSessionStore.read()?.userSessionId ?? null;
 
@@ -485,13 +482,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
           endAttrs[KEY_EMB_SDK_STARTUP_DURATION] = Math.ceil(initDuration);
           endAttrs[KEY_EMB_SDK_LOAD_ORIGIN_OFFSET] = loadOriginOffset;
           endAttrs[KEY_EMB_SDK_INIT_ORIGIN_OFFSET] = initOriginOffset;
-        }
-      }
-      if (isFinalSessionPart) {
-        endAttrs[KEY_EMB_IS_FINAL_SESSION_PART] = 1;
-        if (userSessionEndReason) {
-          endAttrs[KEY_EMB_USER_SESSION_TERMINATION_REASON] =
-            userSessionEndReason;
         }
       }
 
@@ -532,7 +522,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._limitManager.reset();
     }
 
-    if (isFinalSessionPart) {
+    if (endsUserSession) {
       this._previousUserSessionId = partUserSessionId;
 
       // The user session ended, so it's cleared for every tab, unless another
@@ -804,9 +794,9 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   }
 
   /**
-   * Ends the active part as final and starts a fresh part for the next
-   * user session. State clearing for the engaged path is handled by
-   * endSessionPartInternal's isFinal branch. When no part is active
+   * Ends the active part with the user session and starts a fresh part for
+   * the next one. State clearing for the engaged path is handled by
+   * endSessionPartInternal. When no part is active
    * (tab disengaged), the same state-clearing is performed inline so
    * the next engagement creates a fresh user session rather than
    * resuming the just-ended one.
@@ -824,7 +814,6 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       const boundaryTimestamp = this._perf.getNow();
       this.endSessionPartInternal({
         reason: 'user_session_ended',
-        userSessionEndReason,
         timestamp: boundaryTimestamp,
       });
 
@@ -859,7 +848,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
   /**
    * Ends the active part and starts a new one within the same user session.
    * The user session is preserved while the part counters advance, so the
-   * caller's `endReason`/`startReason` must both be non-final. Both spans share
+   * caller's `endReason`/`startReason` must both leave the user session running. Both spans share
    * one boundary timestamp so they tile without a gap; the caller may supply it
    * (for example the timestamp of the triggering event), defaulting to now. A
    * no-op when no part is active: there is nothing to roll over and the next
@@ -1012,10 +1001,7 @@ export class EmbraceUserSessionManager implements UserSessionManagerInternal {
       this._diag.debug(
         'foreground inactivity timer fired; ending current part and user session',
       );
-      this.endSessionPartInternal({
-        reason: 'web_foreground_inactivity',
-        userSessionEndReason: 'inactivity',
-      });
+      this.endSessionPartInternal({ reason: 'web_foreground_inactivity' });
     } catch (e) {
       this._diag.warn('Error handling foreground inactivity timer', e);
     }

@@ -47,9 +47,6 @@ export const KEY_EMB_USER_SESSION_PREVIOUS_ID = 'emb.user_session_previous_id';
 export const KEY_EMB_USER_SESSION_NUMBER = 'emb.user_session_number';
 export const KEY_EMB_USER_SESSION_PART_INDEX = 'emb.user_session_part_index';
 export const KEY_EMB_USER_SESSION_START_TS = 'emb.user_session_start_ts';
-export const KEY_EMB_IS_FINAL_SESSION_PART = 'emb.is_final_session_part';
-export const KEY_EMB_USER_SESSION_TERMINATION_REASON =
-  'emb.user_session_termination_reason';
 export const KEY_EMB_USER_SESSION_MAX_DURATION_SECONDS =
   'emb.user_session_max_duration_seconds';
 export const KEY_EMB_USER_SESSION_INACTIVITY_TIMEOUT_SECONDS =
