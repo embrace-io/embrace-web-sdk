@@ -30,6 +30,12 @@ describe('getDefaultAttributeScrubbers', () => {
       expected: '?foo=bar&pw=REDACTED&foopw=safe&AWSAccessKeyId=REDACTED',
     },
     {
+      name: 'scrub X-Goog-Signature from query string',
+      key: 'url.query',
+      value: '?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Signature=abc123',
+      expected: '?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Signature=REDACTED',
+    },
+    {
       name: 'scrub sensitive params from query string, single param',
       key: 'url.query',
       value: 'token=abcde',
