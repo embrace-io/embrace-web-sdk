@@ -480,6 +480,18 @@ describe('EmbraceLogManager', () => {
     );
   });
 
+  it('should log undefined and null attribute values as empty strings', () => {
+    manager.logException(new Error('this is an exception'), {
+      // A JavaScript caller can pass null.
+      attributes: { undef_key: undefined, null_key: null as unknown as string },
+    });
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].attributes).to.have.property('undef_key', '');
+    expect(finishedLogs[0].attributes).to.have.property('null_key', '');
+  });
+
   it('should log a thrown value that can be neither serialized nor converted to a string', () => {
     const thrown: Record<string, unknown> = Object.create(null);
     thrown['self'] = thrown;
