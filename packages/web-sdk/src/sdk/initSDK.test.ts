@@ -2076,6 +2076,23 @@ describe('initSDK', () => {
       expect(diagLogger.messages('warn')).to.deep.equal(['warning']);
       expect(diagLogger.messages('error')).to.deep.equal(['error']);
     });
+
+    it('should not recurse when the diagLogger writes back to the global diag', () => {
+      // The diagLogger default with 2.x. Installed as the global logger, it calls itself.
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger: diag.createComponentLogger({ namespace: 'customer' }),
+      });
+      void expect(result).not.to.be.false;
+
+      const testingLogger = diag.createComponentLogger({
+        namespace: 'testing',
+      });
+      expect(() => {
+        testingLogger.error('first error');
+        testingLogger.error('second error');
+      }).to.not.throw();
+    });
   });
 
   describe('multiple invocations', () => {
