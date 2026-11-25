@@ -444,6 +444,63 @@ describe('EmbraceLogManager', () => {
     expect(log.attributes).to.have.property(ATTR_EXCEPTION_STACKTRACE);
   });
 
+  it('should log an exception whose attribute value cannot be converted to a string', () => {
+    const unconvertible: unknown = Object.create(null);
+
+    expect(() => {
+      manager.logException(new Error('this is an exception'), {
+        attributes: { attr_key: unconvertible as string },
+      });
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    // '[object Object]' cut to the 12-character value limit set above
+    expect(finishedLogs[0].attributes).to.have.property(
+      'attr_key',
+      '[object Obje',
+    );
+  });
+
+  it('should log a message whose attribute value cannot be converted to a string', () => {
+    const unconvertible: unknown = Object.create(null);
+
+    expect(() => {
+      manager.message('this is a message', 'info', {
+        attributes: { attr_key: unconvertible as string },
+      });
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    // '[object Object]' cut to the 12-character value limit set above
+    expect(finishedLogs[0].attributes).to.have.property(
+      'attr_key',
+      '[object Obje',
+    );
+  });
+
+  it('should log a thrown value that can be neither serialized nor converted to a string', () => {
+    const thrown: Record<string, unknown> = Object.create(null);
+    thrown['self'] = thrown;
+
+    expect(() => {
+      manager.logException(thrown);
+    }).to.not.throw();
+
+    const finishedLogs = memoryExporter.getFinishedLogRecords();
+    expect(finishedLogs).to.have.lengthOf(1);
+    expect(finishedLogs[0].body).to.equal('[object Object]');
+    expect(finishedLogs[0].attributes).to.have.property(
+      ATTR_EXCEPTION_MESSAGE,
+      '[object Object]',
+    );
+    expect(finishedLogs[0].attributes).to.have.property(
+      ATTR_EXCEPTION_TYPE,
+      'object',
+    );
+  });
+
   it('should log an exception from a custom Error class', () => {
     expect(() => {
       manager.logException(new MyError('this is an exception'));

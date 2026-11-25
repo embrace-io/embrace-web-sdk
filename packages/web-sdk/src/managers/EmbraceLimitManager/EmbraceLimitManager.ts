@@ -3,6 +3,7 @@ import { diag } from '@opentelemetry/api';
 import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import type { LogSeverity } from '../../api-logs/index.ts';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../constants/index.ts';
+import { toSafeString } from '../../utils/toSafeString.ts';
 import type {
   AttributeLimitedType,
   EmbraceLimitManagerArgs,
@@ -112,7 +113,7 @@ export class EmbraceLimitManager implements LimitManagerInternal {
       const truncatedKey = this.truncateString(keyType, keys[i]);
       truncatedAttributes[truncatedKey] = this.truncateString(
         valueType,
-        attributes[keys[i]]?.toString() || '',
+        attributes[keys[i]] == null ? '' : toSafeString(attributes[keys[i]]),
       );
     }
 

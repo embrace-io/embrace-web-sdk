@@ -41,3 +41,4 @@ export {
 } from './spanPredicates.ts';
 export { throttle } from './throttle.ts';
 export type { TimeoutRef } from './timeout/index.ts';
+export { toSafeString } from './toSafeString.ts';

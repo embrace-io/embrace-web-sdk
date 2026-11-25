@@ -33,6 +33,7 @@ import {
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
+  toSafeString,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
@@ -130,10 +131,10 @@ export class EmbraceLogManager implements LogManager {
       try {
         errMessage = JSON.stringify(error);
       } catch {
-        errMessage = String(error).trim();
+        errMessage = toSafeString(error).trim();
       }
     } else {
-      errMessage = String(error).trim();
+      errMessage = toSafeString(error).trim();
     }
 
     const limited = this._limitManager.limitException(errMessage, validAttrs);
