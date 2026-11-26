@@ -236,6 +236,71 @@ describe('NamespacedStorage', () => {
     }
   });
 
+  describe('keyChangedBy', () => {
+    const NAMESPACE = 'key-changed-by-test';
+    let namespaced: NamespacedStorage;
+
+    const storageEvent = (init: StorageEventInit) =>
+      new StorageEvent('storage', { storageArea: localStorage, ...init });
+
+    beforeEach(() => {
+      namespaced = new NamespacedStorage({
+        storage: localStorage,
+        namespace: NAMESPACE,
+        diag,
+      });
+    });
+
+    afterEach(() => {
+      localStorage.removeItem(`${NAMESPACE}__k`);
+    });
+
+    it('returns the key without the namespace', () => {
+      expect(
+        namespaced.keyChangedBy(storageEvent({ key: `${NAMESPACE}__k` })),
+      ).to.equal('k');
+    });
+
+    it('returns null when another tab cleared the storage', () => {
+      void expect(namespaced.keyChangedBy(storageEvent({ key: null }))).to.be
+        .null;
+    });
+
+    it('ignores keys in another namespace', () => {
+      void expect(namespaced.keyChangedBy(storageEvent({ key: 'other__k' }))).to
+        .be.undefined;
+    });
+
+    it('ignores another storage area', () => {
+      void expect(
+        namespaced.keyChangedBy(
+          storageEvent({
+            key: `${NAMESPACE}__k`,
+            storageArea: sessionStorage,
+          }),
+        ),
+      ).to.be.undefined;
+    });
+
+    it('ignores a key this page keeps in memory after a failed write', () => {
+      const { setItem } = Storage.prototype;
+
+      Storage.prototype.setItem = () => {
+        throw new DOMException('full', 'QuotaExceededError');
+      };
+
+      try {
+        namespaced.setItem('k', 'v');
+      } finally {
+        Storage.prototype.setItem = setItem;
+      }
+
+      void expect(
+        namespaced.keyChangedBy(storageEvent({ key: `${NAMESPACE}__k` })),
+      ).to.be.undefined;
+    });
+  });
+
   describe('error handling', () => {
     it('returns null and warns when getItem throws', () => {
       const storage = new NamespacedStorage({

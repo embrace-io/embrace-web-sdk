@@ -36,6 +36,12 @@ export interface UserSessionState {
    */
   readonly ended?: boolean;
   /**
+   * Why the user session ended, set on its ended marker so other tabs end
+   * their session parts the same way. Missing on markers written by SDK
+   * versions without it.
+   */
+  readonly endReason?: UserSessionEndReason;
+  /**
    * Null on the first user session since the first visit or after a
    * permanent storage clear.
    */
@@ -107,8 +113,8 @@ export interface EndSessionPartOptions {
   /**
    * Termination reason for the enclosing user session; only meaningful
    * when the part-end reason also ends the user session
-   * (`user_session_ended` or `web_foreground_inactivity`). Ignored
-   * otherwise.
+   * (`user_session_ended` or `web_foreground_inactivity`), and stamped only
+   * when the part is the final one. Ignored otherwise.
    */
   readonly userSessionEndReason?: UserSessionEndReason;
   /** Epoch millis anchoring the part span end; defaults to now. */
@@ -118,6 +124,8 @@ export interface EndSessionPartOptions {
 export interface RolloverSessionPartOptions {
   readonly endReason: SessionPartEndReason;
   readonly startReason: SessionPartStartReason;
+  /** See `EndSessionPartOptions.userSessionEndReason`. */
+  readonly userSessionEndReason?: UserSessionEndReason;
   /** Epoch millis anchoring both part spans' boundary; defaults to now. */
   readonly timestamp?: number;
 }
