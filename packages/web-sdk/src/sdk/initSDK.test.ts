@@ -61,10 +61,12 @@ import {
   ProxyTraceManager,
 } from '../api-traces/index.ts';
 import { NoOpUserManager, ProxyUserManager, user } from '../api-users/index.ts';
+import { EmbraceInstrumentationBase } from '../instrumentations/EmbraceInstrumentationBase/index.ts';
 import type { WebVitalOnReport } from '../instrumentations/index.ts';
 import { RageClickInstrumentation } from '../instrumentations/index.ts';
 import type { UserSessionManagerInternal } from '../managers/EmbraceUserSessionManager/index.ts';
 import {
+  EmbraceLimitManager,
   EmbraceLoggerProvider,
   EmbraceLogManager,
   EmbraceTraceManager,
@@ -2364,6 +2366,33 @@ describe('initSDK', () => {
       expect(perf.getZeroTime()).to.be.greaterThan(zeroTimeBefore);
     });
   });
+
+  it('should pass the managers behind the global APIs to every default Embrace instrumentation', () => {
+    const enable = sinon.spy(EmbraceInstrumentationBase.prototype, 'enable');
+    try {
+      const result = initSDK({ spanExporters: [spanExporter] });
+
+      if (!result) {
+        throw new Error('SDK failed to initialize');
+      }
+      const depsPerInstrumentation = new Set(enable.args.map(([deps]) => deps));
+      expect(depsPerInstrumentation.size).to.equal(1);
+      const [deps] = depsPerInstrumentation;
+      expect(deps?.userSessionManager).to.equal(result.session);
+      expect(deps?.userSessionManager).to.equal(
+        (
+          session.getUserSessionManager() as ProxyUserSessionManager
+        ).getDelegate(),
+      );
+      expect(deps?.logManager).to.equal(result.log);
+      expect(deps?.logManager).to.equal(
+        (log.getLogManager() as ProxyLogManager).getDelegate(),
+      );
+      expect(deps?.pageManager).to.equal(result.page);
+    } finally {
+      enable.restore();
+    }
+  });
 });
 
 describe('isolated instances', () => {
@@ -2588,6 +2617,100 @@ describe('isolated instances', () => {
 
     void expect(result).not.to.be.false;
     expect(instrumentation.propagatorAtEnable).to.equal(propagator);
+  });
+
+  it('should pass the instance managers to an Embrace instrumentation in the instrumentations option under registerGlobally: false', () => {
+    const instrumentation = new FakeInstrumentation();
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      instrumentations: [instrumentation],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    if (!result) {
+      throw new Error('SDK failed to initialize');
+    }
+    expect(instrumentation.managers.userSessionManager()).to.equal(
+      result.session,
+    );
+    expect(instrumentation.managers.logManager()).to.equal(result.log);
+    expect(instrumentation.managers.pageManager()).to.equal(result.page);
+
+    const startCount = instrumentation.startCount;
+    (result.session as UserSessionManagerInternal).endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+    (result.session as UserSessionManagerInternal).startSessionPartInternal({
+      reason: 'web_activity',
+    });
+    expect(instrumentation.startCount).to.equal(startCount + 1);
+  });
+
+  it('should pass only the providers and propagator to other instrumentations in the instrumentations option', () => {
+    const enable = sinon.spy();
+    const instrumentation: Instrumentation = {
+      instrumentationName: 'OtherInstrumentation',
+      enable,
+      disable: () => {},
+      isEnabled: () => enable.called,
+    };
+
+    const result = initSDK({
+      spanExporters: [spanExporter],
+      instrumentations: [instrumentation],
+      registerGlobally: false,
+      defaultInstrumentationConfig: {
+        omit: new Set(['web-vital', 'document-load']),
+      },
+    });
+
+    void expect(result).not.to.be.false;
+    expect(enable.callCount).to.equal(1);
+    expect(Object.keys(enable.firstCall.args[0])).to.have.members([
+      'tracerProvider',
+      'loggerProvider',
+      'propagator',
+    ]);
+  });
+
+  it('should pass the instance managers to every default Embrace instrumentation under registerGlobally: false', () => {
+    const enable = sinon.spy(EmbraceInstrumentationBase.prototype, 'enable');
+    try {
+      const result = initSDK({
+        spanExporters: [spanExporter],
+        registerGlobally: false,
+      });
+
+      if (!result) {
+        throw new Error('SDK failed to initialize');
+      }
+      expect(enable.callCount).to.be.greaterThan(0);
+      const depsPerInstrumentation = new Set(enable.args.map(([deps]) => deps));
+      expect(depsPerInstrumentation.size).to.equal(1);
+      const [deps] = depsPerInstrumentation;
+      expect(deps?.userSessionManager).to.equal(result.session);
+      expect(deps?.logManager).to.equal(result.log);
+      expect(deps?.pageManager).to.equal(result.page);
+      void expect(deps?.perf).to.exist;
+
+      // The user session manager resets its own limit manager when a session
+      // part ends, so the instrumentations must share that one.
+      const reset = sinon.spy(EmbraceLimitManager.prototype, 'reset');
+      try {
+        (result.session as UserSessionManagerInternal).endSessionPartInternal({
+          reason: 'web_foreground_inactivity',
+        });
+        expect(reset.thisValues).to.include(deps?.limitManager);
+      } finally {
+        reset.restore();
+      }
+    } finally {
+      enable.restore();
+    }
   });
 
   it('should record fetch spans into the instance exporter under registerGlobally: false', async () => {
