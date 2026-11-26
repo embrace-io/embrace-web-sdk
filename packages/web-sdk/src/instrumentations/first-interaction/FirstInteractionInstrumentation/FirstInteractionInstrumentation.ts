@@ -67,7 +67,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     };
   }
 
-  public override onEnable(): void {
+  protected override _onEnable(): void {
     this._attachListeners();
     this.setSessionPartListeners({
       start: () => {
@@ -76,7 +76,7 @@ export class FirstInteractionInstrumentation extends EmbraceInstrumentationBase 
     });
   }
 
-  public override onDisable(): void {
+  protected override _onDisable(): void {
     this._detachListeners();
   }
 
