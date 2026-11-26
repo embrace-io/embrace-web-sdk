@@ -1,32 +1,6 @@
 import type { ExtendedSpan } from '../../index.ts';
 
 export interface UserSessionManager {
-  /** @deprecated Will be removed in a future version, use getUserSessionId(); returns null when no user session is active. */
-  getSessionId: () => string | null;
-
-  /** @deprecated Will be removed in a future version, always returns null. Use getPreviousUserSessionId(). */
-  getPreviousSessionId: () => null;
-
-  /**
-   * @deprecated Will be removed in a future version, use
-   * getUserSessionStartTime(); returns null when no user session is active,
-   * otherwise milliseconds since the Unix epoch.
-   */
-  getSessionStartTime: () => number | null;
-
-  /** @deprecated Will be removed in a future version, use getSessionPartSpan(); returns null when no part is active. */
-  getSessionSpan: () => ExtendedSpan | null;
-
-  /**
-   * @deprecated Will be removed in a future version. No-op: starting a
-   * session part is an internal consequence of foreground engagement
-   * (visibility, focus, input) and is not exposed to callers.
-   */
-  startSessionSpan: (options?: StartSessionOptions) => void;
-
-  /** @deprecated Will be removed in a future version, use endUserSession(). */
-  endSessionSpan: () => void;
-
   /**
    * Adds a breadcrumb event to the active session part span. If no part is
    * active the breadcrumb is dropped.
@@ -58,15 +32,6 @@ export interface UserSessionManager {
    * maps (both user-session and permanent) and from localStorage.
    */
   removeProperty: (key: string) => void;
-
-  /** @deprecated Will be removed in a future version, always returns null. */
-  currentSessionAsReadableSpan: (reason: ReasonSessionEnded) => null;
-
-  /** @deprecated Will be removed in a future version, the listener is never invoked and the returned unsubscribe is a no-op. */
-  addSessionStartedListener: (listener: () => void) => () => void;
-
-  /** @deprecated Will be removed in a future version, the listener is never invoked and the returned unsubscribe is a no-op. */
-  addSessionEndedListener: (listener: () => void) => () => void;
 
   /**
    * Returns the active user session UUID, or `null` when no user session active
@@ -102,22 +67,8 @@ export interface UserSessionManager {
   endUserSession: () => void;
 }
 
-/** @deprecated Will be removed in a future version */
-export type ReasonSessionEnded =
-  | 'unknown'
-  | 'inactivity' // inactivity timer
-  | 'timer' // max_time_reached limit
-  | 'manual' // using the public api
-  | 'max_size_reached'
-  | 'state_changed'; // visibility change
-
 export type PropertyOptions = {
   lifespan?: 'permanent';
-};
-
-/** @deprecated Will be removed in a future version */
-export type StartSessionOptions = {
-  reason?: string;
 };
 
 // Reasons that describe SDK-agnostic, cross-platform concepts (`init`,

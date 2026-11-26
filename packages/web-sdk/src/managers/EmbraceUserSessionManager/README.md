@@ -44,23 +44,6 @@ The `UserSessionManager` interface exposes the following methods.
 | `addProperty(key, value, options?)` | Stores a key-value pair. `lifespan: 'permanent'` writes to the `embrace_permanent_properties` blob and survives user-session boundaries. Without `lifespan`, the entry is stored in the user-session state row and is cleared on user-session end. Safe to call before the first session part starts; the call eagerly creates a user-session row so the value is stamped on the part span when it ends. |
 | `removeProperty(key)`               | Removes the key from all stores. If a session part is active, also removes the corresponding span attribute.                                                                                                                                                                                                                                                                                             |
 
-### Deprecated forwarders
-
-These exist for source compatibility with the prior API. Some forward to the
-current equivalents; others are inert (return `null` or no-op).
-
-| Method                           | Behavior                                                                             |
-| -------------------------------- | ------------------------------------------------------------------------------------ |
-| `getSessionId()`                 | Forwards to `getUserSessionId()`.                                                    |
-| `getSessionStartTime()`          | Forwards to `getUserSessionStartTime()` (returns milliseconds since the Unix epoch). |
-| `getSessionSpan()`               | Forwards to the active session-part span.                                            |
-| `endSessionSpan()`               | Forwards to `endUserSession()`.                                                      |
-| `getPreviousSessionId()`         | Always returns `null`. Use `getPreviousUserSessionId()`.                             |
-| `currentSessionAsReadableSpan()` | Always returns `null`.                                                               |
-| `startSessionSpan()`             | No-op. User sessions start implicitly on first engagement, not via a public API.     |
-| `addSessionStartedListener()`    | Returns a no-op unsubscribe. The listener is never called.                           |
-| `addSessionEndedListener()`      | Returns a no-op unsubscribe. The listener is never called.                           |
-
 ### Internal interface
 
 `UserSessionManagerInternal` extends the public interface with members used by
