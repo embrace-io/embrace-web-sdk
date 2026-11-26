@@ -402,7 +402,7 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
         assert.ok(
-          (rootSpan.attributes['http.response_content_length'] as number) > 0,
+          (rootSpan.attributes['http.response.body.size'] as number) > 0,
         );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
@@ -823,54 +823,6 @@ describe('DocumentLoad Instrumentation', () => {
           .find((s) => s.name === 'documentFetch');
         assert.isOk(fetchSpan);
         assert.isUndefined(fetchSpan?.attributes['http.response.status_code']);
-        done();
-      });
-    });
-
-    it('should add http.response_content_length_uncompressed to the documentFetch span when the body was transport-encoded', (done) => {
-      spyEntries.withArgs('navigation').returns([
-        {
-          ...entries,
-          encodedBodySize: 100,
-          decodedBodySize: 300,
-        } as PerformanceNavigationTiming,
-      ]);
-
-      plugin.enable();
-
-      setTimeout(() => {
-        const fetchSpan = exporter
-          .getFinishedSpans()
-          .find((s) => s.name === 'documentFetch');
-        assert.isOk(fetchSpan);
-        assert.strictEqual(
-          fetchSpan?.attributes['http.response_content_length'],
-          100,
-        );
-        assert.strictEqual(
-          fetchSpan?.attributes['http.response_content_length_uncompressed'],
-          300,
-        );
-        done();
-      });
-    });
-
-    it('should omit http.response_content_length_uncompressed from the documentFetch span when both body sizes match', (done) => {
-      plugin.enable();
-
-      setTimeout(() => {
-        const fetchSpan = exporter
-          .getFinishedSpans()
-          .find((s) => s.name === 'documentFetch');
-        assert.isOk(fetchSpan);
-        assert.strictEqual(
-          fetchSpan?.attributes['http.response_content_length'],
-          362,
-        );
-        assert.notProperty(
-          fetchSpan?.attributes,
-          'http.response_content_length_uncompressed',
-        );
         done();
       });
     });
@@ -1304,7 +1256,7 @@ describe('DocumentLoad Instrumentation', () => {
           'script',
         );
         assert.strictEqual(
-          resourceSpan.attributes['http.response_content_length'],
+          resourceSpan.attributes['http.response.body.size'],
           1446396,
         );
         assert.strictEqual(
@@ -1314,31 +1266,6 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(
           resourceSpan.attributes['http.response.decoded_body_size'],
           1446396,
-        );
-        done();
-      });
-    });
-
-    it('should add http.response_content_length_uncompressed when the body was transport-encoded', (done) => {
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries
-        .withArgs('resource')
-        .returns([
-          { ...resources[0], encodedBodySize: 100, decodedBodySize: 300 },
-        ]);
-      spyEntries.withArgs('paint').returns([]);
-
-      plugin.enable();
-      setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.strictEqual(
-          resourceSpan.attributes['http.response_content_length'],
-          100,
-        );
-        assert.strictEqual(
-          resourceSpan.attributes['http.response_content_length_uncompressed'],
-          300,
         );
         done();
       });
@@ -1370,23 +1297,6 @@ describe('DocumentLoad Instrumentation', () => {
         assert.deepStrictEqual(
           resourceSpan?.events.map((e) => e.name),
           ['fetchStart', 'responseEnd'],
-        );
-        done();
-      });
-    });
-
-    it('should omit http.response_content_length_uncompressed when both body sizes match', (done) => {
-      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
-      spyEntries.withArgs('navigation').returns([entries]);
-      spyEntries.withArgs('resource').returns([resources[0]]);
-      spyEntries.withArgs('paint').returns([]);
-
-      plugin.enable();
-      setTimeout(() => {
-        const resourceSpan = exporter.getFinishedSpans()[1];
-        assert.notProperty(
-          resourceSpan.attributes,
-          'http.response_content_length_uncompressed',
         );
         done();
       });
@@ -1655,7 +1565,7 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
-    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', (done) => {
+    it('should have http.response.body.size attribute even if ignoreNetworkEvents is true', (done) => {
       plugin = new DocumentLoadInstrumentation({
         ignoreNetworkEvents: true,
       });
@@ -1668,13 +1578,13 @@ describe('DocumentLoad Instrumentation', () => {
         ) as ReadableSpan;
         assert.isOk(resourceSpan, 'resourceFetch span should exist');
         assert.exists(
-          resourceSpan.attributes['http.response_content_length'],
-          'http.response_content_length attribute should exist',
+          resourceSpan.attributes['http.response.body.size'],
+          'http.response.body.size attribute should exist',
         );
         const fetchSpan = spans.find((s) => s.name === 'documentFetch');
         assert.isOk(fetchSpan, 'documentFetch span should exist');
         assert.strictEqual(
-          fetchSpan?.attributes['http.response_content_length'],
+          fetchSpan?.attributes['http.response.body.size'],
           362,
         );
         done();
