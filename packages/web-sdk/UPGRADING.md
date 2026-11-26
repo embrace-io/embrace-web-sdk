@@ -44,7 +44,7 @@ The `instrumentations` option of `initSDK` uses the `Instrumentation` interface 
 
 - `logLevel` applies to `diagLogger`. With the default `DiagLogLevel.ERROR`, it no longer receives warnings or lower levels.
 - A call from a component logger passes the component's namespace first, so the SDK's own messages arrive as `('embrace-sdk', message)`.
-- A logger from `diag.createComponentLogger` writes back to the global `diag`, so it cannot be the `diagLogger`.
+- A logger from `diag.createComponentLogger` writes back to the global `diag`, so it cannot be the `diagLogger`. Passed as the `diagLogger`, the messages it would loop back go to the console.
 
 ### Removed `defaultInstrumentationConfig` fields
 

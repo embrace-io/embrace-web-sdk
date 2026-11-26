@@ -1,3 +1,4 @@
+import type { DiagLogFunction, DiagLogger } from '@opentelemetry/api';
 import {
   context,
   DiagConsoleLogger,
@@ -133,9 +134,12 @@ export const initSDK = (
       }
     }
 
-    diag.setLogger(providedDiagLogger ?? new DiagConsoleLogger(), {
-      logLevel,
-    });
+    diag.setLogger(
+      providedDiagLogger
+        ? withConsoleOnReentry(providedDiagLogger)
+        : new DiagConsoleLogger(),
+      { logLevel },
+    );
 
     if (typeof window === 'undefined') {
       diagLogger.warn('browser not detected, skipping initialization');
@@ -447,6 +451,34 @@ const isLegacyOTelInstrumentation = (
   instrumentation: Instrumentation | LegacyOTelInstrumentation,
 ): instrumentation is LegacyOTelInstrumentation =>
   'setTracerProvider' in instrumentation;
+
+// Installed as the global logger, a logger that writes back to the global diag, such as one from
+// diag.createComponentLogger(), would call itself until the stack overflows. Its nested call goes to the console.
+const withConsoleOnReentry = (logger: DiagLogger): DiagLogger => {
+  const consoleLogger = new DiagConsoleLogger();
+  let logging = false;
+  const forward =
+    (level: keyof DiagLogger): DiagLogFunction =>
+    (message, ...args) => {
+      if (logging) {
+        consoleLogger[level](message, ...args);
+        return;
+      }
+      logging = true;
+      try {
+        logger[level](message, ...args);
+      } finally {
+        logging = false;
+      }
+    };
+  return {
+    error: forward('error'),
+    warn: forward('warn'),
+    info: forward('info'),
+    debug: forward('debug'),
+    verbose: forward('verbose'),
+  };
+};
 
 const setupUser = ({ registerGlobally, sdkLocalStorage }: SetupUserArgs) => {
   const embraceUserManager = new EmbraceUserManager({
