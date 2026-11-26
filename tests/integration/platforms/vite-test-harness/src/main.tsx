@@ -49,6 +49,17 @@ const getRoute = (): Route => {
   return 'home';
 };
 
+// An SPA that resolves its real route during bootstrap: the pushState happens with
+// no user interaction before it, so the browser does not count it as a soft navigation
+// and web-vitals keeps reporting against the hard navigation.
+const getBootstrapRedirect = (): Route | null => {
+  const target = new URLSearchParams(window.location.search).get(
+    'bootstrapRedirect',
+  );
+
+  return target !== null && target in PAGES ? (target as Route) : null;
+};
+
 const DelayedLcpImage = () => {
   const [visible, setVisible] = useState(false);
 
@@ -75,6 +86,14 @@ const App = () => {
   const [scheduledBlockCount, setScheduledBlockCount] = useState(0);
   const [deferredBlockCount, setDeferredBlockCount] = useState(0);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const target = getBootstrapRedirect();
+    if (target !== null) {
+      history.pushState(null, '', PAGES[target].path);
+      setRoute(target);
+    }
+  }, []);
 
   useEffect(() => {
     const onPopState = () => setRoute(getRoute());

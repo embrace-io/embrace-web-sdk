@@ -20,6 +20,9 @@ describe('ProxyPageManager', () => {
       setCurrentRoute: sinon.stub(),
       getCurrentRoute: sinon.stub().returns(mockRoute),
       getCurrentPageId: sinon.stub().returns('test-page-id'),
+      getCurrentPageURL: sinon
+        .stub()
+        .returns('https://example.com/products/123'),
       clearCurrentRoute: sinon.stub(),
       setPageLabel: sinon.stub(),
       getPageLabel: sinon.stub(),
@@ -56,6 +59,13 @@ describe('ProxyPageManager', () => {
     const pageId = proxyPageManager.getCurrentPageId();
     expect(pageId).to.equal('test-page-id');
     void expect(mockDelegate.getCurrentPageId).to.have.been.calledOnce;
+  });
+
+  it('should delegate getCurrentPageURL to the delegate', () => {
+    proxyPageManager.setDelegate(mockDelegate);
+    const pageURL = proxyPageManager.getCurrentPageURL();
+    expect(pageURL).to.equal('https://example.com/products/123');
+    void expect(mockDelegate.getCurrentPageURL).to.have.been.calledOnce;
   });
 
   it('should delete clearCurrentRoute to the delegate', () => {
