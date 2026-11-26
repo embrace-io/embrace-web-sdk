@@ -1,4 +1,7 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import { ATTR_USER_ID } from '@opentelemetry/semantic-conventions/incubating';
 import type { UserManager } from '../../api-users/index.ts';
 import type { UserLogRecordProcessorArgs } from './types.ts';
@@ -18,7 +21,7 @@ export class UserLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord) {
+  public onEmit(logRecord: ReadWriteLogRecord) {
     const userId = this._userManager.getUserId();
 
     if (userId) {

@@ -8,10 +8,11 @@ import {
   DiagConsoleLogger,
   DiagLogLevel,
   diag,
+  logs,
   propagation,
+  SeverityNumber,
   trace,
 } from '@opentelemetry/api';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import type { Instrumentation } from '@opentelemetry/browser-api';
 import { InstrumentationBase } from '@opentelemetry/browser-api';
 import { CompositePropagator } from '@opentelemetry/core';
@@ -818,6 +819,89 @@ describe('initSDK', () => {
     void expect(finishedLogRecords[0].body).to.be.equal('my custom log');
   });
 
+  describe('when a global provider cannot be registered', () => {
+    let registrationStub: SinonStub | undefined;
+
+    afterEach(() => {
+      registrationStub?.restore();
+      registrationStub = undefined;
+    });
+
+    it('should warn when the global TracerProvider is not registered', () => {
+      registrationStub = sinon
+        .stub(trace, 'setGlobalTracerProvider')
+        .returns(false);
+      const diagLogger = new InMemoryDiagLogger();
+
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+      });
+      void expect(result).not.to.be.false;
+
+      expect(diagLogger.getWarnLogs()).to.include(
+        'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
+      );
+      expect(diagLogger.getWarnLogs()).not.to.include(
+        'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
+      );
+    });
+
+    it('should warn when the global LoggerProvider is not registered', () => {
+      registrationStub = sinon
+        .stub(logs, 'setGlobalLoggerProvider')
+        .returns(false);
+      const diagLogger = new InMemoryDiagLogger();
+
+      const result = initSDK({
+        appID: 'abc12',
+        diagLogger,
+        defaultInstrumentationConfig: { omit: new Set(['document-load']) },
+      });
+      void expect(result).not.to.be.false;
+
+      expect(diagLogger.getWarnLogs()).to.include(
+        'failed to register the global LoggerProvider, so logs.getLogger() will not reach the SDK',
+      );
+      expect(diagLogger.getWarnLogs()).not.to.include(
+        'failed to register the global TracerProvider, so trace.getTracer() will not reach the SDK',
+      );
+    });
+
+    it('should export through the SDK APIs when another API version owns the OTel global', async () => {
+      // What an @opentelemetry/api 1.9 copy, as in OTel JS 2.x, leaves after its first registration.
+      const globalKey = Symbol.for('opentelemetry.js.api.1');
+      Reflect.set(globalThis, globalKey, { version: '1.9.1' });
+      try {
+        const result = initSDK({
+          logExporters: [logExporter],
+          spanExporters: [spanExporter],
+          defaultInstrumentationConfig: {
+            omit: new Set(['web-vital', 'document-load']),
+          },
+        });
+
+        if (!result) {
+          throw new Error('SDK failed to initialize');
+        }
+
+        embtrace.startSpan('my performance span').end();
+        log.message('my custom log', 'info');
+        await result.flush();
+
+        expect(
+          spanExporter.getFinishedSpans().map((span) => span.name),
+        ).to.include('my performance span');
+        expect(
+          logExporter.getFinishedLogRecords().map((record) => record.body),
+        ).to.include('my custom log');
+      } finally {
+        Reflect.deleteProperty(globalThis, globalKey);
+      }
+    });
+  });
+
   it('should allow setting dynamic config through the SDK', () => {
     const refreshRemoteConfigStub = sinon.stub();
     const setConfigStub = sinon.stub();
@@ -1350,7 +1434,7 @@ describe('initSDK', () => {
       for (let i = 0; i < exportedEvents.length; i++) {
         // Default OTel limiting of events drops the oldest events when the limit
         // is reached, because we went 100 over the limit that means we dropped the first 100:
-        // https://github.com/open-telemetry/opentelemetry-js/blob/v2.12.0/packages/sdk-trace/src/Span.ts#L223
+        // https://github.com/open-telemetry/opentelemetry-js/blob/v3.0.0/packages/sdk-trace/src/Span.ts#L232
         const expected = i + 100;
         expect(exportedEvents[i]['name']).to.equal(
           `span-event-${expected.toString()}`,
@@ -1431,11 +1515,7 @@ describe('initSDK', () => {
       ]);
     });
 
-    // This limit is not applied. It appears to be a bug in the OTel package, which does not use the
-    // attributePerEventCountLimit config:
-    // https://github.com/search?q=repo%3Aopen-telemetry%2Fopentelemetry-js+attributePerEventCountLimit&type=code
-    // biome-ignore lint/suspicious/noSkippedTests: waiting on OTel bugfix https://github.com/open-telemetry/opentelemetry-js/pull/6479
-    xit('should apply limits on the attributes of an individual span event', async () => {
+    it('should apply limits on the attributes of an individual span event', async () => {
       fakeFetchRespondWith('');
       const result = initSDK({
         appID: 'abc12',
@@ -1457,8 +1537,8 @@ describe('initSDK', () => {
       const span = embtrace.startSpan('my-span');
       const spanEventAttributes: Record<string, string> = {};
 
-      // Capped at 20 attributes per span event
-      for (let i = 0; i < 40; i++) {
+      // Capped at the OpenTelemetry default of 128 attributes per span event
+      for (let i = 0; i < 200; i++) {
         spanEventAttributes[`span-event-attribute-${i.toString()}`] =
           i.toString();
       }
@@ -1475,7 +1555,7 @@ describe('initSDK', () => {
       const exportedEvents = exportedSpans[0].events;
       expect(exportedEvents).to.have.lengthOf(1);
 
-      expect(exportedEvents[0].attributes).to.have.lengthOf(20);
+      expect(exportedEvents[0].attributes).to.have.lengthOf(128);
     });
 
     it('should apply default data scrubbing to span and log url attribute values', async () => {

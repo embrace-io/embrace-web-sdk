@@ -1,4 +1,7 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import { KEY_EMB_PERF_CLOCK_LAG_MS } from '../../constants/index.ts';
 import type { PerformanceManager } from '../../utils/index.ts';
 import type { PerfClockLagLogRecordProcessorArgs } from './types.ts';
@@ -19,7 +22,7 @@ export class PerfClockLagLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord): void {
+  public onEmit(logRecord: ReadWriteLogRecord): void {
     logRecord.setAttribute(KEY_EMB_PERF_CLOCK_LAG_MS, this._perf.getClockLag());
   }
 

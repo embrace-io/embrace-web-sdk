@@ -539,7 +539,8 @@ from [Custom exporters](#custom-exporters) or else the SDK considers the configu
 The SDK is intended to be imported as a module and transpiled by a bundler. We provide an ES2022 module version for use
 in modern build pipelines. OpenTelemetry set their current minimum language feature support to ES2022. Our default ESM
 SDK targets this as well to ensure compatibility. See more details in
-the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support).
+the [OpenTelemetry docs](https://github.com/open-telemetry/opentelemetry-js#browser-support). Sending to Embrace needs
+at least Chrome and Edge 93, Firefox 113, Safari 16.4 and Samsung Internet 17.
 
 The CDN version targets ES2022 too.
 
@@ -552,7 +553,7 @@ Please see our [Upgrade Guide](./UPGRADING.md) for specific steps.
 ### Compatibility with OTel packages
 
 The SDK is built on top of OpenTelemetry and, as such, it is possible to use it alongside other OTel libraries.
-**Important: New projects should use OpenTelemetry 2.x.**
+**Important: New projects should use OpenTelemetry 3.x.**
 OpenTelemetry 1.x support is limited to 1.x versions of the SDK, which are deprecated.
 
 If you wish to customize the SDK behavior by configuring custom resources, exporters, processors, or instrumentations,
@@ -560,6 +561,7 @@ you must ensure that you are using versions of the OTel packages that are compat
 
 | Embrace Web SDK | Open Telemetry APIs | Core   | Instrumentations & Contrib |
 | --------------- | ------------------- | ------ | -------------------------- |
+| ^3.0.0          | >=1.10.0 <1.11.0    | ^3.1.1 | >=0.301.2 <0.400.0         |
 | ^2.0.0          | ^1.9.0              | ^2.0.3 | >=0.203.0 <0.300.0         |
 | 1.8.2           | ^1.9.0              | 1.30.1 | 0.57.2                     |
 

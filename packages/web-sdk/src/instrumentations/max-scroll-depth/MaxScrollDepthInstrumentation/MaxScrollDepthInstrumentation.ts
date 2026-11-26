@@ -1,4 +1,4 @@
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { SeverityNumber } from '@opentelemetry/api';
 import { EMB_TYPES, KEY_EMB_TYPE } from '../../../constants/attributes.ts';
 import type { DocumentMeasurement } from '../../../utils/index.ts';
 import { measureDocument } from '../../../utils/index.ts';

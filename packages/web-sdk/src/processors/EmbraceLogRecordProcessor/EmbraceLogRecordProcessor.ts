@@ -1,4 +1,7 @@
-import type { LogRecordProcessor, SdkLogRecord } from '@opentelemetry/sdk-logs';
+import type {
+  LogRecordProcessor,
+  ReadWriteLogRecord,
+} from '@opentelemetry/sdk-logs';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import type {
   URLDocument,
@@ -26,7 +29,7 @@ export class EmbraceLogRecordProcessor implements LogRecordProcessor {
     return Promise.resolve(undefined);
   }
 
-  public onEmit(logRecord: SdkLogRecord) {
+  public onEmit(logRecord: ReadWriteLogRecord) {
     if (!logRecord.attributes[KEY_EMB_TYPE]) {
       logRecord.setAttribute(KEY_EMB_TYPE, EMB_TYPES.SystemLog);
     }
