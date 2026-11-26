@@ -28,7 +28,6 @@ export class MaxScrollDepthInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'MaxScrollDepthInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
 
     this._onScrollHandler = (): void => {

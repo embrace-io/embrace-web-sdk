@@ -21,7 +21,6 @@ export class ServerTimingInstrumentation extends EmbraceInstrumentationBase {
       instrumentationVersion: '1.0.0',
       perf,
       limitManager,
-      config: {},
     });
   }
 

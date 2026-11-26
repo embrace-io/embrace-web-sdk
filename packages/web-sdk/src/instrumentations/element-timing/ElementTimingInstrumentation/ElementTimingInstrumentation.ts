@@ -31,15 +31,18 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
       instrumentationVersion: '1.0.0',
       perf,
       limitManager,
-      config: {},
     });
   }
 
-  public override enable(): void {
-    if (isEntryTypeSupported('element')) {
-      super.enable();
-    } else {
-      this._diag.debug('element not supported, skipping');
+  /** Whether this browser reports element entries. */
+  public static isSupported(): boolean {
+    return isEntryTypeSupported('element');
+  }
+
+  protected override _init(): void {
+    // TODO: throw a NotSupportedError DOMException once https://github.com/open-telemetry/opentelemetry-browser/issues/569 is released, so the base logs it at debug level
+    if (!ElementTimingInstrumentation.isSupported()) {
+      throw new Error('element entries are not supported');
     }
   }
 
@@ -51,9 +54,7 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
     );
 
     if (!this._observer) {
-      this._isEnabled = false;
-      this._diag.error('failed to enable');
-      return;
+      throw new Error('could not observe element entries');
     }
   }
 
@@ -65,7 +66,7 @@ export class ElementTimingInstrumentation extends EmbraceInstrumentationBase {
   }
 
   private _processEntry(entry: PerformanceElementTiming): void {
-    if (!this._isEnabled) {
+    if (!this.isEnabled()) {
       return;
     }
 

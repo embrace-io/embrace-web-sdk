@@ -28,7 +28,6 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
       instrumentationName: 'ClicksInstrumentation',
       instrumentationVersion: '1.0.0',
       perf,
-      config: {},
     });
 
     this._onClickHandler = (event: MouseEvent) => {
