@@ -1,24 +1,29 @@
 import { generateUUID } from '../../../utils/index.ts';
-import { USER_SESSION_STATE_SCHEMA_VERSION } from '../constants.ts';
+import {
+  CLOCK_SKEW_TOLERANCE_MS,
+  USER_SESSION_STATE_SCHEMA_VERSION,
+} from '../constants.ts';
 import type { UserSessionState } from '../types.ts';
 
 /**
- * True when the stored state is no longer trustworthy: the device clock
- * jumped backwards past the recorded start, the max-duration deadline has
- * passed, or an inactivity deadline (set when the last part ended) has
- * passed. The inactivity deadline only applies between parts; it is null
- * while a part is active.
+ * True when the user session is over: it was marked as ended, the device
+ * clock jumped backwards past the recorded start by more than tabs' clocks
+ * can differ, the max-duration deadline has passed, or an inactivity
+ * deadline (set when the last part ended) has passed. The inactivity deadline
+ * only applies between parts; it is null while a part is active.
  */
-export const isUserSessionExpired = (
+export const isUserSessionEnded = (
   state: UserSessionState,
   now: number,
 ): boolean =>
-  now < state.userSessionStartTs ||
+  state.ended === true ||
+  now < state.userSessionStartTs - CLOCK_SKEW_TOLERANCE_MS ||
   now >= state.userSessionMaxEndTs ||
   (state.inactivityDeadlineTs !== null && now >= state.inactivityDeadlineTs);
 
 export interface CreateUserSessionStateArgs {
   now: number;
+  userSessionId?: string;
   previousUserSessionId: string | null;
   userSessionMaxDurationSeconds: number;
   userSessionInactivityTimeoutSeconds: number;
@@ -28,6 +33,7 @@ export interface CreateUserSessionStateArgs {
 
 export const createUserSessionState = ({
   now,
+  userSessionId = generateUUID(),
   previousUserSessionId,
   userSessionMaxDurationSeconds,
   userSessionInactivityTimeoutSeconds,
@@ -35,7 +41,8 @@ export const createUserSessionState = ({
   userSessionNumber,
 }: CreateUserSessionStateArgs): UserSessionState => ({
   schemaVersion: USER_SESSION_STATE_SCHEMA_VERSION,
-  userSessionId: generateUUID(),
+  userSessionId,
+  nextUserSessionId: generateUUID(),
   previousUserSessionId,
   userSessionStartTs: now,
   userSessionMaxEndTs: now + userSessionMaxDurationSeconds * 1000,
@@ -45,5 +52,16 @@ export const createUserSessionState = ({
   userSessionInactivityTimeoutSeconds,
   userSessionForegroundInactivityTimeoutSeconds,
   inactivityDeadlineTs: null,
+  userSessionProperties: {},
+});
+
+/** The row an ended user session leaves in storage. */
+export const createEndedUserSessionState = (
+  state: UserSessionState,
+  now: number,
+): UserSessionState => ({
+  ...state,
+  ended: true,
+  inactivityDeadlineTs: now,
   userSessionProperties: {},
 });
