@@ -1,8 +1,10 @@
+import { diag } from '@opentelemetry/api';
 import { SeverityNumber } from '@opentelemetry/api-logs';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemoryLogRecordExporter } from '@opentelemetry/sdk-logs';
 import * as chai from 'chai';
 import {
+  setupTestDiagLogger,
   setupTestLogExporter,
   setupTestStorage,
   setupTestTraceExporter,
@@ -180,6 +182,7 @@ describe('DOMStateInstrumentation', () => {
   });
 
   afterEach(() => {
+    diag.disable();
     // Tests that register a manager on the global proxy must not leak it into
     // the fold capture of later tests.
     session.setGlobalUserSessionManager(new NoOpUserSessionManager());
@@ -1059,27 +1062,24 @@ describe('DOMStateInstrumentation', () => {
     expect(foldLogs).to.have.lengthOf(1);
   });
 
-  it('contains a throw from the injected diag logger instead of escaping enable', () => {
+  it('contains a throw from the global diag logger instead of escaping enable', () => {
     // With no per-instance manager wired the capture attempt takes the
-    // no-engaged-part skip, which logs through the injected diag: caller code,
-    // whose throw would otherwise abort SDK init.
-    let capturedErrors = 0;
-    const throwingDiag = {
-      verbose: () => {},
-      debug: () => {
-        throw new Error('diag debug failed');
-      },
-      info: () => {},
-      warn: () => {},
-      error: () => {
-        capturedErrors++;
-      },
-    };
+    // no-engaged-part skip, which logs through the global diag logger. An app
+    // can replace that logger, and a throw from it would otherwise abort SDK init.
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'DOMStateInstrumentation',
+    });
+    // Scoped to this namespace: other components also log to the global diag channel.
+    diagLogger.debug
+      .withArgs('DOMStateInstrumentation')
+      .throws(new Error('diag debug failed'));
     expect(() => {
-      instrumentation = new DOMStateInstrumentation({ diag: throwingDiag });
+      instrumentation = new DOMStateInstrumentation();
       instrumentation.enable();
     }).to.not.throw();
-    expect(capturedErrors).to.equal(1);
+    expect(diagLogger.messages('error')).to.deep.equal([
+      'failed to capture dom-state fold measurement',
+    ]);
   });
 
   it('contains a layout-read throw during the load-event capture and still emits the part-end log', () => {

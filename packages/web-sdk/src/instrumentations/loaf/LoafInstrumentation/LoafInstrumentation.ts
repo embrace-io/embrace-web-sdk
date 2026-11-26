@@ -44,11 +44,10 @@ export class LoafInstrumentation extends EmbraceInstrumentationBase {
   private _totalBlockingDuration = 0;
   private _scriptSummaries: ScriptSummaries = new Map();
 
-  public constructor({ diag, perf }: LoafInstrumentationArgs = {}) {
+  public constructor({ perf }: LoafInstrumentationArgs = {}) {
     super({
       instrumentationName: 'LoafInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });

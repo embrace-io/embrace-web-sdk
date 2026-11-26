@@ -1,12 +1,13 @@
 /* eslint-disable baseline-js/use-baseline */
 
+import { diag } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import type { InMemorySpanExporter } from '@opentelemetry/sdk-trace';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import {
-  InMemoryDiagLogger,
   MockPerformanceManager,
+  setupTestDiagLogger,
   setupTestTraceExporter,
 } from '../../../../tests/utils/index.ts';
 import {
@@ -95,6 +96,7 @@ describe('ElementTimingInstrumentation', () => {
     (globalThis as Record<string, unknown>)['PerformanceObserver'] =
       originalPerformanceObserver;
     clock.restore();
+    diag.disable();
   });
 
   it('should observe element entries with buffered: true', () => {
@@ -262,7 +264,9 @@ describe('ElementTimingInstrumentation', () => {
   });
 
   it('should not create an observer when element entry type is unsupported', () => {
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'ElementTimingInstrumentation',
+    });
     class UnsupportedMockPerformanceObserver extends MockPerformanceObserver {
       public static override supportedEntryTypes: string[] = [];
     }
@@ -271,14 +275,14 @@ describe('ElementTimingInstrumentation', () => {
 
     const instrumentation = new ElementTimingInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
     });
     instrumentation.enable();
 
     expect(observerCallback).to.be.null;
-    expect(diagLogger.getDebugLogs().some((m) => m.includes('element'))).to.be
-      .true;
+    expect(diagLogger.messages('debug')).to.deep.equal([
+      'element not supported, skipping',
+    ]);
 
     instrumentation.disable();
   });
@@ -346,15 +350,16 @@ describe('ElementTimingInstrumentation', () => {
       }
     };
 
-    const diagLogger = new InMemoryDiagLogger();
+    const diagLogger = setupTestDiagLogger({
+      namespace: 'ElementTimingInstrumentation',
+    });
     const instrumentation = new ElementTimingInstrumentation({
       perf,
-      diag: diagLogger,
       limitManager,
     });
     instrumentation.enable();
 
-    expect(diagLogger.getErrorLogs()[0]).to.equal('failed to enable');
+    expect(diagLogger.messages('error')).to.deep.equal(['failed to enable']);
 
     globalThis.PerformanceObserver = original;
     instrumentation.disable();

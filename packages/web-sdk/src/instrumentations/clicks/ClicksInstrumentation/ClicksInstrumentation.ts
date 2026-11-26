@@ -20,7 +20,6 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
 
   public constructor({
-    diag,
     perf,
     shouldTrack,
     innerTextForElement,
@@ -28,7 +27,6 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
     super({
       instrumentationName: 'ClicksInstrumentation',
       instrumentationVersion: '1.0.0',
-      diag,
       perf,
       config: {},
     });
