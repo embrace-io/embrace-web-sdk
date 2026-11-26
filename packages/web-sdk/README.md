@@ -582,6 +582,9 @@ initSDK({
 });
 ```
 
+To send these logs to your own logger instead of the console, pass a `DiagLogger` from `@opentelemetry/api` as the
+`diagLogger` option. `logLevel` applies to it too.
+
 In addition, initializing the SDK with `ConsoleLogRecordExporter` and `ConsoleSpanExporter` exporters allows you to take
 a more detailed look at the spans and logs that are being exported from the SDK. These can be setup as custom exporters,
 in which case their output will be batched, or wrapped in custom processors to see the telemetry outputted as it gets
