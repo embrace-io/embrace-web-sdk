@@ -608,16 +608,17 @@ describe('LoafInstrumentation', () => {
     instrumentation.enable({ perf, userSessionManager });
 
     // Trigger an entry that will cause an error by passing a broken object
+    const error = new Error('broken');
     triggerEntries([
       {
         get duration(): number {
-          throw new Error('broken');
+          throw error;
         },
       } as PerformanceLongAnimationFrameTiming,
     ]);
 
-    expect(diagLogger.messages('error')).to.deep.equal([
-      'error processing long-animation-frame entry',
+    expect(diagLogger.calls('error')).to.deep.equal([
+      ['error processing long-animation-frame entry', error],
     ]);
 
     instrumentation.disable();
@@ -633,17 +634,18 @@ describe('LoafInstrumentation', () => {
     triggerEntries([makeEntry()]);
 
     // Sabotage the logger to trigger an error during flush
+    const error = new Error('emit failed');
     const originalEmit = instrumentation['logger'].emit;
     instrumentation['logger'].emit = () => {
-      throw new Error('emit failed');
+      throw error;
     };
 
     userSessionManager.endSessionPartInternal({
       reason: 'web_foreground_inactivity',
     });
 
-    expect(diagLogger.messages('error')).to.deep.equal([
-      'error emitting loaf report',
+    expect(diagLogger.calls('error')).to.deep.equal([
+      ['error emitting loaf report', error],
     ]);
 
     instrumentation['logger'].emit = originalEmit;
