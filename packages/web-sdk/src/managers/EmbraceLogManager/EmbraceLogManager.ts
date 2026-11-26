@@ -33,6 +33,7 @@ import {
   GLOBAL_CONFIG,
   getIncrementedCount,
   getVisibilityState,
+  toSafeString,
 } from '../../utils/index.ts';
 import type { LimitManagerInternal } from '../EmbraceLimitManager/index.ts';
 import type { UserSessionManagerInternal } from '../EmbraceUserSessionManager/index.ts';
@@ -98,7 +99,15 @@ export class EmbraceLogManager implements LogManager {
     }
   }
 
-  public logException(
+  public logException(error: unknown, options?: LogExceptionOptions) {
+    try {
+      this._logException(error, options);
+    } catch (e) {
+      this._diag.error('failed to log an exception', e);
+    }
+  }
+
+  private _logException(
     error: unknown,
     {
       handled = true,
@@ -130,10 +139,10 @@ export class EmbraceLogManager implements LogManager {
       try {
         errMessage = JSON.stringify(error);
       } catch {
-        errMessage = String(error).trim();
+        errMessage = toSafeString(error).trim();
       }
     } else {
-      errMessage = String(error).trim();
+      errMessage = toSafeString(error).trim();
     }
 
     const limited = this._limitManager.limitException(errMessage, validAttrs);
@@ -171,6 +180,18 @@ export class EmbraceLogManager implements LogManager {
   }
 
   public message(
+    message: string,
+    severity: LogSeverity,
+    options?: LogMessageOptions,
+  ) {
+    try {
+      this._message(message, severity, options);
+    } catch (e) {
+      this._diag.error('failed to log a message', e);
+    }
+  }
+
+  private _message(
     message: string,
     severity: LogSeverity,
     {
