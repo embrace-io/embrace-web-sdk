@@ -371,4 +371,102 @@ describe('ClicksInstrumentation', () => {
       'view.name': '<div>should track</div>',
     });
   });
+
+  it('should add the data-click-label of the clicked element or its closest labelled ancestor', () => {
+    instrumentation = new ClicksInstrumentation({
+      diag,
+    });
+    instrumentation.enable();
+    const labelled = document.createElement('div');
+    labelled.setAttribute('data-click-label', 'checkout');
+    labelled.innerText = 'Checkout';
+    testContainer.append(labelled);
+
+    const button = document.createElement('button');
+    button.setAttribute('data-click-label', 'add-to-basket');
+    const icon = document.createElement('span');
+    icon.innerText = '+';
+    button.append(icon);
+    testContainer.append(button);
+
+    labelled.click();
+    icon.click();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(2);
+
+    void expect(sessionSpan.events[0].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<div>Checkout</div>',
+      'emb.click.label': 'checkout',
+    });
+    void expect(sessionSpan.events[1].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<span>+</span>',
+      'emb.click.label': 'add-to-basket',
+    });
+  });
+
+  it('should add the id of the clicked element or of its closest interactive ancestor', () => {
+    instrumentation = new ClicksInstrumentation({
+      diag,
+    });
+    instrumentation.enable();
+    const withId = document.createElement('div');
+    withId.id = 'banner';
+    withId.innerText = 'Banner';
+    testContainer.append(withId);
+
+    const link = document.createElement('a');
+    link.id = 'pricing-link';
+    const linkText = document.createElement('span');
+    linkText.innerText = 'Pricing';
+    link.append(linkText);
+    testContainer.append(link);
+
+    const section = document.createElement('section');
+    section.id = 'content';
+    const paragraph = document.createElement('p');
+    paragraph.innerText = 'Text';
+    section.append(paragraph);
+    testContainer.append(section);
+
+    withId.click();
+    linkText.click();
+    paragraph.click();
+    userSessionManager.endSessionPartInternal({
+      reason: 'web_foreground_inactivity',
+    });
+
+    const finishedSpans = memoryExporter.getFinishedSpans();
+    expect(finishedSpans).to.have.lengthOf(1);
+    const sessionSpan = finishedSpans[0];
+    expect(sessionSpan.events).to.have.lengthOf(3);
+
+    void expect(sessionSpan.events[0].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<div>Banner</div>',
+      'emb.click.element_id': 'banner',
+    });
+    void expect(sessionSpan.events[1].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<span>Pricing</span>',
+      'emb.click.element_id': 'pricing-link',
+    });
+    // An id on a non-interactive container doesn't identify what was clicked.
+    void expect(sessionSpan.events[2].attributes).to.deep.equal({
+      'emb.type': 'ux.tap',
+      'tap.coords': '0,0',
+      'view.name': '<p>Text</p>',
+    });
+  });
 });

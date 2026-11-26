@@ -11,10 +11,15 @@
       recording click events for which `stopPropagation` is called. See https://github.com/open-telemetry/opentelemetry-js-contrib/issues/1368
  */
 
+import type { Attributes } from '@opentelemetry/api';
 import { EmbraceInstrumentationBase } from '../../EmbraceInstrumentationBase/index.ts';
 import type { ClicksInstrumentationArgs } from './types.ts';
 
-import { getHTMLElementFriendlyName } from './utils.ts';
+import {
+  getClickElementId,
+  getClickLabel,
+  getHTMLElementFriendlyName,
+} from './utils.ts';
 
 export class ClicksInstrumentation extends EmbraceInstrumentationBase {
   private readonly _onClickHandler: (event: MouseEvent) => void;
@@ -51,19 +56,30 @@ export class ClicksInstrumentation extends EmbraceInstrumentationBase {
         const currentSessionPartSpan =
           this.userSessionManager.getSessionPartSpan();
         if (currentSessionPartSpan) {
+          const attributes: Attributes = {
+            'emb.type': 'ux.tap',
+            'view.name': getHTMLElementFriendlyName(
+              element,
+              innerTextForElement
+                ? innerTextForElement(element)
+                : // innerText, not textContent: capture what the user sees
+                  element.innerText,
+            ),
+            'tap.coords': `${event.x.toString()},${event.y.toString()}`,
+          };
+          // Stable across builds, unlike the class names in view.name, so User Flows can match clicks on them.
+          const label = getClickLabel(element);
+          if (label) {
+            attributes['emb.click.label'] = label;
+          }
+          const elementId = getClickElementId(element);
+          if (elementId) {
+            attributes['emb.click.element_id'] = elementId;
+          }
+
           currentSessionPartSpan.addEvent(
             'click',
-            {
-              'emb.type': 'ux.tap',
-              'view.name': getHTMLElementFriendlyName(
-                element,
-                innerTextForElement
-                  ? innerTextForElement(element)
-                  : // innerText, not textContent: capture what the user sees
-                    element.innerText,
-              ),
-              'tap.coords': `${event.x.toString()},${event.y.toString()}`,
-            },
+            attributes,
             this.perf.offsetToAbsoluteTime(event.timeStamp),
           );
         }
