@@ -104,32 +104,6 @@ export default function App({ Component, pageProps }: AppProps) {
 }
 ```
 
-## Suppressing the Server-Side Build Warning
-
-During the server build you may see:
-
-```
-Critical dependency: the request of a dependency is an expression
-```
-
-This happens because webpack analyzes a dynamic `require.resolve()` in `@opentelemetry/instrumentation`'s Node platform path during the server build.
-
-To silence it, add `serverExternalPackages` to your Next.js config:
-
-```typescript
-// next.config.ts
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
-  serverExternalPackages: ['@opentelemetry/instrumentation'],
-};
-
-export default nextConfig;
-```
-
-> [!NOTE]
-> The warning is harmless — the SDK detects non-browser environments and skips initialization. This config simply silences the warning by telling Next.js to use native `require()` for that package on the server.
-
 ## Import Rules
 
 - Recommended: Client Components (`'use client'`), browser-only scripts
